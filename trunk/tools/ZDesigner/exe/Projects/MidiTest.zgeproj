@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <OnLoaded>
+    <DefineVariable Name="Temp1"/>
+  </OnLoaded>
+  <OnUpdate>
+    <Timer Name="Timer1" Comment="Delay before music starts" Interval="0.5">
+      <OnTimer>
+        <MusicControl Music="Music1"/>
+        <ZExpression Expression="Timer1.Interval=0;"/>
+      </OnTimer>
+    </Timer>
+    <ZExpression Expression="//App.CameraPosition.Z+=App.DeltaTime;"/>
+  </OnUpdate>
+  <Content>
+    <Music Name="Music1" Comment="Imported from Luf2lfia.mid">
+      <MusicFile>
+<![CDATA[78DAED57CD6ADB4010DE34A71C0A858240905B8831898DF0225C1BE3208C85FF848931098542A9C1A7A27B84A107B92F104B7D9026CD03A43F0FD6F94696B5EBDABDB4A52DEC45CCEECC7CF3B3B3B31AF128C4C7487C3E107791F87220EE23F1F589F87429BE1D8A87B97DC7AC7B66D126B11EE6C43A26954761A56DEB8DF8D0B6423BF54079A07C503E51AB6ADC8F44DAEBD3BAD7A7B51B3B91BD6AC65664272D492C7F01D1452893F6281AE5F2D0EF596B79910EB01E600D4D85BFC67080E164188AF42E6A55620BC5BACA168680183AB496EC9B0BDC4EECD32E7D09B90EEFA09B6968729B700B0AF222ED62D905A303AA036AB3B72AB3275E5C41DAE20AED388CEC32725D4632698C22990EA1312C340A5F0B798AC8464476C89A6A4E1AF0A487658F964A6EF7E41A920327D44EC98B6FD8C9B7F9399539139ABF367D9AF8346CD2D8940518A2A88D8C6B0AE42F14481ED1AF16C8FE5CF3D172A9F8542A7672817268E3D3CA2906D58F39939A47761A002A401276502B3927F8007E065C9E2FA3C3DBD22CB2920B3026604C889174E63080BD4BEC5D42B805E132843D0D25E9DAEC07021DA308C728428FBC3BBCADC6CF236BE5B38F0384161C41EB287C9A0E410D894A02300633A464467043C4E2E3E3D9B0E810C26FF47B0AC674CBEF6BF87DFD13BFAFE0ED15FC9E829A6EFC9E4073D2DFF69B1848FAC40AD508C6B03DFED7320FCDC18E08F2AACC23603BC5D56A7229E77780A2897D92BA608B9E54FC9449876FFAE67A1637D8B7B5DBE0C244E2E33205CB57D05E8E113F47E432BEC7F824324A7AB9BBB4497A24866F86D1A5EFF16D995416BB9ED7F5BDF411BA9FF74C24AD4226D69D135E7810F0FAE128696B177E75AEF55CD2B4384300396790170CD2D441B8936EDAC4EA2C6B93EBFC9326406A0C72C620750669E8204DA93C3132EB5799A1BC89913A901CADD7D02932A6BBD5715873139872360DA9CA29EF0D77F7ACF906F02A80EF6558ACB2EF25B6A3F6EE4D9FACEBADBCF0A2AE3F69A76CC2D54D9460A2C2264ED9448D4D48DDC4DED7C2B5B5F23D611372A45426E1C2C419E7AD0BC42E0AFB848D396CACA61B63DB7915487EBBD50329727F521C48FEB4A80742D97E8758F150078BF0DD567DAED36B8AD414E91F285214DD60A116E90FA52977E558F133AB347FD9016BD9C953BDA3D6F0C7D5C27F1E54D6D5B45F6CE7D9AABF57EF9F2102B63B60BB0CE82E6F705116B827CBD7D96FB0C4ED38BE752D3CA3F8B190A07CF6A24636E95EF9D1CCCC62661633B39899C5CC2C666631338B9959CCFCE69A59CCCC62A648CD2C666631338BFD4FB3D8771C370C79]]>
+      </MusicFile>
+      <Instruments>
+        <Sound Comment="33 Electric bass (finger)" Length="0.4" Volume="0.35" UseOsc2="1" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.53" FilterQ="0.05" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.06" Mod2Destination="1" Mod2Amount="0.4" Env0Active="1" Env0ReleaseTime="0.3" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.22"/>
+        <Sound Comment="25 Acoustic guitar (steel)" Length="0.4" Volume="0.35" UseOsc2="1" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.53" FilterQ="0.05" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.06" Mod2Destination="1" Mod2Amount="0.4" Env0Active="1" Env0ReleaseTime="0.3" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.22"/>
+        <Sound Comment="72 Piccolo" Length="0.4" Volume="0.35" UseOsc2="1" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.53" FilterQ="0.05" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.06" Mod2Destination="1" Mod2Amount="0.4" Env0Active="1" Env0ReleaseTime="0.3" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.22"/>
+        <Sound Comment="73 Flute" Length="0.4" Volume="0.35" UseOsc2="1" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.53" FilterQ="0.05" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.06" Mod2Destination="1" Mod2Amount="0.4" Env0Active="1" Env0ReleaseTime="0.3" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.22"/>
+      </Instruments>
+      <OnPlayNote>
+        <SpawnModel Model="NoteModel"/>
+      </OnPlayNote>
+    </Music>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.5" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1" Ch2Active="1" Ch2Volume="0.46" Ch3Active="1" Ch3Volume="0.5" Ch4Active="1" Ch4Volume="0.5" Ch5Active="1" Ch5Volume="0.5" Ch6Active="1" Ch6Volume="0.5" Ch7Active="1" Ch7Volume="0.5" Ch8Active="1" Ch8Volume="0.5" Ch9Volume="0.5"/>
+    <Mesh Name="SphereMesh">
+      <Producers>
+        <MeshSphere Scale="0.5 0.5 0.5" ZSamples="6" RadialSamples="8"/>
+      </Producers>
+    </Mesh>
+    <Model Name="NoteModel" RotationVelocity="0 0.25 0" Category="1">
+      <Definitions>
+        <DefineVariable Name="NoteLifeTime"/>
+        <DefineVariable Name="NoteChannel"/>
+        <DefineVariable Name="NoteNr"/>
+        <DefineVariable Name="NoteTargetX"/>
+        <DefineVariable Name="NoteTargetY"/>
+      </Definitions>
+      <OnRender>
+        <UseMaterial Material="NoteMaterial"/>
+        <RenderSetColor Name="NoteColor"/>
+        <RenderMesh Mesh="SphereMesh"/>
+      </OnRender>
+      <OnUpdate>
+        <Timer Name="NoteTimer">
+          <OnTimer>
+            <RemoveModel/>
+          </OnTimer>
+        </Timer>
+        <ZExpression>
+          <Expression>
+<![CDATA[NoteLifeTime -= App.DeltaTime;
+
+Temp1=clamp(NoteLifeTime*2,0,2);
+CurrentModel.Scale.X = Temp1;
+CurrentModel.Scale.Y = Temp1;
+CurrentModel.Scale.Z = Temp1;]]>
+          </Expression>
+        </ZExpression>
+        <SteeringController Mass="0.5" MaxSpeed="2" MaxForce="10" Radius="0.35">
+          <Behaviours>
+            <SteeringBehaviour Kind="4" Weight="0">
+              <Expression>
+<![CDATA[//OutVector : result steer vector
+this.OutVector.X =
+  NoteTargetX - CurrentModel.Position.X;
+  
+this.OutVector.Y =
+  NoteTargetY - CurrentModel.Position.Y;]]>
+              </Expression>
+            </SteeringBehaviour>
+            <SteeringBehaviour Kind="1" TargetCategory="1"/>
+          </Behaviours>
+        </SteeringController>
+      </OnUpdate>
+      <OnSpawn>
+        <ZExpression>
+          <Expression>
+<![CDATA[NoteLifeTime = Music1.NoteLengthParam;
+NoteChannel = Music1.NoteChannelParam;
+NoteNr = Music1.NoteParam;
+
+NoteTimer.Interval = NoteLifeTime;
+
+//NoteTargetX = clamp((NoteNr/75) * 10 - 5,-5,5);
+//NoteTargetY = clamp(((NoteChannel+1)/4) * 8 - 4,-4,4);
+
+NoteTargetY = noise2(NoteChannel*10.343,14) * 14;
+NoteTargetX = noise2(NoteNr*5.343,0) * 15;
+
+CurrentModel.Position.X=random(NoteTargetX,0.0);
+CurrentModel.Position.Y=random(NoteTargetY,0.0);
+//CurrentModel.Position.Z=App.CameraPosition.Z - 1;
+
+if( frac(NoteChannel/3)==0 ) {
+  NoteColor.Color.B = 0.5;
+} else if( frac(NoteChannel/2)==0 ) {
+  NoteColor.Color.G = 0.5;
+} else {
+  NoteColor.Color.R = 0.5;
+}]]>
+          </Expression>
+        </ZExpression>
+      </OnSpawn>
+    </Model>
+    <Material Name="NoteMaterial" Shading="1" Color="0.19 0.69 0.18 1"/>
+  </Content>
+</ZApplication>

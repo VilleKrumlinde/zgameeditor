@@ -1,0 +1,268 @@
+{Copyright (c) 2008 Ville Krumlinde
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.}
+
+unit ZBitmap;
+
+interface
+
+uses ZOpenGL, ZClasses;
+
+type
+  TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024);
+
+  //32 bits per pixel image
+  TZBitmap = class(TContent)
+  private
+    TexObject: GLuint;
+    IsInitialized : boolean;
+    Memory : pointer;
+    MemFormat,MemType : GLuint;
+    procedure ReInit;
+    procedure CleanUp;
+  protected
+    procedure CopyAndDestroy(Source : TContent); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    //Keep fields in sync with CopyAndDestroy
+    PropWidth,PropHeight : TBitmapSize;
+    constructor CreateFromBitmap(B : TZBitmap);
+    destructor Destroy; override;
+    procedure Update; override;
+    procedure UseTextureBegin;
+    //procedure UseTextureEnd;
+    procedure RenderTargetBegin;
+    procedure RenderTargetEnd;
+    procedure SetMemory(P : pointer; MemFormat, MemType : GLuint);
+    function PixelWidth : integer;
+    function PixelHeight : integer;
+    function GetCopyAsFloats : pointer;
+  end;
+
+implementation
+
+{$ifndef minimal}
+uses BitmapProducers;
+{$endif}
+
+{ TZBitmap }
+
+constructor TZBitmap.CreateFromBitmap(B: TZBitmap);
+begin
+  inherited Create(nil);
+  PropHeight := B.PropHeight;
+  PropWidth := B.PropWidth;
+end;
+
+destructor TZBitmap.Destroy;
+begin
+  CleanUp;
+  inherited;
+end;
+
+
+function TZBitmap.GetCopyAsFloats: pointer;
+var
+  P : PFloat;
+begin
+  GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
+  UseTextureBegin;
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
+  Result := P;
+end;
+
+procedure TZBitmap.CleanUp;
+begin
+  if IsInitialized then
+  begin
+    IsInitialized := False;
+    glDeleteTextures(1, @TexObject);
+  end;
+end;
+
+procedure TZBitmap.CopyAndDestroy(Source: TContent);
+var
+  B : TZBitmap;
+begin
+  CleanUp;
+  B := TZBitmap(Source);
+  Self.TexObject := B.TexObject;
+  Self.IsInitialized := B.IsInitialized;
+  Self.PropHeight := B.PropHeight;
+  Self.PropWidth := B.PropWidth;
+  Self.Memory := B.Memory;
+  Self.MemFormat := B.MemFormat;
+  Self.MemType := B.MemType;
+  B.TexObject := 0;
+  B.IsInitialized := False;
+  B.Free;
+end;
+
+//Call this when bitmap size have changed
+procedure TZBitmap.ReInit;
+var
+  Size,W,H : integer;
+  P : pointer;
+begin
+  CleanUp;
+
+  if Producers.Count>0 then
+  begin
+    //Create from child content producers
+    RefreshFromProducers;
+  end
+  else
+  begin
+    //Create as a texgen buffer
+    //todo: create pbuffers ifall available
+    glGenTextures(1, @TexObject);
+    glBindTexture(GL_TEXTURE_2D, TexObject);
+
+    W := PixelWidth;
+    H := PixelHeight;
+
+    if Memory<>nil then
+    begin
+      glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, Self.MemFormat, Self.MemType, Memory);
+      Memory := nil;
+    end else
+    begin
+      //Must be set to something, otherwise copy from framebuffer won't work
+      Size := H*W*4;
+      GetMem(P, Size);
+      FillChar(P^,Size,0);
+      glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
+      FreeMem(P);
+    end;
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_NEAREST_MIPMAP_LINEAR);
+
+    //Generate mipmaps automatically
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+    //Gör setup-anrop som behövs varje gång bitmap ska användas som rendertarget
+    {glMatrixMode(GL_PROJECTION);
+    glPushMatrix;
+
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    DynTex.BeginSetup;
+    DynTex.EndSetup;
+    glPopAttrib();
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix;
+    glMatrixMode(GL_MODELVIEW);}
+  end;
+  IsChanged := False;
+  Producers.IsChanged := False;
+  IsInitialized := True;
+end;
+
+
+procedure TZBitmap.RenderTargetBegin;
+begin
+  if not IsInitialized then
+    ReInit;
+
+//  glMatrixMode(GL_PROJECTION);
+//  glPushMatrix;
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+    //Skippa perspektiv och sätt upp -1.0 .. 1.0 upplösning
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
+    glOrtho(-1, 1, -1, 1, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
+    glDisable(GL_LIGHTING);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    //Clear
+    //glClearColor(1,0,0,0);
+    //glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, PixelWidth, PixelHeight);
+end;
+
+procedure TZBitmap.RenderTargetEnd;
+begin
+    glBindTexture(GL_TEXTURE_2D, TexObject);
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
+  glPopAttrib;
+
+//  glMatrixMode(GL_PROJECTION);
+//  glPopMatrix;
+//  glMatrixMode(GL_MODELVIEW);
+end;
+
+//Set this bitmap as current opengl texture
+procedure TZBitmap.UseTextureBegin;
+begin
+  if not IsInitialized then
+    ReInit;
+  glBindTexture(GL_TEXTURE_2D, TexObject);
+end;
+
+procedure TZBitmap.Update;
+begin
+  //Dynamic bitmap must be updated before draw begins since backbuffer is being used
+  if (not IsInitialized) or (Producers.IsChanged) or (IsChanged) then
+    ReInit;
+end;
+
+procedure TZBitmap.SetMemory(P: pointer; MemFormat,MemType : GLUInt);
+begin
+  Self.Memory := P;
+  Self.MemFormat := MemFormat;
+  Self.MemType := MemType;
+end;
+
+function TZBitmap.PixelHeight: integer;
+begin
+  Result := 16 shl ord(PropHeight);
+end;
+
+function TZBitmap.PixelWidth: integer;
+begin
+  Result := 16 shl ord(PropWidth);
+end;
+
+
+procedure TZBitmap.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  {$ifndef minimal}
+  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
+  {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := Ord(bs64);
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := Ord(bs64);
+end;
+
+initialization
+
+  ZClasses.Register(TZBitmap,ZBitmapClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=9;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+
+end.

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <OnUpdate>
+    <AnimatorSimple Duration="2" AutoStart="255" Target="MyText Y" FromValue="-0.5" ToValue="0.5" Smooth="255" AutoReverse="255" RepeatCount="100"/>
+    <PlaySound Sound="MySound" ReplayDelay="0.25"/>
+    <ZExpression>
+      <Expression>
+<![CDATA[
+MySound.BaseNoteNr=24+frac(App.Time)*18;
+MySound.FilterCutoff = 0.5 + App.MousePosition.X*0.48;
+]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <UseMaterial Material="TextMaterial"/>
+    <RenderText Name="MyText" Text="HELLO WORLD" Scale="1.5">
+      <RenderCharExpression>
+<![CDATA[
+//Modify current character before render.
+//CharX,CharY : current coordinate
+//CharI : current character index (read only)
+//CharRotate : current character rotation in radians
+//CharScale : current character scale
+CharY=1 + sin(App.MousePosition.Y*CharI);
+]]>
+      </RenderCharExpression>
+    </RenderText>
+  </OnRender>
+  <Content>
+    <Material Name="TextMaterial" Color="1 1 1 1" Blend="1"/>
+    <Sound Name="MySound" Length="0.2" UseFilter="1" FilterCutoff="0.5" FilterQ="0.7" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
+  </Content>
+</ZApplication>

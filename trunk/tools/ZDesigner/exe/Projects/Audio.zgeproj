@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App">
+  <OnLoaded>
+    <SpawnModel Model="CursorModel"/>
+    <MusicControl Music="SanxionMusic"/>
+  </OnLoaded>
+  <Content>
+    <Group Name="CursorGroup">
+      <Children>
+        <Mesh Name="CursorMesh">
+          <Producers>
+            <MeshBox Scale="0.1 0.1 0.1"/>
+          </Producers>
+        </Mesh>
+        <Model Name="CursorModel">
+          <OnRender>
+            <RenderSetColor Color="1 1 1 1"/>
+            <RenderMesh Mesh="CursorMesh"/>
+          </OnRender>
+          <OnUpdate>
+            <MouseModelController ScaleX="4" ScaleY="4"/>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Instr1.FilterCutOff=clamp(abs(CursorModel.Position.Y)/4, 0.1, 0.99);
+//Instr1.FilterQ=clamp(abs(CursorModel.Position.X)/4, 0.1, 0.99);]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+        </Model>
+      </Children>
+    </Group> <!-- CursorGroup -->
+
+    <Music Name="SanxionMusic">
+      <Instruments>
+        <Sound Name="SnxInstr1" Length="0.3" Osc1Waveform="1" Osc2NoteModifier="0.5" FilterCutoff="0.25" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="1" Lfo1Speed="0.2"/>
+        <Sound Name="SnxInstrBass" Length="0.3" Volume="0.7" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="SnxEmpty" Length="0.25" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="SnxBassDrm" Length="0.3" Volume="0.99" BaseNoteNr="13.89" Osc1Waveform="1" Osc2NoteModifier="-0.8" UseFilter="1" FilterCutoff="0.45" FilterQ="0.72" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="1" Mod1Amount="0.05" Mod2Active="1" Mod2Source="2" Mod2Destination="2" Mod2Amount="0.45" Env0Active="1" Env0ReleaseTime="0.1" Env1Active="1" Env1ReleaseTime="0.02" Lfo0Active="1" Lfo0Speed="0.31" Lfo1Speed="0.2"/>
+        <Sound Name="SnxHiHat" Length="0.1" Volume="0.29" BaseNoteNr="120" Osc1Waveform="2" Osc2NoteModifier="-500" UseFilter="1" FilterCutoff="0.69" FilterQ="0.2" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Amount="0.04" Env0Active="1" Env0ReleaseTime="0.4" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="TechnoBass" Comment="Note 24" Length="0.3" Volume="0.53" UseOsc2="1" Osc2NoteModifier="-24" UseFilter="1" FilterCutoff="0.3" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.35" Env1AttackTime="0.5" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="SnxVibrato1" Length="0.3" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="SnxVibrato2" Length="0.3" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="SnxSnare2" Length="0.2" Volume="0.78" Osc1Waveform="2" UseOsc2="1" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.21" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Destination="9" Mod1Amount="0.23" Mod2Destination="10" Mod2Amount="0.19" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+      </Instruments>
+    </Music>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.41" Ch0DelayLength="0.08" Ch1Active="1" Ch1Volume="0.5" Ch1UseDelay="1" Ch1DelayLength="0.14" Ch2Active="1" Ch2Volume="0.46" Ch3Active="1" Ch3Volume="0.5" Ch4Active="1" Ch4Volume="0.5" Ch5Active="1" Ch5Volume="0.5" Ch6Active="1" Ch6Volume="0.5" Ch7Active="1" Ch7Volume="0.5" Ch8Active="1" Ch8Volume="0.5" Ch9Volume="0.5" Lfo0Active="1" Lfo0Speed="0.05"/>
+    <Group Name="TripleE_Sounds">
+      <Children>
+        <Sound Name="PlayerShotSound" Comment="48" Length="0.1" Volume="0.5" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.26" FilterQ="0.53" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.32"/>
+        <Sound Name="MonkeyFallSound" Comment="54" Volume="0.8" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.46" FilterQ="0.47" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.66" Env0Active="1" Env0ReleaseTime="0.98"/>
+        <Sound Name="MonkeyHitSound" Comment="24" Length="0.1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.79" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.82"/>
+        <Sound Name="MonkeyAppearSound" Comment="note 67" Length="0.8" Volume="0.2" UseFilter="1" FilterCutoff="0.65" FilterQ="0.92" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.21" Mod2Source="2" Mod2Amount="0.06" Env0Active="1" Env0ReleaseTime="0.56" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Style="1" Lfo0Speed="0.86"/>
+        <Sound Name="MonkeyThrowNutSound" Comment="note 26, borde vara sine" Length="0.1" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.18"/>
+        <Sound Name="MonkeyExplodeSound" Comment="note 69" Volume="1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.42" FilterQ="0.69" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.63" Env0Active="1" Env0ReleaseTime="0.98" Lfo0Active="1" Lfo0Speed="0.16"/>
+        <Sound Name="EyeDeadSound" Comment="note 62" Length="0.2" Volume="0.5" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.46" FilterQ="0.47" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.66" Env0Active="1" Env0ReleaseTime="0.98"/>
+        <Sound Name="EyeStrafeSound" Comment="note 60" Length="0.3" Volume="0.2" UseFilter="1" FilterCutoff="0.65" FilterQ="0.92" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.21" Mod2Source="2" Mod2Amount="0.06" Env0Active="1" Env0ReleaseTime="0.56" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Style="1" Lfo0Speed="0.86"/>
+        <Sound Name="EyeFireWormSound" Comment="note 54" Length="0.2" Volume="0.15" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.4" Env1Active="1" Env1AttackTime="0.3"/>
+        <Sound Name="EyeHitSound" Comment="54" Length="0.1" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.24" FilterQ="0.06" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.77" Env0Active="1" Env0ReleaseTime="0.26"/>
+        <Sound Name="BossShotSound" Comment="note 26, borde vara sine" Length="0.1" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.18"/>
+        <Sound Name="BossSegmentHitSound" Comment="24" Length="0.1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.79" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.82"/>
+        <Sound Name="BossHitSound" Comment="80" Length="0.1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.87" FilterQ="0.77" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
+        <Sound Name="BossExpandingSound" Comment="36" Length="5" UseOsc2="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.05" Mod2Active="1" Mod2Source="4" Mod2Destination="2" Mod2Amount="0.04" Env0Active="1" Env0ReleaseTime="2" Lfo0Active="1" Lfo0Speed="0.08"/>
+        <Sound Name="BossDeadSound" Comment="49" Length="5" UseOsc2="1" UseFilter="1" FilterCutoff="0.74" FilterQ="0.92" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.14" Mod2Active="1" Mod2Source="3" Mod2Destination="2" Mod2Amount="0.18" Mod3Active="1" Mod3Source="4" Mod3Amount="0.22" Env0Active="1" Env0ReleaseTime="2" Lfo0Active="1" Lfo0Speed="0.1" Lfo1Active="1" Lfo1Style="1" Lfo1Speed="0.55"/>
+      </Children>
+    </Group> <!-- TripleE_Sounds -->
+
+    <Sound Name="filterbrusSound" Length="0.3" Volume="1" UseFilter="1" FilterCutoff="0.11" FilterQ="0.06" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
+    <Sound Name="filterbrusSound2" Comment="press ö for clik at end" Length="0.1" Volume="0.1" UseOsc2="1" Osc2NoteModifier="0.4" UseFilter="1" FilterCutoff="0.32" FilterQ="0.74" Mod0Active="1" Mod0Destination="11" Mod0Amount="0.52" Mod1Source="4" Mod1Destination="1" Mod1Amount="0.21" Mod2Source="3" Mod2Destination="10" Mod2Amount="0.43" Env0Active="1" Env0AttackTime="0.1" Env0ReleaseTime="0.05" Lfo0Active="1" Lfo0Speed="0.75" Lfo1Active="1" Lfo1Speed="0.09"/>
+    <Group Name="ZBlast_sounds">
+      <Children>
+        <Sound Name="ShooterShotSound" Comment="note 46" Volume="0.5" UseFilter="1" FilterCutoff="0.3" FilterQ="0.61" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.33" Mod2Active="1" Mod2Source="4" Mod2Destination="9" Mod2Amount="1" Env0Active="1" Env0ReleaseTime="0.6" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.38" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.1"/>
+        <Sound Name="PingSound" Comment="Note 99" Length="0.1" Volume="0.5" UseFilter="1" FilterCutoff="0.47" FilterQ="0.7" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.05"/>
+        <Sound Name="LevelEntrySound" Comment="note 61" Volume="0.8" Osc1Waveform="1" UseOsc2="1" Osc2Waveform="1" Osc2NoteModifier="0.8" UseFilter="1" FilterCutoff="0.65" FilterQ="0.07" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.79" Mod2Active="1" Mod2Source="4" Mod2Amount="0.08" Mod3Active="1" Mod3Source="1" Mod3Destination="1" Mod3Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="1.2" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.38" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
+        <Sound Name="ShipShotSound" Comment="note 60" Length="0.1" Volume="1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.49" FilterQ="0.01" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1ReleaseTime="0.1"/>
+        <Sound Name="LoseShipSound" Comment="note 44" Length="1.2" Volume="1" UseOsc2="1" Osc2Waveform="1" Osc2NoteModifier="10" UseFilter="1" FilterCutoff="0.12" FilterQ="0.67" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.17" Mod2Active="1" Mod2Source="3" Mod2Amount="0.62" Mod3Active="1" Mod3Source="4" Mod3Destination="10" Mod3Amount="0.15" Env0Active="1" Env0ReleaseTime="0.4" Lfo0Active="1" Lfo0Speed="0.17" Lfo1Active="1" Lfo1Speed="0.06"/>
+        <Sound Name="SkullShotSound" Comment="note 61" Volume="1" UseFilter="1" FilterCutoff="0.07" FilterQ="0.57" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="9" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.45" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.18"/>
+        <Sound Name="BigExplodeSound" Length="0.8" Volume="1" Osc1Waveform="2" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.54" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.3"/>
+        <Sound Name="SmallExplodeSound" Comment="note 60" Length="0.25" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.24" FilterQ="0.47" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="11" Mod1Amount="1" Mod2Active="1" Mod2Destination="2" Mod2Amount="1" Mod3Active="1" Mod3Source="4" Mod3Amount="0.11" Env0Active="1" Env0ReleaseTime="0.25" Env1AttackTime="0.25" Lfo0Active="1" Lfo0Speed="0.5"/>
+      </Children>
+    </Group> <!-- ZBlast_sounds -->
+
+  </Content>
+</ZApplication>
