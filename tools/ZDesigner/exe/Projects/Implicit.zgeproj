@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZzDC Implicit surfaces test program (experimental)">
+  <OnLoaded>
+    <SpawnModel Model="ImplicitModel"/>
+  </OnLoaded>
+  <Content>
+    <Group Name="ImplicitTest">
+      <Children>
+        <Mesh Name="Mesh1">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitPrimitive Kind="1" Param1="1" Param2="0.4"/>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="Mesh2">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitExpression Name="ImpRoot_Wiffle">
+                  <Expression>
+<![CDATA[
+return 1-
+  pow(
+    pow(1/2.3,2) * pow(this.X,2) +
+    pow(1/2.3,2) * pow(this.Y,2) +
+    pow(1/2.3,2) * pow(this.Z,2),-6) -
+  pow(
+    pow(1/2,8) * pow(this.X,8) +
+    pow(1/2,8) * pow(this.Y,8) +
+    pow(1/2,8) * pow(this.Z,8),6);
+
+/*return (this.X*this.X) +
+  (this.Y*this.Y) +
+  (this.Z*this.Z) -
+  (1*1);*/]]>
+                  </Expression>
+                </ImplicitExpression>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="Mesh3">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitCombine Blending="2">
+                  <Children>
+                    <ImplicitCombine Blending="2">
+                      <Children>
+                        <ImplicitPrimitive Position="0.89 1.16 0" Scale="1 0.55 1"/>
+                        <ImplicitCombine Position="3.42 0 0" Rotation="0.18 0 -1.17" Blending="0.34">
+                          <Children>
+                            <ImplicitPrimitive Position="0 0.41 0" Scale="1 0.7 1" Rotation="0 -3.89 -0.06" Kind="2"/>
+                            <ImplicitExpression Position="-0.9 0 0">
+                              <Expression>
+<![CDATA[
+return sqrt( this.X*this.X  +
+  this.Y*this.Y +
+  this.Z*this.Z) - 1.1;
+
+
+// sqrt(x2 + y2 + z2) - R
+
+/*return 1 -
+  pow( pow(1/2.3,2) * (pow(this.X,2) + pow(this.Y,2) + pow(this.Z,2)) ,-4) -
+  pow( pow(1/2,8) * (pow(this.X,8) + pow(this.Y,8) + pow(this.Z,8)) ,4);*/
+
+/*return (this.X*this.X) +
+  (this.Y*this.Y) +
+  (this.Z*this.Z) -
+  (1*1);*/]]>
+                              </Expression>
+                            </ImplicitExpression>
+                          </Children>
+                        </ImplicitCombine>
+                      </Children>
+                    </ImplicitCombine>
+                    <ImplicitCombine Rotation="0 3.14 0" Blending="2">
+                      <Children>
+                        <ImplicitPrimitive Position="0.89 1.16 0" Scale="1 0.55 1"/>
+                        <ImplicitCombine Position="3.42 0 0" Rotation="0.18 0 -1.17" Blending="0.34">
+                          <Children>
+                            <ImplicitPrimitive Position="0 0.41 0.43" Scale="1 0.68 0.57" Rotation="-0.68 -3.89 -0.06" Kind="2"/>
+                            <ImplicitExpression Position="-0.9 0 0">
+                              <Expression>
+<![CDATA[
+return sqrt( this.X*this.X  +
+  this.Y*this.Y +
+  this.Z*this.Z) - 1.1;
+
+
+// sqrt(x2 + y2 + z2) - R
+
+/*return 1 -
+  pow( pow(1/2.3,2) * (pow(this.X,2) + pow(this.Y,2) + pow(this.Z,2)) ,-4) -
+  pow( pow(1/2,8) * (pow(this.X,8) + pow(this.Y,8) + pow(this.Z,8)) ,4);*/
+
+/*return (this.X*this.X) +
+  (this.Y*this.Y) +
+  (this.Z*this.Z) -
+  (1*1);*/]]>
+                              </Expression>
+                            </ImplicitExpression>
+                          </Children>
+                        </ImplicitCombine>
+                      </Children>
+                    </ImplicitCombine>
+                  </Children>
+                </ImplicitCombine>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="Mesh4">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitCombine Name="ImpRoot4" Kind="2" Blending="4">
+                  <Children>
+                    <ImplicitPrimitive Kind="2"/>
+                    <ImplicitPrimitive Position="0.5 0 0" Param1="1" Param2="0.5"/>
+                  </Children>
+                </ImplicitCombine>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="MeshSpejs">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitExpression>
+                  <Expression>
+<![CDATA[
+//fungerar ej
+return 2 -
+ (cos(this.X +  1.61803399*this.y) +
+  cos(this.x -  1.61803399*this.y) +
+  cos(this.y +  1.61803399*this.z) +
+  cos(this.y -  1.61803399*this.z) +
+  cos(this.z -  1.61803399*this.x) +
+  cos(this.z +  1.61803399*this.x));
+
+/*return (this.X*this.X) +
+  (this.Y*this.Y) +
+  (this.Z*this.Z) -
+  (1*1);*/]]>
+                  </Expression>
+                </ImplicitExpression>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="MeshBretzel2">
+          <Producers>
+            <MeshImplicit TriangleSize="0.02">
+              <Function>
+                <ImplicitExpression>
+                  <Expression>
+<![CDATA[
+//2-Hole Bretzel
+//Trisize 0.05
+return  pow(this.x*this.x*(1-this.x*this.x)-this.y*this.y,2)
+  +0.5*this.z*this.z-
+  0.004*(1+0.5*(this.x*this.x+this.y*this.y+this.z*this.z));]]>
+                  </Expression>
+                </ImplicitExpression>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="MeshDecoCube">
+          <Producers>
+            <MeshImplicit TriangleSize="0.1">
+              <Function>
+                <ImplicitExpression>
+                  <Expression>
+<![CDATA[
+//DecoCube
+return
+   (pow(this.x*this.x+this.y*this.y-0.95*0.95,2)+pow(this.z*this.z-1,2))
+  *(pow(this.y*this.y+this.z*this.z-0.95*0.95,2)+pow(this.x*this.x-1,2))
+  *(pow(this.z*this.z+this.x*this.x-0.95*0.95,2)+pow(this.y*this.y-1,2))
+  -0.01;]]>
+                  </Expression>
+                </ImplicitExpression>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="MeshOrthoCircles">
+          <Producers>
+            <MeshImplicit>
+              <Function>
+                <ImplicitExpression>
+                  <Expression>
+<![CDATA[
+//OrthoCircles
+return (pow(this.x*this.x+this.y*this.y-1, 2) + this.z*this.z)
+   *(pow(this.y*this.y+this.z*this.z-1, 2) + this.x*this.x)
+   *(pow(this.z*this.z+this.x*this.x-1, 2) + this.y*this.y)
+   -0.06*0.06*(1+2*(this.x*this.x+this.y*this.y+this.z*this.z));]]>
+                  </Expression>
+                </ImplicitExpression>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Model Name="ImplicitModel">
+          <OnRender>
+            <UseMaterial Material="ImplicitMaterial"/>
+            <RenderSetColor Color="0.17 0.66 0.69 1"/>
+            <RenderMesh Mesh="HuvudMesh"/>
+            <RenderTransformGroup Name="rtgroup1" Scale="1 1 1" Translate="0 -0.63 0">
+              <Children>
+                <RenderSetColor Color="0.46 0.17 0.44 1"/>
+                <RenderMesh Mesh="MeshOrthoCircles"/>
+              </Children>
+            </RenderTransformGroup>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[
+CurrentModel.Rotation.X += App.DeltaTime*0.1;
+CurrentModel.Rotation.Y += App.DeltaTime*0.167;
+rtgroup1.Rotate.Z += App.DeltaTime*0.137;]]>
+              </Expression>
+            </ZExpression>
+            <MouseModelController ScaleX="4" ScaleY="4"/>
+          </OnUpdate>
+        </Model>
+        <Material Name="ImplicitMaterial"/>
+        <Mesh Name="HuvudMesh">
+          <Producers>
+            <MeshImplicit TriangleSize="0.1">
+              <Function>
+                <ImplicitCombine Blending="0.66">
+                  <Children>
+                    <ImplicitCombine Blending="0.4">
+                      <Children>
+                        <ImplicitCombine Blending="0.4">
+                          <Children>
+                            <ImplicitPrimitive Scale="1.15 1.5 1" Param1="0.1" Param2="0.5"/>
+                            <ImplicitPrimitive Position="-0.87 0 0" Scale="0.5 0.5 0.5" Rotation="0.37 0 0" Param1="0.1" Param2="0.5"/>
+                          </Children>
+                        </ImplicitCombine>
+                        <ImplicitPrimitive Position="0.87 0 0" Scale="0.5 0.5 0.5" Rotation="0.37 0 0" Param1="0.1" Param2="0.5"/>
+                      </Children>
+                    </ImplicitCombine>
+                    <ImplicitPrimitive Position="0 -0.9 0.94" Scale="1 0.5 1" Kind="1" Param1="0.2" Param2="0.1"/>
+                  </Children>
+                </ImplicitCombine>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Mesh Name="WarpedTorus">
+          <Producers>
+            <MeshImplicit TriangleSize="0.1">
+              <Function>
+                <ImplicitWarp WarpAmount="1.5">
+                  <Function>
+                    <ImplicitPrimitive Kind="1" Param1="1.5" Param2="0.8"/>
+                  </Function>
+                </ImplicitWarp>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Bitmap Name="MyBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[
+//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.Pixel.R=sin(exp(X)*99)-cos(Y*6);]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group> <!-- ImplicitTest -->
+
+  </Content>
+</ZApplication>
