@@ -58,6 +58,20 @@ type
     {$ifndef minimal}function GetDisplayName: string; override;{$endif}
   end;
 
+  TDefineArray = class(TZComponent)
+  private
+    Limit : integer;
+    Data : PFloatArray;
+    function GetElement(const I1, I2: integer): PFloat;
+    procedure CleanUp;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Dimensions : (dadOne,dadTwo);
+    SizeDim1,SizeDim2 : integer;
+    destructor Destroy; override;
+  end;
+
   //Virtual machine instruction baseclass
   TExpBase = class(TZComponent)
   protected
@@ -132,6 +146,23 @@ type
     Kind : TExpFuncCallKind;
   end;
 
+  //Read value from array and push on stack
+  TExpArrayRead = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    TheArray : TDefineArray;
+  end;
+
+  //Push ptr to element in array on stack, used with assign
+  TExpArrayWrite = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    TheArray : TDefineArray;
+  end;
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -405,6 +436,110 @@ begin
 end;
 {$endif}
 
+{ TExpArrayRead }
+
+procedure TExpArrayRead.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'TheArray',{$ENDIF}integer(@TheArray) - integer(Self), zptComponentRef);
+end;
+
+procedure TExpArrayRead.Execute;
+var
+  A1,A2,V : single;
+  P : PFloat;
+begin
+  A2 := gStack.PopFloat;
+  A1 := gStack.PopFloat;
+  P := TheArray.GetElement( Trunc(A1), Trunc(A2) );
+  {$ifndef minimal}
+  if P=nil then
+    ZHalt('Array read outside range: ' + TheArray.Name);
+  {$endif}
+  V := P^;
+  gStack.Push( TObject( V ) );
+end;
+
+{ TDefineArray }
+
+procedure TDefineArray.CleanUp;
+begin
+  if Data<>nil then
+    FreeMem(Data);
+end;
+
+procedure TDefineArray.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}integer(@SizeDim1) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}integer(@SizeDim2) - integer(Self), zptInteger);
+end;
+
+destructor TDefineArray.Destroy;
+begin
+  CleanUp;
+  inherited;
+end;
+
+function TDefineArray.GetElement(const I1, I2: integer): PFloat;
+var
+  Index : integer;
+begin
+  {$ifndef minimal}
+  //Array size can only be changed in zdesigner, not runtime
+  if Limit<>SizeDim1 * (SizeDim2+1) then
+  begin
+    CleanUp;
+    Data := nil;
+  end;
+  {$endif}
+
+  if Data=nil then
+  begin
+    Limit := SizeDim1 * (SizeDim2+1);
+    GetMem(Data, Limit*SizeOf(single) );
+  end;
+
+  Index := (I2*SizeDim1) + I1;
+
+  {$ifndef minimal}
+  if Index>=Limit then
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog(Self.ClassName).Write('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2));
+    {$endif}
+    Result := nil;
+    Exit;
+  end;
+  {$endif}
+
+  Result := @Data^[ Index ];
+end;
+
+{ TExpArrayWrite }
+
+procedure TExpArrayWrite.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'TheArray',{$ENDIF}integer(@TheArray) - integer(Self), zptComponentRef);
+end;
+
+procedure TExpArrayWrite.Execute;
+var
+  A1,A2 : single;
+  P : Pointer;
+begin
+  A2 := gStack.PopFloat;
+  A1 := gStack.PopFloat;
+
+  P := TheArray.GetElement(Trunc(A1), Trunc(A2));
+  {$ifndef minimal}
+  if P=nil then
+    ZHalt('Array assign outside range: ' + TheArray.Name);
+  {$endif}
+  gStack.Push(P);
+end;
+
 initialization
 
   //Init vm
@@ -417,6 +552,8 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
   ZClasses.Register(TDefineConstant,DefineConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
+  ZClasses.Register(TDefineArray,DefineArrayClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
 
   ZClasses.Register(TExpConstant,ExpConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -429,6 +566,10 @@ initialization
   ZClasses.Register(TExpJump,ExpJumpClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpFuncCall,ExpFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpArrayRead,ExpArrayReadClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpArrayWrite,ExpArrayWriteClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}

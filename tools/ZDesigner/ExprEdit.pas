@@ -241,6 +241,22 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     DefineLabel(LExit);
   end;
 
+  procedure DoGenArrayRead;
+  var
+    A : TZComponent;
+    C : TExpArrayRead;
+  begin
+    A := TZComponent(SymTab.Lookup(Op.Id));
+    if (A=nil) or (not (A is TDefineArray)) then
+      raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
+    //Assert(Op.Arguments.Count=2);
+    GenValue(Op.Child(0));
+    GenValue(Op.Child(1));
+    C := TExpArrayRead.Create(nil);
+    C.TheArray := A as TDefineArray;
+    Target.AddComponent( C );
+  end;
+
 begin
   case Op.Kind of
     zcMul : DoGenBinary(vbkMul);
@@ -253,6 +269,7 @@ begin
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
     zcAnd, zcOr : DoGenBoolean;
+    zcArrayAccess : DoGenArrayRead;
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -267,34 +284,50 @@ var
   var
     C,C2 : TExpPropPtr;
     I,LastIndex : integer;
-  begin
-    if Op.Child(0).Kind<>zcIdentifier then
-      raise ECodeGenError.Create('Assignment must be to identifier');
-    C := TExpPropPtr.Create(Target);
-    if not GetPropRef(Op.Child(0).Id,C.Target) then
-      raise ECodeGenError.Create('Unknown assigment identifier: ' + Op.Child(0).Id);
-    if C.Target.Prop.IsReadOnly then
-      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + Op.Child(0).Id);
-    GenValue(Op.Child(1));
-    Target.AddComponent( MakeBinaryOp(vbkAssign) );
 
-    //Allow "x.Scale" be shorthand for assign x,y,z individually
-    //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
-    if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
+    A : TZComponent;
+    Aw : TExpArrayWrite;
+  begin
+    if Op.Child(0).Kind=zcIdentifier then
     begin
-      if C.Target.Prop.PropertyType=zptVector3f then
-        LastIndex := 2
-      else
-        LastIndex := 3;
-      for I := 1 to LastIndex do
+      C := TExpPropPtr.Create(Target);
+      if not GetPropRef(Op.Child(0).Id,C.Target) then
+        raise ECodeGenError.Create('Unknown assigment identifier: ' + Op.Child(0).Id);
+      if C.Target.Prop.IsReadOnly then
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + Op.Child(0).Id);
+      GenValue(Op.Child(1));
+      Target.AddComponent( MakeBinaryOp(vbkAssign) );
+
+      //Allow "x.Scale" be shorthand for assign x,y,z individually
+      //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
+      if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
       begin
-        C2 := TExpPropPtr.Create(Target);
-        C2.Target := C.Target;
-        C2.Target.Index := I;
-        GenValue(Op.Child(0));
-        Target.AddComponent( MakeBinaryOp(vbkAssign) );
+        if C.Target.Prop.PropertyType=zptVector3f then
+          LastIndex := 2
+        else
+          LastIndex := 3;
+        for I := 1 to LastIndex do
+        begin
+          C2 := TExpPropPtr.Create(Target);
+          C2.Target := C.Target;
+          C2.Target.Index := I;
+          GenValue(Op.Child(0));
+          Target.AddComponent( MakeBinaryOp(vbkAssign) );
+        end;
       end;
-    end;
+    end else if Op.Child(0).Kind=zcArrayAccess then
+    begin
+      A := TZComponent(SymTab.Lookup(Op.Child(0).Id));
+      if (A=nil) or (not (A is TDefineArray)) then
+        raise ECodeGenError.Create('Identifier is not an array: ' + Op.Child(0).Id);
+      //Assert(Op.Arguments.Count=2);
+      GenValue(Op.Child(0).Child(0));
+      GenValue(Op.Child(0).Child(1));
+      Aw := TExpArrayWrite.Create(Target);
+      Aw.TheArray := A as TDefineArray;
+      Target.AddComponent( MakeBinaryOp(vbkAssign) );
+    end else
+      raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 
   end;
 

@@ -1385,7 +1385,7 @@ var
     Result := False;
     D := TOpenDialog.Create(Self);
     try
-      D.Title := '*** Only 8 bit signed mono 8363 hz raw sounds accepted ***';
+      D.Title := '*** Only raw PCM sound files accepted ***';
       D.Filter := 'Raw-files (*.raw)|*.raw';
       D.DefaultExt := '*.raw';
       if not D.Execute then

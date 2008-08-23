@@ -22,12 +22,12 @@ uses  SysUtils,Classes,CocoBase,contnrs,mwStringHashList;
 
 
 const
-maxT = 71;
+maxT = 73;
 type
 TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
   TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConst,zcIdentifier,zcAssign,zcIf,
           zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
-          zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn);
+          zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess);
 
   TZcOp = class
   public
@@ -179,7 +179,8 @@ const
   _greaterSym = 57;  _less_equalSym = 58;  _greater_equalSym = 59;
   _less_lessSym = 60;  _greater_greaterSym = 61;  _plusSym = 62;
   _minusSym = 63;  _starSym = 64;  _slashSym = 65;  _pointSym = 66;
-  _commaSym = 67;  trueSym = 68;  falseSym = 69;  nullSym = 70;  NOSYMB = 71;  _noSym = NOSYMB;   {error token code}
+  _commaSym = 67;  _lbrackSym = 68;  _rbrackSym = 69;  trueSym = 70;
+  falseSym = 71;  nullSym = 72;  NOSYMB = 73;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
@@ -293,6 +294,17 @@ begin
       end;
     zcNop : Result := ';';       //Empty statement
     zcReturn : Result := 'return ' + Child(0).ToString + ';';
+    zcArrayAccess:
+      begin
+        Result := Id + '[';
+        for I := 0 to Children.Count-1 do
+        begin
+          if I>0 then
+            Result := Result + ',';
+          Result := Result + Child(I).ToString;
+        end;
+        Result := Result + ']';
+      end;
   end;
 end;
 
@@ -878,6 +890,7 @@ exit;
 end;
   30: begin
 sym := lbrackSym;
+CheckLiteral(sym);
 exit;
 end;
   31: begin
@@ -921,6 +934,7 @@ exit;
 end;
   38: begin
 sym := rbrackSym;
+CheckLiteral(sym);
 exit;
 end;
   39: begin
@@ -1275,6 +1289,8 @@ fHashList.AddString('==', _equal_equalSym, _equal_equalSym);
 fHashList.AddString('>', _greaterSym, _greaterSym);
 fHashList.AddString('>=', _greater_equalSym, _greater_equalSym);
 fHashList.AddString('>>', _greater_greaterSym, _greater_greaterSym);
+fHashList.AddString('[', _lbrackSym, _lbrackSym);
+fHashList.AddString(']', _rbrackSym, _rbrackSym);
 fHashList.AddString('^', _uparrowSym, _uparrowSym);
 fHashList.AddString('else', elseSym, elseSym);
 fHashList.AddString('false', falseSym, falseSym);
@@ -1453,16 +1469,18 @@ begin
   65 : Result := '"/" expected';
   66 : Result := '"." expected';
   67 : Result := '"," expected';
-  68 : Result := '"true" expected';
-  69 : Result := '"false" expected';
-  70 : Result := '"null" expected';
-  71 : Result := 'not expected';
-  72 : Result := 'invalid Literal';
-  73 : Result := 'invalid Primary';
-  74 : Result := 'invalid AssignOp';
-  75 : Result := 'invalid StatementExpr';
-  76 : Result := 'invalid Expr';
-  77 : Result := 'invalid EmbeddedStatement';
+  68 : Result := '"[" expected';
+  69 : Result := '"]" expected';
+  70 : Result := '"true" expected';
+  71 : Result := '"false" expected';
+  72 : Result := '"null" expected';
+  73 : Result := 'not expected';
+  74 : Result := 'invalid Literal';
+  75 : Result := 'invalid Primary';
+  76 : Result := 'invalid AssignOp';
+  77 : Result := 'invalid StatementExpr';
+  78 : Result := 'invalid Expr';
+  79 : Result := 'invalid EmbeddedStatement';
 
 200 : Result := 'Not a floating point value';
   else
@@ -1556,7 +1574,7 @@ Get;
   nullSym : begin
 Get;
     end;
-else begin SynError(72);
+else begin SynError(74);
     end;
 end;
 end;
@@ -1580,10 +1598,11 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(73);
+end else begin SynError(75);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
- (fCurrentInputSymbol = _pointSym) do begin
+ (fCurrentInputSymbol = _pointSym) OR
+ (fCurrentInputSymbol = _lbrackSym) do begin
 if (fCurrentInputSymbol = _pointSym) then begin
 Get;
 Expect(identSym);
@@ -1591,7 +1610,7 @@ Expect(identSym);
 Assert(OutOp.Kind=zcIdentifier);
 OutOp.Id  :=  OutOp.Id  +  '.'  +  LexString;
 
-end else begin
+end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 Assert(OutOp.Kind=zcIdentifier);
 OutOp.Kind:=zcFuncCall;
@@ -1606,6 +1625,19 @@ OutOp.Children.Add(Op);
 end;
 end;
 Expect(_rparenSym);
+end else begin
+Get;
+Assert(OutOp.Kind=zcIdentifier);
+OutOp.Kind:=zcArrayAccess;
+
+_Expr(Op);
+OutOp.Children.Add(Op);
+while (fCurrentInputSymbol = _commaSym) do begin
+Get;
+_Expr(Op);
+OutOp.Children.Add(Op);
+end;
+Expect(_rbrackSym);
 end;
 end;
 end;
@@ -1787,7 +1819,7 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(74);
+end else begin SynError(76);
 end;
 end;
 
@@ -1828,7 +1860,7 @@ OutOp  :=  MakeAssign(Kind,Op1,Op2);
 
 end else if (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(75);
+end else begin SynError(77);
 end;
 end;
 
@@ -1862,7 +1894,7 @@ end else if (fCurrentInputSymbol = _equalSym) OR
 _AssignOp(Kind);
 _Expr(Op2);
 OutOp  :=  MakeAssign(Kind,Op1,Op2);
-end else begin SynError(76);
+end else begin SynError(78);
 end;
 end;
 
@@ -1899,7 +1931,7 @@ Get;
 _Expr(Op);
 Expect(_semicolonSym);
 OutOp  :=  MakeOp(zcReturn,[Op]);  {return  måste  har  ett  expr}
-end else begin SynError(77);
+end else begin SynError(79);
 end;
 end;
 
@@ -1995,7 +2027,7 @@ symSet[ 4, 3] := [_bar_barSym-48, _and_andSym-48, _barSym-48, _uparrowSym-48,
                     _lessSym-48, _greaterSym-48, _less_equalSym-48, 
                     _greater_equalSym-48, _less_lessSym-48, 
                     _greater_greaterSym-48, _plusSym-48, _minusSym-48];
-symSet[ 4, 4] := [_starSym-64, _slashSym-64, _commaSym-64];
+symSet[ 4, 4] := [_starSym-64, _slashSym-64, _commaSym-64, _rbrackSym-64];
 end; {InitSymSet}
 
 end { Zc }.    
