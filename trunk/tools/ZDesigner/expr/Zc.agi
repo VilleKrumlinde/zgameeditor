@@ -8,7 +8,7 @@ Ancestor=C:\Program Files\CocoR for Delphi\Frames\CocoBase.pas
 
 [Output]
 ;Kommentera ut directory-raden för att fel-loggen ska genereras
-Directory=D:\DATA\Delphi32\ZzDC\tools\ZDesigner\expr
+Directory=D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr
 
 [Registration]
 Palette=Coco/R
