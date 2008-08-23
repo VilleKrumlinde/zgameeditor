@@ -245,13 +245,15 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   var
     A : TZComponent;
     C : TExpArrayRead;
+    I : integer;
   begin
     A := TZComponent(SymTab.Lookup(Op.Id));
     if (A=nil) or (not (A is TDefineArray)) then
       raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
-    //Assert(Op.Arguments.Count=2);
-    GenValue(Op.Child(0));
-    GenValue(Op.Child(1));
+    if Ord((A as TDefineArray).Dimensions)+1<>Op.Children.Count then
+      raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
+    for I := 0 to Ord((A as TDefineArray).Dimensions) do
+      GenValue(Op.Child(I));
     C := TExpArrayRead.Create(nil);
     C.TheArray := A as TDefineArray;
     Target.AddComponent( C );
@@ -320,11 +322,14 @@ var
       A := TZComponent(SymTab.Lookup(Op.Child(0).Id));
       if (A=nil) or (not (A is TDefineArray)) then
         raise ECodeGenError.Create('Identifier is not an array: ' + Op.Child(0).Id);
+      if Ord((A as TDefineArray).Dimensions)+1<>Op.Child(0).Children.Count then
+        raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
       //Assert(Op.Arguments.Count=2);
-      GenValue(Op.Child(0).Child(0));
-      GenValue(Op.Child(0).Child(1));
+      for I := 0 to Ord((A as TDefineArray).Dimensions) do
+        GenValue(Op.Child(0).Child(I));
       Aw := TExpArrayWrite.Create(Target);
       Aw.TheArray := A as TDefineArray;
+      GenValue(Op.Child(1));
       Target.AddComponent( MakeBinaryOp(vbkAssign) );
     end else
       raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);

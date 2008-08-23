@@ -449,7 +449,10 @@ var
   A1,A2,V : single;
   P : PFloat;
 begin
-  A2 := gStack.PopFloat;
+  if TheArray.Dimensions=dadTwo then
+    A2 := gStack.PopFloat
+  else
+    A2 := 0;
   A1 := gStack.PopFloat;
   P := TheArray.GetElement( Trunc(A1), Trunc(A2) );
   {$ifndef minimal}
@@ -471,6 +474,8 @@ end;
 procedure TDefineArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['One','Two']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}integer(@SizeDim1) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}integer(@SizeDim2) - integer(Self), zptInteger);
 end;
@@ -529,7 +534,10 @@ var
   A1,A2 : single;
   P : Pointer;
 begin
-  A2 := gStack.PopFloat;
+  if TheArray.Dimensions=dadTwo then
+    A2 := gStack.PopFloat
+  else
+    A2 := 0;
   A1 := gStack.PopFloat;
 
   P := TheArray.GetElement(Trunc(A1), Trunc(A2));
