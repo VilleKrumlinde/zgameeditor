@@ -2650,8 +2650,16 @@ begin
               begin
                 L.DelimitedText := S;
                 Value.Vector3fValue[0] := StrToFloat(L[0]);
-                Value.Vector3fValue[1] := StrToFloat(L[1]);
-                Value.Vector3fValue[2] := StrToFloat(L[2]);
+                //Allow a single value to be specified, this is copied to all three elements
+                //Used when switching type from float to vector3d (material.texturescale)
+                if L.Count>1 then
+                  Value.Vector3fValue[1] := StrToFloat(L[1])
+                else
+                  Value.Vector3fValue[1] := Value.Vector3fValue[0];
+                if L.Count>2 then
+                  Value.Vector3fValue[2] := StrToFloat(L[2])
+                else
+                  Value.Vector3fValue[2] := Value.Vector3fValue[0];
               end;
             zptInteger :
               Value.IntegerValue := StrToInt(S);

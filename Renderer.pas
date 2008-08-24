@@ -37,7 +37,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Texture : TZBitmap;
-    TextureScale : single;
+    TextureScale : TZVector3f;
     TextureX,TextureY : single;
     TextureRotate : single;
     TextureWrapMode : (tmMirror,tmTile,tmClamp);
@@ -503,7 +503,8 @@ begin
   end;
 
   if NilOld or
-    (NewM.TextureScale<>OldM.TextureScale) or
+    (NewM.TextureScale[0]<>OldM.TextureScale[0]) or
+    (NewM.TextureScale[1]<>OldM.TextureScale[1]) or
     (NewM.TextureX<>OldM.TextureX) or
     (NewM.TextureY<>OldM.TextureY) or
     (NewM.TextureRotate<>OldM.TextureRotate) then
@@ -513,7 +514,7 @@ begin
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
       glTranslatef(NewM.TextureX+0.5,NewM.TextureY+0.5,0);
-      glScalef(NewM.TextureScale,NewM.TextureScale,NewM.TextureScale);
+      glScalef(NewM.TextureScale[0],NewM.TextureScale[1],1);
       glRotatef(NewM.TextureRotate*360,0,0,1);
       glTranslatef(-0.5,-0.5,0);
     glMatrixMode(GL_MODELVIEW);
@@ -667,8 +668,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptFloat);
-    List.GetLast.DefaultValue.FloatValue:=1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
+    List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
   List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate) - integer(Self), zptFloat);

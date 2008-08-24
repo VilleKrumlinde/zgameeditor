@@ -26,8 +26,7 @@
         <RemoveAllModels/>
         <ZExpression>
           <Expression>
-<![CDATA[
-LevelNr=StartLevel;
+<![CDATA[LevelNr=StartLevel;
 PlayerScore=0;
 PlayerShipCount=2;]]>
           </Expression>
@@ -40,8 +39,7 @@ PlayerShipCount=2;]]>
         <RemoveAllModels/>
         <ZExpression>
           <Expression>
-<![CDATA[
-TargetsCount=0;
+<![CDATA[TargetsCount=0;
 
 //LevelGruntCount=2+LevelNr;
 Temp1=0.5+noise2(LevelNr*3.1314,0)*0.5;
@@ -98,8 +96,7 @@ LevelSkullCount=2;*/]]>
         <SpawnModel Model="BackgroundModel" SpawnStyle="1"/>
         <ZExpression>
           <Expression>
-<![CDATA[
-//Leveltime nollställs så att enemies initialt rör sig långsamt
+<![CDATA[//Leveltime nollställs så att enemies initialt rör sig långsamt
 LevelTime=0;
 TargetsCount=
   LevelGruntCount +
@@ -115,8 +112,7 @@ TargetsCount=
             <SpawnModel Model="GruntModel"/>
           </OnIteration>
           <WhileExp>
-<![CDATA[
-//this.Iteration=current iteration nr. Return false to end loop.
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
 return this.Iteration<LevelGruntCount;]]>
           </WhileExp>
         </Repeat>
@@ -125,8 +121,7 @@ return this.Iteration<LevelGruntCount;]]>
             <SpawnModel Model="ShooterModel"/>
           </OnIteration>
           <WhileExp>
-<![CDATA[
-//this.Iteration=current iteration nr. Return false to end loop.
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
 return Iteration<LevelShooterCount;]]>
           </WhileExp>
         </Repeat>
@@ -244,8 +239,7 @@ return Iteration<LevelShooterCount;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-this.Pixel.R=
+<![CDATA[this.Pixel.R=
   (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
   (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
 this.Pixel.G=this.Pixel.R;
@@ -305,8 +299,7 @@ this.Pixel.A=Temp1;
               <OnUpdate>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-AsteroidLargeModel.Rotation.X+=AsteroidLargeRotX * ZBlastApp.DeltaTime;
+<![CDATA[AsteroidLargeModel.Rotation.X+=AsteroidLargeRotX * ZBlastApp.DeltaTime;
 AsteroidLargeModel.Rotation.Y+=AsteroidLargeRotY * ZBlastApp.DeltaTime;
 
 if(AsteroidLargeModel.Position.X>EdgeR) {
@@ -346,8 +339,7 @@ AsteroidLargeHurt-=ZBlastApp.DeltaTime;]]>
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-AsteroidLargeLife=6;
+<![CDATA[AsteroidLargeLife=6;
 
 //Random start, avoiding center
 
@@ -370,8 +362,7 @@ AsteroidLargeRotY = random(0,0.003)*60;]]>
           <OnCollision>
             <ZExpression>
               <Expression>
-<![CDATA[
-AsteroidLargeLife-=1;
+<![CDATA[AsteroidLargeLife-=1;
 if( frac(AsteroidLargeLife/4)==0 )
   AsteroidLargeHurt=0.6;]]>
               </Expression>
@@ -383,8 +374,7 @@ if( frac(AsteroidLargeLife/4)==0 )
                 <RemoveModel/>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-TargetsCount-=1;  //ta bort en
+<![CDATA[TargetsCount-=1;  //ta bort en
 LevelAsteroidLargeCount-=1;
 
 TargetsCount+=2;  //två nya
@@ -423,8 +413,7 @@ LevelAsteroidMediumCount+=2;]]>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-AsteroidMediumModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
+<![CDATA[AsteroidMediumModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
 AsteroidMediumModel.Rotation.Y+=0.003*60 * ZBlastApp.DeltaTime;
 
 if(AsteroidMediumModel.Position.X>EdgeR) {
@@ -454,8 +443,7 @@ if(AsteroidMediumModel.Position.Y<EdgeB) {
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Antingen spawn från largeasteroid eller från reenterlevel
+<![CDATA[//Antingen spawn från largeasteroid eller från reenterlevel
 if( (AsteroidMediumModel.Position.X==0) && (AsteroidMediumModel.Position.Y==0) ) {
   //Random angle
   Temp1=rnd()*3.14*2;
@@ -489,8 +477,7 @@ AsteroidMediumModel.Rotation.Z = rnd();]]>
             <RemoveModel/>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Parameters till explosion.onspawn
+<![CDATA[//Parameters till explosion.onspawn
 Temp3=1;
 
 TargetsCount-=1;  //ta bort en
@@ -530,8 +517,7 @@ LevelAsteroidSmallCount+=4;]]>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-AsteroidSmallModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
+<![CDATA[AsteroidSmallModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
 AsteroidSmallModel.Rotation.Y+=0.003*60 * ZBlastApp.DeltaTime;
 
 if(AsteroidSmallModel.Position.X>EdgeR) {
@@ -561,8 +547,7 @@ if(AsteroidSmallModel.Position.Y<EdgeB) {
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Antingen spawn från largeasteroid eller från reenterlevel
+<![CDATA[//Antingen spawn från largeasteroid eller från reenterlevel
 if( (AsteroidSmallModel.Position.X==0) && (AsteroidSmallModel.Position.Y==0) ) {
   //Random angle
   Temp1=rnd()*3.14*2;
@@ -593,8 +578,7 @@ AsteroidSmallModel.Rotation.Z = rnd();]]>
             <RemoveModel/>
             <ZExpression>
               <Expression>
-<![CDATA[
-Temp3=2; TargetsCount-=1; LevelAsteroidSmallCount-=1;
+<![CDATA[Temp3=2; TargetsCount-=1; LevelAsteroidSmallCount-=1;
 PlayerScore+=100;]]>
               </Expression>
             </ZExpression>
@@ -625,8 +609,7 @@ PlayerScore+=100;]]>
                 </AnimatorGroup>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-if(BackWarpTime>0) {
+<![CDATA[if(BackWarpTime>0) {
   BackWarpTime-=ZBlastApp.DeltaTime;
 }]]>
                   </Expression>
@@ -636,13 +619,12 @@ if(BackWarpTime>0) {
                 <StartAnimator Animator="BackgroundAnimators"/>
               </OnSpawn>
             </Model>
-            <Material Name="BackgroundMaterial" Texture="BackgroundBitmap" TextureScale="2" TextureX="1" TextureY="1" Light="0" TexCoords="1" ZBuffer="0"/>
+            <Material Name="BackgroundMaterial" Texture="BackgroundBitmap" TextureScale="2 2 2" TextureX="1.5" TextureY="1.5" Light="0" TexCoords="1" ZBuffer="0"/>
             <Bitmap Name="BackgroundBitmap">
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[
-//this.Pixel.R=(sin(X*30) + sin(Y*200))*0.3;
+<![CDATA[//this.Pixel.R=(sin(X*30) + sin(Y*200))*0.3;
 //todo: temp1 är constant för alla pixlar
 //ändra till ett bitmap.InitExpr och bitmap.PixelExpr
 //LevelNr=8;
@@ -714,8 +696,7 @@ if(Temp2==0) {
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[
-Temp2=X-0.5;
+<![CDATA[Temp2=X-0.5;
 Temp3=Y-0.5;
 //Distance from center 1..0
 Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
@@ -763,8 +744,7 @@ this.Pixel.A=0.2-Temp1*0.2;
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Restore scale som loselife kan ha ändrat
+<![CDATA[//Restore scale som loselife kan ha ändrat
 CurrentModel.Scale.X=1;
 CurrentModel.Scale.Y=1;
 CurrentModel.Position.X=0;
@@ -796,16 +776,14 @@ CurrentModel.Position.Y=0;]]>
           <OnUpdate>
             <ZExpression>
               <Expression>
-<![CDATA[
-ShipShotModel.Scale.Y+=0.01;
+<![CDATA[ShipShotModel.Scale.Y+=0.01;
 ShipShotModel.Rotation.Z+=0.001*60 * ZBlastApp.DeltaTime;
 //ShipShotModel.Rotation.Z+=1 * ZBlastApp.DeltaTime;]]>
               </Expression>
             </ZExpression>
             <Condition>
               <Expression>
-<![CDATA[
-return 
+<![CDATA[return 
   (ShipShotModel.Position.X<EdgeL) ||
   (ShipShotModel.Position.X>EdgeR) ||
   (ShipShotModel.Position.Y>EdgeT) ||
@@ -819,8 +797,7 @@ return
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-Temp1=random(0,0.1);
+<![CDATA[Temp1=random(0,0.1);
 //ShipShotModel.Scale.X=random(1,0.5);
 //ShipShotModel.Scale.Y=random(1,0.5);
 if(ShipShotDir.Value==1) {
@@ -883,8 +860,7 @@ ShipShotDir.Value=0;]]>
                       <OnUpdate>
                         <ZExpression>
                           <Expression>
-<![CDATA[
-GruntTimeState-=ZBlastApp.DeltaTime;
+<![CDATA[GruntTimeState-=ZBlastApp.DeltaTime;
 if(GruntTimeState<=0) {
   GruntState=1-GruntState;
   GruntTimeState=random(2-GruntState,0.5);
@@ -937,8 +913,7 @@ GruntModel.Rotation.Z += (0.1+GruntSpeedMod) * ZBlastApp.DeltaTime;]]>
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//Random start, avoiding center
+<![CDATA[//Random start, avoiding center
 
 //Random angle
 Temp1=rnd()*3.14*2;
@@ -970,8 +945,7 @@ GruntHomingMod=rnd()*0.6;]]>
                   <OnCollision>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-Temp3=2;
+<![CDATA[Temp3=2;
 PlayerScore+=100;
 TargetsCount-=1;
 LevelGruntCount-=1;]]>
@@ -992,8 +966,7 @@ LevelGruntCount-=1;]]>
                     <MeshSphere Scale="0.1 0.4 0.16" ZSamples="4"/>
                     <MeshExpression>
                       <Expression>
-<![CDATA[
-//V : current vertex
+<![CDATA[//V : current vertex
 //this.V.X += cos(abs(this.V.Y*10000));
 if(this.V.Y>0)
   this.V.X*=this.V.Y*22;
@@ -1031,8 +1004,7 @@ if(this.V.Y<-0.3)
                       <OnUpdate>
                         <ZExpression>
                           <Expression>
-<![CDATA[
-ShooterTimeState-=ZBlastApp.DeltaTime;
+<![CDATA[ShooterTimeState-=ZBlastApp.DeltaTime;
 if(ShooterTimeState<=0) {
   //Select a new angle
   Temp1 = ShipModel.Position.X - ShooterModel.Position.X;
@@ -1102,8 +1074,7 @@ if(rnd()<Temp1) {
                           <OnTrue>
                             <ZExpression>
                               <Expression>
-<![CDATA[
-Temp1=1;
+<![CDATA[Temp1=1;
 Temp2=rnd();]]>
                               </Expression>
                             </ZExpression>
@@ -1126,8 +1097,7 @@ Temp2=rnd();]]>
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//Random start, avoiding center
+<![CDATA[//Random start, avoiding center
 //Random angle
 Temp1=rnd()*3.14*2;
 //radius
@@ -1145,8 +1115,7 @@ ShooterTimeState=rnd() * 1;]]>
                   <OnCollision>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-Temp3=2;
+<![CDATA[Temp3=2;
 PlayerScore+=250;
 TargetsCount-=1;
 LevelShooterCount-=1;]]>
@@ -1178,8 +1147,7 @@ LevelShooterCount-=1;]]>
                   <OnUpdate>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-ShooterShotTimeState-=ZBlastApp.DeltaTime;
+<![CDATA[ShooterShotTimeState-=ZBlastApp.DeltaTime;
 
 if(ShooterShotTimeState<0) {
   if(ShooterShotState==0) {
@@ -1193,8 +1161,7 @@ if(ShooterShotTimeState<0) {
                     </ZExpression>
                     <Condition>
                       <Expression>
-<![CDATA[
-//Keep within playfield
+<![CDATA[//Keep within playfield
 return ( (ShooterShotModel.Position.X>=EdgeR)
   || (ShooterShotModel.Position.X<=EdgeL)
   || (ShooterShotModel.Position.Y<=EdgeB)
@@ -1208,8 +1175,7 @@ return ( (ShooterShotModel.Position.X>=EdgeR)
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//In: Temp1 holds index
+<![CDATA[//In: Temp1 holds index
 //In: Temp2 holds speed mod
 ShooterShotIndex=Temp1;
 
@@ -1237,8 +1203,7 @@ ShooterShotTimeState=0.5;]]>
                   <Producers>
                     <BitmapExpression>
                       <Expression>
-<![CDATA[
-this.Pixel.R=1;
+<![CDATA[this.Pixel.R=1;
 
 Temp2=X-0.5;
 Temp3=Y-0.5;
@@ -1271,8 +1236,7 @@ else
                     <MeshSphere Scale="1.5 1 0.2" ZSamples="5" RadialSamples="30"/>
                     <MeshExpression Scale="0.4 0.4 1">
                       <Expression>
-<![CDATA[
-//V : current vertex
+<![CDATA[//V : current vertex
 if(this.V.Y<-0.85)
   this.V.Y*=1.6;]]>
                       </Expression>
@@ -1307,8 +1271,7 @@ if(this.V.Y<-0.85)
                           <OnStop>
                             <ZExpression>
                               <Expression>
-<![CDATA[
-//Sätt time och Temp1 som param för tailmodel.spawn
+<![CDATA[//Sätt time och Temp1 som param för tailmodel.spawn
 Temp1=SkullTime;
 Temp2=0.8;]]>
                               </Expression>
@@ -1317,8 +1280,7 @@ Temp2=0.8;]]>
                               <OnIteration>
                                 <ZExpression>
                                   <Expression>
-<![CDATA[
-Temp1-=0.1;
+<![CDATA[Temp1-=0.1;
 Temp2-=0.05;]]>
                                   </Expression>
                                 </ZExpression>
@@ -1334,8 +1296,7 @@ Temp2-=0.05;]]>
                       <OnUpdate>
                         <ZExpression>
                           <Expression>
-<![CDATA[
-SkullTime+=ZBlastApp.DeltaTime;
+<![CDATA[SkullTime+=ZBlastApp.DeltaTime;
 //Speed scale
 Temp2 = 4 * clamp(LevelTime*0.2,0,1);
 
@@ -1416,27 +1377,27 @@ if(SkullState==0) { //State 0 är normal
                     <RenderSetColor Color="0.93 0.93 0.93 1"/>
                     <RenderMesh Mesh="SkullMesh"/>
                     <RenderSetColor Color="0.05 0 0 1"/>
-                    <RenderTransformGroup Comment="left eye" Scale="1 1 1" Translate="-0.25 0 0.17" Rotate="0 -0.01 0">
+                    <RenderTransformGroup Comment="left eye" Translate="-0.25 0 0.17" Rotate="0 -0.01 0">
                       <Children>
                         <RenderMesh Mesh="SkullEyeMesh"/>
                       </Children>
                     </RenderTransformGroup>
-                    <RenderTransformGroup Comment="right eye" Scale="1 1 1" Translate="0.25 0 0.17" Rotate="0 0.01 0">
+                    <RenderTransformGroup Comment="right eye" Translate="0.25 0 0.17" Rotate="0 0.01 0">
                       <Children>
                         <RenderMesh Mesh="SkullEyeMesh"/>
                       </Children>
                     </RenderTransformGroup>
-                    <RenderTransformGroup Scale="1 1 1" Translate="0 -0.4 0.1">
+                    <RenderTransformGroup Translate="0 -0.4 0.1">
                       <Children>
                         <RenderMesh Mesh="SkullTooth"/>
                       </Children>
                     </RenderTransformGroup>
-                    <RenderTransformGroup Scale="1 1 1" Translate="0.12 -0.4 0.1">
+                    <RenderTransformGroup Translate="0.12 -0.4 0.1">
                       <Children>
                         <RenderMesh Mesh="SkullTooth"/>
                       </Children>
                     </RenderTransformGroup>
-                    <RenderTransformGroup Scale="1 1 1" Translate="-0.12 -0.4 0.1">
+                    <RenderTransformGroup Translate="-0.12 -0.4 0.1">
                       <Children>
                         <RenderMesh Mesh="SkullTooth"/>
                       </Children>
@@ -1444,12 +1405,12 @@ if(SkullState==0) { //State 0 är normal
                     <Condition Comment="Render if about to shoot" Expression="return SkullShootTime&gt;0;">
                       <OnTrue>
                         <UseMaterial Material="SkullEyeBeamMaterial"/>
-                        <RenderTransformGroup Comment="left eye beam" Scale="1 1 1" Translate="-0.25 0 0">
+                        <RenderTransformGroup Comment="left eye beam" Translate="-0.25 0 0">
                           <Children>
                             <RenderBeams Count="8" Length="0.8" Width="1" Speed="4"/>
                           </Children>
                         </RenderTransformGroup>
-                        <RenderTransformGroup Comment="right eye beam" Scale="1 1 1" Translate="0.25 0 0">
+                        <RenderTransformGroup Comment="right eye beam" Translate="0.25 0 0">
                           <Children>
                             <RenderBeams Count="8" Length="0.8" Width="1" Speed="4"/>
                           </Children>
@@ -1460,8 +1421,7 @@ if(SkullState==0) { //State 0 är normal
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//Random start, avoiding center
+<![CDATA[//Random start, avoiding center
 
 //Random angle
 Temp1=rnd()*3.14*2;
@@ -1478,8 +1438,7 @@ SkullTime=122 + rnd() * 42;]]>
                   <OnCollision>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-Temp3=1;
+<![CDATA[Temp3=1;
 PlayerScore+=300;
 TargetsCount-=1;
 LevelSkullCount-=1;]]>
@@ -1501,8 +1460,7 @@ LevelSkullCount-=1;]]>
                   <OnUpdate>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-SkullTailTime+=ZBlastApp.DeltaTime;
+<![CDATA[SkullTailTime+=ZBlastApp.DeltaTime;
 //Speed scale
 Temp2 = 4 * clamp(LevelTime*0.2,0,1);
 
@@ -1525,8 +1483,7 @@ SkullTailModel.Velocity.Y=(Temp1-SkullTailModel.Position.Y) * Temp2;]]>
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-SkullTailTime=Temp1;
+<![CDATA[SkullTailTime=Temp1;
 TailParticles.ParticleLifeTime=Temp2;]]>
                       </Expression>
                     </ZExpression>
@@ -1538,8 +1495,7 @@ TailParticles.ParticleLifeTime=Temp2;]]>
                     <UseMaterial Material="SkullShotMaterial"/>
                     <RenderParticles Name="SkullShotParticles" ParticlesPerSecond="20" Spread="0.1" ParticleWidth="1" ParticleHeight="1" Speed="2" Radius="0.1" ParticleLifetime="1" AnimateAlpha="-1">
                       <OnEmitExpression>
-<![CDATA[
-//Emit particle.
+<![CDATA[//Emit particle.
 //PColor : particle color
 this.PColor.G=clamp(abs(SkullShotModel.Position.X),0,0.5);
 this.PColor.B=clamp(abs(SkullShotModel.Position.Y),0,0.5);
@@ -1550,8 +1506,7 @@ this.PColor.R=1;]]>
                   <OnUpdate>
                     <Condition>
                       <Expression>
-<![CDATA[
-//Keep within playfield
+<![CDATA[//Keep within playfield
 return ( (SkullShotModel.Position.X>=EdgeR)
   || (SkullShotModel.Position.X<=EdgeL)
   || (SkullShotModel.Position.Y<=EdgeB)
@@ -1565,8 +1520,7 @@ return ( (SkullShotModel.Position.X>=EdgeR)
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//In: Temp1 holds index (left/right eye)
+<![CDATA[//In: Temp1 holds index (left/right eye)
 
 SkullShotModel.Position.X += 0.25 * Temp1;
 
@@ -1593,8 +1547,7 @@ SkullShotParticles.Direction=(3.14*1.5) - Temp3;]]>
                   <Producers>
                     <BitmapExpression>
                       <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
 Temp2=X-0.5;
@@ -1646,8 +1599,7 @@ if(0) { //Temp1<0.1) {
                   <OnUpdate>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-SpikesModel.Rotation.Z+=(SpikesRot*0.01) * ZBlastApp.DeltaTime;
+<![CDATA[SpikesModel.Rotation.Z+=(SpikesRot*0.01) * ZBlastApp.DeltaTime;
 SpikesModel.Rotation.X+=((1-SpikesRot)*0.05) * ZBlastApp.DeltaTime;
 SpikesModel.Rotation.Y+=(SpikesRot*0.09) * ZBlastApp.DeltaTime;]]>
                       </Expression>
@@ -1661,8 +1613,7 @@ SpikesModel.Rotation.Y+=(SpikesRot*0.09) * ZBlastApp.DeltaTime;]]>
                   <OnSpawn>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//Random start, avoiding center
+<![CDATA[//Random start, avoiding center
 
 //Random angle
 Temp1=rnd()*3.14*2;
@@ -1680,8 +1631,7 @@ SpikesRot=rnd();]]>
                   <OnCollision>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-Temp3=2;
+<![CDATA[Temp3=2;
 PlayerScore+=25;
 LevelSpikeCount-=1;]]>
                       </Expression>
@@ -1694,8 +1644,7 @@ LevelSpikeCount-=1;]]>
                   <Producers>
                     <BitmapExpression>
                       <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 
 //Pixel : current color (rgb)
 
@@ -1716,8 +1665,7 @@ this.Pixel.B=0;//Temp1*1.4;]]>
                     <MeshSphere ZSamples="20" RadialSamples="20"/>
                     <MeshExpression>
                       <Expression>
-<![CDATA[
-//http://mathworld.wolfram.com/SphericalCoordinates.html
+<![CDATA[//http://mathworld.wolfram.com/SphericalCoordinates.html
 
 Temp2=atan2(this.V.Y,this.V.X);
 
@@ -1774,8 +1722,7 @@ this.V.Z*=0.2;]]>
                 <UseMaterial Material="TitleTextMaterial"/>
                 <RenderText Name="Text1" Text="ZBLAST" Scale="2.2">
                   <RenderCharExpression>
-<![CDATA[
-//6=string length
+<![CDATA[//6=string length
 Temp2=6-CharI;
 
 Temp1=TitleTextClock;
@@ -1799,8 +1746,7 @@ CharRotate=clamp((-3.14/2)-(Temp2+1)*0.5 + Temp1,-3.14/2,0);
                 <RenderSetColor Color="1 1 1 1"/>
                 <RenderText Text="(C) 2006 VILLE KRUMLINDE" Y="0.96" Scale="0.5">
                   <RenderCharExpression>
-<![CDATA[
-Temp2=CharI;
+<![CDATA[Temp2=CharI;
 
 Temp1=-3 + TitleTextClock + Temp3;
 //Temp1=20;
@@ -1837,8 +1783,7 @@ CharScale=clamp( (0-Temp2)*0.5 + Temp1*2,0,1);]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 this.Pixel.B=noise2(this.X*10,this.Y)*0.8;
 this.Pixel.G=this.Pixel.B*0.2;]]>
@@ -1935,8 +1880,7 @@ this.Pixel.G=this.Pixel.B*0.2;]]>
             <MeshNoise NoiseSpeed="1 1 2"/>
             <MeshExpression>
               <Expression>
-<![CDATA[
-//this.V.Z+=noise2(this.V.X,this.V.Y*1000);
+<![CDATA[//this.V.Z+=noise2(this.V.X,this.V.Y*1000);
 if(this.V.Y>0.4) {
   this.V.X *= sin(this.V.Y);
   this.V.Z *= 4;//sin(this.V.Y);
@@ -1957,8 +1901,7 @@ if(this.V.Y>0.4) {
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-this.Pixel.R=
+<![CDATA[this.Pixel.R=
     abs(noise2(cos(X*8),sin(Y)*10)) +
     abs(noise2(X*4,Y*5)) ;
     
@@ -1976,8 +1919,7 @@ this.Pixel.G=1-this.Pixel.R*3;
             <MeshSphere Scale="0.08 0.08 0.1" ZSamples="5" RadialSamples="8"/>
             <MeshExpression>
               <Expression>
-<![CDATA[
-//V : current vertex
+<![CDATA[//V : current vertex
 if( (abs(this.V.X)>0.02) &&
 (abs(this.V.Y)>0.02) )
 {
@@ -1993,8 +1935,7 @@ if( (abs(this.V.X)>0.02) &&
             <MeshSphere ZSamples="20" RadialSamples="20"/>
             <MeshExpression>
               <Expression>
-<![CDATA[
-Temp1=noise3(this.V.X, this.V.Y, this.V.Z);
+<![CDATA[Temp1=noise3(this.V.X, this.V.Y, this.V.Z);
 Temp1=atan2(this.V.Y,this.V.X);
 
 Temp1=(0.5+sin(Temp1*4)*0.5) *0.8;
@@ -2015,8 +1956,7 @@ this.V.Y*=1 + Temp1;
             <UseMaterial Material="NoiseMaterial"/>
             <RenderNet XCount="4" YCount="4">
               <RenderVertexExpression>
-<![CDATA[
-//Update each vertex.
+<![CDATA[//Update each vertex.
 //Vertex : current vertex
 Temp1=noise3(this.Vertex.X,this.Vertex.Y,ZBlastApp.Time*0.2)*(3.14*2);
 //this.Vertex.X+=cos(Temp1)*0.1;
@@ -2040,8 +1980,7 @@ this.TexCoord.Y+=sin(Temp1)*0.1;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
 Temp2=frac(X*2)-0.5;
@@ -2080,8 +2019,7 @@ this.Pixel.B=Temp1;]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[
-this.Pixel.R=1;
+<![CDATA[this.Pixel.R=1;
 
 Temp2=X-0.5;
 Temp3=Y-0.5;
@@ -2105,8 +2043,7 @@ this.Pixel.A=Temp1;]]>
             <UseMaterial Material="ExplosionMaterial"/>
             <RenderParticles ParticlesPerSecond="200" Spread="3.14" ParticleWidth="0.6" ParticleHeight="0.6" Radius="0.4" ParticleLifetime="0.8" AnimateAlpha="-0.5" Duration="0.8">
               <OnEmitExpression>
-<![CDATA[
-//Emit particle.
+<![CDATA[//Emit particle.
 //PColor : particle color
 this.PColor.R=1-rnd()*0.5;
 if(rnd()<0.2) {
@@ -2122,8 +2059,7 @@ if(rnd()<0.2) {
             <UseMaterial Material="DebrisMaterial"/>
             <RenderParticles ParticlesPerSecond="400" Spread="3.16" ParticleWidth="0.06" ParticleHeight="0.06" Speed="1" Radius="0.1" ParticleLifetime="1" AnimateAlpha="1" Duration="0.1">
               <OnEmitExpression>
-<![CDATA[
-this.PColor.A=0;
+<![CDATA[this.PColor.A=0;
 this.PColor.R=clamp(rnd(),0.5,1);
 this.PColor.G=clamp(rnd(),0,0.2);
 this.PColor.B=clamp(rnd(),0,0.2);]]>
@@ -2141,8 +2077,7 @@ this.PColor.B=clamp(rnd(),0,0.2);]]>
             <PlaySound Sound="SmallExplodeSound" NoteNr="60"/>
             <ZExpression>
               <Expression>
-<![CDATA[
-Temp1=2.6 - (Temp3*0.8);
+<![CDATA[Temp1=2.6 - (Temp3*0.8);
 ExplosionModel.Scale.X=Temp1;
 ExplosionModel.Scale.Y=Temp1;]]>
               </Expression>
@@ -2157,8 +2092,7 @@ ExplosionModel.Scale.Y=Temp1;]]>
             <UseMaterial Material="ExplosionMaterial"/>
             <RenderParticles ParticlesPerSecond="200" Spread="3.14" ParticleWidth="0.6" ParticleHeight="0.6" Radius="0.4" ParticleLifetime="0.8" AnimateAlpha="-0.5" Duration="0.8">
               <OnEmitExpression>
-<![CDATA[
-//Emit particle.
+<![CDATA[//Emit particle.
 //PColor : particle color
 this.PColor.R=1-rnd()*0.5;
 if(rnd()<0.2) {
@@ -2174,8 +2108,7 @@ this.PColor.A=0.2;]]>
             <UseMaterial Material="DebrisMaterial"/>
             <RenderParticles ParticlesPerSecond="400" Spread="3.16" ParticleWidth="0.06" ParticleHeight="0.06" Speed="1" Radius="0.1" ParticleLifetime="1" AnimateAlpha="1" Duration="0.1">
               <OnEmitExpression>
-<![CDATA[
-this.PColor.A=0;
+<![CDATA[this.PColor.A=0;
 this.PColor.R=clamp(rnd(),0.5,1);
 this.PColor.G=clamp(rnd(),0,0.2);
 this.PColor.B=clamp(rnd(),0,0.2);]]>
@@ -2199,8 +2132,7 @@ this.PColor.B=clamp(rnd(),0,0.2);]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 this.Pixel.R=1;
 
@@ -2259,8 +2191,7 @@ else
                 <UseMaterial Material="GameOverBackgroundMaterial"/>
                 <RenderNet XCount="4" YCount="4">
                   <RenderVertexExpression>
-<![CDATA[
-//Update each vertex.
+<![CDATA[//Update each vertex.
 //Vertex : current vertex
 Temp1=noise3(this.Vertex.X,this.Vertex.Y,ZBlastApp.Time*0.2)*(3.14*2);
 //this.Vertex.X+=cos(Temp1)*0.1;
@@ -2275,8 +2206,7 @@ this.TexCoord.Y+=sin(Temp1)*0.1;]]>
             <UseMaterial Material="TitleTextMaterial"/>
             <RenderText Text="GAME OVER" Y="0.3" Scale="1.67">
               <RenderCharExpression>
-<![CDATA[
-//CharX,CharY : current coordinate
+<![CDATA[//CharX,CharY : current coordinate
 Temp1=noise2(this.CharI*0.1,ZBlastApp.Time*0.25);
 //this.CharX*= (((2+Temp1)*0.5));
 this.CharX+=Temp1*0.5;
@@ -2290,8 +2220,7 @@ this.CharScale=1.5+Temp1*1.5+CharI*0.1;//1+CharI*0.1;
             <RenderText Name="Text2" Text="PRESS SPACE TO CONTINUE" Y="-0.8" Scale="0.66" RenderCharExpression="//CharX,CharY : current coordinate"/>
             <RenderText Text="FINAL SCORE" X="-0.4" Y="-0.5" Scale="0.66">
               <RenderCharExpression>
-<![CDATA[
-//GameOverTimer=0;
+<![CDATA[//GameOverTimer=0;
 Temp1=clamp(GameOverTimer*2-CharI*0.2,0,1);
 CharScale=4-Temp1*3;]]>
               </RenderCharExpression>
@@ -2309,8 +2238,7 @@ CharScale=4-Temp1*3;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
 Temp1=abs(noise2(this.X*2,this.Y*2))*0.5;
