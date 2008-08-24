@@ -40,8 +40,9 @@ type
     procedure CopyAndDestroy(Source : TContent); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    //Keep fields in sync with CopyAndDestroy
+    //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     PropWidth,PropHeight : TBitmapSize;
+    Filter : (bmfLinear,bmfNearest);
     constructor CreateFromBitmap(B : TZBitmap);
     destructor Destroy; override;
     procedure Update; override;
@@ -68,6 +69,7 @@ begin
   inherited Create(nil);
   PropHeight := B.PropHeight;
   PropWidth := B.PropWidth;
+  Filter := B.Filter;
 end;
 
 destructor TZBitmap.Destroy;
@@ -109,6 +111,7 @@ begin
   Self.Memory := B.Memory;
   Self.MemFormat := B.MemFormat;
   Self.MemType := B.MemType;
+  Self.Filter := B.Filter;
   B.TexObject := 0;
   B.IsInitialized := False;
   B.Free;
@@ -116,6 +119,8 @@ end;
 
 //Call this when bitmap size have changed
 procedure TZBitmap.ReInit;
+const
+  FilterTypes : array[0..1] of integer = (GL_LINEAR,GL_NEAREST);
 var
   Size,W,H : integer;
   P : pointer;
@@ -151,8 +156,8 @@ begin
       FreeMem(P);
     end;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilterTypes[Ord(Self.Filter)] );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
 
     //Generate mipmaps automatically
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
@@ -193,7 +198,6 @@ begin
     glLoadIdentity;
     glDisable(GL_LIGHTING);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_SCISSOR_TEST);
     //Clear
     //glClearColor(1,0,0,0);
     //glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -256,6 +260,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
+  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest']);{$endif}
 end;
 
 initialization

@@ -767,7 +767,6 @@ begin
       RendererInitCalled := True;
     end;
     glViewport(0, 0, Glp.Width, Glp.Height);
-    glScissor(0, 0, Glp.Width, Glp.Height);
 
     //ShowNode.Update;
     if {(ShowNode is TBitmapProducer) or }(ShowNode is TZBitmap)then
@@ -1001,7 +1000,6 @@ begin
   glMatrixMode(GL_MODELVIEW);
 
   glViewport(0, 0, Glp.Width, Glp.Height);
-  glScissor(0, 0, Glp.Width, Glp.Height);
 
   glClearColor(0.5,0.5,0.5,0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -1143,7 +1141,6 @@ begin
 //  glShadeModel(GL_SMOOTH);
 
   glViewport(0, 0, Glp.Width, Glp.Height);
-  glScissor(0, 0, Glp.Width, Glp.Height);
 
   glClearColor(0.5,0.5,0.5,0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -1188,7 +1185,6 @@ begin
   Model := (ShowNode as TModel);
 
   glViewport(0, 0, Glp.Width, Glp.Height);
-  glScissor(0, 0, Glp.Width, Glp.Height);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();

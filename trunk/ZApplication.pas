@@ -335,7 +335,6 @@ begin
 end;
 
 //Update ActualViewportRatio which is the ratio that is used
-//Also set OpenGL viewport and scissor region
 procedure TZApplication.UpdateViewport;
 var
   ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
@@ -343,14 +342,10 @@ begin
   if Self.ViewportRatio=vprFullWindow then
   begin
     ActualViewportRatio := ScreenWidth/ScreenHeight;
-    {$ifndef zminimal}
-    glDisable(GL_SCISSOR_TEST);
-    {$endif}
     glViewport(0,0,ScreenWidth,ScreenHeight);
   end
   else
   begin
-    glEnable(GL_SCISSOR_TEST);
     case Self.ViewportRatio of
       vprCustom : ActualViewportRatio := Self.CustomViewportRatio;
       vpr4_3 : ActualViewportRatio := 4/3;
@@ -375,7 +370,6 @@ begin
       ViewportY := Trunc((ScreenHeight-ScreenWidth/ActualViewportRatio)*0.5);
     end;
     glViewport(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
-    glScissor(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
   end;
 end;
 
