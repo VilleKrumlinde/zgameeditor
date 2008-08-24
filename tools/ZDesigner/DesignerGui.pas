@@ -545,6 +545,8 @@ var
   ColorDialog : TColorDialog;
 
 procedure TZPropertyColorEdit.OnClick(Sender: TObject);
+var
+  AlphaTemp : single;
 begin
   if ColorDialog=nil then
     ColorDialog := TColorDialog.Create(Application);
@@ -552,7 +554,9 @@ begin
   ColorDialog.Options := [cdFullOpen];
   if ColorDialog.Execute then
   begin
+    AlphaTemp := Value.ColorfValue.V[3];
     Value.ColorfValue := ColorToZColor(ColorDialog.Color);
+    Value.ColorfValue.V[3] := AlphaTemp;
     UpdateProp;
     ValuePanel.Color := ColorDialog.Color;
   end;
