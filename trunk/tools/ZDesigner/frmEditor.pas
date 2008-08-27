@@ -85,8 +85,8 @@ type
     MoveDownComponentAction: TAction;
     Moveup1: TMenuItem;
     Movedown1: TMenuItem;
-    Panel2: TPanel;
-    Panel3: TPanel;
+    LowerRightPanel: TPanel;
+    LogPanel: TPanel;
     LogListBox: TListBox;
     Splitter4: TSplitter;
     SaveProjectAction: TAction;
@@ -607,6 +607,9 @@ begin
     if Ini.ReadBool(Section,'IsMaximized',False) then
       Self.WindowState:=wsMaximized;
 
+    LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
+    LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
+
     Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
   finally
@@ -636,6 +639,9 @@ begin
     Ini.WriteBool(Section,'IsMaximized', Self.WindowState=wsMaximized);
 
     Ini.WriteString(Section,'MruList', MruList.CommaText);
+
+    Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
+    Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
 
     Ini.WriteString(Section,'PackerProg', Self.PackerProg);
     Ini.WriteString(Section,'PackerParams', Self.PackerParams);

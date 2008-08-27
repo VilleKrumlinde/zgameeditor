@@ -120,9 +120,9 @@ var
   {$ifndef minimal}BailOutTime : single;{$endif}
 begin
   {$ifndef minimal}BailOutTime:=Platform_GetTime + 3.0;{$endif}
+  Iteration := 0;
   if WhileExp.Code.Count>0 then
   begin
-    Iteration := 0;
     while True do
     begin
       ZExpressions.RunCode(WhileExp.Code);
@@ -138,7 +138,10 @@ begin
   end
   else
     for I := 0 to Count-1 do
+    begin
       OnIteration.ExecuteCommands;
+      Iteration := Iteration + 1;
+    end;
 end;
 
 procedure TRepeat.Update;

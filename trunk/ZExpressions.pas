@@ -449,11 +449,12 @@ var
   A1,A2,V : single;
   P : PFloat;
 begin
+  A2 := gStack.PopFloat;
   if TheArray.Dimensions=dadTwo then
-    A2 := gStack.PopFloat
+    A1 := gStack.PopFloat
   else
-    A2 := 0;
-  A1 := gStack.PopFloat;
+    A1 := 0;
+
   P := TheArray.GetElement( Trunc(A1), Trunc(A2) );
   {$ifndef minimal}
   if P=nil then
@@ -505,7 +506,7 @@ begin
     GetMem(Data, Limit*SizeOf(single) );
   end;
 
-  Index := (I2*SizeDim1) + I1;
+  Index := (I1*SizeDim2) + I2;
 
   {$ifndef minimal}
   if Index>=Limit then
@@ -534,11 +535,11 @@ var
   A1,A2 : single;
   P : Pointer;
 begin
+  A2 := gStack.PopFloat;
   if TheArray.Dimensions=dadTwo then
-    A2 := gStack.PopFloat
+    A1 := gStack.PopFloat
   else
-    A2 := 0;
-  A1 := gStack.PopFloat;
+    A1 := 0;
 
   P := TheArray.GetElement(Trunc(A1), Trunc(A2));
   {$ifndef minimal}
