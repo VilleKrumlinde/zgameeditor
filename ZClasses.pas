@@ -2121,7 +2121,8 @@ begin
     zptExpression:
       Result := {$ifdef minimal}Value.ExpressionValue.Code.Count=0;
         {$else}
-        Trim(Value.ExpressionValue.Source)=Trim(DefaultValue.ExpressionValue.Source);
+          (Trim(Value.ExpressionValue.Source)=Trim(DefaultValue.ExpressionValue.Source)) or
+          (Trim(Value.ExpressionValue.Source)='');
         {$endif}
     zptBinary :
       Result := Value.BinaryValue.Size=0;
