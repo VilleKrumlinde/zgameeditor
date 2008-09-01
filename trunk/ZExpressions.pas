@@ -135,7 +135,7 @@ type
   end;
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
-     fcTan,fcCeil,fcFloor,fcAcos,fcAsin,
+     fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,fcSetRandomSeed);
 
   TExpFuncCall = class(TExpBase)
@@ -365,6 +365,7 @@ begin
     fcFloor : V := Floor(gStack.PopFloat);
     fcAcos : V := ArcCos(gStack.PopFloat);
     fcAsin : V := ArcSin(gStack.PopFloat);
+    fcRound : V := Round(gStack.PopFloat);
 
     fcRandom :
       begin
