@@ -27,7 +27,7 @@ resourcestring
   sGIFImageFile	= 'GIF Image';
 
 { TTinyGifImage }
-function TTinyGifImage.GetHeight: Integer;
+function TTinyGifImage.GetWidth: Integer;
 var
   hdcTemp : HDC;
   lWidthPixels,lWidth : integer;
@@ -39,7 +39,7 @@ begin
   ReleaseDC(0,hdcTemp);
 end;
 
-function TTinyGifImage.GetWidth: Integer;
+function TTinyGifImage.GetHeight: Integer;
 var
   hdcTemp : HDC;
   lHeightPixels,lHeight : integer;

@@ -601,6 +601,7 @@ begin
   else if (Op.Id='floor') then DoGenFunc(fcFloor)
   else if (Op.Id='acos') then DoGenFunc(fcAcos)
   else if (Op.Id='asin') then DoGenFunc(fcAsin)
+  else if (Op.Id='round') then DoGenFunc(fcRound)
   else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
 end;
 
