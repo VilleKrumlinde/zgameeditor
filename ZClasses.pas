@@ -48,7 +48,7 @@ type
  ApplicationClassId,AppStateClassId,SetAppStateClassId,
  ZExpressionClassId,ExpConstantClassId,ExpOpBinaryClassId,ExpPropValueClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,
- ExpArrayReadClassId,ExpArrayWriteClassId,
+ ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  DefineConstantClassId,DefineArrayClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -160,6 +160,7 @@ type
     procedure Push(Item : TObject);
     function Pop : TObject;
     function PopFloat : single;
+    function GetPtrToItem(Index: Integer): pointer;
   end;
 
   //Används som property i komponenter för att hålla children-komponenter
@@ -1106,6 +1107,15 @@ begin
   if (Index < 0) or (Index >= FCount) then
     ZHalt('ZArrayList bad index');
   Result := List^[Index];
+end;
+
+function TZArrayList.GetPtrToItem(Index: Integer): pointer;
+begin
+  {$IFNDEF MINIMAL}
+  if (Index < 0) or (Index >= FCount) then
+    ZHalt('ZArrayList bad index');
+  {$ENDIF}
+  Result := @List^[Index];
 end;
 
 procedure TZArrayList.SetItem(Index: Integer; const Value: TObject);

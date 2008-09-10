@@ -45,6 +45,41 @@
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIntraweb_80_100.bpl">Intraweb 8.0 Design Package for Borland Development Studio 2006</Excluded_Packages>
       <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIndyCore100.bpl">Indy 10 Core Design Time</Excluded_Packages>
       <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclsmp100.bpl">Borland Sample Components</Excluded_Packages>
@@ -86,6 +121,7 @@
     <DCCReference Include="expr\CocoBase.pas" />
     <DCCReference Include="expr\mwStringHashList.pas" />
     <DCCReference Include="expr\Zc.PAS" />
+    <DCCReference Include="expr\Zc_Ops.pas" />
     <DCCReference Include="frm3dsImportOptions.pas">
       <Form>Import3dsForm</Form>
     </DCCReference>

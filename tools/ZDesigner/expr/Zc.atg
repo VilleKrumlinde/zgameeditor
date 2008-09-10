@@ -1,36 +1,22 @@
 COMPILER Zc
 
 DELPHI
-(*  USES INTERFACE SysUtils *)
-  USES (INTERFACE) contnrs
+  USES (INTERFACE) Zc_Ops,contnrs,uSymTab
+ (* USES (IMPLEMENTATION)  *)
 
   TYPE
 
-  TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
-  TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConst,zcIdentifier,zcAssign,zcIf,
-          zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
-          zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess);
-
-  TZcOp = class
-  public
-    Kind : TZcOpKind;
-    Value : single;
-    Id : string;
-    Children : TObjectList;
-    constructor Create;
-    destructor Destroy; override;
-    function ToString : string;
-    function Child(I : integer) : TZcOp;
-    procedure Optimize;
-  end;
 
   PUBLIC
     ZStatements : TObjectList;
+    SymTab : TSymbolTable;
   PRIVATE
+    CurrentFunction : TZcOpFunction;
     procedure WriteStr(S : string);
     procedure WriteOp(Op : TZcOp);
     procedure AddGlobalStatement(Op : TZcOp);
     procedure CleanUp;
+    function IsLocalVarDecl : boolean;
   CREATE
     ZStatements := TObjectList.Create(False);
     //Alla nodes ägs av globalcleanups
@@ -39,6 +25,7 @@ DELPHI
     CleanUp;
   ERRORS
     200 : Result := 'Not a floating point value';
+    201 : Result := 'Variable name already defined in this scope';
 END_DELPHI
 
 (* Arbitrary Code *)
@@ -48,7 +35,7 @@ var
 
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 begin
-  Result := TZcOp.Create;
+  Result := TZcOp.Create(GlobalCleanUps);
   Result.Kind := Kind;
 end;
 function MakeOp(Kind : TZcOpKind; Value : single) : TZcOp; overload;
@@ -86,118 +73,6 @@ begin
   Result := MakeOp(zcAssign,[Op1,Op2]);
 end;
 
-constructor TZcOp.Create;
-begin
-  Children := TObjectList.Create(False);
-  GlobalCleanUps.Add(Self);
-end;
-
-destructor TZcOp.Destroy;
-//var
-//  I : integer;
-begin
-//  for I := 0 to Children.Count-1 do
-//    if Assigned(Children[I]) then Child(I).Free;
-  FreeAndNil(Children);
-end;
-
-function TZcOp.Child(I : integer) : TZcOp;
-begin
-  Result := TZcOp(Children[I]);
-end;
-
-function TZcOp.ToString : string;
-var
-  I : integer;
-begin
-  case Kind of
-    zcMul : Result := Child(0).ToString + '*' + Child(1).ToString;
-    zcDiv : Result := Child(0).ToString + '/' + Child(1).ToString;
-    zcPlus : Result := Child(0).ToString + '+' + Child(1).ToString;
-    zcMinus : Result := Child(0).ToString + '-' + Child(1).ToString;
-    zcConst : Result := FloatToStr(Value);
-    zcIdentifier : Result := Id;
-    zcAssign : Result := Child(0).ToString + '=' + Child(1).ToString;
-    zcIf :
-      begin
-        Result := 'if(' + Child(0).ToString + ') ' + Child(1).ToString;
-        if Assigned(Child(2)) then
-          Result := Result + ' else ' + Child(2).ToString;
-      end;
-    zcCompLT : Result := Child(0).ToString + '<' + Child(1).ToString;
-    zcCompGT : Result := Child(0).ToString + '>' + Child(1).ToString;
-    zcCompLE : Result := Child(0).ToString + '<=' + Child(1).ToString;
-    zcCompGE : Result := Child(0).ToString + '>=' + Child(1).ToString;
-    zcCompNE : Result := Child(0).ToString + '!=' + Child(1).ToString;
-    zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
-    zcBlock :
-      begin
-        Result := '{'#13#10;
-        for I := 0 to Children.Count-1 do
-          Result := Result + Child(I).ToString + '; ';
-        Result := Result + '}'#13#10;
-      end;
-    zcNegate : Result := '-' + Child(0).ToString;
-    zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
-    zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
-    zcFuncCall :
-      begin
-        Result := Id + '(';
-        for I := 0 to Children.Count-1 do
-        begin
-          if I>0 then
-            Result := Result + ',';
-          Result := Result + Child(I).ToString;
-        end;
-        Result := Result + ')';
-      end;
-    zcNop : Result := ';';       //Empty statement
-    zcReturn : Result := 'return ' + Child(0).ToString + ';';
-    zcArrayAccess:
-      begin
-        Result := Id + '[';
-        for I := 0 to Children.Count-1 do
-        begin
-          if I>0 then
-            Result := Result + ',';
-          Result := Result + Child(I).ToString;
-        end;
-        Result := Result + ']';
-      end;
-  end;
-end;
-
-procedure TZcOp.Optimize;
-var
-  I : integer;
-
-  procedure DoConstant(NewValue : single);
-  begin
-    if (Child(0).Kind=zcConst) and (Child(1).Kind=zcConst) then
-    begin
-      Kind := zcConst;
-      Value := NewValue;
-    end;
-  end;
-
-begin
-  for I := 0 to Children.Count-1 do
-    if Assigned(Child(I)) then Child(I).Optimize;
-  case Kind of
-    //todo: more optimizations
-    zcMul : DoConstant(Child(0).Value * Child(1).Value);
-    zcDiv : DoConstant(Child(0).Value / Child(1).Value);
-    zcPlus : DoConstant(Child(0).Value + Child(1).Value);
-    zcMinus : DoConstant(Child(0).Value - Child(1).Value);
-    zcNegate :
-      if Child(0).Kind=zcConst then
-      begin
-        Kind := zcConst;
-        Value := Child(0).Value * -1;
-      end;
-  end;
-end;
-
 procedure T-->Grammar<--.WriteStr(S : string);
 begin
   StreamToListFile(S, TRUE);
@@ -211,6 +86,11 @@ end;
 procedure T-->Grammar<--.AddGlobalStatement(Op : TZcOp);
 begin
   ZStatements.Add(Op);
+end;
+
+function T-->Grammar<--.IsLocalVarDecl : boolean;
+begin
+  Result := fCurrentInputSymbol=floatSym;
 end;
 
 procedure T-->Grammar<--.CleanUp;
@@ -315,16 +195,25 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
-Zc      (. var Op : TZcOp; I : integer; .)
-= (. Op := nil; .)
-  {EmbeddedStatement<Op>
-      (. if Op<>nil then
-           AddGlobalStatement(Op);
-         Op := nil;
-      .)
-   }
+Zc      (. var I : integer; Func : TZcOpFunction; .)
+= (. 
+     Func := TZcOpFunction.Create(GlobalCleanUps);
+     Self.CurrentFunction := Func;
+     
+     SymTab.PushScope;
+  .)
 
-  (. if Successful then
+  /* A zc-expression is treated like the body of a nameless function
+     to allow local var declarations  */
+
+  ZcFuncBody
+
+  (. 
+     SymTab.PopScope;
+  
+     AddGlobalStatement(Func);
+     
+     if Successful then
      begin
        for I:=0 to ZStatements.Count-1 do
        begin
@@ -335,18 +224,42 @@ Zc      (. var Op : TZcOp; I : integer; .)
   .)
 .
 
+/*------------------------------------------------------------------------*/
+
+ZcFuncBody (. var Op : TZcOp; .)
+=  {  (. Op:=nil; .)
+      Statement<Op>
+      (. if Op<>nil then
+           CurrentFunction.Statements.Add(Op);
+         Op := nil;
+      .)
+   }
+.
 
 /*------------------------------------------------------------------------*/
 
-/* LocalVarDecl
+LocalVarDecl
 = Type LocalVar {"," LocalVar}
-. */
+.
 
 /*------------------------------------------------------------------------*/
 
-/* LocalVar       (. var Op : TZcOp; .)
-= ident [ "=" ( Init | "stackalloc" Type "[" Expr<Op> "]") ]
-. */
+LocalVar       (. var Loc : TZcOpLocalVar; .)
+= ident  
+     (. 
+        if SymTab.ScopeContains(LexString) then
+          SynError(201)
+        else
+        begin
+          Loc := TZcOpLocalVar.Create(GlobalCleanUps);
+          Loc.Ordinal := CurrentFunction.Locals.Count;
+          Loc.Id := LexString;
+          SymTab.Add(Loc.Id,Loc);
+          CurrentFunction.Locals.Add(Loc);
+        end;
+     .)
+     /* [ "=" ( Init | "stackalloc" Type "[" Expr<Op> "]") ] */
+.
 
 /*------------------------------------------------------------------------*/
 
@@ -367,16 +280,17 @@ Argument<var OutOp : TZcOp>
 /* Attribute "type" is needed for error messages in EmbeddedStatement     *
  * and for array creation expressions                                     */
 
-/*
+
 Type
 = ( SimpleType )
-. */
+.
 
 /*------------------------------------------------------------------------*/
 
-/* SimpleType
-= IntType | "float" | "double" | "decimal" | "bool"
-.  */
+SimpleType
+/* = IntType | "float" | "double" | "decimal" | "bool" */
+= "float"
+.
 
 /*------------------------------------------------------------------------*/
 
@@ -392,12 +306,18 @@ Type
 Statement<var OutOp : TZcOp>
 =
 /* "const" Type ident "=" Expr<Op> {"," ident "=" Expr<Op>} ";" */
-/* | LocalVarDecl ";"
- | */
- EmbeddedStatement<OutOp>
+(*IF IsLocalVarDecl THEN 
+BEGIN
+  LocalVarDecl ";"
+END
+|  EmbeddedStatement<OutOp> *)
+
+LocalVarDecl ";"
+| EmbeddedStatement<OutOp>
   /* LL(1) confict between LocalVarDecl and StatementExpr: *
    * ident {"." ident} { "[" ...                           */
 .
+
 /*------------------------------------------------------------------------*/
 EmbeddedStatement<var OutOp : TZcOp>
   (. var
@@ -597,7 +517,12 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>         (. var Op : TZcOp; .)
 =            (. OutOp := nil; .)
-  ( ident    (. OutOp := MakeOp(zcIdentifier,LexString); .)
+  ( 
+    ident    (. 
+       OutOp := MakeOp(zcIdentifier,LexString); 
+       if SymTab.Contains(LexString) then
+         OutOp.Ref := SymTab.Lookup(LexString);
+              .)
   | Literal  (. 
         try
           OutOp := MakeOp(zcConst,StrToFloat(LexString)); 

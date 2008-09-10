@@ -68,7 +68,8 @@ uses
   frmRawAudioImportOptions in 'frmRawAudioImportOptions.pas' {ImportRawAudioForm},
   frmSettings in 'frmSettings.pas' {SettingsForm},
   unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
-  unitEXIcon in '3rdparty\unitEXIcon.pas';
+  unitEXIcon in '3rdparty\unitEXIcon.pas',
+  Zc_Ops in 'expr\Zc_Ops.pas';
 
 {$R *.res}
 

@@ -29,11 +29,11 @@ type
   private
     Scopes : TObjectList;
     function CurrentScope : TStringList;
-    function ScopeContains(const Name: string): boolean;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Add(const Name : string; Value : TObject);
+    function ScopeContains(const Name: string): boolean;
     function Contains(const Name : string) : boolean;
     function Lookup(const Name : string) : TObject;
     procedure Remove(const Name : string);

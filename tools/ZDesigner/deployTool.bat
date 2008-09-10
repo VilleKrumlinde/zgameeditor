@@ -26,6 +26,7 @@ copy .\exe\projects\CleanseCube.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\ShaderDemo.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\FpsDemo\FpsDemo.zgeproj ..\..\Deploy\%tool%\projects\FpsDemo\
 copy .\exe\projects\FpsDemo\FpsLevelLayout.txt ..\..\Deploy\%tool%\projects\FpsDemo\
+copy .\exe\projects\ZBlast.zgeproj ..\..\Deploy\%tool%\projects\
 
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini

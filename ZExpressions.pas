@@ -164,6 +164,27 @@ type
     TheArray : TDefineArray;
   end;
 
+  //Setup/destroy local stack frame
+  TExpStackFrame = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (sfFrameSetup,sfFrameDestroy);
+    Size : integer;
+  end;
+
+  //Load/store local value
+  TExpAccessLocal = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (loLoad,loStore);
+    Index : integer;
+  end;
+
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -181,7 +202,7 @@ uses ZMath,ZPlatform,ZApplication
 
 var
   //Expression execution context
-  gCurrentPc : integer;
+  gCurrentPc,gCurrentBP : integer;
   gStack : TZArrayList;
 
 procedure RunCode(Code : TZComponentList);
@@ -196,6 +217,10 @@ begin
     TExpBase(Code[gCurrentPc]).Execute;
     Inc(gCurrentPc);
   end;
+  {$ifndef minimal}
+  if gStack.Count>0 then
+    ZLog.GetLog('Zc').Write('Warning, stack not empty on script completion');
+  {$endif}
 end;
 
 { TZExpression }
@@ -550,6 +575,58 @@ begin
   gStack.Push(P);
 end;
 
+{ TExpStackFrame }
+
+procedure TExpStackFrame.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@Size) - integer(Self), zptInteger);
+end;
+
+procedure TExpStackFrame.Execute;
+//http://en.wikipedia.org/wiki/Function_prologue
+var
+  I : integer;
+begin
+  case Kind of
+    sfFrameSetup:
+      begin
+        gStack.Push(pointer(gCurrentBP));
+        gCurrentBP := gStack.Count;
+        //Todo: make ZStack-class with MakeSpace-method
+        for I := 0 to Self.Size - 1 do
+          gStack.Add(nil);
+      end;
+    sfFrameDestroy:
+      begin
+        while gStack.Count>gCurrentBP do
+          gStack.Pop;
+        gCurrentBP := integer(gStack.Pop);
+      end;
+  end;
+end;
+
+{ TExpAccessLocal }
+
+procedure TExpAccessLocal.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}integer(@Index) - integer(Self), zptInteger);
+end;
+
+procedure TExpAccessLocal.Execute;
+var
+  P : ^integer;  //4 byte data
+begin
+  P := gStack.GetPtrToItem( gCurrentBP + Self.Index );
+  case Kind of
+    loLoad: gStack.Push(TObject(P^));
+    loStore: P^ := integer(gStack.Pop);
+  end;
+end;
+
 initialization
 
   //Init vm
@@ -580,6 +657,10 @@ initialization
   ZClasses.Register(TExpArrayRead,ExpArrayReadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayWrite,ExpArrayWriteClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpStackFrame,ExpStackFrameClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAccessLocal,ExpAccessLocalClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}

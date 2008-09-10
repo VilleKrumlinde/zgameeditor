@@ -556,7 +556,8 @@ begin
   begin
     AlphaTemp := Value.ColorfValue.V[3];
     Value.ColorfValue := ColorToZColor(ColorDialog.Color);
-    Value.ColorfValue.V[3] := AlphaTemp;
+    if AlphaTemp>0 then
+      Value.ColorfValue.V[3] := AlphaTemp;
     UpdateProp;
     ValuePanel.Color := ColorDialog.Color;
   end;
@@ -569,7 +570,7 @@ var
 begin
   if Button=mbRight then
   begin
-    S := InputBox('Color editor','Enter alpha value:',FloatToStr(Value.ColorfValue.V[3]) );
+    S := InputBox('Color editor','Enter alpha value (range 0-1):',FloatToStr(Value.ColorfValue.V[3]) );
     Value.ColorfValue.V[3] := StrToFloatDef(S,1.0);
     UpdateProp;
   end;

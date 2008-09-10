@@ -5,7 +5,8 @@ uses
   CocoBase in 'CocoBase.pas',
   fTestZc in 'fTestZc.pas' {fmTestZc},
   mwStringHashList in 'mwStringHashList.pas',
-  Zc in 'Zc.PAS';
+  Zc in 'Zc.PAS',
+  uSymTab in '..\uSymTab.pas';
 
 {$R *.res}
 
