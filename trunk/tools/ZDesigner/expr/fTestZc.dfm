@@ -1,10 +1,10 @@
 object fmTestZc: TfmTestZc
   Left = 141
   Top = 134
-  Width = 544
-  Height = 375
   ActiveControl = memSource
   Caption = 'Test Zc'
+  ClientHeight = 341
+  ClientWidth = 536
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,12 +17,13 @@ object fmTestZc: TfmTestZc
   TextHeight = 13
   object splSourceOutput: TSplitter
     Left = 0
-    Top = 170
+    Top = 174
     Width = 536
     Height = 6
     Cursor = crVSplit
     Align = alBottom
     Beveled = True
+    ExplicitTop = 170
   end
   object pnlButtons: TPanel
     Left = 0
@@ -73,9 +74,10 @@ object fmTestZc: TfmTestZc
     Left = 0
     Top = 29
     Width = 536
-    Height = 141
+    Height = 145
     Align = alClient
     TabOrder = 1
+    ExplicitHeight = 141
     object memSource: TMemo
       Left = 1
       Top = 1
@@ -96,11 +98,12 @@ object fmTestZc: TfmTestZc
   end
   object pnlOutput: TPanel
     Left = 0
-    Top = 176
+    Top = 180
     Width = 536
     Height = 161
     Align = alBottom
     TabOrder = 2
+    ExplicitTop = 176
     object memOutput: TMemo
       Left = 1
       Top = 1

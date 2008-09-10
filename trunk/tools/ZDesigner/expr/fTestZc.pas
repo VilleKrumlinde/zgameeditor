@@ -67,7 +67,7 @@ begin
   memOutput.Clear;
   memOutput.Lines.LoadFromStream(Zc.ListStream);
   Zc.Free;
-end;
+end;                                
 
 procedure TfmTestZc.memSourceChange(Sender: TObject);
 begin

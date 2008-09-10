@@ -17,31 +17,13 @@ regenerated.
 ==============================================================================}
 
 interface
-uses  SysUtils,Classes,CocoBase,contnrs,mwStringHashList;
+uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,mwStringHashList;
 
 
 
 const
-maxT = 73;
+maxT = 74;
 type
-TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
-  TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConst,zcIdentifier,zcAssign,zcIf,
-          zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
-          zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess);
-
-  TZcOp = class
-  public
-    Kind : TZcOpKind;
-    Value : single;
-    Id : string;
-    Children : TObjectList;
-    constructor Create;
-    destructor Destroy; override;
-    function ToString : string;
-    function Child(I : integer) : TZcOp;
-    procedure Optimize;
-  end;
-
 
   SymbolSet = array[0..maxT div setsize] of TBitSet;
 
@@ -75,7 +57,7 @@ destructor Destroy; override;
   TZc = class(TCocoRGrammar)
   private
     { strictly internal variables }
-    symSet : array[0..4] of SymbolSet; // symSet[0] = allSyncSyms
+    symSet : array[0..5] of SymbolSet; // symSet[0] = allSyncSyms
 
     function GetBuildDate : TDateTime;
     function GetVersion : string;
@@ -102,17 +84,24 @@ destructor Destroy; override;
     procedure _Unary (var OutOp : TZcOp);
     procedure _StatementExpr (var OutOp : TZcOp);
     procedure _Block (var OutOp : TZcOp);
-    procedure _Statement (var OutOp : TZcOp);
+    procedure _EmbeddedStatement (var OutOp : TZcOp);
+    procedure _SimpleType;
     procedure _Expr (var OutOp : TZcOp);
     procedure _Argument (var OutOp : TZcOp);
-    procedure _EmbeddedStatement (var OutOp : TZcOp);
+    procedure _LocalVar;
+    procedure _Type;
+    procedure _LocalVarDecl;
+    procedure _Statement (var OutOp : TZcOp);
+    procedure _ZcFuncBody;
     procedure _Zc;
 
   private
+    CurrentFunction : TZcOpFunction;
     procedure WriteStr(S : string);
     procedure WriteOp(Op : TZcOp);
     procedure AddGlobalStatement(Op : TZcOp);
     procedure CleanUp;
+    function IsLocalVarDecl : boolean;
 
   protected
     { Protected Declarations }
@@ -137,6 +126,7 @@ destructor Destroy; override;
 
   public
     ZStatements : TObjectList;
+    SymTab : TSymbolTable;
 
   published
     { Published Declarations }
@@ -170,17 +160,17 @@ const
   lshiftSym = 19;  ltSym = 20;  lteSym = 21;  minusSym = 22;  modSym = 23;
   neqSym = 24;  notSym = 25;  orSym = 26;  plusSym = 27;  rbraceSym = 28;
   rbrackSym = 29;  rparSym = 30;  rshiftSym = 31;  scolonSym = 32;
-  tildeSym = 33;  timesSym = 34;  xorSym = 35;  _semicolonSym = 36;  ifSym = 37;
-  _lparenSym = 38;  _rparenSym = 39;  elseSym = 40;  returnSym = 41;
-  _lbraceSym = 42;  _rbraceSym = 43;  _equalSym = 44;  _plus_equalSym = 45;
-  _minus_equalSym = 46;  _star_equalSym = 47;  _slash_equalSym = 48;
-  _bar_barSym = 49;  _and_andSym = 50;  _barSym = 51;  _uparrowSym = 52;
-  _andSym = 53;  _bang_equalSym = 54;  _equal_equalSym = 55;  _lessSym = 56;
-  _greaterSym = 57;  _less_equalSym = 58;  _greater_equalSym = 59;
-  _less_lessSym = 60;  _greater_greaterSym = 61;  _plusSym = 62;
-  _minusSym = 63;  _starSym = 64;  _slashSym = 65;  _pointSym = 66;
-  _commaSym = 67;  _lbrackSym = 68;  _rbrackSym = 69;  trueSym = 70;
-  falseSym = 71;  nullSym = 72;  NOSYMB = 73;  _noSym = NOSYMB;   {error token code}
+  tildeSym = 33;  timesSym = 34;  xorSym = 35;  _commaSym = 36;  floatSym = 37;
+  _semicolonSym = 38;  ifSym = 39;  _lparenSym = 40;  _rparenSym = 41;
+  elseSym = 42;  returnSym = 43;  _lbraceSym = 44;  _rbraceSym = 45;
+  _equalSym = 46;  _plus_equalSym = 47;  _minus_equalSym = 48;
+  _star_equalSym = 49;  _slash_equalSym = 50;  _bar_barSym = 51;
+  _and_andSym = 52;  _barSym = 53;  _uparrowSym = 54;  _andSym = 55;
+  _bang_equalSym = 56;  _equal_equalSym = 57;  _lessSym = 58;  _greaterSym = 59;
+  _less_equalSym = 60;  _greater_equalSym = 61;  _less_lessSym = 62;
+  _greater_greaterSym = 63;  _plusSym = 64;  _minusSym = 65;  _starSym = 66;
+  _slashSym = 67;  _pointSym = 68;  _lbrackSym = 69;  _rbrackSym = 70;
+  trueSym = 71;  falseSym = 72;  nullSym = 73;  NOSYMB = 74;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
@@ -189,7 +179,7 @@ var
 
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 begin
-  Result := TZcOp.Create;
+  Result := TZcOp.Create(GlobalCleanUps);
   Result.Kind := Kind;
 end;
 function MakeOp(Kind : TZcOpKind; Value : single) : TZcOp; overload;
@@ -227,118 +217,6 @@ begin
   Result := MakeOp(zcAssign,[Op1,Op2]);
 end;
 
-constructor TZcOp.Create;
-begin
-  Children := TObjectList.Create(False);
-  GlobalCleanUps.Add(Self);
-end;
-
-destructor TZcOp.Destroy;
-//var
-//  I : integer;
-begin
-//  for I := 0 to Children.Count-1 do
-//    if Assigned(Children[I]) then Child(I).Free;
-  FreeAndNil(Children);
-end;
-
-function TZcOp.Child(I : integer) : TZcOp;
-begin
-  Result := TZcOp(Children[I]);
-end;
-
-function TZcOp.ToString : string;
-var
-  I : integer;
-begin
-  case Kind of
-    zcMul : Result := Child(0).ToString + '*' + Child(1).ToString;
-    zcDiv : Result := Child(0).ToString + '/' + Child(1).ToString;
-    zcPlus : Result := Child(0).ToString + '+' + Child(1).ToString;
-    zcMinus : Result := Child(0).ToString + '-' + Child(1).ToString;
-    zcConst : Result := FloatToStr(Value);
-    zcIdentifier : Result := Id;
-    zcAssign : Result := Child(0).ToString + '=' + Child(1).ToString;
-    zcIf :
-      begin
-        Result := 'if(' + Child(0).ToString + ') ' + Child(1).ToString;
-        if Assigned(Child(2)) then
-          Result := Result + ' else ' + Child(2).ToString;
-      end;
-    zcCompLT : Result := Child(0).ToString + '<' + Child(1).ToString;
-    zcCompGT : Result := Child(0).ToString + '>' + Child(1).ToString;
-    zcCompLE : Result := Child(0).ToString + '<=' + Child(1).ToString;
-    zcCompGE : Result := Child(0).ToString + '>=' + Child(1).ToString;
-    zcCompNE : Result := Child(0).ToString + '!=' + Child(1).ToString;
-    zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
-    zcBlock :
-      begin
-        Result := '{'#13#10;
-        for I := 0 to Children.Count-1 do
-          Result := Result + Child(I).ToString + '; ';
-        Result := Result + '}'#13#10;
-      end;
-    zcNegate : Result := '-' + Child(0).ToString;
-    zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
-    zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
-    zcFuncCall :
-      begin
-        Result := Id + '(';
-        for I := 0 to Children.Count-1 do
-        begin
-          if I>0 then
-            Result := Result + ',';
-          Result := Result + Child(I).ToString;
-        end;
-        Result := Result + ')';
-      end;
-    zcNop : Result := ';';       //Empty statement
-    zcReturn : Result := 'return ' + Child(0).ToString + ';';
-    zcArrayAccess:
-      begin
-        Result := Id + '[';
-        for I := 0 to Children.Count-1 do
-        begin
-          if I>0 then
-            Result := Result + ',';
-          Result := Result + Child(I).ToString;
-        end;
-        Result := Result + ']';
-      end;
-  end;
-end;
-
-procedure TZcOp.Optimize;
-var
-  I : integer;
-
-  procedure DoConstant(NewValue : single);
-  begin
-    if (Child(0).Kind=zcConst) and (Child(1).Kind=zcConst) then
-    begin
-      Kind := zcConst;
-      Value := NewValue;
-    end;
-  end;
-
-begin
-  for I := 0 to Children.Count-1 do
-    if Assigned(Child(I)) then Child(I).Optimize;
-  case Kind of
-    //todo: more optimizations
-    zcMul : DoConstant(Child(0).Value * Child(1).Value);
-    zcDiv : DoConstant(Child(0).Value / Child(1).Value);
-    zcPlus : DoConstant(Child(0).Value + Child(1).Value);
-    zcMinus : DoConstant(Child(0).Value - Child(1).Value);
-    zcNegate :
-      if Child(0).Kind=zcConst then
-      begin
-        Kind := zcConst;
-        Value := Child(0).Value * -1;
-      end;
-  end;
-end;
-
 procedure TZc.WriteStr(S : string);
 begin
   StreamToListFile(S, TRUE);
@@ -352,6 +230,11 @@ end;
 procedure TZc.AddGlobalStatement(Op : TZcOp);
 begin
   ZStatements.Add(Op);
+end;
+
+function TZc.IsLocalVarDecl : boolean;
+begin
+  Result := fCurrentInputSymbol=floatSym;
 end;
 
 procedure TZc.CleanUp;
@@ -1294,6 +1177,7 @@ fHashList.AddString(']', _rbrackSym, _rbrackSym);
 fHashList.AddString('^', _uparrowSym, _uparrowSym);
 fHashList.AddString('else', elseSym, elseSym);
 fHashList.AddString('false', falseSym, falseSym);
+fHashList.AddString('float', floatSym, floatSym);
 fHashList.AddString('if', ifSym, ifSym);
 fHashList.AddString('null', nullSym, nullSym);
 fHashList.AddString('return', returnSym, returnSym);
@@ -1437,52 +1321,55 @@ begin
   33 : Result := 'tilde expected';
   34 : Result := 'times expected';
   35 : Result := 'xor expected';
-  36 : Result := '";" expected';
-  37 : Result := '"if" expected';
-  38 : Result := '"(" expected';
-  39 : Result := '")" expected';
-  40 : Result := '"else" expected';
-  41 : Result := '"return" expected';
-  42 : Result := '"{" expected';
-  43 : Result := '"}" expected';
-  44 : Result := '"=" expected';
-  45 : Result := '"+=" expected';
-  46 : Result := '"-=" expected';
-  47 : Result := '"*=" expected';
-  48 : Result := '"/=" expected';
-  49 : Result := '"||" expected';
-  50 : Result := '"&&" expected';
-  51 : Result := '"|" expected';
-  52 : Result := '"^" expected';
-  53 : Result := '"&" expected';
-  54 : Result := '"!=" expected';
-  55 : Result := '"==" expected';
-  56 : Result := '"<" expected';
-  57 : Result := '">" expected';
-  58 : Result := '"<=" expected';
-  59 : Result := '">=" expected';
-  60 : Result := '"<<" expected';
-  61 : Result := '">>" expected';
-  62 : Result := '"+" expected';
-  63 : Result := '"-" expected';
-  64 : Result := '"*" expected';
-  65 : Result := '"/" expected';
-  66 : Result := '"." expected';
-  67 : Result := '"," expected';
-  68 : Result := '"[" expected';
-  69 : Result := '"]" expected';
-  70 : Result := '"true" expected';
-  71 : Result := '"false" expected';
-  72 : Result := '"null" expected';
-  73 : Result := 'not expected';
-  74 : Result := 'invalid Literal';
-  75 : Result := 'invalid Primary';
-  76 : Result := 'invalid AssignOp';
-  77 : Result := 'invalid StatementExpr';
-  78 : Result := 'invalid Expr';
+  36 : Result := '"," expected';
+  37 : Result := '"float" expected';
+  38 : Result := '";" expected';
+  39 : Result := '"if" expected';
+  40 : Result := '"(" expected';
+  41 : Result := '")" expected';
+  42 : Result := '"else" expected';
+  43 : Result := '"return" expected';
+  44 : Result := '"{" expected';
+  45 : Result := '"}" expected';
+  46 : Result := '"=" expected';
+  47 : Result := '"+=" expected';
+  48 : Result := '"-=" expected';
+  49 : Result := '"*=" expected';
+  50 : Result := '"/=" expected';
+  51 : Result := '"||" expected';
+  52 : Result := '"&&" expected';
+  53 : Result := '"|" expected';
+  54 : Result := '"^" expected';
+  55 : Result := '"&" expected';
+  56 : Result := '"!=" expected';
+  57 : Result := '"==" expected';
+  58 : Result := '"<" expected';
+  59 : Result := '">" expected';
+  60 : Result := '"<=" expected';
+  61 : Result := '">=" expected';
+  62 : Result := '"<<" expected';
+  63 : Result := '">>" expected';
+  64 : Result := '"+" expected';
+  65 : Result := '"-" expected';
+  66 : Result := '"*" expected';
+  67 : Result := '"/" expected';
+  68 : Result := '"." expected';
+  69 : Result := '"[" expected';
+  70 : Result := '"]" expected';
+  71 : Result := '"true" expected';
+  72 : Result := '"false" expected';
+  73 : Result := '"null" expected';
+  74 : Result := 'not expected';
+  75 : Result := 'invalid Literal';
+  76 : Result := 'invalid Primary';
+  77 : Result := 'invalid AssignOp';
+  78 : Result := 'invalid StatementExpr';
   79 : Result := 'invalid EmbeddedStatement';
+  80 : Result := 'invalid Expr';
+  81 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
+    201 : Result := 'Variable name already defined in this scope';
   else
     if Assigned(OnCustomError) then
       Result := OnCustomError(Self, ErrorCode, Data)
@@ -1574,7 +1461,7 @@ Get;
   nullSym : begin
 Get;
     end;
-else begin SynError(74);
+else begin SynError(75);
     end;
 end;
 end;
@@ -1584,7 +1471,11 @@ begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
 Get;
+
 OutOp  :=  MakeOp(zcIdentifier,LexString);
+if  SymTab.Contains(LexString)  then
+OutOp.Ref  :=  SymTab.Lookup(LexString);
+
 end else if _In(symSet[1], fCurrentInputSymbol) then begin
 _Literal;
 
@@ -1598,7 +1489,7 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(75);
+end else begin SynError(76);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _pointSym) OR
@@ -1819,7 +1710,7 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(76);
+end else begin SynError(77);
 end;
 end;
 
@@ -1860,7 +1751,7 @@ OutOp  :=  MakeAssign(Kind,Op1,Op2);
 
 end else if (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(77);
+end else begin SynError(78);
 end;
 end;
 
@@ -1875,31 +1766,6 @@ _Statement(Op);
 OutOp.Children.Add(Op);
 end;
 Expect(_rbraceSym);
-end;
-
-procedure TZc._Statement (var  OutOp  :  TZcOp);begin
-_EmbeddedStatement(OutOp);
-end;
-
-procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
-begin
-_Unary(Op1);
-if _In(symSet[4], fCurrentInputSymbol) then begin
-_OrExpr(Op1,OutOp);
-end else if (fCurrentInputSymbol = _equalSym) OR
- (fCurrentInputSymbol = _plus_equalSym) OR
- (fCurrentInputSymbol = _minus_equalSym) OR
- (fCurrentInputSymbol = _star_equalSym) OR
- (fCurrentInputSymbol = _slash_equalSym) then begin
-_AssignOp(Kind);
-_Expr(Op2);
-OutOp  :=  MakeAssign(Kind,Op1,Op2);
-end else begin SynError(78);
-end;
-end;
-
-procedure TZc._Argument (var  OutOp  :  TZcOp);begin
-_Expr(OutOp);
 end;
 
 procedure TZc._EmbeddedStatement (var  OutOp  :  TZcOp);var
@@ -1935,16 +1801,97 @@ end else begin SynError(79);
 end;
 end;
 
-procedure TZc._Zc;var  Op  :  TZcOp;  I  :  integer;
+procedure TZc._SimpleType;begin
+Expect(floatSym);
+end;
+
+procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
 begin
-Op  :=  nil;
+_Unary(Op1);
+if _In(symSet[4], fCurrentInputSymbol) then begin
+_OrExpr(Op1,OutOp);
+end else if (fCurrentInputSymbol = _equalSym) OR
+ (fCurrentInputSymbol = _plus_equalSym) OR
+ (fCurrentInputSymbol = _minus_equalSym) OR
+ (fCurrentInputSymbol = _star_equalSym) OR
+ (fCurrentInputSymbol = _slash_equalSym) then begin
+_AssignOp(Kind);
+_Expr(Op2);
+OutOp  :=  MakeAssign(Kind,Op1,Op2);
+end else begin SynError(80);
+end;
+end;
+
+procedure TZc._Argument (var  OutOp  :  TZcOp);begin
+_Expr(OutOp);
+end;
+
+procedure TZc._LocalVar;var  Loc  :  TZcOpLocalVar;
+begin
+Expect(identSym);
+
+if  SymTab.ScopeContains(LexString)  then
+   SynError(201)
+else
+begin
+   Loc  :=  TZcOpLocalVar.Create(GlobalCleanUps);
+   Loc.Ordinal  :=  CurrentFunction.Locals.Count;
+   Loc.Id  :=  LexString;
+   SymTab.Add(Loc.Id,Loc);
+   CurrentFunction.Locals.Add(Loc);
+end;
+
+end;
+
+procedure TZc._Type;begin
+_SimpleType;
+end;
+
+procedure TZc._LocalVarDecl;begin
+_Type;
+_LocalVar;
+while (fCurrentInputSymbol = _commaSym) do begin
+Get;
+_LocalVar;
+end;
+end;
+
+procedure TZc._Statement (var  OutOp  :  TZcOp);begin
+if (fCurrentInputSymbol = floatSym) then begin
+_LocalVarDecl;
+Expect(_semicolonSym);
+end else if _In(symSet[5], fCurrentInputSymbol) then begin
+_EmbeddedStatement(OutOp);
+end else begin SynError(81);
+end;
+end;
+
+procedure TZc._ZcFuncBody;var  Op  :  TZcOp;
+begin
 while _In(symSet[3], fCurrentInputSymbol) do begin
-_EmbeddedStatement(Op);
+Op:=nil;
+_Statement(Op);
 if  Op<>nil  then
-   AddGlobalStatement(Op);
+   CurrentFunction.Statements.Add(Op);
 Op  :=  nil;
 
 end;
+end;
+
+procedure TZc._Zc;var  I  :  integer;  Func  :  TZcOpFunction;
+begin
+
+Func  :=  TZcOpFunction.Create(GlobalCleanUps);
+Self.CurrentFunction  :=  Func;
+
+SymTab.PushScope;
+
+_ZcFuncBody;
+
+SymTab.PopScope;
+
+AddGlobalStatement(Func);
+
 if  Successful  then
 begin
    for  I:=0  to  ZStatements.Count-1  do
@@ -2011,23 +1958,30 @@ symSet[ 1, 4] := [trueSym-64, falseSym-64, nullSym-64];
 symSet[ 2, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 2, 1] := [];
 symSet[ 2, 2] := [_lparenSym-32];
-symSet[ 2, 3] := [_minusSym-48];
-symSet[ 2, 4] := [trueSym-64, falseSym-64, nullSym-64];
+symSet[ 2, 3] := [];
+symSet[ 2, 4] := [_minusSym-64, trueSym-64, falseSym-64, nullSym-64];
 symSet[ 3, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 3, 1] := [];
-symSet[ 3, 2] := [_semicolonSym-32, ifSym-32, _lparenSym-32, returnSym-32, 
-                    _lbraceSym-32];
-symSet[ 3, 3] := [_minusSym-48];
-symSet[ 3, 4] := [trueSym-64, falseSym-64, nullSym-64];
+symSet[ 3, 2] := [floatSym-32, _semicolonSym-32, ifSym-32, _lparenSym-32, 
+                    returnSym-32, _lbraceSym-32];
+symSet[ 3, 3] := [];
+symSet[ 3, 4] := [_minusSym-64, trueSym-64, falseSym-64, nullSym-64];
 symSet[ 4, 0] := [];
 symSet[ 4, 1] := [];
-symSet[ 4, 2] := [_semicolonSym-32, _rparenSym-32];
+symSet[ 4, 2] := [_commaSym-32, _semicolonSym-32, _rparenSym-32];
 symSet[ 4, 3] := [_bar_barSym-48, _and_andSym-48, _barSym-48, _uparrowSym-48, 
                     _andSym-48, _bang_equalSym-48, _equal_equalSym-48, 
                     _lessSym-48, _greaterSym-48, _less_equalSym-48, 
                     _greater_equalSym-48, _less_lessSym-48, 
-                    _greater_greaterSym-48, _plusSym-48, _minusSym-48];
-symSet[ 4, 4] := [_starSym-64, _slashSym-64, _commaSym-64, _rbrackSym-64];
+                    _greater_greaterSym-48];
+symSet[ 4, 4] := [_plusSym-64, _minusSym-64, _starSym-64, _slashSym-64, 
+                    _rbrackSym-64];
+symSet[ 5, 0] := [intConSym, realConSym, stringConSym, identSym];
+symSet[ 5, 1] := [];
+symSet[ 5, 2] := [_semicolonSym-32, ifSym-32, _lparenSym-32, returnSym-32, 
+                    _lbraceSym-32];
+symSet[ 5, 3] := [];
+symSet[ 5, 4] := [_minusSym-64, trueSym-64, falseSym-64, nullSym-64];
 end; {InitSymSet}
 
 end { Zc }.    

@@ -29,6 +29,7 @@
     <DelphiCompile Include="ExprTest.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\uSymTab.pas" />
     <DCCReference Include="CocoBase.pas" />
     <DCCReference Include="fTestZc.pas">
       <Form>fmTestZc</Form>

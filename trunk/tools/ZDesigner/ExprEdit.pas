@@ -45,7 +45,7 @@ function ParsePropRef(SymTab : TSymbolTable;
 
 implementation
 
-uses Zc,Dialogs,
+uses Zc,Zc_Ops,Dialogs,
   DesignerGUI,CocoBase,Contnrs;
 
 
@@ -211,13 +211,24 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Target.AddComponent( MakeBinaryOp(Kind) );
   end;
 
-  procedure DoGenPropValue;
+  procedure DoGenVariableValue;
   var
     C : TExpPropValue;
+    L : TExpAccessLocal;
   begin
-    C := TExpPropValue.Create(Target);
-    if not GetPropRef(Op.Id,C.Source) then
-      raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
+    if (Op.Ref<>nil) and (Op.Ref is TZcOpLocalVar) then
+    begin
+      //Local variable
+      L := TExpAccessLocal.Create(Target);
+      L.Index := (Op.Ref as TZcOpLocalVar).Ordinal;
+      L.Kind := loLoad;
+    end else
+    begin
+      //Property reference
+      C := TExpPropValue.Create(Target);
+      if not GetPropRef(Op.Id,C.Source) then
+        raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
+    end;
   end;
 
   procedure DoGenBoolean;
@@ -266,7 +277,7 @@ begin
     zcPlus : DoGenBinary(vbkPlus);
     zcMinus : DoGenBinary(vbkMinus);
     zcConst : Target.AddComponent( MakeConstOp(Op.Value) );
-    zcIdentifier : DoGenPropValue;
+    zcIdentifier : DoGenVariableValue;
     zcFuncCall : GenFuncCall(Op,True);
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
@@ -289,15 +300,28 @@ var
 
     A : TZComponent;
     Aw : TExpArrayWrite;
+    LeftOp,RightOp : TZcOp;
+    L : TExpAccessLocal;
   begin
-    if Op.Child(0).Kind=zcIdentifier then
+    //Left-hand side of the assignment
+    LeftOp := Op.Child(0);
+    RightOp := Op.Child(1);
+    if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpLocalVar) then
+    begin
+      //Local variable
+      GenValue(RightOp);
+      L := TExpAccessLocal.Create(Target);
+      L.Index := (LeftOp.Ref as TZcOpLocalVar).Ordinal;
+      L.Kind := loStore;
+    end
+    else if LeftOp.Kind=zcIdentifier then
     begin
       C := TExpPropPtr.Create(Target);
-      if not GetPropRef(Op.Child(0).Id,C.Target) then
-        raise ECodeGenError.Create('Unknown assigment identifier: ' + Op.Child(0).Id);
+      if not GetPropRef(LeftOp.Id,C.Target) then
+        raise ECodeGenError.Create('Unknown assigment identifier: ' + LeftOp.Id);
       if C.Target.Prop.IsReadOnly then
-        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + Op.Child(0).Id);
-      GenValue(Op.Child(1));
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+      GenValue(RightOp);
       Target.AddComponent( MakeBinaryOp(vbkAssign) );
 
       //Allow "x.Scale" be shorthand for assign x,y,z individually
@@ -313,20 +337,20 @@ var
           C2 := TExpPropPtr.Create(Target);
           C2.Target := C.Target;
           C2.Target.Index := I;
-          GenValue(Op.Child(0));
+          GenValue(LeftOp);
           Target.AddComponent( MakeBinaryOp(vbkAssign) );
         end;
       end;
-    end else if Op.Child(0).Kind=zcArrayAccess then
+    end else if LeftOp.Kind=zcArrayAccess then
     begin
-      A := TZComponent(SymTab.Lookup(Op.Child(0).Id));
+      A := TZComponent(SymTab.Lookup(LeftOp.Id));
       if (A=nil) or (not (A is TDefineArray)) then
-        raise ECodeGenError.Create('Identifier is not an array: ' + Op.Child(0).Id);
-      if Ord((A as TDefineArray).Dimensions)+1<>Op.Child(0).Children.Count then
+        raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
+      if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
         raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
       //Assert(Op.Arguments.Count=2);
       for I := 0 to Ord((A as TDefineArray).Dimensions) do
-        GenValue(Op.Child(0).Child(I));
+        GenValue(LeftOp.Child(I));
       Aw := TExpArrayWrite.Create(Target);
       Aw.TheArray := A as TDefineArray;
       GenValue(Op.Child(1));
@@ -376,6 +400,30 @@ var
     GenJump(jsJumpReturn,LReturn);
   end;
 
+  procedure DoGenFunction(Func : TZcOpFunction);
+  var
+    I : integer;
+    Frame : TExpStackFrame;
+  begin
+    if Func.Locals.Count>0 then
+    begin
+      Frame := TExpStackFrame.Create(Target);
+      Frame.Kind := sfFrameSetup;
+      Frame.Size := Func.Locals.Count;
+    end;
+    for I := 0 to Func.Statements.Count - 1 do
+    begin
+      Gen(Func.Statements[I] as TZcOp);
+    end;
+    if Assigned(LReturn) then
+      DefineLabel(LReturn);
+    if Func.Locals.Count>0 then
+    begin
+      Frame := TExpStackFrame.Create(Target);
+      Frame.Kind := sfFrameDestroy;
+    end;
+  end;
+
 begin
   case Op.Kind of
     zcAssign : DoGenAssign;
@@ -386,6 +434,7 @@ begin
         Gen(Op.Child(I));
     zcReturn : DoGenReturn;
     zcFuncCall : GenFuncCall(Op,False);
+    zcFunction : DoGenFunction(Op as TZcOpFunction);
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -433,8 +482,6 @@ begin
   RemoveConstants(StmtList);
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
-  if Assigned(LReturn) then
-    DefineLabel(LReturn);
   ResolveLabels;
 end;
 
@@ -619,7 +666,7 @@ var
     Value : TZPropertyValue;
     I : integer;
   begin
-    if Op.Kind=Zc.zcIdentifier then
+    if Op.Kind=Zc_Ops.zcIdentifier then
     begin
       if GetPropRef(Op.Id,P) then
       begin
@@ -631,6 +678,10 @@ var
           Op.Value := Value.FloatValue;
         end;
       end;
+    end else if Op.Kind=Zc_Ops.zcFunction then
+    begin
+      for I := 0 to TZcOpFunction(Op).Statements.Count-1 do
+        DoRemoveConstants(TZcOpFunction(Op).Statements[I] as TZcOp);
     end else
     begin
       for I := 0 to Op.Children.Count-1 do
@@ -678,6 +729,7 @@ begin
 
   Compiler := TZc.Create(nil);
   try
+    Compiler.SymTab := SymTab;
     Compiler.SourceStream.Write(S[1],Length(S));
     Compiler.Execute;
     if not Compiler.Successful then

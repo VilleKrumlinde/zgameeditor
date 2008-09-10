@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
-  <Default.Personality>
-    <Projects ActiveProject="ZDesigner.exe"/>
-  </Default.Personality>
+	<Default.Personality>
+		<Projects ActiveProject="ExprTest.exe"/>
+	</Default.Personality>
 </BorlandProject>
