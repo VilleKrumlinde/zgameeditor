@@ -278,7 +278,7 @@ type
     procedure OnTreeDragDrop(Sender, Source: TObject; X, Y: Integer);
     procedure SetFileChanged(Value : Boolean);
     procedure RefreshSymbolTable;
-    procedure DoCompile(Node: TZComponentTreeNode;  const Expr: TZExpressionPropValue);
+    procedure DoCompile(Node: TZComponentTreeNode;  const Expr: TZPropertyValue; Prop : TZProperty);
     procedure OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure OnGLPanelMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -430,6 +430,7 @@ begin
   RefreshMenuFromMruList;
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
+  Tree.ShowOpCodes := DebugHook<>0;
 
   Platform_InitGlobals;  //Nollställ timer etc
 
@@ -1420,7 +1421,7 @@ begin
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
-    DoCompile(Tree.ZSelected,PropValue.ExpressionValue);
+    DoCompile(Tree.ZSelected,PropValue,Prop);
     Success:=True;
   except
     on E : EParseError do
@@ -1454,12 +1455,19 @@ begin
   uHelp.ShowHelp('Main/WritingExpressions');
 end;
 
-procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZExpressionPropValue);
+procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZPropertyValue; Prop : TZProperty);
 var
   C : TZComponent;
   CurParent : TZComponentTreeNode;
   Model : TModel;
 begin
+  if Prop.IsDefaultValue(Expr) then
+  begin
+    //Generate no code for an empty expression 
+    Expr.ExpressionValue.Code.Clear;
+    Exit;
+  end;
+
   C := Node.Component;
   CurParent := Node.Parent as TZComponentTreeNode;
   Model := nil;
@@ -1478,7 +1486,9 @@ begin
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
   try
-    Compile(C,Expr,Root,SymTab);
+    Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType);
+    if Tree.ShowOpCodes then
+      Tree.RefreshNode(Node,C);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
@@ -1513,7 +1523,7 @@ begin
             C.GetProperty(Prop,PropValue);
             //Compile(C,PropValue.ExpressionValue,Root,SymTab);
             try
-              DoCompile(Node,PropValue.ExpressionValue);
+              DoCompile(Node,PropValue,Prop);
             except on E : Exception do
               ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
             end;

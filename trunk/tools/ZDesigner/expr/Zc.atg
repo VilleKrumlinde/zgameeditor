@@ -1,7 +1,7 @@
 COMPILER Zc
 
 DELPHI
-  USES (INTERFACE) Zc_Ops,contnrs,uSymTab
+  USES (INTERFACE) Zc_Ops,contnrs,uSymTab,ZClasses
  (* USES (IMPLEMENTATION)  *)
 
   TYPE
@@ -10,13 +10,13 @@ DELPHI
   PUBLIC
     ZStatements : TObjectList;
     SymTab : TSymbolTable;
+    ReturnType : TZcDataType;
   PRIVATE
     CurrentFunction : TZcOpFunction;
     procedure WriteStr(S : string);
     procedure WriteOp(Op : TZcOp);
     procedure AddGlobalStatement(Op : TZcOp);
     procedure CleanUp;
-    function IsLocalVarDecl : boolean;
   CREATE
     ZStatements := TObjectList.Create(False);
     //Alla nodes ägs av globalcleanups
@@ -25,7 +25,9 @@ DELPHI
     CleanUp;
   ERRORS
     200 : Result := 'Not a floating point value';
-    201 : Result := 'Variable name already defined in this scope';
+    201 : Result := 'Variable already defined in this scope';
+    202 : Result := 'Return value expected';
+    203 : Result := 'Function should not return a value';
 END_DELPHI
 
 (* Arbitrary Code *)
@@ -86,11 +88,6 @@ end;
 procedure T-->Grammar<--.AddGlobalStatement(Op : TZcOp);
 begin
   ZStatements.Add(Op);
-end;
-
-function T-->Grammar<--.IsLocalVarDecl : boolean;
-begin
-  Result := fCurrentInputSymbol=floatSym;
 end;
 
 procedure T-->Grammar<--.CleanUp;
@@ -198,6 +195,7 @@ PRODUCTIONS
 Zc      (. var I : integer; Func : TZcOpFunction; .)
 = (. 
      Func := TZcOpFunction.Create(GlobalCleanUps);
+     Func.ReturnType := Self.ReturnType;
      Self.CurrentFunction := Func;
      
      SymTab.PushScope;
@@ -252,10 +250,9 @@ LocalVar       (. var Loc : TZcOpLocalVar; .)
         else
         begin
           Loc := TZcOpLocalVar.Create(GlobalCleanUps);
-          Loc.Ordinal := CurrentFunction.Locals.Count;
           Loc.Id := LexString;
+          CurrentFunction.AddLocal(Loc);
           SymTab.Add(Loc.Id,Loc);
-          CurrentFunction.Locals.Add(Loc);
         end;
      .)
      /* [ "=" ( Init | "stackalloc" Type "[" Expr<Op> "]") ] */
@@ -323,8 +320,7 @@ EmbeddedStatement<var OutOp : TZcOp>
   (. var
        Op,IfOp,IfBody,ElseOp : TZcOp;
   .)
-=
-  Block<OutOp>
+= Block<OutOp>
 | ";"   (. OutOp := MakeOp(zcNop); .)
 | StatementExpr<OutOp> ";"
 | "if" (. ElseOp := nil; .)
@@ -337,7 +333,23 @@ EmbeddedStatement<var OutOp : TZcOp>
 /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
 /* | "break" ";" */
 /* | "continue" ";" */
- | "return" Expr<Op> ";"   (. OutOp := MakeOp(zcReturn,[Op]); {return måste har ett expr} .)
+ | (. Op := nil; .) "return" [ Expr<Op> ] ";"   
+    (. 
+        if (Op=nil) then
+        begin
+          if CurrentFunction.ReturnType<>zctVoid then
+            SynError(202)
+          else
+            OutOp := MakeOp(zcReturn);
+        end else
+        begin
+          if CurrentFunction.ReturnType=zctVoid then
+            SynError(203)
+          else
+            //todo: testa rätt typ av returnvärde
+            OutOp := MakeOp(zcReturn,[Op]);
+        end;
+    .)
 .
 /*------------------------------------------------------------------------*/
 

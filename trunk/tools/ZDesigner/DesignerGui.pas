@@ -58,6 +58,7 @@ type
     function CreateNode: TTreeNode; override;
     function GetPopupMenu: TPopupMenu; override;
   public
+    ShowOpCodes : boolean;
     LockShowNode : TTreeNode;
     function AddNode(C : TZComponent; Parent : TTreenode) : TTreeNode;
     procedure SetRootComponent(C : TZComponent);
@@ -770,18 +771,18 @@ begin
         begin
           //Expression-nodes visas ska bara visas för debug, tillåt ej ändringar
           C.GetProperty(Prop,Value);
-          //Slopa kod-vy nu, måste fixa editorform compile all
-          {
-          if Value.ExpressionValue.Code.Count=0 then
-            Continue;
-          NestedNode := Items.AddChild(Node, Prop.Name ) as TZComponentTreeNode;
-          //NestedNode.ComponentList := Value.ExpressionValue.Code;
-          NestedNode.ImageIndex := 3;
-          NestedNode.SelectedIndex := NestedNode.ImageIndex;
-          NestedNode.Prop := Prop;
-          for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
-            AddNode(Value.ExpressionValue.Code.GetComponent(J),NestedNode);
-            }
+          if ShowOpCodes then
+          begin
+            if Value.ExpressionValue.Code.Count=0 then
+              Continue;
+            NestedNode := Items.AddChild(Node, Prop.Name ) as TZComponentTreeNode;
+            //NestedNode.ComponentList := Value.ExpressionValue.Code;
+            NestedNode.ImageIndex := 3;
+            NestedNode.SelectedIndex := NestedNode.ImageIndex;
+            NestedNode.Prop := Prop;
+            for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
+              AddNode(Value.ExpressionValue.Code.GetComponent(J),NestedNode);
+          end;
         end;
       zptComponentList :
         begin

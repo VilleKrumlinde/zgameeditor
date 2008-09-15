@@ -108,6 +108,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'WhileExp',{$ENDIF}integer(@WhileExp) - integer(Self), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source:='//this.Iteration=current iteration nr. Return false to end loop.';
+    List.GetLast.ReturnType := zctFloat;
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptFloat);
     List.GetLast.NeverPersist:=True;
@@ -156,6 +157,7 @@ procedure TCondition.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+    {$ifndef minimal}List.GetLast.ReturnType := zctFloat;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}integer(@OnTrue) - integer(Self), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}integer(@OnFalse) - integer(Self), zptComponentList);

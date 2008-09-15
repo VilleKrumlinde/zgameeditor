@@ -17,7 +17,7 @@ regenerated.
 ==============================================================================}
 
 interface
-uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,mwStringHashList;
+uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,ZClasses,mwStringHashList;
 
 
 
@@ -101,7 +101,6 @@ destructor Destroy; override;
     procedure WriteOp(Op : TZcOp);
     procedure AddGlobalStatement(Op : TZcOp);
     procedure CleanUp;
-    function IsLocalVarDecl : boolean;
 
   protected
     { Protected Declarations }
@@ -127,6 +126,7 @@ destructor Destroy; override;
   public
     ZStatements : TObjectList;
     SymTab : TSymbolTable;
+    ReturnType : TZcDataType;
 
   published
     { Published Declarations }
@@ -230,11 +230,6 @@ end;
 procedure TZc.AddGlobalStatement(Op : TZcOp);
 begin
   ZStatements.Add(Op);
-end;
-
-function TZc.IsLocalVarDecl : boolean;
-begin
-  Result := fCurrentInputSymbol=floatSym;
 end;
 
 procedure TZc.CleanUp;
@@ -1369,7 +1364,9 @@ begin
   81 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
-    201 : Result := 'Variable name already defined in this scope';
+    201 : Result := 'Variable already defined in this scope';
+    202 : Result := 'Return value expected';
+    203 : Result := 'Function should not return a value';
   else
     if Assigned(OnCustomError) then
       Result := OnCustomError(Self, ErrorCode, Data)
@@ -1793,10 +1790,28 @@ _EmbeddedStatement(ElseOp);
 end;
 OutOp  :=  MakeOp(zcIf,[IfOp,IfBody,ElseOp]);
 end else if (fCurrentInputSymbol = returnSym) then begin
+Op  :=  nil;
 Get;
+if _In(symSet[2], fCurrentInputSymbol) then begin
 _Expr(Op);
+end;
 Expect(_semicolonSym);
-OutOp  :=  MakeOp(zcReturn,[Op]);  {return  måste  har  ett  expr}
+
+  if  (Op=nil)  then
+  begin
+    if  CurrentFunction.ReturnType<>zctVoid  then
+      SynError(202)
+    else
+      OutOp  :=  MakeOp(zcReturn);
+  end  else
+  begin
+    if  CurrentFunction.ReturnType=zctVoid  then
+      SynError(203)
+    else
+      //todo:  testa  rätt  typ  av  returnvärde
+      OutOp  :=  MakeOp(zcReturn,[Op]);
+  end;
+
 end else begin SynError(79);
 end;
 end;
@@ -1835,10 +1850,9 @@ if  SymTab.ScopeContains(LexString)  then
 else
 begin
    Loc  :=  TZcOpLocalVar.Create(GlobalCleanUps);
-   Loc.Ordinal  :=  CurrentFunction.Locals.Count;
    Loc.Id  :=  LexString;
+   CurrentFunction.AddLocal(Loc);
    SymTab.Add(Loc.Id,Loc);
-   CurrentFunction.Locals.Add(Loc);
 end;
 
 end;
@@ -1882,6 +1896,7 @@ procedure TZc._Zc;var  I  :  integer;  Func  :  TZcOpFunction;
 begin
 
 Func  :=  TZcOpFunction.Create(GlobalCleanUps);
+Func.ReturnType  :=  Self.ReturnType;
 Self.CurrentFunction  :=  Func;
 
 SymTab.PushScope;

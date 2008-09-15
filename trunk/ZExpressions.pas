@@ -124,7 +124,7 @@ type
     Kind : TExpOpBinaryKind;
   end;
 
-  TExpOpJumpKind = (jsJumpAlways,jsJumpLT,jsJumpGT,jsJumpLE,jsJumpGE,jsJumpNE,jsJumpEQ,jsJumpReturn);
+  TExpOpJumpKind = (jsJumpAlways,jsJumpLT,jsJumpGT,jsJumpLE,jsJumpGE,jsJumpNE,jsJumpEQ);
   TExpJump = class(TExpBase)
   protected
     procedure Execute; override;
@@ -164,13 +164,12 @@ type
     TheArray : TDefineArray;
   end;
 
-  //Setup/destroy local stack frame
+  //Setup local stack frame
   TExpStackFrame = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (sfFrameSetup,sfFrameDestroy);
     Size : integer;
   end;
 
@@ -184,6 +183,16 @@ type
     Index : integer;
   end;
 
+  //Return from function
+  TExpReturn = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    HasFrame : boolean;
+    IsFunction : boolean;      //if false=simple expression
+    HasReturnValue : boolean;
+  end;
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -333,7 +342,6 @@ begin
   Jump := True;
   case Kind of
     jsJumpAlways : ;
-    jsJumpReturn : gReturnValue := gStack.PopFloat;
   else
     begin
       R := gStack.PopFloat;
@@ -580,7 +588,6 @@ end;
 procedure TExpStackFrame.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@Size) - integer(Self), zptInteger);
 end;
 
@@ -589,22 +596,11 @@ procedure TExpStackFrame.Execute;
 var
   I : integer;
 begin
-  case Kind of
-    sfFrameSetup:
-      begin
-        gStack.Push(pointer(gCurrentBP));
-        gCurrentBP := gStack.Count;
-        //Todo: make ZStack-class with MakeSpace-method
-        for I := 0 to Self.Size - 1 do
-          gStack.Add(nil);
-      end;
-    sfFrameDestroy:
-      begin
-        while gStack.Count>gCurrentBP do
-          gStack.Pop;
-        gCurrentBP := integer(gStack.Pop);
-      end;
-  end;
+  gStack.Push(pointer(gCurrentBP));
+  gCurrentBP := gStack.Count;
+  //Todo: make ZStack-class with MakeSpace-method
+  for I := 0 to Self.Size - 1 do
+    gStack.Add(nil);
 end;
 
 { TExpAccessLocal }
@@ -624,6 +620,39 @@ begin
   case Kind of
     loLoad: gStack.Push(TObject(P^));
     loStore: P^ := integer(gStack.Pop);
+  end;
+end;
+
+{ TExpReturn }
+
+procedure TExpReturn.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'HasFrame',{$ENDIF}integer(@HasFrame) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'IsFunction',{$ENDIF}integer(@IsFunction) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue) - integer(Self), zptBoolean);
+end;
+
+procedure TExpReturn.Execute;
+var
+  RetVal : integer;
+begin
+  if HasReturnValue then
+  begin
+    //Local0 holds returnvalue
+    RetVal := PInteger( gStack.GetPtrToItem( gCurrentBP ) )^;
+  end;
+
+  if HasFrame then
+  begin
+    while gStack.Count>gCurrentBP do
+      gStack.Pop;
+    gCurrentBP := integer(gStack.Pop);
+  end;
+
+  if HasReturnValue then
+  begin
+    gReturnValue := PFloat(@RetVal)^;
   end;
 end;
 
@@ -661,6 +690,8 @@ initialization
   ZClasses.Register(TExpStackFrame,ExpStackFrameClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAccessLocal,ExpAccessLocalClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpReturn,ExpReturnClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}

@@ -1,8 +1,10 @@
 unit Zc_Ops;
 
+//Abstract Syntax Tree for Zc-script
+
 interface
 
-uses Contnrs;
+uses Contnrs, ZClasses;
 
 type
   TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
@@ -25,16 +27,6 @@ type
     procedure Optimize; virtual;
   end;
 
-  TZcOpFunction = class(TZcOp)
-  public
-    Locals : TObjectList;
-    Statements : TObjectList;
-    constructor Create(Owner : TObjectList); override;
-    destructor Destroy; override;
-    function ToString : string; override;
-    procedure Optimize; override;
-  end;
-
   TZcOpVariableBase = class(TZcOp)
   public
     Ordinal : integer;
@@ -44,6 +36,20 @@ type
   public
     function ToString : string; override;
   end;
+
+  TZcOpFunction = class(TZcOp)
+  public
+    Locals : TObjectList;
+    Statements : TObjectList;
+    ReturnType : TZcDataType;
+    constructor Create(Owner : TObjectList); override;
+    destructor Destroy; override;
+    function ToString : string; override;
+    procedure Optimize; override;
+    procedure AddLocal(Local : TZcOpLocalVar);
+    function GetStackSize : integer; 
+  end;
+
 
 implementation
 
@@ -172,6 +178,22 @@ begin
   Statements.Free;
   Locals.Free;
   inherited;
+end;
+
+procedure TZcOpFunction.AddLocal(Local: TZcOpLocalVar);
+begin
+  Local.Ordinal := Locals.Count;
+  if ReturnType<>zctVoid then
+    Inc(Local.Ordinal);
+  Locals.Add(Local);
+end;
+
+function TZcOpFunction.GetStackSize: integer;
+begin
+  //One entry per local var + one entry for return value
+  Result := Locals.Count;
+  if ReturnType<>zctVoid then
+    Inc(Result);
 end;
 
 procedure TZcOpFunction.Optimize;
