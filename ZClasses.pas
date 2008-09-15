@@ -49,6 +49,7 @@ type
  ZExpressionClassId,ExpConstantClassId,ExpOpBinaryClassId,ExpPropValueClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
+ ExpReturnClassId,
  DefineConstantClassId,DefineArrayClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -209,13 +210,16 @@ type
     Source : string;            //Expression source
     {$endif}
     Code : TZComponentList;     //Expression byte code
-    end;
+  end;
+
+  //Datatypes in Zc-script
+  TZcDataType = (zctVoid,zctFloat);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
     Size : integer;
     Data : pointer;
-    end;
+  end;
 
   TZPropertyValue = record
     {$IFNDEF MINIMAL}
@@ -266,6 +270,7 @@ type
     Options : array of string;  //För bytes: Valbara alternativ
     HideInGui : boolean;        //Visa inte denna prop i gui
     IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
+    ReturnType : TZcDataType;      //For expresssions: return type of expression
     function IsDefaultValue(const Value : TZPropertyValue) : boolean;
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);

@@ -35,7 +35,8 @@ type
   end;
 
 
-procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; Root : TZComponent; SymTab : TSymbolTable);
+procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; SymTab : TSymbolTable;
+  ReturnType : TZcDataType);
 
 function ParsePropRef(SymTab : TSymbolTable;
   ThisC : TZComponent;
@@ -156,11 +157,11 @@ type
   TZCodeGen = class
   private
     Target : TZComponentList;
-    Root : TZComponent;
     Component : TZComponent;
     SymTab : TSymbolTable;
     Labels : TObjectList;
     LReturn : TZCodeLabel;
+    CurrentFunction : TZcOpFunction;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
@@ -391,25 +392,35 @@ var
   end;
 
   procedure DoGenReturn;
+  var
+    L : TExpAccessLocal;
   begin
     //"return x", generate value + jump to exit
     if not Assigned(LReturn) then
       //Global label shared for all return statements
       LReturn := NewLabel;
-    GenValue(Op.Child(0));
-    GenJump(jsJumpReturn,LReturn);
+    if CurrentFunction.ReturnType<>zctVoid then
+    begin
+      GenValue(Op.Child(0));
+      //Store return value in local0
+      L := TExpAccessLocal.Create(Target);
+      L.Index := 0;
+      L.Kind := loStore;
+    end;
+    GenJump(jsJumpAlways,LReturn);
   end;
 
   procedure DoGenFunction(Func : TZcOpFunction);
   var
     I : integer;
     Frame : TExpStackFrame;
+    Ret : TExpReturn;
   begin
-    if Func.Locals.Count>0 then
+    Self.CurrentFunction := Func;
+    if Func.GetStackSize>0 then
     begin
       Frame := TExpStackFrame.Create(Target);
-      Frame.Kind := sfFrameSetup;
-      Frame.Size := Func.Locals.Count;
+      Frame.Size := Func.GetStackSize;
     end;
     for I := 0 to Func.Statements.Count - 1 do
     begin
@@ -417,11 +428,9 @@ var
     end;
     if Assigned(LReturn) then
       DefineLabel(LReturn);
-    if Func.Locals.Count>0 then
-    begin
-      Frame := TExpStackFrame.Create(Target);
-      Frame.Kind := sfFrameDestroy;
-    end;
+    Ret := TExpReturn.Create(Target);
+    Ret.HasFrame := Func.GetStackSize>0;
+    Ret.HasReturnValue := Func.ReturnType<>zctVoid;
   end;
 
 begin
@@ -714,7 +723,7 @@ end;
 
 //////////////////////////
 
-procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; Root : TZComponent; SymTab : TSymbolTable);
+procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; SymTab : TSymbolTable; ReturnType : TZcDataType);
 var
   Compiler : TZc;
   CodeGen : TZCodeGen;
@@ -730,6 +739,7 @@ begin
   Compiler := TZc.Create(nil);
   try
     Compiler.SymTab := SymTab;
+    Compiler.ReturnType := ReturnType;
     Compiler.SourceStream.Write(S[1],Length(S));
     Compiler.Execute;
     if not Compiler.Successful then
@@ -753,7 +763,6 @@ begin
     Target.Clear;
     CodeGen := TZCodeGen.Create;
     try
-      CodeGen.Root := Root;
       CodeGen.Target := Target;
       CodeGen.Component := ThisC;
       CodeGen.SymTab := SymTab;
