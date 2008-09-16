@@ -1399,7 +1399,21 @@ end;
 function Platform_ShowOptionDialog : boolean;
 begin
   Result := DialogBoxParam(hInstance, 'IDDLG_OPTIONSDIALOG', 0,@Options,0)=ID_OK;
-//  Result := True;
+end;
+
+function Platform_GetDisplayRefreshRate : integer;
+var
+  dmScreenSettings : DEVMODE;
+begin
+  ZeroMemory(@dmScreenSettings, SizeOf(dmScreenSettings));
+  dmScreenSettings.dmSize       := SizeOf(dmScreenSettings);
+  EnumDisplaySettings(nil,0,dmScreenSettings);
+  Result := dmScreenSettings.dmDisplayFrequency;
+end;
+
+procedure Platform_Sleep(time : integer);
+begin
+  Sleep(time);
 end;
 
 {initialization

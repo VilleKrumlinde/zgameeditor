@@ -771,7 +771,7 @@ begin
         begin
           //Expression-nodes visas ska bara visas för debug, tillåt ej ändringar
           C.GetProperty(Prop,Value);
-          if ShowOpCodes then
+          if false then //(displaying opcodes is too slow) if ShowOpCodes then
           begin
             if Value.ExpressionValue.Code.Count=0 then
               Continue;
