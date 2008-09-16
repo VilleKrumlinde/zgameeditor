@@ -55,6 +55,8 @@ type
     FpsCounter,FpsTime : single;
     CurrentState : TAppState;
     HasShutdown : boolean;
+    TargetFrameRate : integer;
+    NextFrameTime : single;
     procedure Init;
     procedure Shutdown;
     procedure MainSlice;
@@ -99,6 +101,7 @@ type
     ActualViewportRatio : single;
     Icon : TZBinaryPropValue;
     Clock : TClock;
+    LimitFrameRate : boolean;
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
@@ -212,6 +215,10 @@ begin
     Renderer.InitRenderer;
     UpdateViewport;
 
+    TargetFrameRate := Platform_GetDisplayRefreshRate;
+    if (TargetFrameRate<50) or (TargetFrameRate>200) then
+      TargetFrameRate := 60;
+
     NoSound := Platform_CommandLine('s');
     if not NoSound then
       Platform_InitAudio;
@@ -253,6 +260,11 @@ begin
 end;
 
 function TZApplication.Main : boolean;
+{$ifdef minimal}
+var
+  Remaining : integer;
+{$endif}
+
   {$ifndef minimal}
   procedure InDumpDebugInfo;
   var
@@ -265,26 +277,44 @@ function TZApplication.Main : boolean;
   end;
  {$endif}
 begin
-  UpdateTime;
 
-  UpdateStateVars;
-
-  //Dela upp tiden.
-  //MainSlice anropas för varje movementfactor 1, detta så att collision sker
-  //för varje enskilt movement.
-  Clock.Slice(Self.MainSlice);
-
-  //Draw all
-  UpdateScreen;
-
-  Inc(FpsFrames);
-  if (Time-FpsTime)>1.0 then
+  {$ifdef xminimal}
+  if (not LimitFrameRate) or
+     ( (Platform_GetTime>=NextFrameTime) {or (FpsCounter<TargetFrames)} ) then
+  {$endif}
   begin
-    FpsCounter := FpsFrames / (Time-FpsTime);
-    FpsFrames := 0;
-    FpsTime := Time;
-    {$ifndef minimal}
-    InDumpDebugInfo;
+    NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
+
+    UpdateTime;
+
+    UpdateStateVars;
+
+    //Dela upp tiden.
+    //MainSlice anropas för varje movementfactor 1, detta så att collision sker
+    //för varje enskilt movement.
+    Clock.Slice(Self.MainSlice);
+
+    //Draw all
+    UpdateScreen;
+
+    Inc(FpsFrames);
+    if (Time-FpsTime)>1.0 then
+    begin
+      FpsCounter := FpsFrames / (Time-FpsTime);
+      FpsFrames := 0;
+      FpsTime := Time;
+      {$ifndef minimal}
+      InDumpDebugInfo;
+      {$endif}
+    end;
+
+    {$ifdef minimal}
+    if LimitFrameRate then
+    begin //Give remaining time back to the OS to avoid 100% cpu pressure
+      Remaining := Trunc((NextFrameTime - Platform_GetTime) * 1000);
+      if Remaining>0 then
+        Platform_Sleep(Remaining);
+    end;
     {$endif}
   end;
 
@@ -484,6 +514,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
 
   List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'LimitFrameRate',{$ENDIF}integer(@LimitFrameRate) - integer(Self), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
   List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 1;
@@ -537,28 +569,6 @@ end;
 
 { TClock }
 
-(*
-procedure TClock.Slice(Callback : TSliceCallback);
-const
-  //Maximum time step for update and collision=1/10 second
-  MaxUpdateStep = 1.0 / 10;
-var
-  SaveMove,CurMove : single;
-begin
-  SaveMove := DeltaTime;
-  CurMove := DeltaTime;
-  while CurMove>0 do
-  begin
-    if CurMove>MaxUpdateStep then
-      DeltaTime := MaxUpdateStep
-    else
-      DeltaTime := CurMove;
-    Callback;
-    CurMove := CurMove - MaxUpdateStep;
-  end;
-  DeltaTime := SaveMove;
-end;
-*)
 procedure TClock.Slice(Callback : TSliceCallback);
 begin
   //Skip slicing now, detlatime is maxed out directly in updatetime instead

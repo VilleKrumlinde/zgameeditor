@@ -412,14 +412,6 @@ object EditorForm: TEditorForm
                   Width = 33
                   ExplicitWidth = 33
                 end
-                inherited NotesEdit: TComboBox
-                  ItemHeight = 0
-                end
-              end
-              inherited GroupBox3: TGroupBox
-                inherited Osc1WaveformCombo: TComboBox
-                  ItemHeight = 0
-                end
               end
               inherited GroupBox2: TGroupBox
                 inherited Label3: TLabel
@@ -436,16 +428,9 @@ object EditorForm: TEditorForm
                   Width = 62
                   ExplicitWidth = 62
                 end
-                inherited Osc2WaveformCombo: TComboBox
-                  ItemHeight = 0
-                end
               end
             end
             inherited TabSheet2: TTabSheet
-              ExplicitLeft = 0
-              ExplicitTop = 0
-              ExplicitWidth = 0
-              ExplicitHeight = 0
               inherited Label15: TLabel
                 Width = 58
                 ExplicitWidth = 58
@@ -482,10 +467,6 @@ object EditorForm: TEditorForm
         Caption = 'ViewerBlankTabSheet'
         ImageIndex = 3
         TabVisible = False
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
       end
     end
     object LowerRightPanel: TPanel
@@ -507,25 +488,17 @@ object EditorForm: TEditorForm
         Top = 1
         Width = 459
         Height = 154
-        ActivePage = ShaderTabSheet
+        ActivePage = TabSheet3
         Align = alClient
         TabOrder = 0
         object TabSheet2: TTabSheet
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             451
             144)
@@ -553,10 +526,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             451
             144)

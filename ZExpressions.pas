@@ -23,6 +23,8 @@ unit ZExpressions;
 {
   Expressions.
   Use global proc RunCode(...) to execute code.
+
+  Runtime Virtual Machine
 }
 
 interface
@@ -62,13 +64,13 @@ type
   private
     Limit : integer;
     Data : PFloatArray;
-    function GetElement(const I1, I2: integer): PFloat;
+    function PopAndGetElement : PFloat;
     procedure CleanUp;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Dimensions : (dadOne,dadTwo);
-    SizeDim1,SizeDim2 : integer;
+    Dimensions : (dadOne,dadTwo,dadThree);
+    SizeDim1,SizeDim2,SizeDim3 : integer;
     destructor Destroy; override;
   end;
 
@@ -76,6 +78,7 @@ type
   TExpBase = class(TZComponent)
   protected
     procedure Execute; virtual; abstract;
+    {$ifndef minimal}public function ExpAsText : string;{$endif}
   end;
 
   //Load value of prop to stack
@@ -207,7 +210,7 @@ implementation
 
 
 uses ZMath,ZPlatform,ZApplication
-{$ifndef minimal},ZLog,SysUtils{$endif};
+{$ifndef minimal},ZLog,SysUtils,Math{$endif};
 
 var
   //Expression execution context
@@ -220,6 +223,7 @@ var
 begin
   //Pc can be modified in jump-code
   gCurrentPc := 0;
+  gCurrentBP := 0;
   Limit := Code.Count;
   while gCurrentPc<Limit do
   begin
@@ -480,16 +484,10 @@ end;
 
 procedure TExpArrayRead.Execute;
 var
-  A1,A2,V : single;
+  V : single;
   P : PFloat;
 begin
-  A2 := gStack.PopFloat;
-  if TheArray.Dimensions=dadTwo then
-    A1 := gStack.PopFloat
-  else
-    A1 := 0;
-
-  P := TheArray.GetElement( Trunc(A1), Trunc(A2) );
+  P := TheArray.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
     ZHalt('Array read outside range: ' + TheArray.Name);
@@ -510,9 +508,10 @@ procedure TDefineArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['One','Two']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['One','Two','Three']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}integer(@SizeDim1) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}integer(@SizeDim2) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'SizeDim3',{$ENDIF}integer(@SizeDim3) - integer(Self), zptInteger);
 end;
 
 destructor TDefineArray.Destroy;
@@ -521,13 +520,24 @@ begin
   inherited;
 end;
 
-function TDefineArray.GetElement(const I1, I2: integer): PFloat;
+function TDefineArray.PopAndGetElement : PFloat;
 var
   Index : integer;
+  I1,I2,I3 : integer;
 begin
+  I3 := Trunc(gStack.PopFloat);
+  if Self.Dimensions>=dadTwo then
+    I2 := Trunc(gStack.PopFloat)
+  else
+    I2 := 0;
+  if Self.Dimensions=dadThree then
+    I1 := Trunc(gStack.PopFloat)
+  else
+    I1 := 0;
+
   {$ifndef minimal}
   //Array size can only be changed in zdesigner, not runtime
-  if Limit<>SizeDim1 * (SizeDim2+1) then
+  if Limit<>SizeDim1 * (SizeDim2+1) * (SizeDim3+1) then
   begin
     CleanUp;
     Data := nil;
@@ -536,17 +546,20 @@ begin
 
   if Data=nil then
   begin
-    Limit := SizeDim1 * (SizeDim2+1);
+    Limit := SizeDim1 * (SizeDim2+1) * (SizeDim3+1);;
     GetMem(Data, Limit*SizeOf(single) );
   end;
 
-  Index := (I1*SizeDim2) + I2;
+  Index := (I1*SizeDim3) + (I2*SizeDim2) + I3;
 
   {$ifndef minimal}
-  if Index>=Limit then
+  if (Index>=Limit) or
+    (I3>SizeDim1) or
+    (I2>SizeDim2) or
+    (I1>SizeDim3) then
   begin
     {$ifdef zlog}
-    ZLog.GetLog(Self.ClassName).Write('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2));
+    ZLog.GetLog(Self.ClassName).Write('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     {$endif}
     Result := nil;
     Exit;
@@ -566,16 +579,9 @@ end;
 
 procedure TExpArrayWrite.Execute;
 var
-  A1,A2 : single;
   P : Pointer;
 begin
-  A2 := gStack.PopFloat;
-  if TheArray.Dimensions=dadTwo then
-    A1 := gStack.PopFloat
-  else
-    A1 := 0;
-
-  P := TheArray.GetElement(Trunc(A1), Trunc(A2));
+  P := TheArray.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
     ZHalt('Array assign outside range: ' + TheArray.Name);
@@ -655,6 +661,43 @@ begin
     gReturnValue := PFloat(@RetVal)^;
   end;
 end;
+
+{ TExpBase }
+
+{$ifndef minimal}
+function TExpBase.ExpAsText: string;
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I : integer;
+  S : string;
+begin
+  Result := ComponentManager.GetInfo(Self).ZClassName;
+  PropList := Self.GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    Self.GetProperty(Prop,Value);
+    case Prop.PropertyType of
+      zptFloat,zptScalar : S := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
+      zptInteger : S := IntToStr(Value.IntegerValue);
+      zptComponentRef : S := Value.ComponentValue.Name;
+      zptPropertyRef :
+        begin
+          S := Value.PropertyValue.Component.Name + ' ' + Value.PropertyValue.Prop.Name;
+          if Value.PropertyValue.Index>0 then
+            S := S + ' ' + IntToStr(Value.PropertyValue.Index);
+        end;
+      zptByte : S := IntToStr(Value.ByteValue);
+      zptBoolean : S := IntToStr( byte(Value.BooleanValue) );
+    else
+      S := '';
+    end;
+    Result:=Result + ' ' + S;
+  end;
+end;
+{$endif}
 
 initialization
 

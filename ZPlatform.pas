@@ -31,6 +31,7 @@ procedure Platform_InitGlobals;
 
 //W and H is desired rez, returns actual rez.
 procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+function Platform_GetDisplayRefreshRate : integer;
 
 procedure Platform_ShutdownScreen;
 procedure Platform_SwapBuffers;
@@ -59,6 +60,7 @@ function Platform_CreateMutex : pointer;
 procedure Platform_FreeMutex(P : pointer);
 procedure Platform_EnterMutex(P : pointer);
 procedure Platform_LeaveMutex(P : pointer);
+procedure Platform_Sleep(time : integer);
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 //function Platform_GenerateFontTexture(Char : integer) : integer;

@@ -393,6 +393,18 @@ begin
 end;
 {$endif}
 
+
+function Platform_GetDisplayRefreshRate : integer;
+begin
+  //Not supported via SDL?
+  Result := 0;
+end;
+
+procedure Platform_Sleep(time : integer);
+begin
+  SDL_Delay(time);
+end;
+
 initialization
 
   // Initialize SDL

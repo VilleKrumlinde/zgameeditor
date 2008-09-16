@@ -260,6 +260,7 @@ type
     RendererInitCalled : boolean;
     PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
+    ShowOpCodes : boolean;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -325,7 +326,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.2';
+  AppVersion = '1.9.3b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -430,7 +431,7 @@ begin
   RefreshMenuFromMruList;
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
-  Tree.ShowOpCodes := DebugHook<>0;
+  ShowOpCodes := DebugHook<>0;
 
   Platform_InitGlobals;  //Nollställ timer etc
 
@@ -1410,6 +1411,7 @@ var
   Prop : TZProperty;
   PropValue : TZPropertyValue;
   Success : boolean;
+  I : integer;
 begin
   //Spara ändrad text i edit-ruta
   ExprEdit.Text := TrimRight(ExprSynEdit.Text);
@@ -1447,6 +1449,12 @@ begin
     ExprCompileButton.Enabled := False;
     CompileErrorLabel.Caption := '';
     CompileErrorLabel.BevelKind := bkNone;
+    if ShowOpCodes then
+    begin
+      ZLog.GetLog(Self.ClassName).Write('----');
+      for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
+        ZLog.GetLog(Self.ClassName).Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+    end;
   end;
 end;
 
@@ -1463,7 +1471,7 @@ var
 begin
   if Prop.IsDefaultValue(Expr) then
   begin
-    //Generate no code for an empty expression 
+    //Generate no code for an empty expression
     Expr.ExpressionValue.Code.Clear;
     Exit;
   end;
