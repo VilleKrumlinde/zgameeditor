@@ -99,6 +99,10 @@ object EditorForm: TEditorForm
       object ViewerGlTabSheet: TTabSheet
         Caption = 'ViewerGlTabSheet'
         TabVisible = False
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object RotateModelPanel: TPanel
           Left = 0
           Top = 0
@@ -373,6 +377,8 @@ object EditorForm: TEditorForm
             ExplicitWidth = 626
             ExplicitHeight = 564
             inherited TabSheet1: TTabSheet
+              ExplicitLeft = 4
+              ExplicitTop = 24
               ExplicitWidth = 618
               ExplicitHeight = 536
               inherited Label8: TLabel
@@ -431,6 +437,10 @@ object EditorForm: TEditorForm
               end
             end
             inherited TabSheet2: TTabSheet
+              ExplicitLeft = 0
+              ExplicitTop = 0
+              ExplicitWidth = 0
+              ExplicitHeight = 0
               inherited Label15: TLabel
                 Width = 58
                 ExplicitWidth = 58
@@ -467,6 +477,10 @@ object EditorForm: TEditorForm
         Caption = 'ViewerBlankTabSheet'
         ImageIndex = 3
         TabVisible = False
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
     end
     object LowerRightPanel: TPanel
@@ -495,10 +509,18 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             451
             144)
@@ -526,6 +548,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             451
             144)
@@ -582,6 +608,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             451
             144)

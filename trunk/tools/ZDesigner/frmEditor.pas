@@ -261,6 +261,7 @@ type
     PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
     ShowOpCodes : boolean;
+    ZcGlobalNames : TObjectList;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -269,7 +270,7 @@ type
     procedure OnPropValueChange;
     procedure OnTreeSelectItem(Sender : TObject; Node : TTreeNode);
     procedure OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
-    procedure CompileAll;
+    function CompileAll : boolean;
     procedure ReadProjectSettingsFromIni;
     procedure WriteProjectSettingsToIni;
     procedure SetShowNode(Node : TZComponent);
@@ -336,7 +337,7 @@ implementation
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
   ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitPEFile,unitResourceDetails,
-  ActiveX, u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics;
+  ActiveX, u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops;
 
 { TEditorForm }
 
@@ -419,6 +420,8 @@ begin
   MruList := TStringList.Create;
   MruList.StrictDelimiter := True;
   MruList.Duplicates := dupIgnore;
+
+  ZcGlobalNames := TObjectList.Create(True);
 
   //öppna editor direkt
   if (ParamCount=1) and FileExists(ParamStr(1)) then
@@ -507,9 +510,6 @@ begin
 
   RefreshSymbolTable;
 
-  //Must compile directly after load because no zc-instructions are saved in the xml
-  CompileAll;
-
 //  Root.Update;
 
   //Sätt till nytt värde så att form.caption ändras
@@ -519,6 +519,9 @@ begin
   ViewerPageControl.ActivePage := ViewerBlankTabSheet;
 
   ReadProjectSettingsFromIni;
+
+  //Must compile directly after load because no zc-instructions are saved in the xml
+  CompileAll;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -560,6 +563,7 @@ var
   I : integer;
   Con : TDefineConstant;
 begin
+  ZcGlobalNames.Clear;
   SymTab.ClearAll;
 
   for I := 0 to PredefinedConstants.Count - 1 do
@@ -973,7 +977,8 @@ procedure TEditorForm.SaveBinaryMenuItemClick(Sender: TObject);
 var
   Stream : TMemoryStream;
 begin
-  CompileAll;
+  if not CompileAll then
+    Exit;
   if not SaveDialog.Execute then
     Exit;
   Stream := ComponentManager.SaveBinaryToStream(Root) as TMemoryStream;
@@ -1286,6 +1291,7 @@ begin
   SymTab.Free;
   MruList.Free;
   PredefinedConstants.Free;
+  ZcGlobalNames.Free;
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
@@ -1423,8 +1429,13 @@ begin
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
-    DoCompile(Tree.ZSelected,PropValue,Prop);
-    Success:=True;
+    if C is TZLibrary then
+      Success := CompileAll
+    else
+    begin
+      DoCompile(Tree.ZSelected,PropValue,Prop);
+      Success:=True;
+    end;
   except
     on E : EParseError do
     begin
@@ -1494,16 +1505,14 @@ begin
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
   try
-    Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType);
-    if Tree.ShowOpCodes then
-      Tree.RefreshNode(Node,C);
+    Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
   end;
 end;
 
-procedure TEditorForm.CompileAll;
+function TEditorForm.CompileAll : boolean;
 var
   I,J,CompiledCount : integer;
   Node : TZComponentTreeNode;
@@ -1511,9 +1520,20 @@ var
   Prop : TZProperty;
   PropValue : TZPropertyValue;
   PropList : TZPropertyList;
+  Success : boolean;
 begin
   CompiledCount := 0;
   Tree.Items.BeginUpdate;
+  Success := True;
+
+  for I := 0 to ZcGlobalNames.Count - 1 do
+  begin
+    //Remove user function names from symtab
+    if SymTab.Contains(TZcOpFunction(ZcGlobalNames[I]).Id) then
+      SymTab.Remove(TZcOpFunction(ZcGlobalNames[I]).Id);
+  end;
+  ZcGlobalNames.Clear;
+
   try
     I := 0;
     while I<Tree.Items.Count do
@@ -1533,7 +1553,12 @@ begin
             try
               DoCompile(Node,PropValue,Prop);
             except on E : Exception do
-              ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
+              begin
+                ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
+                Node.Expand(True);
+                Tree.Selected := Node;
+                Success := False;
+              end;
             end;
             //Ifall expressioninstruktioner visas så måste träd refreshas
             //Men då tar omkompilering 5 sekunder
@@ -1548,6 +1573,7 @@ begin
     Tree.Items.EndUpdate;
   end;
   ZLog.GetLog(Self.ClassName).Write('Compiled expressions: ' + IntToStr(CompiledCount));
+  Result := Success;
 end;
 
 procedure TEditorForm.BuildBinary(const PlayerName,OutputName : string);
@@ -1558,7 +1584,8 @@ var
   IsPiggy : boolean;
 begin
   IsPiggy := (PlayerName<>'');
-  CompileAll;
+  if not CompileAll then
+    Exit;
   M2 := ComponentManager.SaveBinaryToStream(Root) as TMemoryStream;
   M1 := TMemoryStream.Create;
   try
@@ -2159,10 +2186,10 @@ end;
 
 procedure TEditorForm.AppPreviewStartActionExecute(Sender: TObject);
 begin
-  //todo: no need compile all if constants can be kept (compile optimize false)
   if (Tree.ZSelected.Component<>ZApp) and (ShowNode<>ZApp) then
     Exit;
-  CompileAll;
+  if not CompileAll then
+    Exit;
   try
     ZApp.DesignerReset;  //Reset timer-components etc
     ZApp.DesignerStart(Glp.Width,Glp.Height);

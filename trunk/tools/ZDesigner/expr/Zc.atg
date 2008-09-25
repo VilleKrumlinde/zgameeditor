@@ -8,36 +8,39 @@ DELPHI
 
 
   PUBLIC
-    ZStatements : TObjectList;
+    ZFunctions : TObjectList;
     SymTab : TSymbolTable;
     ReturnType : TZcDataType;
+    AllowFunctions : boolean;
+    GlobalNames : TObjectList;    
   PRIVATE
     CurrentFunction : TZcOpFunction;
     procedure WriteStr(S : string);
     procedure WriteOp(Op : TZcOp);
-    procedure AddGlobalStatement(Op : TZcOp);
     procedure CleanUp;
+    function NoFunctionsAllowed : boolean;
   CREATE
-    ZStatements := TObjectList.Create(False);
-    //Alla nodes ägs av globalcleanups
-    GlobalCleanUps := TObjectList.Create;
+    ZFunctions := TObjectList.Create(False);
+    //Alla nodes ägs av FunctionCleanUps
+    FunctionCleanUps := TObjectList.Create(True);
   DESTROY
     CleanUp;
   ERRORS
     200 : Result := 'Not a floating point value';
-    201 : Result := 'Variable already defined in this scope';
+    201 : Result := 'Name already defined in this scope';
     202 : Result := 'Return value expected';
     203 : Result := 'Function should not return a value';
+    204 : Result := 'Only function definitions are allowed here';
 END_DELPHI
 
 (* Arbitrary Code *)
 
 var
-  GlobalCleanUps : TObjectList;
+  FunctionCleanUps : TObjectList;
 
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 begin
-  Result := TZcOp.Create(GlobalCleanUps);
+  Result := TZcOp.Create(FunctionCleanUps);
   Result.Kind := Kind;
 end;
 function MakeOp(Kind : TZcOpKind; Value : single) : TZcOp; overload;
@@ -85,18 +88,16 @@ begin
   WriteStr(Op.ToString);
 end;
 
-procedure T-->Grammar<--.AddGlobalStatement(Op : TZcOp);
-begin
-  ZStatements.Add(Op);
-end;
 
 procedure T-->Grammar<--.CleanUp;
-//var
-//  I : integer;
 begin
-//  for I := 0 to ZSTatements.Count-1 do TObject(ZStatements[I]).Free;
-  ZStatements.Free;
-  GlobalCleanUps.Free;
+  ZFunctions.Free;
+  FunctionCleanUps.Free;
+end;
+
+function T-->Grammar<--.NoFunctionsAllowed : boolean;
+begin
+  Result := not AllowFunctions;
 end;
 
 CHARACTERS
@@ -192,31 +193,64 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
-Zc      (. var I : integer; Func : TZcOpFunction; .)
-= (. 
-     Func := TZcOpFunction.Create(GlobalCleanUps);
-     Func.ReturnType := Self.ReturnType;
-     Self.CurrentFunction := Func;
-     
-     SymTab.PushScope;
+Zc (. var 
+        I : integer; 
+        Func : TZcOpFunction; 
+    .)
+= 
+
+  IF AllowFunctions THEN 
+  BEGIN { 
+    "void" ident (. 
+          if SymTab.Contains(LexString) then
+            SynError(201)
+          else
+          begin
+            Func := TZcOpFunction.Create(GlobalNames);
+            Func.Id := LexString;
+            SymTab.Add(Func.Id,Func);
+            ZFunctions.Add(Func); 
+            Self.CurrentFunction := Func;
+            SymTab.PushScope;
+          end;
+       .)
+    "(" /* [ FormalParams ] */ ")" "{" ZcFuncBody "}"  
+        (. 
+           SymTab.PopScope;
+        .)
+    } 
+  END
+
+
+  (. 
+     if NoFunctionsAllowed then
+     begin
+       Func := TZcOpFunction.Create(FunctionCleanUps);
+       Func.ReturnType := Self.ReturnType;
+       Self.CurrentFunction := Func;
+       SymTab.PushScope;
+       ZFunctions.Add(Func);
+     end else
+       Self.CurrentFunction := nil;
   .)
 
   /* A zc-expression is treated like the body of a nameless function
      to allow local var declarations  */
 
-  ZcFuncBody
+  IF NoFunctionsAllowed THEN BEGIN ZcFuncBody END
 
   (. 
-     SymTab.PopScope;
-  
-     AddGlobalStatement(Func);
+     if NoFunctionsAllowed then
+     begin
+       SymTab.PopScope;
+     end;
      
      if Successful then
      begin
-       for I:=0 to ZStatements.Count-1 do
+       for I:=0 to ZFunctions.Count-1 do
        begin
-         TZcOp(ZStatements[I]).Optimize;
-         WriteOp(TZcOp(ZStatements[I]));
+         TZcOp(ZFunctions[I]).Optimize;
+         WriteOp(TZcOp(ZFunctions[I]));
        end;
      end;
   .)
@@ -249,7 +283,7 @@ LocalVar       (. var Loc : TZcOpLocalVar; .)
           SynError(201)
         else
         begin
-          Loc := TZcOpLocalVar.Create(GlobalCleanUps);
+          Loc := TZcOpLocalVar.Create(FunctionCleanUps);
           Loc.Id := LexString;
           CurrentFunction.AddLocal(Loc);
           SymTab.Add(Loc.Id,Loc);
