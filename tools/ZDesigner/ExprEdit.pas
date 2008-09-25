@@ -24,7 +24,7 @@ unit ExprEdit;
 
 interface
 
-uses ZClasses,ZExpressions,Classes,uSymTab,SysUtils;
+uses ZClasses,ZExpressions,Classes,uSymTab,SysUtils,Contnrs;
 
 type
   EZcErrorBase = class(Exception);
@@ -35,8 +35,11 @@ type
   end;
 
 
-procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; SymTab : TSymbolTable;
-  ReturnType : TZcDataType);
+procedure Compile(ThisC : TZComponent;
+  const Ze : TZExpressionPropValue;
+  SymTab : TSymbolTable;
+  ReturnType : TZcDataType;
+  GlobalNames : TObjectList);
 
 function ParsePropRef(SymTab : TSymbolTable;
   ThisC : TZComponent;
@@ -47,7 +50,7 @@ function ParsePropRef(SymTab : TSymbolTable;
 implementation
 
 uses Zc,Zc_Ops,Dialogs,
-  DesignerGUI,CocoBase,Contnrs;
+  DesignerGUI,CocoBase;
 
 
 //ThisC = object som är 'this'
@@ -162,6 +165,7 @@ type
     Labels : TObjectList;
     LReturn : TZCodeLabel;
     CurrentFunction : TZcOpFunction;
+    IsLibrary : boolean;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
@@ -416,6 +420,11 @@ var
     Frame : TExpStackFrame;
     Ret : TExpReturn;
   begin
+    if IsLibrary then
+    begin
+      Func.Lib := Component as TZLibrary;
+      Func.LibIndex := Target.Count;
+    end;
     Self.CurrentFunction := Func;
     if Func.GetStackSize>0 then
     begin
@@ -488,6 +497,7 @@ procedure TZCodeGen.GenRoot(StmtList: TList);
 var
   I : integer;
 begin
+  IsLibrary := Component is TZLibrary;
   RemoveConstants(StmtList);
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
@@ -632,33 +642,53 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       GenValue(Op.Child(I));
     F := TExpFuncCall.Create(Target);
     F.Kind := Kind;
-    //todo: if !needreturnvalue generate code to discard return value from stack
+    if (not NeedReturnValue) and (HasReturnValue) then
+      //discard return value from stack
+      with TExpMisc.Create(Target) do
+        Kind := emPop;
+  end;
+
+  procedure DoGenUserFunc(UserFunc : TZcOpFunction);
+  var
+    F : TExpUserFuncCall;
+  begin
+    F := TExpUserFuncCall.Create(Target);
+    F.Lib := UserFunc.Lib;
+    F.Index := UserFunc.LibIndex;
+    //todo arguments, return value etc
   end;
 
 begin
   Assert(Op.Kind=zcFuncCall);
-  if (Op.Id='sin') then DoGenFunc(fcSin)
-  else if (Op.Id='sqrt') then DoGenFunc(fcSqrt)
-  else if (Op.Id='cos') then DoGenFunc(fcCos)
-  else if (Op.Id='tan') then DoGenFunc(fcTan)
-  else if (Op.Id='abs') then DoGenFunc(fcAbs)
-  else if (Op.Id='rnd') then DoGenFunc(fcRnd,0)
-  else if (Op.Id='random') then DoGenFunc(fcRandom,2)
-  else if (Op.Id='atan2') then DoGenFunc(fcAtan2,2)
-  else if (Op.Id='noise2') then DoGenFunc(fcNoise2,2)
-  else if (Op.Id='noise3') then DoGenFunc(fcNoise3,3)
-  else if (Op.Id='frac') then DoGenFunc(fcFrac)
-  else if (Op.Id='exp') then DoGenFunc(fcExp)
-  else if (Op.Id='clamp') then DoGenFunc(fcClamp,3)
-  else if (Op.Id='pow') then DoGenFunc(fcPow,2)
-  else if (Op.Id='centerMouse') then DoGenFunc(fcCenterMouse,0,False)
-  else if (Op.Id='setRandomSeed') then DoGenFunc(fcSetRandomSeed)
-  else if (Op.Id='ceil') then DoGenFunc(fcCeil)
-  else if (Op.Id='floor') then DoGenFunc(fcFloor)
-  else if (Op.Id='acos') then DoGenFunc(fcAcos)
-  else if (Op.Id='asin') then DoGenFunc(fcAsin)
-  else if (Op.Id='round') then DoGenFunc(fcRound)
-  else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
+
+  if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunction) then
+  begin
+    DoGenUserFunc(SymTab.Lookup(Op.Id) as TZcOpFunction);
+  end else
+  begin
+    if (Op.Id='sin') then DoGenFunc(fcSin)
+    else if (Op.Id='sqrt') then DoGenFunc(fcSqrt)
+    else if (Op.Id='cos') then DoGenFunc(fcCos)
+    else if (Op.Id='tan') then DoGenFunc(fcTan)
+    else if (Op.Id='abs') then DoGenFunc(fcAbs)
+    else if (Op.Id='rnd') then DoGenFunc(fcRnd,0)
+    else if (Op.Id='random') then DoGenFunc(fcRandom,2)
+    else if (Op.Id='atan2') then DoGenFunc(fcAtan2,2)
+    else if (Op.Id='noise2') then DoGenFunc(fcNoise2,2)
+    else if (Op.Id='noise3') then DoGenFunc(fcNoise3,3)
+    else if (Op.Id='frac') then DoGenFunc(fcFrac)
+    else if (Op.Id='exp') then DoGenFunc(fcExp)
+    else if (Op.Id='clamp') then DoGenFunc(fcClamp,3)
+    else if (Op.Id='pow') then DoGenFunc(fcPow,2)
+    else if (Op.Id='centerMouse') then DoGenFunc(fcCenterMouse,0)
+    else if (Op.Id='setRandomSeed') then DoGenFunc(fcSetRandomSeed)
+    else if (Op.Id='ceil') then DoGenFunc(fcCeil)
+    else if (Op.Id='floor') then DoGenFunc(fcFloor)
+    else if (Op.Id='acos') then DoGenFunc(fcAcos)
+    else if (Op.Id='asin') then DoGenFunc(fcAsin)
+    else if (Op.Id='round') then DoGenFunc(fcRound)
+    else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
+  end;
 end;
 
 
@@ -723,7 +753,11 @@ end;
 
 //////////////////////////
 
-procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue; SymTab : TSymbolTable; ReturnType : TZcDataType);
+
+
+procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue;
+  SymTab : TSymbolTable; ReturnType : TZcDataType;
+  GlobalNames : TObjectList);
 var
   Compiler : TZc;
   CodeGen : TZCodeGen;
@@ -732,7 +766,16 @@ var
   Target : TZComponentList;
   PError : EParseError;
   Error : TCocoError;
+  Lib : TZLibrary;
+  AllowFuncDefs : boolean;
 begin
+  //allow function definitions if compiling a library
+  if ThisC is TZLibrary then
+    Lib := ThisC as TZLibrary
+  else
+    Lib := nil;
+  AllowFuncDefs := Assigned(Lib);
+
   S := Ze.Source;
   Target := Ze.Code;
 
@@ -740,7 +783,9 @@ begin
   try
     Compiler.SymTab := SymTab;
     Compiler.ReturnType := ReturnType;
+    Compiler.GlobalNames := GlobalNames;
     Compiler.SourceStream.Write(S[1],Length(S));
+    Compiler.AllowFunctions := AllowFuncDefs;
     Compiler.Execute;
     if not Compiler.Successful then
     begin
@@ -767,7 +812,7 @@ begin
       CodeGen.Component := ThisC;
       CodeGen.SymTab := SymTab;
       try
-        CodeGen.GenRoot(Compiler.ZStatements);
+        CodeGen.GenRoot(Compiler.ZFunctions);
       except
         //Om något går fel under kodgenereringen så rensa koden så att den inte körs
         Target.Clear;

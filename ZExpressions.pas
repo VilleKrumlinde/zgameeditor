@@ -42,6 +42,14 @@ type
     procedure Execute; override;
   end;
 
+  //User-defined functions
+  TZLibrary = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Source : TZExpressionPropValue;
+  end;
+
   //Define a global variable that can be used in expressions
   TDefineVariable = class(TZComponent)
   protected
@@ -141,6 +149,7 @@ type
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,fcSetRandomSeed);
 
+  //Built-in function call
   TExpFuncCall = class(TExpBase)
   protected
     procedure Execute; override;
@@ -197,6 +206,24 @@ type
     HasReturnValue : boolean;
   end;
 
+  TExpMisc = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (emPop);
+  end;
+
+  TExpUserFuncCall = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Lib : TZLibrary;
+    Index : integer;
+  end;
+
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -214,20 +241,23 @@ uses ZMath,ZPlatform,ZApplication
 
 var
   //Expression execution context
-  gCurrentPc,gCurrentBP : integer;
+  gCurrentPc : ^TExpBase;
+  gCurrentBP : integer;
   gStack : TZArrayList;
 
 procedure RunCode(Code : TZComponentList);
-var
-  Limit : integer;
 begin
   //Pc can be modified in jump-code
-  gCurrentPc := 0;
+  if Code.Count=0 then
+    Exit;
+  gCurrentPc := Code.GetPtrToItem(0);
   gCurrentBP := 0;
-  Limit := Code.Count;
-  while gCurrentPc<Limit do
+  gStack.Push(nil); //Push return adress nil
+  while True do
   begin
-    TExpBase(Code[gCurrentPc]).Execute;
+    TExpBase(gCurrentPc^).Execute;
+    if gCurrentPc=nil then
+       break;
     Inc(gCurrentPc);
   end;
   {$ifndef minimal}
@@ -656,6 +686,9 @@ begin
     gCurrentBP := integer(gStack.Pop);
   end;
 
+  //Get return adress
+  gCurrentPc := pointer(gStack.Pop);
+
   if HasReturnValue then
   begin
     gReturnValue := PFloat(@RetVal)^;
@@ -699,6 +732,45 @@ begin
 end;
 {$endif}
 
+{ TExpMisc }
+
+procedure TExpMisc.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+end;
+
+procedure TExpMisc.Execute;
+begin
+  case Kind of
+    emPop: gStack.Pop;  //Pop, discard value from top of stack
+  end;
+end;
+
+{ TZLibrary }
+
+procedure TZLibrary.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source) - integer(Self), zptExpression);
+end;
+
+{ TExpUserFuncCall }
+
+procedure TExpUserFuncCall.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}integer(@Lib) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}integer(@Index) - integer(Self), zptInteger);
+end;
+
+procedure TExpUserFuncCall.Execute;
+begin
+  gStack.Push(TObject(gCurrentPC));
+  gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
+  Dec(gCurrentPc);
+end;
+
 initialization
 
   //Init vm
@@ -706,6 +778,8 @@ initialization
   gStack.ReferenceOnly := True;
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
+  ZClasses.Register(TZLibrary,ZLibraryClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
   ZClasses.Register(TDefineVariable,DefineVariableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
@@ -735,6 +809,10 @@ initialization
   ZClasses.Register(TExpAccessLocal,ExpAccessLocalClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpReturn,ExpReturnClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpMisc,ExpMiscClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpUserFuncCall,ExpUserFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}

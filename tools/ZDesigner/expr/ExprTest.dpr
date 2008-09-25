@@ -6,7 +6,8 @@ uses
   fTestZc in 'fTestZc.pas' {fmTestZc},
   mwStringHashList in 'mwStringHashList.pas',
   Zc in 'Zc.PAS',
-  uSymTab in '..\uSymTab.pas';
+  uSymTab in '..\uSymTab.pas',
+  ZClasses in '..\..\..\ZClasses.pas';
 
 {$R *.res}
 

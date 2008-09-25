@@ -4,7 +4,7 @@ unit Zc_Ops;
 
 interface
 
-uses Contnrs, ZClasses;
+uses Contnrs, ZClasses, ZExpressions;
 
 type
   TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
@@ -42,6 +42,9 @@ type
     Locals : TObjectList;
     Statements : TObjectList;
     ReturnType : TZcDataType;
+    //Assigned during codegen
+    Lib : TZLibrary;
+    LibIndex : integer;
     constructor Create(Owner : TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
@@ -117,7 +120,13 @@ begin
         Result := Result + ')';
       end;
     zcNop : Result := ';';       //Empty statement
-    zcReturn : Result := 'return ' + Child(0).ToString + ';';
+    zcReturn :
+      begin
+        Result := 'return';
+        if Children.Count>0 then
+          Result := Result + Child(0).ToString;
+        Result := Result + ';';
+      end;
     zcArrayAccess:
       begin
         Result := Id + '[';
