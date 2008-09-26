@@ -221,11 +221,12 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     C : TExpPropValue;
     L : TExpAccessLocal;
   begin
-    if (Op.Ref<>nil) and (Op.Ref is TZcOpLocalVar) then
+    if (Op.Ref<>nil) and
+      ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar))then
     begin
-      //Local variable
+      //Local variable or argument
       L := TExpAccessLocal.Create(Target);
-      L.Index := (Op.Ref as TZcOpLocalVar).Ordinal;
+      L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loLoad;
     end else
     begin
@@ -311,12 +312,13 @@ var
     //Left-hand side of the assignment
     LeftOp := Op.Child(0);
     RightOp := Op.Child(1);
-    if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpLocalVar) then
+    if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
+      ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
     begin
-      //Local variable
+      //Local variable or argument
       GenValue(RightOp);
       L := TExpAccessLocal.Create(Target);
-      L.Index := (LeftOp.Ref as TZcOpLocalVar).Ordinal;
+      L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loStore;
     end
     else if LeftOp.Kind=zcIdentifier then
@@ -650,12 +652,22 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 
   procedure DoGenUserFunc(UserFunc : TZcOpFunction);
   var
+    I : integer;
     F : TExpUserFuncCall;
   begin
+    if NeedReturnValue and (UserFunc.ReturnType=zctVoid) then
+      raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
+    if Op.Children.Count<>UserFunc.Arguments.Count then
+      raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
+    for I := 0 to UserFunc.Arguments.Count-1 do
+      GenValue(Op.Child(I));
     F := TExpUserFuncCall.Create(Target);
     F.Lib := UserFunc.Lib;
     F.Index := UserFunc.LibIndex;
-    //todo arguments, return value etc
+    if (not NeedReturnValue) and (UserFunc.ReturnType<>zctVoid) then
+      //discard return value from stack
+      with TExpMisc.Create(Target) do
+        Kind := emPop;
   end;
 
 begin

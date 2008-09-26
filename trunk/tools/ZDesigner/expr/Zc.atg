@@ -2,7 +2,7 @@ COMPILER Zc
 
 DELPHI
   USES (INTERFACE) Zc_Ops,contnrs,uSymTab,ZClasses
- (* USES (IMPLEMENTATION)  *)
+  USES (IMPLEMENTATION) ExprEdit
 
   TYPE
 
@@ -19,6 +19,7 @@ DELPHI
     procedure WriteOp(Op : TZcOp);
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
+    procedure ZError(const S : string);
   CREATE
     ZFunctions := TObjectList.Create(False);
     //Alla nodes ägs av FunctionCleanUps
@@ -99,6 +100,18 @@ function T-->Grammar<--.NoFunctionsAllowed : boolean;
 begin
   Result := not AllowFunctions;
 end;
+
+procedure T-->Grammar<--.ZError(const S : string);
+var
+  E : EParseError;
+begin
+  E := EParseError.Create(S);
+  E.Message := S;
+  E.Line := (Scanner as TZcScanner).CurrentSymbol.Line;
+  E.Col := (Scanner as TZcScanner).CurrentSymbol.Col;
+  raise E;
+end;
+
 
 CHARACTERS
 
@@ -196,64 +209,63 @@ PRODUCTIONS
 Zc (. var 
         I : integer; 
         Func : TZcOpFunction; 
+        Typ : TZcDataType;
     .)
 = 
 
   IF AllowFunctions THEN 
   BEGIN { 
-    "void" ident (. 
+    ("void" (. Typ := zctVoid; .) | Type<Typ> ) ident (. 
           if SymTab.Contains(LexString) then
-            SynError(201)
+            ZError('Name already defined: ' + LexString)
           else
           begin
             Func := TZcOpFunction.Create(GlobalNames);
             Func.Id := LexString;
+            Func.ReturnType := Typ;
             SymTab.Add(Func.Id,Func);
             ZFunctions.Add(Func); 
             Self.CurrentFunction := Func;
             SymTab.PushScope;
           end;
        .)
-    "(" /* [ FormalParams ] */ ")" "{" ZcFuncBody "}"  
+    "(" [ FormalParams ] ")" "{" ZcFuncBody "}"  
         (. 
            SymTab.PopScope;
         .)
     } 
-  END
+  END ELSE
+  BEGIN
 
 
   (. 
-     if NoFunctionsAllowed then
-     begin
        Func := TZcOpFunction.Create(FunctionCleanUps);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
        SymTab.PushScope;
        ZFunctions.Add(Func);
-     end else
-       Self.CurrentFunction := nil;
   .)
 
   /* A zc-expression is treated like the body of a nameless function
      to allow local var declarations  */
 
-  IF NoFunctionsAllowed THEN BEGIN ZcFuncBody END
+  ZcFuncBody
 
   (. 
-     if NoFunctionsAllowed then
-     begin
        SymTab.PopScope;
-     end;
-     
-     if Successful then
-     begin
-       for I:=0 to ZFunctions.Count-1 do
-       begin
-         TZcOp(ZFunctions[I]).Optimize;
-         WriteOp(TZcOp(ZFunctions[I]));
-       end;
-     end;
   .)
+  END
+
+(.  
+       if Successful then
+       begin
+         for I:=0 to ZFunctions.Count-1 do
+         begin
+           TZcOp(ZFunctions[I]).Optimize;
+           WriteOp(TZcOp(ZFunctions[I]));
+         end;
+       end;
+.)
 .
 
 /*------------------------------------------------------------------------*/
@@ -269,14 +281,34 @@ ZcFuncBody (. var Op : TZcOp; .)
 .
 
 /*------------------------------------------------------------------------*/
+FormalParams                    
+= ( Par ["," FormalParams] )
+.
+/*------------------------------------------------------------------------*/
+Par (. var Typ : TZcDataType; Arg : TZcOpArgumentVar; .)
+= Type<Typ> ident
+     (.
+        if SymTab.ScopeContains(LexString) then
+          SynError(201)
+        else
+        begin
+          Arg := TZcOpArgumentVar.Create(FunctionCleanUps);
+          Arg.Id := LexString;
+          Arg.Typ := Typ;
+          CurrentFunction.AddArgument(Arg);
+          SymTab.Add(Arg.Id,Arg);
+        end;
+     .)
+.
+/*------------------------------------------------------------------------*/
 
-LocalVarDecl
-= Type LocalVar {"," LocalVar}
+LocalVarDecl (. var Typ : TZcDataType; .)
+= Type<Typ> LocalVar<Typ> {"," LocalVar<Typ>}
 .
 
 /*------------------------------------------------------------------------*/
 
-LocalVar       (. var Loc : TZcOpLocalVar; .)
+LocalVar<Typ : TZcDataType> (. var Loc : TZcOpLocalVar; .)
 = ident  
      (. 
         if SymTab.ScopeContains(LexString) then
@@ -285,6 +317,7 @@ LocalVar       (. var Loc : TZcOpLocalVar; .)
         begin
           Loc := TZcOpLocalVar.Create(FunctionCleanUps);
           Loc.Id := LexString;
+          Loc.Typ := Typ;
           CurrentFunction.AddLocal(Loc);
           SymTab.Add(Loc.Id,Loc);
         end;
@@ -312,15 +345,15 @@ Argument<var OutOp : TZcOp>
  * and for array creation expressions                                     */
 
 
-Type
-= ( SimpleType )
+Type<var Typ : TZcDataType>
+= ( SimpleType<Typ> )
 .
 
 /*------------------------------------------------------------------------*/
 
-SimpleType
+SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
-= "float"
+= "float" (. Typ := zctFloat; .)
 .
 
 /*------------------------------------------------------------------------*/

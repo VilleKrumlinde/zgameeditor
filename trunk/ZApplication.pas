@@ -101,7 +101,8 @@ type
     ActualViewportRatio : single;
     Icon : TZBinaryPropValue;
     Clock : TClock;
-    LimitFrameRate : boolean;
+    FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
+    FixedFrameRate : integer;
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
@@ -215,8 +216,12 @@ begin
     Renderer.InitRenderer;
     UpdateViewport;
 
-    TargetFrameRate := Platform_GetDisplayRefreshRate;
-    if (TargetFrameRate<50) or (TargetFrameRate>200) then
+    case FrameRateStyle of
+      frsSyncedWithMonitor: TargetFrameRate := Platform_GetDisplayRefreshRate;
+      frsFree: ;
+      frsFixed: TargetFrameRate := Self.FixedFrameRate;
+    end;
+    if (TargetFrameRate<10) or (TargetFrameRate>200) then
       TargetFrameRate := 60;
 
     NoSound := Platform_CommandLine('s');
@@ -278,12 +283,13 @@ var
  {$endif}
 begin
 
-  {$ifdef xminimal}
+  {$ifdef xminimal} //**
   if (not LimitFrameRate) or
      ( (Platform_GetTime>=NextFrameTime) {or (FpsCounter<TargetFrames)} ) then
   {$endif}
   begin
-    NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
+    if FrameRateStyle<>frsFree then
+      NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
 
     UpdateTime;
 
@@ -309,7 +315,7 @@ begin
     end;
 
     {$ifdef minimal}
-    if LimitFrameRate then
+    if FrameRateStyle<>frsFree then
     begin //Give remaining time back to the OS to avoid 100% cpu pressure
       Remaining := Trunc((NextFrameTime - Platform_GetTime) * 1000);
       if Remaining>0 then
@@ -514,8 +520,11 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
 
   List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'LimitFrameRate',{$ENDIF}integer(@LimitFrameRate) - integer(Self), zptBoolean);
-    List.GetLast.DefaultValue.BooleanValue := True;
+
+  List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}integer(@FrameRateStyle) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['SyncedWithMonitor','Free','Fixed']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}integer(@FixedFrameRate) - integer(Self), zptInteger);
+
   List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 1;

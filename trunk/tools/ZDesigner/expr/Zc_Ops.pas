@@ -30,6 +30,7 @@ type
   TZcOpVariableBase = class(TZcOp)
   public
     Ordinal : integer;
+    Typ : TZcDataType;
   end;
 
   TZcOpLocalVar = class(TZcOpVariableBase)
@@ -37,9 +38,13 @@ type
     function ToString : string; override;
   end;
 
+  TZcOpArgumentVar = class(TZcOpVariableBase)
+  end;
+
   TZcOpFunction = class(TZcOp)
   public
     Locals : TObjectList;
+    Arguments : TObjectList;
     Statements : TObjectList;
     ReturnType : TZcDataType;
     //Assigned during codegen
@@ -50,7 +55,8 @@ type
     function ToString : string; override;
     procedure Optimize; override;
     procedure AddLocal(Local : TZcOpLocalVar);
-    function GetStackSize : integer; 
+    procedure AddArgument(Arg: TZcOpArgumentVar);
+    function GetStackSize : integer;
   end;
 
 
@@ -180,12 +186,14 @@ begin
   Kind := zcFunction;
   Statements := TObjectList.Create(False);
   Locals := TObjectList.Create(False);
+  Arguments := TObjectList.Create(False);
 end;
 
 destructor TZcOpFunction.Destroy;
 begin
   Statements.Free;
   Locals.Free;
+  Arguments.Free;
   inherited;
 end;
 
@@ -195,6 +203,17 @@ begin
   if ReturnType<>zctVoid then
     Inc(Local.Ordinal);
   Locals.Add(Local);
+end;
+
+
+procedure TZcOpFunction.AddArgument(Arg: TZcOpArgumentVar);
+var
+  I : integer;
+begin
+  Arguments.Add(Arg);
+  for I := 0 to Arguments.Count - 1 do
+    //-2 = old bp, return pc
+    (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - 2 + I;
 end;
 
 function TZcOpFunction.GetStackSize: integer;
