@@ -260,6 +260,8 @@ begin
        break;
     Inc(gCurrentPc);
   end;
+  if gStack.Count=1 then
+    gReturnValue := gStack.PopFloat;
   {$ifndef minimal}
   if gStack.Count>0 then
     ZLog.GetLog('Zc').Write('Warning, stack not empty on script completion');
@@ -669,6 +671,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue) - integer(Self), zptBoolean);
 end;
 
+{$warnings off}
 procedure TExpReturn.Execute;
 var
   RetVal : integer;
@@ -691,9 +694,10 @@ begin
 
   if HasReturnValue then
   begin
-    gReturnValue := PFloat(@RetVal)^;
+    gStack.Push(TObject(RetVal));
   end;
 end;
+{$warnings on}
 
 { TExpBase }
 

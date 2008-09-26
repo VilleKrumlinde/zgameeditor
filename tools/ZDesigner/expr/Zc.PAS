@@ -85,14 +85,16 @@ destructor Destroy; override;
     procedure _StatementExpr (var OutOp : TZcOp);
     procedure _Block (var OutOp : TZcOp);
     procedure _EmbeddedStatement (var OutOp : TZcOp);
-    procedure _SimpleType;
+    procedure _SimpleType (var Typ : TZcDataType);
     procedure _Expr (var OutOp : TZcOp);
     procedure _Argument (var OutOp : TZcOp);
-    procedure _LocalVar;
-    procedure _Type;
+    procedure _LocalVar (Typ : TZcDataType);
     procedure _LocalVarDecl;
+    procedure _Par;
     procedure _Statement (var OutOp : TZcOp);
     procedure _ZcFuncBody;
+    procedure _FormalParams;
+    procedure _Type (var Typ : TZcDataType);
     procedure _Zc;
 
   private
@@ -101,6 +103,7 @@ destructor Destroy; override;
     procedure WriteOp(Op : TZcOp);
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
+    procedure ZError(const S : string);
 
   protected
     { Protected Declarations }
@@ -150,6 +153,7 @@ property Version : string read GetVersion write SetVersion;
   end; { TZc }
 
 implementation
+uses  ExprEdit;
 
 
 
@@ -240,6 +244,18 @@ function TZc.NoFunctionsAllowed : boolean;
 begin
   Result := not AllowFunctions;
 end;
+
+procedure TZc.ZError(const S : string);
+var
+  E : EParseError;
+begin
+  E := EParseError.Create(S);
+  E.Message := S;
+  E.Line := (Scanner as TZcScanner).CurrentSymbol.Line;
+  E.Col := (Scanner as TZcScanner).CurrentSymbol.Col;
+  raise E;
+end;
+
 
 
 
@@ -1819,8 +1835,9 @@ end else begin SynError(80);
 end;
 end;
 
-procedure TZc._SimpleType;begin
+procedure TZc._SimpleType (var  Typ  :  TZcDataType);begin
 Expect(floatSym);
+Typ  :=  zctFloat;
 end;
 
 procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
@@ -1844,7 +1861,7 @@ procedure TZc._Argument (var  OutOp  :  TZcOp);begin
 _Expr(OutOp);
 end;
 
-procedure TZc._LocalVar;var  Loc  :  TZcOpLocalVar;
+procedure TZc._LocalVar (Typ  :  TZcDataType);var  Loc  :  TZcOpLocalVar;
 begin
 Expect(identSym);
 
@@ -1854,23 +1871,39 @@ else
 begin
    Loc  :=  TZcOpLocalVar.Create(FunctionCleanUps);
    Loc.Id  :=  LexString;
+   Loc.Typ  :=  Typ;
    CurrentFunction.AddLocal(Loc);
    SymTab.Add(Loc.Id,Loc);
 end;
 
 end;
 
-procedure TZc._Type;begin
-_SimpleType;
-end;
-
-procedure TZc._LocalVarDecl;begin
-_Type;
-_LocalVar;
+procedure TZc._LocalVarDecl;var  Typ  :  TZcDataType;
+begin
+_Type(Typ);
+_LocalVar(Typ);
 while (fCurrentInputSymbol = _commaSym) do begin
 Get;
-_LocalVar;
+_LocalVar(Typ);
 end;
+end;
+
+procedure TZc._Par;var  Typ  :  TZcDataType;  Arg  :  TZcOpArgumentVar;
+begin
+_Type(Typ);
+Expect(identSym);
+
+  if  SymTab.ScopeContains(LexString)  then
+    SynError(201)
+  else
+  begin
+    Arg  :=  TZcOpArgumentVar.Create(FunctionCleanUps);
+    Arg.Id  :=  LexString;
+    Arg.Typ  :=  Typ;
+    CurrentFunction.AddArgument(Arg);
+    SymTab.Add(Arg.Id,Arg);
+  end;
+
 end;
 
 procedure TZc._Statement (var  OutOp  :  TZcOp);begin
@@ -1895,22 +1928,42 @@ Op  :=  nil;
 end;
 end;
 
+procedure TZc._FormalParams;begin
+_Par;
+if (fCurrentInputSymbol = _commaSym) then begin
+Get;
+_FormalParams;
+end;
+end;
+
+procedure TZc._Type (var  Typ  :  TZcDataType);begin
+_SimpleType(Typ);
+end;
+
 procedure TZc._Zc;var
-   I  :  integer;                                                      
+   I  :  integer;
    Func  :  TZcOpFunction;
+   Typ  :  TZcDataType;
 
 begin
 if AllowFunctions then begin
-while (fCurrentInputSymbol = voidSym) do begin
+while (fCurrentInputSymbol = voidSym) OR
+ (fCurrentInputSymbol = floatSym) do begin
+if (fCurrentInputSymbol = voidSym) then begin
 Get;
+Typ  :=  zctVoid;
+end else begin
+_Type(Typ);
+end;
 Expect(identSym);
 
 if  SymTab.Contains(LexString)  then
-SynError(201)
+ZError('Name  already  defined:  '  +  LexString)
 else
 begin
 Func  :=  TZcOpFunction.Create(GlobalNames);
 Func.Id  :=  LexString;
+Func.ReturnType  :=  Typ;
 SymTab.Add(Func.Id,Func);
 ZFunctions.Add(Func);
 Self.CurrentFunction  :=  Func;
@@ -1918,6 +1971,9 @@ SymTab.PushScope;
 end;
 
 Expect(_lparenSym);
+if (fCurrentInputSymbol = floatSym) then begin
+_FormalParams;
+end;
 Expect(_rparenSym);
 Expect(_lbraceSym);
 _ZcFuncBody;
@@ -1926,35 +1982,29 @@ Expect(_rbraceSym);
 SymTab.PopScope;
 
 end;
-end;
+end
+else begin
 
-if  NoFunctionsAllowed  then
-begin
    Func  :=  TZcOpFunction.Create(FunctionCleanUps);
    Func.ReturnType  :=  Self.ReturnType;
    Self.CurrentFunction  :=  Func;
    SymTab.PushScope;
    ZFunctions.Add(Func);
-end  else
-   Self.CurrentFunction  :=  nil;
 
-if NoFunctionsAllowed then begin
 _ZcFuncBody;
-end;
 
-if  NoFunctionsAllowed  then
-begin
    SymTab.PopScope;
+
 end;
 
-if  Successful  then
-begin
-   for  I:=0  to  ZFunctions.Count-1  do
-   begin
-     TZcOp(ZFunctions[I]).Optimize;
-     WriteOp(TZcOp(ZFunctions[I]));
-   end;
-end;
+    if  Successful  then
+    begin
+      for  I:=0  to  ZFunctions.Count-1  do
+      begin
+        TZcOp(ZFunctions[I]).Optimize;
+        WriteOp(TZcOp(ZFunctions[I]));
+      end;
+    end;
 
 end;
 
