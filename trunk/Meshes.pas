@@ -1109,6 +1109,8 @@ end;
 
 function TModels.Get(Cat: integer): TZArrayList;
 begin
+  if Cats.Count<=Cat then
+    RegisterCat(Cat);
   Result := TZArrayList(Cats[Cat]);
 end;
 

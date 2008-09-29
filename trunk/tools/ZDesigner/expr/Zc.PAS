@@ -210,14 +210,14 @@ end;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 const
   AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
-var
-  Tmp : TZcOp;
+//var
+//  Tmp : TZcOp;
 begin
   case Kind of
     atMulAssign,atDivAssign,atPlusAssign,atMinusAssign :  //Convert x*=2 to x=x*2
       begin
-        Tmp := MakeOp(zcIdentifier,Op1.Id);
-        Op2 := MakeOp(AssignMap[Kind],[Tmp,Op2]);
+        //Tmp := MakeOp(zcIdentifier,Op1.Id);
+        Op2 := MakeOp(AssignMap[Kind],[Op1,Op2]);
       end;
   end;
   Result := MakeOp(zcAssign,[Op1,Op2]);
