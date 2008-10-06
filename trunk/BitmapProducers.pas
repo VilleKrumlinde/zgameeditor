@@ -5,8 +5,6 @@ interface
 uses ZOpenGL, ZClasses, ZExpressions;
 
 type
-//  TBitmapBlur = class(TBitmapProducer);
-
   TBitmapRect = class(TContentProducer)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -21,7 +19,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    Zoom,Rotation : single;
+    Zoom,Rotation,ScaleX,ScaleY : single;
   end;
 
   TBitmapExpression = class(TContentProducer)
@@ -44,9 +42,18 @@ type
     HasAlphaLayer : boolean;
   end;
 
+  TBitmapBlur = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Radius : integer;
+  end;
+
+
 implementation
 
-uses ZBitmap {$ifdef zlog},ZLog{$endif};
+uses ZBitmap {$ifdef zlog},ZLog{$endif}, ZMath;
 
 { TBitmapRect }
 
@@ -134,6 +141,7 @@ begin
     glRotatef( (Rotation*360) , 0, 0, 1);
 
   glEnable(GL_TEXTURE_2D);
+  glScalef(ScaleX,ScaleY,1);
   glBegin(GL_QUADS);
     glTexCoord2f(TexLeft, TexTop);
     glVertex2f(-Size,-Size);
@@ -158,6 +166,10 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Zoom',{$ENDIF}integer(@Zoom) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX) - integer(Self), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY) - integer(Self), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
 end;
 
 { TBitmapExpression }
@@ -325,6 +337,78 @@ begin
   Stack.Push(BM);
 end;
 
+{ TBitmapBlur }
+
+procedure TBitmapBlur.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptInteger);
+end;
+
+procedure TBitmapBlur.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  SourceB,B : TZBitmap;
+  H,W,I,J,K,L : integer;
+  SourceP,DestP : PColorf;
+  Tot : TZVector3f;
+  P : PZVector3f;
+
+  procedure InAdd(X,Y:integer);
+  var
+    Tmp : PZVector4f;
+  begin
+    if (X<0) then
+      X:=0
+    else if (X>W-1) then
+      X := W-1;
+    if Y<0 then
+      Y := 0
+    else if (Y>H-1) then
+      Y := H-1;
+    Tmp := PZVector4f(SourceP);
+    Inc(Tmp, Y*W + X);
+    VecAdd3(PZVector3f(Tmp)^,Tot,Tot)
+  end;
+
+begin
+  if Stack.Count=0 then
+    Exit;
+
+  SourceB := TZBitmap(Stack.Pop());
+  B := TZBitmap.CreateFromBitmap( SourceB );
+  SourceP := SourceB.GetCopyAsFloats;
+  SourceB.Free;
+
+  W := B.PixelWidth;
+  H := B.PixelHeight;
+
+  GetMem(DestP,SizeOf(TZVector3f)*W*H);
+  B.SetMemory(DestP,GL_RGB,GL_FLOAT);
+
+  //Reference: http://www.blackpawn.com/texts/blur/default.html
+  P := PZVector3f(DestP);
+  for I := 0 to H-1 do
+  begin
+    for J := 0 to W-1 do
+    begin
+      FillChar(Tot,SizeOf(Tot),0);
+      for K := -Radius to Radius do
+        for L := -Radius to Radius do
+          InAdd(J+K,I + L);
+      VecDiv3(Tot, Power(Radius*2+1,2),P^);
+      Inc(P);
+    end;
+  end;
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(SourceP);
+  FreeMem(DestP);
+
+  Stack.Push(B);
+end;
+
 initialization
 
   ZClasses.Register(TBitmapRect,BitmapRectClassId);
@@ -334,6 +418,8 @@ initialization
   ZClasses.Register(TBitmapExpression,BitmapExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
   ZClasses.Register(TBitmapFromFile,BitmapFromFileClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+  ZClasses.Register(TBitmapBlur,BitmapBlurClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
 
 end.

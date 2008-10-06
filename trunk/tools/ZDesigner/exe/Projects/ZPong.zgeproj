@@ -31,7 +31,7 @@ this.Pixel.B = 0;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="BallMaterial" Texture="BallTexture" TextureScale="0.69"/>
+        <Material Name="BallMaterial" Texture="BallTexture" TextureScale="0.69 0.69 0.69"/>
         <Material Name="BatMaterial" Texture="BatTexture" TextureX="0.5" TexCoords="1"/>
       </Children>
     </Group> <!-- Materials -->

@@ -33,7 +33,7 @@ type
   //List with unique ClassIDs
   TZClassIds = (
  LogicalGroupClassId,ZBitmapClassId,
- BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,
+ BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
  MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,RemoveAllModelsClassId,
  MeshImplicitClassId,ImplicitPrimitiveClassId,ImplicitExpressionClassId,ImplicitCombineClassId,
@@ -88,6 +88,7 @@ type
 
   PZVector3f = ^TZVector3f;
   TZVector3f = array[0..2] of single;
+  PZVector4f = ^TZVector4f;
   TZVector4f = array[0..3] of single;
 
   TZMatrix4f = array[0..3] of TZVector4f;
