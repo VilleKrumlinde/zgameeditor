@@ -1526,6 +1526,7 @@ var
   glVertex4sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glVertexPointer: procedure(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glViewport: procedure(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glActiveTexture: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   {$ifdef WIN32}
   wglGetProcAddress : function(P : pchar) : pointer; stdcall;
@@ -1627,7 +1628,7 @@ var
 //  glVertexAttribPointer: procedure(index: GLuint; size: GLint; _type: GLenum; normalized: GLboolean; stride: GLsizei; const pointer: PGLvoid); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
 
-  ShadersSupported : boolean;
+  ShadersSupported,MultiTextureSupported : boolean;
 
 {procedure LoadOpenGL( const dll: PChar );
 procedure FreeOpenGL;}
@@ -1646,7 +1647,7 @@ begin
   UnLoadModule(LibGL);
 end;
 
-const FuncArray : packed array[0..{$ifdef win32}336{$else}335{$endif}] of
+const FuncArray : packed array[0..335{$ifdef win32}+1{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -1996,7 +1997,7 @@ const FuncArray : packed array[0..{$ifdef win32}336{$else}335{$endif}] of
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..{$ifdef minimal}11{$else}15{$endif}] of
+const ExtFuncArray : packed array[0..12{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -2059,7 +2060,8 @@ const ExtFuncArray : packed array[0..{$ifdef minimal}11{$else}15{$endif}] of
 //(Name : 'glUniformMatrix3fv'; Ptr : @@glUniformMatrix3fv),
 //(Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
 //(Name : 'glUniform2i'; Ptr : @@glUniform2i),
-(Name : 'glUseProgram'; Ptr : @@glUseProgram)
+(Name : 'glUseProgram'; Ptr : @@glUseProgram),
+(Name : 'glActiveTexture'; Ptr : @@glActiveTexture)
 //(Name : 'glVertexAttrib4ubv'; Ptr : @@glVertexAttrib4ubv),
 //(Name : 'glVertexAttrib4sv'; Ptr : @@glVertexAttrib4sv),
 //(Name : 'glVertexAttrib4s'; Ptr : @@glVertexAttrib4s),
@@ -2111,6 +2113,7 @@ begin
     ExtFuncArray[I].Ptr^ := Platform_GLLoadProc(ExtFuncArray[I].Name);
 
   ShadersSupported := @glUseProgram<>nil;
+  MultiTextureSupported := @glActiveTexture<>nil;
 end;
 
 procedure LoadOpenGL(const dll: PChar);

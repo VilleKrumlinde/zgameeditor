@@ -9,24 +9,21 @@
         <SpawnModel Model="ParamModel"/>
       </OnIteration>
       <WhileExp>
-<![CDATA[
-//this.Iteration=current iteration nr. Return false to end loop.
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
 Temp1=this.Iteration;
 return Temp1<ParamCount;]]>
       </WhileExp>
     </Repeat>
     <ZExpression>
       <Expression>
-<![CDATA[
-//Default particle size
+<![CDATA[//Default particle size
 CursorSize=0.2;]]>
       </Expression>
     </ZExpression>
     <DefineCollision Cat1="1" Cat2="1"/>
     <ZExpression>
       <Expression>
-<![CDATA[
-//Signal before spawn: Cursor is not clone
+<![CDATA[//Signal before spawn: Cursor is not clone
 Temp1=0;]]>
       </Expression>
     </ZExpression>
@@ -60,8 +57,7 @@ Temp1=0;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-this.Pixel.R=
+<![CDATA[this.Pixel.R=
   (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
   (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
 this.Pixel.G=this.Pixel.R;
@@ -91,8 +87,7 @@ this.Pixel.A=Temp1;
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-//X,Y : current coordinate (0..1)
+<![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 this.Pixel.R=1;
 
@@ -119,8 +114,7 @@ else
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-this.Pixel.R=1;
+<![CDATA[this.Pixel.R=1;
 
 Temp2=X-0.5;
 Temp3=Y-0.5;
@@ -139,8 +133,7 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-Temp1=noise2(this.X*4,this.Y*4);
+<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
 
 Temp2=this.X-0.5;
 Temp3=this.Y-0.5;
@@ -159,8 +152,7 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-Temp2=X-0.5;
+<![CDATA[Temp2=X-0.5;
 Temp3=Y-0.5;
 //Distance from center 1..0
 Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
@@ -179,8 +171,7 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-Temp1=abs(noise2(this.X*4,this.Y*4));
+<![CDATA[Temp1=abs(noise2(this.X*4,this.Y*4));
 
 Temp2=this.X-0.5;
 Temp3=this.Y-0.5;
@@ -199,8 +190,7 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-Temp2=X-0.5 + noise2(X*3,Y*3)*0.1;;
+<![CDATA[Temp2=X-0.5 + noise2(X*3,Y*3)*0.1;;
 Temp3=Y-0.5 + noise2(X*3,Y*3)*0.1;
 //Distance from center 1..0
 Temp1 = 1 - sqrt ( pow(Temp2*Temp2,1.5) + pow(Temp3*Temp3,1.5) ) * 2.75;
@@ -220,8 +210,8 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
 
     <Group Name="FeedbackGroup">
       <Children>
-        <Material Name="ScreenFadeMaterial" Texture="ScreenFadeBitmap" TextureX="1.5" TextureY="1.5" Color="0 0 0 0.09" Light="0" Blend="1" ZBuffer="0"/>
-        <Model Name="ScreenFadeOutModel" Scale="16 16 1">
+        <Material Name="ScreenFadeMaterial" Texture="ScreenFadeBitmap" TextureX="1.5" TextureY="1.5" Color="-1.4974 -1.4974 -1.4974 1" Light="0" Blend="1" ZBuffer="0"/>
+        <Model Name="ScreenFadeOutModel" Position="-0.0245 -0.0601 0" Rotation="0 0 0.9359" Scale="16 16 1">
           <OnRender>
             <UseMaterial Material="ScreenFadeMaterial"/>
             <RenderSprite/>
@@ -231,9 +221,8 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
               <OnTrue>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-//Randomize feedback-colors
-Temp1=App.DeltaTime*0.08;
+<![CDATA[//Randomize feedback-colors
+Temp1=App.DeltaTime*0.04;
 if((ScreenFadeMaterial.Color.R<0) && (rnd()<0.0005))
   ScreenFadeMaterial.Color.R=rnd() * 0.6;
 else
@@ -268,12 +257,11 @@ CurrentModel.Position.Y=Temp1*1;]]>
             </Condition>
           </OnUpdate>
         </Model>
-        <Bitmap Name="ScreenFadeBitmap" Height="4" Width="5">
+        <Bitmap Name="ScreenFadeBitmap" Width="5" Height="4">
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[
-Temp2=X-0.5;
+<![CDATA[Temp2=X-0.5;
 Temp3=Y-0.5;
 //Distance from center 1..0
 Temp1 = 1.0 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.5;
@@ -306,7 +294,7 @@ this.Pixel.A=1-Temp1*0.5;]]>
                 <UseMaterial Material="TextMaterial"/>
                 <RenderText Text="FPS" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
                 <RenderText TextFloatRef="App FpsCounter" X="-0.74" Y="-0.92" Scale="0.4"/>
-                <RenderTransformGroup Scale="1 1 1">
+                <RenderTransformGroup>
                   <Children>
                     <RenderSetColor Color="0.67 0 0 1"/>
                     <RenderText Text="RIGHT MOUSE" X="-0.96" Y="0.83" Scale="0.35" Align="1"/>
@@ -318,7 +306,7 @@ this.Pixel.A=1-Temp1*0.5;]]>
                     <RenderText Text="M" X="0.4" Y="0.83" Scale="0.35" Align="1"/>
                   </Children>
                 </RenderTransformGroup>
-                <RenderTransformGroup Scale="1 1 1">
+                <RenderTransformGroup>
                   <Children>
                     <RenderSetColor Color="0.75 0.75 0.75 1"/>
                     <RenderText Text="=RANDOMIZE" X="-0.57" Y="0.83" Scale="0.3" Align="1"/>
@@ -336,8 +324,7 @@ this.Pixel.A=1-Temp1*0.5;]]>
           <OnUpdate>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Temp1=0;//noise2(App.Time*2,App.Time*2)*0.25;
+<![CDATA[//Temp1=0;//noise2(App.Time*2,App.Time*2)*0.25;
 //Temp2=0;//noise2(App.Time*1.3,App.Time*1.3)*0.25;
 
 if(IsAutoPilot==0) {
@@ -355,8 +342,7 @@ if(IsAutoPilot==0) {
               <OnPressed>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-App.ClearScreenMode=1-App.ClearScreenMode;
+<![CDATA[App.ClearScreenMode=1-App.ClearScreenMode;
 if(App.ClearScreenMode==0) {
   ScreenFadeOutModel.Position.Y=-100;
 //  Mixer.Ch0DelayLength=0.14;
@@ -373,8 +359,7 @@ if(App.ClearScreenMode==0) {
                 <PlaySound Sound="CursorCloneSound" NoteNr="48"/>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-CloneCount+=1;
+<![CDATA[CloneCount+=1;
 HeartTimer/=2;
 //Signal: Cursor is clone
 Temp1=1;]]>
@@ -387,8 +372,7 @@ Temp1=1;]]>
               <OnPressed>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-if(SelectParamKeys.KeyIndex==0) {
+<![CDATA[if(SelectParamKeys.KeyIndex==0) {
   ParamIndex=ParamIndex-1;
   if(ParamIndex==-1)
     ParamIndex=ParamCount-1;
@@ -406,8 +390,7 @@ if(SelectParamKeys.KeyIndex==0) {
               <OnPressed>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-//1 or -1 depending on inc/dec
+<![CDATA[//1 or -1 depending on inc/dec
 Temp4=1-(IncDecKeys.KeyIndex==0)*2;
 
 if(ParamIndex==0) {
@@ -466,15 +449,13 @@ ParamIndex=clamp(ParamIndex,0,1);*/]]>
             </KeyPress>
             <Condition Name="HeartSoundTest">
               <Expression>
-<![CDATA[
-HeartTimer-=App.DeltaTime;
+<![CDATA[HeartTimer-=App.DeltaTime;
 return HeartTimer<0;]]>
               </Expression>
               <OnTrue>
                 <Condition>
                   <Expression>
-<![CDATA[
-HeartSoundSwitch=1-HeartSoundSwitch;
+<![CDATA[HeartSoundSwitch=1-HeartSoundSwitch;
 return HeartSoundSwitch==1;]]>
                   </Expression>
                   <OnTrue>
@@ -483,8 +464,7 @@ return HeartSoundSwitch==1;]]>
                   <OnFalse>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-//Play sound in random octave
+<![CDATA[//Play sound in random octave
 Temp1=rnd()*4;
 Temp1-=frac(Temp1);
 PlayHBSound2.NoteNr=24 + 12*Temp1;]]>
@@ -495,8 +475,7 @@ PlayHBSound2.NoteNr=24 + 12*Temp1;]]>
                 </Condition>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-//Increase heartbeat with clonecount
+<![CDATA[//Increase heartbeat with clonecount
 HeartTimer=16/clamp(CloneCount+1,1,4);]]>
                   </Expression>
                 </ZExpression>
@@ -506,8 +485,7 @@ HeartTimer=16/clamp(CloneCount+1,1,4);]]>
               <OnPressed>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-IsAutoPilot=1-IsAutoPilot;
+<![CDATA[IsAutoPilot=1-IsAutoPilot;
 if(IsAutoPilot==1) {
   AutoPilotRandomTimer=20;
 }]]>
@@ -525,8 +503,7 @@ if(IsAutoPilot==1) {
                 </KeyPress>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-if(IsAutoPilot==1) {
+<![CDATA[if(IsAutoPilot==1) {
   AutoPilotRandomTimer-=App.DeltaTime;
   if(AutoPilotRandomTimer<0) {
     AutoPilotRandomTimer=20 + random(0,2);
@@ -539,8 +516,7 @@ if(IsAutoPilot==1) {
                   <OnTrue>
                     <ZExpression>
                       <Expression>
-<![CDATA[
-PEmitter1.ParticlesPerSecond=clamp( rnd() * MaxPCount*0.75, 10,MaxPCount);
+<![CDATA[PEmitter1.ParticlesPerSecond=clamp( rnd() * MaxPCount*0.75, 10,MaxPCount);
 
 PEmitter1.ParticleLifeTime=clamp( rnd() * MaxLifeTime*0.75, 0.05,MaxLifeTime);
 PEmitter1.AnimateAlpha=0-(1/PEmitter1.ParticleLifeTime);
@@ -574,8 +550,7 @@ CursorPattern-=frac(CursorPattern);]]>
               <OnPressed>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-//10 percent adjustment of parameters
+<![CDATA[//10 percent adjustment of parameters
 
 Temp1=random(0,1);
 
@@ -599,8 +574,7 @@ PEmitter1.ParticleHeight=CursorSize;*/]]>
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-HeartTimer=5;
+<![CDATA[HeartTimer=5;
 
 //Screensaver settings
 if(IsScreenSaver==1) {
@@ -684,8 +658,7 @@ if(IsScreenSaver==1) {
           <OnUpdate>
             <ZExpression>
               <Expression>
-<![CDATA[
-Temp1=App.DeltaTime*8;
+<![CDATA[Temp1=App.DeltaTime*8;
 if(ParamIndex==ThisParamIndex) {
   CurrentModel.Scale.X+=Temp1;
 } else {
@@ -701,8 +674,7 @@ CurrentModel.Scale.Y=CurrentModel.Scale.X;
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-ThisParamIndex=Temp1;
+<![CDATA[ThisParamIndex=Temp1;
 CurrentModel.Position.X=-4.5 + Temp1*1;
 CurrentModel.Position.Y=3;]]>
               </Expression>
@@ -719,7 +691,7 @@ CurrentModel.Position.Y=3;]]>
 
     <Group Name="CursorGroup">
       <Children>
-        <Model Name="CursorModel" Category="1" CollisionBounds="0.75 0.75 0 0">
+        <Model Name="CursorModel" Position="-3.7155 4 0" Category="1" CollisionBounds="0.75 0.75 0 0">
           <Definitions>
             <DefineVariable Name="CursorRotation"/>
             <DefineVariable Name="CursorGraphic"/>
@@ -732,8 +704,7 @@ CurrentModel.Position.Y=3;]]>
               <OnStart>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-CursorEnergy=1;
+<![CDATA[CursorEnergy=1;
 CursorInitialPLife=PEmitter1.ParticleLifeTime;
 CursorInitialPCount=PEmitter1.ParticlesPerSecond;]]>
                   </Expression>
@@ -747,8 +718,7 @@ CursorInitialPCount=PEmitter1.ParticlesPerSecond;]]>
                 </SteeringController>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-//DAmpen velocity set by steeringcontroller
+<![CDATA[//DAmpen velocity set by steeringcontroller
 Temp1=1.0 - clamp(16*App.DeltaTime,0,0.8);
 CurrentModel.Velocity.X *= Temp1;
 CurrentModel.Velocity.Y *= Temp1;
@@ -777,8 +747,7 @@ if(CursorEnergy<0.1) {
                 </ZExpression>
                 <Condition Comment="Remove if out of bounds">
                   <Expression>
-<![CDATA[
-return (abs(CurrentModel.Position.X)>5.1) ||
+<![CDATA[return (abs(CurrentModel.Position.X)>5.1) ||
   (abs(CurrentModel.Position.Y)>4.1) ||
   (CursorEnergy<0);]]>
                   </Expression>
@@ -798,8 +767,7 @@ return (abs(CurrentModel.Position.X)>5.1) ||
                 <PlaySound Sound="CursorHitCursorSound" NoteNr="36" ReplayDelay="0.2"/>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-CursorEnergyBoost=0.5;
+<![CDATA[CursorEnergyBoost=0.5;
 CurrentModel.Scale.X=1;
 CurrentModel.Scale.Y=1;]]>
                   </Expression>
@@ -834,10 +802,9 @@ CurrentModel.Scale.Y=1;]]>
                 </Condition>
               </OnFalse>
             </Condition>
-            <RenderParticles Name="PEmitter1" ParticlesPerSecond="60" Spread="3.14" ParticleWidth="0.2" ParticleHeight="0.2" Speed="1" SpeedRange="0.05" ParticleLifetime="0.5" AnimateAlpha="-0.2" FollowModel="0">
+            <RenderParticles Name="PEmitter1" ParticlesPerSecond="53.6947" Spread="3.14" ParticleWidth="0.844" ParticleHeight="0.844" Speed="1" SpeedRange="0.05" ParticleLifetime="1.8803" AnimateAlpha="-0.5318" Gravity="-1.7997 1.294 0" FollowModel="0">
               <OnEmitExpression>
-<![CDATA[
-//Emit particle.
+<![CDATA[//Emit particle.
 //PColor : particle color, pangle
 
 if(CursorPattern==0) {

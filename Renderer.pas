@@ -36,7 +36,7 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Texture : TZBitmap;
+    Textures : array[0..2] of TZBitmap;
     TextureScale : TZVector3f;
     TextureX,TextureY : single;
     TextureRotate : single;
@@ -399,7 +399,7 @@ const
   TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
 var
   NilOld : boolean;
-  Tmp : integer;
+  Tmp,I,StartI : integer;
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -491,15 +491,24 @@ begin
     end;
   end;
 
-  if NilOld or (NewM.Texture<>OldM.Texture) then
+  if MultiTextureSupported then
+    StartI := High(NewM.Textures)
+  else
+    StartI := 0;
+  for I := StartI downto 0 do
   begin
-    if NewM.Texture<>nil then
+    if NilOld or (NewM.Textures[I]<>OldM.Textures[I]) then
     begin
-      glEnable(GL_TEXTURE_2D);
-      NewM.Texture.UseTextureBegin;
-    end
-    else
-      glDisable(GL_TEXTURE_2D);
+      if MultiTextureSupported then
+        glActiveTexture($84C0 + I);
+      if NewM.Textures[I]<>nil then
+      begin
+        glEnable(GL_TEXTURE_2D);
+        NewM.Textures[I].UseTextureBegin;
+      end
+      else
+        glDisable(GL_TEXTURE_2D);
+    end;
   end;
 
   if NilOld or
@@ -620,6 +629,8 @@ const
   no_shininess = 0;
   low_shininess = 5;
   high_shininess = 100;
+var
+  I : integer;
 //  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
   glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
@@ -655,6 +666,17 @@ begin
   LoadOpenGLExtensions;
 //_ShaderTest;
 
+  //Initialize autmatic coords for other textures
+  if MultiTextureSupported then
+    for I := 2 downto 0 do
+    begin
+      glActiveTexture($84C0 + I);
+      glEnable(GL_TEXTURE_GEN_S);
+      glEnable(GL_TEXTURE_GEN_T);
+      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+    end;
+
   //Set other default properties using the material-handler
   {$ifndef minimal}IsRendering := True;{$endif}
      EnableMaterial(nil,DefaultMaterial);
@@ -666,8 +688,13 @@ end;
 procedure TMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Textures[0]) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Texture2',{$ENDIF}integer(@Textures[1]) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Texture3',{$ENDIF}integer(@Textures[2]) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+
   List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
   List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);

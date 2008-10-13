@@ -120,7 +120,7 @@ end;
 //Call this when bitmap size have changed
 procedure TZBitmap.ReInit;
 const
-  FilterTypes : array[0..1] of integer = (GL_LINEAR,GL_NEAREST);
+  FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_NEAREST_MIPMAP_LINEAR);
 var
   Size,W,H : integer;
   P : pointer;
@@ -142,6 +142,9 @@ begin
     W := PixelWidth;
     H := PixelHeight;
 
+    //Generate mipmaps automatically, must be set before call to glTexImage2D
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
     if Memory<>nil then
     begin
       glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, Self.MemFormat, Self.MemType, Memory);
@@ -158,9 +161,6 @@ begin
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilterTypes[Ord(Self.Filter)] );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
-
-    //Generate mipmaps automatically
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 
     //Gör setup-anrop som behövs varje gång bitmap ska användas som rendertarget
     {glMatrixMode(GL_PROJECTION);
@@ -261,7 +261,7 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
 end;
 
 initialization

@@ -109,7 +109,8 @@ type
   public
     Expression : TZExpressionPropValue;
     V,N : TZVector3f;
-    AutoNormals : boolean;
+    C : TZColorf;
+    AutoNormals,VertexColors : boolean;
   end;
 
   //Created by 3ds-import
@@ -919,13 +920,18 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
     {$ifndef minimal}
-    List.GetLast.DefaultValue.ExpressionValue.Source := '//V : current vertex'#13#10'//N : current normal (turn off AutoNormals when modifying normals)';
+    List.GetLast.DefaultValue.ExpressionValue.Source := '//V : current vertex'#13#10+
+      '//N : current normal (turn off AutoNormals when modifying normals)'#13#10+
+      '//C : current color (turn on VertexColors)';
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}integer(@AutoNormals) - integer(Self), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'V',{$ENDIF}integer(@V) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'N',{$ENDIF}integer(@N) - integer(Self), zptVector3f);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'C',{$ENDIF}integer(@C) - integer(Self), zptColorf);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -933,11 +939,16 @@ procedure TMeshExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   Mesh : TMesh;
   I : integer;
+  PColor : PInteger;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
   {$endif}
   Mesh := TMesh(Stack.Pop);
+
+  if VertexColors and (Mesh.Colors=nil) then
+    GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
+  PColor := Mesh.Colors;
 
   for I := 0 to Mesh.VerticesCount-1 do
   begin
@@ -946,6 +957,11 @@ begin
     ZExpressions.RunCode(Expression.Code);
     VecCopy3(V,Mesh.Vertices^[I]);
     VecCopy3(N,Mesh.Normals^[I]);
+    if VertexColors then
+    begin
+      PColor^ := ColorFtoB(Self.C);
+      Inc(PColor);
+    end;
   end;
 
   Mesh.Scale( Self.Scale );

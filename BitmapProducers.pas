@@ -2,7 +2,7 @@ unit BitmapProducers;
 
 interface
 
-uses ZOpenGL, ZClasses, ZExpressions;
+uses ZOpenGL, ZClasses, ZExpressions,ZBitmap;
 
 type
   TBitmapRect = class(TContentProducer)
@@ -50,10 +50,27 @@ type
     Radius : integer;
   end;
 
+  TBitmapLoad = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Bitmap : TZBitmap;
+    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+  end;
+
+  TBitmapCombine = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Method : (cmeAdd);
+  end;
+
 
 implementation
 
-uses ZBitmap {$ifdef zlog},ZLog{$endif}, ZMath;
+uses {$ifdef zlog}ZLog,{$endif} ZMath;
 
 { TBitmapRect }
 
@@ -409,6 +426,119 @@ begin
   Stack.Push(B);
 end;
 
+{ TBitmapLoad }
+
+procedure TBitmapLoad.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+end;
+
+{$ifndef minimal}
+function TBitmapLoad.GetDisplayName: String;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(Bitmap) then
+    Result := Result + '  ' + Bitmap.Name;
+end;
+{$endif}
+
+procedure TBitmapLoad.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  B : TZBitmap;
+  Pixels : pointer;
+begin
+  if Bitmap=nil then
+    Exit;
+  {$ifndef minimal}
+  if (Bitmap.PixelWidth<>TZBitmap(Content).PixelWidth) or
+     (Bitmap.PixelHeight<>TZBitmap(Content).PixelHeight) then
+  begin
+    ZLog.GetLog(Self.ClassName).Write('Bitmap size must match target.');
+    Exit;
+  end;
+  {$endif}
+
+  B := TZBitmap.CreateFromBitmap(TZBitmap(Content));
+
+  Pixels := Bitmap.GetCopyAsFloats;
+
+  B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(Pixels);
+
+  Stack.Push(B);
+end;
+
+{ TBitmapCombine }
+
+procedure TBitmapCombine.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Method',{$ENDIF}integer(@Method) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Add']);{$endif}
+end;
+
+procedure TBitmapCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  B,B1,B2 : TZBitmap;
+  Data1,Data2,P1,P2 : PColorf;
+  I,J : integer;
+begin
+  if Stack.Count<2 then
+    Exit;
+
+  B2 := TZBitmap(Stack.Pop());
+  B1 := TZBitmap(Stack.Pop());
+
+  {$ifndef minimal}
+  if (B1.PixelWidth<>B2.PixelWidth) or
+     (B1.PixelHeight<>B2.PixelHeight) then
+  begin
+    ZLog.GetLog(Self.ClassName).Write('Bitmap sizes must match.');
+    Exit;
+  end;
+  {$endif}
+
+  B := TZBitmap.CreateFromBitmap(TZBitmap(Content));
+
+  Data1 := B1.GetCopyAsFloats;
+  Data2 := B2.GetCopyAsFloats;
+
+  P1 := Data1;
+  P2 := Data2;
+  for I := 0 to B1.PixelWidth*B1.PixelHeight-1 do
+  begin
+    case Method of
+      cmeAdd :
+        begin
+          for J := 0 to 3 do
+            P2^.V[J] := Clamp(P1^.V[J] + P2^.V[J],0,1);
+        end;
+    end;
+    Inc(P1);
+    Inc(P2);
+  end;
+
+  B.SetMemory(Data2,GL_RGBA,GL_FLOAT);
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(Data1);
+  FreeMem(Data2);
+
+  B1.Free;
+  B2.Free;
+
+  Stack.Push(B);
+end;
+
+
 initialization
 
   ZClasses.Register(TBitmapRect,BitmapRectClassId);
@@ -420,6 +550,10 @@ initialization
   ZClasses.Register(TBitmapFromFile,BitmapFromFileClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
   ZClasses.Register(TBitmapBlur,BitmapBlurClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+  ZClasses.Register(TBitmapLoad,BitmapLoadClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+  ZClasses.Register(TBitmapCombine,BitmapCombineClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
 
 end.
