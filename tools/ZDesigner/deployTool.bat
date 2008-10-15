@@ -3,7 +3,8 @@ setlocal
 
 set tool=ZGameEditor
 
-.\exe\tools\upx .\exe\ZDesigner.exe
+rem UPX 3.03 is incorrectly reported as trojan horse by AVG
+rem .\exe\tools\upx .\exe\ZDesigner.exe
 
 copy .\exe\ZDesigner.exe ..\..\Deploy\%tool%\%tool%.exe
 copy .\exe\player.bin ..\..\Deploy\%tool%\

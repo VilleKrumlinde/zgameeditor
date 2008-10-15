@@ -42,7 +42,7 @@ type
   public
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     PropWidth,PropHeight : TBitmapSize;
-    Filter : (bmfLinear,bmfNearest);
+    Filter : (bmfLinear,bmfNearest,bmfMipmap);
     constructor CreateFromBitmap(B : TZBitmap);
     destructor Destroy; override;
     procedure Update; override;
@@ -120,9 +120,9 @@ end;
 //Call this when bitmap size have changed
 procedure TZBitmap.ReInit;
 const
-  FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_NEAREST_MIPMAP_LINEAR);
+  FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_LINEAR_MIPMAP_LINEAR);
 var
-  Size,W,H : integer;
+  Size,W,H,I : integer;
   P : pointer;
 begin
   CleanUp;
@@ -143,7 +143,8 @@ begin
     H := PixelHeight;
 
     //Generate mipmaps automatically, must be set before call to glTexImage2D
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    if Filter=bmfMipmap then
+      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 
     if Memory<>nil then
     begin
@@ -159,7 +160,11 @@ begin
       FreeMem(P);
     end;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilterTypes[Ord(Self.Filter)] );
+    if Self.Filter=bmfMipmap then
+      I := GL_LINEAR  //Mipmap is not a valid mag-filter
+    else
+      I := FilterTypes[Ord(Self.Filter)];
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
 
     //Gör setup-anrop som behövs varje gång bitmap ska användas som rendertarget

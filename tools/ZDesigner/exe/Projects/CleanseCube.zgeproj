@@ -14,8 +14,7 @@
 <![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
 Temp2=4;           //Ball count
 Temp1+=(1/Temp2);  //Parameter to spawned model
-return this.Iteration<Temp2;
-]]>
+return this.Iteration<Temp2;]]>
           </WhileExp>
         </Repeat>
       </Children>
@@ -49,7 +48,7 @@ return this.Iteration<Temp2;
 
 //Delay 10 seconds before start
 if(App.Time<10)
-  return 0;
+  return;
 
 Temp1=abs(noise2(App.Time,0));
 
@@ -69,8 +68,7 @@ if(Temp1<0.05) {
 
 //Turn on second sound
 if((Audio2Timer.Interval==0) && (noise2(App.Time,0)>0.25))
-  Audio2Timer.Interval=0.3;
-]]>
+  Audio2Timer.Interval=0.3;]]>
       </Expression>
     </ZExpression>
   </OnUpdate>
@@ -303,13 +301,12 @@ CurrentModel.RotationVelocity.X+=CurrentModel.Personality*0.1;
 /*Temp2=1+(Temp1*0.5);
 CurrentModel.Scale.X=Temp2;
 CurrentModel.Scale.Y=Temp2;
-CurrentModel.Scale.Z=Temp2;*/
-]]>
+CurrentModel.Scale.Z=Temp2;*/]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
         </Model>
-        <Material Name="CirculatingMaterial" Texture="CirculatingBitmap" TextureScale="0.44" TextureX="-1.6" TextureY="0.44" Color="1 1 1 1"/>
+        <Material Name="CirculatingMaterial" Texture="CirculatingBitmap" TextureScale="0.44 0.44 0.44" TextureX="-1.6" TextureY="0.44" Color="1 1 1 1"/>
         <Mesh Name="CirculatingMesh">
           <Producers>
             <MeshSphere Scale="1.5 1.5 1.5"/>
