@@ -1825,6 +1825,10 @@ begin
 end;
 
 procedure TShader.ReInit;
+const
+  TexVar : array[0..4] of char = 'tex'#0#0;
+var
+  I,J : integer;
 
   {$ifndef minimal}
   function InCheckShaderValid(Shader : PGLuint; Kind: GLEnum) : boolean;
@@ -1892,6 +1896,16 @@ begin
   glLinkProgram(ProgHandle);
   {$ifndef minimal}InCheckProgramStatus;{$endif}
 
+  //Initialize uniform variables for accessing textures 0-2
+  glUseProgram(ProgHandle);
+  for I := 0 to 2 do
+  begin
+    TexVar[3]:=char(ord('1') + I);
+    J := glGetUniformLocation(ProgHandle,pchar(@TexVar));
+    if J>-1 then
+      glUniform1i(J,I);
+  end;
+
   IsChanged := False;
 end;
 
@@ -1950,7 +1964,7 @@ begin
 
   glUseProgram(ProgHandle);
 
-  //Update uniform variables
+  //Update uniform variables once each frame
   if (UniformVariables.Count>0)
     //Time is not moving in designer, need to update anyway
     {$ifdef minimal}and (LastVariableUpdate<>ZApp.Time){$endif}

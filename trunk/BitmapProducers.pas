@@ -158,6 +158,9 @@ begin
     glRotatef( (Rotation*360) , 0, 0, 1);
 
   glEnable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_GEN_S);
+  glDisable(GL_TEXTURE_GEN_T);
+
   glScalef(ScaleX,ScaleY,1);
   glBegin(GL_QUADS);
     glTexCoord2f(TexLeft, TexTop);

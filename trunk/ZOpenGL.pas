@@ -1573,7 +1573,7 @@ var
 //  glUniform2f: procedure(location: GLint; v0: GLfloat; v1: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3f: procedure(location: GLint; v0: GLfloat; v1: GLfloat; v2: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform4f: procedure(location: GLint; v0: GLfloat; v1: GLfloat; v2: GLfloat; v3: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glUniform1i: procedure(location: GLint; v0: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glUniform1i: procedure(location: GLint; v0: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform2i: procedure(location: GLint; v0: GLint; v1: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3i: procedure(location: GLint; v0: GLint; v1: GLint; v2: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform4i: procedure(location: GLint; v0: GLint; v1: GLint; v2: GLint; v3: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1997,7 +1997,7 @@ const FuncArray : packed array[0..335{$ifdef win32}+1{$endif}] of
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..12{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..13{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -2051,7 +2051,7 @@ const ExtFuncArray : packed array[0..12{$ifndef minimal}+4{$endif}] of
 //(Name : 'glUniform2iv'; Ptr : @@glUniform2iv),
 //(Name : 'glUniform4i'; Ptr : @@glUniform4i),
 //(Name : 'glUniform3iv'; Ptr : @@glUniform3iv),
-//(Name : 'glUniform1i'; Ptr : @@glUniform1i),
+(Name : 'glUniform1i'; Ptr : @@glUniform1i),
 //(Name : 'glUniform3f'; Ptr : @@glUniform3f),
 //(Name : 'glUniform4iv'; Ptr : @@glUniform4iv),
 //(Name : 'glUniform1iv'; Ptr : @@glUniform1iv),

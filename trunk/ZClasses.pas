@@ -2974,21 +2974,28 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers) - integer(Self), zptComponentList);
 end;
 
-var
-  GlobalContent :
+type
+  TGlobalContent =
     record
       Content : TContent;
       Stack : TZArrayList;
     end;
 
+var
+  GlobalContent : TGlobalContent;
+
+
 procedure TContent.RefreshFromProducers;
 var
   Stack : TZArrayList;
+  Save : TGlobalContent;
 begin
   {$ifdef zlog}
   if Producers.Count>0 then
     ZLog.GetLog(Self.ClassName).Write('Refresh: ' + GetDisplayName);
   {$endif}
+
+  Save := GlobalContent;
 
   Stack := TZArrayList.Create;
     Stack.ReferenceOnly := True;
@@ -3008,7 +3015,8 @@ begin
     Producers.IsChanged := False;
   Stack.Free;
 
-  FillChar(GlobalContent,SizeOf(GlobalContent),0);
+//  FillChar(GlobalContent,SizeOf(GlobalContent),0);
+  GlobalContent := Save;
 end;
 
 ///////////////////

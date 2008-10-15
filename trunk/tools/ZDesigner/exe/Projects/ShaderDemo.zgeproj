@@ -321,5 +321,111 @@ gl_FragColor = gl_Color;
         </Mesh>
       </Children>
     </Group>
+    <Group Comment="Texture shader">
+      <Children>
+        <Shader Name="Shader5">
+          <VertexShaderSource>
+<![CDATA[// Vertex shader for adaptively antialiasing a procedural stripe pattern
+//
+// Author: Randi Rost
+//         based on a shader by Bert Freudenberg
+//
+// Copyright (c) 2002-2004 3Dlabs Inc. Ltd. 
+//
+// See 3Dlabs-License.txt for license information
+//
+//
+
+//uniform vec3  LightPosition;
+const vec3  LightPosition=vec3(5.0,5.0,8.0);
+
+varying float LightIntensity;
+ 
+void main(void)
+{
+    vec3 pos        = vec3(gl_ModelViewMatrix * gl_Vertex);
+    vec3 tnorm      = normalize(gl_NormalMatrix * gl_Normal);
+    vec3 lightVec   = normalize(LightPosition - pos);
+
+    LightIntensity = max(dot(lightVec, tnorm), 0.0);
+
+    gl_Position = ftransform();
+}]]>
+          </VertexShaderSource>
+          <FragmentShaderSource>
+<![CDATA[uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+
+uniform float time;
+varying float LightIntensity;
+
+void main (void)
+{
+    vec2 coord2 = vec2(gl_FragCoord.x,gl_FragCoord.y+time*10)*0.008;
+    vec2 coord3 = vec2(gl_FragCoord.x,gl_FragCoord.y+time*8)*0.0075;
+
+    gl_FragColor = texture2D(tex1, gl_FragCoord.xy*0.01+time*0.1) +
+      texture2D(tex2, coord2) +
+      texture2D(tex3, coord3) *
+      LightIntensity;
+//
+//    gl_FragColor = texture2D(tex2, gl_TexCoord[0].st);// +
+//      texture2D(tex2, gl_TexCoord[0].st) * 0.25 +
+//      LightIntensity;
+
+}]]>
+          </FragmentShaderSource>
+          <UniformVariables>
+            <ShaderVariable VariableName="time" ValuePropRef="App Time"/>
+          </UniformVariables>
+        </Shader>
+        <Material Name="Material5" Texture="Bitmap1" Texture2="Bitmap2" Texture3="Bitmap3" Shader="Shader5"/>
+        <Model Name="Model5" RotationVelocity="0.03 0.04 0.05">
+          <OnRender>
+            <UseMaterial Material="Material5"/>
+            <RenderMesh Mesh="Mesh5"/>
+          </OnRender>
+        </Model>
+        <Mesh Name="Mesh5">
+          <Producers>
+            <MeshSphere Scale="1.25 1.25 1.25" ZSamples="20" RadialSamples="20"/>
+          </Producers>
+        </Mesh>
+        <Bitmap Name="Bitmap1">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.pixel.r=noise2(this.x*4,this.y*4)*3;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="Bitmap2">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.pixel.g=noise2(this.x*4,this.y*4)*3;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="Bitmap3">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.pixel.b=noise2(this.x*4.5,this.y*4.5)*3;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>
