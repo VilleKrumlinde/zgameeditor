@@ -561,8 +561,14 @@ end;
 procedure TZApplication.DesignerStart(const ViewW,ViewH : integer);
 begin
   Self.Init;
+
   ScreenWidth := ViewW;
   ScreenHeight := ViewH;
+
+  Self.Time := 0;
+  Self.DeltaTime := 0;
+  Self.Clock.LastTime := 0;
+
   //Uppdatera träd initialt
   Content.Update;
   OnLoaded.ExecuteCommands;

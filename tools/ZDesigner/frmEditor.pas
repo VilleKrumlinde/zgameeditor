@@ -2178,6 +2178,7 @@ end;
 procedure TEditorForm.DeleteComponentActionUpdate(Sender: TObject);
 begin
   (Sender as TAction).Enabled :=
+    (ActiveControl = Tree) and
     Assigned(Tree.Selected) and
     Assigned(Tree.ZSelected.Component) and
     (Tree.ZSelected.Component<>Root) and

@@ -252,6 +252,7 @@ begin
     Exit;
   gCurrentPc := Code.GetPtrToItem(0);
   gCurrentBP := 0;
+  gStack.Clear;
   gStack.Push(nil); //Push return adress nil
   while True do
   begin
@@ -555,7 +556,7 @@ end;
 function TDefineArray.PopAndGetElement : PFloat;
 var
   Index : integer;
-  I1,I2,I3 : integer;
+  I1,I2,I3,ByteSize : integer;
 begin
   I3 := Trunc(gStack.PopFloat);
   if Self.Dimensions>=dadTwo then
@@ -579,16 +580,20 @@ begin
   if Data=nil then
   begin
     Limit := SizeDim1 * (SizeDim2+1) * (SizeDim3+1);;
-    GetMem(Data, Limit*SizeOf(single) );
+    ByteSize := Limit*SizeOf(single);
+    GetMem(Data, ByteSize );
+    FillChar(Data^, ByteSize ,0);
   end;
 
   Index := (I1*SizeDim3) + (I2*SizeDim2) + I3;
 
   {$ifndef minimal}
-  if (Index>=Limit) or
-    (I3>SizeDim1) or
-    (I2>SizeDim2) or
-    (I1>SizeDim3) then
+  if ((Index<0) or (Index>=Limit)) or
+    ((I1<0) or (I2<0) or (I3<0)) or
+    ((Dimensions=dadOne) and (I3>=SizeDim1)) or
+    ((Dimensions=dadTwo) and ((I2>=SizeDim1) or (I3>=SizeDim2))) or
+    ((Dimensions=dadThree) and ((I1>=SizeDim1) or (I2>=SizeDim2) or (I3>=SizeDim3)))
+    then
   begin
     {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
