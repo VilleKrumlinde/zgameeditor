@@ -26,6 +26,8 @@ uses ZClasses;
 
 type
   TZFile = class(TZComponent)
+  private
+    WriteFileName : array[0..254] of char;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -34,6 +36,7 @@ type
     FileEmbedded : TZBinaryPropValue;
     Encoding : (feChar,feBinary);
     OnRead : TZComponentList;
+    OnWrite : TZComponentList;
   end;
 
   TFileAction = class(TCommand)
@@ -61,12 +64,29 @@ type
 
 implementation
 
-uses ZLog;
+uses ZLog,ZPlatform;
 
 var
   CurFileState : (fsNone,fsReading,fsWriting);
   CurInStream : TZInputStream;
   CurFile : TZFile;
+  CurWriteBuf : record
+      Position,ByteSize : integer;
+      Append : boolean;
+      case Boolean of
+        True : (BBuf : array[0..1023] of byte);
+        False : (FBuf : array[0..255] of single);
+    end;
+
+
+procedure FlushWriteBuf;
+begin
+  Platform_WriteFile(CurFile.WriteFileName,@CurWriteBuf.BBuf,
+    CurWriteBuf.ByteSize,CurWriteBuf.Append);
+  CurWriteBuf.Position := 0;
+  CurWriteBuf.ByteSize := 0;
+  CurWriteBuf.Append := True;
+end;
 
 { TZFile }
 
@@ -79,13 +99,14 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite) - integer(Self), zptComponentList);
 end;
 
 { TFileAction }
 
 {$ifndef minimal}
 const
-  FileActionNames : array[0..0] of string = ('Read');
+  FileActionNames : array[0..1] of string = ('Read','Write');
 {$endif}
 
 procedure TFileAction.DefineProperties(List: TZPropertyList);
@@ -107,11 +128,16 @@ var
 begin
   {$ifndef minimal}
   if CurFileState<>fsNone then
+    //Only allow a single file-operation to be active at one time
     ZHalt('FileAction failed. CurFileState<>fsNone.');
   {$endif}
 
   if ZFile.FileEmbedded.Size>0 then
   begin
+    {$ifndef minimal}
+    if Action=faWrite then
+      ZHalt('FileAction failed. Cannot write to embedded file.');
+    {$endif}
     //Open file embedded in exe-file
     CurInStream := TZInputStream.CreateFromMemory(ZFile.FileEmbedded.Data,ZFile.FileEmbedded.Size);
   end
@@ -120,7 +146,7 @@ begin
     //Open external file
     if ZFile.FileNameFloatRef.Component<>nil then
     begin
-      //Om textref är satt så konvertera float-värde till sträng
+      //If ref is set then convert float-value to string
       ZStrConvertFloat(
         PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^,
         PChar(@FloatBuf));
@@ -135,27 +161,45 @@ begin
     ZLog.GetLog(Self.ClassName).Write('ZFile Open: ' + S);
     {$endif}
 
-    CurInStream := TZInputStream.CreateFromFile(S,True);
+    if Action=faRead then
+      CurInStream := TZInputStream.CreateFromFile(S,True)
+    else
+    begin
+      ZStrCopy(Self.ZFile.WriteFileName,S);
+      CurWriteBuf.Position := 0;
+    end;
   end;
 
-  CurFileState := fsReading;
   CurFile := Self.ZFile;
 
-  {$ifndef minimal}
-  try
-  {$endif}
-    ZFile.OnRead.ExecuteCommands;
-  {$ifndef minimal}
-  finally
-  {$endif}
-    CurInStream.Free;
-    CurFileState := fsNone;
-  {$ifndef minimal}
+  case Action of
+    faRead :
+      begin
+      {$ifndef minimal}try{$endif}
+        CurFileState := fsReading;
+        ZFile.OnRead.ExecuteCommands;
+      {$ifndef minimal}finally{$endif}
+        CurInStream.Free;
+        CurFileState := fsNone;
+      {$ifndef minimal}end;{$endif}
+      end;
+    faWrite :
+      begin
+      {$ifndef minimal}try{$endif}
+        CurFileState := fsWriting;
+        FillChar(CurWriteBuf,SizeOf(CurWriteBuf),0);
+        ZFile.OnWrite.ExecuteCommands;
+        FlushWriteBuf;
+      {$ifndef minimal}finally{$endif}
+        CurFileState := fsNone;
+      {$ifndef minimal}end;{$endif}
+      end;
   end;
+
+  {$ifndef minimal}
   CurFile := nil;
   CurInStream := nil;
   {$endif}
-
 end;
 
 {$ifndef minimal}
@@ -184,25 +228,47 @@ var
   B : byte;
 begin
   {$ifndef minimal}
-  if (CurFileState=fsNone) or (CurFile=nil) or (CurInStream=nil) then
-    ZHalt('FileMoveData failed. No file opened for reading.');
+  if (CurFileState=fsNone) then
+    ZHalt('FileMoveData failed. No file active.');
   if (ZProperty.Component=nil) then
     ZHalt('FileMoveData failed. No target property set.');
   {$endif}
+  PropValuePtr := ZProperty.Component.GetPropertyPtr(ZProperty.Prop,ZProperty.Index);
   case CurFileState of
     fsReading :
       begin
-        PropValuePtr := ZProperty.Component.GetPropertyPtr(ZProperty.Prop,ZProperty.Index);
         case CurFile.Encoding of
           feChar :
             begin
               CurInStream.Read(B,SizeOf(B));
-              V := Trunc(B);
+              V := B;
             end;
           feBinary :
             CurInStream.Read(V,SizeOf(V));
         end;
         PropValuePtr^ := V;
+      end;
+    fsWriting :
+      begin
+        V := PropValuePtr^;
+        case CurFile.Encoding of
+          feChar :
+            begin
+              B := Trunc(V);
+              if CurWriteBuf.Position>High(CurWriteBuf.BBuf) then
+                FlushWriteBuf;
+              CurWriteBuf.BBuf[CurWriteBuf.Position] := B;
+              Inc(CurWriteBuf.ByteSize);
+            end;
+          feBinary :
+            begin
+              if CurWriteBuf.Position>High(CurWriteBuf.FBuf) then
+                FlushWriteBuf;
+              CurWriteBuf.FBuf[CurWriteBuf.Position] := V;
+              Inc(CurWriteBuf.ByteSize,4);
+            end;
+        end;
+        Inc(CurWriteBuf.Position);
       end;
   end;
 end;
@@ -225,6 +291,6 @@ initialization
   ZClasses.Register(TFileAction,FileActionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Controls when to read/write from a File';{$endif}
   ZClasses.Register(TFileMoveData,FileMoveDataClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Move data from/to a File. Use only in File.OnRead.';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Move data from/to a File. Use only in File.OnRead or OnWrite.';{$endif}
 
 end.

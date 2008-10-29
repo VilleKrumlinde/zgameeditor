@@ -327,7 +327,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.3b';
+  AppVersion = '1.9.4b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -616,7 +616,7 @@ begin
     LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
 
-    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
+    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}kkrunchy.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
   finally
     Ini.Free;
