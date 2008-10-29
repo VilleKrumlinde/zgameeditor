@@ -52,6 +52,7 @@ procedure Platform_Error(ErrorMessage : PChar);
 //procedure Platform_SimpleText(Scale,X,Y : single; Msg : PChar);
 
 procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
 
 procedure Platform_InitAudio;
 procedure Platform_ShutdownAudio;

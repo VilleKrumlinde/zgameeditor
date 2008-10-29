@@ -70,7 +70,7 @@ CurrentModel.Position.Z=TileCurZ;]]>
         </Model>
       </Children>
     </Group>
-    <Group Comment="File">
+    <Group Comment="Map File">
       <Children>
         <File Name="LevelLayoutFile" FileName="FpsLevelLayout.txt">
           <OnRead>
@@ -184,6 +184,16 @@ PlayerViewAngle+=0.25 * App.DeltaTime;]]>
             <KeyPress Comment="Fire" Keys="Z" RepeatDelay="0.25">
               <OnPressed>
                 <SpawnModel Model="PlayerShotModel" UseSpawnerPosition="255"/>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Comment="Save" Keys="1" RepeatDelay="1">
+              <OnPressed>
+                <FileAction File="SaveGameFile" Action="1"/>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Comment="Load" Keys="2" RepeatDelay="1">
+              <OnPressed>
+                <FileAction File="SaveGameFile"/>
               </OnPressed>
             </KeyPress>
           </OnUpdate>
@@ -402,6 +412,22 @@ CurrentModel.Position.Z=TileCurZ;]]>
             <DefineConstant Name="Enemy1Speed" Value="4"/>
           </Children>
         </Group>
+      </Children>
+    </Group>
+    <Group>
+      <Children>
+        <File Name="SaveGameFile" FileName="SaveGame" Encoding="1">
+          <OnRead>
+            <FileMoveData Property="PlayerModel Position"/>
+            <FileMoveData Property="PlayerModel Position 2"/>
+            <FileMoveData Property="PlayerViewAngle Value"/>
+          </OnRead>
+          <OnWrite>
+            <FileMoveData Property="PlayerModel Position"/>
+            <FileMoveData Property="PlayerModel Position 2"/>
+            <FileMoveData Property="PlayerViewAngle Value"/>
+          </OnWrite>
+        </File>
       </Children>
     </Group>
   </Content>

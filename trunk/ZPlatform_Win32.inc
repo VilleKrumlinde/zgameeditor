@@ -611,34 +611,73 @@ begin
 end;
 {$endif}
 
+procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+{$ifdef minimal}
+var
+  I : integer;
+{$endif}
+begin
+  {$ifdef minimal}
+  I := GetModuleFileName(0,Buf,255);
+  while (I>0) and (Buf[I]<>'\') do
+    Dec(I);
+  if I>0 then
+  begin
+    Buf[I+1]:=#0;
+    //lstrcat(Buf,FileName);
+    ZStrCat(PChar(@Buf),FileName);
+  end;
+  {$else}
+  Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
+  ZStrCopy(PChar(@Buf),PChar(DesignerFilePath));
+  ZStrCat(PChar(@Buf),FileName);
+  {$endif}
+end;
+
+procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+var
+  Handle : THandle;
+  Dummy : longword;
+  Buf : array[0..254] of char;
+  OpenFlag : LongWord;
+begin
+  MakeFullPath(FileName,Buf);
+  FileName := @Buf;
+
+  if Append then
+    OpenFlag := OPEN_ALWAYS
+  else
+    OpenFlag := CREATE_ALWAYS;
+
+  Handle := CreateFile(FileName, GENERIC_WRITE,
+    0, nil, OpenFlag,
+    FILE_ATTRIBUTE_NORMAL, 0);
+
+  if Handle=INVALID_HANDLE_VALUE then
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog('Platform').Write('Could not open file: ' + FileName);
+    {$endif}
+    Exit;
+  end;
+
+  SetFilePointer(Handle, 0, nil, FILE_END);
+  WriteFile(Handle, Memory^, Size, Dummy, nil);
+
+  CloseHandle(Handle);
+end;
+
 procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   Handle : THandle;
   Dummy : longword;
   Buf : array[0..254] of char;
-  {$ifdef minimal}
-  I : integer;
-  {$endif}
 begin
 
   //Open file relative to path of exe-file
   if IsRelative then
   begin
-    {$ifdef minimal}
-    I := GetModuleFileName(0,Buf,255);
-    while (I>0) and (Buf[I]<>'\') do
-      Dec(I);
-    if I>0 then
-    begin
-      Buf[I+1]:=#0;
-      //lstrcat(Buf,FileName);
-      ZStrCat(PChar(@Buf),FileName);
-    end;
-    {$else}
-    Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
-    ZStrCopy(PChar(@Buf),PChar(DesignerFilePath));
-    ZStrCat(PChar(@Buf),FileName);
-    {$endif}
+    MakeFullPath(FileName,Buf);
     FileName := @Buf;
   end;
 

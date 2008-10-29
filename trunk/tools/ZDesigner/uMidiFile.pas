@@ -40,6 +40,7 @@ uses
 type
   TChunkType = (ctIllegal, ctHeader, ctTrack);
   TFileType = (ftSingle, ftMultiSynch, ftMultiAsynch);
+  TMidiFile = class;
 
   TMidiEvent = class
   private
@@ -51,6 +52,7 @@ type
     iPulses: Integer;
     Position: Integer;
     iSize: Integer;
+    TimeMsec,LengthMsec : integer;
   end;
 
   TMidiHead = record
@@ -70,12 +72,13 @@ type
     FPosition: Integer;
     FTrackSize: Integer;
     CurEventI : integer;
+    CurTimeMsec : integer;
   protected
     function GetTrackLength: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure AddEvent(Event: TMidiEvent);
+    procedure AddEvent(Event: TMidiEvent; Mid : TMidiFile);
   end;
 
   TMidiFile = class
@@ -89,10 +92,11 @@ type
     FMidiHead: TMidiHead;
     FMidiTrack: TMidiTrack;
     TrackList: TList;
-    TicksPerSecond : single;
+    SecondsPerTick : single;
     LastWrittenPosition : integer;
     MidiWarnings,UsedPatchesList : TStringList;
     UsedChannels : array[0..15] of boolean;
+    Tickrate : single;
     procedure ReadChunkHeader;
     procedure ReadChunkContent;
     procedure ProcessHeaderChunk;
@@ -125,6 +129,12 @@ begin
     WriteVarLength(Stream, I, $80);
   B := B or Mask;
   Stream.Write(B,1);
+end;
+
+procedure WriteTime(Stream : TMemoryStream; Value: LongInt);
+begin
+  //Convert from msecs to zge-miditiming
+  WriteVarLength(Stream,Value div 10);
 end;
 
 function ReadVarLength(var PIndex: PByte): Integer;
@@ -183,7 +193,7 @@ begin
   inherited;
 end;
 
-procedure TMidiTrack.AddEvent(Event: TMidiEvent);
+procedure TMidiTrack.AddEvent(Event: TMidiEvent; Mid : TMidiFile);
 begin
   if (Event.iEvent = $FF) then
   begin
@@ -200,8 +210,14 @@ begin
 //        FChannels[Event^.iEvent and $F] := True;
 //    end;
   end;
+
   FPosition := FPosition + Event.iPulses;
   Event.Position := FPosition;
+
+  Event.LengthMsec := Mid.TicksToTime(Event.iPulses);
+  CurTimeMsec := CurTimeMsec + Event.LengthMsec;
+  Event.TimeMsec := CurTimeMsec;
+
   EventList.Add(Event);
 end;
 
@@ -289,7 +305,6 @@ var
   i: Integer;
   W : word;
   B : byte;
-  Tickrate : single;
 begin
   ReadChunkHeader;
   if FChunkType <> ctHeader then
@@ -324,7 +339,7 @@ begin
       Tickrate := 29.97;
     //Lower 8 bits=Ticks per frame
     Tickrate := Tickrate * (W and $00ff);
-    Self.TicksPerSecond := 1.0 / Tickrate;
+    Self.SecondsPerTick := 1.0 / Tickrate;
   end
   else
   begin
@@ -332,7 +347,7 @@ begin
     Tickrate := (W and $7FFF);
     //Se STK
     //Default tempo is 120 beats per minute = 2 per second
-    Self.TicksPerSecond := (0.5 / Tickrate);
+    Self.SecondsPerTick := (0.5 / Tickrate);
   end;
 
 end;
@@ -341,7 +356,7 @@ end;
 procedure TMidiFile.ProcessTrackChunk;
 var
   iEvent: Integer;
-  iLength: Integer;
+  iLength, I : Integer;
   pEvent: TMidiEvent;
   pStart: PByte;
 begin
@@ -383,6 +398,14 @@ begin
       inc(FChunkIndex);
       iLength := ReadVarLength(FChunkIndex);
       pEvent.sLetter := ReadString(iLength, FChunkIndex);
+      if pEvent.iData1=81 then
+      begin //tempo change
+        I := Byte( pEvent.sLetter[1] ) * $10000 +
+          Byte( pEvent.sLetter[2] ) * $100 +
+          Byte( pEvent.sLetter[3] );
+        //http://www.piclist.com/techref/io/serial/midi/midifile.html
+        Self.SecondsPerTick := I / Tickrate / 1000000;
+      end;
     end else
     begin
       // These are all midi events
@@ -397,6 +420,10 @@ begin
             inc(FChunkIndex);
             pEvent.iData2 := FChunkIndex^;
             inc(FChunkIndex);
+            //Some files use "note on" with velocity zero instead of note-off
+            //Convert them to note-off events
+            if (iEvent shr 4=$9) and (pEvent.iData2=0) then
+               pEvent.iEvent := pEvent.iEvent and (255- (1 shl 4));
           end;
         $C0..$CF, // Program change
           $D0..$DF: // Channel aftertouch
@@ -407,7 +434,7 @@ begin
       end;
     end;
     pEvent.iSize := Integer(FChunkIndex) - Integer(pStart);
-    FMidiTrack.AddEvent(pEvent);
+    FMidiTrack.AddEvent(pEvent,Self);
   end; // End while
 end;
 
@@ -420,8 +447,8 @@ end;
 
 function TMidiFile.TicksToTime(const I : integer) : integer;
 begin
-  //Returns ticks recalculated to 0.1 seconds
-  Result := Round(I * Self.TicksPerSecond * 100);
+  //Returns ticks recalculated to msecs
+  Result := Round(I * Self.SecondsPerTick * 1000) ;
 end;
 
 procedure TMidiFile.MidiWarning(const S : string);
@@ -440,6 +467,7 @@ var
   S : string;
 begin
   case Event.iEvent shr 4 of
+    $8 : ; //note off, ignore
     $9 : //Note on
       begin
         //find matching note off-event to get note length
@@ -449,7 +477,7 @@ begin
         for I := Track.CurEventI+1 to Track.EventList.Count - 1 do
         begin
           E := TMidiEvent(Track.EventList[I]);
-          Inc(NoteLength,E.iPulses);
+          Inc(NoteLength,E.LengthMsec);
           if (E.iEvent shr 4=$8) and //note off
             (E.iEvent and 15=Event.iEvent and 15) and  //same channel
             (E.iData1=Event.iData1) //same note
@@ -474,25 +502,24 @@ begin
         UsedChannels[Event.iEvent and 15] := True;
         //ZLog.GetLog(Self.ClassName).Write( Format('Write %d : %d : %d : %d',
         //  [Event.iEvent,Event.iPulses,Event.iData1,NoteLength]) );
-        NoteLength := TicksToTime(NoteLength);
-        WriteVarLength(Stream, TicksToTime(Event.Position - Self.LastWrittenPosition) );  //delta-time
+        WriteTime(Stream, Event.TimeMsec - Self.LastWrittenPosition );  //delta-time
         Stream.Write(Event.iEvent,1); //playnote id
         Stream.Write(Event.iData1,1); //note nr
-        WriteVarLength(Stream,NoteLength);  //length
+        WriteTime(Stream,NoteLength);  //length
         if Event.iData2=0 then
           MidiWarning('Note on with velocity zero');
         Stream.Write(Event.iData2,1); //velocity
-        Self.LastWrittenPosition := Event.Position;  //event is written: reset delta for next event
+        Self.LastWrittenPosition := Event.TimeMsec;  //event is written: reset delta for next event
       end;
     $B : //controller event
       begin
         case Event.iData1 of
           7 : //Channel volume
             begin
-              WriteVarLength(Stream, TicksToTime(Event.Position - Self.LastWrittenPosition) );  //delta-time
+              WriteTime(Stream, Event.TimeMsec - Self.LastWrittenPosition );  //delta-time
               Stream.Write(Event.iEvent,1); //command
               Stream.Write(Event.iData2,1); //volume
-              Self.LastWrittenPosition := Event.Position;  //event is written: reset delta for next event
+              Self.LastWrittenPosition := Event.TimeMsec;  //event is written: reset delta for next event
             end;
         else
           MidiWarning(Format('Ignore ctrl event %d', [Event.iData1]));
@@ -506,10 +533,10 @@ begin
           UsedPatchesList.Add(S);
         InstrumentNr := UsedPatchesList.IndexOf(S);
         //ZLog.GetLog(Self.ClassName).Write( Format('Patch change %d : %d', [Event.iEvent,Event.iData1]) );
-        WriteVarLength(Stream, TicksToTime(Event.Position - Self.LastWrittenPosition) );  //delta-time
+        WriteTime(Stream, Event.TimeMsec - Self.LastWrittenPosition );  //delta-time
         Stream.Write(Event.iEvent,1); //program change
         Stream.Write(InstrumentNr,1); //instrument nr
-        Self.LastWrittenPosition := Event.Position;  //event is written: reset delta for next event
+        Self.LastWrittenPosition := Event.TimeMsec;  //event is written: reset delta for next event
       end;
     $F : //meta event FF
       begin
@@ -540,13 +567,13 @@ begin
     while Track.CurEventI<Track.EventList.Count - 1 do
     begin
       Event := TMidiEvent(Track.EventList[Track.CurEventI]);
-      if Event.Position<=Time then
+      if Event.TimeMsec<=Time then
         WriteOneEvent(Stream,Track,Event)
       else
       begin
         //Returnera tidpunkt för närmaste event från något track
-        if Event.Position<Result then
-          Result := Event.Position;
+        if Event.TimeMsec<Result then
+          Result := Event.TimeMsec;
         Break;
       end;
       Inc(Track.CurEventI);
@@ -579,7 +606,10 @@ begin
       end;
     end;
     Music.Instruments.Clear;
-    for I := 0 to UsedPatchesList.Count - 1 do
+    if UsedPatchesList.Count=0 then
+      //Some files do not contain patch-changes, just add a default instrument
+      Music.Instruments.AddComponent((InstGroup.Children[0] as TSound).Clone)
+    else for I := 0 to UsedPatchesList.Count - 1 do
     begin
       PatchNr := StrToInt(UsedPatchesList[I]);
       Inst := InstGroup.Children[PatchNr] as TSound;
