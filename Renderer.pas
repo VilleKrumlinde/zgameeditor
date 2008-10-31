@@ -210,6 +210,8 @@ type
     RenderVertexExpression : TZExpressionPropValue;
     Vertex : TZVector3f;
     TexCoord : TZVector3f;
+    Color : TZColorf;
+    VertexColors : boolean;
     procedure Execute; override;
     destructor Destroy; override;
   end;
@@ -1443,12 +1445,16 @@ begin
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Update each vertex.'#13#10 +
       '//Vertex : current vertex'#13#10 +
-      '//TexCoord : current texture coordinate';
+      '//TexCoord : current texture coordinate'#13#10 +
+      '//Color : current vertex color';
     {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'Vertex',{$ENDIF}integer(@Vertex) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist:=True;
   List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist:=True;
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptColorf);
+    List.GetLast.NeverPersist := True;
 end;
 
 destructor TRenderNet.Destroy;
@@ -1463,6 +1469,7 @@ var
   I : integer;
   P : PZVector3f;
   Tex : PZVector2f;
+  PColor : PInteger;
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -1472,6 +1479,10 @@ begin
     Mesh := TMesh.Create(nil);
 
   Mesh.MakeNet(XCount,YCount);
+
+  if VertexColors and (Mesh.Colors=nil) then
+    GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
+  PColor := Mesh.Colors;
 
   if (RenderVertexExpression.Code<>nil) then
   begin
@@ -1485,6 +1496,11 @@ begin
       ZExpressions.RunCode(RenderVertexExpression.Code);
       Tex^ := PZVector2f(@TexCoord)^;
       P^ := Vertex;
+      if VertexColors then
+      begin
+        PColor^ := ColorFtoB(Self.Color);
+        Inc(PColor);
+      end;
       Inc(P);
       Inc(Tex);
     end;

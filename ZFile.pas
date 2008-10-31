@@ -66,6 +66,9 @@ implementation
 
 uses ZLog,ZPlatform;
 
+
+const
+  WriteBufSize=1024;
 var
   CurFileState : (fsNone,fsReading,fsWriting);
   CurInStream : TZInputStream;
@@ -74,8 +77,8 @@ var
       Position,ByteSize : integer;
       Append : boolean;
       case Boolean of
-        True : (BBuf : array[0..1023] of byte);
-        False : (FBuf : array[0..255] of single);
+        True : (BBuf : array[0..WriteBufSize-1] of byte);
+        False : (FBuf : array[0..(WriteBufSize div 4)-1] of single);
     end;
 
 

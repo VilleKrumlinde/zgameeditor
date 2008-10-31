@@ -175,27 +175,56 @@ begin
 {$endif}
 end;
 
+procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+var
+  I : integer;
+  Tmp : PChar;
+begin
+  Tmp := @Buf;
+  ZStrCopy(Tmp,Platform_GetExeFileName);
+  I := ZStrLength(Tmp);
+  while (I>0) and (not (Tmp[I] in ['\','/'])) do
+    Dec(I);
+  if I>0 then
+    Tmp[I+1] := #0;
+  //Append filename
+  ZStrCat(Tmp,FileName);
+end;
+
+procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+var
+  Buf : array[0..511] of char;
+  Written : longint;
+begin
+  MakeFullPath(FileName,Buf);
+  FileName := @Buf;
+
+  System.FileMode := 2;
+  System.Assign(F,FileName);
+
+  if Append then
+  begin
+    System.Reset(F,1);
+    System.Seek(F,System.FileSize(F));
+  end
+  else
+    System.Rewrite(F,1);
+
+  System.BlockWrite(F,Memory^,Size,Written);
+
+  System.Close(F);
+end;
+
 procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   F : file;
-  I : integer;
-  Tmp : PChar;
   Buf : array[0..511] of char;
 begin
   //Open file relative to path of exe-file
   if IsRelative then
   begin
-    //Get path of exe-file
-    Tmp := @Buf;
-    ZStrCopy(Tmp,Platform_GetExeFileName);
-    I := ZStrLength(Tmp);
-    while (I>0) and (not (Tmp[I] in ['\','/'])) do
-      Dec(I);
-    if I>0 then
-      Tmp[I+1] := #0;
-    //Append filename
-    ZStrCat(Tmp,FileName);
-    FileName := Tmp;
+    MakeFullPath(FileName,Buf);
+    FileName := @Buf;
   end;
 
   System.FileMode := 0;
