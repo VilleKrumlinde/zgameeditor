@@ -2813,7 +2813,8 @@ begin
         Continue;
       end
       else
-        Assert(C<>nil,'Unknown reference: ' + Fix.Name);
+        if C=nil then
+          raise Exception.Create('Unknown reference: ' + Fix.Name);
     end;
     case Fix.Prop.PropertyType of
       zptComponentRef :

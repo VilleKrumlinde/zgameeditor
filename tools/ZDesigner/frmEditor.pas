@@ -327,7 +327,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.4b';
+  AppVersion = '1.9.4';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -2381,6 +2381,11 @@ begin
     ShowMessage('An component with this name already exists: ' + NewName);
     Abort;
   end;
+  if (NewName='') and HasReferers(Root, C) then
+  begin
+    ShowMessage('Cannot set the name to blank, other components refer to this component.');
+    Abort;
+  end;
   if Trim(OldName)<>'' then
     SymTab.Remove(OldName);
   if NewName<>'' then
@@ -2522,6 +2527,7 @@ begin
       Delete(S,1,4);
       C := ComponentManager.LoadXmlFromString(S,SymTab);
       InsertAndRenameComponent(C,DestTreeNode);
+      CompileAll;
     end;
   end;
 end;
