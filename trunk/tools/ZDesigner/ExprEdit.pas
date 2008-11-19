@@ -438,10 +438,14 @@ var
       Gen(Func.Statements[I] as TZcOp);
     end;
     if Assigned(LReturn) then
+    begin
       DefineLabel(LReturn);
+      LReturn := nil;
+    end;
     Ret := TExpReturn.Create(Target);
     Ret.HasFrame := Func.GetStackSize>0;
     Ret.HasReturnValue := Func.ReturnType<>zctVoid;
+    Ret.Arguments := Func.Arguments.Count;
   end;
 
 begin
@@ -473,12 +477,15 @@ end;
 
 procedure TZCodeGen.DefineLabel(Lbl: TZCodeLabel);
 begin
+  if Lbl.Definition<>-1 then
+    raise ECodeGenError.Create('Label already defined');
   Lbl.Definition := Target.Count;
 end;
 
 function TZCodeGen.NewLabel: TZCodeLabel;
 begin
   Result := TZCodeLabel.Create;
+  Result.Definition := -1;
   Labels.Add(Result);
 end;
 
@@ -515,7 +522,7 @@ begin
   for I := 0 to Labels.Count-1 do
   begin
     Lbl := TZCodeLabel(Labels[I]);
-    if Lbl.Definition=0 then
+    if Lbl.Definition=-1 then
       raise ECodeGenError.Create('Label with missing definition');
     for J := 0 to Lbl.Usage.Count-1 do
     begin

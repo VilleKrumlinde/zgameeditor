@@ -387,7 +387,10 @@ begin
   if TexCoords<>nil then
     FreeMem(TexCoords);
   if Colors<>nil then
+  begin
     FreeMem(Colors);
+    Colors := nil;
+  end;
 end;
 
 destructor TMesh.Destroy;

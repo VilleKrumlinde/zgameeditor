@@ -204,6 +204,7 @@ type
     HasFrame : boolean;
     IsFunction : boolean;      //if false=simple expression
     HasReturnValue : boolean;
+    Arguments : integer;
   end;
 
   TExpMisc = class(TExpBase)
@@ -585,7 +586,12 @@ begin
     FillChar(Data^, ByteSize ,0);
   end;
 
-  Index := (I1*SizeDim3) + (I2*SizeDim2) + I3;
+  case Self.Dimensions of
+    dadOne: Index := I3;
+    dadTwo: Index := (I2*SizeDim2) + I3;
+  else
+    Index := (I1*SizeDim2) + (I2*SizeDim1) + I3;
+  end;
 
   {$ifndef minimal}
   if ((Index<0) or (Index>=Limit)) or
@@ -674,12 +680,14 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasFrame',{$ENDIF}integer(@HasFrame) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'IsFunction',{$ENDIF}integer(@IsFunction) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Arguments',{$ENDIF}integer(@Arguments) - integer(Self), zptInteger);
 end;
 
 {$warnings off}
 procedure TExpReturn.Execute;
 var
   RetVal : integer;
+  I : integer;
 begin
   if HasReturnValue then
   begin
@@ -696,6 +704,10 @@ begin
 
   //Get return adress
   gCurrentPc := pointer(gStack.Pop);
+
+  //Clean stack of function arguments
+  for I := 0 to Arguments - 1 do
+    gStack.Pop;
 
   if HasReturnValue then
   begin
@@ -775,6 +787,10 @@ end;
 
 procedure TExpUserFuncCall.Execute;
 begin
+  {$ifndef minimal}
+  if gStack.Count>10000 then
+    ZHalt('Stack overflow in expression.');
+  {$endif}
   gStack.Push(TObject(gCurrentPC));
   gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
   Dec(gCurrentPc);

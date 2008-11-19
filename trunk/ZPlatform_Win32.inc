@@ -498,7 +498,7 @@ begin
       {$endif}
 
       {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
-      Sleep(5);  //Avoid using all cpu in screensaver mode
+      //Sleep(5);  //Avoid using all cpu in screensaver mode
       {$ifend}
     end;
   end;
