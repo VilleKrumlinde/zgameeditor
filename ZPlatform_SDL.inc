@@ -195,6 +195,7 @@ procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer;
 var
   Buf : array[0..511] of char;
   Written : longint;
+  F : file;
 begin
   MakeFullPath(FileName,Buf);
   FileName := @Buf;
