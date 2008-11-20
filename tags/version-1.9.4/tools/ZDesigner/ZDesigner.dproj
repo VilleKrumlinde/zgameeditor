@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{b410a785-0552-4d55-820f-510dfc7ab4d8}</ProjectGuid>
+    <MainSource>ZDesigner.dpr</MainSource>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+    <DCC_DependencyCheckOutputName>exe\ZDesigner.exe</DCC_DependencyCheckOutputName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_WriteableConstants>True</DCC_WriteableConstants>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_ExeOutput>.\exe</DCC_ExeOutput>
+    <DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty</DCC_ResourcePath>
+    <DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty</DCC_ObjPath>
+    <DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty</DCC_IncludePath>
+    <DCC_Define>zdebug;zlog;RELEASE</DCC_Define>
+    <DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
+    <DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_WriteableConstants>True</DCC_WriteableConstants>
+    <DCC_ExeOutput>.\exe</DCC_ExeOutput>
+    <DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty</DCC_ResourcePath>
+    <DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty</DCC_ObjPath>
+    <DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty</DCC_IncludePath>
+    <DCC_Define>zdebug;zlog;DEBUG</DCC_Define>
+    <DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
+    <DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality</Borland.Personality>
+    <Borland.ProjectType>VCLApplication</Borland.ProjectType>
+    <BorlandProject>
+<BorlandProject><Delphi.Personality><Parameters><Parameters Name="DebugSourceDirs">C:\DATA\Delphi32\ZzDC\</Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1053</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIntraweb_80_100.bpl">Intraweb 8.0 Design Package for Borland Development Studio 2006</Excluded_Packages>
+      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIndyCore100.bpl">Indy 10 Core Design Time</Excluded_Packages>
+      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclsmp100.bpl">Borland Sample Components</Excluded_Packages>
+      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIndyProtocols100.bpl">Indy 10 Protocols Design Time</Excluded_Packages>
+      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dcltee100.bpl">TeeChart Components</Excluded_Packages>
+    </Excluded_Packages><Source><Source Name="MainSource">ZDesigner.dpr</Source></Source></Delphi.Personality><ModelSupport>False</ModelSupport></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
+  <ItemGroup>
+    <DelphiCompile Include="ZDesigner.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="..\..\Animators.pas" />
+    <DCCReference Include="..\..\AudioComponents.pas" />
+    <DCCReference Include="..\..\AudioPlayer.pas" />
+    <DCCReference Include="..\..\BitmapProducers.pas" />
+    <DCCReference Include="..\..\Collision.pas" />
+    <DCCReference Include="..\..\Commands.pas" />
+    <DCCReference Include="..\..\ImplicitMeshes.pas" />
+    <DCCReference Include="..\..\Meshes.pas" />
+    <DCCReference Include="..\..\Steering.pas" />
+    <DCCReference Include="..\..\ZApplication.pas" />
+    <DCCReference Include="..\..\ZBitmap.pas" />
+    <DCCReference Include="..\..\ZClasses.pas" />
+    <DCCReference Include="..\..\ZExpressions.pas" />
+    <DCCReference Include="..\..\ZFile.pas" />
+    <DCCReference Include="3rdparty\unitEXIcon.pas" />
+    <DCCReference Include="3rdparty\unitPEFile.pas" />
+    <DCCReference Include="3rdparty\unitResourceDetails.pas" />
+    <DCCReference Include="3rdparty\unitResourceGraphics.pas" />
+    <DCCReference Include="3rdparty\unitResourceRCData.pas" />
+    <DCCReference Include="3rdparty\uTinyGif.pas" />
+    <DCCReference Include="DesignerGui.pas" />
+    <DCCReference Include="dmCommon.pas">
+      <Form>CommonModule</Form>
+      <DesignClass>TDataModule</DesignClass>
+    </DCCReference>
+    <DCCReference Include="ExprEdit.pas" />
+    <DCCReference Include="expr\CocoBase.pas" />
+    <DCCReference Include="expr\mwStringHashList.pas" />
+    <DCCReference Include="expr\Zc.PAS" />
+    <DCCReference Include="expr\Zc_Ops.pas" />
+    <DCCReference Include="frm3dsImportOptions.pas">
+      <Form>Import3dsForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmAbout.pas">
+      <Form>AboutForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmChannelFrame.pas">
+      <Form>ChannelFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmCompEditBase.pas">
+      <Form>CompEditFrameBase</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmEditor.pas">
+      <Form>EditorForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmEnvelopeFrame.pas">
+      <Form>EnvelopeFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmLfoFrame.pas">
+      <Form>LfoFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmMemoEdit.pas">
+      <Form>MemoEditForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmModulationFrame.pas">
+      <Form>ModulationFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmMusicEdit.pas">
+      <Form>MusicEditFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmRawAudioImportOptions.pas">
+      <Form>ImportRawAudioForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmSelectComponent.pas">
+      <Form>SelectComponentForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmSettings.pas">
+      <Form>SettingsForm</Form>
+    </DCCReference>
+    <DCCReference Include="frmSoundEdit.pas">
+      <Form>SoundEditFrame</Form>
+      <DesignClass>TFrame</DesignClass>
+    </DCCReference>
+    <DCCReference Include="frmToolMissing.pas">
+      <Form>ToolMissingForm</Form>
+    </DCCReference>
+    <DCCReference Include="GLPanel.pas" />
+    <DCCReference Include="OpenGL12.pas" />
+    <DCCReference Include="u3dsFile.pas" />
+    <DCCReference Include="uHelp.pas" />
+    <DCCReference Include="uMidiFile.pas" />
+    <DCCReference Include="uSymTab.pas" />
+  </ItemGroup>
+</Project>
