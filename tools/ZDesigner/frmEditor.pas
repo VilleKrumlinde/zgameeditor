@@ -327,7 +327,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.4';
+  AppVersion = '1.9.4 *physics test*';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -1292,6 +1292,7 @@ begin
   MruList.Free;
   PredefinedConstants.Free;
   ZcGlobalNames.Free;
+  Renderer.CleanUp;
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);

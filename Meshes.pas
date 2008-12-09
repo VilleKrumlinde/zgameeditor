@@ -23,7 +23,7 @@ unit Meshes;
 
 interface
 
-uses ZClasses, ZBitmap, ZExpressions;
+uses ZClasses, ZBitmap, ZExpressions, PAPPE;
 
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
@@ -154,6 +154,9 @@ type
   TModel = class(TZComponent)
   private
     CurrentState : TModelState;
+    PhysInitialized : boolean;
+    Phys : TPhysicsObject;
+    PhysRig : TPhysicsRigidBody;
   protected
     ChildModelRefs : TZArrayList;  //referenser till models som denna har spawnat
     ParentModel : TModel;
@@ -179,6 +182,13 @@ type
     Active : boolean;
     Personality : single;  //Varje instans har egen random "personlighet", som kan användas i expressions.
     LastPosition : TZVector3f;  //Används i collision
+
+    UsePhysics : boolean;
+    PhysicsIsRigid : boolean;
+    PhysicsSize : TZVector3f;
+    PhysicsGeoStyle : (pgsBox,pgsSphere,pgsMesh);
+    PhysicsMesh : TMesh;
+
     procedure Update; override;        //anropas ej ifall active=false
     procedure GetCollisionBounds(out Result : TCollisionBounds);
     procedure Collision(Hit : TModel);
@@ -581,6 +591,16 @@ begin
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'UsePhysics',{$ENDIF}integer(@UsePhysics) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsIsRigid',{$ENDIF}integer(@PhysicsIsRigid) - integer(Self), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsMass',{$ENDIF}integer(@PhysRig.Mass) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsSize',{$ENDIF}integer(@PhysicsSize) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsGeoStyle',{$ENDIF}integer(@PhysicsGeoStyle) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Box','Sphere'{,'Mesh'}]);{$endif}
+//  List.AddProperty({$IFNDEF MINIMAL}'PhysicsMesh',{$ENDIF}integer(@PhysicsMesh) - integer(Self), zptComponentRef);
+//    {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
 end;
 
 procedure TModel.GetCollisionBounds(out Result: TCollisionBounds);
@@ -633,6 +653,7 @@ end;
 procedure TModel.Update;
 var
   I : integer;
+  TmpM : TPhysicsMatrix4x4;
 begin
   if Active then
   begin
@@ -648,6 +669,62 @@ begin
     if not VecIsNull3(Self.RotationVelocity) then
       for I := 0 to 2 do
         Rotation[I] := Rotation[I] + (RotationVelocity[I] * ZApp.DeltaTime);
+
+    if UsePhysics then
+    begin
+      if not PhysInitialized then
+      begin
+        case PhysicsGeoStyle of
+          pgsBox:
+            begin
+              PhysicsObjectInit(Phys,BodyBox);
+              PhysicsObjectAddMesh(Phys);
+              PhysicsObjectMeshCreateBox(Phys.Meshs^[0]^, PhysicsSize[0],PhysicsSize[1],PhysicsSize[2]);
+            end;
+          pgsSphere:
+            begin
+              PhysicsObjectInit(Phys,BodySphere);
+              PhysicsObjectAddMesh(Phys);
+              PhysicsObjectMeshCreateSphere(Phys.Meshs^[0]^,PhysicsSize[0],Trunc(PhysicsSize[1]));
+            end;
+          pgsMesh:
+            begin
+              PhysicsObjectInit(Phys,BodyMesh);
+              PhysicsObjectAddMesh(Phys);
+              {$ifndef minimal}
+              if PhysicsMesh<>nil then
+              {$endif}
+              for I := 0 to (PhysicsMesh.IndicesCount div 3)- 1 do
+              begin
+                PhysicsObjectMeshAddTriangle(Phys.Meshs^[0]^,
+                  TPhysicsVector3(PhysicsMesh.Vertices[ PhysicsMesh.Indices[I*3] ]),
+                  TPhysicsVector3(PhysicsMesh.Vertices[ PhysicsMesh.Indices[I*3+1] ]),
+                  TPhysicsVector3(PhysicsMesh.Vertices[ PhysicsMesh.Indices[I*3+2] ]));
+              end;
+            end;
+        end;
+        PhysicsObjectFinish(Phys);
+        if PhysicsIsRigid then
+          PhysicsRigidBodyInit(PhysRig,@Phys,PhysRig.Mass,0.5,0.8);
+
+        TmpM := Matrix4x4Rotate(TPhysicsEuler(Rotation));
+        Matrix4x4Translate(TmpM,TPhysicsVector3(Position));
+        PhysicsObjectSetMatrix(Phys, TmpM );
+        //PhysicsObjectSetVector(Phys, TPhysicsVector3(Position) );
+        PhysRig.Velocity := TPhysicsVector3(Self.Velocity);
+
+        PhysInitialized := True;
+      end;
+      PhysicsObjectUpdate(Phys,ZApp.DeltaTime);
+      Position:=TZVector3f(Phys.Position);
+
+      Rotation:=TZVector3f(Matrix4x4Euler(Phys.Transform));
+      Rotation[0] := Rotation[0] / (2 * PI);
+      Rotation[1] := Rotation[1] / (2 * PI);
+      Rotation[2] := Rotation[2] / (2 * PI);
+
+      Velocity := TZVector3f(PhysRig.Velocity);
+    end;
 
     OnUpdate.ExecuteCommands;
     //Update renderers: particlesystems, beams etc
@@ -691,6 +768,12 @@ end;
 
 destructor TModel.Destroy;
 begin
+  if PhysInitialized then
+  begin
+    if Phys.RigidBody<>nil then
+      PhysicsRigidBodyDone(PhysRig);
+    PhysicsObjectDone(Phys);
+  end;
   ChildModelRefs.Free;
   inherited;
 end;

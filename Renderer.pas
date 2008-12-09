@@ -259,6 +259,7 @@ procedure ApplyRotation(const Rotate : TZVector3f);
 
 
 {$ifndef minimal}
+procedure CleanUp;
 procedure AssertNotRenderMode;
 
 var
@@ -2035,6 +2036,14 @@ begin
 end;
 {$endif}
 
+{$ifndef minimal}
+procedure CleanUp;
+begin
+  DefaultMaterial.Free;
+end;
+{$endif}
+
+
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
@@ -2075,8 +2084,4 @@ initialization
 
   DefaultMaterial := TMaterial.Create(nil);
 
-{$ifndef minimal}
-finalization
-  DefaultMaterial.Free;
-{$endif}
 end.

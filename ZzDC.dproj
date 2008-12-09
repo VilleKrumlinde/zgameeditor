@@ -55,6 +55,7 @@
     <DCCReference Include="Commands.pas" />
     <DCCReference Include="ImplicitMeshes.pas" />
     <DCCReference Include="Meshes.pas" />
+    <DCCReference Include="PAPPE.pas" />
     <DCCReference Include="Renderer.pas" />
     <DCCReference Include="Steering.pas" />
     <DCCReference Include="ZApplication.pas" />
