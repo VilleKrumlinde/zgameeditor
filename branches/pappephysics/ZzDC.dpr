@@ -52,7 +52,8 @@ uses
   AudioPlayer in 'AudioPlayer.pas',
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
-  ZFile in 'ZFile.pas';
+  ZFile in 'ZFile.pas',
+  PAPPE in 'PAPPE.pas';
 
 {$ifndef fpc}
   {$R Data.res Data.rc}

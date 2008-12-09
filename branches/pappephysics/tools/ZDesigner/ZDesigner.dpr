@@ -21,6 +21,7 @@ THE SOFTWARE.}
 program ZDesigner;
 
 uses
+//  FastMM4,
   Forms,
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
@@ -69,7 +70,8 @@ uses
   frmSettings in 'frmSettings.pas' {SettingsForm},
   unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
   unitEXIcon in '3rdparty\unitEXIcon.pas',
-  Zc_Ops in 'expr\Zc_Ops.pas';
+  Zc_Ops in 'expr\Zc_Ops.pas',
+  PAPPE in '..\..\PAPPE.pas';
 
 {$R *.res}
 

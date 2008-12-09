@@ -22,7 +22,7 @@ unit ZApplication;
 
 interface
 
-uses ZClasses,Meshes,Collision,Commands,Renderer{Tfont},AudioComponents;
+uses ZClasses,Meshes,Collision,Commands,Renderer{Tfont},AudioComponents,PAPPE;
 
 type
 
@@ -57,6 +57,8 @@ type
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
+    Physics: TPhysics;
+    PhysicsCollide:TPhysicsCollide;
     procedure Init;
     procedure Shutdown;
     procedure MainSlice;
@@ -158,6 +160,11 @@ begin
   Font := TFont.Create(nil);
   Clock := TClock.Create;
 
+  PhysicsInit(Physics);
+  PhysicsInstance:=@Physics;
+//  PhysicsInstance^.SweepAndPruneWorkMode:=sapwmOFF;
+  PhysicsCollideInit(PhysicsCollide);
+
   Models := TModels.Create;
 
   Collisions := TCollisionChecks.Create(Models);
@@ -171,6 +178,9 @@ begin
   //ev problem med models.free, borde göra models.removeall vid terminate först
   //annars kan models referera modeller som redan har gjorts free på
   Models.Free;
+
+  PhysicsCollideDone(PhysicsCollide);
+  PhysicsDone(Physics);
 
   Collisions.Free;
   Font.Free;
@@ -345,6 +355,8 @@ begin
   //Uppdatera modeller, flytta noder
   if (CurrentState=nil) or CurrentState.ModelUpdatesEnabled then
     Models.Update;
+
+  PhysicsUpdate(Physics,DeltaTime);
 
   //Test collisions
   if (CurrentState=nil) or CurrentState.CollisionsEnabled then

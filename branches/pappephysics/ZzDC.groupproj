@@ -3,12 +3,16 @@
     <ProjectGuid>{ad88dd67-0846-4bd0-9cdf-b22a9136d570}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup />
-  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="tools\ZDesigner\expr\ExprTest.dproj" />
+    <Projects Include="tools\ZDesigner\ZDesigner.dproj" />
+    <Projects Include="ZzDC.dproj" />
+  </ItemGroup>
   <ProjectExtensions>
     <Borland.Personality>Default.Personality</Borland.Personality>
     <Borland.ProjectType />
     <BorlandProject>
-  <BorlandProject xmlns=""> <Default.Personality> </Default.Personality> </BorlandProject></BorlandProject>
+<BorlandProject xmlns=""><Default.Personality></Default.Personality></BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Target Name="ZzDC">
     <MSBuild Projects="ZzDC.dproj" Targets="" />
@@ -46,4 +50,5 @@
   <Target Name="Make">
     <CallTarget Targets="ZzDC:Make;ZDesigner:Make;ExprTest:Make" />
   </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>
