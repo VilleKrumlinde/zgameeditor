@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <OnLoaded>
+    <SpawnModel Model="Model1"/>
+  </OnLoaded>
+  <Content>
+    <Model Name="Model1">
+      <Definitions>
+        <Mesh Name="Mesh1">
+          <Producers>
+            <MeshBox Scale="0.5 1 0.5"/>
+          </Producers>
+        </Mesh>
+        <DefineVariable Name="ShipAngle"/>
+      </Definitions>
+      <OnRender>
+        <RenderMesh Mesh="Mesh1"/>
+      </OnRender>
+      <OnUpdate>
+        <KeyPress Keys="a">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[ShipAngle-=0.25 * App.DeltaTime;
+]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Keys="s">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[ShipAngle+=0.25 * App.DeltaTime;
+]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <ZExpression>
+          <Expression>
+<![CDATA[//Rotate the model to face the direction it is moving
+CurrentModel.Rotation.Z=ShipAngle;
+//Update model velocity
+CurrentModel.Velocity.X=cos((0.25+ShipAngle)*(2*3.14)) * 2;
+CurrentModel.Velocity.Y=sin((0.25+ShipAngle)*(2*3.14)) * 2;
+]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+    </Model>
+  </Content>
+</ZApplication>

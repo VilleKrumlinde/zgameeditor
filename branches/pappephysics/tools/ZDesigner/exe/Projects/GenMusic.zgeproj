@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor: Generative music">
+  <OnLoaded>
+    <DefineVariable Name="Temp1"/>
+    <DefineVariable Name="Temp2"/>
+  </OnLoaded>
+  <OnUpdate>
+    <Timer Interval="0.2">
+      <OnTimer>
+        <ZExpression>
+          <Expression>
+<![CDATA[Temp1=clamp((abs(noise2(App.Time*3.5,0)) * 4) * 16,0,15);
+//Temp1=clamp(((0.3 + noise2(App.Time*0.75,0)) * 1.5) * 16,0,15);
+//TEmp1=random(7.5,8);
+Temp1=abs(sin(App.Time) + sin(App.Time*1.25) + cos(App.Time*1.85));
+
+//Temp1=abs(sin(App.Time*0.5) + noise2(App.Time*0.5,0) );
+
+//Temp1=sin(frac(App.Time/4));
+Temp1=App.Time/5;
+Temp1+=noise2(App.Time*5,0);
+
+Temp1=abs(frac(Temp1));
+Temp1=clamp(Temp1*16,0,15);
+Temp1-=frac(Temp1);
+
+if(Temp1==0) {
+  Temp2=0;    //no note
+} else if(Temp1==1) {
+  Temp2=43;  //g2
+} else if(Temp1==2) {
+  Temp2=57;  //a3
+} else if(Temp1==3) {
+  Temp2=48;  //c3
+} else if(Temp1==4) {
+  Temp2=52;  //e3
+} else if(Temp1==5) {
+  Temp2=53;  //f3
+} else if(Temp1==6) {
+  Temp2=55;  //g3
+} else if(Temp1==7) {
+  Temp2=69;  //a4
+} else if(Temp1==8) {
+  Temp2=60;  //c4
+} else if(Temp1==9) {
+  Temp2=64;  //e4
+} else if(Temp1==10) {
+  Temp2=65;  //f4
+} else if(Temp1==11) {
+  Temp2=67;  //g4
+} else if(Temp1==12) {
+  Temp2=81;  //a5
+} else if(Temp1==13) {
+  Temp2=72;  //c5
+} else if(Temp1==14) {
+  Temp2=76;  //e5
+} else if(Temp1==15) {
+  Temp2=79;  //g5
+}
+//if( (Temp2!=0) && (frac(App.Time*5)<0.5))
+//  Temp2+=12;
+Sound1.BaseNoteNr=Temp2;
+]]>
+          </Expression>
+        </ZExpression>
+        <Condition Expression="return Temp2&gt;0;">
+          <OnTrue>
+            <PlaySound Sound="Sound1"/>
+          </OnTrue>
+        </Condition>
+      </OnTimer>
+    </Timer>
+  </OnUpdate>
+  <OnRender>
+    <RenderText TextFloatRef="Temp1 Value" X="-0.79" Y="-0.79"/>
+  </OnRender>
+  <Content>
+    <Sound Name="Sound1" Length="0.26" Volume="0.83" BaseNoteNr="57" UseFilter="255" FilterCutoff="0.36" FilterQ="0.29" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.36" Ch0UseDelay="255" Ch0DelayLength="0.18" Ch1Active="1" Ch1Volume="0.36" Ch1UseDelay="1" Ch1DelayLength="0.14" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
+  </Content>
+</ZApplication>

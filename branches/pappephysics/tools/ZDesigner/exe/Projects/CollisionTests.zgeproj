@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <OnLoaded>
+    <DefineCollision Cat1="1" Cat2="2"/>
+    <SpawnModel Model="Coll1Model" Position="2 1 0"/>
+    <SpawnModel Model="Coll2Model"/>
+  </OnLoaded>
+  <Content>
+    <Model Name="Coll1Model" Category="1" CollisionBounds="1 0 0 0" CollisionStyle="1">
+      <OnRender>
+        <RenderMesh Mesh="CollMesh"/>
+      </OnRender>
+    </Model>
+    <Mesh Name="CollMesh">
+      <Producers>
+        <MeshSphere/>
+      </Producers>
+    </Mesh>
+    <Model Name="Coll2Model" Category="2" CollisionBounds="1 0 0 0" CollisionStyle="1">
+      <OnRender>
+        <RenderMesh Mesh="CollMesh"/>
+      </OnRender>
+      <OnUpdate>
+        <MouseModelController ScaleX="4" ScaleY="4"/>
+        <KeyPress Comment="Q" Keys="Q" RepeatDelay="0.5">
+          <OnPressed>
+            <ZExpression Expression="CurrentModel.Position.Z+=0.5;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Comment="A" Keys="A" RepeatDelay="0.5">
+          <OnPressed>
+            <ZExpression Expression="CurrentModel.Position.Z-=0.5;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Comment="W" Keys="W" RepeatDelay="0.5">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Scale.X+=0.25;
+CurrentModel.Scale.Y+=0.25;
+CurrentModel.Scale.Z+=0.25;
+CurrentModel.CollisionBounds.X+=0.25;]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Comment="S" Keys="S" RepeatDelay="0.5">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Scale.X-=0.25;
+CurrentModel.Scale.Y-=0.25;
+CurrentModel.Scale.Z-=0.25;
+CurrentModel.CollisionBounds.X-=0.25;]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <ZExpression Expression="CurrentModel.RotationVelocity.Z=0;"/>
+      </OnUpdate>
+      <OnCollision>
+        <ZExpression Expression="CurrentModel.RotationVelocity.Z=1;"/>
+      </OnCollision>
+    </Model>
+  </Content>
+</ZApplication>

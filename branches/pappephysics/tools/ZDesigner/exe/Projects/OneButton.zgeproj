@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor Tutorial &quot;OneButton&quot;" ClearColor="0.07 0.07 0.07 1">
+  <States>
+    <AppState Name="PlayingState">
+      <OnStart>
+        <SpawnModel Model="PlayerModel" Position="-2 0 0"/>
+        <ZExpression Comment="Init game vars">
+          <Expression>
+<![CDATA[
+GameTime=0;
+Score=0;]]>
+          </Expression>
+        </ZExpression>
+      </OnStart>
+      <OnUpdate>
+        <ZExpression Expression="GameTime+=App.DeltaTime;"/>
+        <Timer Name="WallTimer" Comment="Emit walls" Interval="0.91">
+          <OnTimer>
+            <SpawnModel Model="WallModel"/>
+            <ZExpression Comment="Add score">
+              <Expression>
+<![CDATA[
+Score+=100;
+WallTimer.Interval=1.5 - clamp(GameTime*0.02,0,1);]]>
+              </Expression>
+            </ZExpression>
+          </OnTimer>
+        </Timer>
+      </OnUpdate>
+    </AppState>
+    <AppState Name="TitleState">
+      <OnUpdate>
+        <KeyPress Keys=" ">
+          <OnPressed>
+            <SetAppState State="PlayingState"/>
+          </OnPressed>
+        </KeyPress>
+      </OnUpdate>
+      <OnRender>
+        <UseMaterial Material="TextMaterial"/>
+        <RenderText Text="PRESS SPACE TO START" Scale="0.75"/>
+      </OnRender>
+    </AppState>
+  </States>
+  <OnLoaded>
+    <SetAppState State="TitleState"/>
+    <DefineCollision Comment="Player vs Walls" Cat2="1"/>
+    <DefineVariable Name="GameTime"/>
+    <DefineVariable Name="Score"/>
+  </OnLoaded>
+  <OnRender>
+    <UseMaterial Material="TextMaterial"/>
+    <RenderText Comment="Display score" TextFloatRef="Score Value" X="0.62" Y="-0.87"/>
+  </OnRender>
+  <Content>
+    <Mesh Name="PlayerMesh">
+      <Producers>
+        <MeshSphere Scale="0.5 0.5 0.5" ZSamples="3" RadialSamples="4"/>
+      </Producers>
+    </Mesh>
+    <Model Name="PlayerModel" CollisionBounds="0.5 0.5 0 0">
+      <OnRender>
+        <UseMaterial Material="SpriteMaterial"/>
+        <RenderSetColor Color="0.85 0.99 0.96 1"/>
+        <RenderMesh Mesh="PlayerMesh"/>
+      </OnRender>
+      <OnUpdate>
+        <KeyPress Comment="Test mouse-click or up-key" Keys="^{">
+          <OnPressed>
+            <ZExpression Expression="CurrentModel.Velocity.Y+=10.5*App.DeltaTime;"/>
+            <PlaySound Sound="ThrustSound" NoteNr="48" ReplayDelay="0.1"/>
+          </OnPressed>
+        </KeyPress>
+        <ZExpression>
+          <Expression>
+<![CDATA[
+CurrentModel.Velocity.Y-=5.5*App.DeltaTime;
+CurrentModel.Velocity.Y=clamp(CurrentModel.Velocity.Y,-6,5);;
+
+if(CurrentModel.Position.Y<-4) {
+  CurrentModel.Position.Y=-4;
+  CurrentModel.Velocity.Y=0;
+}
+
+if(CurrentModel.Position.Y>4) {
+  CurrentModel.Position.Y=4;
+  CurrentModel.Velocity.Y=0;
+}
+
+CurrentModel.Rotation.X+=0.25 * App.DeltaTime;]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+      <OnCollision>
+        <RemoveAllModels/>
+        <SetAppState State="TitleState"/>
+      </OnCollision>
+    </Model>
+    <Mesh Name="WallMesh">
+      <Producers>
+        <MeshBox Scale="0.25 1.2 3"/>
+      </Producers>
+    </Mesh>
+    <Model Name="WallModel" Category="1" CollisionBounds="0.25 2.2 0 0">
+      <OnRender>
+        <UseMaterial Material="SpriteMaterial"/>
+        <RenderSetColor Color="1 0.51 0 1"/>
+        <RenderMesh Mesh="WallMesh"/>
+      </OnRender>
+      <OnUpdate>
+        <Condition Comment="Remove wall if outside screen" Expression="return CurrentModel.Position.X&lt;-7.5;">
+          <OnTrue>
+            <RemoveModel/>
+          </OnTrue>
+        </Condition>
+      </OnUpdate>
+      <OnSpawn>
+        <ZExpression>
+          <Expression>
+<![CDATA[
+CurrentModel.Position.X=8;
+CurrentModel.Position.Y=random(0,4);
+CurrentModel.Velocity.X=-3 - clamp(GameTime*0.1,0,2.5);]]>
+          </Expression>
+        </ZExpression>
+        <PlaySound Sound="WallSound" NoteNr="24"/>
+      </OnSpawn>
+    </Model>
+    <Material Name="SpriteMaterial" Shading="1"/>
+    <Material Name="TextMaterial" Color="1 1 0 1" Blend="1"/>
+    <Group Name="Audio">
+      <Children>
+        <Sound Name="ThrustSound" Length="0.3" Volume="0.78" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.08" FilterQ="0.01" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.15"/>
+        <Sound Name="WallSound" Length="0.2" Volume="0.45" UseFilter="1" FilterCutoff="0.14" FilterQ="0.06" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Amount="0.26" Env0Active="1" Env0ReleaseTime="0.2"/>
+        <AudioMixer Ch0Active="1" Ch0Volume="0.96" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1" Lfo0Active="1" Lfo0Speed="0.02"/>
+      </Children>
+    </Group> <!-- Audio -->
+
+  </Content>
+</ZApplication>
