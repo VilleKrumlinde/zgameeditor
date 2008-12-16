@@ -223,7 +223,8 @@ end;
 //Set this bitmap as current opengl texture
 procedure TZBitmap.UseTextureBegin;
 begin
-  if not IsInitialized then
+  if (not IsInitialized)
+   {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
     ReInit;
   glBindTexture(GL_TEXTURE_2D, TexObject);
 end;

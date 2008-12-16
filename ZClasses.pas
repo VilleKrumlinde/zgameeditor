@@ -381,7 +381,6 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
-    constructor Create;
     function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
@@ -1225,10 +1224,6 @@ end;
 
 
 { TZComponentManager }
-
-constructor TZComponentManager.Create;
-begin
-end;
 
 function TZComponentManager.GetInfo(Component: TZComponent) : TZComponentInfo;
 var
@@ -3166,7 +3161,8 @@ initialization
 finalization
 
   if Assigned(_ComponentManager) then
-    _ComponentManager.Free;
+    FreeAndNil(_ComponentManager);
+//    _ComponentManager.Free;
 {$endif}
 
 end.

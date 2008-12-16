@@ -17,17 +17,19 @@ var
   Keys : array[0..511] of boolean;
   KeyMap : array[char] of word;
 
+procedure Platform_ShowMouse(Visible : boolean);
+const vals : array[boolean] of integer = (0,1);
+begin
+  SDL_ShowCursor(vals[Visible]);
+end;
+
 procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
 begin
   if UseFullScreen then
-  begin
     flags := SDL_OPENGL or SDL_FULLSCREEN;
-    //Stäng av mus
-    SDL_ShowCursor(0);
-  end
   else
     flags := SDL_OPENGL or SDL_RESIZABLE;
 

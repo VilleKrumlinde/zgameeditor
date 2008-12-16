@@ -45,6 +45,7 @@ function Platform_IsKeyPressed(C : char) : boolean;
 
 function Platform_GetMousePos : TZPointi;
 procedure Platform_SetMousePos(const X,Y : integer);
+procedure Platform_ShowMouse(Visible : boolean);
 
 function Platform_CommandLine(Switch : PChar) : boolean;
 
