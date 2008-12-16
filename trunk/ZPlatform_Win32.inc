@@ -412,12 +412,6 @@ begin
   SetForegroundWindow(h_Wnd);
   SetFocus(h_Wnd);
 
-  //Hide mouse, except in preview mode
-  {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
-  if PreviewParentHWnd=0 then
-  {$ifend}
-    ShowCursor(False);
-
   if FullScreen then
     //Try to workaround corrupt font problem in fullscreen
     Sleep(500);
@@ -431,7 +425,15 @@ begin
   {$endif}
 end;
 
-
+procedure Platform_ShowMouse(Visible : boolean);
+begin
+  //Hide mouse, except in preview mode
+  {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
+  if PreviewParentHWnd<>0 then
+    Exit;
+  {$ifend}
+  ShowCursor(Visible);
+end;
 
 procedure Platform_SwapBuffers;
 begin
@@ -572,14 +574,6 @@ begin
     //Och getcursorpos används pga wm_mousemove enbart skickas till aktuellt fönster
     GetCursorPos(TPoint(Result));
     ScreenToClient(h_Wnd,TPoint(Result));
-    if Result.X<0 then
-      Result.X := 0;
-    if Result.X>=ScreenWidth then
-      Result.X := ScreenWidth-1;
-    if Result.Y<0 then
-      Result.Y := 0;
-    if Result.Y>=ScreenHeight then
-      Result.Y := ScreenHeight-1;
   end;
 end;
 

@@ -1313,11 +1313,13 @@ begin
     end;
 
     Self.Component.Comment := 'Imported from ' + ExtractFileName(FileName);
+
+    (Self.Component as TBitmapFromFile).HasAlphaLayer := UseAlpha;
     if UseAlpha then
-    begin
-      (Self.Component as TBitmapFromFile).HasAlphaLayer := True;
-      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer;
-    end;
+      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer
+    else
+      (Self.Component as TBitmapFromFile).Transparency := btNone;
+
   finally
 //    Bm.Free;
     Pic.Free;

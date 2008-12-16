@@ -57,6 +57,7 @@ type
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
+    ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     procedure Init;
     procedure Shutdown;
     procedure MainSlice;
@@ -103,6 +104,7 @@ type
     Clock : TClock;
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
+    MouseVisible : boolean;
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
@@ -189,6 +191,7 @@ begin
 
   {$ifndef minimal}
     //no init if inside designer tool
+    UpdateViewport;
   {$else}
     if Platform_CommandLine('f') then
       Self.FullScreen := True;
@@ -213,6 +216,7 @@ begin
     end;
 
     Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PChar(Self.Caption) );
+    Platform_ShowMouse(MouseVisible);
     Renderer.InitRenderer;
     UpdateViewport;
 
@@ -258,10 +262,23 @@ var
   P : TZPointi;
 begin
   P := Platform_GetMousePos;
+
+  //Clip coord to current viewport
+  Dec(P.X,ViewportX);
+  Dec(P.Y,ViewportY);
+  if P.X<0 then
+    P.X := 0;
+  if P.X>=ViewportWidth then
+    P.X := ViewportWidth-1;
+  if P.Y<0 then
+    P.Y := 0;
+  if P.Y>=ViewportHeight then
+    P.Y := ViewportHeight-1;
+
   //-1 .. 1, 0 är center
-  EventState.MousePosition[0] := (P.X / ScreenWidth) * 2 - 1;
+  EventState.MousePosition[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
-  EventState.MousePosition[1] := (((ScreenHeight-P.Y) / ScreenHeight) * 2 - 1);
+  EventState.MousePosition[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
 end;
 
 function TZApplication.Main : boolean;
@@ -372,13 +389,15 @@ end;
 
 //Update ActualViewportRatio which is the ratio that is used
 procedure TZApplication.UpdateViewport;
-var
-  ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
 begin
   if Self.ViewportRatio=vprFullWindow then
   begin
     ActualViewportRatio := ScreenWidth/ScreenHeight;
     glViewport(0,0,ScreenWidth,ScreenHeight);
+    ViewportWidth := ScreenWidth;
+    ViewportHeight := ScreenHeight;
+    ViewportX := 0;
+    ViewportY := 0;
   end
   else
   begin
@@ -550,6 +569,7 @@ begin
     List.GetLast.DefaultValue.FloatValue := 0.1;
   List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
+  List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible) - integer(Self), zptBoolean);
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon) - integer(Self), zptBinary);

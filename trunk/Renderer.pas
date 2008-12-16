@@ -260,6 +260,7 @@ procedure ApplyRotation(const Rotate : TZVector3f);
 
 {$ifndef minimal}
 procedure AssertNotRenderMode;
+procedure CleanUp;
 
 var
   IsRendering : boolean;
@@ -428,7 +429,7 @@ begin
   if NilOld or (NewM.Shading<>OldM.Shading) then
   begin
     if (not NilOld) and (OldM.Shading=msWireframe) then
-    begin //todo: bökigt... slopa wireframe?
+    begin
       glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
       glLineWidth(1.0);
     end;
@@ -438,13 +439,13 @@ begin
       msFlat :
         glShadeModel(GL_FLAT);
       msWireframe :
-        begin
-          //Wireframe
-          glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-          glLineWidth(NewM.WireframeWidth);
-        end;
+        //Wireframe
+        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
     end;
   end;
+
+  if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
+    glLineWidth(NewM.WireframeWidth);
 
   if NilOld or (NewM.Light<>OldM.Light) then
   begin
@@ -499,7 +500,9 @@ begin
     StartI := 0;
   for I := StartI downto 0 do
   begin
-    if NilOld or (NewM.Textures[I]<>OldM.Textures[I]) then
+    if NilOld or (NewM.Textures[I]<>OldM.Textures[I])
+    {$ifndef minimal}or ((NewM.Textures[I]<>nil) and (TZBitmap(NewM.Textures[I]).Producers.IsChanged)){$endif}
+    then
     begin
       if MultiTextureSupported then
         glActiveTexture($84C0 + I);
@@ -2035,6 +2038,13 @@ begin
 end;
 {$endif}
 
+{$ifndef minimal}
+procedure CleanUp;
+begin
+  DefaultMaterial.Free;
+end;
+{$endif}
+
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
@@ -2075,8 +2085,4 @@ initialization
 
   DefaultMaterial := TMaterial.Create(nil);
 
-{$ifndef minimal}
-finalization
-  DefaultMaterial.Free;
-{$endif}
 end.

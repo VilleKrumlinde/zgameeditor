@@ -590,7 +590,7 @@ begin
     dadOne: Index := I3;
     dadTwo: Index := (I2*SizeDim2) + I3;
   else
-    Index := (I1*SizeDim2) + (I2*SizeDim1) + I3;
+    Index := (I1*SizeDim2*SizeDim3) + (I2*SizeDim3) + I3;
   end;
 
   {$ifndef minimal}
