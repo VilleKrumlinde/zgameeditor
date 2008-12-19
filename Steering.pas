@@ -343,7 +343,7 @@ var
   Feelers : array[0..2] of TZVector2f;
   Feeler : PZVector2f;
   Walls : array[0..3] of TWall2D;
-  Bounds : TCollisionBounds;
+  Bounds : PCollisionCoordinates;
   I,J,K,ClosestWall : integer;
   ModelPos2D,HitPoint,ClosestPoint,OverShoot,Tmp : TZVector2f;
   DistToThis,DistToClosest,T1 : single;
@@ -391,7 +391,8 @@ begin
   for I := 0 to WallModels.Count-1 do
   begin
     //obs, collisionstyle måste vara rect2d
-    TModel(WallModels[I]).GetCollisionBounds(Bounds);
+    TModel(WallModels[I]).UpdateCollisionCoordinates;
+    Bounds := @TModel(WallModels[I]).CollisionCoordinates;
 
     Walls[0].P1 := Vector2f(Bounds.Rect.Right,Bounds.Rect.Top);
     Walls[0].P2 := Vector2f(Bounds.Rect.Left,Bounds.Rect.Top);

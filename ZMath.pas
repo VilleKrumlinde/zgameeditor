@@ -105,6 +105,7 @@ procedure CreateRotationMatrixZ(const Angle : Single; out Result : TZMatrix4f);
 
 function MatrixMultiply(const M1, M2: TZMatrix4f) : TZMatrix4f;
 
+function Vec2DDistance(const v1,v2 : TZVector2f) : single;
 function LineIntersection2D(const A,B,C,D : TZVector2f;
   out Dist : single;
   out HitPoint : TZVector2f) : boolean;
