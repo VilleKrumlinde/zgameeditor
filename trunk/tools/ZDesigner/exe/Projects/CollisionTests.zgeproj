@@ -6,22 +6,24 @@
     <SpawnModel Model="Coll2Model"/>
   </OnLoaded>
   <Content>
-    <Model Name="Coll1Model" Category="1" CollisionBounds="1 0 0 0" CollisionStyle="1">
-      <OnRender>
-        <RenderMesh Mesh="CollMesh"/>
-      </OnRender>
-    </Model>
-    <Mesh Name="CollMesh">
-      <Producers>
-        <MeshSphere/>
-      </Producers>
-    </Mesh>
-    <Model Name="Coll2Model" Category="2" CollisionBounds="1 0 0 0" CollisionStyle="1">
+    <Model Name="Coll1Model" Category="1" CollisionBounds="1 0 0 0" CollisionStyle="4">
       <OnRender>
         <RenderMesh Mesh="CollMesh"/>
       </OnRender>
       <OnUpdate>
         <MouseModelController ScaleX="4" ScaleY="4"/>
+      </OnUpdate>
+    </Model>
+    <Mesh Name="CollMesh">
+      <Producers>
+        <MeshSphere ZSamples="20" RadialSamples="20"/>
+      </Producers>
+    </Mesh>
+    <Model Name="Coll2Model" Rotation="0 0 0.05" Category="2" CollisionBounds="2 2 0 0" CollisionStyle="3">
+      <OnRender>
+        <RenderMesh Mesh="CollMesh2"/>
+      </OnRender>
+      <OnUpdate>
         <KeyPress Comment="Q" Keys="Q" RepeatDelay="0.5">
           <OnPressed>
             <ZExpression Expression="CurrentModel.Position.Z+=0.5;"/>
@@ -59,8 +61,13 @@ CurrentModel.CollisionBounds.X-=0.25;]]>
         <ZExpression Expression="CurrentModel.RotationVelocity.Z=0;"/>
       </OnUpdate>
       <OnCollision>
-        <ZExpression Expression="CurrentModel.RotationVelocity.Z=1;"/>
+        <ZExpression Expression="CurrentModel.Scale.X=random(1,0.01);"/>
       </OnCollision>
     </Model>
+    <Mesh Name="CollMesh2">
+      <Producers>
+        <MeshBox/>
+      </Producers>
+    </Mesh>
   </Content>
 </ZApplication>

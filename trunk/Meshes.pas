@@ -143,12 +143,14 @@ type
     {$endif}
   end;
 
-  TCollisionStyle = (csRect2D,csSphere3D,csBox3D,csRect2D_OBB);
-  TCollisionBounds =
+  TCollisionStyle = (csRect2D,csSphere3D,csBox3D,csRect2D_OBB,csCircle2D);
+  PCollisionCoordinates = ^TCollisionCoordinates;
+  TCollisionCoordinates =
     record
-      Rect : TZRectf;
-      Box : TZBox3D;
-      OBB : TOBB_2D;
+      case Integer of
+        0 : (Rect : TZRectf);
+        1 : (Box : TZBox3D);
+        2 : (OBB : TOBB_2D);
     end;
 
   TModel = class(TZComponent)
@@ -179,8 +181,10 @@ type
     Active : boolean;
     Personality : single;  //Varje instans har egen random "personlighet", som kan användas i expressions.
     LastPosition : TZVector3f;  //Används i collision
+    CollisionCoordinates : TCollisionCoordinates;
+    CollisionCoordinatesUpdatedTime : single;
     procedure Update; override;        //anropas ej ifall active=false
-    procedure GetCollisionBounds(out Result : TCollisionBounds);
+    procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
     {$ifndef minimal}
     procedure DesignerUpdate;
@@ -243,6 +247,13 @@ type
 var
   CurrentModel : TModel;  //Set to the model that is currently updated
 
+
+
+{$ifndef minimal}
+const
+  CollisionStyleNames : array[0..4] of string =
+('Rect2D','Sphere3D','Box3D','Rect2D_OBB','Circle2D');
+{$endif}
 
 implementation
 
@@ -576,19 +587,26 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CollisionBounds',{$ENDIF}integer(@CollisionBounds) - integer(Self), zptRectf);
   List.AddProperty({$IFNDEF MINIMAL}'CollisionOffset',{$ENDIF}integer(@CollisionOffset) - integer(Self), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'CollisionStyle',{$ENDIF}integer(@CollisionStyle) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Rect2D','Sphere3D','Box3D','Rect2D_OBB']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(CollisionStyleNames);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}integer(@Personality) - integer(Self), zptFloat);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
-procedure TModel.GetCollisionBounds(out Result: TCollisionBounds);
+procedure TModel.UpdateCollisionCoordinates;
 var
   W,H,A,S,C : single;
   Start : TZVector3f;
   I : integer;
+  Result : PCollisionCoordinates;
 begin
+  if Self.CollisionCoordinatesUpdatedTime=ZApp.Time then
+    Exit; //Only update once per frame
+  Self.CollisionCoordinatesUpdatedTime:=ZApp.Time;
+
+  Result := @Self.CollisionCoordinates;
+
   VecAdd3(CollisionOffset,Position, Start);
   case Self.CollisionStyle of
     csRect2D:
@@ -626,6 +644,12 @@ begin
         Result.OBB.U[0][1] := S;
         Result.OBB.U[1][0] := -S;
         Result.OBB.U[1][1] := C;
+      end;
+    csCircle2D :
+      begin
+        Result.Rect.Area[0] := Start[0];
+        Result.Rect.Area[1] := Start[1];
+        Result.Rect.Area[2] := CollisionBounds.Area[0] * Scale[0];
       end;
   end;
 end;
@@ -1523,3 +1547,4 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
 
 end.
+
