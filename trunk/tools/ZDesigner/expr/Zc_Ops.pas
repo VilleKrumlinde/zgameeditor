@@ -141,8 +141,10 @@ begin
   if (Ref<>nil) and (Ref is TZcOp) then
   begin
     Result := (Ref as TZcOp).GetDataType;
-  end else  if Kind=zcIdentifier then
+  end else if Kind=zcIdentifier then
     DoIdentifier
+  else if Kind=zcFuncCall then
+    Result := zctFloat //built in function
   else if Kind=zcConstLiteral then
     Result := zctFloat
   else if Children.Count>0 then

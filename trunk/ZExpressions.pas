@@ -138,12 +138,21 @@ type
 
   TExpOpBinaryKind = (vbkPlus,vbkMinus,vbkMul,vbkDiv,vbkAssign);
 
-  TExpOpBinary = class(TExpBase)
+  TExpOpBinaryBase = class(TExpBase)
   protected
-    procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpOpBinaryKind;
+  end;
+
+  TExpOpBinaryFloat = class(TExpOpBinaryBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  TExpOpBinaryInt = class(TExpOpBinaryBase)
+  protected
+    procedure Execute; override;
   end;
 
   TExpOpJumpKind = (jsJumpAlways,jsJumpLT,jsJumpGT,jsJumpLE,jsJumpGE,jsJumpNE,jsJumpEQ);
@@ -360,14 +369,14 @@ end;
 
 { TExpOpBinary }
 
-procedure TExpOpBinary.DefineProperties(List: TZPropertyList);
+procedure TExpOpBinaryBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
 end;
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
-procedure TExpOpBinary.Execute;
+procedure TExpOpBinaryFloat.Execute;
 var
   A1,A2,V : single;
 begin
@@ -381,6 +390,29 @@ begin
     vbkAssign :
       begin
         PFloat(A2)^ := A1;
+        Exit; //no result
+      end;
+    {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
+  end;
+  gStack.Push(TObject(V));
+end;
+{$ifdef minimal} {$WARNINGS ON} {$endif}
+
+{$ifdef minimal} {$WARNINGS OFF} {$endif}
+procedure TExpOpBinaryInt.Execute;
+var
+  A1,A2,V : integer;
+begin
+  A1 := Integer(gStack.Pop);
+  A2 := Integer(gStack.Pop);
+  case Kind of
+    vbkPlus : V := A1 + A2;
+    vbkMinus : V := A2 - A1;
+    vbkMul : V := A2 * A1;
+    vbkDiv : V := A2 div A1;
+    vbkAssign :
+      begin
+        PInteger(A2)^ := A1;
         Exit; //no result
       end;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
@@ -881,7 +913,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpConstantInt,ExpConstantIntClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpOpBinary,ExpOpBinaryClassId);
+  ZClasses.Register(TExpOpBinaryFloat,ExpOpBinaryFloatClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpOpBinaryInt,ExpOpBinaryIntClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpPropValue,ExpPropValueClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
