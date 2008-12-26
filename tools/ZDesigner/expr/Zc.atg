@@ -22,8 +22,6 @@ DELPHI
     procedure ZError(const S : string);
   CREATE
     ZFunctions := TObjectList.Create(False);
-    //Alla nodes ägs av FunctionCleanUps
-    FunctionCleanUps := TObjectList.Create(True);
   DESTROY
     CleanUp;
   ERRORS
@@ -36,47 +34,7 @@ END_DELPHI
 
 (* Arbitrary Code *)
 
-var
-  FunctionCleanUps : TObjectList;
 
-function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
-begin
-  Result := TZcOp.Create(FunctionCleanUps);
-  Result.Kind := Kind;
-end;
-function MakeOp(Kind : TZcOpKind; Value : single) : TZcOp; overload;
-begin
-  Result := MakeOp(Kind);
-  Result.Value := Value;
-end;
-function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
-begin
-  Result := MakeOp(Kind);
-  Result.Id := Id;
-end;
-function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
-var
-  I : integer;
-begin
-  Result := MakeOp(Kind);
-  for I := 0 to High(Children) do
-    Result.Children.Add(Children[I]);
-end;
-
-function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
-const
-  AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
-begin
-  case Kind of
-    atMulAssign,atDivAssign,atPlusAssign,atMinusAssign :  //Convert x*=2 to x=x*2
-      begin
-        //Note: op1 becomes inserted at a second position in the tree
-        //This works because nodes do not own each other
-        Op2 := MakeOp(AssignMap[Kind],[Op1,Op2]);
-      end;
-  end;
-  Result := MakeOp(zcAssign,[Op1,Op2]);
-end;
 
 procedure T-->Grammar<--.WriteStr(S : string);
 begin
@@ -91,8 +49,8 @@ end;
 
 procedure T-->Grammar<--.CleanUp;
 begin
+  Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
-  FunctionCleanUps.Free;
 end;
 
 function T-->Grammar<--.NoFunctionsAllowed : boolean;
@@ -238,7 +196,7 @@ Zc (. var
 
 
   (. 
-       Func := TZcOpFunction.Create(FunctionCleanUps);
+       Func := TZcOpFunction.Create(nil);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
        SymTab.PushScope;
@@ -260,8 +218,8 @@ Zc (. var
        begin
          for I:=0 to ZFunctions.Count-1 do
          begin
-           TZcOp(ZFunctions[I]).Optimize;
-           WriteOp(TZcOp(ZFunctions[I]));
+           ZFunctions[I] := TZcOp(ZFunctions[I]).Optimize;
+           //WriteOp(TZcOp(ZFunctions[I]));
          end;
        end;
 .)
@@ -291,7 +249,7 @@ Par (. var Typ : TZcDataType; Arg : TZcOpArgumentVar; .)
           SynError(201)
         else
         begin
-          Arg := TZcOpArgumentVar.Create(FunctionCleanUps);
+          Arg := TZcOpArgumentVar.Create(nil);
           Arg.Id := LexString;
           Arg.Typ := Typ;
           CurrentFunction.AddArgument(Arg);
@@ -314,7 +272,7 @@ LocalVar<Typ : TZcDataType> (. var Loc : TZcOpLocalVar; .)
           SynError(201)
         else
         begin
-          Loc := TZcOpLocalVar.Create(FunctionCleanUps);
+          Loc := TZcOpLocalVar.Create(nil);
           Loc.Id := LexString;
           Loc.Typ := Typ;
           CurrentFunction.AddLocal(Loc);
@@ -352,7 +310,8 @@ Type<var Typ : TZcDataType>
 
 SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
-= "float" (. Typ := zctFloat; .)
+= "float" (. Typ := zctFloat; .) |
+  "int" (. Typ := zctInt; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -523,7 +482,7 @@ EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : T
    | "=="   (. Kind := zcCompEQ; .)
    )
    Unary<Op> RelExpr<Op,R>
-         (. OutOp := MakeOp(Kind,[L,R]);
+         (. OutOp := MakeBinary(Kind, L,R);
             L := OutOp;
          .)
   }
@@ -537,7 +496,7 @@ RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
     | ">="      (. Kind := zcCompGE; .)
      )
     Unary<Op> ShiftExpr<Op,R>
-         (. OutOp := MakeOp(Kind,[L,R]);
+         (. OutOp := MakeBinary(Kind, L,R );
             L := OutOp;
          .)
   }
@@ -552,7 +511,7 @@ AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
     {( "+"    (. Kind := zcPlus; .)
      | "-"    (. Kind := zcMinus; .)
      ) Unary<Op> MulExpr<Op,R>
-         (. OutOp := MakeOp(Kind,[L,R]);
+         (. OutOp := MakeBinary(Kind,L,R);
             L := OutOp;
          .)
     }
@@ -564,7 +523,7 @@ MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcO
     | "/"     (. Kind := zcDiv; .)
   (*  | "%" *)
     ) Unary<Tmp>
-         (. OutOp := MakeOp(Kind,[InOp,Tmp]);
+         (. OutOp := MakeBinary(Kind,InOp,Tmp);
             InOp := OutOp;
          .)
     }
@@ -603,7 +562,7 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; .)
               .)
   | Literal  (. 
         try
-          OutOp := MakeOp(zcConst,StrToFloat(LexString)); 
+          OutOp := TZcOpLiteral.Create(zctFloat,StrToFloat(LexString));
         except on EConvertError do
           SynError(200);
         end;
@@ -642,7 +601,7 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; .)
 .
 /*------------------------------------------------------------------------*/
 Literal
-= intCon | realCon | stringCon | "true" | "false" | "null"
+= intCon | realCon (* | stringCon | "true" | "false" | "null" *)
 .
 
 END Zc.

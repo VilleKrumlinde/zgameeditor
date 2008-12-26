@@ -107,12 +107,23 @@ type
     Target : TZPropertyRef;
   end;
 
-  TExpConstant = class(TExpBase)
+  TExpConstantFloat = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Constant : single;
+    {$ifndef minimal}
+    function GetDisplayName: String; override;
+    {$endif}
+  end;
+
+  TExpConstantInt = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Constant : integer;
     {$ifndef minimal}
     function GetDisplayName: String; override;
     {$endif}
@@ -224,6 +235,14 @@ type
     Index : integer;
   end;
 
+  TExpConvertKind = (eckFloatToInt,eckIntToFloat);
+  TExpConvert = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : TExpConvertKind;
+  end;
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -299,23 +318,43 @@ begin
   gStack.Push( TObject(ZClasses.GetPropertyRef(Source)^) );
 end;
 
-{ TExpConstant }
+{ TExpConstantFloat }
 
-procedure TExpConstant.DefineProperties(List: TZPropertyList);
+procedure TExpConstantFloat.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}integer(@Constant) - integer(Self), zptFloat);
 end;
 
-procedure TExpConstant.Execute;
+procedure TExpConstantFloat.Execute;
 begin
   gStack.Push( TObject(Constant) );
 end;
 
 {$ifndef minimal}
-function TExpConstant.GetDisplayName: String;
+function TExpConstantFloat.GetDisplayName: String;
 begin
   Result := inherited GetDisplayName + ' ' + FloatToStr(Constant);
+end;
+{$endif}
+
+{ TExpConstantInt }
+
+procedure TExpConstantInt.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}integer(@Constant) - integer(Self), zptInteger);
+end;
+
+procedure TExpConstantInt.Execute;
+begin
+  gStack.Push( TObject(Constant) );
+end;
+
+{$ifndef minimal}
+function TExpConstantInt.GetDisplayName: String;
+begin
+  Result := inherited GetDisplayName + ' ' + IntToStr(Constant);
 end;
 {$endif}
 
@@ -727,7 +766,7 @@ var
   I : integer;
   S : string;
 begin
-  Result := ComponentManager.GetInfo(Self).ZClassName;
+  Result := Copy(ComponentManager.GetInfo(Self).ZClassName,4,255);
   PropList := Self.GetProperties;
   for I := 0 to PropList.Count-1 do
   begin
@@ -796,6 +835,31 @@ begin
   Dec(gCurrentPc);
 end;
 
+{ TExpConvert }
+
+procedure TExpConvert.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+end;
+
+procedure TExpConvert.Execute;
+var
+  V : single;
+begin
+  case Kind of
+    eckFloatToInt:
+      begin
+        gStack.Push(TObject(Trunc(gStack.PopFloat)));
+      end;
+    eckIntToFloat :
+      begin
+        V := Integer(gStack.Pop);
+        gStack.Push( TObject( V ) );
+      end;
+  end;
+end;
+
 initialization
 
   //Init vm
@@ -813,7 +877,9 @@ initialization
   ZClasses.Register(TDefineArray,DefineArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
 
-  ZClasses.Register(TExpConstant,ExpConstantClassId);
+  ZClasses.Register(TExpConstantFloat,ExpConstantFloatClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpConstantInt,ExpConstantIntClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpOpBinary,ExpOpBinaryClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -838,6 +904,8 @@ initialization
   ZClasses.Register(TExpMisc,ExpMiscClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpUserFuncCall,ExpUserFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpConvert,ExpConvertClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}
