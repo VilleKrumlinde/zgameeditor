@@ -195,9 +195,14 @@ begin
 end;
 
 
-function MakeBinaryOp(Kind : TExpOpBinaryKind) : TExpOpBinary;
+function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpOpBinaryBase;
 begin
-  Result := TExpOpBinary.Create(nil);
+  case Typ of
+    zctFloat : Result := TExpOpBinaryFloat.Create(nil);
+    zctInt : Result := TExpOpBinaryInt.Create(nil);
+  else
+    raise ECodeGenError.Create('Wrong datatype for binaryop');
+  end;
   Result.Kind := Kind;
 end;
 
@@ -216,7 +221,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     //Assert(Op.Arguments.Count=2);
     GenValue(Op.Child(0));
     GenValue(Op.Child(1));
-    Target.AddComponent( MakeBinaryOp(Kind) );
+    Target.AddComponent( MakeBinaryOp(Kind,Op.GetDataType) );
   end;
 
   procedure DoGenVariableValue;
@@ -375,7 +380,7 @@ var
       if C.Target.Prop.IsReadOnly then
         raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
       GenValue(RightOp);
-      Target.AddComponent( MakeBinaryOp(vbkAssign) );
+      Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
 
       //Allow "x.Scale" be shorthand for assign x,y,z individually
       //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
@@ -391,7 +396,7 @@ var
           C2.Target := C.Target;
           C2.Target.Index := I;
           GenValue(LeftOp);
-          Target.AddComponent( MakeBinaryOp(vbkAssign) );
+          Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
         end;
       end;
     end else if LeftOp.Kind=zcArrayAccess then
@@ -407,7 +412,7 @@ var
       Aw := TExpArrayWrite.Create(Target);
       Aw.TheArray := A as TDefineArray;
       GenValue(Op.Child(1));
-      Target.AddComponent( MakeBinaryOp(vbkAssign) );
+      Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
     end else
       raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 
