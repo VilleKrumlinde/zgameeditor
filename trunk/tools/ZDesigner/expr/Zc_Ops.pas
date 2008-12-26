@@ -4,19 +4,18 @@ unit Zc_Ops;
 
 interface
 
-uses Contnrs, ZClasses, ZExpressions;
+uses Contnrs, ZClasses, ZExpressions, uSymTab;
 
 type
   TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
-  TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConst,zcIdentifier,zcAssign,zcIf,
+  TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConstLiteral,zcIdentifier,zcAssign,zcIf,
           zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
-          zcFunction);
+          zcFunction,zcConvert);
 
   TZcOp = class
   public
     Kind : TZcOpKind;
-    Value : single;
     Id : string;
     Children : TObjectList;
     Ref : TObject;
@@ -24,13 +23,15 @@ type
     destructor Destroy; override;
     function ToString : string; virtual;
     function Child(I : integer) : TZcOp;
-    procedure Optimize; virtual;
+    function Optimize : TZcOp; virtual;
+    function GetDataType : TZcDataType; virtual;
   end;
 
   TZcOpVariableBase = class(TZcOp)
   public
     Ordinal : integer;
     Typ : TZcDataType;
+    function GetDataType : TZcDataType; override;
   end;
 
   TZcOpLocalVar = class(TZcOpVariableBase)
@@ -39,6 +40,25 @@ type
   end;
 
   TZcOpArgumentVar = class(TZcOpVariableBase)
+  end;
+
+  TZcOpLiteral = class(TZcOp)
+  public
+    Typ : TZcDataType;
+    Value : single;
+    constructor Create(Typ : TZcDataType; Value : single); reintroduce;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
+  end;
+
+
+  TZcOpConvert = class(TZcOp)
+  public
+    ToType : TZcDataType;
+    constructor Create(ToType : TZcDataType; Op : TZcOp); reintroduce;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
+    function Optimize : TZcOp; override;
   end;
 
   TZcOpFunction = class(TZcOp)
@@ -53,19 +73,43 @@ type
     constructor Create(Owner : TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
-    procedure Optimize; override;
+    function Optimize : TZcOp; override;
     procedure AddLocal(Local : TZcOpLocalVar);
     procedure AddArgument(Arg: TZcOpArgumentVar);
     function GetStackSize : integer;
+    function GetDataType : TZcDataType; override;
   end;
 
+function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
+
+function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
+function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
+
+var
+  //Nodes owned by the current compiled function/expression
+  //Used for memory management
+  FunctionCleanUps : TObjectList;
+
+  //State shared between this unit and Zc-commpiler
+  CompilerContext : record
+    SymTab : TSymbolTable;
+    ThisC : TZComponent;
+  end;
 
 implementation
 
-uses SysUtils;
+uses SysUtils,Math,ExprEdit;
+
+const
+  ZcTypeNames : array[TZcDataType] of string =
+(('void'),('float'),('int'));
 
 constructor TZcOp.Create(Owner : TObjectList);
 begin
+  if Owner=nil then
+    Owner := FunctionCleanUps;
   Owner.Add(Self);
   Children := TObjectList.Create(False);
 end;
@@ -73,6 +117,36 @@ end;
 destructor TZcOp.Destroy;
 begin
   FreeAndNil(Children);
+end;
+
+function TZcOp.GetDataType: TZcDataType;
+
+  procedure DoIdentifier;
+  var
+    Ref : TZPropertyRef;
+  begin
+    if ParsePropRef(CompilerContext.SymTab,CompilerContext.ThisC,Self.Id,Ref) then
+    begin
+      if Ref.Prop.PropertyType in ZClasses.FloatTypes then
+        Result := zctFloat
+      else
+        case Ref.Prop.PropertyType of
+          zptInteger : Result := zctInt;
+        end;
+    end;
+  end;
+
+begin
+  Result := zctVoid;
+  if (Ref<>nil) and (Ref is TZcOp) then
+  begin
+    Result := (Ref as TZcOp).GetDataType;
+  end else  if Kind=zcIdentifier then
+    DoIdentifier
+  else if Kind=zcConstLiteral then
+    Result := zctFloat
+  else if Children.Count>0 then
+    Result := Child(0).GetDataType;
 end;
 
 function TZcOp.Child(I : integer) : TZcOp;
@@ -89,7 +163,6 @@ begin
     zcDiv : Result := Child(0).ToString + '/' + Child(1).ToString;
     zcPlus : Result := Child(0).ToString + '+' + Child(1).ToString;
     zcMinus : Result := Child(0).ToString + '-' + Child(1).ToString;
-    zcConst : Result := FloatToStr(Value);
     zcIdentifier : Result := Id;
     zcAssign : Result := Child(0).ToString + '=' + Child(1).ToString;
     zcIf :
@@ -106,10 +179,12 @@ begin
     zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
     zcBlock :
       begin
-        Result := '{'#13#10;
+        if Children.Count>1 then
+          Result := '{'#13#10;
         for I := 0 to Children.Count-1 do
-          Result := Result + Child(I).ToString + '; ';
-        Result := Result + '}'#13#10;
+          Result := Result + Child(I).ToString + '; ' + #13#10;
+        if Children.Count>1 then
+          Result := Result + '}'#13#10;
       end;
     zcNegate : Result := '-' + Child(0).ToString;
     zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
@@ -147,34 +222,41 @@ begin
   end;
 end;
 
-procedure TZcOp.Optimize;
+function TZcOp.Optimize : TZcOp;
 var
   I : integer;
+  C1,C2 : TZcOpLiteral;
 
   procedure DoConstant(NewValue : single);
   begin
-    if (Child(0).Kind=zcConst) and (Child(1).Kind=zcConst) then
-    begin
-      Kind := zcConst;
-      Value := NewValue;
-    end;
+    Result := TZcOpLiteral.Create(C1.Typ,NewValue);
   end;
 
 begin
   for I := 0 to Children.Count-1 do
-    if Assigned(Child(I)) then Child(I).Optimize;
-  case Kind of
-    //todo: more optimizations
-    zcMul : DoConstant(Child(0).Value * Child(1).Value);
-    zcDiv : DoConstant(Child(0).Value / Child(1).Value);
-    zcPlus : DoConstant(Child(0).Value + Child(1).Value);
-    zcMinus : DoConstant(Child(0).Value - Child(1).Value);
-    zcNegate :
-      if Child(0).Kind=zcConst then
-      begin
-        Kind := zcConst;
-        Value := Child(0).Value * -1;
-      end;
+    if Assigned(Child(I)) then Children[I] := Child(I).Optimize;
+
+  Result := Self;
+
+  if (Children.Count=2) and (Child(0).Kind=zcConstLiteral) and (Child(1).Kind=zcConstLiteral) then
+  begin
+    C1 := Child(0) as TZcOpLiteral;
+    C2 := Child(1) as TZcOpLiteral;
+    case Kind of
+      //todo: more optimizations
+      zcMul : DoConstant(C1.Value * C2.Value);
+      zcDiv : DoConstant(C1.Value / C2.Value);
+      zcPlus : DoConstant(C1.Value + C2.Value);
+      zcMinus : DoConstant(C1.Value - C2.Value);
+    end;
+  end;
+
+  if (Children.Count=1) and (Child(0).Kind=zcConstLiteral) then
+  begin
+    C1 := Child(0) as TZcOpLiteral;
+    case Kind of
+      zcNegate : Result := TZcOpLiteral.Create(C1.Typ,C1.Value * -1);
+    end;
   end;
 end;
 
@@ -216,6 +298,11 @@ begin
     (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - 2 + I;
 end;
 
+function TZcOpFunction.GetDataType: TZcDataType;
+begin
+  Result := ReturnType;
+end;
+
 function TZcOpFunction.GetStackSize: integer;
 begin
   //One entry per local var + one entry for return value
@@ -224,24 +311,29 @@ begin
     Inc(Result);
 end;
 
-procedure TZcOpFunction.Optimize;
+function TZcOpFunction.Optimize : TZcOp;
 var
   I : integer;
 begin
   for I := 0 to Statements.Count-1 do
-    TZcOp(Statements[I]).Optimize;
+    Statements[I] := TZcOp(Statements[I]).Optimize;
+  Result := Self;
 end;
 
 function TZcOpFunction.ToString: string;
 var
   I : integer;
+  UseCurly : boolean;
 begin
-  Result := '{'#13#10;           
+  UseCurly := (Self.Id<>'') or ((Statements.Count>1) or (Locals.Count>0));
+  if UseCurly then
+    Result := '{'#13#10;
   for I := 0 to Locals.Count-1 do
     Result := Result + TZcOp(Locals[I]).ToString;
   for I := 0 to Statements.Count-1 do
-    Result := Result + TZcOp(Statements[I]).ToString;
-  Result := Result + '}'#13#10;
+    Result := Result + TZcOp(Statements[I]).ToString + ';' + #13#10;
+  if UseCurly then
+    Result := Result + '}'#13#10;
 end;
 
 { TZcOpVariableBase }
@@ -251,7 +343,130 @@ end;
 
 function TZcOpLocalVar.ToString: string;
 begin
-  Result := 'float ' + Id + ';'#13#10;
+  Result := ZcTypeNames[Typ] + ' ' + Id + ';'#13#10;
 end;
+
+{ TZcOpVariableBase }
+
+function TZcOpVariableBase.GetDataType: TZcDataType;
+begin
+  Result := Typ;
+end;
+
+
+
+{ TZcOpConvert }
+
+constructor TZcOpConvert.Create(ToType: TZcDataType; Op: TZcOp);
+begin
+  inherited Create(nil);
+  Self.Kind := zcConvert;
+  Self.ToType := ToType;
+  Children.Add(Op);
+end;
+
+function TZcOpConvert.GetDataType: TZcDataType;
+begin
+  Result := ToType;
+end;
+
+function TZcOpConvert.Optimize: TZcOp;
+var
+  C1 : TZcOpLiteral;
+begin
+  Result := inherited Optimize;
+  if (Child(0).Kind=zcConstLiteral) then
+  begin
+    C1 := Child(0) as TZcOpLiteral;
+    Result := TZcOpLiteral.Create(Self.ToType,C1.Value);
+  end;
+end;
+
+function TZcOpConvert.ToString: string;
+begin
+  Result := '(' + ZcTypeNames[ToType] + ')' + Child(0).ToString;
+end;
+
+//-----------------
+
+function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
+begin
+  Result := TZcOp.Create(nil);
+  Result.Kind := Kind;
+end;
+function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+begin
+  Result := MakeOp(Kind);
+  Result.Id := Id;
+end;
+function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
+var
+  I : integer;
+begin
+  Result := MakeOp(Kind);
+  for I := 0 to High(Children) do
+    Result.Children.Add(Children[I]);
+end;
+
+function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
+begin
+  if (Op.GetDataType=WantedType) or (WantedType=zctVoid) or (Op.GetDataType=zctVoid) then
+    Result := Op
+  else
+  begin
+    Result := TZcOpConvert.Create(WantedType,Op);
+  end;
+end;
+
+function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
+begin
+  Op2 := MakeCompatible(Op2,Op1.GetDataType);
+  Result := MakeOp(Kind,[Op1,Op2]);
+end;
+
+function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
+const
+  AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
+begin
+  Op2 := MakeCompatible(Op2,Op1.GetDataType);
+  case Kind of
+    atMulAssign,atDivAssign,atPlusAssign,atMinusAssign :  //Convert x*=2 to x=x*2
+      begin
+        //Note: op1 becomes inserted at a second position in the tree
+        //This works because nodes do not own each other
+        Op2 := MakeOp(AssignMap[Kind],[Op1,Op2]);
+      end;
+  end;
+  Result := MakeOp(zcAssign,[Op1,Op2]);
+end;
+
+
+{ TZcOpLiteral }
+
+constructor TZcOpLiteral.Create(Typ: TZcDataType; Value: single);
+begin
+  inherited Create(nil);
+  Kind := zcConstLiteral;
+  Self.Typ := Typ;
+  Self.Value := Value;
+end;
+
+function TZcOpLiteral.GetDataType: TZcDataType;
+begin
+  Result := Typ;
+end;
+
+function TZcOpLiteral.ToString: string;
+begin
+  Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
+end;
+
+initialization
+
+  FunctionCleanUps := TObjectList.Create(True);
+
+finalization
+
+  FreeAndNil(FunctionCleanUps);
 
 end.

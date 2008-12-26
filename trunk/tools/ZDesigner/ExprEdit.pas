@@ -47,6 +47,9 @@ function ParsePropRef(SymTab : TSymbolTable;
   var Ref : TZPropertyRef) : boolean;
 
 
+var
+  CompileDebugString : string;
+
 implementation
 
 uses Zc,Zc_Ops,Dialogs,
@@ -187,8 +190,8 @@ type
 function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
 begin
   Result := ParsePropRef(SymTab,Component,VarName,Ref);
-  if Result and (not (Ref.Prop.PropertyType in ZClasses.FloatTypes)) then
-    raise ECodeGenError.Create('Only float type properties can be used: ' + VarName);
+  if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes) or (Ref.Prop.PropertyType=zptInteger)) ) then
+    raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
 end;
 
 
@@ -198,9 +201,9 @@ begin
   Result.Kind := Kind;
 end;
 
-function MakeConstOp(const Value : single) : TExpConstant;
+function MakeConstOp(const Value : single) : TExpConstantFloat;
 begin
-  Result := TExpConstant.Create(nil);
+  Result := TExpConstantFloat.Create(nil);
   Result.Constant := Value;
 end;
 
@@ -271,9 +274,51 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
     for I := 0 to Ord((A as TDefineArray).Dimensions) do
       GenValue(Op.Child(I));
-    C := TExpArrayRead.Create(nil);
+    C := TExpArrayRead.Create(Target);
     C.TheArray := A as TDefineArray;
-    Target.AddComponent( C );
+  end;
+
+  procedure DoGenConvert;
+  var
+    C : TExpConvert;
+    COp : TZcOpConvert;
+    Kind : TExpConvertKind;
+  begin
+    GenValue(Op.Child(0));
+    COp := Op As TZcOpConvert;
+    Kind := TExpConvertKind(99);
+    C := TExpConvert.Create(Target);
+    case Cop.Child(0).GetDataType of
+      zctFloat :
+        case Cop.ToType of
+          zctInt: Kind := eckFloatToInt;
+        end;
+      zctInt :
+        case Cop.ToType of
+          zctFloat: Kind := eckIntToFloat;
+        end;
+    end;
+    if Ord(Kind)=99 then
+      raise ECodeGenError.Create('Invalid conversion operator');
+    C.Kind := Kind;
+  end;
+
+  procedure DoLiteral;
+  var
+    COp : TZcOpLiteral;
+  begin
+    COp := Op as TZcOpLiteral;
+    case Cop.Typ of
+      zctFloat :
+        with TExpConstantFloat.Create(Target) do
+          Constant := Cop.Value;
+      zctInt :
+        with TExpConstantInt.Create(Target) do
+          Constant := Round(Cop.Value);
+      else
+        raise ECodeGenError.Create('Invalid literal');
+    end;
+//    Target.AddComponent( MakeConstOp(Op.Value) )
   end;
 
 begin
@@ -282,13 +327,14 @@ begin
     zcDiv : DoGenBinary(vbkDiv);
     zcPlus : DoGenBinary(vbkPlus);
     zcMinus : DoGenBinary(vbkMinus);
-    zcConst : Target.AddComponent( MakeConstOp(Op.Value) );
+    zcConstLiteral : DoLiteral;
     zcIdentifier : DoGenVariableValue;
     zcFuncCall : GenFuncCall(Op,True);
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
     zcAnd, zcOr : DoGenBoolean;
     zcArrayAccess : DoGenArrayRead;
+    zcConvert : DoGenConvert;
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -718,12 +764,13 @@ var
   I : integer;
   Op : TZcOp;
 
-  procedure DoRemoveConstants(Op: TZcOp);
+  function DoRemoveConstants(Op: TZcOp) : TZcOp;
   var
     P : TZPropertyRef;
     Value : TZPropertyValue;
     I : integer;
   begin
+    Result := Op;
     if Op.Kind=Zc_Ops.zcIdentifier then
     begin
       if GetPropRef(Op.Id,P) then
@@ -732,19 +779,18 @@ var
         if P.Component is TDefineConstant then
         begin
           Assert(P.Prop.PropertyType=zptFloat);
-          Op.Kind := zcConst;
-          Op.Value := Value.FloatValue;
+          Result := TZcOpLiteral.Create(zctFloat,Value.FloatValue);
         end;
       end;
     end else if Op.Kind=Zc_Ops.zcFunction then
     begin
       for I := 0 to TZcOpFunction(Op).Statements.Count-1 do
-        DoRemoveConstants(TZcOpFunction(Op).Statements[I] as TZcOp);
+        TZcOpFunction(Op).Statements[I] := DoRemoveConstants(TZcOpFunction(Op).Statements[I] as TZcOp);
     end else
     begin
       for I := 0 to Op.Children.Count-1 do
         if Assigned(Op.Child(I)) then
-          DoRemoveConstants(Op.Child(I));
+          Op.Children[I] := DoRemoveConstants(Op.Child(I));
     end;
   end;
 
@@ -752,8 +798,9 @@ begin
   for I := 0 to StmtList.Count-1 do
   begin
     Op := StmtList[I];
-    DoRemoveConstants(Op);
-    Op.Optimize;
+    Op := DoRemoveConstants(Op);
+    Op := Op.Optimize;
+    StmtList[I] := Op;
   end;
 end;
 
@@ -798,6 +845,9 @@ begin
   S := Ze.Source;
   Target := Ze.Code;
 
+  CompilerContext.SymTab := SymTab;
+  CompilerContext.ThisC := ThisC;
+
   Compiler := TZc.Create(nil);
   try
     Compiler.SymTab := SymTab;
@@ -837,6 +887,12 @@ begin
         Target.Clear;
         raise;
       end;
+
+      //Show tree as source-code for debugging
+      CompileDebugString := '';
+      for I := 0 to Compiler.ZFunctions.Count-1 do
+        CompileDebugString := CompileDebugString + (Compiler.ZFunctions[I] as TZcOp).ToString + #13#10;
+
     finally
       CodeGen.Free;
     end;

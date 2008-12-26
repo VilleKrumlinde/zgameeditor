@@ -47,10 +47,10 @@ type
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
  RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,
  ApplicationClassId,AppStateClassId,SetAppStateClassId,
- ZExpressionClassId,ExpConstantClassId,ExpOpBinaryClassId,ExpPropValueClassId,
+ ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,ExpOpBinaryClassId,ExpPropValueClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
- ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,
+ ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -215,7 +215,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat);
+  TZcDataType = (zctVoid,zctFloat,zctInt);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record

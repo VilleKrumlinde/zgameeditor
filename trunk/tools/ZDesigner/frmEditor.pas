@@ -245,7 +245,7 @@ type
     Root : TZComponent;
     FloatEdit : TEdit;
     MinFloat,MaxFloat : single;
-    ExprEdit : TEdit;
+    ExprEditBox : TEdit;
     CurrentFileName : string;
     ExprSynEdit,ShaderSynEdit : TSynEdit;
     ViewRotate,ViewTranslate : TZVector3f;
@@ -549,10 +549,28 @@ begin
 end;
 
 procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString);
+var
+  I : integer;
+  Tmp : TStringList;
+
+  procedure InAddOne(const S : String);
+  begin
+    while LogListBox.Items.Count>500 do
+      LogListBox.Items.Delete(0);
+    LogListBox.Items.AddObject(S,Log);
+  end;
+
 begin
-  while LogListBox.Items.Count>500 do
-    LogListBox.Items.Delete(0);
-  LogListBox.Items.AddObject(Mess,Log);
+  if Pos(#13,Mess)=0 then
+    InAddOne(Mess)
+  else
+  begin
+    Tmp := TStringList.Create;
+    Tmp.Text := Mess;
+    for I := 0 to Tmp.Count - 1 do
+        InAddOne(Tmp[I]);
+    Tmp.Free;
+  end;
   LogListBox.ItemIndex := LogListBox.Items.Count-1;
   LogListBox.Repaint;
 end;
@@ -1364,8 +1382,8 @@ end;
 
 procedure TEditorForm.ShowExprEditor(Edit: TEdit);
 begin
-  ExprEdit := Edit;
-  ExprEdit.ReadOnly := True;
+  ExprEditBox := Edit;
+  ExprEditBox.ReadOnly := True;
   ExprSynEdit.Text := Edit.Text;
   ExprCompileButton.Enabled := False;
   CustomPropEditorsPageControl.ActivePageIndex := 2;
@@ -1392,8 +1410,8 @@ end;
 
 procedure TEditorForm.ShowShaderEditor(Edit: TEdit);
 begin
-  ExprEdit := Edit;
-  ExprEdit.ReadOnly := True;
+  ExprEditBox := Edit;
+  ExprEditBox.ReadOnly := True;
   ShaderSynEdit.Text := Edit.Text;
   CompileShaderButton.Enabled := False;
   CustomPropEditorsPageControl.ActivePage := ShaderTabSheet;
@@ -1408,8 +1426,8 @@ end;
 procedure TEditorForm.CompileShaderButtonClick(Sender: TObject);
 begin
   //Spara ändrad text i edit-ruta
-  ExprEdit.Text := TrimRight(ShaderSynEdit.Text);
-  ExprEdit.OnExit(ExprEdit);
+  ExprEditBox.Text := TrimRight(ShaderSynEdit.Text);
+  ExprEditBox.OnExit(ExprEditBox);
 end;
 
 procedure TEditorForm.ExprCompileButtonClick(Sender: TObject);
@@ -1421,12 +1439,12 @@ var
   I : integer;
 begin
   //Spara ändrad text i edit-ruta
-  ExprEdit.Text := TrimRight(ExprSynEdit.Text);
-  ExprEdit.OnExit(ExprEdit);
+  ExprEditBox.Text := TrimRight(ExprSynEdit.Text);
+  ExprEditBox.OnExit(ExprEditBox);
   //Propvärde har nu sparats i component
   //Läs tillbaka propvärde för kompilering
   C := Selected;
-  Prop := C.GetProperties.GetByName(ExprEdit.Hint);
+  Prop := C.GetProperties.GetByName(ExprEditBox.Hint);
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
@@ -1463,6 +1481,9 @@ begin
     CompileErrorLabel.BevelKind := bkNone;
     if ShowOpCodes then
     begin
+      ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
+
+
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
         ZLog.GetLog(Self.ClassName).Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
