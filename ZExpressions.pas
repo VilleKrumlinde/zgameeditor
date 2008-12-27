@@ -800,7 +800,7 @@ var
 begin
   Result := Copy(ComponentManager.GetInfo(Self).ZClassName,4,255);
   PropList := Self.GetProperties;
-  for I := 0 to PropList.Count-1 do
+  for I := 3 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
     Self.GetProperty(Prop,Value);

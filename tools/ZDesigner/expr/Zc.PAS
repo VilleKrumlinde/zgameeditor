@@ -100,7 +100,6 @@ destructor Destroy; override;
   private
     CurrentFunction : TZcOpFunction;
     procedure WriteStr(S : string);
-    procedure WriteOp(Op : TZcOp);
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
@@ -183,11 +182,6 @@ const
 procedure TZc.WriteStr(S : string);
 begin
   StreamToListFile(S, TRUE);
-end;
-
-procedure TZc.WriteOp(Op : TZcOp);
-begin
-  WriteStr(Op.ToString);
 end;
 
 
@@ -1418,7 +1412,7 @@ end else begin SynError(74);
 end;
 end;
 
-procedure TZc._Primary (var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+procedure TZc._Primary (var  OutOp  :  TZcOp);var  Op  :  TZcOp;  S  :  string;
 begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
@@ -1472,6 +1466,10 @@ _Argument(Op);
 OutOp.Children.Add(Op);
 end;
 end;
+
+if  not  VerifyFunctionCall(OutOp,S)  then
+   ZError(S);
+
 Expect(_rparenSym);
 end else begin
 Get;
@@ -1852,7 +1850,7 @@ Expect(identSym);
     SynError(201)
   else
   begin
-    Arg  :=  TZcOpArgumentVar.Create(nil);
+    Arg  :=  TZcOpArgumentVar.Create(GlobalNames);
     Arg.Id  :=  LexString;
     Arg.Typ  :=  Typ;
     CurrentFunction.AddArgument(Arg);
@@ -1958,10 +1956,7 @@ end;
     if  Successful  then
     begin
       for  I:=0  to  ZFunctions.Count-1  do
-      begin
         ZFunctions[I]  :=  TZcOp(ZFunctions[I]).Optimize;
-        //WriteOp(TZcOp(ZFunctions[I]));
-      end;
     end;
 
 end;
