@@ -86,6 +86,7 @@ function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
+function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 
 var
   //Nodes owned by the current compiled function/expression
@@ -338,9 +339,6 @@ begin
     Result := Result + '}'#13#10;
 end;
 
-{ TZcOpVariableBase }
-
-
 { TZcOpLocalVar }
 
 function TZcOpLocalVar.ToString: string;
@@ -386,7 +384,7 @@ end;
 
 function TZcOpConvert.ToString: string;
 begin
-  Result := '(' + ZcTypeNames[ToType] + ')' + Child(0).ToString;
+  Result := '((' + ZcTypeNames[ToType] + ')' + Child(0).ToString + ')';
 end;
 
 //-----------------
@@ -442,6 +440,29 @@ begin
   Result := MakeOp(zcAssign,[Op1,Op2]);
 end;
 
+function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
+var
+  FOp : TZcOpFunction;
+  I : integer;
+begin
+  Result := False;
+  if CompilerContext.SymTab.Contains(Op.Id) and (CompilerContext.SymTab.Lookup(Op.Id) is TZcOpFunction) then
+  begin  //User function
+    FOp := CompilerContext.SymTab.Lookup(Op.Id) as TZcOpFunction;
+    if FOp.Arguments.Count<>Op.Children.Count then
+    begin
+      Error := 'Wrong nr of arguments';
+      Exit;
+    end;
+    for I := 0 to FOp.Arguments.Count - 1 do
+      Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
+  end else
+  begin //Built in function, assume all arguments are floats
+    for I := 0 to Op.Children.Count - 1 do
+      Op.Children[I] := MakeCompatible(Op.Child(I),zctFloat);
+  end;
+  Result := True;
+end;
 
 { TZcOpLiteral }
 
@@ -462,6 +483,8 @@ function TZcOpLiteral.ToString: string;
 begin
   Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
 end;
+
+
 
 initialization
 

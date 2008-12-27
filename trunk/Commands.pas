@@ -58,7 +58,7 @@ type
     Keys : TPropString;
     RepeatDelay : single;
     OnPressed : TZComponentList;
-    KeyIndex : single;
+    KeyIndex : integer;
     CharCode : word;
     procedure Execute; override;
   end;
@@ -189,7 +189,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}integer(@CharCode) - integer(Self), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}integer(@RepeatDelay) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}integer(@OnPressed) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}integer(@KeyIndex) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}integer(@KeyIndex) - integer(Self), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -217,7 +217,6 @@ begin
   begin
     if Platform_IsKeyPressed(char(P^[Index])) then
     begin
-      //todo keyindex borde vara en byte, nu sker intToFloat conversion
       Self.KeyIndex := Index;
       OnPressed.ExecuteCommands;
       LastPressedAt := ZApp.Time;

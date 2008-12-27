@@ -37,21 +37,21 @@ type
     SaveDialog: TSaveDialog;
     Timer1: TTimer;
     LeftPanel: TPanel;
-    TreePanel: TPanel;
+    TreePanel: TGroupBox;
     Panel1: TPanel;
     Splitter1: TSplitter;
     CustomPropEditorsPageControl: TPageControl;
     TabSheet1: TTabSheet;
     TrackBar1: TTrackBar;
     TabSheet2: TTabSheet;
-    PropEditorPanel: TPanel;
+    PropEditorPanel: TGroupBox;
     ViewerPanel: TPanel;
     Splitter2: TSplitter;
     Label1: TLabel;
     TabSheet3: TTabSheet;
     ExprCompileButton: TButton;
     Splitter3: TSplitter;
-    ExprPanel : TPanel;
+    ExprPanel: TGroupBox;
     ActionList1: TActionList;
     AddComponentAction: TAction;
     TreePopupMenu: TPopupMenu;
@@ -1482,8 +1482,6 @@ begin
     if ShowOpCodes then
     begin
       ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
-
-
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
         ZLog.GetLog(Self.ClassName).Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );

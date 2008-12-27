@@ -15,8 +15,6 @@ DELPHI
     GlobalNames : TObjectList;    
   PRIVATE
     CurrentFunction : TZcOpFunction;
-    procedure WriteStr(S : string);
-    procedure WriteOp(Op : TZcOp);
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
@@ -35,16 +33,6 @@ END_DELPHI
 (* Arbitrary Code *)
 
 
-
-procedure T-->Grammar<--.WriteStr(S : string);
-begin
-  StreamToListFile(S, TRUE);
-end;
-
-procedure T-->Grammar<--.WriteOp(Op : TZcOp);
-begin
-  WriteStr(Op.ToString);
-end;
 
 
 procedure T-->Grammar<--.CleanUp;
@@ -217,10 +205,7 @@ Zc (. var
        if Successful then
        begin
          for I:=0 to ZFunctions.Count-1 do
-         begin
            ZFunctions[I] := TZcOp(ZFunctions[I]).Optimize;
-           //WriteOp(TZcOp(ZFunctions[I]));
-         end;
        end;
 .)
 .
@@ -249,7 +234,7 @@ Par (. var Typ : TZcDataType; Arg : TZcOpArgumentVar; .)
           SynError(201)
         else
         begin
-          Arg := TZcOpArgumentVar.Create(nil);
+          Arg := TZcOpArgumentVar.Create(GlobalNames);
           Arg.Id := LexString;
           Arg.Typ := Typ;
           CurrentFunction.AddArgument(Arg);
@@ -552,7 +537,7 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
     .)
 .
 /*------------------------------------------------------------------------*/
-Primary<var OutOp : TZcOp>         (. var Op : TZcOp; .)
+Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; .)
 =            (. OutOp := nil; .)
   ( 
     ident    (. 
@@ -588,6 +573,10 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; .)
           {"," Argument<Op> (. OutOp.Children.Add(Op); .)
           }
         ]
+        (. 
+           if not VerifyFunctionCall(OutOp,S) then
+             ZError(S);
+        .)
     ")"
 
   | "[" (. Assert(OutOp.Kind=zcIdentifier);
