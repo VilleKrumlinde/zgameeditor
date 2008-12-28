@@ -99,7 +99,6 @@ destructor Destroy; override;
 
   private
     CurrentFunction : TZcOpFunction;
-    procedure WriteStr(S : string);
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
@@ -179,12 +178,6 @@ const
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
-procedure TZc.WriteStr(S : string);
-begin
-  StreamToListFile(S, TRUE);
-end;
-
-
 procedure TZc.CleanUp;
 begin
   Zc_Ops.FunctionCleanUps.Clear;
@@ -1412,7 +1405,7 @@ end else begin SynError(74);
 end;
 end;
 
-procedure TZc._Primary (var  OutOp  :  TZcOp);var  Op  :  TZcOp;  S  :  string;
+procedure TZc._Primary (var  OutOp  :  TZcOp);var  Op  :  TZcOp;  S  :  string;  V  :  single;
 begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
@@ -1427,7 +1420,11 @@ end else if (fCurrentInputSymbol = intConSym) OR
 _Literal;
 
 try
-OutOp  :=  TZcOpLiteral.Create(zctFloat,StrToFloat(LexString));
+V  :=  StrToFloat(LexString);
+if  Frac(V)=0  then
+OutOp  :=  TZcOpLiteral.Create(zctInt,V)
+else
+OutOp  :=  TZcOpLiteral.Create(zctFloat,V);
 except  on  EConvertError  do
 SynError(200);
 end;
@@ -1477,11 +1474,11 @@ Assert(OutOp.Kind=zcIdentifier);
 OutOp.Kind:=zcArrayAccess;
 
 _Expr(Op);
-OutOp.Children.Add(Op);
+OutOp.Children.Add(  MakeCompatible(Op,zctInt)  );
 while (fCurrentInputSymbol = _commaSym) do begin
 Get;
 _Expr(Op);
-OutOp.Children.Add(Op);
+OutOp.Children.Add(  MakeCompatible(Op,zctInt)  );
 end;
 Expect(_rbrackSym);
 end;
@@ -1774,8 +1771,7 @@ Expect(_semicolonSym);
     if  CurrentFunction.ReturnType=zctVoid  then
       SynError(203)
     else
-      //todo:  testa  rätt  typ  av  returnvärde
-      OutOp  :=  MakeOp(zcReturn,[Op]);
+      OutOp  :=  MakeOp(zcReturn,[  MakeCompatible(Op,CurrentFunction.ReturnType)  ]);
   end;
 
 end else begin SynError(78);

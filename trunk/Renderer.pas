@@ -180,7 +180,8 @@ type
     TextFloatRef : TZPropertyRef;     //Propvalue att printa, en av dessa gäller
     X,Y,Scale : single;
     Align : (alCenter,alLeft);
-    CharX,CharY,CharI,CharRotate,CharScale : single;
+    CharX,CharY,CharRotate,CharScale : single;
+    CharI : integer;
     RenderCharExpression : TZExpressionPropValue;
     FloatMultiply : single;  //Multiplicera floatref innan print, för att visa decimaltal
     UseModelSpace : boolean;
@@ -1029,7 +1030,7 @@ begin
     List.GetLast.NeverPersist:=True;
   List.AddProperty({$IFNDEF MINIMAL}'CharY',{$ENDIF}integer(@CharY) - integer(Self), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}integer(@CharI) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}integer(@CharI) - integer(Self), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'CharRotate',{$ENDIF}integer(@CharRotate) - integer(Self), zptFloat);
@@ -1182,7 +1183,7 @@ begin
 
     CharX := CharX + XStep;
 
-    CharI := CharI + 1;
+    Inc(CharI);
     Inc(P);
   end;
 

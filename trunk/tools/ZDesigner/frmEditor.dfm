@@ -955,6 +955,10 @@ object EditorForm: TEditorForm
       ShortCut = 16454
       OnExecute = FindComponentActionExecute
     end
+    object ShowCompilerDetailsAction: TAction
+      Caption = 'Show compiler details'
+      OnExecute = ShowCompilerDetailsActionExecute
+    end
   end
   object TreePopupMenu: TPopupMenu
     Left = 168
@@ -1486,6 +1490,9 @@ object EditorForm: TEditorForm
       Caption = 'Tools'
       object Settings2: TMenuItem
         Action = ShowSettingsAction
+      end
+      object N10: TMenuItem
+        Action = ShowCompilerDetailsAction
       end
     end
     object Help1: TMenuItem
