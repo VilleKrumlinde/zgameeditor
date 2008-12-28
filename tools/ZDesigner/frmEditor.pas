@@ -182,6 +182,8 @@ type
     Findcomponent1: TMenuItem;
     NormalsCheckBox: TCheckBox;
     Panel4: TPanel;
+    ShowCompilerDetailsAction: TAction;
+    N10: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -236,6 +238,7 @@ type
     procedure ShowSettingsActionExecute(Sender: TObject);
     procedure FindComponentActionExecute(Sender: TObject);
     procedure NormalsCheckBoxClick(Sender: TObject);
+    procedure ShowCompilerDetailsActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -260,7 +263,6 @@ type
     RendererInitCalled : boolean;
     PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
-    ShowOpCodes : boolean;
     ZcGlobalNames : TObjectList;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
@@ -434,7 +436,7 @@ begin
   RefreshMenuFromMruList;
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
-  ShowOpCodes := DebugHook<>0;
+  ShowCompilerDetailsAction.Checked := DebugHook<>0;
 
   Platform_InitGlobals;  //Nollställ timer etc
 
@@ -1380,6 +1382,11 @@ begin
   CustomPropEditorsPageControl.ActivePageIndex := 0;
 end;
 
+procedure TEditorForm.ShowCompilerDetailsActionExecute(Sender: TObject);
+begin
+  ShowCompilerDetailsAction.Checked := not ShowCompilerDetailsAction.Checked;
+end;
+
 procedure TEditorForm.ShowExprEditor(Edit: TEdit);
 begin
   ExprEditBox := Edit;
@@ -1479,7 +1486,7 @@ begin
     ExprCompileButton.Enabled := False;
     CompileErrorLabel.Caption := '';
     CompileErrorLabel.BevelKind := bkNone;
-    if ShowOpCodes then
+    if ShowCompilerDetailsAction.Checked then
     begin
       ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');

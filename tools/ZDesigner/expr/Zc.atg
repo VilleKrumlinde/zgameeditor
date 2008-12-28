@@ -356,8 +356,7 @@ EmbeddedStatement<var OutOp : TZcOp>
           if CurrentFunction.ReturnType=zctVoid then
             SynError(203)
           else
-            //todo: testa rätt typ av returnvärde
-            OutOp := MakeOp(zcReturn,[Op]);
+            OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
         end;
     .)
 .
@@ -537,7 +536,7 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
     .)
 .
 /*------------------------------------------------------------------------*/
-Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; .)
+Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
 =            (. OutOp := nil; .)
   ( 
     ident    (. 
@@ -547,7 +546,11 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; .)
               .)
   | Literal  (. 
         try
-          OutOp := TZcOpLiteral.Create(zctFloat,StrToFloat(LexString));
+          V := StrToFloat(LexString);
+          if Frac(V)=0 then
+            OutOp := TZcOpLiteral.Create(zctInt,V)
+          else
+            OutOp := TZcOpLiteral.Create(zctFloat,V);
         except on EConvertError do
           SynError(200);
         end;
@@ -582,8 +585,8 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; .)
   | "[" (. Assert(OutOp.Kind=zcIdentifier);
            OutOp.Kind:=zcArrayAccess;
          .)
-    Expr<Op> (. OutOp.Children.Add(Op); .) 
-      {"," Expr<Op> (. OutOp.Children.Add(Op); .) } 
+    Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
+      {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
     "]" 
 
   }

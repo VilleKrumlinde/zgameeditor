@@ -630,13 +630,13 @@ var
   Index : integer;
   I1,I2,I3,ByteSize : integer;
 begin
-  I3 := Trunc(gStack.PopFloat);
+  I3 := Integer(gStack.Pop);
   if Self.Dimensions>=dadTwo then
-    I2 := Trunc(gStack.PopFloat)
+    I2 := Integer(gStack.Pop)
   else
     I2 := 0;
   if Self.Dimensions=dadThree then
-    I1 := Trunc(gStack.PopFloat)
+    I1 := Integer(gStack.Pop)
   else
     I1 := 0;
 

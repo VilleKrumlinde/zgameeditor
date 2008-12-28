@@ -84,6 +84,7 @@ function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; over
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 
+function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
@@ -144,6 +145,8 @@ begin
     Result := (Ref as TZcOp).GetDataType;
   end else if Kind=zcIdentifier then
     DoIdentifier
+  else if Kind=zcArrayAccess then
+    Result := zctFloat 
   else if Kind=zcFuncCall then
     Result := zctFloat //built in function
   else if Kind=zcConstLiteral then
@@ -419,8 +422,16 @@ begin
 end;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
+var
+  T1,T2 : TZcDataType;
 begin
-  Op2 := MakeCompatible(Op2,Op1.GetDataType);
+  T1 := Op1.GetDataType;
+  T2 := Op2.GetDataType;
+  //Cast to common type that does not lose precision
+  if T2=zctFloat then
+    Op1 := MakeCompatible(Op1,T2)
+  else
+    Op2 := MakeCompatible(Op2,T1);
   Result := MakeOp(Kind,[Op1,Op2]);
 end;
 

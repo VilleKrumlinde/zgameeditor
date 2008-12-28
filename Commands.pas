@@ -34,7 +34,7 @@ type
     Count : integer;                   //Set for a fixed nr of iterations
     OnIteration : TZComponentList;
     WhileExp : TZExpressionPropValue;  //Set to use a expression to test against
-    Iteration : single;                //current iteration, todo: should be integer but ZC only supports float
+    Iteration : integer;
     procedure Execute; override;
     procedure Update; override;
   end;
@@ -110,7 +110,7 @@ begin
     List.GetLast.DefaultValue.ExpressionValue.Source:='//this.Iteration=current iteration nr. Return false to end loop.';
     List.GetLast.ReturnType := zctFloat;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -130,7 +130,7 @@ begin
       if ZExpressions.gReturnValue=0 then
         Break;
       OnIteration.ExecuteCommands;
-      Iteration := Iteration + 1;
+      Inc(Iteration);
       {$ifndef minimal}
       if (Platform_GetTime>BailoutTime) and (Iteration>1) then
         ZHalt('Repeat-loop timeout. Check your repeat-components for infinite loops.');
@@ -141,7 +141,7 @@ begin
     for I := 0 to Count-1 do
     begin
       OnIteration.ExecuteCommands;
-      Iteration := Iteration + 1;
+      Inc(Iteration);
     end;
 end;
 
