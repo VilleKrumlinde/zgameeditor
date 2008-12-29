@@ -190,7 +190,8 @@ type
 function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
 begin
   Result := ParsePropRef(SymTab,Component,VarName,Ref);
-  if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes) or (Ref.Prop.PropertyType=zptInteger)) ) then
+  if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes)
+    or (Ref.Prop.PropertyType in [zptInteger,zptByte]))) then
     raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
 end;
 
@@ -204,6 +205,16 @@ begin
     raise ECodeGenError.Create('Wrong datatype for binaryop');
   end;
   Result.Kind := Kind;
+end;
+
+function MakeAssignOp(Size : integer) : TExpBase;
+begin
+  case Size of
+    4 : Result := TExpAssign4.Create(nil);
+    1 : Result := TExpAssign1.Create(nil);
+  else
+    raise ECodeGenError.Create('Wrong datatype for assign');
+  end;
 end;
 
 function MakeConstOp(const Value : single) : TExpConstantFloat;
@@ -226,8 +237,9 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoGenVariableValue;
   var
-    C : TExpPropValue;
+    C : TExpPropValueBase;
     L : TExpAccessLocal;
+    Source : TZPropertyRef;
   begin
     if (Op.Ref<>nil) and
       ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar))then
@@ -239,9 +251,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     end else
     begin
       //Property reference
-      C := TExpPropValue.Create(Target);
-      if not GetPropRef(Op.Id,C.Source) then
+      if not GetPropRef(Op.Id,Source) then
         raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
+      if Source.Prop.PropertyType=zptByte then
+        C := TExpPropValue1.Create(Target)
+      else
+        C := TExpPropValue4.Create(Target);
+      C.Source := Source;
     end;
   end;
 
@@ -353,7 +369,7 @@ var
   procedure DoGenAssign;
   var
     C,C2 : TExpPropPtr;
-    I,LastIndex : integer;
+    I,LastIndex,AssignSize : integer;
 
     A : TZComponent;
     Aw : TExpArrayWrite;
@@ -379,8 +395,14 @@ var
         raise ECodeGenError.Create('Unknown assigment identifier: ' + LeftOp.Id);
       if C.Target.Prop.IsReadOnly then
         raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+
+      if C.Target.Prop.PropertyType=zptByte then
+        AssignSize:=1
+      else
+        AssignSize:=4;
+
       GenValue(RightOp);
-      Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
+      Target.AddComponent( MakeAssignOp(AssignSize) );
 
       //Allow "x.Scale" be shorthand for assign x,y,z individually
       //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
@@ -396,7 +418,7 @@ var
           C2.Target := C.Target;
           C2.Target.Index := I;
           GenValue(LeftOp);
-          Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
+          Target.AddComponent( MakeAssignOp(AssignSize) );
         end;
       end;
     end else if LeftOp.Kind=zcArrayAccess then
@@ -412,7 +434,7 @@ var
       Aw := TExpArrayWrite.Create(Target);
       Aw.TheArray := A as TDefineArray;
       GenValue(Op.Child(1));
-      Target.AddComponent( MakeBinaryOp(vbkAssign,Op.GetDataType) );
+      Target.AddComponent( MakeAssignOp(4) );
     end else
       raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 

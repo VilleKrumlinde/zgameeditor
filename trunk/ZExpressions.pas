@@ -90,12 +90,21 @@ type
   end;
 
   //Load value of prop to stack
-  TExpPropValue = class(TExpBase)
+  TExpPropValueBase = class(TExpBase)
   protected
-    procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Source : TZPropertyRef;
+  end;
+
+  TExpPropValue4 = class(TExpPropValueBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  TExpPropValue1 = class(TExpPropValueBase)
+  protected
+    procedure Execute; override;
   end;
 
   //Load pointer to prop on stack, used with assign
@@ -129,14 +138,7 @@ type
     {$endif}
   end;
 
-{  TExpFunc1Arg = class(TExpProducer)
-  protected
-    procedure ProduceOutput(Stack: TZArrayList); override;
-  public
-    Kind : (vukSine,vukCos);
-  end;}
-
-  TExpOpBinaryKind = (vbkPlus,vbkMinus,vbkMul,vbkDiv,vbkAssign);
+  TExpOpBinaryKind = (vbkPlus,vbkMinus,vbkMul,vbkDiv);
 
   TExpOpBinaryBase = class(TExpBase)
   protected
@@ -253,6 +255,18 @@ type
     Kind : TExpConvertKind;
   end;
 
+  //Assign ptr to 4-byte value, both on stack
+  TExpAssign4 = class(TExpBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  //Assign ptr to 1-byte value, both on stack
+  TExpAssign1 = class(TExpBase)
+  protected
+    procedure Execute; override;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -314,17 +328,28 @@ begin
 //  Expression.Code.IsChanged := False;
 end;
 
-{ TExpPropValue }
+{ TExpPropValueBase }
 
-procedure TExpPropValue.DefineProperties(List: TZPropertyList);
+procedure TExpPropValueBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source) - integer(Self), zptPropertyRef);
 end;
 
-procedure TExpPropValue.Execute;
+procedure TExpPropValue4.Execute;
 begin
   gStack.Push( TObject(ZClasses.GetPropertyRef(Source)^) );
+end;
+
+//Load byte value and cast to integer
+procedure TExpPropValue1.Execute;
+var
+  I : integer;
+  B : integer;
+begin
+  B := PByte(ZClasses.GetPropertyRef(Source))^;
+  I := B;
+  gStack.Push( TObject(I) );
 end;
 
 { TExpConstantFloat }
@@ -387,11 +412,6 @@ begin
     vbkMinus : V := A2 - A1;
     vbkMul : V := A2 * A1;
     vbkDiv : V := A2 / A1;
-    vbkAssign :
-      begin
-        PFloat(A2)^ := A1;
-        Exit; //no result
-      end;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
   gStack.Push(TObject(V));
@@ -410,11 +430,6 @@ begin
     vbkMinus : V := A2 - A1;
     vbkMul : V := A2 * A1;
     vbkDiv : V := A2 div A1;
-    vbkAssign :
-      begin
-        PInteger(A2)^ := A1;
-        Exit; //no result
-      end;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
   gStack.Push(TObject(V));
@@ -892,6 +907,33 @@ begin
   end;
 end;
 
+{ TExpAssign4 }
+
+procedure TExpAssign4.Execute;
+var
+  V : single;
+  P : pointer;
+begin
+  V := gStack.PopFloat;
+  P := gStack.Pop;
+  PFloat(P)^ := V;
+end;
+
+{ TExpAssign1 }
+
+procedure TExpAssign1.Execute;
+var
+  V : integer;
+  B : byte;
+  P : pointer;
+begin
+  //Cast integer to byte before assigning
+  V := Integer(gStack.Pop);
+  P := gStack.Pop;
+  B := V;
+  PByte(P)^ := B;
+end;
+
 initialization
 
   //Init vm
@@ -917,7 +959,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpOpBinaryInt,ExpOpBinaryIntClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropValue,ExpPropValueClassId);
+  ZClasses.Register(TExpPropValue4,ExpPropValue4ClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpPropValue1,ExpPropValue1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpPropPtr,ExpPropPtrClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -940,6 +984,10 @@ initialization
   ZClasses.Register(TExpUserFuncCall,ExpUserFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpConvert,ExpConvertClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAssign4,ExpAssign4ClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAssign1,ExpAssign1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 {$ifndef minimal}
