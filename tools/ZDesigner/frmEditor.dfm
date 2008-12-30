@@ -34,21 +34,22 @@ object EditorForm: TEditorForm
     Width = 433
     Height = 736
     Align = alLeft
+    BevelOuter = bvNone
     TabOrder = 0
     object Splitter3: TSplitter
-      Left = 1
-      Top = 256
-      Width = 431
+      Left = 0
+      Top = 255
+      Width = 433
       Height = 4
       Cursor = crVSplit
       Align = alTop
-      ExplicitLeft = 0
       ExplicitTop = 266
+      ExplicitWidth = 431
     end
     object TreePanel: TGroupBox
-      Left = 1
-      Top = 1
-      Width = 431
+      Left = 0
+      Top = 0
+      Width = 433
       Height = 255
       Align = alTop
       Caption = 'Project &tree'
@@ -56,17 +57,18 @@ object EditorForm: TEditorForm
       TabOrder = 0
     end
     object Panel1: TPanel
-      Left = 1
-      Top = 260
-      Width = 431
-      Height = 475
+      Left = 0
+      Top = 259
+      Width = 433
+      Height = 477
       Align = alClient
+      BevelOuter = bvNone
       TabOrder = 1
       object PropEditorPanel: TGroupBox
-        Left = 1
-        Top = 1
-        Width = 429
-        Height = 473
+        Left = 0
+        Top = 0
+        Width = 433
+        Height = 477
         Align = alClient
         Caption = '&Properties'
         TabOrder = 0
@@ -477,19 +479,22 @@ object EditorForm: TEditorForm
       Width = 634
       Height = 156
       Align = alBottom
+      BevelOuter = bvNone
       TabOrder = 1
       object Splitter4: TSplitter
-        Left = 460
-        Top = 1
-        Height = 154
+        Left = 461
+        Top = 0
+        Height = 156
         Align = alRight
         ExplicitLeft = 301
+        ExplicitTop = 1
+        ExplicitHeight = 154
       end
       object CustomPropEditorsPageControl: TPageControl
-        Left = 1
-        Top = 1
-        Width = 459
-        Height = 154
+        Left = 0
+        Top = 0
+        Width = 461
+        Height = 156
         ActivePage = TabSheet3
         Align = alClient
         TabOrder = 0
@@ -502,8 +507,8 @@ object EditorForm: TEditorForm
           Caption = 'Float/Int'
           TabVisible = False
           DesignSize = (
-            451
-            144)
+            453
+            146)
           object Label1: TLabel
             Left = 16
             Top = 8
@@ -515,7 +520,7 @@ object EditorForm: TEditorForm
           object TrackBar1: TTrackBar
             Left = 8
             Top = 25
-            Width = 440
+            Width = 442
             Height = 45
             Anchors = [akLeft, akTop, akRight]
             Max = 1000
@@ -529,13 +534,13 @@ object EditorForm: TEditorForm
           ImageIndex = 2
           TabVisible = False
           DesignSize = (
-            451
-            144)
+            453
+            146)
           object ExprPanel: TGroupBox
             Left = 0
             Top = 0
-            Width = 451
-            Height = 105
+            Width = 453
+            Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = '&Code editor'
@@ -543,7 +548,7 @@ object EditorForm: TEditorForm
           end
           object ExprCompileButton: TButton
             Left = 8
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
@@ -553,8 +558,8 @@ object EditorForm: TEditorForm
           end
           object CompileErrorLabel: TStaticText
             Left = 168
-            Top = 111
-            Width = 280
+            Top = 113
+            Width = 282
             Height = 26
             Anchors = [akLeft, akRight, akBottom]
             AutoSize = False
@@ -571,7 +576,7 @@ object EditorForm: TEditorForm
           end
           object ExprHelpButton: TButton
             Left = 87
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
@@ -585,19 +590,20 @@ object EditorForm: TEditorForm
           ImageIndex = 3
           TabVisible = False
           DesignSize = (
-            451
-            144)
+            453
+            146)
           object Label6: TLabel
             Left = 96
-            Top = 120
+            Top = 122
             Width = 93
             Height = 13
             Anchors = [akLeft, akBottom]
             Caption = 'GLSL Shader editor'
+            ExplicitTop = 120
           end
           object CompileShaderButton: TButton
             Left = 8
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
@@ -608,8 +614,8 @@ object EditorForm: TEditorForm
           object ShaderPanel: TPanel
             Left = 0
             Top = 0
-            Width = 451
-            Height = 105
+            Width = 453
+            Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = 'Placeholder f'#246'r synedit'
@@ -618,17 +624,17 @@ object EditorForm: TEditorForm
         end
       end
       object LogPanel: TPanel
-        Left = 463
-        Top = 1
+        Left = 464
+        Top = 0
         Width = 170
-        Height = 154
+        Height = 156
         Align = alRight
         TabOrder = 1
         object LogListBox: TListBox
           Left = 1
           Top = 1
           Width = 168
-          Height = 152
+          Height = 154
           Style = lbOwnerDrawFixed
           Align = alClient
           Color = 2976796
@@ -935,6 +941,7 @@ object EditorForm: TEditorForm
     object GenerateActiveXAction: TAction
       Caption = 'Build and compress ActiveX'
       Enabled = False
+      Visible = False
       OnExecute = GenerateActiveXActionExecute
     end
     object Import3dsAction: TAction
@@ -1490,6 +1497,9 @@ object EditorForm: TEditorForm
       Caption = 'Tools'
       object Settings2: TMenuItem
         Action = ShowSettingsAction
+      end
+      object N11: TMenuItem
+        Caption = '-'
       end
       object N10: TMenuItem
         Action = ShowCompilerDetailsAction

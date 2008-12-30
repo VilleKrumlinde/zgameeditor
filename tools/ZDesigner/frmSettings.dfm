@@ -4,7 +4,7 @@ object SettingsForm: TSettingsForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 269
+  ClientHeight = 322
   ClientWidth = 358
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -17,12 +17,12 @@ object SettingsForm: TSettingsForm
   OnCreate = FormCreate
   DesignSize = (
     358
-    269)
+    322)
   PixelsPerInch = 96
   TextHeight = 13
   object OkButton: TButton
     Left = 195
-    Top = 237
+    Top = 290
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -30,33 +30,26 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
-  end
-  object ShellCheck: TCheckBox
-    Left = 13
-    Top = 16
-    Width = 255
-    Height = 17
-    Caption = 'Associate .zgeproj file extension with explorer'
-    TabOrder = 1
-    OnClick = ShellCheckClick
+    ExplicitTop = 237
   end
   object Button2: TButton
     Left = 277
-    Top = 237
+    Top = 290
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
     ModalResult = 2
-    TabOrder = 2
+    TabOrder = 1
+    ExplicitTop = 237
   end
   object GroupBox1: TGroupBox
     Left = 8
-    Top = 47
+    Top = 118
     Width = 339
     Height = 154
     Caption = 'Packer settings'
-    TabOrder = 3
+    TabOrder = 2
     object Label1: TLabel
       Left = 14
       Top = 32
@@ -123,6 +116,50 @@ object SettingsForm: TSettingsForm
         'Upx brute'
         'kkrunchy default'
         'kkrunchy best')
+    end
+  end
+  object GroupBox2: TGroupBox
+    Left = 8
+    Top = 63
+    Width = 339
+    Height = 49
+    Caption = 'Explorer'
+    TabOrder = 3
+    object ShellCheck: TCheckBox
+      Left = 10
+      Top = 16
+      Width = 255
+      Height = 17
+      Caption = 'Associate .zgeproj file extension with explorer'
+      TabOrder = 0
+      OnClick = ShellCheckClick
+    end
+  end
+  object GroupBox3: TGroupBox
+    Left = 8
+    Top = 8
+    Width = 339
+    Height = 49
+    Caption = 'Designer layout'
+    TabOrder = 4
+    object Label6: TLabel
+      Left = 14
+      Top = 19
+      Width = 171
+      Height = 13
+      Caption = 'Project tree position (requires restart)'
+    end
+    object GuiLayoutCombo: TComboBox
+      Left = 200
+      Top = 16
+      Width = 89
+      Height = 21
+      Style = csDropDownList
+      ItemHeight = 13
+      TabOrder = 0
+      Items.Strings = (
+        'Left'
+        'Right')
     end
   end
 end

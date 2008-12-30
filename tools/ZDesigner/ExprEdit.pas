@@ -119,8 +119,12 @@ begin
     begin
       C := TZComponent(SymTab.Lookup(PName));
       if (C is TDefineVariable) or (C is TDefineConstant) then
-        PName := 'Value'
-      else
+      begin
+        if (C is TDefineVariable) and ((C as TDefineVariable)._Type=dvbInt) then
+          PName := 'IntValue'
+        else
+          PName := 'Value';
+      end else
         C := nil;
     end
     else

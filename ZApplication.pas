@@ -546,6 +546,7 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     List.GetLast.DefaultValue.ByteValue := 1;
   List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}integer(@ShowOptionsDialog) - integer(Self), zptBoolean);
 
