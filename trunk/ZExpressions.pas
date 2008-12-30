@@ -50,12 +50,21 @@ type
     Source : TZExpressionPropValue;
   end;
 
+  TDefineVariableBase = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    _Type : (dvbFloat,dvbInt);
+  end;
+
+
   //Define a global variable that can be used in expressions
-  TDefineVariable = class(TZComponent)
+  TDefineVariable = class(TDefineVariableBase)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Value : single;
+    IntValue : integer;
   end;
 
   //Define a global constant that can be used in expressions
@@ -68,7 +77,7 @@ type
     {$ifndef minimal}function GetDisplayName: string; override;{$endif}
   end;
 
-  TDefineArray = class(TZComponent)
+  TDefineArray = class(TDefineVariableBase)
   private
     Limit : integer;
     Data : PFloatArray;
@@ -493,6 +502,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value) - integer(Self), zptFloat);
     //Variabler är ingen ide att spara, de måste sättas ifrån kod
     List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}integer(@IntValue) - integer(Self), zptInteger);
+    List.GetLast.NeverPersist := True;
 end;
 
 { TExpFuncCall }
@@ -630,8 +641,11 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['One','Two','Three']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}integer(@SizeDim1) - integer(Self), zptInteger);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}integer(@SizeDim2) - integer(Self), zptInteger);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim3',{$ENDIF}integer(@SizeDim3) - integer(Self), zptInteger);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 destructor TDefineArray.Destroy;
@@ -932,6 +946,15 @@ begin
   P := gStack.Pop;
   B := V;
   PByte(P)^ := B;
+end;
+
+{ TDefineVariableBase }
+
+procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer']);{$endif}
 end;
 
 initialization

@@ -184,6 +184,7 @@ type
     Panel4: TPanel;
     ShowCompilerDetailsAction: TAction;
     N10: TMenuItem;
+    N11: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -264,6 +265,7 @@ type
     PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
     ZcGlobalNames : TObjectList;
+    GuiLayout : integer;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -613,6 +615,17 @@ begin
   try
     Section := 'Designer';
 
+    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',0),1);
+    if GuiLayout=1 then
+    begin
+      TreePanel.Parent := Self;
+      TreePanel.Align := alRight;
+
+      Splitter3.Parent := Self;
+      Splitter3.Align := alRight;
+      Splitter3.Cursor := crHSplit;
+    end;
+
     S := Ini.ReadString(Section,'LastOpenedProject','');
     if (S<>'') and (CurrentFileName='') and (not FindCmdLineSwitch('blank')) then
     begin
@@ -635,6 +648,7 @@ begin
 
     LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
+    LeftPanel.Width := Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20);
 
     Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}kkrunchy.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
@@ -653,6 +667,8 @@ begin
     Section := 'Designer';
     Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
 
+    Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
+
     S := ExtractFilePath(CurrentFileName);
     if S='' then
       S:= ExtractFilePath(FileOpenAction.Dialog.FileName);
@@ -668,6 +684,7 @@ begin
 
     Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
     Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
+    Ini.WriteInteger(Section,'LeftPanel.Width',LeftPanel.Width);
 
     Ini.WriteString(Section,'PackerProg', Self.PackerProg);
     Ini.WriteString(Section,'PackerParams', Self.PackerParams);
@@ -1404,11 +1421,12 @@ begin
   try
     F.PackerEdit.Text := Self.PackerProg;
     F.PackerParamsEdit.Text := Self.PackerParams;
-
+    F.GuiLayoutCombo.ItemIndex := Self.GuiLayout;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
       Self.PackerParams := F.PackerParamsEdit.Text;
+      Self.GuiLayout := F.GuiLayoutCombo.ItemIndex;
     end;
   finally
     F.Free;

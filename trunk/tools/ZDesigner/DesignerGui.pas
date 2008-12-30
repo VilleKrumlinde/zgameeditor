@@ -257,7 +257,7 @@ begin
     else
       Continue;
     end;
-    PEditor.IsReadOnlyProp := Prop.NeverPersist or Prop.IsReadOnly;
+    PEditor.IsReadOnlyProp := Prop.NeverPersist;// or Prop.IsReadOnly;
     PEditor.Height := 20;
     PEditor.Parent := Self;
     PEditor.SetProp(C,Prop);

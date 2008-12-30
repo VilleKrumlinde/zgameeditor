@@ -9,7 +9,6 @@ uses
 type
   TSettingsForm = class(TForm)
     OkButton: TButton;
-    ShellCheck: TCheckBox;
     Button2: TButton;
     PackerEdit: TEdit;
     PackerParamsEdit: TEdit;
@@ -20,6 +19,11 @@ type
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    GroupBox2: TGroupBox;
+    ShellCheck: TCheckBox;
+    GroupBox3: TGroupBox;
+    Label6: TLabel;
+    GuiLayoutCombo: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
@@ -124,6 +128,7 @@ end;
 procedure TSettingsForm.ReadSettings;
 begin
   ShellCheck.Checked := IsRegZgeExt;
+
 end;
 
 procedure TSettingsForm.SaveSettings;

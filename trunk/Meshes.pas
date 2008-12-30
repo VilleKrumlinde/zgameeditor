@@ -1416,11 +1416,8 @@ procedure TMeshImport.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}integer(@MeshData) - integer(Self), zptBinary);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}integer(@HasVertexColors) - integer(Self), zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}integer(@HasTextureCoords) - integer(Self), zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 procedure TMeshImport.ProduceOutput(Content: TContent; Stack: TZArrayList);

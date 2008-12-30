@@ -146,8 +146,12 @@ begin
   end else if Kind=zcIdentifier then
     DoIdentifier
   else if Kind=zcArrayAccess then
-    Result := zctFloat 
-  else if Kind=zcFuncCall then
+  begin
+    if (Ref<>nil) and (Ref is TDefineArray) and ((Ref as TDefineArray)._Type=dvbInt) then
+      Result := zctInt
+    else
+      Result := zctFloat
+  end else if Kind=zcFuncCall then
     Result := zctFloat //built in function
   else if Kind=zcConstLiteral then
     Result := zctFloat
