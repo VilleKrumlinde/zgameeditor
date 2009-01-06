@@ -243,7 +243,7 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (emPop);
+    Kind : (emPop,emDup);
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -298,6 +298,10 @@ var
   gStack : TZArrayList;
 
 procedure RunCode(Code : TZComponentList);
+{$ifndef minimal}
+var
+  GuardLimit : integer;
+{$endif}
 begin
   //Pc can be modified in jump-code
   if Code.Count=0 then
@@ -306,12 +310,20 @@ begin
   gCurrentBP := 0;
   gStack.Clear;
   gStack.Push(nil); //Push return adress nil
+  {$ifndef minimal}
+  GuardLimit := 10 * 1000000;
+  {$endif}
   while True do
   begin
     TExpBase(gCurrentPc^).Execute;
     if gCurrentPc=nil then
        break;
     Inc(gCurrentPc);
+    {$ifndef minimal}
+    Dec(GuardLimit);
+    if GuardLimit=0 then
+      ZHalt('Ten million instructions executed. Infinite loop?');
+    {$endif}
   end;
   if gStack.Count=1 then
     gReturnValue := gStack.PopFloat;
@@ -862,9 +874,17 @@ begin
 end;
 
 procedure TExpMisc.Execute;
+var
+  V : integer;
 begin
   case Kind of
     emPop: gStack.Pop;  //Pop, discard value from top of stack
+    emDup :
+      begin
+        V := Integer(gStack.Pop);
+        gStack.Push(TObject(V));
+        gStack.Push(TObject(V));
+      end;
   end;
 end;
 

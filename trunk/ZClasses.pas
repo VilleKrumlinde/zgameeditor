@@ -1489,6 +1489,7 @@ procedure TZPropertyList.SetDesignerProperty;
 begin
   //Sätt senaste prop till bara ska användas i designer (t.ex. Name)
   GetLast.ExcludeFromBinary := True;
+  GetLast.IsReadOnly := True;
   //Avallokera senaste id, dessa måste vara konstanta för alla binärprops
   Dec(NextId);
 end;

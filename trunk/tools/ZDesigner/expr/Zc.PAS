@@ -22,7 +22,7 @@ uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,ZClasses,mwStringHashList
 
 
 const
-maxT = 73;
+maxT = 76;
 type
 
   SymbolSet = array[0..maxT div setsize] of TBitSet;
@@ -57,7 +57,7 @@ destructor Destroy; override;
   TZc = class(TCocoRGrammar)
   private
     { strictly internal variables }
-    symSet : array[0..3] of SymbolSet; // symSet[0] = allSyncSyms
+    symSet : array[0..5] of SymbolSet; // symSet[0] = allSyncSyms
 
     function GetBuildDate : TDateTime;
     function GetVersion : string;
@@ -82,14 +82,17 @@ destructor Destroy; override;
     procedure _OrExpr (InOp : TZcOp; var OutOp : TZcOp);
     procedure _AssignOp (var Kind : TZcAssignType);
     procedure _Unary (var OutOp : TZcOp);
+    procedure _ForInc (var OutOp : TZcOp);
+    procedure _ForInit (var OutOp : TZcOp);
     procedure _StatementExpr (var OutOp : TZcOp);
     procedure _Block (var OutOp : TZcOp);
     procedure _EmbeddedStatement (var OutOp : TZcOp);
     procedure _SimpleType (var Typ : TZcDataType);
-    procedure _Expr (var OutOp : TZcOp);
     procedure _Argument (var OutOp : TZcOp);
-    procedure _LocalVar (Typ : TZcDataType);
-    procedure _LocalVarDecl;
+    procedure _Expr (var OutOp : TZcOp);
+    procedure _Init (var OutOp : TZcOp);
+    procedure _LocalVar (Typ : TZcDataType; var OutOp : TZcOp);
+    procedure _LocalVarDecl (var OutOp : TZcOp);
     procedure _Par;
     procedure _Statement (var OutOp : TZcOp);
     procedure _ZcFuncBody;
@@ -166,15 +169,16 @@ const
   rbrackSym = 29;  rparSym = 30;  rshiftSym = 31;  scolonSym = 32;
   tildeSym = 33;  timesSym = 34;  xorSym = 35;  voidSym = 36;  _lparenSym = 37;
   _rparenSym = 38;  _lbraceSym = 39;  _rbraceSym = 40;  _commaSym = 41;
-  floatSym = 42;  intSym = 43;  _semicolonSym = 44;  ifSym = 45;  elseSym = 46;
-  returnSym = 47;  _equalSym = 48;  _plus_equalSym = 49;  _minus_equalSym = 50;
-  _star_equalSym = 51;  _slash_equalSym = 52;  _bar_barSym = 53;
-  _and_andSym = 54;  _barSym = 55;  _uparrowSym = 56;  _andSym = 57;
-  _bang_equalSym = 58;  _equal_equalSym = 59;  _lessSym = 60;  _greaterSym = 61;
-  _less_equalSym = 62;  _greater_equalSym = 63;  _less_lessSym = 64;
-  _greater_greaterSym = 65;  _plusSym = 66;  _minusSym = 67;  _starSym = 68;
-  _slashSym = 69;  _pointSym = 70;  _lbrackSym = 71;  _rbrackSym = 72;
-  NOSYMB = 73;  _noSym = NOSYMB;   {error token code}
+  _equalSym = 42;  floatSym = 43;  intSym = 44;  _semicolonSym = 45;
+  ifSym = 46;  elseSym = 47;  forSym = 48;  returnSym = 49;
+  _plus_equalSym = 50;  _minus_equalSym = 51;  _star_equalSym = 52;
+  _slash_equalSym = 53;  _bar_barSym = 54;  _and_andSym = 55;  _barSym = 56;
+  _uparrowSym = 57;  _andSym = 58;  _bang_equalSym = 59;  _equal_equalSym = 60;
+  _lessSym = 61;  _greaterSym = 62;  _less_equalSym = 63;
+  _greater_equalSym = 64;  _less_lessSym = 65;  _greater_greaterSym = 66;
+  _plusSym = 67;  _minusSym = 68;  _starSym = 69;  _slashSym = 70;
+  _plus_plusSym = 71;  _minus_minusSym = 72;  _pointSym = 73;  _lbrackSym = 74;
+  _rbrackSym = 75;  NOSYMB = 76;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
@@ -695,6 +699,7 @@ exit;
 end;
   24: begin
 sym := decSym;
+CheckLiteral(sym);
 exit;
 end;
   25: if (CurrInputCh = '=') then
@@ -719,6 +724,7 @@ exit;
 end;
   28: begin
 sym := incSym;
+CheckLiteral(sym);
 exit;
 end;
   29: begin
@@ -1114,8 +1120,10 @@ fHashList.AddString('(', _lparenSym, _lparenSym);
 fHashList.AddString(')', _rparenSym, _rparenSym);
 fHashList.AddString('*', _starSym, _starSym);
 fHashList.AddString('+', _plusSym, _plusSym);
+fHashList.AddString('++', _plus_plusSym, _plus_plusSym);
 fHashList.AddString(',', _commaSym, _commaSym);
 fHashList.AddString('-', _minusSym, _minusSym);
+fHashList.AddString('--', _minus_minusSym, _minus_minusSym);
 fHashList.AddString('.', _pointSym, _pointSym);
 fHashList.AddString('/', _slashSym, _slashSym);
 fHashList.AddString(';', _semicolonSym, _semicolonSym);
@@ -1132,6 +1140,7 @@ fHashList.AddString(']', _rbrackSym, _rbrackSym);
 fHashList.AddString('^', _uparrowSym, _uparrowSym);
 fHashList.AddString('else', elseSym, elseSym);
 fHashList.AddString('float', floatSym, floatSym);
+fHashList.AddString('for', forSym, forSym);
 fHashList.AddString('if', ifSym, ifSym);
 fHashList.AddString('int', intSym, intSym);
 fHashList.AddString('return', returnSym, returnSym);
@@ -1279,46 +1288,50 @@ begin
   39 : Result := '"{" expected';
   40 : Result := '"}" expected';
   41 : Result := '"," expected';
-  42 : Result := '"float" expected';
-  43 : Result := '"int" expected';
-  44 : Result := '";" expected';
-  45 : Result := '"if" expected';
-  46 : Result := '"else" expected';
-  47 : Result := '"return" expected';
-  48 : Result := '"=" expected';
-  49 : Result := '"+=" expected';
-  50 : Result := '"-=" expected';
-  51 : Result := '"*=" expected';
-  52 : Result := '"/=" expected';
-  53 : Result := '"||" expected';
-  54 : Result := '"&&" expected';
-  55 : Result := '"|" expected';
-  56 : Result := '"^" expected';
-  57 : Result := '"&" expected';
-  58 : Result := '"!=" expected';
-  59 : Result := '"==" expected';
-  60 : Result := '"<" expected';
-  61 : Result := '">" expected';
-  62 : Result := '"<=" expected';
-  63 : Result := '">=" expected';
-  64 : Result := '"<<" expected';
-  65 : Result := '">>" expected';
-  66 : Result := '"+" expected';
-  67 : Result := '"-" expected';
-  68 : Result := '"*" expected';
-  69 : Result := '"/" expected';
-  70 : Result := '"." expected';
-  71 : Result := '"[" expected';
-  72 : Result := '"]" expected';
-  73 : Result := 'not expected';
-  74 : Result := 'invalid Literal';
-  75 : Result := 'invalid Primary';
-  76 : Result := 'invalid AssignOp';
-  77 : Result := 'invalid StatementExpr';
-  78 : Result := 'invalid EmbeddedStatement';
-  79 : Result := 'invalid SimpleType';
-  80 : Result := 'invalid Expr';
-  81 : Result := 'invalid Statement';
+  42 : Result := '"=" expected';
+  43 : Result := '"float" expected';
+  44 : Result := '"int" expected';
+  45 : Result := '";" expected';
+  46 : Result := '"if" expected';
+  47 : Result := '"else" expected';
+  48 : Result := '"for" expected';
+  49 : Result := '"return" expected';
+  50 : Result := '"+=" expected';
+  51 : Result := '"-=" expected';
+  52 : Result := '"*=" expected';
+  53 : Result := '"/=" expected';
+  54 : Result := '"||" expected';
+  55 : Result := '"&&" expected';
+  56 : Result := '"|" expected';
+  57 : Result := '"^" expected';
+  58 : Result := '"&" expected';
+  59 : Result := '"!=" expected';
+  60 : Result := '"==" expected';
+  61 : Result := '"<" expected';
+  62 : Result := '">" expected';
+  63 : Result := '"<=" expected';
+  64 : Result := '">=" expected';
+  65 : Result := '"<<" expected';
+  66 : Result := '">>" expected';
+  67 : Result := '"+" expected';
+  68 : Result := '"-" expected';
+  69 : Result := '"*" expected';
+  70 : Result := '"/" expected';
+  71 : Result := '"++" expected';
+  72 : Result := '"--" expected';
+  73 : Result := '"." expected';
+  74 : Result := '"[" expected';
+  75 : Result := '"]" expected';
+  76 : Result := 'not expected';
+  77 : Result := 'invalid Literal';
+  78 : Result := 'invalid Primary';
+  79 : Result := 'invalid AssignOp';
+  80 : Result := 'invalid ForInit';
+  81 : Result := 'invalid StatementExpr';
+  82 : Result := 'invalid EmbeddedStatement';
+  83 : Result := 'invalid SimpleType';
+  84 : Result := 'invalid Expr';
+  85 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
     201 : Result := 'Name already defined in this scope';
@@ -1401,7 +1414,7 @@ if (fCurrentInputSymbol = intConSym) then begin
 Get;
 end else if (fCurrentInputSymbol = realConSym) then begin
 Get;
-end else begin SynError(74);
+end else begin SynError(77);
 end;
 end;
 
@@ -1410,11 +1423,7 @@ begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
 Get;
-
 OutOp  :=  MakeOp(zcIdentifier,LexString);
-if  SymTab.Contains(LexString)  then
-OutOp.Ref  :=  SymTab.Lookup(LexString);
-
 end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) then begin
 _Literal;
@@ -1433,12 +1442,20 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(75);
+end else begin SynError(78);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
+ (fCurrentInputSymbol = _plus_plusSym) OR
+ (fCurrentInputSymbol = _minus_minusSym) OR
  (fCurrentInputSymbol = _pointSym) OR
  (fCurrentInputSymbol = _lbrackSym) do begin
-if (fCurrentInputSymbol = _pointSym) then begin
+if (fCurrentInputSymbol = _plus_plusSym) then begin
+Get;
+OutOp  :=  MakePrePostIncDec(zcPostInc,OutOp);
+end else if (fCurrentInputSymbol = _minus_minusSym) then begin
+Get;
+OutOp  :=  MakePrePostIncDec(zcPostDec,OutOp);
+end else if (fCurrentInputSymbol = _pointSym) then begin
 Get;
 Expect(identSym);
 
@@ -1450,11 +1467,7 @@ Get;
 Assert(OutOp.Kind=zcIdentifier);
 OutOp.Kind:=zcFuncCall;
 
-if (fCurrentInputSymbol = intConSym) OR
- (fCurrentInputSymbol = realConSym) OR
- (fCurrentInputSymbol = identSym) OR
- (fCurrentInputSymbol = _lparenSym) OR
- (fCurrentInputSymbol = _minusSym) then begin
+if _In(symSet[1], fCurrentInputSymbol) then begin
 _Argument(Op);
 OutOp.Children.Add(Op);
 while (fCurrentInputSymbol = _commaSym) do begin
@@ -1662,34 +1675,93 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(76);
+end else begin SynError(79);
 end;
 end;
 
 procedure TZc._Unary (var  OutOp  :  TZcOp);var  LastOp,Tmp  :  TZcOp;  Kind  :  TZcOpKind;
 begin
-LastOp  :=  nil;
-while (fCurrentInputSymbol = _minusSym) do begin
-Get;
+LastOp  :=  nil;  Kind  :=  zcNop;
+while (fCurrentInputSymbol = _minusSym) OR
+ (fCurrentInputSymbol = _plus_plusSym) OR
+ (fCurrentInputSymbol = _minus_minusSym) do begin
+if (fCurrentInputSymbol = _minusSym) then begin
+Get;                                  
 Kind  :=  zcNegate;
-Tmp  :=  MakeOp(Kind);
-if  LastOp<>nil  then
-   LastOp.Children.Add(Tmp);
-LastOp  :=  Tmp;
+end else if (fCurrentInputSymbol = _plus_plusSym) then begin
+Get;
+Kind  :=  zcPreInc;
+end else begin
+Get;
+Kind  :=  zcPreDec;
+end;
+
+if  Kind=zcNegate  then
+begin
+   Tmp  :=  MakeOp(Kind);
+   if  LastOp<>nil  then
+     LastOp.Children.Add(Tmp);
+   LastOp  :=  Tmp;
+end  else  if  Assigned(LastOp)  then
+   ZError('--  and  ++  cannot  be  combined  with  other  unary  ops');
 
 end;
 _Primary(Tmp);
-if  LastOp<>nil  then
-begin
-   LastOp.Children.Add(Tmp);
-   OutOp  :=  LastOp;
-end  else
-   OutOp  :=  Tmp;
 
+if  Kind  in  [zcNop,zcNegate]  then
+begin
+   if  LastOp<>nil  then
+   begin
+     LastOp.Children.Add(Tmp);
+     OutOp  :=  LastOp;
+   end  else
+     OutOp  :=  Tmp;
+end  else
+begin
+   OutOp  :=  MakePrePostIncDec(Kind,Tmp);
+end;
+
+end;
+
+procedure TZc._ForInc (var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+begin
+Op:=nil;
+OutOp  :=  MakeOp(zcBlock);
+
+_StatementExpr(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
+while (fCurrentInputSymbol = _commaSym) do begin
+Op:=nil;
+Get;
+_StatementExpr(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
+end;
+end;
+
+procedure TZc._ForInit (var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+begin
+Op:=nil;  OutOp  :=  MakeOp(zcBlock);
+if (fCurrentInputSymbol = floatSym) OR
+ (fCurrentInputSymbol = intSym) then begin
+_LocalVarDecl(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
+end else if _In(symSet[1], fCurrentInputSymbol) then begin
+Op:=nil;
+_StatementExpr(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
+while (fCurrentInputSymbol = _commaSym) do begin
+Op:=nil;
+Get;
+_StatementExpr(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
+end;
+end else begin SynError(80);
+end;
 end;
 
 procedure TZc._StatementExpr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
 begin
+Op1  :=nil;  Op2  :=  nil;
 _Unary(Op1);
 if (fCurrentInputSymbol = _equalSym) OR
  (fCurrentInputSymbol = _plus_equalSym) OR
@@ -1699,11 +1771,14 @@ if (fCurrentInputSymbol = _equalSym) OR
 _AssignOp(Kind);
 _Expr(Op2);
 
-OutOp  :=  MakeAssign(Kind,Op1,Op2);
+if  Op2<>nil  then
+   OutOp  :=  MakeAssign(Kind,Op1,Op2);
 
-end else if (fCurrentInputSymbol = _semicolonSym) then begin
+end else if (fCurrentInputSymbol = _rparenSym) OR
+ (fCurrentInputSymbol = _commaSym) OR
+ (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(77);
+end else begin SynError(81);
 end;
 end;
 
@@ -1711,32 +1786,35 @@ procedure TZc._Block (var  OutOp  :  TZcOp);var
    Op  :  TZcOp;
 
 begin
+Op  :=  nil;
 OutOp  :=  MakeOp(zcBlock);
+
 Expect(_lbraceSym);
-while _In(symSet[1], fCurrentInputSymbol) do begin
+while _In(symSet[2], fCurrentInputSymbol) do begin
 _Statement(Op);
-OutOp.Children.Add(Op);
+if  Assigned(Op)  then  OutOp.Children.Add(Op);
 end;
 Expect(_rbraceSym);
 end;
 
 procedure TZc._EmbeddedStatement (var  OutOp  :  TZcOp);var
    Op,IfOp,IfBody,ElseOp  :  TZcOp;
+   ForInitOp,ForCondOp,ForIncOp,ForBodyOp  :  TZcOp;
 
 begin
-if (fCurrentInputSymbol = _lbraceSym) then begin
+case fCurrentInputSymbol of
+  _lbraceSym : begin
 _Block(OutOp);
-end else if (fCurrentInputSymbol = _semicolonSym) then begin
+    end;
+  _semicolonSym : begin
 Get;
 OutOp  :=  MakeOp(zcNop);
-end else if (fCurrentInputSymbol = intConSym) OR
- (fCurrentInputSymbol = realConSym) OR
- (fCurrentInputSymbol = identSym) OR
- (fCurrentInputSymbol = _lparenSym) OR
- (fCurrentInputSymbol = _minusSym) then begin
+    end;
+  intConSym, realConSym, identSym, _lparenSym, _minusSym, _plus_plusSym, _minus_minusSym : begin
 _StatementExpr(OutOp);
 Expect(_semicolonSym);
-end else if (fCurrentInputSymbol = ifSym) then begin
+    end;
+  ifSym : begin
 Get;
 ElseOp  :=  nil;
 Expect(_lparenSym);
@@ -1748,14 +1826,37 @@ Get;
 _EmbeddedStatement(ElseOp);
 end;
 OutOp  :=  MakeOp(zcIf,[IfOp,IfBody,ElseOp]);
-end else if (fCurrentInputSymbol = returnSym) then begin
+    end;
+  forSym : begin
+Get;
+try
+SymTab.PushScope;
+ForInitOp  :=nil;  ForCondOp  :=  nil;  ForIncOp  :=  nil;
+Expect(_lparenSym);
+if _In(symSet[3], fCurrentInputSymbol) then begin
+_ForInit(ForInitOp);
+end;
+Expect(_semicolonSym);
+if _In(symSet[1], fCurrentInputSymbol) then begin
+_Expr(ForCondOp);
+end;
+Expect(_semicolonSym);
+if _In(symSet[1], fCurrentInputSymbol) then begin
+_ForInc(ForIncOp);
+end;
+Expect(_rparenSym);
+_EmbeddedStatement(ForBodyOp);
+
+   OutOp  :=  MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
+   finally
+   SymTab.PopScope;
+   end;
+
+    end;
+  returnSym : begin
 Op  :=  nil;
 Get;
-if (fCurrentInputSymbol = intConSym) OR
- (fCurrentInputSymbol = realConSym) OR
- (fCurrentInputSymbol = identSym) OR
- (fCurrentInputSymbol = _lparenSym) OR
- (fCurrentInputSymbol = _minusSym) then begin
+if _In(symSet[1], fCurrentInputSymbol) then begin
 _Expr(Op);
 end;
 Expect(_semicolonSym);
@@ -1774,7 +1875,9 @@ Expect(_semicolonSym);
       OutOp  :=  MakeOp(zcReturn,[  MakeCompatible(Op,CurrentFunction.ReturnType)  ]);
   end;
 
-end else begin SynError(78);
+    end;
+else begin SynError(82);
+    end;
 end;
 end;
 
@@ -1785,14 +1888,18 @@ Typ  :=  zctFloat;
 end else if (fCurrentInputSymbol = intSym) then begin
 Get;
 Typ  :=  zctInt;
-end else begin SynError(79);
+end else begin SynError(83);
 end;
+end;
+
+procedure TZc._Argument (var  OutOp  :  TZcOp);begin
+_Expr(OutOp);
 end;
 
 procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
 begin
 _Unary(Op1);
-if _In(symSet[2], fCurrentInputSymbol) then begin
+if _In(symSet[4], fCurrentInputSymbol) then begin
 _OrExpr(Op1,OutOp);
 end else if (fCurrentInputSymbol = _equalSym) OR
  (fCurrentInputSymbol = _plus_equalSym) OR
@@ -1802,38 +1909,53 @@ end else if (fCurrentInputSymbol = _equalSym) OR
 _AssignOp(Kind);
 _Expr(Op2);
 OutOp  :=  MakeAssign(Kind,Op1,Op2);
-end else begin SynError(80);
+end else begin SynError(84);
 end;
 end;
 
-procedure TZc._Argument (var  OutOp  :  TZcOp);begin
+procedure TZc._Init (var  OutOp  :  TZcOp);begin
 _Expr(OutOp);
 end;
 
-procedure TZc._LocalVar (Typ  :  TZcDataType);var  Loc  :  TZcOpLocalVar;
+procedure TZc._LocalVar (Typ  :  TZcDataType;  var  OutOp  :  TZcOp);var  Loc  :  TZcOpLocalVar;  InitOp  :  TZcOp;
 begin
 Expect(identSym);
 
 if  SymTab.ScopeContains(LexString)  then
-   SynError(201)
-else
-begin
-   Loc  :=  TZcOpLocalVar.Create(nil);
-   Loc.Id  :=  LexString;
-   Loc.Typ  :=  Typ;
-   CurrentFunction.AddLocal(Loc);
-   SymTab.Add(Loc.Id,Loc);
+   ZError('Name  already  defined:  '  +  LexString);
+
+Loc  :=  TZcOpLocalVar.Create(nil);
+Loc.Id  :=  LexString;
+Loc.Typ  :=  Typ;
+
+if (fCurrentInputSymbol = _equalSym) then begin
+Get;
+_Init(InitOp);
+Loc.InitExpression:=InitOp;
 end;
+
+SymTab.Add(Loc.Id,Loc);
+CurrentFunction.AddLocal(Loc);
+
+if  Assigned(Loc.InitExpression)  then
+begin
+   //Generate  tree  for  initial  assignment
+   if  OutOp=nil  then
+     OutOp  :=  MakeOp(zcBlock);
+   OutOp.Children.Add(  MakeAssign(atAssign,  MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression)  );
+end;
+
 
 end;
 
-procedure TZc._LocalVarDecl;var  Typ  :  TZcDataType;
+procedure TZc._LocalVarDecl (var  OutOp  :  TZcOp);var  Typ  :  TZcDataType;
 begin
+OutOp  :=  nil;
 _Type(Typ);
-_LocalVar(Typ);
+_LocalVar(Typ,OutOp);
 while (fCurrentInputSymbol = _commaSym) do begin
 Get;
-_LocalVar(Typ);
+_LocalVar(Typ,OutOp);
 end;
 end;
 
@@ -1858,17 +1980,18 @@ end;
 procedure TZc._Statement (var  OutOp  :  TZcOp);begin
 if (fCurrentInputSymbol = floatSym) OR
  (fCurrentInputSymbol = intSym) then begin
-_LocalVarDecl;
+OutOp  :=  nil;
+_LocalVarDecl(OutOp);
 Expect(_semicolonSym);
-end else if _In(symSet[3], fCurrentInputSymbol) then begin
+end else if _In(symSet[5], fCurrentInputSymbol) then begin
 _EmbeddedStatement(OutOp);
-end else begin SynError(81);
+end else begin SynError(85);
 end;
 end;
 
 procedure TZc._ZcFuncBody;var  Op  :  TZcOp;
 begin
-while _In(symSet[1], fCurrentInputSymbol) do begin
+while _In(symSet[2], fCurrentInputSymbol) do begin
 Op:=nil;
 _Statement(Op);
 if  Op<>nil  then
@@ -1909,9 +2032,8 @@ end;
 Expect(identSym);
 
 if  SymTab.Contains(LexString)  then
-ZError('Name  already  defined:  '  +  LexString)
-else
-begin
+ZError('Name  already  defined:  '  +  LexString);
+
 Func  :=  TZcOpFunction.Create(GlobalNames);
 Func.Id  :=  LexString;
 Func.ReturnType  :=  Typ;
@@ -1919,7 +2041,7 @@ SymTab.Add(Func.Id,Func);
 ZFunctions.Add(Func);
 Self.CurrentFunction  :=  Func;
 SymTab.PushScope;
-end;
+try
 
 Expect(_lparenSym);
 if (fCurrentInputSymbol = floatSym) OR
@@ -1931,7 +2053,9 @@ Expect(_lbraceSym);
 _ZcFuncBody;
 Expect(_rbraceSym);
 
+finally
 SymTab.PopScope;
+end;
 
 end;
 end
@@ -1941,11 +2065,14 @@ else begin
    Func.ReturnType  :=  Self.ReturnType;
    Self.CurrentFunction  :=  Func;
    SymTab.PushScope;
+   try
    ZFunctions.Add(Func);
 
 _ZcFuncBody;
 
+   finally
    SymTab.PopScope;
+   end;
 
 end;
 
@@ -2006,25 +2133,34 @@ symSet[ 0, 3] := [];
 symSet[ 0, 4] := [];
 symSet[ 1, 0] := [intConSym, realConSym, identSym];
 symSet[ 1, 1] := [];
-symSet[ 1, 2] := [_lparenSym-32, _lbraceSym-32, floatSym-32, intSym-32, 
-                    _semicolonSym-32, ifSym-32, returnSym-32];
+symSet[ 1, 2] := [_lparenSym-32];
 symSet[ 1, 3] := [];
-symSet[ 1, 4] := [_minusSym-64];
-symSet[ 2, 0] := [];
+symSet[ 1, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64];
+symSet[ 2, 0] := [intConSym, realConSym, identSym];
 symSet[ 2, 1] := [];
-symSet[ 2, 2] := [_rparenSym-32, _commaSym-32, _semicolonSym-32];
-symSet[ 2, 3] := [_bar_barSym-48, _and_andSym-48, _barSym-48, _uparrowSym-48, 
-                    _andSym-48, _bang_equalSym-48, _equal_equalSym-48, 
-                    _lessSym-48, _greaterSym-48, _less_equalSym-48, 
-                    _greater_equalSym-48];
-symSet[ 2, 4] := [_less_lessSym-64, _greater_greaterSym-64, _plusSym-64, 
-                    _minusSym-64, _starSym-64, _slashSym-64, _rbrackSym-64];
+symSet[ 2, 2] := [_lparenSym-32, _lbraceSym-32, floatSym-32, intSym-32, 
+                    _semicolonSym-32, ifSym-32];
+symSet[ 2, 3] := [forSym-48, returnSym-48];
+symSet[ 2, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64];
 symSet[ 3, 0] := [intConSym, realConSym, identSym];
 symSet[ 3, 1] := [];
-symSet[ 3, 2] := [_lparenSym-32, _lbraceSym-32, _semicolonSym-32, ifSym-32, 
-                    returnSym-32];
+symSet[ 3, 2] := [_lparenSym-32, floatSym-32, intSym-32];
 symSet[ 3, 3] := [];
-symSet[ 3, 4] := [_minusSym-64];
+symSet[ 3, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64];
+symSet[ 4, 0] := [];
+symSet[ 4, 1] := [];
+symSet[ 4, 2] := [_rparenSym-32, _commaSym-32, _semicolonSym-32];
+symSet[ 4, 3] := [_bar_barSym-48, _and_andSym-48, _barSym-48, _uparrowSym-48, 
+                    _andSym-48, _bang_equalSym-48, _equal_equalSym-48, 
+                    _lessSym-48, _greaterSym-48, _less_equalSym-48];
+symSet[ 4, 4] := [_greater_equalSym-64, _less_lessSym-64, 
+                    _greater_greaterSym-64, _plusSym-64, _minusSym-64, 
+                    _starSym-64, _slashSym-64, _rbrackSym-64];
+symSet[ 5, 0] := [intConSym, realConSym, identSym];
+symSet[ 5, 1] := [];
+symSet[ 5, 2] := [_lparenSym-32, _lbraceSym-32, _semicolonSym-32, ifSym-32];
+symSet[ 5, 3] := [forSym-48, returnSym-48];
+symSet[ 5, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64];
 end; {InitSymSet}
 
 end { Zc }.    
