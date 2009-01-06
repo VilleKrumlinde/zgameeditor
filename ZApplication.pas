@@ -100,11 +100,14 @@ type
     CustomViewportRatio,FOV,ClipNear,ClipFar : single;
     ViewportRatio : (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
     ActualViewportRatio : single;
-    Icon : TZBinaryPropValue;
     Clock : TClock;
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
     MouseVisible : boolean;
+    {$ifndef minimal}
+    Icon : TZBinaryPropValue;
+    PreviewClearColor : TZColorf;
+    {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
@@ -574,6 +577,9 @@ begin
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon) - integer(Self), zptBinary);
+    List.SetDesignerProperty;
+  List.AddProperty('PreviewClearColor',integer(@PreviewClearColor) - integer(Self), zptColorf);
+    List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.5,0.5,0.5,0);
     List.SetDesignerProperty;
   {$ENDIF}
 end;

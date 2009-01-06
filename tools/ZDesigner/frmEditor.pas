@@ -38,7 +38,6 @@ type
     Timer1: TTimer;
     LeftPanel: TPanel;
     TreePanel: TGroupBox;
-    Panel1: TPanel;
     Splitter1: TSplitter;
     CustomPropEditorsPageControl: TPageControl;
     TabSheet1: TTabSheet;
@@ -185,6 +184,7 @@ type
     ShowCompilerDetailsAction: TAction;
     N10: TMenuItem;
     N11: TMenuItem;
+    Panel2: TPanel;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -427,12 +427,6 @@ begin
 
   ZcGlobalNames := TObjectList.Create(True);
 
-  //öppna editor direkt
-  if (ParamCount=1) and FileExists(ParamStr(1)) then
-    OpenProject(ParamStr(1))
-  else
-    NewProject;
-
   ReadAppSettingsFromIni;
 
   RefreshMenuFromMruList;
@@ -588,6 +582,7 @@ begin
   ZcGlobalNames.Clear;
   SymTab.ClearAll;
 
+  //Scope 0: global constants
   for I := 0 to PredefinedConstants.Count - 1 do
   begin
     Con := TDefineConstant(PredefinedConstants[I]);
@@ -595,6 +590,7 @@ begin
   end;
   SymTab.PushScope;
 
+  //Scope 1: object names
   List := TStringList.Create;
   try
     //todo: skippa getobjectnames, den här rutinen ska själv loopa root
@@ -615,22 +611,34 @@ begin
   try
     Section := 'Designer';
 
-    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',0),1);
-    if GuiLayout=1 then
-    begin
-      TreePanel.Parent := Self;
-      TreePanel.Align := alRight;
+    Self.Width := Max(Ini.ReadInteger(Section,'Width',Self.Width),100);
+    Self.Height := Max(Ini.ReadInteger(Section,'Height',Self.Height),100);
+    if Ini.ReadBool(Section,'IsMaximized',False) then
+      Self.WindowState:=wsMaximized;
 
-      Splitter3.Parent := Self;
-      Splitter3.Align := alRight;
-      Splitter3.Cursor := crHSplit;
+    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',0),1);
+    if GuiLayout=0 then
+    begin
+      PropEditorPanel.Parent := LeftPanel;
+      PropEditorPanel.Align := alBottom;
+      TreePanel.Align := alClient;
+      Splitter3.Parent := LeftPanel;
+      Splitter3.Align := alBottom;
+      Splitter3.Cursor := crVSplit;
+      PropEditorPanel.Height := Self.Height div 2;
     end;
 
-    S := Ini.ReadString(Section,'LastOpenedProject','');
-    if (S<>'') and (CurrentFileName='') and (not FindCmdLineSwitch('blank')) then
+    if (ParamCount=1) and FileExists(ParamStr(1)) then
+      OpenProject(ParamStr(1))
+    else
     begin
-      CloseProject;
-      OpenProject(S);
+      S := Ini.ReadString(Section,'LastOpenedProject','');
+      if (S<>'') and (CurrentFileName='') and (not FindCmdLineSwitch('blank')) then
+      begin
+        CloseProject;
+        OpenProject(S);
+      end else
+        NewProject;
     end;
 
     S := Ini.ReadString(Section,'LastOpenedPath', '');
@@ -641,10 +649,6 @@ begin
     S := Ini.ReadString(Section,'MruList', '');
     MruList.CommaText := S;
 
-    Self.Width := Max(Ini.ReadInteger(Section,'Width',Self.Width),100);
-    Self.Height := Max(Ini.ReadInteger(Section,'Height',Self.Height),100);
-    if Ini.ReadBool(Section,'IsMaximized',False) then
-      Self.WindowState:=wsMaximized;
 
     LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
@@ -827,13 +831,15 @@ begin
     else
     begin
       //Prevent displaying junk
-      glClearColor(0.5,0.5,0.5,0);
+      glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     end;
   end;
 end;
 
 procedure TEditorForm.SelectComponent(C: TZComponent);
+var
+  OldFocus : TWinControl;
 begin
   Selected := C;
   if not LockShow then
@@ -841,8 +847,20 @@ begin
   Ed.SetComponent(C);
   RenderAborted := False;
   ViewerPanel.Refresh;
-//  if Assigned(Ed.WantsFocus) and Ed.WantsFocus.CanFocus and Ed.Parent.Enabled and Visible then
-//    Ed.WantsFocus.SetFocus;
+  if Assigned(Ed.WantsFocus) and
+    Ed.WantsFocus.CanFocus and
+    Ed.Parent.Enabled and
+    Visible and
+    (Self.ActiveControl<>Ed.WantsFocus)
+    then
+  begin
+    //Focus editor to make code-editor visible
+    //Then focus back to tree to make tree-navigation with cursorkeys possible
+    OldFocus := Self.ActiveControl;
+    Ed.WantsFocus.SetFocus;
+    if Assigned(OldFocus) and (OldFocus.Visible) then
+      Self.ActiveControl := OldFocus;
+  end;
 end;
 
 procedure TEditorForm.SetShowNode(Node : TZComponent);
@@ -1246,7 +1264,7 @@ begin
 
   glShadeModel(GL_SMOOTH);
 
-  glClearColor(0.5,0.5,0.5,0);
+  glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);

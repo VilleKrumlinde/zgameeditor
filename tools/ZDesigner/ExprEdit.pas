@@ -164,6 +164,8 @@ type
     destructor Destroy; override;
   end;
 
+  TAssignLeaveValueStyle = (alvNone,alvPre,alvPost);
+
   TZCodeGen = class
   private
     Target : TZComponentList;
@@ -184,6 +186,7 @@ type
     procedure FallFalse(Op : TZcOp; Lbl : TZCodeLabel);
     procedure GenValue(Op : TZcOp);
     procedure GenFuncCall(Op : TZcOp; NeedReturnValue : boolean);
+    procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -360,89 +363,102 @@ begin
     zcAnd, zcOr : DoGenBoolean;
     zcArrayAccess : DoGenArrayRead;
     zcConvert : DoGenConvert;
+    zcAssign,zcPreInc,zcPreDec : GenAssign(Op,alvPost);
+    zcPostInc,zcPostDec : GenAssign(Op,alvPre);
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 
+procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
+//LeaveValue : Optionally leave a value of the assignement on stack.
+var
+  C,C2 : TExpPropPtr;
+  I,LastIndex,AssignSize : integer;
+
+  A : TZComponent;
+  Aw : TExpArrayWrite;
+  LeftOp,RightOp : TZcOp;
+  L : TExpAccessLocal;
+begin
+  //Left-hand side of the assignment
+  LeftOp := Op.Child(0);
+  RightOp := Op.Child(1);
+
+  if LeaveValue=alvPre then
+    GenValue(LeftOp);
+
+  if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
+    ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
+  begin
+    //Local variable or argument
+    GenValue(RightOp);
+    if LeaveValue=alvPost then
+      with TExpMisc.Create(Target) do
+        Kind := emDup;
+    L := TExpAccessLocal.Create(Target);
+    L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
+    L.Kind := loStore;
+  end
+  else if LeftOp.Kind=zcIdentifier then
+  begin
+    if LeaveValue=alvPost then
+      raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
+    C := TExpPropPtr.Create(Target);
+    if not GetPropRef(LeftOp.Id,C.Target) then
+      raise ECodeGenError.Create('Unknown assigment identifier: ' + LeftOp.Id);
+    if C.Target.Prop.IsReadOnly then
+      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+
+    if C.Target.Prop.PropertyType=zptByte then
+      AssignSize:=1
+    else
+      AssignSize:=4;
+
+    GenValue(RightOp);
+    Target.AddComponent( MakeAssignOp(AssignSize) );
+
+    //Allow "x.Scale" be shorthand for assign x,y,z individually
+    //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
+    if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
+    begin
+      if C.Target.Prop.PropertyType=zptVector3f then
+        LastIndex := 2
+      else
+        LastIndex := 3;
+      for I := 1 to LastIndex do
+      begin
+        C2 := TExpPropPtr.Create(Target);
+        C2.Target := C.Target;
+        C2.Target.Index := I;
+        GenValue(LeftOp);
+        Target.AddComponent( MakeAssignOp(AssignSize) );
+      end;
+    end;
+  end else if LeftOp.Kind=zcArrayAccess then
+  begin
+    if LeaveValue=alvPost then
+      raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
+    A := TZComponent(SymTab.Lookup(LeftOp.Id));
+    if (A=nil) or (not (A is TDefineArray)) then
+      raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
+    if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
+      raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
+    //Assert(Op.Arguments.Count=2);
+    for I := 0 to Ord((A as TDefineArray).Dimensions) do
+      GenValue(LeftOp.Child(I));
+    Aw := TExpArrayWrite.Create(Target);
+    Aw.TheArray := A as TDefineArray;
+    GenValue(Op.Child(1));
+    Target.AddComponent( MakeAssignOp(4) );
+  end else
+    raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
+
+end;
 
 procedure TZCodeGen.Gen(Op : TZcOp);
 var
   I : integer;
-
-  procedure DoGenAssign;
-  var
-    C,C2 : TExpPropPtr;
-    I,LastIndex,AssignSize : integer;
-
-    A : TZComponent;
-    Aw : TExpArrayWrite;
-    LeftOp,RightOp : TZcOp;
-    L : TExpAccessLocal;
-  begin
-    //Left-hand side of the assignment
-    LeftOp := Op.Child(0);
-    RightOp := Op.Child(1);
-    if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
-      ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
-    begin
-      //Local variable or argument
-      GenValue(RightOp);
-      L := TExpAccessLocal.Create(Target);
-      L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
-      L.Kind := loStore;
-    end
-    else if LeftOp.Kind=zcIdentifier then
-    begin
-      C := TExpPropPtr.Create(Target);
-      if not GetPropRef(LeftOp.Id,C.Target) then
-        raise ECodeGenError.Create('Unknown assigment identifier: ' + LeftOp.Id);
-      if C.Target.Prop.IsReadOnly then
-        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-
-      if C.Target.Prop.PropertyType=zptByte then
-        AssignSize:=1
-      else
-        AssignSize:=4;
-
-      GenValue(RightOp);
-      Target.AddComponent( MakeAssignOp(AssignSize) );
-
-      //Allow "x.Scale" be shorthand for assign x,y,z individually
-      //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
-      if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
-      begin
-        if C.Target.Prop.PropertyType=zptVector3f then
-          LastIndex := 2
-        else
-          LastIndex := 3;
-        for I := 1 to LastIndex do
-        begin
-          C2 := TExpPropPtr.Create(Target);
-          C2.Target := C.Target;
-          C2.Target.Index := I;
-          GenValue(LeftOp);
-          Target.AddComponent( MakeAssignOp(AssignSize) );
-        end;
-      end;
-    end else if LeftOp.Kind=zcArrayAccess then
-    begin
-      A := TZComponent(SymTab.Lookup(LeftOp.Id));
-      if (A=nil) or (not (A is TDefineArray)) then
-        raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
-      if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
-        raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
-      //Assert(Op.Arguments.Count=2);
-      for I := 0 to Ord((A as TDefineArray).Dimensions) do
-        GenValue(LeftOp.Child(I));
-      Aw := TExpArrayWrite.Create(Target);
-      Aw.TheArray := A as TDefineArray;
-      GenValue(Op.Child(1));
-      Target.AddComponent( MakeAssignOp(4) );
-    end else
-      raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
-
-  end;
 
   procedure DoGenIf;
   var
@@ -471,6 +487,33 @@ var
       //Gen else-body
       Gen(Op.Child(2));
     end;
+    DefineLabel(LExit);
+  end;
+
+  procedure DoGenForLoop;
+  var
+    LExit,LLoop : TZCodeLabel;
+  begin
+    //Children: [ForInitOp,ForCondOp,ForIncOp,ForBodyOp]
+    if Assigned(Op.Child(0)) then
+      Gen(Op.Child(0));
+
+    LExit := NewLabel;
+
+    LLoop := NewLabel;
+    DefineLabel(LLoop);
+
+    if Assigned(Op.Child(1)) then
+      FallTrue(Op.Child(1),LExit);
+
+    if Assigned(Op.Child(3)) then
+      Gen(Op.Child(3));
+
+    if Assigned(Op.Child(2)) then
+      Gen(Op.Child(2));
+
+    GenJump(jsJumpAlways,LLoop);
+
     DefineLabel(LExit);
   end;
 
@@ -527,7 +570,7 @@ var
 
 begin
   case Op.Kind of
-    zcAssign : DoGenAssign;
+    zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
     zcIf : DoGenIf;
     zcNop : ;
     zcBlock :
@@ -536,6 +579,7 @@ begin
     zcReturn : DoGenReturn;
     zcFuncCall : GenFuncCall(Op,False);
     zcFunction : DoGenFunction(Op as TZcOpFunction);
+    zcForLoop : DoGenForLoop;
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;

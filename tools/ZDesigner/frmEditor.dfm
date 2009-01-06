@@ -36,43 +36,16 @@ object EditorForm: TEditorForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    object Splitter3: TSplitter
-      Left = 0
-      Top = 255
-      Width = 433
-      Height = 4
-      Cursor = crVSplit
-      Align = alTop
-      ExplicitTop = 266
-      ExplicitWidth = 431
-    end
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
       Width = 433
-      Height = 255
-      Align = alTop
+      Height = 736
+      Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-    end
-    object Panel1: TPanel
-      Left = 0
-      Top = 259
-      Width = 433
-      Height = 477
-      Align = alClient
-      BevelOuter = bvNone
-      TabOrder = 1
-      object PropEditorPanel: TGroupBox
-        Left = 0
-        Top = 0
-        Width = 433
-        Height = 477
-        Align = alClient
-        Caption = '&Properties'
-        TabOrder = 0
-      end
+      ExplicitHeight = 255
     end
   end
   object ViewerPanel: TPanel
@@ -92,387 +65,6 @@ object EditorForm: TEditorForm
       ExplicitTop = 376
       ExplicitWidth = 475
     end
-    object ViewerPageControl: TPageControl
-      Left = 1
-      Top = 1
-      Width = 634
-      Height = 574
-      ActivePage = ViewerGlTabSheet
-      Align = alClient
-      TabOrder = 0
-      object ViewerGlTabSheet: TTabSheet
-        Caption = 'ViewerGlTabSheet'
-        TabVisible = False
-        object RotateModelPanel: TPanel
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 50
-          Align = alTop
-          TabOrder = 0
-          object ViewTranslateLabel: TLabel
-            Left = 416
-            Top = 5
-            Width = 32
-            Height = 30
-            Alignment = taRightJustify
-            AutoSize = False
-            Caption = 'ViewTranslateLabel'
-            Font.Charset = ANSI_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -8
-            Font.Name = 'Arial'
-            Font.Style = []
-            ParentFont = False
-            WordWrap = True
-          end
-          object Label2: TLabel
-            Left = 7
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate X'
-          end
-          object Label3: TLabel
-            Left = 112
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate Y'
-          end
-          object Label4: TLabel
-            Left = 217
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate Z'
-          end
-          object Label5: TLabel
-            Left = 324
-            Top = 22
-            Width = 27
-            Height = 13
-            Caption = 'Zoom'
-          end
-          object ViewRotateXTrackBar: TTrackBar
-            Left = 0
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 0
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object TrackBar2: TTrackBar
-            Tag = 1
-            Left = 104
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 1
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object TrackBar3: TTrackBar
-            Tag = 2
-            Left = 209
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 2
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object ZoomTrackBar: TTrackBar
-            Left = 316
-            Top = 0
-            Width = 100
-            Height = 24
-            TabOrder = 3
-            TickStyle = tsNone
-            OnChange = ZoomTrackBarChange
-          end
-          object Panel4: TPanel
-            Left = 371
-            Top = 1
-            Width = 254
-            Height = 48
-            Align = alRight
-            BevelOuter = bvNone
-            TabOrder = 4
-            DesignSize = (
-              254
-              48)
-            object NormalsCheckBox: TCheckBox
-              Left = 9
-              Top = 7
-              Width = 61
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Normals'
-              TabOrder = 0
-              OnClick = NormalsCheckBoxClick
-            end
-            object ResetCameraButton: TButton
-              Left = 172
-              Top = 25
-              Width = 73
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Reset camera'
-              TabOrder = 1
-              OnClick = ResetCameraButtonClick
-            end
-            object ResetModelButton: TButton
-              Left = 172
-              Top = 5
-              Width = 73
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = '&Reset time'
-              Enabled = False
-              TabOrder = 2
-              OnClick = ResetModelButtonClick
-            end
-            object UpdateTimeCheckBox: TCheckBox
-              Left = 72
-              Top = 5
-              Width = 81
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Update time'
-              TabOrder = 3
-              OnClick = UpdateTimeCheckBoxClick
-            end
-            object WireframeCheckBox: TCheckBox
-              Left = 72
-              Top = 22
-              Width = 74
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Wireframe'
-              TabOrder = 4
-            end
-          end
-        end
-        object AppControlPanel: TPanel
-          Left = 0
-          Top = 50
-          Width = 626
-          Height = 41
-          Align = alTop
-          TabOrder = 1
-          object AppStartButton: TBitBtn
-            Left = 7
-            Top = 6
-            Width = 75
-            Height = 25
-            Action = AppPreviewStartAction
-            Caption = 'Start'
-            TabOrder = 0
-            Glyph.Data = {
-              36040000424D3604000000000000360000002800000010000000100000000100
-              2000000000000004000000000000000000000000000000000000FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00D5E0D50077AD66004188260041802600418026004188
-              260077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF0077AD660041882D00579A48005EA457006FAD66006FAD66005EA4
-              5700579A480041882D0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF0077AD660048913A005EA45700ADCBAD00ADCBAD003A8833003A883A00489A
-              410057A457005EA4570048913A0077AD6600FF00FF00FF00FF00FF00FF00D5E0
-              D50041882D00579A4F0041914100ADCBAD00FFFFFF00ADCBAD0041883A004188
-              3A00419141004F9A48005EA4570041882D00D5E0D500FF00FF00FF00FF0077AD
-              66004F9141004F9148004F914800ADCBAD00FFFFFF00FFFFFF00ADCBAD004F91
-              48004F9148004F9A4800579A4F005791410077AD6600FF00FF00FF00FF004180
-              260033802D0033802D0033802D00ADCBAD00FFFFFF00FFFFFF00FFFFFF00ADCB
-              AD0033802D0033802D00488841005EA4570041802600FF00FF00FF00FF004180
-              20003A7733003A7733003A773300ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF00BAD2BA003A7733003A7733006F9A5E0041802000FF00FF00FF00FF004888
-              3300488048004880480048804800ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF00FFFFFF0078E9C2004880480077AD770041802600FF00FF00FF00FF004888
-              3300579A5E00579A5E00579A5E00BAD2BA00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF0026CC8000579A5E00579A5E0077AD770048883300FF00FF00FF00FF0077AD
-              6600579A4F005EA46F005EA46F00BAD2BA00FFFFFF00FFFFFF00FFFFFF0026CC
-              80005EA46F005EA46F005EA46F005EA46F0077AD6600FF00FF00FF00FF00D5E0
-              D500488833006FAD80006FB78800BAD2BA00FFFFFF00FFFFFF0026CC80006FB7
-              88006FB788006FB788006FB7880048883300D5E0D500FF00FF00FF00FF00FF00
-              FF0077AD66005791480077B7880026CC8000FFFFFF0026CC80006FB791006FB7
-              910077B7910077B791005791480077AD6600FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF0077AD66004888330026CC800026CC800088C19A0088C1A40080B7
-              880066A466004F883A0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00D5E0D50077AD66004F883A0041802600418026004F88
-              3A0077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-          end
-          object AppStopButton: TBitBtn
-            Left = 88
-            Top = 6
-            Width = 75
-            Height = 25
-            Action = AppPreviewStopAction
-            Caption = 'Stop'
-            TabOrder = 1
-            Glyph.Data = {
-              36040000424D3604000000000000360000002800000010000000100000000100
-              2000000000000004000000000000000000000000000000000000FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF007060D0002010C0002010C0002010C0002010C0002010C0002010
-              C0002010C0002010C0002010C0007060D000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF002010C000A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8
-              F800A8A8F800A8A8F800A8A8F8002010C000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF002010C0009898D8004038E8004038E8004038E8004038E8004038
-              E8004038E8004038E8009898D8002010C000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003828C8007878F0003830E8003830E8003830E8003830E8003830
-              E8003830E8003830E8007878F0003828C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003838B8007068F0003020E8003020E8003020E8003020E8003020
-              E8003020E8003020E8007068F0003838B800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003838B8007878F0003830E8003830E8003830E8003830E8003830
-              E8003830E8003830E8007878F0003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003840C8009898D8004840E8004840E8004840E8004840E8004840
-              E8004840E8004840E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003840C8009898D8005048E8005048E8005048E8005048E8005048
-              E8005048E8005048E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF004050C800A8A8F8005050E8005050E8005050E8005050E8005050
-              E8005050E8005050E800A8A8F8004050C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF004050C800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0
-              F800A8B0F800A8B0F800A8B0F8004050C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF009898D8004858C8004858C8004858C8004858C8004858C8004858
-              C8004858C8004858C8004858C8009898D800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-          end
-        end
-      end
-      object ViewerSoundTabSheet: TTabSheet
-        Caption = 'ViewerSoundTabSheet'
-        ImageIndex = 1
-        TabVisible = False
-        inline SoundEditFrame1: TSoundEditFrame
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 564
-          Align = alClient
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 0
-          TabStop = True
-          ExplicitWidth = 626
-          ExplicitHeight = 564
-          inherited PageControl1: TPageControl
-            Width = 626
-            Height = 564
-            ExplicitWidth = 626
-            ExplicitHeight = 564
-            inherited TabSheet1: TTabSheet
-              ExplicitWidth = 618
-              ExplicitHeight = 536
-              inherited Label8: TLabel
-                Width = 55
-                ExplicitWidth = 55
-              end
-              inherited Label6: TLabel
-                Width = 25
-                ExplicitWidth = 25
-              end
-              inherited Label12: TLabel
-                Width = 50
-                ExplicitWidth = 50
-              end
-              inherited Label1: TLabel
-                Width = 82
-                ExplicitWidth = 82
-              end
-              inherited SoundGraphPaintBox: TPaintBox
-                Width = 200
-                ExplicitWidth = 245
-              end
-              inherited Label16: TLabel
-                Width = 35
-                ExplicitWidth = 35
-              end
-              inherited Label17: TLabel
-                Width = 19
-                ExplicitWidth = 19
-              end
-              inherited GroupBox4: TGroupBox
-                inherited Label5: TLabel
-                  Width = 49
-                  ExplicitWidth = 49
-                end
-                inherited Label11: TLabel
-                  Width = 33
-                  ExplicitWidth = 33
-                end
-              end
-              inherited GroupBox2: TGroupBox
-                inherited Label3: TLabel
-                  Width = 28
-                  ExplicitWidth = 28
-                end
-              end
-              inherited GroupBox1: TGroupBox
-                inherited Label2: TLabel
-                  Width = 62
-                  ExplicitWidth = 62
-                end
-                inherited Label18: TLabel
-                  Width = 62
-                  ExplicitWidth = 62
-                end
-              end
-            end
-            inherited TabSheet2: TTabSheet
-              inherited Label15: TLabel
-                Width = 58
-                ExplicitWidth = 58
-              end
-              inherited Label19: TLabel
-                Width = 69
-                ExplicitWidth = 69
-              end
-              inherited ChannelsParent: TScrollBox
-                Width = 472
-                ExplicitWidth = 472
-              end
-            end
-          end
-        end
-      end
-      object ViewerMusicTabSheet: TTabSheet
-        Caption = 'ViewerMusicTabSheet'
-        ImageIndex = 2
-        TabVisible = False
-        inline MusicEditFrame1: TMusicEditFrame
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 564
-          Align = alClient
-          TabOrder = 0
-          TabStop = True
-          ExplicitWidth = 626
-          ExplicitHeight = 564
-        end
-      end
-      object ViewerBlankTabSheet: TTabSheet
-        Caption = 'ViewerBlankTabSheet'
-        ImageIndex = 3
-        TabVisible = False
-      end
-    end
     object LowerRightPanel: TPanel
       Left = 1
       Top = 579
@@ -480,7 +72,7 @@ object EditorForm: TEditorForm
       Height = 156
       Align = alBottom
       BevelOuter = bvNone
-      TabOrder = 1
+      TabOrder = 0
       object Splitter4: TSplitter
         Left = 461
         Top = 0
@@ -647,6 +239,422 @@ object EditorForm: TEditorForm
           ParentFont = False
           TabOrder = 0
           OnDrawItem = LogListBoxDrawItem
+        end
+      end
+    end
+    object Panel2: TPanel
+      Left = 1
+      Top = 1
+      Width = 634
+      Height = 574
+      Align = alClient
+      BevelOuter = bvNone
+      TabOrder = 1
+      object Splitter3: TSplitter
+        Left = 300
+        Top = 0
+        Width = 4
+        Height = 574
+        ExplicitLeft = 100
+      end
+      object PropEditorPanel: TGroupBox
+        Left = 0
+        Top = 0
+        Width = 300
+        Height = 574
+        Align = alLeft
+        Caption = '&Properties'
+        TabOrder = 1
+      end
+      object ViewerPageControl: TPageControl
+        Left = 304
+        Top = 0
+        Width = 330
+        Height = 574
+        ActivePage = ViewerGlTabSheet
+        Align = alClient
+        TabOrder = 0
+        ExplicitLeft = 200
+        ExplicitWidth = 430
+        object ViewerGlTabSheet: TTabSheet
+          Caption = 'ViewerGlTabSheet'
+          TabVisible = False
+          ExplicitWidth = 422
+          object RotateModelPanel: TPanel
+            Left = 0
+            Top = 0
+            Width = 322
+            Height = 50
+            Align = alTop
+            TabOrder = 0
+            ExplicitWidth = 422
+            object ViewTranslateLabel: TLabel
+              Left = 416
+              Top = 5
+              Width = 32
+              Height = 30
+              Alignment = taRightJustify
+              AutoSize = False
+              Caption = 'ViewTranslateLabel'
+              Font.Charset = ANSI_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -8
+              Font.Name = 'Arial'
+              Font.Style = []
+              ParentFont = False
+              WordWrap = True
+            end
+            object Label2: TLabel
+              Left = 7
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate X'
+            end
+            object Label3: TLabel
+              Left = 112
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate Y'
+            end
+            object Label4: TLabel
+              Left = 217
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate Z'
+            end
+            object Label5: TLabel
+              Left = 324
+              Top = 22
+              Width = 27
+              Height = 13
+              Caption = 'Zoom'
+            end
+            object ViewRotateXTrackBar: TTrackBar
+              Left = 0
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 0
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object TrackBar2: TTrackBar
+              Tag = 1
+              Left = 104
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 1
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object TrackBar3: TTrackBar
+              Tag = 2
+              Left = 209
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 2
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object ZoomTrackBar: TTrackBar
+              Left = 316
+              Top = 0
+              Width = 100
+              Height = 24
+              TabOrder = 3
+              TickStyle = tsNone
+              OnChange = ZoomTrackBarChange
+            end
+            object Panel4: TPanel
+              Left = 67
+              Top = 1
+              Width = 254
+              Height = 48
+              Align = alRight
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 4
+              ExplicitLeft = 167
+              DesignSize = (
+                254
+                48)
+              object NormalsCheckBox: TCheckBox
+                Left = 9
+                Top = 7
+                Width = 61
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Normals'
+                TabOrder = 0
+                OnClick = NormalsCheckBoxClick
+              end
+              object ResetCameraButton: TButton
+                Left = 172
+                Top = 25
+                Width = 73
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Reset camera'
+                TabOrder = 1
+                OnClick = ResetCameraButtonClick
+              end
+              object ResetModelButton: TButton
+                Left = 172
+                Top = 5
+                Width = 73
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = '&Reset time'
+                Enabled = False
+                TabOrder = 2
+                OnClick = ResetModelButtonClick
+              end
+              object UpdateTimeCheckBox: TCheckBox
+                Left = 72
+                Top = 5
+                Width = 81
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Update time'
+                TabOrder = 3
+                OnClick = UpdateTimeCheckBoxClick
+              end
+              object WireframeCheckBox: TCheckBox
+                Left = 72
+                Top = 22
+                Width = 74
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Wireframe'
+                TabOrder = 4
+              end
+            end
+          end
+          object AppControlPanel: TPanel
+            Left = 0
+            Top = 50
+            Width = 322
+            Height = 41
+            Align = alTop
+            TabOrder = 1
+            ExplicitWidth = 422
+            object AppStartButton: TBitBtn
+              Left = 7
+              Top = 6
+              Width = 75
+              Height = 25
+              Action = AppPreviewStartAction
+              Caption = 'Start'
+              TabOrder = 0
+              Glyph.Data = {
+                36040000424D3604000000000000360000002800000010000000100000000100
+                2000000000000004000000000000000000000000000000000000FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00D5E0D50077AD66004188260041802600418026004188
+                260077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF0077AD660041882D00579A48005EA457006FAD66006FAD66005EA4
+                5700579A480041882D0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF0077AD660048913A005EA45700ADCBAD00ADCBAD003A8833003A883A00489A
+                410057A457005EA4570048913A0077AD6600FF00FF00FF00FF00FF00FF00D5E0
+                D50041882D00579A4F0041914100ADCBAD00FFFFFF00ADCBAD0041883A004188
+                3A00419141004F9A48005EA4570041882D00D5E0D500FF00FF00FF00FF0077AD
+                66004F9141004F9148004F914800ADCBAD00FFFFFF00FFFFFF00ADCBAD004F91
+                48004F9148004F9A4800579A4F005791410077AD6600FF00FF00FF00FF004180
+                260033802D0033802D0033802D00ADCBAD00FFFFFF00FFFFFF00FFFFFF00ADCB
+                AD0033802D0033802D00488841005EA4570041802600FF00FF00FF00FF004180
+                20003A7733003A7733003A773300ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
+                FF00BAD2BA003A7733003A7733006F9A5E0041802000FF00FF00FF00FF004888
+                3300488048004880480048804800ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
+                FF00FFFFFF0078E9C2004880480077AD770041802600FF00FF00FF00FF004888
+                3300579A5E00579A5E00579A5E00BAD2BA00FFFFFF00FFFFFF00FFFFFF00FFFF
+                FF0026CC8000579A5E00579A5E0077AD770048883300FF00FF00FF00FF0077AD
+                6600579A4F005EA46F005EA46F00BAD2BA00FFFFFF00FFFFFF00FFFFFF0026CC
+                80005EA46F005EA46F005EA46F005EA46F0077AD6600FF00FF00FF00FF00D5E0
+                D500488833006FAD80006FB78800BAD2BA00FFFFFF00FFFFFF0026CC80006FB7
+                88006FB788006FB788006FB7880048883300D5E0D500FF00FF00FF00FF00FF00
+                FF0077AD66005791480077B7880026CC8000FFFFFF0026CC80006FB791006FB7
+                910077B7910077B791005791480077AD6600FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF0077AD66004888330026CC800026CC800088C19A0088C1A40080B7
+                880066A466004F883A0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00D5E0D50077AD66004F883A0041802600418026004F88
+                3A0077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
+            end
+            object AppStopButton: TBitBtn
+              Left = 88
+              Top = 6
+              Width = 75
+              Height = 25
+              Action = AppPreviewStopAction
+              Caption = 'Stop'
+              TabOrder = 1
+              Glyph.Data = {
+                36040000424D3604000000000000360000002800000010000000100000000100
+                2000000000000004000000000000000000000000000000000000FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF007060D0002010C0002010C0002010C0002010C0002010C0002010
+                C0002010C0002010C0002010C0007060D000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF002010C000A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8
+                F800A8A8F800A8A8F800A8A8F8002010C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF002010C0009898D8004038E8004038E8004038E8004038E8004038
+                E8004038E8004038E8009898D8002010C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003828C8007878F0003830E8003830E8003830E8003830E8003830
+                E8003830E8003830E8007878F0003828C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003838B8007068F0003020E8003020E8003020E8003020E8003020
+                E8003020E8003020E8007068F0003838B800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003838B8007878F0003830E8003830E8003830E8003830E8003830
+                E8003830E8003830E8007878F0003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003840C8009898D8004840E8004840E8004840E8004840E8004840
+                E8004840E8004840E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003840C8009898D8005048E8005048E8005048E8005048E8005048
+                E8005048E8005048E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF004050C800A8A8F8005050E8005050E8005050E8005050E8005050
+                E8005050E8005050E800A8A8F8004050C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF004050C800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0
+                F800A8B0F800A8B0F800A8B0F8004050C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF009898D8004858C8004858C8004858C8004858C8004858C8004858
+                C8004858C8004858C8004858C8009898D800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
+            end
+          end
+        end
+        object ViewerSoundTabSheet: TTabSheet
+          Caption = 'ViewerSoundTabSheet'
+          ImageIndex = 1
+          TabVisible = False
+          ExplicitWidth = 422
+          inline SoundEditFrame1: TSoundEditFrame
+            Left = 0
+            Top = 0
+            Width = 322
+            Height = 564
+            Align = alClient
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 0
+            TabStop = True
+            ExplicitWidth = 422
+            ExplicitHeight = 564
+            inherited PageControl1: TPageControl
+              Width = 322
+              Height = 564
+              ExplicitWidth = 422
+              ExplicitHeight = 564
+              inherited TabSheet1: TTabSheet
+                ExplicitWidth = 414
+                ExplicitHeight = 536
+                inherited Label8: TLabel
+                  Width = 55
+                  ExplicitWidth = 55
+                end
+                inherited Label6: TLabel
+                  Width = 25
+                  ExplicitWidth = 25
+                end
+                inherited Label12: TLabel
+                  Width = 50
+                  ExplicitWidth = 50
+                end
+                inherited Label1: TLabel
+                  Width = 82
+                  ExplicitWidth = 82
+                end
+                inherited SoundGraphPaintBox: TPaintBox
+                  Width = 100
+                  ExplicitWidth = 245
+                end
+                inherited Label16: TLabel
+                  Width = 35
+                  ExplicitWidth = 35
+                end
+                inherited Label17: TLabel
+                  Width = 19
+                  ExplicitWidth = 19
+                end
+                inherited GroupBox4: TGroupBox
+                  inherited Label5: TLabel
+                    Width = 49
+                    ExplicitWidth = 49
+                  end
+                  inherited Label11: TLabel
+                    Width = 33
+                    ExplicitWidth = 33
+                  end
+                end
+                inherited GroupBox2: TGroupBox
+                  inherited Label3: TLabel
+                    Width = 28
+                    ExplicitWidth = 28
+                  end
+                end
+                inherited GroupBox1: TGroupBox
+                  inherited Label2: TLabel
+                    Width = 62
+                    ExplicitWidth = 62
+                  end
+                  inherited Label18: TLabel
+                    Width = 62
+                    ExplicitWidth = 62
+                  end
+                end
+              end
+              inherited TabSheet2: TTabSheet
+                inherited Label15: TLabel
+                  Width = 58
+                  ExplicitWidth = 58
+                end
+                inherited Label19: TLabel
+                  Width = 69
+                  ExplicitWidth = 69
+                end
+                inherited ChannelsParent: TScrollBox
+                  Width = 472
+                  ExplicitWidth = 472
+                end
+              end
+            end
+          end
+        end
+        object ViewerMusicTabSheet: TTabSheet
+          Caption = 'ViewerMusicTabSheet'
+          ImageIndex = 2
+          TabVisible = False
+          ExplicitWidth = 422
+          inline MusicEditFrame1: TMusicEditFrame
+            Left = 0
+            Top = 0
+            Width = 322
+            Height = 564
+            Align = alClient
+            TabOrder = 0
+            TabStop = True
+            ExplicitWidth = 422
+            ExplicitHeight = 564
+          end
+        end
+        object ViewerBlankTabSheet: TTabSheet
+          Caption = 'ViewerBlankTabSheet'
+          ImageIndex = 3
+          TabVisible = False
+          ExplicitWidth = 422
         end
       end
     end

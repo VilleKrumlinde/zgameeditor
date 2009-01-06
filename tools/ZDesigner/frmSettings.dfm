@@ -30,7 +30,6 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
-    ExplicitTop = 237
   end
   object Button2: TButton
     Left = 277
@@ -41,7 +40,6 @@ object SettingsForm: TSettingsForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
-    ExplicitTop = 237
   end
   object GroupBox1: TGroupBox
     Left = 8
@@ -145,12 +143,12 @@ object SettingsForm: TSettingsForm
     object Label6: TLabel
       Left = 14
       Top = 19
-      Width = 171
+      Width = 185
       Height = 13
-      Caption = 'Project tree position (requires restart)'
+      Caption = 'Property editor position (requires restart)'
     end
     object GuiLayoutCombo: TComboBox
-      Left = 200
+      Left = 211
       Top = 16
       Width = 89
       Height = 21
@@ -159,7 +157,7 @@ object SettingsForm: TSettingsForm
       TabOrder = 0
       Items.Strings = (
         'Left'
-        'Right')
+        'Middle')
     end
   end
 end

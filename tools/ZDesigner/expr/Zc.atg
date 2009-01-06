@@ -162,21 +162,22 @@ Zc (. var
   BEGIN { 
     ("void" (. Typ := zctVoid; .) | Type<Typ> ) ident (. 
           if SymTab.Contains(LexString) then
-            ZError('Name already defined: ' + LexString)
-          else
-          begin
-            Func := TZcOpFunction.Create(GlobalNames);
-            Func.Id := LexString;
-            Func.ReturnType := Typ;
-            SymTab.Add(Func.Id,Func);
-            ZFunctions.Add(Func); 
-            Self.CurrentFunction := Func;
-            SymTab.PushScope;
-          end;
+            ZError('Name already defined: ' + LexString);
+            
+          Func := TZcOpFunction.Create(GlobalNames);
+          Func.Id := LexString;
+          Func.ReturnType := Typ;
+          SymTab.Add(Func.Id,Func);
+          ZFunctions.Add(Func); 
+          Self.CurrentFunction := Func;
+          SymTab.PushScope;
+          try
        .)
     "(" [ FormalParams ] ")" "{" ZcFuncBody "}"  
         (. 
-           SymTab.PopScope;
+          finally
+          SymTab.PopScope;
+          end;
         .)
     } 
   END ELSE
@@ -188,6 +189,7 @@ Zc (. var
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
        SymTab.PushScope;
+       try
        ZFunctions.Add(Func);
   .)
 
@@ -197,7 +199,9 @@ Zc (. var
   ZcFuncBody
 
   (. 
+       finally
        SymTab.PopScope;
+       end;
   .)
   END
 
@@ -244,34 +248,44 @@ Par (. var Typ : TZcDataType; Arg : TZcOpArgumentVar; .)
 .
 /*------------------------------------------------------------------------*/
 
-LocalVarDecl (. var Typ : TZcDataType; .)
-= Type<Typ> LocalVar<Typ> {"," LocalVar<Typ>}
+LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
+= (. OutOp := nil; .)
+  Type<Typ> LocalVar<Typ,OutOp> {"," LocalVar<Typ,OutOp>}
 .
 
 /*------------------------------------------------------------------------*/
 
-LocalVar<Typ : TZcDataType> (. var Loc : TZcOpLocalVar; .)
+LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitOp : TZcOp; .)
 = ident  
      (. 
         if SymTab.ScopeContains(LexString) then
-          SynError(201)
-        else
-        begin
-          Loc := TZcOpLocalVar.Create(nil);
-          Loc.Id := LexString;
-          Loc.Typ := Typ;
-          CurrentFunction.AddLocal(Loc);
-          SymTab.Add(Loc.Id,Loc);
-        end;
+          ZError('Name already defined: ' + LexString);
+
+        Loc := TZcOpLocalVar.Create(nil);
+        Loc.Id := LexString;
+        Loc.Typ := Typ;        
      .)
-     /* [ "=" ( Init | "stackalloc" Type "[" Expr<Op> "]") ] */
+     [ "=" Init<InitOp> (. Loc.InitExpression:=InitOp; .) ]
+     (. 
+        SymTab.Add(Loc.Id,Loc);
+        CurrentFunction.AddLocal(Loc);
+
+        if Assigned(Loc.InitExpression) then
+        begin
+          //Generate tree for initial assignment
+          if OutOp=nil then
+            OutOp := MakeOp(zcBlock);
+          OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
+        end;
+        
+     .)
 .
 
 /*------------------------------------------------------------------------*/
 
-/* Init           (. var Op : TZcOp; .)
-= Expr<Op>
-.  */
+Init<var OutOp : TZcOp>
+= Expr<OutOp>
+.
 
 /*------------------------------------------------------------------------*/
 Argument<var OutOp : TZcOp>
@@ -311,7 +325,7 @@ SimpleType<var Typ : TZcDataType>
  *------------------------------------------------------------------------*/
 
 Statement<var OutOp : TZcOp>
-=
+= (. OutOp := nil; .)
 /* "const" Type ident "=" Expr<Op> {"," ident "=" Expr<Op>} ";" */
 (*IF IsLocalVarDecl THEN 
 BEGIN
@@ -319,7 +333,7 @@ BEGIN
 END
 |  EmbeddedStatement<OutOp> *)
 
-LocalVarDecl ";"
+LocalVarDecl<OutOp> ";"
 | EmbeddedStatement<OutOp>
   /* LL(1) confict between LocalVarDecl and StatementExpr: *
    * ident {"." ident} { "[" ...                           */
@@ -329,6 +343,7 @@ LocalVarDecl ";"
 EmbeddedStatement<var OutOp : TZcOp>
   (. var
        Op,IfOp,IfBody,ElseOp : TZcOp;
+       ForInitOp,ForCondOp,ForIncOp,ForBodyOp : TZcOp;
   .)
 = Block<OutOp>
 | ";"   (. OutOp := MakeOp(zcNop); .)
@@ -339,7 +354,17 @@ EmbeddedStatement<var OutOp : TZcOp>
 /* | "switch" "(" Expr<Op> ")" "{" {SwitchSection} "}" */
 /* | "while" "(" Expr<Op> ")" EmbeddedStatement<Op> */
 /* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
-/* | "for" "(" [ForInit] ";" [Expr<Op>] ";" [ForInc] ")" EmbeddedStatement<Op> */
+ | "for" 
+    (. try
+       SymTab.PushScope; 
+       ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
+   "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp> 
+   (.
+       OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
+       finally
+       SymTab.PopScope;
+       end;
+   .)
 /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
 /* | "break" ";" */
 /* | "continue" ";" */
@@ -366,16 +391,19 @@ Block<var OutOp : TZcOp>
   (. var
        Op : TZcOp;
   .)
-= (. OutOp := MakeOp(zcBlock); .)
-  "{" {Statement<Op> (. OutOp.Children.Add(Op); .) } "}".
+= (. Op := nil;
+     OutOp := MakeOp(zcBlock); 
+  .)
+  "{" {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) } "}".
 
 /*------------------------------------------------------------------------*/
 StatementExpr<var OutOp : TZcOp>           (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
-=
+= (. Op1 :=nil; Op2 := nil; .)
   Unary<Op1>
   ( AssignOp<Kind> Expr<Op2>
     (.
-      OutOp := MakeAssign(Kind,Op1,Op2);
+      if Op2<>nil then
+        OutOp := MakeAssign(Kind,Op1,Op2);
     .)
   |                             (. OutOp := Op1; .)
   )
@@ -406,16 +434,26 @@ AssignOp<var Kind : TZcAssignType>
 
 /*------------------------------------------------------------------------*/
 
-/* ForInit     (. var Op : TZcOp; .)
-= LocalVarDecl
-| StatementExpr<Op> { "," StatementExpr<Op> }
-.  */
+ForInit<var OutOp : TZcOp>     (. var Op : TZcOp; .)
+= (. Op:=nil; OutOp := MakeOp(zcBlock); .) 
+(
+LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+| (. Op:=nil; .) StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+  { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+)
+.  
 
 /*------------------------------------------------------------------------*/
 
-/* ForInc      (. var Op : TZcOp; .)
-= StatementExpr<Op> { "," StatementExpr<Op> }
-.  */
+ForInc<var OutOp : TZcOp>      (. var Op : TZcOp; .)
+= (. Op:=nil; 
+     OutOp := MakeOp(zcBlock);
+  .) 
+(
+StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) 
+{ (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+)
+. 
 
 
 /*------------------------------------------------------------------------*
@@ -514,36 +552,47 @@ MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcO
 .
 /*------------------------------------------------------------------------*/
 Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
-=       (. LastOp := nil; .)
+=       (. LastOp := nil; Kind := zcNop; .)
   {
     (
       (* "+" | *)
-      "-"       (. Kind := zcNegate; .)
-      (* | "!" | "~" | "*" | "++" | "--" *)
-    )   (. Tmp := MakeOp(Kind);
-           if LastOp<>nil then
-             LastOp.Children.Add(Tmp);
-           LastOp := Tmp;
-        .)
+      "-"   (. Kind := zcNegate; .) |
+      "++"  (. Kind := zcPreInc; .) |    
+      "--"  (. Kind := zcPreDec; .)
+      (* | "!" | "~" | "*" |  *)
+    )   
+    (. 
+       if Kind=zcNegate then
+       begin
+         Tmp := MakeOp(Kind);
+         if LastOp<>nil then
+           LastOp.Children.Add(Tmp);
+         LastOp := Tmp;
+       end else if Assigned(LastOp) then 
+         ZError('-- and ++ cannot be combined with other unary ops');
+    .)
   }
   Primary<Tmp>
-    (. if LastOp<>nil then
+    (. 
+       if Kind in [zcNop,zcNegate] then
        begin
-         LastOp.Children.Add(Tmp);
-         OutOp := LastOp;
-       end else
-         OutOp := Tmp;
+         if LastOp<>nil then
+         begin
+           LastOp.Children.Add(Tmp);
+           OutOp := LastOp;
+         end else
+           OutOp := Tmp;
+       end else 
+       begin
+         OutOp := MakePrePostIncDec(Kind,Tmp);
+       end;
     .)
 .
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
 =            (. OutOp := nil; .)
   ( 
-    ident    (. 
-       OutOp := MakeOp(zcIdentifier,LexString); 
-       if SymTab.Contains(LexString) then
-         OutOp.Ref := SymTab.Lookup(LexString);
-              .)
+    ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
   | Literal  (. 
         try
           V := StrToFloat(LexString);
@@ -563,7 +612,9 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
   )
 
   {
-/*  "++" | "--" | "->" ident
+  "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
+  "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
+/*  | "->" ident
   | */
   "." ident (.
       Assert(OutOp.Kind=zcIdentifier);

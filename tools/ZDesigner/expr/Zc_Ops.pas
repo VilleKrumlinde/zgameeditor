@@ -11,7 +11,8 @@ type
   TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConstLiteral,zcIdentifier,zcAssign,zcIf,
           zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
-          zcFunction,zcConvert);
+          zcFunction,zcConvert,zcForLoop,
+          zcPreInc,zcPreDec,zcPostInc,zcPostDec);
 
   TZcOp = class
   public
@@ -36,6 +37,7 @@ type
 
   TZcOpLocalVar = class(TZcOpVariableBase)
   public
+    InitExpression : TZcOp;
     function ToString : string; override;
   end;
 
@@ -88,6 +90,7 @@ function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
+function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 
 var
   //Nodes owned by the current compiled function/expression
@@ -174,7 +177,7 @@ begin
     zcPlus : Result := Child(0).ToString + '+' + Child(1).ToString;
     zcMinus : Result := Child(0).ToString + '-' + Child(1).ToString;
     zcIdentifier : Result := Id;
-    zcAssign : Result := Child(0).ToString + '=' + Child(1).ToString;
+    zcAssign,zcPreInc,zcPreDec,zcPostInc,zcPostDec : Result := Child(0).ToString + '=' + Child(1).ToString;
     zcIf :
       begin
         Result := 'if(' + Child(0).ToString + ') ' + Child(1).ToString;
@@ -189,12 +192,15 @@ begin
     zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
     zcBlock :
       begin
-        if Children.Count>1 then
+        if Children.Count=1 then
+          Result := Child(0).ToString
+        else
+        begin
           Result := '{'#13#10;
-        for I := 0 to Children.Count-1 do
-          Result := Result + Child(I).ToString + '; ' + #13#10;
-        if Children.Count>1 then
-          Result := Result + '}'#13#10;
+          for I := 0 to Children.Count-1 do
+            Result := Result + Child(I).ToString + '; ' + #13#10;
+          Result := Result + '}';//#13#10;
+        end;
       end;
     zcNegate : Result := '-' + Child(0).ToString;
     zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
@@ -210,7 +216,7 @@ begin
         end;
         Result := Result + ')';
       end;
-    zcNop : Result := ';';       //Empty statement
+    zcNop : Result := '<nop>;';       //Empty statement
     zcReturn :
       begin
         Result := 'return';
@@ -228,6 +234,33 @@ begin
           Result := Result + Child(I).ToString;
         end;
         Result := Result + ']';
+      end;
+    zcForLoop :
+      begin
+        Result := 'for(';
+        if Assigned(Child(0)) then
+          for I := 0 to Child(0).Children.Count-1 do
+          begin
+            if I>0 then
+              Result := Result + ',';
+            Result := Result + Child(0).Child(I).ToString;
+          end;
+        Result := Result + ';';
+
+        if Assigned(Child(1)) then
+          Result := Result + Child(1).ToString;
+        Result := Result + ';';
+
+        if Assigned(Child(2)) then
+          for I := 0 to Child(2).Children.Count-1 do
+          begin
+            if I>0 then
+              Result := Result + ',';
+            Result := Result + Child(2).Child(I).ToString;
+          end;
+        Result := Result + ')';
+        if Assigned(Child(3)) then
+          Result := Result + Child(3).ToString;
       end;
   end;
 end;
@@ -335,7 +368,7 @@ var
   I : integer;
   UseCurly : boolean;
 begin
-  UseCurly := (Self.Id<>'') or ((Statements.Count>1) or (Locals.Count>0));
+  UseCurly := (Self.Id<>'');// or ((Statements.Count>1) or (Locals.Count>0));
   if UseCurly then
     Result := '{'#13#10;
   for I := 0 to Locals.Count-1 do
@@ -405,7 +438,10 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
+  if (Kind=zcIdentifier) and CompilerContext.SymTab.Contains(Id) then
+    Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
+
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
 var
   I : integer;
@@ -437,6 +473,21 @@ begin
   else
     Op2 := MakeCompatible(Op2,T1);
   Result := MakeOp(Kind,[Op1,Op2]);
+end;
+
+function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
+var
+  Op : TZcOp;
+begin
+  Op := TZcOpLiteral.Create(LeftOp.GetDataType,1);
+  case Kind of
+    zcPreInc,zcPostInc:
+      Result := MakeOp(Kind, [LeftOp, MakeOp(zcPlus,[LeftOp,Op]) ]);
+    zcPreDec,zcPostDec:
+      Result := MakeOp(Kind, [LeftOp, MakeOp(zcMinus,[LeftOp,Op]) ]);
+  else
+    Result := nil;
+  end;
 end;
 
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
