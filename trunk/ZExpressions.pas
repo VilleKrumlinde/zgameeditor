@@ -174,6 +174,7 @@ type
   public
     Kind : TExpOpJumpKind;
     Destination : integer;  //todo could be smallint or byte
+    _Type : (jutFloat,jutInt);
   end;
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
@@ -477,11 +478,13 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Destination',{$ENDIF}integer(@Destination) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type) - integer(Self), zptByte);
 end;
 
 procedure TExpJump.Execute;
 var
   L,R : single;
+  Li,Ri : integer;
   Jump : boolean;
 begin
   Jump := True;
@@ -489,16 +492,32 @@ begin
     jsJumpAlways : ;
   else
     begin
-      R := gStack.PopFloat;
-      L := gStack.PopFloat;
-      case Kind of
-        jsJumpLT : Jump := L<R;
-        jsJumpGT : Jump := L>R;
-        jsJumpLE : Jump := L<=R;
-        jsJumpGE : Jump := L>=R;
-        jsJumpNE : Jump := L<>R;
-        jsJumpEQ : Jump := L=R;
-      {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+      if _Type=jutFloat then
+      begin
+        R := gStack.PopFloat;
+        L := gStack.PopFloat;
+        case Kind of
+          jsJumpLT : Jump := L<R;
+          jsJumpGT : Jump := L>R;
+          jsJumpLE : Jump := L<=R;
+          jsJumpGE : Jump := L>=R;
+          jsJumpNE : Jump := L<>R;
+          jsJumpEQ : Jump := L=R;
+        {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+        end;
+      end else
+      begin
+        Ri := Integer(gStack.Pop);
+        Li := Integer(gStack.Pop);
+        case Kind of
+          jsJumpLT : Jump := Li<Ri;
+          jsJumpGT : Jump := Li>Ri;
+          jsJumpLE : Jump := Li<=Ri;
+          jsJumpGE : Jump := Li>=Ri;
+          jsJumpNE : Jump := Li<>Ri;
+          jsJumpEQ : Jump := Li=Ri;
+        {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+        end;
       end;
     end;
   end;

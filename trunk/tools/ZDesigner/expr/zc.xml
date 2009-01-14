@@ -6,7 +6,7 @@
     <File Type="Info" Display="Generated Component File" FileName="D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc.PAS" />
   </Files>
   <Errors>
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="MulExpr is a deletable symbol" Line="542" Col="0" Data="MulExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="MulExpr is a deletable symbol" Line="545" Col="0" Data="MulExpr" />
     <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="AddExpr is a deletable symbol" Line="531" Col="0" Data="AddExpr" />
     <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="ShiftExpr is a deletable symbol" Line="527" Col="0" Data="ShiftExpr" />
     <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="RelExpr is a deletable symbol" Line="513" Col="0" Data="RelExpr" />

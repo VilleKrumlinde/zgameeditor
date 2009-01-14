@@ -331,7 +331,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.5b';
+  AppVersion = '1.9.5';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -847,7 +847,7 @@ begin
   Ed.SetComponent(C);
   RenderAborted := False;
   ViewerPanel.Refresh;
-  if Assigned(Ed.WantsFocus) and
+  if (C<>nil) and Assigned(Ed.WantsFocus) and
     Ed.WantsFocus.CanFocus and
     Ed.Parent.Enabled and
     Visible and
