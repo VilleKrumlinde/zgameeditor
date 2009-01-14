@@ -1532,6 +1532,9 @@ Kind  :=  zcMinus;
 end;
 _Unary(Op);
 _MulExpr(Op,R);
+      
+if  (L=nil)  or  (R=nil)  then
+   ZError('Invalid  syntax');
 OutOp  :=  MakeBinary(Kind,L,R);
 L  :=  OutOp;
 
@@ -1686,7 +1689,7 @@ while (fCurrentInputSymbol = _minusSym) OR
  (fCurrentInputSymbol = _plus_plusSym) OR
  (fCurrentInputSymbol = _minus_minusSym) do begin
 if (fCurrentInputSymbol = _minusSym) then begin
-Get;                                  
+Get;
 Kind  :=  zcNegate;
 end else if (fCurrentInputSymbol = _plus_plusSym) then begin
 Get;

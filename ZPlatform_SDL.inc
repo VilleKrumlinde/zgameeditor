@@ -7,6 +7,8 @@ implementation
   {$linklib SDLMain.o}
 {$endif}
 
+{$i-}  //No io-test on files, code tests ioresult
+
 uses SDL, ZLog, AudioPlayer,ZApplication
   {$IFDEF LINUX},libc{$ENDIF}
   ;
@@ -29,7 +31,7 @@ var
   Mode : PSDL_Surface;
 begin
   if UseFullScreen then
-    flags := SDL_OPENGL or SDL_FULLSCREEN;
+    flags := SDL_OPENGL or SDL_FULLSCREEN
   else
     flags := SDL_OPENGL or SDL_RESIZABLE;
 
@@ -213,6 +215,14 @@ begin
   else
     System.Rewrite(F,1);
 
+  if IOResult<>0 then
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog('Platform').Write('File could not be created: ' + FileName);
+    {$endif}
+    Exit;
+  end;
+
   System.BlockWrite(F,Memory^,Size,Written);
 
   System.Close(F);
@@ -232,6 +242,8 @@ begin
 
   System.FileMode := 0;
   System.Assign(F,FileName);
+
+  System.Reset(F,1);
   if IOResult<>0 then
   begin
     {$ifdef zlog}
@@ -239,8 +251,6 @@ begin
     {$endif}
     Exit;
   end;
-
-  System.Reset(F,1);
 
   Size := System.FileSize(F);
 

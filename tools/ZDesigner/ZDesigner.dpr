@@ -21,6 +21,7 @@ THE SOFTWARE.}
 program ZDesigner;
 
 uses
+  // FastMM4,
   Forms,
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',

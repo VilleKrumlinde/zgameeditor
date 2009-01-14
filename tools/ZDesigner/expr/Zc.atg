@@ -533,7 +533,10 @@ AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
     {( "+"    (. Kind := zcPlus; .)
      | "-"    (. Kind := zcMinus; .)
      ) Unary<Op> MulExpr<Op,R>
-         (. OutOp := MakeBinary(Kind,L,R);
+         (. 
+            if (L=nil) or (R=nil) then
+              ZError('Invalid syntax');
+            OutOp := MakeBinary(Kind,L,R);
             L := OutOp;
          .)
     }

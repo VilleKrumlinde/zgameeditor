@@ -1,6 +1,6 @@
 
 
-Compiled: den 6 januari 2009 - 18:10:05
+Compiled: den 12 januari 2009 - 17:55:48
 Output sent to: D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 6 januari 2009 @ 18:10:05
+Time Compiled: den 12 januari 2009 @ 17:55:48
 
 Statistics:
   number of terminals:        77 (limit  2561)
@@ -594,122 +594,125 @@ Listing
   533      {( "+"    (. Kind := zcPlus; .)
   534       | "-"    (. Kind := zcMinus; .)
   535       ) Unary<Op> MulExpr<Op,R>
-  536           (. OutOp := MakeBinary(Kind,L,R);
-  537              L := OutOp;
-  538           .)
-  539      }
-  540  .
-  541  /*------------------------------------------------------------------------*/
-  542  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
+  536           (. 
+  537              if (L=nil) or (R=nil) then
+  538                ZError('Invalid syntax');
+  539              OutOp := MakeBinary(Kind,L,R);
+  540              L := OutOp;
+  541           .)
+  542      }
+  543  .
+  544  /*------------------------------------------------------------------------*/
+  545  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
 *****  ^ MulExpr is a deletable symbol
-  543  =       (. OutOp := InOp; .)
-  544    { ("*"      (. Kind := zcMul; .)
-  545      | "/"     (. Kind := zcDiv; .)
-  546    (*  | "%" *)
-  547      ) Unary<Tmp>
-  548           (. OutOp := MakeBinary(Kind,InOp,Tmp);
-  549              InOp := OutOp;
-  550           .)
-  551      }
-  552  .
-  553  /*------------------------------------------------------------------------*/
-  554  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
-  555  =       (. LastOp := nil; Kind := zcNop; .)
-  556    {
-  557      (
-  558        (* "+" | *)
-  559        "-"   (. Kind := zcNegate; .) |
-  560        "++"  (. Kind := zcPreInc; .) |    
-  561        "--"  (. Kind := zcPreDec; .)
-  562        (* | "!" | "~" | "*" |  *)
-  563      )   
-  564      (. 
-  565         if Kind=zcNegate then
-  566         begin
-  567           Tmp := MakeOp(Kind);
-  568           if LastOp<>nil then
-  569             LastOp.Children.Add(Tmp);
-  570           LastOp := Tmp;
-  571         end else if Assigned(LastOp) then 
-  572           ZError('-- and ++ cannot be combined with other unary ops');
-  573      .)
-  574    }
-  575    Primary<Tmp>
-  576      (. 
-  577         if Kind in [zcNop,zcNegate] then
-  578         begin
-  579           if LastOp<>nil then
-  580           begin
-  581             LastOp.Children.Add(Tmp);
-  582             OutOp := LastOp;
-  583           end else
-  584             OutOp := Tmp;
-  585         end else 
-  586         begin
-  587           OutOp := MakePrePostIncDec(Kind,Tmp);
-  588         end;
-  589      .)
-  590  .
-  591  /*------------------------------------------------------------------------*/
-  592  Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
-  593  =            (. OutOp := nil; .)
-  594    ( 
-  595      ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
-  596    | Literal  (. 
-  597          try
-  598            V := StrToFloat(LexString);
-  599            if Frac(V)=0 then
-  600              OutOp := TZcOpLiteral.Create(zctInt,V)
-  601            else
-  602              OutOp := TZcOpLiteral.Create(zctFloat,V);
-  603          except on EConvertError do
-  604            SynError(200);
-  605          end;
-  606       .)
-  607    | "(" Expr<OutOp> ")"
-  608  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
-  609      | "float"  | "int"    | "long" | "object"  | "sbyte"
-  610      | "short"  | "string" | "uint" | "ulong"   | "ushort"
-  611      ) "." ident *)
-  612    )
-  613  
-  614    {
-  615    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
-  616    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
-  617  /*  | "->" ident
-  618    | */
-  619    "." ident (.
-  620        Assert(OutOp.Kind=zcIdentifier);
-  621        OutOp.Id := OutOp.Id + '.' + LexString;
-  622      .)
-  623    | "(" (. Assert(OutOp.Kind=zcIdentifier);
-  624             OutOp.Kind:=zcFuncCall;
-  625           .)
-  626          [Argument<Op> (. OutOp.Children.Add(Op); .)
-  627            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
-  628            }
-  629          ]
-  630          (. 
-  631             if not VerifyFunctionCall(OutOp,S) then
-  632               ZError(S);
-  633          .)
-  634      ")"
-  635  
-  636    | "[" (. Assert(OutOp.Kind=zcIdentifier);
-  637             OutOp.Kind:=zcArrayAccess;
-  638           .)
-  639      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
-  640        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
-  641      "]" 
-  642  
-  643    }
-  644  .
-  645  /*------------------------------------------------------------------------*/
-  646  Literal
-  647  = intCon | realCon (* | stringCon | "true" | "false" | "null" *)
-  648  .
-  649  
-  650  END Zc.
+  546  =       (. OutOp := InOp; .)
+  547    { ("*"      (. Kind := zcMul; .)
+  548      | "/"     (. Kind := zcDiv; .)
+  549    (*  | "%" *)
+  550      ) Unary<Tmp>
+  551           (. OutOp := MakeBinary(Kind,InOp,Tmp);
+  552              InOp := OutOp;
+  553           .)
+  554      }
+  555  .
+  556  /*------------------------------------------------------------------------*/
+  557  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
+  558  =       (. LastOp := nil; Kind := zcNop; .)
+  559    {
+  560      (
+  561        (* "+" | *)
+  562        "-"   (. Kind := zcNegate; .) |
+  563        "++"  (. Kind := zcPreInc; .) |    
+  564        "--"  (. Kind := zcPreDec; .)
+  565        (* | "!" | "~" | "*" |  *)
+  566      )   
+  567      (. 
+  568         if Kind=zcNegate then
+  569         begin
+  570           Tmp := MakeOp(Kind);
+  571           if LastOp<>nil then
+  572             LastOp.Children.Add(Tmp);
+  573           LastOp := Tmp;
+  574         end else if Assigned(LastOp) then 
+  575           ZError('-- and ++ cannot be combined with other unary ops');
+  576      .)
+  577    }
+  578    Primary<Tmp>
+  579      (. 
+  580         if Kind in [zcNop,zcNegate] then
+  581         begin
+  582           if LastOp<>nil then
+  583           begin
+  584             LastOp.Children.Add(Tmp);
+  585             OutOp := LastOp;
+  586           end else
+  587             OutOp := Tmp;
+  588         end else 
+  589         begin
+  590           OutOp := MakePrePostIncDec(Kind,Tmp);
+  591         end;
+  592      .)
+  593  .
+  594  /*------------------------------------------------------------------------*/
+  595  Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
+  596  =            (. OutOp := nil; .)
+  597    ( 
+  598      ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
+  599    | Literal  (. 
+  600          try
+  601            V := StrToFloat(LexString);
+  602            if Frac(V)=0 then
+  603              OutOp := TZcOpLiteral.Create(zctInt,V)
+  604            else
+  605              OutOp := TZcOpLiteral.Create(zctFloat,V);
+  606          except on EConvertError do
+  607            SynError(200);
+  608          end;
+  609       .)
+  610    | "(" Expr<OutOp> ")"
+  611  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
+  612      | "float"  | "int"    | "long" | "object"  | "sbyte"
+  613      | "short"  | "string" | "uint" | "ulong"   | "ushort"
+  614      ) "." ident *)
+  615    )
+  616  
+  617    {
+  618    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
+  619    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
+  620  /*  | "->" ident
+  621    | */
+  622    "." ident (.
+  623        Assert(OutOp.Kind=zcIdentifier);
+  624        OutOp.Id := OutOp.Id + '.' + LexString;
+  625      .)
+  626    | "(" (. Assert(OutOp.Kind=zcIdentifier);
+  627             OutOp.Kind:=zcFuncCall;
+  628           .)
+  629          [Argument<Op> (. OutOp.Children.Add(Op); .)
+  630            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+  631            }
+  632          ]
+  633          (. 
+  634             if not VerifyFunctionCall(OutOp,S) then
+  635               ZError(S);
+  636          .)
+  637      ")"
+  638  
+  639    | "[" (. Assert(OutOp.Kind=zcIdentifier);
+  640             OutOp.Kind:=zcArrayAccess;
+  641           .)
+  642      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
+  643        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
+  644      "]" 
+  645  
+  646    }
+  647  .
+  648  /*------------------------------------------------------------------------*/
+  649  Literal
+  650  = intCon | realCon (* | stringCon | "true" | "false" | "null" *)
+  651  .
+  652  
+  653  END Zc.
 
     1 LL(1) error
    11 warnings

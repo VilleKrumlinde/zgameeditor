@@ -176,7 +176,7 @@ type
     CurrentFunction : TZcOpFunction;
     IsLibrary : boolean;
     procedure Gen(Op : TZcOp);
-    procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel);
+    procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
     function NewLabel : TZCodeLabel;
     procedure DefineLabel(Lbl : TZCodeLabel);
@@ -610,13 +610,19 @@ begin
   Labels.Add(Result);
 end;
 
-procedure TZCodeGen.GenJump(Kind: TExpOpJumpKind; Lbl: TZCodeLabel);
+procedure TZCodeGen.GenJump(Kind: TExpOpJumpKind; Lbl: TZCodeLabel; T : TZcDataType = zctFloat);
 var
   Op : TExpJump;
   U : TLabelUse;
 begin
   Op := TExpJump.Create(Target);
   Op.Kind := Kind;
+  case T of
+    zctFloat: Op._Type := jutFloat;
+    zctInt: Op._Type := jutInt;
+  else
+    raise ECodeGenError.Create('Invalid datatype for jump');
+  end;
   U := TLabelUse.Create;
   U.AdrPtr := @Op.Destination;
   U.AdrPC := Target.Count-1;
@@ -662,7 +668,7 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
     //Assert(Op.Arguments.Count=2);
     GenValue(Op.Child(0));
     GenValue(Op.Child(1));
-    GenJump(Kind,Lbl);
+    GenJump(Kind,Lbl,Op.Child(0).GetDataType);
   end;
 
   procedure DoGenAnd;
@@ -684,6 +690,7 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
+    //**todo datatype?
     GenValue(Op);
     Target.AddComponent( MakeConstOp(0) );
     GenJump(jsJumpNE,Lbl);
@@ -713,7 +720,7 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
     //Assert(Op.Arguments.Count=2);
     GenValue(Op.Child(0));
     GenValue(Op.Child(1));
-    GenJump(Kind,Lbl);
+    GenJump(Kind,Lbl,Op.Child(0).GetDataType);
   end;
 
   procedure DoGenAnd;
@@ -735,6 +742,7 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
+    //**todo datatype?
     GenValue(Op);
     Target.AddComponent( MakeConstOp(0) );
     GenJump(jsJumpEQ,Lbl);
