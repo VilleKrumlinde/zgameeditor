@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Test bars www.emix8.org">
+  <OnLoaded>
+    <DefineVariable Name="Temp1"/>
+    <SpawnModel Model="TestModel"/>
+  </OnLoaded>
+  <Content>
+    <Bitmap Name="TestBitmap" Width="5">
+      <Producers>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[
+//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+Temp1=1/7;
+if(X<(Temp1*1)) {
+  Temp1=255/192;
+  this.Pixel.R=Temp1;
+  this.Pixel.G=Temp1;
+  this.Pixel.B=Temp1;
+} else if(X<(Temp1*2)) {
+  Temp1=255/192;
+  this.Pixel.R=Temp1;
+  this.Pixel.G=Temp1;
+  this.Pixel.B=0;
+} else if(X<(Temp1*3)) {
+  Temp1=255/192;
+  this.Pixel.R=0;
+  this.Pixel.G=Temp1;
+  this.Pixel.B=Temp1;
+} else if(X<(Temp1*4)) {
+  Temp1=255/192;
+  this.Pixel.R=0;
+  this.Pixel.G=Temp1;
+  this.Pixel.B=0;
+} else if(X<(Temp1*5)) {
+  Temp1=255/192;
+  this.Pixel.R=Temp1;
+  this.Pixel.G=0;
+  this.Pixel.B=Temp1;
+} else if(X<(Temp1*6)) {
+  Temp1=255/192;
+  this.Pixel.R=Temp1;
+  this.Pixel.G=0;
+  this.Pixel.B=0;
+} else if(X<(Temp1*7)) {
+  Temp1=255/192;
+  this.Pixel.R=0;
+  this.Pixel.G=0;
+  this.Pixel.B=Temp1;
+}
+
+this.Pixel.A=1;]]>
+          </Expression>
+        </BitmapExpression>
+      </Producers>
+    </Bitmap>
+    <Material Name="TestMaterial" Texture="TestBitmap" TexCoords="1"/>
+    <Model Name="TestModel" Scale="11 10 1">
+      <OnRender>
+        <UseMaterial Material="TestMaterial"/>
+        <RenderSprite/>
+      </OnRender>
+    </Model>
+  </Content>
+</ZApplication>

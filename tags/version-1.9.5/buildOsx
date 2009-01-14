@@ -1,0 +1,3 @@
+#! /bin/sh
+
+fpc -XXis -O3 -dZZDC_SDL -dMINIMAL -FU./Build/obj -Mdelphi -k-L/Library/Frameworks/SDL.framework -k"-L/Library/Frameworks/JEDI-SDL.framework/SDL -framework SDL -framework OpenGL -framework Cocoa" -XMSDL_main ZzDC.dpr  

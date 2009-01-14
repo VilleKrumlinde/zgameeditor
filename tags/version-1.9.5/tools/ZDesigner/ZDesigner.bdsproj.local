@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2006-11-18 16:59:23.812.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\MemCheck.pas=</Transaction>
+    <Transaction>2006-11-22 17:11:57.234.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmMain.pas=</Transaction>
+    <Transaction>2006-11-22 17:11:57.234.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmMain.dfm=</Transaction>
+    <Transaction>2007-01-02 16:42:11.156.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmAbout.pas</Transaction>
+    <Transaction>2007-01-02 16:42:11.171.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmAbout.dfm</Transaction>
+    <Transaction>2007-01-24 10:03:08.687.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\uHelp.pas</Transaction>
+    <Transaction>2007-02-02 17:11:59.593.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmToolMissing.pas</Transaction>
+    <Transaction>2007-02-02 17:11:59.609.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmToolMissing.dfm</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor: FileDemo">
+  <OnLoaded>
+    <DefineVariable Name="Temp1"/>
+    <DefineConstant Name="TileSize" Value="0.3"/>
+    <DefineConstant Name="TileCountX" Value="29"/>
+    <DefineConstant Name="TileCountY" Value="19"/>
+    <FileAction File="LevelLayoutFile"/>
+  </OnLoaded>
+  <Content>
+    <Model Name="TileModel" Position="4.05 -2.55 0">
+      <OnRender>
+        <RenderSetColor Color="0.77 0.07 0.77 1"/>
+        <RenderMesh Mesh="TileMesh"/>
+      </OnRender>
+      <OnUpdate>
+        <ZExpression>
+          <Expression>
+<![CDATA[
+Temp1=noise3(abs(CurrentModel.Position.X),abs(CurrentModel.Position.Y),App.Time*0.25);
+CurrentModel.Scale.X=1 + Temp1;
+CurrentModel.Scale.Y=1 + Temp1;]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+    </Model>
+    <Mesh Name="TileMesh">
+      <Producers>
+        <MeshSphere Scale="0.4 0.4 0.4"/>
+      </Producers>
+    </Mesh>
+    <Group Name="FileGroup">
+      <Children>
+        <File Name="LevelLayoutFile" FileName="TestFile.txt">
+          <OnRead>
+            <ZExpression Comment="Init CurY" Expression="TileCurY=(TileCountY/2*TileSize);"/>
+            <Repeat Comment="Y loop">
+              <OnIteration>
+                <ZExpression Comment="Init CurX" Expression="TileCurX=-(TileCountX/2 * TileSize);"/>
+                <Repeat Comment="X loop" WhileExp="return this.Iteration&lt;TileCountX+2;">
+                  <OnIteration>
+                    <FileMoveData Property="TileID Value"/>
+                    <Condition Comment="Spawn tile on &apos;A&apos; (ascii 65)" Expression="return TileID==65;">
+                      <OnTrue>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[
+TileModel.Position.X=TileCurX;
+TileModel.Position.Y=TileCurY;]]>
+                          </Expression>
+                        </ZExpression>
+                        <SpawnModel Model="TileModel"/>
+                      </OnTrue>
+                    </Condition>
+                    <ZExpression Comment="Update CurX" Expression="TileCurX+=TileSize;"/>
+                  </OnIteration>
+                </Repeat>
+                <ZExpression Comment="Update CurY" Expression="TileCurY-=TileSize;"/>
+              </OnIteration>
+              <WhileExp>
+<![CDATA[
+//this.Iteration=current iteration nr. Return false to end loop.
+return this.Iteration<TileCountY;]]>
+              </WhileExp>
+            </Repeat>
+          </OnRead>
+        </File>
+        <DefineVariable Name="TileID"/>
+        <DefineVariable Name="TileCurX"/>
+        <DefineVariable Name="TileCurY"/>
+      </Children>
+    </Group> <!-- FileGroup -->
+
+  </Content>
+</ZApplication>
