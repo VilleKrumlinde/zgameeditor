@@ -313,6 +313,7 @@ type
     procedure ReplaceActiveXGuid(const OutFile: string);
     procedure BuildActiveXTypelibrary(const ClsGuid: TGUID; const OutFile: string);
     procedure ReplaceTypeLibResource(const InFile, OutFile, DataFile: string);
+    procedure DrawOnRenderComponent;
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -331,7 +332,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.5';
+  AppVersion = '1.9.6b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -828,6 +829,8 @@ begin
       DrawMesh
     else if (ShowNode is TModel) then
       DrawModel
+    else if ((ShowNode is TStateBase))then
+      DrawOnRenderComponent
     else
     begin
       //Prevent displaying junk
@@ -885,11 +888,11 @@ begin
   else if (ShowNode is TZBitmap) or
     (ShowNode is TMesh) or
     (ShowNode is TZApplication) or
-    (ShowNode is TModel) then
+    (ShowNode is TModel) or
+    (ShowNode is TStateBase) then
   begin
-    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh);
+    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh) or (ShowNode is TStateBase);
     AppControlPanel.Visible := ShowNode is TZApplication;
-//  ZLog.GetLog(Self.ClassName).Write( inttostr(byte(AppControlPanel.Visible)));
     ViewerPageControl.ActivePage := ViewerGlTabSheet;
     ResetCamera;
   end
@@ -981,11 +984,7 @@ end;
 procedure TEditorForm.OnTreeSelectItem(Sender: TObject; Node : TTreeNode);
 begin
   if (Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>nil) then
-  begin
-    SelectComponent( Tree.ZSelected.Component );
-    if GetAsyncKeyState(VK_SHIFT)<0 then
-      LockShowAction.Execute;
-  end
+    SelectComponent( Tree.ZSelected.Component )
   else
     //Dölj property editor om ingen component är selectad
     Ed.SetComponent(nil);
@@ -1245,6 +1244,52 @@ begin
 //  glFlush;
 end;
 
+
+procedure TEditorForm.DrawOnRenderComponent;
+var
+  OnRender : TZComponentList;
+begin
+  OnRender := nil;
+  if ShowNode is TStateBase then
+    OnRender := (ShowNode as TStateBase).OnRender;
+  if OnRender=nil then
+    Exit;
+
+  glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  glMatrixMode(GL_MODELVIEW);
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+    if WireframeCheckBox.Checked then
+      glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
+    else
+      SetupGLShading;
+
+    glLoadIdentity();
+    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
+    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
+    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
+    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
+
+  Renderer.Render_Begin;
+  try
+    OnRender.ExecuteCommands;
+  except
+    on E : EZHalted do
+    begin //Detect errors in onrender-list
+      RenderAborted := True;
+      raise;
+    end;
+  end;
+  Renderer.Render_End;
+
+  glPopAttrib();
+end;
 
 procedure TEditorForm.DrawModel;
 var
@@ -2213,6 +2258,7 @@ begin
   begin
     ShowNode := nil;
     Tree.LockShowNode := nil;
+    LockShow := False;
   end;
 
   //Remove all names from symboltable
@@ -2624,6 +2670,7 @@ begin
   Tmp := L[I-1];
   L[I-1] := C;
   L[I] := Tmp;
+  L.Change;
   Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index-1],naInsert);
   SetFileChanged(True);
 end;
@@ -2640,6 +2687,7 @@ begin
   Tmp := L[I+1];
   L[I+1] := C;
   L[I] := Tmp;
+  L.Change;
   if I<L.Count-2 then
     Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index+2],naInsert)
   else

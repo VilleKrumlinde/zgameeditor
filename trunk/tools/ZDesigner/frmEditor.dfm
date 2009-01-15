@@ -45,7 +45,6 @@ object EditorForm: TEditorForm
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-      ExplicitHeight = 255
     end
   end
   object ViewerPanel: TPanel
@@ -274,12 +273,9 @@ object EditorForm: TEditorForm
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
-        ExplicitLeft = 200
-        ExplicitWidth = 430
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitWidth = 422
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -287,7 +283,6 @@ object EditorForm: TEditorForm
             Height = 50
             Align = alTop
             TabOrder = 0
-            ExplicitWidth = 422
             object ViewTranslateLabel: TLabel
               Left = 416
               Top = 5
@@ -382,7 +377,6 @@ object EditorForm: TEditorForm
               BevelOuter = bvNone
               ParentBackground = False
               TabOrder = 4
-              ExplicitLeft = 167
               DesignSize = (
                 254
                 48)
@@ -445,7 +439,6 @@ object EditorForm: TEditorForm
             Height = 41
             Align = alTop
             TabOrder = 1
-            ExplicitWidth = 422
             object AppStartButton: TBitBtn
               Left = 7
               Top = 6
@@ -540,7 +533,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
-          ExplicitWidth = 422
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
@@ -551,15 +543,15 @@ object EditorForm: TEditorForm
             ShowHint = True
             TabOrder = 0
             TabStop = True
-            ExplicitWidth = 422
+            ExplicitWidth = 322
             ExplicitHeight = 564
             inherited PageControl1: TPageControl
               Width = 322
               Height = 564
-              ExplicitWidth = 422
+              ExplicitWidth = 322
               ExplicitHeight = 564
               inherited TabSheet1: TTabSheet
-                ExplicitWidth = 414
+                ExplicitWidth = 314
                 ExplicitHeight = 536
                 inherited Label8: TLabel
                   Width = 55
@@ -637,7 +629,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitWidth = 422
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -646,7 +637,7 @@ object EditorForm: TEditorForm
             Align = alClient
             TabOrder = 0
             TabStop = True
-            ExplicitWidth = 422
+            ExplicitWidth = 322
             ExplicitHeight = 564
           end
         end
@@ -654,7 +645,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitWidth = 422
         end
       end
     end

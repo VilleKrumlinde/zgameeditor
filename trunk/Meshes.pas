@@ -31,6 +31,11 @@ type
   PIndicesArray = ^TIndicesArray;
   TIndicesArray = array[0..10000] of TMeshVertexIndex;
 
+  PMeshVertexColor = ^TMeshVertexColor;
+  TMeshVertexColor = integer;
+  PMeshColorArray = ^TMeshColorArray;
+  TMeshColorArray = array[0..10000] of TMeshVertexColor;
+
   TMesh = class(TContent)
   private
     procedure FreeData;
@@ -48,7 +53,7 @@ type
     IndicesCount : integer;
     Normals : PZVector3Array;
     TexCoords : PZVector2Array;
-    Colors : PInteger;
+    Colors : PMeshColorArray;
     Style : (msTris,msQuads);
     {$ifndef minimal}
     BoundSphere :
@@ -57,13 +62,13 @@ type
         Radius : single;
       end;
     {$endif}
-    destructor Destroy; override;
     procedure Scale(const V : TZVector3f);
     procedure MakeNet(XCount,YCount : integer);
     procedure BeforeRender;
     procedure CreateData(VQuantity,TQuantity : integer; WithTexCoords : boolean = False;
       WithColors : boolean = False);
     procedure ComputeNormals;
+    destructor Destroy; override;
   end;
 
   TMeshProducer = class(TContentProducer)
@@ -123,6 +128,24 @@ type
     HasTextureCoords : boolean;
     MeshData : TZBinaryPropValue;
   end;
+
+  //Combine the vertexes of two meshes
+  TMeshCombine = class(TMeshProducer)
+  protected
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+  end;
+
+  //Loads a copy of another mesh onto the stack
+  TMeshLoad = class(TMeshProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+    Mesh : TMesh;
+    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+  end;
+
 
   //State for models
   TModelState = class(TStateBase)
@@ -382,7 +405,7 @@ begin
   if WithTexCoords then
     GetMem(TexCoords, SizeOf(TZVector2f) * VerticesCount);
   if WithColors then
-    GetMem(Colors, SizeOf(Integer) * VerticesCount);
+    GetMem(Colors, SizeOf(TMeshVertexColor) * VerticesCount);
 end;
 
 procedure TMesh.FreeData;
@@ -966,7 +989,7 @@ procedure TMeshExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   Mesh : TMesh;
   I : integer;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
@@ -975,7 +998,7 @@ begin
 
   if VertexColors and (Mesh.Colors=nil) then
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
-  PColor := Mesh.Colors;
+  PColor := PMeshVertexColor(Mesh.Colors);
 
   for I := 0 to Mesh.VerticesCount-1 do
   begin
@@ -1431,7 +1454,7 @@ var
   MinV,DiffV : TZVector3f;
   W : word;
   Sm,Sm2 : smallint;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
   PTex : PZVector2f;
 begin
   Stream := TZInputStream.CreateFromMemory(MeshData.Data,MeshData.Size);
@@ -1476,7 +1499,7 @@ begin
   //Vertex colors
   if Self.HasVertexColors then
   begin
-    PColor := Mesh.Colors;
+    PColor := PMeshVertexColor(Mesh.Colors);
     Stream.Read(PColor^,VertCount * 4);
   end;
 
@@ -1508,6 +1531,88 @@ begin
   Stack.Push(Mesh);
 end;
 
+{ TMeshCombine }
+
+procedure TMeshCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  M,Mesh1,Mesh2 : TMesh;
+  CopyTex,CopyCols : boolean;
+  I : integer;
+begin
+  if Stack.Count<2 then
+    Exit;
+
+  Mesh1 := TMesh(Stack.Pop);
+  Mesh2 := TMesh(Stack.Pop);
+
+  M := TMesh.Create(nil);
+
+  CopyTex := (Mesh1.TexCoords<>nil) and (Mesh2.TexCoords<>nil);
+  CopyCols := (Mesh1.Colors<>nil) and (Mesh2.Colors<>nil);
+  M.CreateData(Mesh1.VerticesCount + Mesh2.VerticesCount,
+    (Mesh1.IndicesCount + Mesh2.IndicesCount) div 3,
+    CopyTex,CopyCols);
+
+  Move(Mesh1.Vertices^,M.Vertices^,Mesh1.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh2.Vertices^,M.Vertices^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector3f));
+
+  Move(Mesh1.Normals^,M.Normals^,Mesh1.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh2.Normals^,M.Normals^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector3f));
+
+  Move(Mesh1.Indices^,M.Indices^,Mesh1.IndicesCount * SizeOf(TMeshVertexIndex));
+  Move(Mesh2.Indices^,M.Indices^[Mesh1.IndicesCount],Mesh2.IndicesCount * SizeOf(TMeshVertexIndex));
+  for I := Mesh1.IndicesCount to M.IndicesCount - 1 do
+    Inc(M.Indices^[I],Mesh1.VerticesCount);
+
+  if CopyCols then
+  begin
+    Move(Mesh1.Colors^,M.Colors^,Mesh1.VerticesCount * SizeOf(TMeshVertexColor));
+    Move(Mesh2.Colors^,M.Colors^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TMeshVertexColor));
+  end;
+
+  if CopyTex then
+  begin
+    Move(Mesh1.TexCoords^,M.TexCoords^,Mesh1.VerticesCount * SizeOf(TZVector2f));
+    Move(Mesh2.TexCoords^,M.TexCoords^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector2f));
+  end;
+
+  Stack.Push(M);
+
+  Mesh1.Free;
+  Mesh2.Free;
+end;
+
+{ TMeshLoad }
+
+procedure TMeshLoad.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}integer(@Mesh) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
+end;
+
+{$ifndef minimal}
+function TMeshLoad.GetDisplayName: String;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(Mesh) then
+    Result := Result + '  ' + Mesh.Name;
+end;
+{$endif}
+
+procedure TMeshLoad.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  M : TMesh;
+begin
+  if Mesh=nil then
+    Exit;
+
+  M := TMesh(Mesh.Clone);
+  M.RefreshFromProducers;
+
+  Stack.Push(M);
+end;
+
 initialization
 
   ZClasses.Register(TMesh,MeshClassId);
@@ -1524,6 +1629,10 @@ initialization
   ZClasses.Register(TMeshImport,MeshImportClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate := True;{$endif}
+  ZClasses.Register(TMeshCombine,MeshCombineClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+  ZClasses.Register(TMeshLoad,MeshLoadClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
 
   ZClasses.Register(TModel,ModelClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 13;{$endif}

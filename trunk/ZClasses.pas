@@ -36,7 +36,9 @@ type
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
  BitmapLoadClassId,BitmapCombineClassId,
  MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
- MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,RemoveAllModelsClassId,
+ MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
+ MeshCombineClassId,MeshLoadClassId,
+ RemoveAllModelsClassId,
  MeshImplicitClassId,ImplicitPrimitiveClassId,ImplicitExpressionClassId,ImplicitCombineClassId,
  ImplicitWarpClassId,MeshImportClassId,
  FontClassId,ModelStateClassId,SetModelStateClassId,
@@ -2895,12 +2897,18 @@ procedure TZComponentList.AddComponent(Component: TZComponent);
 begin
   Add(Component);
   Component.OwnerList := Self;
+  {$ifndef minimal}
+  IsChanged:=True;
+  {$endif}
 end;
 
 procedure TZComponentList.RemoveComponent(Component: TZComponent);
 begin
   Component.OwnerList := nil;
   Remove(Component);
+  {$ifndef minimal}
+  IsChanged:=True;
+  {$endif}
 end;
 
 
