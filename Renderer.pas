@@ -1473,7 +1473,7 @@ var
   I : integer;
   P : PZVector3f;
   Tex : PZVector2f;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -1486,7 +1486,7 @@ begin
 
   if VertexColors and (Mesh.Colors=nil) then
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
-  PColor := Mesh.Colors;
+  PColor := PMeshVertexColor(Mesh.Colors);
 
   if (RenderVertexExpression.Code<>nil) then
   begin
