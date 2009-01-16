@@ -191,6 +191,7 @@ type
     procedure ExecuteCommands;
     {$ifndef minimal}
     procedure DesignerReset;
+    procedure InsertComponent(Component: TZComponent; Index : integer);
     {$endif}
   end;
 
@@ -2897,18 +2898,12 @@ procedure TZComponentList.AddComponent(Component: TZComponent);
 begin
   Add(Component);
   Component.OwnerList := Self;
-  {$ifndef minimal}
-  IsChanged:=True;
-  {$endif}
 end;
 
 procedure TZComponentList.RemoveComponent(Component: TZComponent);
 begin
   Component.OwnerList := nil;
   Remove(Component);
-  {$ifndef minimal}
-  IsChanged:=True;
-  {$endif}
 end;
 
 
@@ -2940,6 +2935,23 @@ var
 begin
   for I := 0 to Count-1 do
     TZComponent(Self[I]).DesignerReset;
+end;
+
+procedure TZComponentList.InsertComponent(Component: TZComponent; Index : integer);
+var
+  I : integer;
+begin
+  Component.OwnerList := Self;
+
+  Add(nil);
+  I := Count-1;
+  while I>Index do
+  begin
+    Items[I] := Items[I-1];
+    Dec(I);
+  end;
+
+  Items[ Index ] := Component;
 end;
 {$endif}
 

@@ -185,6 +185,9 @@ type
     N10: TMenuItem;
     N11: TMenuItem;
     Panel2: TPanel;
+    N12: TMenuItem;
+    UndoDeleteAction: TAction;
+    Undodelete1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -240,6 +243,8 @@ type
     procedure FindComponentActionExecute(Sender: TObject);
     procedure NormalsCheckBoxClick(Sender: TObject);
     procedure ShowCompilerDetailsActionExecute(Sender: TObject);
+    procedure UndoDeleteActionUpdate(Sender: TObject);
+    procedure UndoDeleteActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -266,6 +271,8 @@ type
     PackerProg,PackerParams : string;
     ZcGlobalNames : TObjectList;
     GuiLayout : integer;
+    UndoNodes,UndoIndices : TObjectList;
+    UndoParent : TZComponentTreeNode;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -293,7 +300,7 @@ type
     procedure OnGLPanelMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     function InsertAndRenameComponent(InsertC: TZComponent;
-      DestTreeNode: TZComponentTreeNode) : TZComponentTreeNode;
+      DestTreeNode: TZComponentTreeNode; Index : integer = -1) : TZComponentTreeNode;
     procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString);
     procedure OpenProject(const FileName: string);
     procedure NewProject;
@@ -314,6 +321,7 @@ type
     procedure BuildActiveXTypelibrary(const ClsGuid: TGUID; const OutFile: string);
     procedure ReplaceTypeLibResource(const InFile, OutFile, DataFile: string);
     procedure DrawOnRenderComponent;
+    procedure WipeUndoHistory;
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -435,6 +443,9 @@ begin
   SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
 
+  UndoNodes := TObjectList.Create(True);
+  UndoIndices := TObjectList.Create(False);
+
   Platform_InitGlobals;  //Nollställ timer etc
 
   Assert(Self.SoundEditFrame1.Osc1WaveformCombo.Items.Count>0,'Dåligt bygge: osc count=0');
@@ -517,10 +528,12 @@ begin
 
   ViewerPageControl.ActivePage := ViewerBlankTabSheet;
 
-  ReadProjectSettingsFromIni;
-
   //Must compile directly after load because no zc-instructions are saved in the xml
   CompileAll;
+
+  //Read settings last. Must be after compileall because it selects nodes which
+  //will call RefreshContent that requires to have expressions already compiled.
+  ReadProjectSettingsFromIni;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -660,6 +673,13 @@ begin
   finally
     Ini.Free;
   end;
+end;
+
+procedure TEditorForm.WipeUndoHistory;
+begin
+  UndoNodes.Clear;
+  UndoIndices.Clear;
+  UndoParent := nil;
 end;
 
 procedure TEditorForm.WriteAppSettingsToIni;
@@ -1375,6 +1395,30 @@ begin
     Glp.Invalidate;
 end;
 
+procedure TEditorForm.UndoDeleteActionExecute(Sender: TObject);
+var
+  C : TZComponent;
+  Index : integer;
+begin
+  while UndoNodes.Count>0 do
+  begin
+    C := UndoNodes[UndoNodes.Count-1] as TZComponent;
+    UndoNodes.Extract( C );
+
+    Index := Integer(UndoIndices[UndoIndices.Count-1]);
+    UndoIndices.Delete(UndoIndices.Count-1);
+
+    InsertAndRenameComponent(C,UndoParent,Index);
+  end;
+
+  WipeUndoHistory;
+end;
+
+procedure TEditorForm.UndoDeleteActionUpdate(Sender: TObject);
+begin
+  UndoDeleteAction.Enabled := UndoNodes.Count>0;
+end;
+
 procedure TEditorForm.Update1Click(Sender: TObject);
 begin
   Timer1.Enabled := (Sender as TMenuItem).Checked;
@@ -1393,6 +1437,8 @@ begin
   PredefinedConstants.Free;
   ZcGlobalNames.Free;
   Renderer.CleanUp;
+  UndoNodes.Free;
+  UndoIndices.Free;
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
@@ -2246,8 +2292,14 @@ var
   C,CurC : TZComponent;
   List : TObjectList;
   I : integer;
+  Node : TZComponentTreeNode;
 begin
-  C := Tree.ZSelected.Component;
+  WipeUndoHistory;
+  UndoParent := Tree.ZSelected.Parent as TZComponentTreeNode;
+
+  Node := Tree.ZSelected;
+
+  C := Node.Component;
   if HasReferers(Root, C) then
   begin
     ShowMessage('Cannot delete, other components refers to this component.');
@@ -2275,11 +2327,13 @@ begin
     List.Free;
   end;
 
-  C.Free;
+  UndoNodes.Add(C);
+  UndoParent.ComponentList.RemoveComponent(C);
+  UndoIndices.Add( TObject(UndoParent.IndexOf(Node)) );
+  Node.Delete;
 
   //Signalera till parentlistan att den är ändrad
-  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
-  Tree.ZSelected.Delete;
+  UndoParent.ComponentList.Change;
   SelectComponent(nil);
   SetFileChanged(True);
 end;
@@ -2406,7 +2460,10 @@ begin
   begin
     //Flytta zcomponent
     SourceC.OwnerList.RemoveComponent(SourceC);
+    SourceC.OwnerList.Change;
+
     DestList.AddComponent(SourceC);
+    DestList.Change;
 
     //Flytta trädnoder
     FromNode.MoveTo(ToNode,naAddChild);
@@ -2556,7 +2613,8 @@ begin
 end;
 
 function TEditorForm.InsertAndRenameComponent(InsertC : TZComponent;
-  DestTreeNode : TZComponentTreeNode) : TZComponentTreeNode;
+  DestTreeNode : TZComponentTreeNode;
+  Index : integer = -1) : TZComponentTreeNode;
 var
   DestList : TZComponentList;
   C : TZComponent;
@@ -2567,6 +2625,10 @@ var
 begin
   Result := nil;
   DestList := DestTreeNode.ComponentList;
+
+  if (Index>=0) and (Index>=DestList.Count) then
+    Index := -1;
+
   List := TObjectList.Create(False);
   try
     GetAllObjects(InsertC,List);
@@ -2615,9 +2677,13 @@ begin
   finally
     List.Free;
   end;
-  DestList.AddComponent(InsertC);
+  if Index=-1 then
+    DestList.AddComponent(InsertC)
+  else
+    DestList.InsertComponent(InsertC,Index);
+  DestList.Change;
   SetFileChanged(True);
-  Result := Tree.AddNode(InsertC,DestTreeNode)as TZComponentTreeNode;
+  Result := Tree.AddNode(InsertC,DestTreeNode,Index)as TZComponentTreeNode;
 end;
 
 procedure TEditorForm.PasteComponentActionExecute(Sender: TObject);
@@ -2725,6 +2791,8 @@ begin
   WriteProjectSettingsToIni;
 
   SetShowNode(nil);
+
+  WipeUndoHistory;
 
   Tree.Selected := nil;
   LockShow := False;

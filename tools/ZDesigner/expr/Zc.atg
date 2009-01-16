@@ -81,9 +81,10 @@ TOKENS
   /*--------------------------------------------------------------------------------*/
         intCon =
                 ( digit {digit}
-                | ("0x" | "0X") hexDigit {hexDigit}
+                (* | ("0x" | "0X") hexDigit {hexDigit} *)
                 )
-                ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"].
+                (* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] *)
+                . 
   /*--------------------------------------------------------------------------------*/
         realCon =
                 "." digit {digit}
@@ -592,17 +593,20 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
     .)
 .
 /*------------------------------------------------------------------------*/
-Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
+Primary<var OutOp : TZcOp>         
+(. var Op : TZcOp; S : string; V : single; 
+     Typ : TZcDataType;
+.)
 =            (. OutOp := nil; .)
   ( 
     ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
-  | Literal  (. 
+  | Literal<Typ>  (. 
         try
-          V := StrToFloat(LexString);
-          if Frac(V)=0 then
-            OutOp := TZcOpLiteral.Create(zctInt,V)
-          else
-            OutOp := TZcOpLiteral.Create(zctFloat,V);
+          S := LexString;
+          if S[ Length(S) ] in ['F','f'] then
+            S := Copy(S,1,Length(S)-1);
+          V := StrToFloat(S);
+          OutOp := TZcOpLiteral.Create(Typ,V)
         except on EConvertError do
           SynError(200);
         end;
@@ -646,8 +650,10 @@ Primary<var OutOp : TZcOp>         (. var Op : TZcOp; S : string; V : single; .)
   }
 .
 /*------------------------------------------------------------------------*/
-Literal
-= intCon | realCon (* | stringCon | "true" | "false" | "null" *)
+Literal<var Typ : TZcDataType>
+= intCon (. Typ :=zctInt; .) | 
+  realCon (. Typ := zctFloat; .) 
+  (* | stringCon | "true" | "false" | "null" *)
 .
 
 END Zc.
