@@ -60,7 +60,7 @@ type
   public
     ShowOpCodes : boolean;
     LockShowNode : TTreeNode;
-    function AddNode(C : TZComponent; Parent : TTreenode) : TTreeNode;
+    function AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
     procedure SetRootComponent(C : TZComponent);
     function FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;
     procedure RefreshNode(Node : TTreeNode; C : TZComponent);
@@ -726,12 +726,17 @@ begin
   end;
 end;
 
-function TZComponentTreeView.AddNode(C : TZComponent; Parent : TTreenode) : TTreeNode;
+function TZComponentTreeView.AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
 var
   Node : TZComponentTreeNode;
 begin
   Assert(C<>nil);
-  Node := Items.AddChild(Parent,'') as TZComponentTreeNode;
+
+  if Index=-1 then
+    Node := Items.AddChild(Parent,'') as TZComponentTreeNode
+  else
+    Node := Items.Insert(Parent.Item[Index],'') as TZComponentTreeNode;
+
   Node.Component := C;
   Node.ImageIndex := ComponentManager.GetInfo(C).ImageIndex;
   Node.SelectedIndex := Node.ImageIndex;
