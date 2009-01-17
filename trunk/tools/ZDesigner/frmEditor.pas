@@ -380,6 +380,8 @@ begin
   Tree.OnDragDrop := OnTreeDragDrop;
   Tree.DragMode := dmAutomatic;
   Tree.RightClickSelect := True;
+  Tree.MultiSelect := True;
+  Tree.MultiSelectStyle := [msControlSelect, msShiftSelect, msSiblingOnly];
 
   Glp := TCustomGLPanel.Create(Self);
   Glp.Align := alClient;
@@ -2291,46 +2293,55 @@ procedure TEditorForm.DeleteComponentActionExecute(Sender: TObject);
 var
   C,CurC : TZComponent;
   List : TObjectList;
-  I : integer;
+  I,J : integer;
   Node : TZComponentTreeNode;
+  NodeList : TObjectList;
 begin
   WipeUndoHistory;
   UndoParent := Tree.ZSelected.Parent as TZComponentTreeNode;
 
-  Node := Tree.ZSelected;
-
-  C := Node.Component;
-  if HasReferers(Root, C) then
-  begin
-    ShowMessage('Cannot delete, other components refers to this component.');
-    Exit;
-  end;
-
-  if C=ShowNode then
-  begin
-    ShowNode := nil;
-    Tree.LockShowNode := nil;
-    LockShow := False;
-  end;
-
-  //Remove all names from symboltable
-  List := TObjectList.Create(False);
+  NodeList := Tree.SortSelections;
   try
-    GetAllObjects(C,List);
-    for I := 0 to List.Count - 1 do
+    for J := 0 to NodeList.Count - 1 do
     begin
-      CurC := List[I] as TZComponent;
-      if CurC.Name<>'' then
-        SymTab.Remove(CurC.Name);
+      Node := NodeList[J] as TZComponentTreeNode;
+
+      C := Node.Component;
+      if HasReferers(Root, C) then
+      begin
+        ShowMessage('Cannot delete, other components refers to this component.');
+        Exit;
+      end;
+
+      if C=ShowNode then
+      begin
+        ShowNode := nil;
+        Tree.LockShowNode := nil;
+        LockShow := False;
+      end;
+
+      //Remove all names from symboltable
+      List := TObjectList.Create(False);
+      try
+        GetAllObjects(C,List);
+        for I := 0 to List.Count - 1 do
+        begin
+          CurC := List[I] as TZComponent;
+          if CurC.Name<>'' then
+            SymTab.Remove(CurC.Name);
+        end;
+      finally
+        List.Free;
+      end;
+
+      UndoNodes.Add(C);
+      UndoParent.ComponentList.RemoveComponent(C);
+      UndoIndices.Add( TObject(UndoParent.IndexOf(Node)) );
+      Node.Delete;
     end;
   finally
-    List.Free;
+    NodeList.Free;
   end;
-
-  UndoNodes.Add(C);
-  UndoParent.ComponentList.RemoveComponent(C);
-  UndoIndices.Add( TObject(UndoParent.IndexOf(Node)) );
-  Node.Delete;
 
   //Signalera till parentlistan att den är ändrad
   UndoParent.ComponentList.Change;
@@ -2438,35 +2449,46 @@ var
   SourceC : TZComponent;
   DestList : TZComponentList;
   IsCopy : boolean;
+  I : integer;
+  Nodes : TObjectList;
 begin
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
-  FromNode:=Tree.Selected;
-  ToNode:=Tree.DropTarget;
-  if (FromNode=nil) or (ToNode=nil) then
-    Exit;
-  if ToNode.HasAsParent(FromNode) and (not IsCopy) then
-    Exit;
-  SourceC := (FromNode as TZComponentTreeNode).Component;
-  if not Assigned(SourceC) then
-    Exit;
-  DestList := (ToNode as TZComponentTreeNode).ComponentList;
-  if not Assigned(DestList) then
-    Exit;
 
-  if GetAsyncKeyState(VK_CONTROL)<0 then
-    //Kopiera komponent ifall CTRL är nedtryckt
-    InsertAndRenameComponent(SourceC.Clone,ToNode as TZComponentTreeNode)
-  else
-  begin
-    //Flytta zcomponent
-    SourceC.OwnerList.RemoveComponent(SourceC);
-    SourceC.OwnerList.Change;
+  Nodes := Tree.SortSelections;
+  try
+    for I := 0 to Nodes.Count - 1 do
+    begin
+      FromNode:=Nodes[I] as TTreeNode;
+      ToNode:=Tree.DropTarget;
+      if (FromNode=nil) or (ToNode=nil) then
+        Exit;
+      if ToNode.HasAsParent(FromNode) and (not IsCopy) then
+        Exit;
+      SourceC := (FromNode as TZComponentTreeNode).Component;
+      if not Assigned(SourceC) then
+        Exit;
+      DestList := (ToNode as TZComponentTreeNode).ComponentList;
+      if not Assigned(DestList) then
+        Exit;
 
-    DestList.AddComponent(SourceC);
-    DestList.Change;
+      if IsCopy then
+        //Kopiera komponent ifall CTRL är nedtryckt
+        InsertAndRenameComponent(SourceC.Clone,ToNode as TZComponentTreeNode)
+      else
+      begin
+        //Flytta zcomponent
+        SourceC.OwnerList.Change;
+        SourceC.OwnerList.RemoveComponent(SourceC);
 
-    //Flytta trädnoder
-    FromNode.MoveTo(ToNode,naAddChild);
+        DestList.AddComponent(SourceC);
+        DestList.Change;
+
+        //Flytta trädnoder
+        FromNode.MoveTo(ToNode,naAddChild);
+      end;
+    end;
+  finally
+    Nodes.Free;
   end;
   SetFileChanged(True);
 end;
@@ -2570,8 +2592,33 @@ procedure TEditorForm.CopyComponentActionExecute(Sender: TObject);
 var
   Stream : TMemoryStream;
   S : string;
+  C : TZComponent;
+  Group : TLogicalGroup;
+  I : integer;
+  Nodes : TObjectList;
 begin
-  Stream := ComponentManager.SaveXmlToStream(Tree.ZSelected.Component) as TMemoryStream;
+  Group := nil;
+  if Tree.SelectionCount>1 then
+  begin
+    //Copy several: Create group component as root for the copies
+    Group := TLogicalGroup.Create(nil);
+    Group.Name := '#';
+    Nodes := Tree.SortSelections;
+    try
+      for I := 0 to Tree.SelectionCount - 1 do
+        Group.Children.AddComponent( (Nodes[I] as TZComponentTreeNode).Component.Clone );
+    finally
+      Nodes.Free;
+    end;
+    C := Group;
+  end
+  else
+  begin
+    //Copy single node
+    C := Tree.ZSelected.Component;
+  end;
+
+  Stream := ComponentManager.SaveXmlToStream(C) as TMemoryStream;
   try
     SetLength(S,Stream.Size);
     Stream.Position := 0;
@@ -2580,6 +2627,8 @@ begin
     Clipboard.SetTextBuf(PChar(S));
   finally
     Stream.Free;
+    if Assigned(Group) then
+      Group.Free;
   end;
 end;
 
@@ -2691,6 +2740,7 @@ var
   DestTreeNode : TZComponentTreeNode;
   S : string;
   C : TZComponent;
+  Group : TLogicalGroup;
 begin
   DestTreeNode := Tree.ZSelected;
 
@@ -2701,7 +2751,19 @@ begin
     begin
       Delete(S,1,4);
       C := ComponentManager.LoadXmlFromString(S,SymTab);
-      InsertAndRenameComponent(C,DestTreeNode);
+      if (C is TLogicalGroup) and ((C as TLogicalGroup).Name='#') then
+      begin //Paste several components
+        Group := (C as TLogicalGroup);
+        while Group.Children.Count>0 do
+        begin
+          C := Group.Children.GetComponent(0);
+          Group.Children.RemoveComponent(C);
+          InsertAndRenameComponent(C,DestTreeNode);
+        end;
+        Group.Free;
+      end
+      else //Paste single component
+        InsertAndRenameComponent(C,DestTreeNode);
       CompileAll;
     end;
   end;
