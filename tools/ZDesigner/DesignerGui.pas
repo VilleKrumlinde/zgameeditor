@@ -65,6 +65,7 @@ type
     function FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;
     procedure RefreshNode(Node : TTreeNode; C : TZComponent);
     function ZSelected : TZComponentTreeNode;
+    function SortSelections : TObjectList;
     constructor Create(AOwner: TComponent); override;
     property OnChange;
     property Items;
@@ -815,6 +816,33 @@ procedure TZComponentTreeView.SetRootComponent(C: TZComponent);
 begin
   RootComponent := C;
   RebuildGui;
+end;
+
+function SortNodes(P1,P2 : pointer) : integer;
+var
+  N1,N2 : TTreeNode;
+  I1,I2 : integer;
+begin
+  N1 := TTreeNode(P1); N2 := TTreeNode(P2);
+  I1 := N1.Parent.IndexOf(N1);
+  I2 := N2.Parent.IndexOf(N2);
+  if I1=I2 then
+    Result := 0
+  else if I1<I2 then
+    Result := -1
+  else
+    Result := 1;
+end;
+
+function TZComponentTreeView.SortSelections : TObjectList;
+var
+  I : integer;
+begin
+  //Sort selected sibling-nodes in their child-order to the parent 
+  Result := TObjectList.Create(False);
+  for I := 0 to Self.SelectionCount-1 do
+    Result.Add(Self.Selections[I]);
+  Result.Sort(SortNodes);
 end;
 
 constructor TZComponentTreeView.Create(AOwner: TComponent);
