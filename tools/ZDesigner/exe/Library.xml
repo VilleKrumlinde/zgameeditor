@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <Content>
+    <Group Comment="Bitmaps">
+      <Children>
+        <Bitmap Comment="Superformula" Width="4" Height="4">
+          <Producers>
+            <BitmapExpression Comment="2D Superformula">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+//Parameters
+float VarM = 3;
+float VarN1 = 5;
+float VarN2 = 18;
+float VarN3 = 18;
+
+//Variables
+float VarR, VarT, VarX, VarY, VarTemp;
+
+
+if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2x2)
+    VarX = (this.X-0.5)*7;  //Use the constant multiplying the expression
+    VarY = (this.Y-0.5)*7;  //to scale your image (zoom in and out) ;)
+    VarT = atan2(VarY,VarX);
+    VarR = sqrt(VarX*VarX + VarY*VarY);
+    VarTemp = VarR - pow(
+        pow(abs(cos(VarM*VarT/4)/1),VarN2) +
+        pow(abs(sin(VarM*VarT/4)/1),VarN3),
+        -1/VarN1);
+
+    if (VarTemp < 0) { //If it does belong to the figure
+            this.Pixel.G = VarTemp*(-2.5);
+            //The higher the multiplyer is,
+            //the sharper the image :)
+            //If you need a very sharp image just use:
+            //this.Pixel.G = 1;
+            }
+}   // X or Y different by zero
+    //Else is not needed since X or Y will be never equal to zero. if it happens, just add them]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Bricks" Width="4" Height="4" Filter="2">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+float X1, Y1;
+
+if (Y>0.5) {
+ Y1 = Y*4-3; X1 = (X- 0.5)*2;
+}
+else {
+ Y1 = Y*4-1; X1 = (abs(X-0.5)*2-1)*((X-0.5)*2+0.01)/abs((X-0.5)*2+0.01);
+}
+this.Pixel.B = pow(X1,8) + pow(Y1,8);
+if (X1 > Y1) this.Pixel.G=1;]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapZoomRotate Zoom="-4.5"/>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+float Temp=0, Down = 0;
+
+Temp = this.Pixel.B - pow(sin(X*pi),0.33)*noise2(X*3+768,Y+187)*1;
+if (this.Pixel.G > 0.5) Down = 1;
+this.Pixel = 0;
+if (Temp < 0.7) {
+    this.Pixel.G = clamp(pow(sin(X*pi),0.3),0,0.5) * noise2(X*15+500,Y*12+170);
+    this.Pixel.R = 0.8 + noise2(X*35+350,Y*35)/3;
+    if (noise2(X*35+350,Y*35) < -0.2) this.Pixel.R -= 0.1;
+   if (noise2(X*35+350,Y*35) < -0.25) this.Pixel.R -= 0.3;
+}
+if (Temp < 0.7 && Temp > 0.45) {
+    if (Down == 1) this.Pixel.R -= 0.3;
+    else this.Pixel.R += 0.2;
+}
+
+if (Temp >= 0.7) {this.Pixel = 0.3 + noise2(X*130+2463,Y*130+374)/2;}
+/*
+if (this.Pixel.R > 0.2) {
+    this.Pixel.R -= 0.2 + noise2(Y*12+2015,X*12+1021)/3;}
+
+if (this.Pixel.G > 0.2) {
+    this.Pixel.G = 0.1 + noise2(Y*12+715,X*12+321)/4;}
+
+if (this.Pixel.B > 0.2) {
+    this.Pixel.R += 0.1;
+    this.Pixel.G += 0.2 + noise2(Y*12+203,X*12+821)/3;
+    this.Pixel.B = 0;
+}
+
+if (this.Pixel.A > 0.2) {
+    this.Pixel.R -= 0.3 + noise2(Y*12+2015,X*12+1021)/4;
+    this.Pixel.A = 0;
+
+}
+
+if (this.Pixel.R < 0.2) {
+    this.Pixel = 0.3 + noise2(Y*130+374,X*130+2463)/2;}]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapZoomRotate Zoom="-1.5"/>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group>
+    <Group Comment="Meshes">
+      <Children>
+        <Mesh Comment="Superformula">
+          <Producers>
+            <MeshSphere ZSamples="8" RadialSamples="60"/>
+            <MeshExpression Comment="3D Superformula">
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+//Parameters
+float VarM = 3;
+float VarN1 = 5;
+float VarN2 = 18;
+float VarN3 = 18;
+
+//Variables
+float VarR, VarT, VarX, VarY, VarTemp;
+
+if (this.V.X!=0 || this.V.Y!=0) { //this is always true (textures are multiples of 2x2)
+    VarT = atan2(this.V.Y,this.V.X);
+    VarR = pow(
+        pow(abs(cos(VarM*VarT/4)/1),VarN2) +
+        pow(abs(sin(VarM*VarT/4)/1),VarN3),
+        -1/VarN1);
+
+    VarR *= 0.5; //SCALING
+    this.V.Y *= VarR;
+    this.V.X *= VarR;
+
+/* also, try doing something like:
+    this.V.Y /= VarR;
+    this.V.X /= VarR;
+    */
+    
+}   // X or Y different by zero
+
+this.V.Z *= 0.3;]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Teardrop">
+          <Producers>
+            <MeshBox XCount="16" YCount="16" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+this.V.X = 0.5*(1-cos(U))*sin(U)*cos(V);
+this.V.Y = 0.5*(1-cos(U))*sin(U)*sin(V);
+this.V.Z = cos(U);]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Pillow">
+          <Producers>
+            <MeshBox XCount="16" YCount="16" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+this.V.X = cos(U);
+this.V.Y = cos(V);
+this.V.Z = 0-((sin(U)*sin(V))/Pi*2);]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Spring">
+          <Producers>
+            <MeshBox XCount="16" YCount="40" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+float Radius=1;
+float Length=4;
+float Period=2;
+
+this.V.X = (Pi+Radius*cos(V))*cos(U*Length);
+this.V.Y = (Pi+Radius*cos(V))*sin(U*Length);
+this.V.Z = 0-(Radius*(sin(V)+Period*U*Length/Pi));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Torus">
+          <Producers>
+            <MeshBox XCount="17" YCount="26" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarU = this.V.Y*PI;
+float VarV = this.V.X*PI;
+this.V.X = (2 + 0.5*cos(VarV))*cos(VarU);
+this.V.Y = (2 + 0.5*cos(VarV))*sin(VarU);
+this.V.Z = 0-(0.5*sin(VarV));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Throcoid">
+          <Producers>
+            <MeshBox XCount="15" YCount="500" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarM = 5/4;
+float VarP = this.V.X*PI;
+float VarQ = this.V.Y*PI;
+
+//this.V.X = 0.5*cos(VarP);
+
+VarQ = this.V.X*PI;
+VarP = this.V.Y*PI*4;
+//this.V.X = (2 + 0.5*cos(VarQ))*cos(VarP);
+//this.V.Y = (2 + 0.5*cos(VarQ))*sin(VarP);
+this.V.Z = 0-(0.1 * sin(VarQ));
+this.V.X = ((2)*(1 + VarM)*cos(VarM*VarP)-(2+0.07*cos(VarQ))*(1 + VarM)*cos(VarP + VarM*VarP));
+this.V.Y = ((2)*(1 + VarM)*sin(VarM*VarP)-(2+0.07*cos(VarQ))*(1 + VarM)*sin(VarP + VarM*VarP));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Perycicloid">
+          <Producers>
+            <MeshBox XCount="15" YCount="400" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarM = -4/3;
+float VarP = this.V.X*PI;
+float VarQ = this.V.Y*PI;
+
+//this.V.X = 0.5*cos(VarP);
+
+VarQ = this.V.X*PI;
+VarP = this.V.Y*PI*3;
+//this.V.X = (2 + 0.5*cos(VarQ))*cos(VarP);
+//this.V.Y = (2 + 0.5*cos(VarQ))*sin(VarP);
+this.V.Z = (0.1*sin(VarQ));
+this.V.X = ((2)*(1 + VarM)*cos(VarM*VarP)-(2 + 0.1*cos(VarQ))*(VarM)*cos(VarP + VarM*VarP));
+this.V.Y = ((2)*(1 + VarM)*sin(VarM*VarP)-(2 + 0.1*cos(VarQ))*(VarM)*sin(VarP + VarM*VarP));
+
+/*         0.1*cos(VarP) +
+           0.1*sin(VarP) +]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+  </Content>
+</ZApplication>
