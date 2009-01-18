@@ -31,7 +31,7 @@ uses
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls, ToolWin;
 
 type
-  TBuildBinaryKind = (bbNormal,bbScreenSaver,bbActiveX,bbNormalLinux,bbNormalOsx86);
+  TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
 
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
@@ -159,8 +159,6 @@ type
     FileNewWindowAction: TAction;
     ExprHelpButton: TButton;
     ReopenMenuItem: TMenuItem;
-    GenerateActiveXAction: TAction;
-    BuildandcompressAciveX1: TMenuItem;
     Import3dsAction: TAction;
     Import3dsAction1: TMenuItem;
     N8: TMenuItem;
@@ -188,6 +186,7 @@ type
     N12: TMenuItem;
     UndoDeleteAction: TAction;
     Undodelete1: TMenuItem;
+    AddFromLibraryMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -233,7 +232,6 @@ type
     procedure ForumsMenuItemsClick(Sender: TObject);
     procedure FileNewWindowActionExecute(Sender: TObject);
     procedure ExprHelpButtonClick(Sender: TObject);
-    procedure GenerateActiveXActionExecute(Sender: TObject);
     procedure Import3dsActionExecute(Sender: TObject);
     procedure CompileShaderButtonClick(Sender: TObject);
     procedure GenerateReleaseLinuxActionExecute(Sender: TObject);
@@ -245,6 +243,7 @@ type
     procedure ShowCompilerDetailsActionExecute(Sender: TObject);
     procedure UndoDeleteActionUpdate(Sender: TObject);
     procedure UndoDeleteActionExecute(Sender: TObject);
+    procedure AddFromLibraryMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -273,6 +272,7 @@ type
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
+    SysLibrary : TZComponent;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -308,7 +308,7 @@ type
     procedure OnExprChanged(Sender: TObject);
     procedure BuildBinary(const PlayerName, OutputName: string);
     procedure ExecToolAndWait(const ExeFile, ParamString: string);
-    procedure BuildRelease(Kind : TBuildBinaryKind);
+    function BuildRelease(Kind : TBuildBinaryKind) : string;
     procedure ResetCamera;
     procedure ReadAppSettingsFromIni;
     procedure WriteAppSettingsToIni;
@@ -317,11 +317,11 @@ type
     procedure ReplaceResource(const ExeFile, OutFile, DataFile: string);
     procedure RefreshMenuFromMruList;
     procedure OnMruItemClick(Sender: TObject);
-    procedure ReplaceActiveXGuid(const OutFile: string);
-    procedure BuildActiveXTypelibrary(const ClsGuid: TGUID; const OutFile: string);
-    procedure ReplaceTypeLibResource(const InFile, OutFile, DataFile: string);
     procedure DrawOnRenderComponent;
     procedure WipeUndoHistory;
+    procedure LoadSysLibrary;
+    procedure OnAddFromLibraryItemClick(Sender: TObject);
+    procedure AddNewComponentToTree(C: TZComponent);
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -350,7 +350,7 @@ implementation
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
   ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitPEFile,unitResourceDetails,
-  ActiveX, u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops;
+  u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops;
 
 { TEditorForm }
 
@@ -1441,6 +1441,7 @@ begin
   Renderer.CleanUp;
   UndoNodes.Free;
   UndoIndices.Free;
+  SysLibrary.Free;
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
@@ -1759,20 +1760,12 @@ begin
   ZLog.GetLog(Self.ClassName).Write('File generated: ' + OutputName);
 end;
 
-procedure TEditorForm.GenerateActiveXActionExecute(Sender: TObject);
-begin
-  BuildRelease(bbActiveX);
-end;
-
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
 begin
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.exe'
-  else
-    OutFile := ChangeFileExt(CurrentFileName,'.exe');
-  BuildBinary('player.bin',OutFile);
+//  BuildBinary('player.bin',OutFile);
+  OutFile := BuildRelease(bbNormalUncompressed);
   //Kör den skapade filen
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
 end;
@@ -1900,150 +1893,8 @@ begin
   end;
 end;
 
-procedure TEditorForm.ReplaceTypeLibResource(const InFile,OutFile,DataFile : string);
-var
-  M : TPEResourceModule;
-  R : TResourceDetails;
-  NewData : TMemoryStream;
-begin
-  M := TPEResourceModule.Create;
-  try
-    M.LoadFromFile( InFile );
 
-    R := M.FindResource('TYPELIB','1',0);
-    Assert(R<>nil);
-
-    NewData := TMemoryStream.Create;
-      NewData.LoadFromFile(DataFile);
-      R.ChangeData(NewData);
-    NewData.Free;
-
-    M.SaveToFile( OutFile );
-  finally
-    M.Free;
-  end;
-end;
-
-procedure TEditorForm.BuildActiveXTypelibrary(const ClsGuid : TGUID; const OutFile : string);
-const
-//  ZClsGuid : TGUID = '{49F96FB9-0D7F-4E4E-ADBC-442EAB031529}';
-  ZIntGuid : TGUID = '{8C1FB6F5-666A-44D3-A98C-8B24C1B13CE1}';
-  ITypeInfoGuid : TGUID = '{00020401-0000-0000-C000-000000000046}';
-  IDispatchGuid : TGUID = '{00020400-0000-0000-C000-000000000046}';
-var
-  LibGUID : TGUID;
-  Tlb : ICreateTypeLib2;
-  StdOleTlb : ITypeLib;
-  Cls,Intf: ICreateTypeInfo;
-  IntfTypeInfo,DispatchTypeInfo  : ITypeInfo;
-  RefType : HRefType;
-begin
-  //Create typelib
-  CoCreateGuid(LibGUID);
-  CreateTypeLib2(SYS_WIN32, StringToOleStr(OutFile), Tlb);
-
-  Tlb.SetGuid(LibGUID);
-  Tlb.SetLcid(0);
-  Tlb.SetName('ZgeActiveX');
-
-  //Create reference to IDispatch in stdole32
-  LoadTypeLib('stdole32.tlb',StdOleTlb);
-  StdOleTlb.GetTypeInfoOfGuid(IDispatchGuid,DispatchTypeInfo);
-
-  //Create interface. Must inherit IDispatch.
-  Tlb.CreateTypeInfo('IZgeActiveXControl', TKIND_INTERFACE, Intf);
-  Intf.SetGuid(ZIntGuid);
-  Intf.AddRefTypeInfo(DispatchTypeInfo, RefType);
-  Intf.AddImplType(0,RefType);
-  Intf.QueryInterface(ITypeInfoGuid,IntfTypeInfo);
-
-  //Create coclass. Implements IZgeActiveXControl.
-  Tlb.CreateTypeInfo('ZgeActiveXControl', TKIND_COCLASS, Cls);
-//  ClsGuid := ZClsGuid;
-  Cls.SetGuid(ClsGUID);
-  Cls.SetTypeFlags(TYPEFLAG_FCANCREATE);
-
-  Cls.AddRefTypeInfo(IntfTypeInfo, RefType);
-  Cls.AddImplType(0,RefType);
-  Cls.SetImplTypeFlags(0,IMPLTYPEFLAG_FDEFAULT);
-
-  Tlb.SaveAllChanges;
-end;
-
-procedure TEditorForm.ReplaceActiveXGuid(const OutFile : string);
-const
-  OriginalG : TGUID = '{49F96FB9-0D7F-4E4E-ADBC-442EAB031529}';
-  HtmlPage : string =
-'<HTML>'#13#10 +
-'<H1> Sample page for using the "%s" ActiveX-control </H1><p>'#13#10 +
-'<a href="http://www.google.com">Google</a>  <a href="http://www.zgameeditor.org">ZGameEditor</a>'#13#10 +
-'<HR><center><P>'#13#10 +
-'<OBJECT'#13#10 +
-'   classid="clsid:%s"'#13#10 +
-'   codebase="%s#Version=-1,-1,-1,-1"'#13#10 +
-'   width=800'#13#10 +
-'   height=600'#13#10 +
-'   align=center'#13#10 +
-'   hspace=0'#13#10 +
-'   vspace=0'#13#10 +
-'>'#13#10 +
-'</OBJECT>'#13#10 +
-'</HTML>'#13#10;
-var
-  Mem : TMemorySTream;
-  I,ReplaceCount : integer;
-  P : PChar;
-  NewG : TGUID;
-  NewGBuf : array[0..100] of WideChar;
-  NewGString,S : string;
-  TempTlbFile : string;
-begin
-  //Every ZGE-application must have its own guid, otherwise IE will not
-  //load another ocx with the same guid.
-
-  //New GUID for the player.
-  CoCreateGuid(NewG);
-
-  //Rebuild and replace the typelibrary within the player-module
-  //(cannot do a binary replace inside a typelibrary so we must rebuild it)
-  TempTlbFile := ExePath + 'temp.tlb';
-  BuildActiveXTypelibrary(NewG,TempTlbFile);
-  ReplaceTypeLibResource(OutFile,OutFile,TempTlbFile);
-  DeleteFile(TempTlbFile);
-  //Delete backupfile generated by resource-code
-  DeleteFile(ChangeFileExt(OutFile,'.~ocx'));
-
-  //Binary replace of the oldguid to the new
-  Mem := TMemoryStream.Create;
-  try
-    Mem.LoadFromFile(OutFile);
-    P := Mem.Memory;
-    ReplaceCount := 0;
-    for I := 0 to Mem.Size - SizeOf(TGUID) - 1 do
-    begin
-      if CompareMem(@OriginalG,P,SizeOf(TGUID)) then
-      begin
-        Move(NewG,P^,SizeOf(TGUID));
-        Inc(ReplaceCount);
-      end;
-      Inc(P);
-    end;
-    Assert(ReplaceCount>0);
-    Mem.SaveToFile(OutFile);
-
-    //Genereate HTM-page with the new GUID
-    StringFromGUID2(NewG,NewGBuf,39);
-    NewGString := Copy(WideCharToString(NewGBuf),2,36);
-    S := Format(HtmlPage,[ ExtractFileName(OutFile), NewGString, ExtractFileName(OutFile) ]);
-    Mem.Clear;
-    Mem.Write(pointer(S)^,Length(S));
-    Mem.SaveToFile(ChangeFileExt(OutFile,'.htm'));
-  finally
-    Mem.Free;
-  end;
-end;
-
-procedure TEditorForm.BuildRelease(Kind : TBuildBinaryKind);
+function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
   OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
   ToolPath : string;
@@ -2061,7 +1912,7 @@ var
 begin
   UsePiggyback := False;
   case Kind of
-    bbNormal :
+    bbNormal, bbNormalUncompressed :
       begin
         Ext := 'exe';
         PlayerName := ExePath + 'player.bin';
@@ -2070,11 +1921,6 @@ begin
       begin
         Ext := 'scr';
         PlayerName := ExePath + 'player_ss.bin'
-      end;
-    bbActiveX :
-      begin
-        Ext := 'ocx';
-        PlayerName := ExePath + 'player_activex.bin';
       end;
     bbNormalLinux :
       begin
@@ -2111,47 +1957,28 @@ begin
     DeleteFile(TempFile);
   end;
 
-  if Kind=bbActiveX then
-    ReplaceActiveXGuid(OutFile);
-
-  //Kör upx på allt utom Linux (linuxbinärer med piggyback hanteras ej av upx)
-  if (Kind<>bbNormalLinux) and (Kind<>bbNormalOsx86) then
+  //linuxbinärer med piggyback hanteras ej av upx
+  if Kind in [bbNormal,bbScreenSaver] then
   begin
     //Upx -v %1
     ToolPath := ExePath + 'tools\';
 
-//    Tool := ToolPath + 'upx.exe';
     Tool := StringReplace(PackerProg,'{$toolpath}',ToolPath,[rfReplaceAll, rfIgnoreCase]);
     if not VerifyToolExists('Packer','',Tool) then
       Exit;
-//    ToolParams := '-v "' + OutFile + '"';
+
     ToolParams := StringReplace(PackerParams,'{$exename}','"' + OutFile + '"',[rfReplaceAll, rfIgnoreCase]);
     ExecToolAndWait(Tool,ToolParams);
   end;
 
   //Need to update filedate, the file created by reshacker has same date as original
-  FileSetDate(OutFile,DateTimeToFileDate(Now));
+//  FileSetDate(OutFile,DateTimeToFileDate(Now));
 
-  if Kind=bbActiveX then
-  begin
-    case Application.MessageBox( PChar('Created files: '#13#13 +
-      OutFile + #13 +
-      ChangeFileExt(OutFile,'.htm') + #13#13 +
-      'Size: ' + IntToStr(InGetSize div 1024) + ' kb' + #13#13 +
-      'Click YES to open the html-file in Internet Explorer to test the ActiveX-control.')
-       ,
-      PChar(Caption), MB_YESNO) of
-      IDYES : ShellExecute(Handle, 'open',  PChar('iexplore.exe'), PChar(ChangeFileExt(OutFile,'.htm')), nil, SW_SHOWDEFAULT);
-      IDNO : ;
-    end;
-{    ShowMessage('Created files: '#13#13 +
-      O
-      utFile + #13 +
-      ChangeFileExt(OutFile,'.htm') + #13#13 +
-      'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
-    ShellExecute(Handle, 'open',  PChar('iexplore.exe'), PChar(ChangeFileExt(OutFile,'.htm')), nil, SW_SHOWDEFAULT);}
-  end else
+  if Kind<>bbNormalUncompressed then
     ShowMessage('Created file: '#13#13'  ' + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
+
+  //Return created filename
+  Result := OutFile;
 end;
 
 procedure TEditorForm.GenerateReleaseActionExecute(Sender: TObject);
@@ -2190,19 +2017,15 @@ procedure TEditorForm.AddComponentActionExecute(Sender: TObject);
 var
   C : TZComponent;
   Ci : TZComponentInfo;
-  OwnerList : TZComponentList;
   Prop : TZProperty;
   ParentComps,ParentLists : TStringList;
   CurParent : TZComponentTreeNode;
-  S : string;
-  I : integer;
 begin
   //Ta reda på vilken lista som nod ska läggas till
   if not Assigned(Tree.Selected) then
     Exit;
   if Assigned(Tree.ZSelected.ComponentList) then
   begin
-    OwnerList := Tree.ZSelected.ComponentList;
     //ParentC := (Tree.ZSelected.Parent as TZComponentTreeNode).Component;
     Prop := Tree.ZSelected.Prop;
   end
@@ -2246,7 +2069,17 @@ begin
     ParentLists.Free;
   end;
 
-  C := Ci.ZClass.Create(OwnerList);
+  C := Ci.ZClass.Create(nil);
+  AddNewComponentToTree(C);
+end;
+
+procedure TEditorForm.AddNewComponentToTree(C : TZComponent);
+var
+  Ci : TZComponentInfo;
+  I : integer;
+  S : string;
+begin
+  Ci := ComponentManager.GetInfo(C);
 
   if Ci.AutoName then
   begin  //Give unique name
@@ -2263,15 +2096,20 @@ begin
   end;
 
   Tree.AddNode(C,Tree.Selected).Selected := True;
-  //Signalera till parentlistan att den är ändrad
+  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.AddComponent(C);
   TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
   SetFileChanged(True);
 end;
 
 procedure TEditorForm.AddComponentActionUpdate(Sender: TObject);
+var
+  B : boolean;
 begin
-  (Sender as TAction).Enabled := Tree.Focused and Assigned(Tree.Selected) and Assigned(Tree.ZSelected.ComponentList);
+  B :=Tree.Focused and Assigned(Tree.Selected) and Assigned(Tree.ZSelected.ComponentList);
+  (Sender as TAction).Enabled := B;
+  AddFromLibraryMenuItem.Enabled := B;
 end;
+
 
 procedure TEditorForm.ViewRotateXTrackBarChange(Sender: TObject);
 var
@@ -3031,6 +2869,63 @@ end;
 procedure TEditorForm.ForumsMenuItemsClick(Sender: TObject);
 begin
   GoUrl('http://www.emix8.org/forum/');
+end;
+
+
+procedure TEditorForm.LoadSysLibrary;
+var
+  S : string;
+
+  procedure InAddItems(List : TZComponentList; Parent : TMenuItem);
+  var
+    M : TMenuItem;
+    C : TZComponent;
+    I : integer;
+  begin
+    for I := 0 to List.Count - 1 do
+    begin
+      C := List.GetComponent(I);
+      M := TMenuItem.Create(AddFromLibraryMenuItem);
+      M.Caption := C.Comment;
+      Parent.Add(M);
+      if C is TLogicalGroup then
+        InAddItems((C as TLogicalGroup).Children,M)
+      else
+      begin
+        M.OnClick := OnAddFromLibraryItemClick;
+        M.Tag := Integer(C);
+      end;
+    end;
+  end;
+
+begin
+  S := ExePath + 'Library.xml';
+  if not FileExists(S) then
+  begin
+    ZLog.GetLog(Self.ClassName).Write( 'Lib file missing: ' + S );
+    Exit;
+  end;
+  AddFromLibraryMenuItem.Clear;
+  SysLibrary := ComponentManager.LoadXmlFromFile(S);
+  InAddItems((SysLibrary as TZApplication).Content,AddFromLibraryMenuItem);
+end;
+
+procedure TEditorForm.OnAddFromLibraryItemClick(Sender: TObject);
+var
+  M : TMenuItem;
+  C : TZComponent;
+begin
+  M := Sender as TMenuItem;
+  C := TZComponent(M.Tag).Clone;
+  AddNewComponentToTree(C);
+  CompileAll;
+  C.Change;
+end;
+
+procedure TEditorForm.AddFromLibraryMenuItemClick(Sender: TObject);
+begin
+  if SysLibrary=nil then
+    LoadSysLibrary;
 end;
 
 end.

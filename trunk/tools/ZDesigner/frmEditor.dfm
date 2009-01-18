@@ -2,7 +2,7 @@ object EditorForm: TEditorForm
   Left = 294
   Top = 134
   Caption = 'ZDesigner'
-  ClientHeight = 798
+  ClientHeight = 918
   ClientWidth = 1073
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -24,7 +24,7 @@ object EditorForm: TEditorForm
     Left = 433
     Top = 22
     Width = 4
-    Height = 776
+    Height = 896
     ExplicitTop = 30
     ExplicitHeight = 537
   end
@@ -32,34 +32,34 @@ object EditorForm: TEditorForm
     Left = 0
     Top = 22
     Width = 433
-    Height = 776
+    Height = 896
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 736
+    ExplicitHeight = 816
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
       Width = 433
-      Height = 776
+      Height = 896
       Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-      ExplicitHeight = 736
+      ExplicitHeight = 816
     end
   end
   object ViewerPanel: TPanel
     Left = 437
     Top = 22
     Width = 636
-    Height = 776
+    Height = 896
     Align = alClient
     TabOrder = 1
-    ExplicitHeight = 736
+    ExplicitHeight = 816
     object Splitter1: TSplitter
       Left = 1
-      Top = 615
+      Top = 735
       Width = 634
       Height = 4
       Cursor = crVSplit
@@ -69,13 +69,13 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 1
-      Top = 619
+      Top = 739
       Width = 634
       Height = 156
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 579
+      ExplicitTop = 659
       object Splitter4: TSplitter
         Left = 461
         Top = 0
@@ -249,16 +249,16 @@ object EditorForm: TEditorForm
       Left = 1
       Top = 1
       Width = 634
-      Height = 614
+      Height = 734
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitHeight = 574
+      ExplicitHeight = 654
       object Splitter3: TSplitter
         Left = 300
         Top = 0
         Width = 4
-        Height = 614
+        Height = 734
         ExplicitLeft = 100
         ExplicitHeight = 574
       end
@@ -266,25 +266,27 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 300
-        Height = 614
+        Height = 734
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
-        ExplicitHeight = 574
+        ExplicitLeft = 1
+        ExplicitTop = 4
+        ExplicitHeight = 714
       end
       object ViewerPageControl: TPageControl
         Left = 304
         Top = 0
         Width = 330
-        Height = 614
+        Height = 734
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
-        ExplicitHeight = 574
+        ExplicitHeight = 654
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitHeight = 564
+          ExplicitHeight = 644
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -542,29 +544,27 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
-          ExplicitHeight = 564
+          ExplicitHeight = 644
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
             Width = 322
-            Height = 604
+            Height = 724
             Align = alClient
             ParentShowHint = False
             ShowHint = True
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 322
-            ExplicitHeight = 564
+            ExplicitHeight = 644
             inherited PageControl1: TPageControl
               Width = 322
-              Height = 604
+              Height = 724
               ExplicitWidth = 322
-              ExplicitHeight = 564
+              ExplicitHeight = 644
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 314
-                ExplicitHeight = 536
+                ExplicitHeight = 616
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -641,24 +641,24 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitHeight = 564
+          ExplicitHeight = 644
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
             Width = 322
-            Height = 604
+            Height = 724
             Align = alClient
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 322
-            ExplicitHeight = 564
+            ExplicitHeight = 644
           end
         end
         object ViewerBlankTabSheet: TTabSheet
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitHeight = 564
+          ExplicitHeight = 644
         end
       end
     end
@@ -906,7 +906,7 @@ object EditorForm: TEditorForm
       OnExecute = GenerateEXEClick
     end
     object GenerateReleaseLinuxAction: TAction
-      Caption = 'Build Linux binary'
+      Caption = 'Build Linux x86 binary'
       OnExecute = GenerateReleaseLinuxActionExecute
     end
     object FileSaveBinaryAsAction: TAction
@@ -950,12 +950,6 @@ object EditorForm: TEditorForm
       Caption = 'New &Window'
       OnExecute = FileNewWindowActionExecute
     end
-    object GenerateActiveXAction: TAction
-      Caption = 'Build and compress ActiveX'
-      Enabled = False
-      Visible = False
-      OnExecute = GenerateActiveXActionExecute
-    end
     object Import3dsAction: TAction
       Caption = 'Import 3DS-file'
       OnExecute = Import3dsActionExecute
@@ -989,6 +983,12 @@ object EditorForm: TEditorForm
     Top = 40
     object Addcomponent2: TMenuItem
       Action = AddComponentAction
+    end
+    object AddFromLibraryMenuItem: TMenuItem
+      Caption = 'Add from library...'
+      OnClick = AddFromLibraryMenuItemClick
+      object TMenuItem
+      end
     end
     object N12: TMenuItem
       Caption = '-'
@@ -1502,9 +1502,6 @@ object EditorForm: TEditorForm
       end
       object BuildMacOSXIntelbinary1: TMenuItem
         Action = GenerateReleaseOsx86Action
-      end
-      object BuildandcompressAciveX1: TMenuItem
-        Action = GenerateActiveXAction
       end
       object N5: TMenuItem
         Caption = '-'
