@@ -2,7 +2,7 @@ object EditorForm: TEditorForm
   Left = 294
   Top = 134
   Caption = 'ZDesigner'
-  ClientHeight = 918
+  ClientHeight = 938
   ClientWidth = 1073
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -24,7 +24,7 @@ object EditorForm: TEditorForm
     Left = 433
     Top = 22
     Width = 4
-    Height = 896
+    Height = 916
     ExplicitTop = 30
     ExplicitHeight = 537
   end
@@ -32,7 +32,7 @@ object EditorForm: TEditorForm
     Left = 0
     Top = 22
     Width = 433
-    Height = 896
+    Height = 916
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
@@ -41,7 +41,7 @@ object EditorForm: TEditorForm
       Left = 0
       Top = 0
       Width = 433
-      Height = 896
+      Height = 916
       Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
@@ -53,13 +53,13 @@ object EditorForm: TEditorForm
     Left = 437
     Top = 22
     Width = 636
-    Height = 896
+    Height = 916
     Align = alClient
     TabOrder = 1
     ExplicitHeight = 816
     object Splitter1: TSplitter
       Left = 1
-      Top = 735
+      Top = 755
       Width = 634
       Height = 4
       Cursor = crVSplit
@@ -69,7 +69,7 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 1
-      Top = 739
+      Top = 759
       Width = 634
       Height = 156
       Align = alBottom
@@ -249,7 +249,7 @@ object EditorForm: TEditorForm
       Left = 1
       Top = 1
       Width = 634
-      Height = 734
+      Height = 754
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
@@ -258,7 +258,7 @@ object EditorForm: TEditorForm
         Left = 300
         Top = 0
         Width = 4
-        Height = 734
+        Height = 754
         ExplicitLeft = 100
         ExplicitHeight = 574
       end
@@ -266,7 +266,7 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 300
-        Height = 734
+        Height = 754
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
@@ -278,7 +278,7 @@ object EditorForm: TEditorForm
         Left = 304
         Top = 0
         Width = 330
-        Height = 734
+        Height = 754
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
@@ -549,7 +549,7 @@ object EditorForm: TEditorForm
             Left = 0
             Top = 0
             Width = 322
-            Height = 724
+            Height = 744
             Align = alClient
             ParentShowHint = False
             ShowHint = True
@@ -559,7 +559,7 @@ object EditorForm: TEditorForm
             ExplicitHeight = 644
             inherited PageControl1: TPageControl
               Width = 322
-              Height = 724
+              Height = 744
               ExplicitWidth = 322
               ExplicitHeight = 644
               inherited TabSheet1: TTabSheet
@@ -646,7 +646,7 @@ object EditorForm: TEditorForm
             Left = 0
             Top = 0
             Width = 322
-            Height = 724
+            Height = 744
             Align = alClient
             TabOrder = 0
             TabStop = True
@@ -863,7 +863,7 @@ object EditorForm: TEditorForm
       Category = 'File'
       Caption = '&Open...'
       Dialog.DefaultExt = '*.zgeproj'
-      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj'
+      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj|Any file (*.*)|*.*'
       Hint = 'Open|Opens an existing file'
       ImageIndex = 5
       ShortCut = 16463

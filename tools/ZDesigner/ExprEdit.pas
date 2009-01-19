@@ -187,6 +187,7 @@ type
     procedure GenValue(Op : TZcOp);
     procedure GenFuncCall(Op : TZcOp; NeedReturnValue : boolean);
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
+    procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -224,12 +225,20 @@ begin
   end;
 end;
 
-function MakeConstOp(const Value : single) : TExpConstantFloat;
-begin
-  Result := TExpConstantFloat.Create(nil);
-  Result.Constant := Value;
-end;
 
+procedure TZCodeGen.MakeLiteralOp(const Value : single; Typ : TZcDataType);
+begin
+  case Typ of
+    zctFloat :
+      with TExpConstantFloat.Create(Target) do
+        Constant := Value;
+    zctInt :
+      with TExpConstantInt.Create(Target) do
+        Constant := Round(Value);
+    else
+      raise ECodeGenError.Create('Invalid literal');
+  end;
+end;
 
 //Genererar en op som skapar ett värde på stacken
 procedure TZCodeGen.GenValue(Op : TZcOp);
@@ -278,13 +287,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     FallTrue(Op,LFalse);
 
     //Gen "true" body
-    Target.AddComponent( MakeConstOp(1) );
+    MakeLiteralOp(1, Op.GetDataType);
     //jump to exit
     GenJump(jsJumpAlways,LExit);
 
     //Gen "false"
     DefineLabel(LFalse);
-    Target.AddComponent( MakeConstOp(0) );
+    MakeLiteralOp(0, Op.GetDataType);
 
     DefineLabel(LExit);
   end;
@@ -332,21 +341,8 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   end;
 
   procedure DoLiteral;
-  var
-    COp : TZcOpLiteral;
   begin
-    COp := Op as TZcOpLiteral;
-    case Cop.Typ of
-      zctFloat :
-        with TExpConstantFloat.Create(Target) do
-          Constant := Cop.Value;
-      zctInt :
-        with TExpConstantInt.Create(Target) do
-          Constant := Round(Cop.Value);
-      else
-        raise ECodeGenError.Create('Invalid literal');
-    end;
-//    Target.AddComponent( MakeConstOp(Op.Value) )
+    MakeLiteralOp((Op as TZcOpLiteral).Value, Op.GetDataType);
   end;
 
 begin
@@ -690,10 +686,9 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
-    //**todo datatype?
     GenValue(Op);
-    Target.AddComponent( MakeConstOp(0) );
-    GenJump(jsJumpNE,Lbl);
+    MakeLiteralOp(0, Op.GetDataType);
+    GenJump(jsJumpNE,Lbl, Op.GetDataType);
   end;
 
 begin
@@ -742,10 +737,9 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
-    //**todo datatype?
     GenValue(Op);
-    Target.AddComponent( MakeConstOp(0) );
-    GenJump(jsJumpEQ,Lbl);
+    MakeLiteralOp(0, Op.GetDataType);
+    GenJump(jsJumpEQ,Lbl,Op.GetDataType);
   end;
 
 begin

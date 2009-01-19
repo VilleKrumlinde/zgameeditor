@@ -117,6 +117,7 @@ type
     {$ifndef minimal}
     procedure DesignerStart(const ViewW,ViewH : integer);
     procedure DesignerStop;
+    procedure DesignerSetUpView;
     {$endif}
   end;
 
@@ -501,6 +502,31 @@ begin
   Platform_SwapBuffers;
   {$endif}
 end;
+
+{$ifndef minimal}
+procedure TZApplication.DesignerSetUpView;
+begin
+  //Used for previewing app-state in designer
+  UpdateViewport;
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+
+  gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
+
+  ApplyRotation(CameraRotation);
+  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+
+  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+end;
+{$endif}
 
 procedure TZApplication.AddModel(Model: TModel);
 begin

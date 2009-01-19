@@ -851,7 +851,7 @@ begin
       DrawMesh
     else if (ShowNode is TModel) then
       DrawModel
-    else if ((ShowNode is TStateBase))then
+    else if ((ShowNode is TStateBase) or (ShowNode is TZApplication))then
       DrawOnRenderComponent
     else
     begin
@@ -913,7 +913,7 @@ begin
     (ShowNode is TModel) or
     (ShowNode is TStateBase) then
   begin
-    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh) or (ShowNode is TStateBase);
+    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh);// or (ShowNode is TStateBase);
     AppControlPanel.Visible := ShowNode is TZApplication;
     ViewerPageControl.ActivePage := ViewerGlTabSheet;
     ResetCamera;
@@ -1273,44 +1273,31 @@ var
 begin
   OnRender := nil;
   if ShowNode is TStateBase then
-    OnRender := (ShowNode as TStateBase).OnRender;
+    OnRender := (ShowNode as TStateBase).OnRender
+  else if (ShowNode is TZApplication) then
+    OnRender := (ShowNode as TZApplication).OnRender;
+
   if OnRender=nil then
     Exit;
 
-  glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
-  glMatrixMode(GL_MODELVIEW);
-
   glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-    if WireframeCheckBox.Checked then
-      glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
-    else
-      SetupGLShading;
-
-    glLoadIdentity();
-    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
-    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
-    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
-    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
-
-  Renderer.Render_Begin;
   try
-    OnRender.ExecuteCommands;
-  except
-    on E : EZHalted do
-    begin //Detect errors in onrender-list
-      RenderAborted := True;
-      raise;
-    end;
-  end;
-  Renderer.Render_End;
+    ZApp.DesignerSetUpView;
 
-  glPopAttrib();
+    Renderer.Render_Begin;
+    try
+      OnRender.ExecuteCommands;
+    except
+      on E : EZHalted do
+      begin //Detect errors in onrender-list
+        RenderAborted := True;
+        raise;
+      end;
+    end;
+    Renderer.Render_End;
+  finally
+    glPopAttrib();
+  end;
 end;
 
 procedure TEditorForm.DrawModel;
@@ -2639,6 +2626,7 @@ begin
   L.Change;
   Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index-1],naInsert);
   SetFileChanged(True);
+  Tree.ClearSelection(True);
 end;
 
 procedure TEditorForm.MoveDownComponentActionExecute(Sender: TObject);
@@ -2659,6 +2647,7 @@ begin
   else
     Tree.Selected.MoveTo(Tree.Selected.Parent,naAddChild);
   SetFileChanged(True);
+  Tree.ClearSelection(True);
 end;
 
 procedure TEditorForm.MoveUpComponentActionUpdate(Sender: TObject);
