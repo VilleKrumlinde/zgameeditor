@@ -208,6 +208,12 @@ begin
 end;
 
 
+function DesignerFormatFloat(V : single) : string;
+const F : array[1..FloatTextDecimals+2] of char = ('0','.','0','#','#','#');
+begin
+  Result := FormatFloat(F, V);
+end;
+
 
 { TZPropertyEditor }
 
@@ -475,7 +481,7 @@ begin
   inherited;
   Edit := TEdit.Create(Self);
   Edit.Align := alClient;
-  Edit.Text := FloatToStr( RoundTo(Value.FloatValue,-FloatTextDecimals) );
+  Edit.Text := DesignerFormatFloat(Value.FloatValue);
   Edit.OnChange := OnEditChange;
   Edit.OnEnter := OnFocusControl;
   Edit.OnExit := OnEditExit;
@@ -538,7 +544,7 @@ var
   Add : single;
 begin
   Add := 0.01 * (1-(ord(Button=btPrev)*2));
-  Edit.Text := FloatToStr( RoundTo(StrToFloatDef(Edit.Text,0) + Add,-FloatTextDecimals) );
+  Edit.Text := DesignerFormatFloat(StrToFloatDef(Edit.Text,0) + Add);
 end;
 
 { TZPropertyColorEdit }
@@ -983,7 +989,7 @@ begin
     Edit.Tag := I;
     Edit.Width := 40;
     Edit.Align := alLeft;
-    Edit.Text := FloatToStr( RoundTo(FloatP^[I],-FloatTextDecimals) );
+    Edit.Text := DesignerFormatFloat(FloatP^[I]);
     Edit.OnChange := OnEditChange;
     Edit.OnEnter := OnFocusControl;
     Edit.OnExit := OnEditExit;
