@@ -23,7 +23,7 @@ unit Meshes;
 
 interface
 
-uses ZClasses, ZBitmap, ZExpressions;
+uses ZClasses, ZBitmap, ZExpressions, ZOpenGL;
 
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
@@ -38,6 +38,8 @@ type
 
   TMesh = class(TContent)
   private
+    VboHandles: array[0..1] of GLuint;
+    VboOffsets : array[0..2] of integer;
     procedure FreeData;
   protected
     procedure CopyAndDestroy(Source : TContent); override;
@@ -425,6 +427,12 @@ begin
     FreeMem(Colors);
     Colors := nil;
   end;
+
+  if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
+  begin
+    glDeleteBuffersARB(2, @VboHandles);
+    VboHandles[0]:=0;
+  end;
 end;
 
 destructor TMesh.Destroy;
@@ -434,6 +442,20 @@ begin
 end;
 
 procedure TMesh.BeforeRender;
+var
+  VertSize,NormSize,ColsSize,TexSize : integer;
+
+ { procedure CheckGLError;
+  var
+    Error : GLenum;
+  begin
+    Error := glGetError;
+    if Error<>0 then
+    begin
+      ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
+    end;
+  end;}
+
 begin
   if (Vertices=nil) or (Producers.IsChanged) or (IsChanged) then
   begin
@@ -442,6 +464,68 @@ begin
     UpdateBounds;
     {$endif}
   end;
+
+  if ZOpenGL.VbosSupported then
+  begin
+
+    if Self.VboHandles[0]=0 then
+    begin
+      glGenBuffersARB(2, @VboHandles);
+
+      VertSize := VerticesCount * SizeOf(TZVector3f);
+      NormSize := VertSize;
+
+      if Colors<>nil then
+        ColsSize:= VerticesCount * SizeOf(TMeshVertexColor)
+      else
+        ColsSize:= 0;
+
+      if TexCoords<>nil then
+        TexSize:= VerticesCount * SizeOf(TZVector2f)
+      else
+        TexSize:= 0;
+
+      glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
+      glBufferDataARB(GL_ARRAY_BUFFER_ARB, VertSize + NormSize + ColsSize + TexSize, nil, STATIC_DRAW_ARB);
+
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, VertSize, Vertices);
+
+      VboOffsets[0] := VertSize;
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[0], NormSize, Normals);
+
+      VboOffsets[1]:=VboOffsets[0]+NormSize;
+      if ColsSize>0 then
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[1], ColsSize, Colors);
+
+      VboOffsets[2]:=VboOffsets[1]+ColsSize;
+      if TexSize>0 then
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[2], TexSize, TexCoords);
+
+      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
+      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, IndicesCount * SizeOf(TMeshVertexIndex), Indices, STATIC_DRAW_ARB);
+    end;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
+
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT,0,pointer(VboOffsets[0]));
+
+    if Colors<>nil then
+    begin
+      glEnableClientState(GL_COLOR_ARRAY);
+      glColorPointer(4,GL_UNSIGNED_BYTE,0,pointer(VboOffsets[1]));
+    end;
+
+    if TexCoords<>nil then
+    begin
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      glTexCoordPointer(2,GL_FLOAT,0,pointer(VboOffsets[2]));
+    end;
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3,GL_FLOAT,0,nil);
+  end;
+
 end;
 
 procedure TMesh.Scale(const V: TZVector3f);

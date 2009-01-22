@@ -840,6 +840,12 @@ begin
     if not RendererInitCalled then
     begin
       Renderer.InitRenderer;
+      if not ShadersSupported then
+        ZLog.GetLog(Self.ClassName).Write('GL shaders not supported');
+      if not MultiTextureSupported then
+        ZLog.GetLog(Self.ClassName).Write('GL multitexture not supported');
+      if not VbosSupported then
+        ZLog.GetLog(Self.ClassName).Write('GL VBOs not supported');
       RendererInitCalled := True;
     end;
     glViewport(0, 0, Glp.Width, Glp.Height);
