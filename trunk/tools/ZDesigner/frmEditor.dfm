@@ -56,7 +56,6 @@ object EditorForm: TEditorForm
     Height = 916
     Align = alClient
     TabOrder = 1
-    ExplicitHeight = 816
     object Splitter1: TSplitter
       Left = 1
       Top = 755
@@ -75,7 +74,6 @@ object EditorForm: TEditorForm
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 659
       object Splitter4: TSplitter
         Left = 461
         Top = 0
@@ -97,10 +95,18 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -128,6 +134,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -184,6 +194,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -253,7 +267,6 @@ object EditorForm: TEditorForm
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitHeight = 654
       object Splitter3: TSplitter
         Left = 300
         Top = 0
@@ -282,10 +295,12 @@ object EditorForm: TEditorForm
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
-        ExplicitHeight = 654
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
           ExplicitHeight = 644
           object RotateModelPanel: TPanel
             Left = 0
@@ -544,7 +559,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
-          ExplicitHeight = 644
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
@@ -556,15 +570,17 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 322
-            ExplicitHeight = 644
+            ExplicitHeight = 744
             inherited PageControl1: TPageControl
               Width = 322
               Height = 744
               ExplicitWidth = 322
-              ExplicitHeight = 644
+              ExplicitHeight = 744
               inherited TabSheet1: TTabSheet
+                ExplicitLeft = 4
+                ExplicitTop = 24
                 ExplicitWidth = 314
-                ExplicitHeight = 616
+                ExplicitHeight = 716
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -621,6 +637,10 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -641,7 +661,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitHeight = 644
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -651,13 +670,16 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 322
-            ExplicitHeight = 644
+            ExplicitHeight = 744
           end
         end
         object ViewerBlankTabSheet: TTabSheet
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
           ExplicitHeight = 644
         end
       end

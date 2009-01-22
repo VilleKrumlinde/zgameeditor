@@ -1185,6 +1185,12 @@ const
   GL_VALIDATE_STATUS = $8B83;
 
 
+  //VBOs
+  GL_ARRAY_BUFFER_ARB = $8892;
+  GL_ELEMENT_ARRAY_BUFFER_ARB = $8893;
+
+  STATIC_DRAW_ARB = $88E4;
+
 {******************************************************************************}
 
 procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
@@ -1628,7 +1634,15 @@ var
 //  glVertexAttribPointer: procedure(index: GLuint; size: GLint; _type: GLenum; normalized: GLboolean; stride: GLsizei; const pointer: PGLvoid); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
 
-  ShadersSupported,MultiTextureSupported : boolean;
+  //Vertex buffer objects
+  glBindBufferARB : procedure(target: GLenum; buffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteBuffersARB : procedure(n :GLsizei; const buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenBuffersARB : procedure(n :GLsizei; buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBufferDataARB : procedure(target: GLenum; size: integer; const data: pointer; usage: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBufferSubDataARB : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
+
+  ShadersSupported,MultiTextureSupported,VbosSupported : boolean;
 
 {procedure LoadOpenGL( const dll: PChar );
 procedure FreeOpenGL;}
@@ -1997,7 +2011,7 @@ const FuncArray : packed array[0..335{$ifdef win32}+1{$endif}] of
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..13{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..18{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -2061,7 +2075,14 @@ const ExtFuncArray : packed array[0..13{$ifndef minimal}+4{$endif}] of
 //(Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
 //(Name : 'glUniform2i'; Ptr : @@glUniform2i),
 (Name : 'glUseProgram'; Ptr : @@glUseProgram),
-(Name : 'glActiveTexture'; Ptr : @@glActiveTexture)
+ //Multitexture
+(Name : 'glActiveTexture'; Ptr : @@glActiveTexture),
+ //VBO
+(Name : 'glBindBufferARB'; Ptr : @@glBindBufferARB),
+(Name : 'glDeleteBuffersARB'; Ptr : @@glDeleteBuffersARB),
+(Name : 'glGenBuffersARB'; Ptr : @@glGenBuffersARB),
+(Name : 'glBufferDataARB'; Ptr : @@glBufferDataARB),
+(Name : 'glBufferSubDataARB'; Ptr : @@glBufferSubDataARB)
 //(Name : 'glVertexAttrib4ubv'; Ptr : @@glVertexAttrib4ubv),
 //(Name : 'glVertexAttrib4sv'; Ptr : @@glVertexAttrib4sv),
 //(Name : 'glVertexAttrib4s'; Ptr : @@glVertexAttrib4s),
@@ -2114,6 +2135,8 @@ begin
 
   ShadersSupported := @glUseProgram<>nil;
   MultiTextureSupported := @glActiveTexture<>nil;
+  VbosSupported := @glBindBufferARB<>nil;
+//  VbosSupported := false;
 end;
 
 procedure LoadOpenGL(const dll: PChar);

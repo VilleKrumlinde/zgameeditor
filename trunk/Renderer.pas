@@ -328,50 +328,46 @@ end;
 {$endif}
 
 procedure RenderMesh(Mesh: TMesh);
-{$DEFINE USE_VERTEX_ARRAYS}
-{$ifndef USE_VERTEX_ARRAYS}
-var
-  I : integer;
-{$endif}
 begin
   Mesh.BeforeRender;
+
   case Mesh.Style of
     msTris :
       begin
-{$ifdef USE_VERTEX_ARRAYS}
-        //Rita med vertex arrayer
-        //Verticedata ligger kvar i arbetsminnet
-        //Använd vertex buffer objects extension för att kopiera till grafikkortet
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT,0,Mesh.Normals);
-        if Mesh.TexCoords<>nil then
+        if VbosSupported then
         begin
-          glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-          glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
-        end;
-        if Mesh.Colors<>nil then
+          //Use vertex buffer objects
+          //vbo is prepared in Mesh.BeforeRender
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,nil);
+
+          glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+          glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+        end else
         begin
-          glEnableClientState(GL_COLOR_ARRAY);
-          glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
+          //Use vertex arrays
+          glEnableClientState(GL_VERTEX_ARRAY);
+          glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
+          glEnableClientState(GL_NORMAL_ARRAY);
+          glNormalPointer(GL_FLOAT,0,Mesh.Normals);
+          if Mesh.TexCoords<>nil then
+          begin
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
+          end;
+          if Mesh.Colors<>nil then
+          begin
+            glEnableClientState(GL_COLOR_ARRAY);
+            glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
+          end;
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,Mesh.Indices);
         end;
-        glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,Mesh.Indices);
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
-{$else}
-        glBegin(GL_TRIANGLES);
-        for I := 0 to Mesh.IndicesCount-1 do
-        begin
-          glNormal3fv( @Mesh.Normals^[ Mesh.Indices^[I] ] );
-          glVertex3fv( @Mesh.Vertices^[ Mesh.Indices^[I] ] );
-        end;
-        glEnd;
-{$endif}
       end;
   end;
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_COLOR_ARRAY);
 
   {$ifndef minimal}
   //Display normals for debugging
