@@ -334,7 +334,7 @@ begin
   case Mesh.Style of
     msTris :
       begin
-        if VbosSupported then
+        if VbosSupported and (not Mesh.IsDynamic) then
         begin
           //Use vertex buffer objects
           //vbo is prepared in Mesh.BeforeRender
@@ -497,12 +497,13 @@ begin
     StartI := 0;
   for I := StartI downto 0 do
   begin
+    if MultiTextureSupported and ((NewM.Textures[I]<>nil) or ((not NilOld) and (OldM.Textures[I]<>nil))) then
+      glActiveTexture($84C0 + I);
+
     if NilOld or (NewM.Textures[I]<>OldM.Textures[I])
     {$ifndef minimal}or ((NewM.Textures[I]<>nil) and (TZBitmap(NewM.Textures[I]).Producers.IsChanged)){$endif}
     then
     begin
-      if MultiTextureSupported then
-        glActiveTexture($84C0 + I);
       if NewM.Textures[I]<>nil then
       begin
         glEnable(GL_TEXTURE_2D);
@@ -548,9 +549,10 @@ begin
     end;
   end;
 
-  if NilOld or (NewM.TextureWrapMode<>OldM.TextureWrapMode) then
+  if NilOld or ((NewM.TextureWrapMode<>OldM.TextureWrapMode) or (NewM.Textures[0]<>OldM.Textures[0])) then
   begin
     Tmp := TexWrapModes[Ord(NewM.TextureWrapMode)];
+    //This is a local parameter for every texture
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
   end;
@@ -1476,9 +1478,12 @@ begin
   {$endif}
 
   if (Mesh=nil) then
+  begin
     Mesh := TMesh.Create(nil);
+  end;
 
   Mesh.MakeNet(XCount,YCount);
+  Mesh.IsDynamic := True;
 
   if VertexColors and (Mesh.Colors=nil) then
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);

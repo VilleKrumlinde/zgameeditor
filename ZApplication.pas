@@ -104,6 +104,7 @@ type
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
     MouseVisible : boolean;
+    EscapeToQuit : boolean;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
@@ -111,10 +112,10 @@ type
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
-    procedure Terminate;
     procedure AddModel(Model : TModel);
     procedure Update; override;
     {$ifndef minimal}
+    procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer);
     procedure DesignerStop;
     procedure DesignerSetUpView;
@@ -385,11 +386,13 @@ begin
   Platform_Run(Self.Main);
 end;
 
+{$ifndef minimal}
 procedure TZApplication.Terminate;
 begin
   Terminating := True;
   Shutdown;
 end;
+{$endif}
 
 //Update ActualViewportRatio which is the ratio that is used
 procedure TZApplication.UpdateViewport;
@@ -600,6 +603,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
   List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}integer(@EscapeToQuit) - integer(Self), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon) - integer(Self), zptBinary);

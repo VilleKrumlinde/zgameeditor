@@ -64,7 +64,8 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    Method : (cmeAdd);
+    Method : (cmeAdd,cmeSubtract);
+    ExcludeAlpha : boolean;
   end;
 
 
@@ -483,14 +484,15 @@ procedure TBitmapCombine.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Method',{$ENDIF}integer(@Method) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Add']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Add','Subtract']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ExcludeAlpha',{$ENDIF}integer(@ExcludeAlpha) - integer(Self), zptBoolean);
 end;
 
 procedure TBitmapCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   B,B1,B2 : TZBitmap;
   Data1,Data2,P1,P2 : PColorf;
-  I,J : integer;
+  I,J,EndI : integer;
 begin
   if Stack.Count<2 then
     Exit;
@@ -514,13 +516,24 @@ begin
 
   P1 := Data1;
   P2 := Data2;
+
+  if Self.ExcludeAlpha then
+    EndI := 2
+  else
+    EndI := 3;
+
   for I := 0 to B1.PixelWidth*B1.PixelHeight-1 do
   begin
     case Method of
       cmeAdd :
         begin
-          for J := 0 to 3 do
+          for J := 0 to EndI do
             P2^.V[J] := Clamp(P1^.V[J] + P2^.V[J],0,1);
+        end;
+      cmeSubtract :
+        begin
+          for J := 0 to EndI do
+            P2^.V[J] := Clamp(P1^.V[J] - P2^.V[J],0,1);
         end;
     end;
     Inc(P1);

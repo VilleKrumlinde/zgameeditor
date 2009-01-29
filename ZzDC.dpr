@@ -63,7 +63,7 @@ begin
   ZApp := ZApplication.LoadApplicationComponent;
 //  try
     ZApp.Run;
-    ZApp.Terminate;
+//    ZApp.Terminate;
 //  finally
     ZApp.Free;
 //  end;

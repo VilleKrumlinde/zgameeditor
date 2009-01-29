@@ -108,7 +108,7 @@ implementation
 uses ZMath,ZLog;
 
 const
-  RES =	10; //* # converge iterations    */
+  RES = 10; //* # converge iterations    */
   ImpHASHBIT = 5;
   ImpHASHSIZE = (1 shl (3*ImpHASHBIT));
   ImpMASK = ((1 shl ImpHASHBIT)-1);
@@ -189,7 +189,7 @@ type
     Vertices,Normals,Triangles : TZArrayList;
     MultipleSurfaces : boolean; //if true, compute whole area to look for more surfaces
     procedure Find(var Test : TImpTest; Sign: boolean; X,Y,Z : TImpType);
-    procedure Converge(var P1,P2 : TImpPoint; V : TImpType; out P : TImpPoint);
+    procedure Converge(var P1,P2 : TImpPoint; V : TImpType; MaxIter : integer; out P : TImpPoint);
     procedure March(const X,Y,Z : TImpType);
     constructor Create;
     function SetCorner(I, J, K: integer): TImpCorner;
@@ -227,7 +227,7 @@ end;
 { TImpProcess }
 
 //from two points of differing sign, converge to zero crossing
-procedure TImpProcess.Converge(var P1, P2 : TImpPoint; V: TImpType; out P : TImpPoint);
+procedure TImpProcess.Converge(var P1, P2 : TImpPoint; V: TImpType; MaxIter : integer; out P : TImpPoint);
 var
   I : integer;
   Pos,Neg : TImpPoint;
@@ -249,9 +249,10 @@ begin
     P.X := 0.5 * (Pos.X + Neg.X);
     P.Y := 0.5 * (Pos.Y + Neg.Y);
     P.Z := 0.5 * (Pos.Z + Neg.Z);
-    if I=Res then
-      Exit;
+    if I=MaxIter then
+      Break;
     Inc(I);
+
     if Func.Eval(P.X,P.Y,P.Z)>0 then
       Pos := P
     else
@@ -495,7 +496,7 @@ begin
   A.X := C1.X; A.Y := C1.Y; A.Z := C1.Z;
   B.X := C2.X; B.Y := C2.Y; B.Z := C2.Z;
 
-  Converge(A,B,C1.Value,V);  //position
+  Converge(A,B,C1.Value,4,V);  //position
 
   VNormal(V,N);
   Vertices.Push( TImpPointInList.Create(V) );
@@ -669,7 +670,7 @@ begin
     Find(TOut,False, x, y, z);
     if (not TIn.Ok) or (not TOut.Ok) then
       Exit; //ZHalt('can''t find starting point');
-    Converge(TIn.P, TOut.P, TIn.Value, Self.Start);
+    Converge(TIn.P, TOut.P, TIn.Value, RES, Self.Start);
   end;
   //else If multiplesurfaces just leave start point at zero, whole area will be calculated anyway
 

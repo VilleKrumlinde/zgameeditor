@@ -83,7 +83,7 @@ begin
         SDL_KEYUP :
           begin
             {$ifdef minimal}
-            if E.Key.keysym.sym=SDLK_ESCAPE then
+            if (E.Key.keysym.sym=SDLK_ESCAPE) and ZApp.EscapeToQuit then
               Finished := True;
             {$endif}
             Keys[ E.Key.keysym.sym mod 512 ] := False;

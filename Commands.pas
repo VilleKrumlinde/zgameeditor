@@ -88,8 +88,18 @@ type
     RepeatCount : integer;
     procedure Execute; override;
     {$ifndef minimal}
-    procedure DesignerReset; override; 
+    procedure DesignerReset; override;
     {$endif}
+  end;
+
+  TJoystickAxis = class(TCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    OnMoved : TZComponentList;
+    JoystickId : integer;
+    AxisIndex : integer;
+    procedure Execute; override;
   end;
 
 implementation
@@ -290,6 +300,22 @@ begin
       end;
     end;
   end;
+end;
+
+{ TJoystickAxis }
+
+procedure TJoystickAxis.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'OnMoved',{$ENDIF}integer(@OnMoved) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'JoystickId',{$ENDIF}integer(@JoystickId) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'AxisIndex',{$ENDIF}integer(@AxisIndex) - integer(Self), zptInteger);
+end;
+
+procedure TJoystickAxis.Execute;
+begin
+  inherited;
+
 end;
 
 initialization

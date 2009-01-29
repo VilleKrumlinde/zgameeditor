@@ -64,6 +64,7 @@ type
         Radius : single;
       end;
     {$endif}
+    IsDynamic : boolean;   //True if vertices can be changed in runtime
     procedure Scale(const V : TZVector3f);
     procedure MakeNet(XCount,YCount : integer);
     procedure BeforeRender;
@@ -372,6 +373,7 @@ begin
   TexCoords := M.TexCoords;
   Colors := M.Colors;
   Style := M.Style;
+  IsDynamic := M.IsDynamic;
   M.Vertices :=nil;
   M.Indices :=nil;
   M.Normals :=nil;
@@ -408,6 +410,9 @@ begin
     GetMem(TexCoords, SizeOf(TZVector2f) * VerticesCount);
   if WithColors then
     GetMem(Colors, SizeOf(TMeshVertexColor) * VerticesCount);
+
+  //Use VBOs for larger meshes only
+  IsDynamic := TQuantity<1024;
 end;
 
 procedure TMesh.FreeData;
@@ -465,7 +470,7 @@ begin
     {$endif}
   end;
 
-  if ZOpenGL.VbosSupported then
+  if ZOpenGL.VbosSupported and (not IsDynamic) then
   begin
 
     if Self.VboHandles[0]=0 then

@@ -79,7 +79,7 @@ begin
     WM_KEYUP:         // Set the released key (wparam) to equal false so we can check if its pressed
       begin
         {$ifdef minimal}
-        if wParam=VK_ESCAPE then
+        if (wParam=VK_ESCAPE) and ZApp.EscapeToQuit then
           PostMessage(hWnd,WM_QUIT,0,0);
         {$endif}
         Keys[Lo(wParam)] := False;
