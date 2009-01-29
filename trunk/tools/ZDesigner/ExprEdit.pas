@@ -829,6 +829,7 @@ begin
     else if (Op.Id='acos') then DoGenFunc(fcAcos)
     else if (Op.Id='asin') then DoGenFunc(fcAsin)
     else if (Op.Id='round') then DoGenFunc(fcRound)
+    else if (Op.Id='quit') then DoGenFunc(fcQuit,0)
     else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
   end;
 end;

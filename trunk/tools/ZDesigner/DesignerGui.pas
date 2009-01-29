@@ -238,7 +238,7 @@ begin
   if C = nil then
     Exit;
 
-  //Important: otherwise vertscrollbars appears that crash if clicked upon  
+  //Important: otherwise vertscrollbars appears that crash if clicked upon
   Self.DisableAutoRange;
 
   PEditor := nil;
@@ -1536,8 +1536,13 @@ end;
 procedure TZBinaryPropEdit.SetProp(C: TZComponent; Prop: TZProperty);
 var
   B : TButton;
+  IsEnabled : boolean;
 begin
   inherited;
+
+  if not IsReadOnlyProp then
+    IsReadOnlyProp := (ComponentManager.GetInfo(C).ClassId=MeshImportClassId);
+  IsEnabled := (not Self.IsReadOnlyProp);
 
   ValuePanel.Alignment := taLeftJustify;
 
@@ -1548,7 +1553,7 @@ begin
   ClearButton.Hint := 'Clear the current content';
   ClearButton.OnClick := OnClearValue;
   ClearButton.Parent := ValuePanel;
-  ClearButton.Enabled := not Self.IsReadOnlyProp;
+  ClearButton.Enabled := IsEnabled;
 
   B := TButton.Create(Self);
   B.Align := alRight;
@@ -1558,7 +1563,7 @@ begin
   B.Hint := 'Select a file to import';
   B.OnClick := OnStoreValue;
   B.Parent := ValuePanel;
-  B.Enabled := not Self.IsReadOnlyProp;
+  B.Enabled := IsEnabled;
 
   DataChanged;
 end;

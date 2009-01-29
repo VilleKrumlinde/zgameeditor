@@ -179,7 +179,8 @@ type
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
-     fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,fcSetRandomSeed);
+     fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
+     fcSetRandomSeed,fcQuit);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -312,7 +313,7 @@ begin
   gStack.Clear;
   gStack.Push(nil); //Push return adress nil
   {$ifndef minimal}
-  GuardLimit := 10 * 1000000;
+  GuardLimit := 20 * 1000000;
   {$endif}
   while True do
   begin
@@ -323,7 +324,7 @@ begin
     {$ifndef minimal}
     Dec(GuardLimit);
     if GuardLimit=0 then
-      ZHalt('Ten million instructions executed. Infinite loop?');
+      ZHalt('Twenty million instructions executed. Infinite loop?');
     {$endif}
   end;
   if gStack.Count=1 then
@@ -613,6 +614,11 @@ begin
       begin
         V := System.RandSeed; //int to float
         System.RandSeed := Round(gStack.PopFloat); //float to int
+      end;
+    fcQuit :
+      begin
+        V := 0; //todo: does not return a value
+        ZApp.Terminating := True;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
