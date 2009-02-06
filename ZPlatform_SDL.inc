@@ -447,6 +447,18 @@ begin
   SDL_Delay(time);
 end;
 
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+begin
+  //TODO: joystick support
+  Result := 0;
+end;
+
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+begin
+  //TODO: joystick support
+  Result := False;
+end;
+
 initialization
 
   // Initialize SDL

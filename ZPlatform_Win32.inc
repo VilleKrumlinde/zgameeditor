@@ -58,6 +58,11 @@ var
   LastMouse : TPoint;
 
 
+procedure UpdateJoysticks; forward;
+procedure InitJoysticks; forward;
+
+
+
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
 begin
   Result := 0;
@@ -69,7 +74,7 @@ begin
     WM_CLOSE,WM_DESTROY:
       begin
         //In screensaver mode with ParentWindow: parent window sends destroy to
-        //all child windows, important to quit otherwise process will keep on living. 
+        //all child windows, important to quit otherwise process will keep on living.
         PostQuitMessage(0);
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
@@ -110,6 +115,7 @@ begin
   //Brygga mellan vcl-tmessage och win-api wndproc.
   M := Messages.PMessage(P);
   WndProc(h_Wnd,M.Msg,M.WParam,M.LParam);
+  UpdateJoysticks;
 end;
 {$ifend}
 
@@ -493,6 +499,8 @@ begin
     begin
       if not (Callback()) then
         Finished := True;
+
+      UpdateJoysticks;
 
       {$ifdef zzdc_activex}
       if ZgeActiveXFinished then
@@ -1354,6 +1362,8 @@ begin
   QueryPerformanceCounter(TimerStart);
 
   InitKeyMap;
+
+  InitJoysticks;
 end;
 
 
@@ -1447,6 +1457,178 @@ end;
 procedure Platform_Sleep(time : integer);
 begin
   Sleep(time);
+end;
+
+
+//-------------------------------------------
+//JOYSTICK support
+//Inspired and borrowed from SDL_mmjoystick.c
+
+const
+  mmsyst = 'winmm.dll';
+  MAX_JOYSTICKS = 16;
+  MAX_AXES = 6;
+
+type
+  //From mmsystem.pas
+  JOYCAPS = record
+    wMid: Word;
+    wPid: Word;
+    szPname: array[0..32-1] of byte;
+    wXmin: UINT;
+    wXmax: UINT;
+    wYmin: UINT;
+    wYmax: UINT;
+    wZmin: UINT;
+    wZmax: UINT;
+    wNumButtons: UINT;
+    wPeriodMin: UINT;
+    wPeriodMax: UINT;
+    wRmin: UINT;
+    wRmax: UINT;
+    wUmin: UINT;
+    wUmax: UINT;
+    wVmin: UINT;
+    wVmax: UINT;
+    wCaps: UINT;
+    wMaxAxes: UINT;
+    wNumAxes: integer;
+    wMaxButtons: UINT;
+    szRegKey: array[0..32 - 1] of byte;
+    szOEMVxD: array[0..260 - 1] of byte;
+  end;
+
+  JOYINFOEX = record
+    dwSize: DWORD;
+    dwFlags: DWORD;
+    wXpos: UINT;
+    wYpos: UINT;
+    wZpos: UINT;
+    dwRpos: DWORD;
+    dwUpos: DWORD;
+    dwVpos: DWORD;
+    wButtons: UINT;
+    dwButtonNumber: DWORD;
+    dwPOV: DWORD;
+    dwReserved1: DWORD;
+    dwReserved2: DWORD;
+  end;
+
+  PJoystick = ^TJoystick;
+  TJoystick =
+    record
+      Caps : JOYCAPS;
+      TransAxis : array[0..MAX_AXES-1] of
+        record
+          Offset : single;
+          Scale : single;
+        end;
+      Values : array[0..MAX_AXES-1] of single;
+      Buttons : LongWord;
+    end;
+
+var
+  Joysticks : array[0..MAX_JOYSTICKS-1] of TJoystick;
+  JoyCount : integer;
+
+function joyGetNumDevs: UINT; stdcall; external mmsyst name 'joyGetNumDevs';
+function joyGetDevCaps(uJoyID: UINT; lpCaps: pointer; uSize: UINT): UINT; stdcall;
+   external mmsyst name 'joyGetDevCapsA';
+function joyGetPosEx(uJoyID: UINT; lpInfo: pointer): UINT; stdcall;
+   external mmsyst name 'joyGetPosEx';
+
+procedure InitJoysticks;
+type
+  PMinMax = ^TMinMax;
+  TMinMax = packed record min,max : LongWord; end;
+var
+  I,J,MaxDevs : integer;
+  MinMax : PMinMax;
+  Joy : PJoystick;
+begin
+  MaxDevs := joyGetNumDevs();
+  if MaxDevs>MAX_JOYSTICKS then
+    MaxDevs := MAX_JOYSTICKS;
+
+  for I := 0 to MaxDevs - 1 do
+  begin
+    Joy := @Joysticks[I];
+    if joyGetDevCaps(I,@Joy.Caps,SizeOf(JOYCAPS))<>0 then
+      Break;
+
+    MinMax := @Joy.Caps.wXmin;
+    for J := 0 to MAX_AXES-1 do
+    begin
+      if (MinMax.Min<>0) or (MinMax.Max<>0) then
+      begin
+        Joy.TransAxis[J].Offset := MinMax.Min;
+        Joy.TransAxis[J].Scale := (2.0) / (MinMax.Max-MinMax.Min);
+      end;
+      if J=2 then
+        MinMax := @Joy.Caps.wRmin
+      else
+        Inc(MinMax);
+    end;
+  end;
+  JoyCount := I;
+end;
+
+procedure UpdateJoystick(JoyId : integer; var Joy : TJoystick);
+const
+  Mask : LongWord = $FFFFFFF0;
+var
+  Info : JOYINFOEX;
+  Flag : LongWord;
+  I : integer;
+  Pos : ^LongWord;
+begin
+  Info.dwSize := SizeOf(Info);
+  Info.dwFlags := 191;
+
+  joyGetPosEx(JoyId, @Info);
+
+  Pos := @Info.wXpos;
+  Flag := 1;
+  for I := 0 to MAX_AXES - 1 do
+  begin
+    if (Info.dwFlags and Flag)>0 then
+    begin
+      Joy.Values[I] := (((Pos^ and Mask) - Joy.TransAxis[I].Offset) * Joy.TransAxis[I].Scale)-1.0;
+    end;
+    Flag := Flag shl 1;
+    Inc(Pos);
+  end;
+
+  Joy.Buttons := Info.wButtons;
+end;
+
+procedure UpdateJoysticks;
+var
+  I : integer;
+begin
+  for I := 0 to JoyCount - 1 do
+    UpdateJoystick(I,Joysticks[I]);
+end;
+
+
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+var
+  Joy : PJoystick;
+begin
+  Result := 0;
+  if JoyId<JoyCount then
+  begin
+    Joy := @Joysticks[JoyId];
+    if Axis<Joy.Caps.wNumAxes then
+      Result := Joysticks[JoyId].Values[Axis];
+  end;
+end;
+
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+begin
+  Result := False;
+  if JoyId<JoyCount then
+    Result := (Joysticks[JoyId].Buttons and (1 shl Button))>0;
 end;
 
 {initialization
