@@ -72,6 +72,10 @@ function Platform_GLLoadProc(const P : PChar) : pointer;
 
 function Platform_ShowOptionDialog : boolean;
 
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+
+
 {$ifndef minimal}
 type
   TDesignerAudioCallback = procedure(P : pointer; Count : integer);

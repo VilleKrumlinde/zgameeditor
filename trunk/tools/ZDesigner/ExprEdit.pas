@@ -830,6 +830,8 @@ begin
     else if (Op.Id='asin') then DoGenFunc(fcAsin)
     else if (Op.Id='round') then DoGenFunc(fcRound)
     else if (Op.Id='quit') then DoGenFunc(fcQuit,0)
+    else if (Op.Id='joyGetAxis') then DoGenFunc(fcJoyGetAxis,2)
+    else if (Op.Id='joyGetButton') then DoGenFunc(fcJoyGetButton,2)
     else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
   end;
 end;

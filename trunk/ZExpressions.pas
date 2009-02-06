@@ -180,7 +180,8 @@ type
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
-     fcSetRandomSeed,fcQuit);
+     fcSetRandomSeed,fcQuit,
+     fcJoyGetAxis,fcJoyGetButton);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -619,6 +620,20 @@ begin
       begin
         V := 0; //todo: does not return a value
         ZApp.Terminating := True;
+      end;
+    fcJoyGetAxis :
+      begin
+        //todo: arguments should be integers
+        A2 := gStack.PopFloat;
+        A1 := gStack.PopFloat;
+        V := Platform_GetJoystickAxis(Round(A1),Round(A2));
+      end;
+    fcJoyGetButton :
+      begin
+        //todo: arguments should be integers, return should be int
+        A2 := gStack.PopFloat;
+        A1 := gStack.PopFloat;
+        V := Ord(Platform_GetJoystickButton(Round(A1),Round(A2))) and 1;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
