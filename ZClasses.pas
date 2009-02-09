@@ -151,6 +151,9 @@ type
     procedure Grow;
     function GetItem(Index: Integer): TObject;
     procedure SetItem(Index: Integer; const Value: TObject);
+    {$ifndef minimal}
+    procedure CheckValidIndex(Index: Integer);
+    {$endif}
   public
     ReferenceOnly : boolean;
     constructor CreateReferenced;
@@ -166,7 +169,6 @@ type
     property Count : integer read FCount;
     procedure Push(Item : TObject);
     function Pop : TObject;
-    function PopFloat : single;
     function GetPtrToItem(Index: Integer): pointer;
   end;
 
@@ -1113,8 +1115,17 @@ begin
   inherited;
 end;
 
+{$ifndef minimal}
+procedure TZArrayList.CheckValidIndex(Index: Integer);
+begin
+  if (Index < 0) or (Index >= FCount) then
+    ZHalt('ZArrayList bad index');
+end;
+{$endif}
+
 function TZArrayList.GetItem(Index: Integer): TObject;
 begin
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   if (Index < 0) or (Index >= FCount) then
     ZHalt('ZArrayList bad index');
   Result := List^[Index];
@@ -1122,17 +1133,13 @@ end;
 
 function TZArrayList.GetPtrToItem(Index: Integer): pointer;
 begin
-  {$IFNDEF MINIMAL}
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
-  {$ENDIF}
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Result := @List^[Index];
 end;
 
 procedure TZArrayList.SetItem(Index: Integer; const Value: TObject);
 begin
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   List^[Index] := Value;
 end;
 
@@ -1164,8 +1171,7 @@ procedure TZArrayList.RemoveAt(Index: integer);
 var
   Temp: TObject;
 begin
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Temp := List^[Index];
   Dec(FCount);
   if Index < FCount then
@@ -1202,7 +1208,6 @@ end;
 
 function TZArrayList.Pop: TObject;
 begin
-  {$ifndef minimal}Assert(Count>0);{$endif}
   Result := Last;
   RemoveAt(Count-1);
 end;
@@ -1210,16 +1215,6 @@ end;
 procedure TZArrayList.Push(Item: TObject);
 begin
   Add(Item);
-end;
-
-function TZArrayList.PopFloat: single;
-var
-  T : TObject;
-begin
-  //FPC har en bug så att man inte kan skriva: f:=single(stack.pop)
-  T:=Last;
-  Result := single(T);
-  RemoveAt(Count-1);
 end;
 
 constructor TZArrayList.CreateReferenced;
