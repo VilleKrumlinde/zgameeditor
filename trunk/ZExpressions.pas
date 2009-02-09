@@ -298,7 +298,59 @@ var
   //Expression execution context
   gCurrentPc : ^TExpBase;
   gCurrentBP : integer;
-  gStack : TZArrayList;
+
+
+const
+  ZcStackSize=16384;
+
+var
+  ZcStack : array[0..ZcStackSize div SizeOf(Integer)] of integer;
+  ZcStackPtr : PInteger;
+
+const
+  ZcStackBegin : PInteger = @ZcStack;
+
+function StackGetDepth : integer;
+begin
+  Result := (integer(ZcStackPtr) - integer(ZcStackBegin)) div SizeOf(Integer);
+end;
+
+procedure StackPush(const X);
+begin
+  {$ifndef minimal}
+  if StackGetDepth>=High(ZcStack) then
+    ZHalt('Zc Stack Overflow (infinite recursion?)');
+  {$endif}
+  ZcStackPtr^ := PInteger(@X)^;
+  Inc(ZcStackPtr);
+end;
+
+procedure StackPushValue(X : pointer);
+begin
+  StackPush(X);
+end;
+
+procedure StackPopTo(var X);
+begin
+  {$ifndef minimal}
+  if StackGetDepth=0 then
+    ZHalt('Zc Stack Underflow');
+  {$endif}
+  Dec(ZcStackPtr);
+  PInteger(@X)^:=ZcStackPtr^;
+end;
+
+function StackPopFloat : single;
+begin
+  StackPopTo(Result);
+end;
+
+
+function StackGetPtrToItem(const Index : integer) : PInteger;
+begin
+  Result := @ZcStack;
+  Inc(Result,Index);
+end;
 
 procedure RunCode(Code : TZComponentList);
 {$ifndef minimal}
@@ -311,8 +363,11 @@ begin
     Exit;
   gCurrentPc := Code.GetPtrToItem(0);
   gCurrentBP := 0;
-  gStack.Clear;
-  gStack.Push(nil); //Push return adress nil
+
+  //Reset stack
+  ZcStackPtr := ZcStackBegin;
+  StackPushValue(nil); //Push return adress nil
+
   {$ifndef minimal}
   GuardLimit := 20 * 1000000;
   {$endif}
@@ -328,10 +383,10 @@ begin
       ZHalt('Twenty million instructions executed. Infinite loop?');
     {$endif}
   end;
-  if gStack.Count=1 then
-    gReturnValue := gStack.PopFloat;
+  if StackGetDepth=1 then
+    StackPopTo(gReturnValue);
   {$ifndef minimal}
-  if gStack.Count>0 then
+  if StackGetDepth>0 then
     ZLog.GetLog('Zc').Write('Warning, stack not empty on script completion');
   {$endif}
 end;
@@ -348,8 +403,6 @@ procedure TZExpression.Execute;
 begin
   ZExpressions.RunCode(Expression.Code);
   Value := ZExpressions.gReturnValue;
-//  IsChanged := False;
-//  Expression.Code.IsChanged := False;
 end;
 
 { TExpPropValueBase }
@@ -362,7 +415,7 @@ end;
 
 procedure TExpPropValue4.Execute;
 begin
-  gStack.Push( TObject(ZClasses.GetPropertyRef(Source)^) );
+  StackPush(ZClasses.GetPropertyRef(Source)^);
 end;
 
 //Load byte value and cast to integer
@@ -373,7 +426,7 @@ var
 begin
   B := PByte(ZClasses.GetPropertyRef(Source))^;
   I := B;
-  gStack.Push( TObject(I) );
+  StackPush(I);
 end;
 
 { TExpConstantFloat }
@@ -386,7 +439,7 @@ end;
 
 procedure TExpConstantFloat.Execute;
 begin
-  gStack.Push( TObject(Constant) );
+  StackPush( Constant );
 end;
 
 {$ifndef minimal}
@@ -406,7 +459,7 @@ end;
 
 procedure TExpConstantInt.Execute;
 begin
-  gStack.Push( TObject(Constant) );
+  StackPush( Constant );
 end;
 
 {$ifndef minimal}
@@ -429,8 +482,8 @@ procedure TExpOpBinaryFloat.Execute;
 var
   A1,A2,V : single;
 begin
-  A1 := gStack.PopFloat;
-  A2 := gStack.PopFloat;
+  StackPopTo(A1);
+  StackPopTo(A2);
   case Kind of
     vbkPlus : V := A1 + A2;
     vbkMinus : V := A2 - A1;
@@ -438,7 +491,7 @@ begin
     vbkDiv : V := A2 / A1;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
-  gStack.Push(TObject(V));
+  StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
@@ -447,8 +500,8 @@ procedure TExpOpBinaryInt.Execute;
 var
   A1,A2,V : integer;
 begin
-  A1 := Integer(gStack.Pop);
-  A2 := Integer(gStack.Pop);
+  StackPopTo(A1);
+  StackPopTo(A2);
   case Kind of
     vbkPlus : V := A1 + A2;
     vbkMinus : V := A2 - A1;
@@ -456,7 +509,7 @@ begin
     vbkDiv : V := A2 div A1;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
-  gStack.Push(TObject(V));
+  StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
@@ -470,7 +523,7 @@ end;
 
 procedure TExpPropPtr.Execute;
 begin
-  gStack.Push(TObject(GetPropertyRef(Target)));
+  StackPushValue(GetPropertyRef(Target));
 end;
 
 { TExpJump }
@@ -496,8 +549,8 @@ begin
     begin
       if _Type=jutFloat then
       begin
-        R := gStack.PopFloat;
-        L := gStack.PopFloat;
+        StackPopTo(R);
+        StackPopTo(L);
         case Kind of
           jsJumpLT : Jump := L<R;
           jsJumpGT : Jump := L>R;
@@ -509,8 +562,8 @@ begin
         end;
       end else
       begin
-        Ri := Integer(gStack.Pop);
-        Li := Integer(gStack.Pop);
+        StackPopTo(Ri);
+        StackPopTo(Li);
         case Kind of
           jsJumpLT : Jump := Li<Ri;
           jsJumpGT : Jump := Li>Ri;
@@ -554,56 +607,56 @@ var
   V,A1,A2,A3 : single;
 begin
   case Kind of
-    fcSin :  V := Sin(gStack.PopFloat);
-    fcSqrt : V := Sqrt(gStack.PopFloat);
-    fcCos : V := Cos(gStack.PopFloat);
-    fcAbs : V := Abs(gStack.PopFloat);
+    fcSin :  V := Sin(StackPopFloat);
+    fcSqrt : V := Sqrt(StackPopFloat);
+    fcCos : V := Cos(StackPopFloat);
+    fcAbs : V := Abs(StackPopFloat);
     fcRnd : V := System.Random;
-    fcFrac : V := Frac(gStack.PopFloat);
-    fcExp : V := Exp(gStack.PopFloat);
-    fcTan : V := Tan(gStack.PopFloat);
-    fcCeil : V := Ceil(gStack.PopFloat);
-    fcFloor : V := Floor(gStack.PopFloat);
-    fcAcos : V := ArcCos(gStack.PopFloat);
-    fcAsin : V := ArcSin(gStack.PopFloat);
-    fcRound : V := Round(gStack.PopFloat);
+    fcFrac : V := Frac(StackPopFloat);
+    fcExp : V := Exp(StackPopFloat);
+    fcTan : V := Tan(StackPopFloat);
+    fcCeil : V := Ceil(StackPopFloat);
+    fcFloor : V := Floor(StackPopFloat);
+    fcAcos : V := ArcCos(StackPopFloat);
+    fcAsin : V := ArcSin(StackPopFloat);
+    fcRound : V := Round(StackPopFloat);
 
     fcRandom :
       begin
-        A2 := gStack.PopFloat; //Variance
-        A1 := gStack.PopFloat; //Base
+        StackPopTo(A2); //Variance
+        StackPopTo(A1); //Base
         V := A1 + ((2*System.Random-1.0) * A2);
       end;
     fcAtan2 :
       begin
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := ArcTan2(A1,A2);
       end;
     fcNoise2 :
       begin
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := PerlinNoise2(A1,A2);
       end;
     fcNoise3 :
       begin
-        A3 := gStack.PopFloat;
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A3);
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := PerlinNoise3(A1,A2,A3);
       end;
     fcClamp :
       begin
-        A3 := gStack.PopFloat;
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A3);
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := Clamp(A1,A2,A3);
       end;
     fcPow :
       begin
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := ZMath.Power(A1,A2);
       end;
     fcCenterMouse :
@@ -614,7 +667,7 @@ begin
     fcSetRandomSeed :
       begin
         V := System.RandSeed; //int to float
-        System.RandSeed := Round(gStack.PopFloat); //float to int
+        System.RandSeed := Round(StackPopFloat); //float to int
       end;
     fcQuit :
       begin
@@ -624,20 +677,20 @@ begin
     fcJoyGetAxis :
       begin
         //todo: arguments should be integers
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := Platform_GetJoystickAxis(Round(A1),Round(A2));
       end;
     fcJoyGetButton :
       begin
         //todo: arguments should be integers, return should be int
-        A2 := gStack.PopFloat;
-        A1 := gStack.PopFloat;
+        StackPopTo(A2);
+        StackPopTo(A1);
         V := Ord(Platform_GetJoystickButton(Round(A1),Round(A2))) and 1;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
-  gStack.Push(TObject(V));
+  StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
@@ -676,7 +729,7 @@ begin
     ZHalt('Array read outside range: ' + TheArray.Name);
   {$endif}
   V := P^;
-  gStack.Push( TObject( V ) );
+  StackPush( V );
 end;
 
 { TDefineArray }
@@ -711,13 +764,13 @@ var
   Index : integer;
   I1,I2,I3,ByteSize : integer;
 begin
-  I3 := Integer(gStack.Pop);
+  StackPopTo(I3);
   if Self.Dimensions>=dadTwo then
-    I2 := Integer(gStack.Pop)
+    StackPopTo(I2)
   else
     I2 := 0;
   if Self.Dimensions=dadThree then
-    I1 := Integer(gStack.Pop)
+    StackPopTo(I1)
   else
     I1 := 0;
 
@@ -781,7 +834,7 @@ begin
   if P=nil then
     ZHalt('Array assign outside range: ' + TheArray.Name);
   {$endif}
-  gStack.Push(P);
+  StackPush(P);
 end;
 
 { TExpStackFrame }
@@ -797,11 +850,11 @@ procedure TExpStackFrame.Execute;
 var
   I : integer;
 begin
-  gStack.Push(pointer(gCurrentBP));
-  gCurrentBP := gStack.Count;
+  StackPush(gCurrentBP);
+  gCurrentBP := StackGetDepth;
   //Todo: make ZStack-class with MakeSpace-method
   for I := 0 to Self.Size - 1 do
-    gStack.Add(nil);
+    StackPushValue(nil);
 end;
 
 { TExpAccessLocal }
@@ -815,12 +868,12 @@ end;
 
 procedure TExpAccessLocal.Execute;
 var
-  P : ^integer;  //4 byte data
+  P : PInteger;  //4 byte data
 begin
-  P := gStack.GetPtrToItem( gCurrentBP + Self.Index );
+  P := StackGetPtrToItem( gCurrentBP + Self.Index );
   case Kind of
-    loLoad: gStack.Push(TObject(P^));
-    loStore: P^ := integer(gStack.Pop);
+    loLoad: StackPush(P^);
+    loStore: StackPopTo(P^);
   end;
 end;
 
@@ -844,26 +897,26 @@ begin
   if HasReturnValue then
   begin
     //Local0 holds returnvalue
-    RetVal := PInteger( gStack.GetPtrToItem( gCurrentBP ) )^;
+    RetVal := PInteger( StackGetPtrToItem( gCurrentBP ) )^;
   end;
 
   if HasFrame then
   begin
-    while gStack.Count>gCurrentBP do
-      gStack.Pop;
-    gCurrentBP := integer(gStack.Pop);
+    while StackGetDepth>gCurrentBP do
+      StackPopFloat;
+    StackPopTo(gCurrentBP);
   end;
 
   //Get return adress
-  gCurrentPc := pointer(gStack.Pop);
+  StackPopTo(gCurrentPc);
 
   //Clean stack of function arguments
   for I := 0 to Arguments - 1 do
-    gStack.Pop;
+    StackPopFloat;
 
   if HasReturnValue then
   begin
-    gStack.Push(TObject(RetVal));
+    StackPush(RetVal);
   end;
 end;
 {$warnings on}
@@ -918,12 +971,12 @@ var
   V : integer;
 begin
   case Kind of
-    emPop: gStack.Pop;  //Pop, discard value from top of stack
+    emPop: StackPopFloat;  //Pop, discard value from top of stack
     emDup :
       begin
-        V := Integer(gStack.Pop);
-        gStack.Push(TObject(V));
-        gStack.Push(TObject(V));
+        StackPopTo(V);
+        StackPush(V);
+        StackPush(V);
       end;
   end;
 end;
@@ -947,11 +1000,7 @@ end;
 
 procedure TExpUserFuncCall.Execute;
 begin
-  {$ifndef minimal}
-  if gStack.Count>10000 then
-    ZHalt('Stack overflow in expression.');
-  {$endif}
-  gStack.Push(TObject(gCurrentPC));
+  StackPush(gCurrentPC);
   gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
   Dec(gCurrentPc);
 end;
@@ -967,16 +1016,19 @@ end;
 procedure TExpConvert.Execute;
 var
   V : single;
+  I : integer;
 begin
   case Kind of
     eckFloatToInt:
       begin
-        gStack.Push(TObject(Trunc(gStack.PopFloat)));
+        I := Trunc(StackPopFloat);
+        StackPush(I);
       end;
     eckIntToFloat :
       begin
-        V := Integer(gStack.Pop);
-        gStack.Push( TObject( V ) );
+        StackPopTo(I);
+        V := I;
+        StackPush(V);
       end;
   end;
 end;
@@ -985,12 +1037,12 @@ end;
 
 procedure TExpAssign4.Execute;
 var
-  V : single;
+  I : integer;
   P : pointer;
 begin
-  V := gStack.PopFloat;
-  P := gStack.Pop;
-  PFloat(P)^ := V;
+  StackPopTo(I);
+  StackPopTo(P);
+  PInteger(P)^ := I;
 end;
 
 { TExpAssign1 }
@@ -1002,8 +1054,8 @@ var
   P : pointer;
 begin
   //Cast integer to byte before assigning
-  V := Integer(gStack.Pop);
-  P := gStack.Pop;
+  StackPopTo(V);
+  StackPopTo(P);
   B := V;
   PByte(P)^ := B;
 end;
@@ -1018,10 +1070,6 @@ begin
 end;
 
 initialization
-
-  //Init vm
-  gStack := TZArrayList.Create;
-  gStack.ReferenceOnly := True;
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
@@ -1072,10 +1120,5 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAssign1,ExpAssign1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-
-{$ifndef minimal}
-finalization
-  gStack.Free;
-{$endif}
 
 end.
