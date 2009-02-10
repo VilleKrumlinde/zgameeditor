@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0.5 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -123,7 +123,7 @@ if(x!=2)
     </ZExpression>
     <ZExpression Comment="For-loops">
       <Expression>
-<![CDATA[int sum;
+<![CDATA[int sum=0;
 
 for(int i=0; i<10; i++) {
   sum+=10;
@@ -222,6 +222,16 @@ if(f!=0)
     </ZExpression>
     <SpawnModel Model="Model1"/>
   </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[if(Error==0)
+  App.ClearColor.R=0;
+else
+  App.ClearColor.R=1;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
   <OnRender>
     <RenderText TextFloatRef="Error Value"/>
   </OnRender>

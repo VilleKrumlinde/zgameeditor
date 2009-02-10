@@ -1465,13 +1465,12 @@ end;
 //Inspired and borrowed from SDL_mmjoystick.c
 
 const
-  mmsyst = 'winmm.dll';
   MAX_JOYSTICKS = 16;
   MAX_AXES = 6;
 
 type
-  //From mmsystem.pas
-  JOYCAPS = record
+  //From mmsystem.pas and slightly modified
+  TZ_JOYCAPS = record
     wMid: Word;
     wPid: Word;
     szPname: array[0..32-1] of byte;
@@ -1498,7 +1497,7 @@ type
     szOEMVxD: array[0..260 - 1] of byte;
   end;
 
-  JOYINFOEX = record
+  TZ_JOYINFOEX = record
     dwSize: DWORD;
     dwFlags: DWORD;
     wXpos: UINT;
@@ -1509,7 +1508,8 @@ type
     dwVpos: DWORD;
     wButtons: UINT;
     dwButtonNumber: DWORD;
-    dwPOV: DWORD;
+    wPOV: word;
+    filler1 : word;
     dwReserved1: DWORD;
     dwReserved2: DWORD;
   end;
@@ -1517,7 +1517,7 @@ type
   PJoystick = ^TJoystick;
   TJoystick =
     record
-      Caps : JOYCAPS;
+      Caps : TZ_JOYCAPS;
       TransAxis : array[0..MAX_AXES-1] of
         record
           Offset : single;
@@ -1525,17 +1525,12 @@ type
         end;
       Values : array[0..MAX_AXES-1] of single;
       Buttons : LongWord;
+      POV : single;
     end;
 
 var
   Joysticks : array[0..MAX_JOYSTICKS-1] of TJoystick;
   JoyCount : integer;
-
-function joyGetNumDevs: UINT; stdcall; external mmsyst name 'joyGetNumDevs';
-function joyGetDevCaps(uJoyID: UINT; lpCaps: pointer; uSize: UINT): UINT; stdcall;
-   external mmsyst name 'joyGetDevCapsA';
-function joyGetPosEx(uJoyID: UINT; lpInfo: pointer): UINT; stdcall;
-   external mmsyst name 'joyGetPosEx';
 
 procedure InitJoysticks;
 type
@@ -1577,13 +1572,13 @@ procedure UpdateJoystick(JoyId : integer; var Joy : TJoystick);
 const
   Mask : LongWord = $FFFFFFF0;
 var
-  Info : JOYINFOEX;
+  Info : TZ_JOYINFOEX;
   Flag : LongWord;
   I : integer;
   Pos : ^LongWord;
 begin
   Info.dwSize := SizeOf(Info);
-  Info.dwFlags := 191;
+  Info.dwFlags := $BF or $200;
 
   joyGetPosEx(JoyId, @Info);
 
@@ -1600,6 +1595,11 @@ begin
   end;
 
   Joy.Buttons := Info.wButtons;
+
+  if Info.wPOV=$FFFF then
+    Joy.POV := -1
+  else
+    Joy.POV := Info.wPOV*0.01;
 end;
 
 procedure UpdateJoysticks;
@@ -1629,6 +1629,13 @@ begin
   Result := False;
   if JoyId<JoyCount then
     Result := (Joysticks[JoyId].Buttons and (1 shl Button))>0;
+end;
+
+function Platform_GetJoystickPOV(JoyId : integer) : single;
+begin
+  Result := -1;
+  if JoyId<JoyCount then
+    Result := (Joysticks[JoyId]).POV;
 end;
 
 {initialization

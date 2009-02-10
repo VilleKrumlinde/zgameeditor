@@ -74,6 +74,7 @@ function Platform_ShowOptionDialog : boolean;
 
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
 function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+function Platform_GetJoystickPOV(JoyId : integer) : single;
 
 
 {$ifndef minimal}
