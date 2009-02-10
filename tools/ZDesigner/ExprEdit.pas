@@ -832,6 +832,7 @@ begin
     else if (Op.Id='quit') then DoGenFunc(fcQuit,0)
     else if (Op.Id='joyGetAxis') then DoGenFunc(fcJoyGetAxis,2)
     else if (Op.Id='joyGetButton') then DoGenFunc(fcJoyGetButton,2)
+    else if (Op.Id='joyGetPOV') then DoGenFunc(fcJoyGetPOV,1)
     else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
   end;
 end;

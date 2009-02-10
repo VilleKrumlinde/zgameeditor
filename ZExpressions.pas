@@ -181,7 +181,7 @@ type
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
-     fcJoyGetAxis,fcJoyGetButton);
+     fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -688,6 +688,12 @@ begin
         StackPopTo(A1);
         V := Ord(Platform_GetJoystickButton(Round(A1),Round(A2))) and 1;
       end;
+    fcJoyGetPOV :
+      begin
+        //todo: argument should be integer
+        StackPopTo(A1);
+        V := Platform_GetJoystickPOV(Round(A1));
+      end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   StackPush(V);
@@ -847,14 +853,11 @@ end;
 
 procedure TExpStackFrame.Execute;
 //http://en.wikipedia.org/wiki/Function_prologue
-var
-  I : integer;
 begin
   StackPush(gCurrentBP);
   gCurrentBP := StackGetDepth;
-  //Todo: make ZStack-class with MakeSpace-method
-  for I := 0 to Self.Size - 1 do
-    StackPushValue(nil);
+  //Add frame to stack
+  Inc(ZcStackPtr,Self.Size);
 end;
 
 { TExpAccessLocal }
@@ -892,7 +895,6 @@ end;
 procedure TExpReturn.Execute;
 var
   RetVal : integer;
-  I : integer;
 begin
   if HasReturnValue then
   begin
@@ -902,8 +904,7 @@ begin
 
   if HasFrame then
   begin
-    while StackGetDepth>gCurrentBP do
-      StackPopFloat;
+    Dec(ZcStackPtr,StackGetDepth-gCurrentBP);
     StackPopTo(gCurrentBP);
   end;
 
@@ -911,8 +912,7 @@ begin
   StackPopTo(gCurrentPc);
 
   //Clean stack of function arguments
-  for I := 0 to Arguments - 1 do
-    StackPopFloat;
+  Dec(ZcStackPtr,Arguments);
 
   if HasReturnValue then
   begin

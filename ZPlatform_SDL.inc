@@ -459,6 +459,12 @@ begin
   Result := False;
 end;
 
+function Platform_GetJoystickPOV(JoyId : integer) : single;
+begin
+  //TODO: joystick support
+  Result := -1;
+end;
+
 initialization
 
   // Initialize SDL

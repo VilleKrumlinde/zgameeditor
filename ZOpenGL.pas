@@ -2136,7 +2136,10 @@ begin
   ShadersSupported := @glUseProgram<>nil;
   MultiTextureSupported := @glActiveTexture<>nil;
   VbosSupported := @glBindBufferARB<>nil;
-//  VbosSupported := false;
+  {$ifdef linux}
+  //VBOs crash on my ubuntu-linux setup.
+  VbosSupported := False;
+  {$endif}
 end;
 
 procedure LoadOpenGL(const dll: PChar);
