@@ -605,6 +605,7 @@ end;
 procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
+  I1,I2 : integer;
 begin
   case Kind of
     fcSin :  V := Sin(StackPopFloat);
@@ -676,23 +677,20 @@ begin
       end;
     fcJoyGetAxis :
       begin
-        //todo: arguments should be integers
-        StackPopTo(A2);
-        StackPopTo(A1);
-        V := Platform_GetJoystickAxis(Round(A1),Round(A2));
+        StackPopTo(I2);
+        StackPopTo(I1);
+        V := Platform_GetJoystickAxis(I1,I2);
       end;
     fcJoyGetButton :
       begin
-        //todo: arguments should be integers, return should be int
-        StackPopTo(A2);
-        StackPopTo(A1);
-        V := Ord(Platform_GetJoystickButton(Round(A1),Round(A2))) and 1;
+        StackPopTo(I2);
+        StackPopTo(I1);
+        PInteger(@V)^ := Ord(Platform_GetJoystickButton(I1,I2)) and 1;
       end;
     fcJoyGetPOV :
       begin
-        //todo: argument should be integer
-        StackPopTo(A1);
-        V := Platform_GetJoystickPOV(Round(A1));
+        StackPopTo(I1);
+        V := Platform_GetJoystickPOV(I1);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;

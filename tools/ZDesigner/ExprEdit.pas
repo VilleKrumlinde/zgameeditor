@@ -173,7 +173,7 @@ type
     SymTab : TSymbolTable;
     Labels : TObjectList;
     LReturn : TZCodeLabel;
-    CurrentFunction : TZcOpFunction;
+    CurrentFunction : TZcOpFunctionUserDefined;
     IsLibrary : boolean;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
@@ -532,7 +532,7 @@ var
     GenJump(jsJumpAlways,LReturn);
   end;
 
-  procedure DoGenFunction(Func : TZcOpFunction);
+  procedure DoGenFunction(Func : TZcOpFunctionUserDefined);
   var
     I : integer;
     Frame : TExpStackFrame;
@@ -574,7 +574,7 @@ begin
         Gen(Op.Child(I));
     zcReturn : DoGenReturn;
     zcFuncCall : GenFuncCall(Op,False);
-    zcFunction : DoGenFunction(Op as TZcOpFunction);
+    zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
@@ -761,26 +761,26 @@ end;
 
 procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 
-  procedure DoGenFunc(Kind : TExpFuncCallKind; ArgCount : integer = 1; HasReturnValue : boolean = True);
+  procedure DoGenBuiltInFunc(Func : TZcOpFunctionBuiltIn);
   var
     I : integer;
     F : TExpFuncCall;
   begin
-    if NeedReturnValue and (not HasReturnValue) then
+    if NeedReturnValue and (Func.ReturnType=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
-    if Op.Children.Count<>ArgCount then
+    if Op.Children.Count<>Func.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
-    for I := 0 to ArgCount-1 do
+    for I := 0 to Func.Arguments.Count-1 do
       GenValue(Op.Child(I));
     F := TExpFuncCall.Create(Target);
-    F.Kind := Kind;
-    if (not NeedReturnValue) and (HasReturnValue) then
+    F.Kind := Func.FuncId;
+    if (not NeedReturnValue) and (Func.ReturnType<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do
         Kind := emPop;
   end;
 
-  procedure DoGenUserFunc(UserFunc : TZcOpFunction);
+  procedure DoGenUserFunc(UserFunc : TZcOpFunctionUserDefined);
   var
     I : integer;
     F : TExpUserFuncCall;
@@ -802,39 +802,13 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 
 begin
   Assert(Op.Kind=zcFuncCall);
-
-  if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunction) then
+  if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunctionUserDefined) then
   begin
-    DoGenUserFunc(SymTab.Lookup(Op.Id) as TZcOpFunction);
-  end else
+    DoGenUserFunc(SymTab.Lookup(Op.Id) as TZcOpFunctionUserDefined);
+  end else if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunctionBuiltIn) then
   begin
-    if (Op.Id='sin') then DoGenFunc(fcSin)
-    else if (Op.Id='sqrt') then DoGenFunc(fcSqrt)
-    else if (Op.Id='cos') then DoGenFunc(fcCos)
-    else if (Op.Id='tan') then DoGenFunc(fcTan)
-    else if (Op.Id='abs') then DoGenFunc(fcAbs)
-    else if (Op.Id='rnd') then DoGenFunc(fcRnd,0)
-    else if (Op.Id='random') then DoGenFunc(fcRandom,2)
-    else if (Op.Id='atan2') then DoGenFunc(fcAtan2,2)
-    else if (Op.Id='noise2') then DoGenFunc(fcNoise2,2)
-    else if (Op.Id='noise3') then DoGenFunc(fcNoise3,3)
-    else if (Op.Id='frac') then DoGenFunc(fcFrac)
-    else if (Op.Id='exp') then DoGenFunc(fcExp)
-    else if (Op.Id='clamp') then DoGenFunc(fcClamp,3)
-    else if (Op.Id='pow') then DoGenFunc(fcPow,2)
-    else if (Op.Id='centerMouse') then DoGenFunc(fcCenterMouse,0)
-    else if (Op.Id='setRandomSeed') then DoGenFunc(fcSetRandomSeed)
-    else if (Op.Id='ceil') then DoGenFunc(fcCeil)
-    else if (Op.Id='floor') then DoGenFunc(fcFloor)
-    else if (Op.Id='acos') then DoGenFunc(fcAcos)
-    else if (Op.Id='asin') then DoGenFunc(fcAsin)
-    else if (Op.Id='round') then DoGenFunc(fcRound)
-    else if (Op.Id='quit') then DoGenFunc(fcQuit,0)
-    else if (Op.Id='joyGetAxis') then DoGenFunc(fcJoyGetAxis,2)
-    else if (Op.Id='joyGetButton') then DoGenFunc(fcJoyGetButton,2)
-    else if (Op.Id='joyGetPOV') then DoGenFunc(fcJoyGetPOV,1)
-    else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
-  end;
+    DoGenBuiltInFunc(SymTab.Lookup(Op.Id) as TZcOpFunctionBuiltIn);
+  end else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
 end;
 
 
@@ -865,8 +839,8 @@ var
       end;
     end else if Op.Kind=Zc_Ops.zcFunction then
     begin
-      for I := 0 to TZcOpFunction(Op).Statements.Count-1 do
-        TZcOpFunction(Op).Statements[I] := DoRemoveConstants(TZcOpFunction(Op).Statements[I] as TZcOp);
+      for I := 0 to (Op as TZcOpFunctionBase).Statements.Count-1 do
+        TZcOpFunctionBase(Op).Statements[I] := DoRemoveConstants(TZcOpFunctionBase(Op).Statements[I] as TZcOp);
     end else
     begin
       for I := 0 to Op.Children.Count-1 do

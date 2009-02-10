@@ -101,7 +101,7 @@ destructor Destroy; override;
     procedure _Zc;
 
   private
-    CurrentFunction : TZcOpFunction;
+    CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
@@ -1836,7 +1836,7 @@ end;
 
 procedure TZc._Zc;var
    I  :  integer;
-   Func  :  TZcOpFunction;
+   Func  :  TZcOpFunctionUserDefined;
    Typ  :  TZcDataType;
 
 begin
@@ -1855,7 +1855,7 @@ Expect(identSym);
 if  SymTab.Contains(LexString)  then
 ZError('Name  already  defined:  '  +  LexString);
 
-Func  :=  TZcOpFunction.Create(GlobalNames);
+Func  :=  TZcOpFunctionUserDefined.Create(GlobalNames);
 Func.Id  :=  LexString;
 Func.ReturnType  :=  Typ;
 SymTab.Add(Func.Id,Func);
@@ -1882,7 +1882,7 @@ end;
 end
 else begin
 
-   Func  :=  TZcOpFunction.Create(nil);
+   Func  :=  TZcOpFunctionUserDefined.Create(nil);
    Func.ReturnType  :=  Self.ReturnType;
    Self.CurrentFunction  :=  Func;
    SymTab.PushScope;
