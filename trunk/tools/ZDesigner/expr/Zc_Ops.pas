@@ -63,15 +63,12 @@ type
     function Optimize : TZcOp; override;
   end;
 
-  TZcOpFunction = class(TZcOp)
+  TZcOpFunctionBase = class(TZcOp)
   public
     Locals : TObjectList;
     Arguments : TObjectList;
     Statements : TObjectList;
     ReturnType : TZcDataType;
-    //Assigned during codegen
-    Lib : TZLibrary;
-    LibIndex : integer;
     constructor Create(Owner : TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
@@ -80,6 +77,18 @@ type
     procedure AddArgument(Arg: TZcOpArgumentVar);
     function GetStackSize : integer;
     function GetDataType : TZcDataType; override;
+  end;
+
+  TZcOpFunctionUserDefined = class(TZcOpFunctionBase)
+  public
+    //Assigned during codegen
+    Lib : TZLibrary;
+    LibIndex : integer;
+  end;
+
+  TZcOpFunctionBuiltIn = class(TZcOpFunctionBase)
+  public
+    FuncId : TExpFuncCallKind;
   end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
@@ -91,6 +100,8 @@ function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
+
+function GetBuiltInFunctions : TObjectList;
 
 var
   //Nodes owned by the current compiled function/expression
@@ -106,6 +117,10 @@ var
 implementation
 
 uses SysUtils,Math,ExprEdit;
+
+var
+  BuiltInFunctions : TObjectList=nil;
+  BuiltInCleanUps : TObjectList;
 
 const
   ZcTypeNames : array[TZcDataType] of string =
@@ -303,9 +318,9 @@ begin
   end;
 end;
 
-{ TZcOpFunction }
+{ TZcOpFunctionBase }
 
-constructor TZcOpFunction.Create(Owner: TObjectList);
+constructor TZcOpFunctionBase.Create(Owner: TObjectList);
 begin
   inherited;
   Kind := zcFunction;
@@ -314,7 +329,7 @@ begin
   Arguments := TObjectList.Create(False);
 end;
 
-destructor TZcOpFunction.Destroy;
+destructor TZcOpFunctionBase.Destroy;
 begin
   Statements.Free;
   Locals.Free;
@@ -322,7 +337,7 @@ begin
   inherited;
 end;
 
-procedure TZcOpFunction.AddLocal(Local: TZcOpLocalVar);
+procedure TZcOpFunctionBase.AddLocal(Local: TZcOpLocalVar);
 begin
   Local.Ordinal := Locals.Count;
   if ReturnType<>zctVoid then
@@ -331,7 +346,7 @@ begin
 end;
 
 
-procedure TZcOpFunction.AddArgument(Arg: TZcOpArgumentVar);
+procedure TZcOpFunctionBase.AddArgument(Arg: TZcOpArgumentVar);
 var
   I : integer;
 begin
@@ -341,12 +356,12 @@ begin
     (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - 2 + I;
 end;
 
-function TZcOpFunction.GetDataType: TZcDataType;
+function TZcOpFunctionBase.GetDataType: TZcDataType;
 begin
   Result := ReturnType;
 end;
 
-function TZcOpFunction.GetStackSize: integer;
+function TZcOpFunctionBase.GetStackSize: integer;
 begin
   //One entry per local var + one entry for return value
   Result := Locals.Count;
@@ -354,7 +369,7 @@ begin
     Inc(Result);
 end;
 
-function TZcOpFunction.Optimize : TZcOp;
+function TZcOpFunctionBase.Optimize : TZcOp;
 var
   I : integer;
 begin
@@ -363,7 +378,7 @@ begin
   Result := Self;
 end;
 
-function TZcOpFunction.ToString: string;
+function TZcOpFunctionBase.ToString: string;
 var
   I : integer;
   UseCurly : boolean;
@@ -508,13 +523,13 @@ end;
 
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 var
-  FOp : TZcOpFunction;
+  FOp : TZcOpFunctionBase;
   I : integer;
 begin
   Result := False;
-  if CompilerContext.SymTab.Contains(Op.Id) and (CompilerContext.SymTab.Lookup(Op.Id) is TZcOpFunction) then
-  begin  //User function
-    FOp := CompilerContext.SymTab.Lookup(Op.Id) as TZcOpFunction;
+  if CompilerContext.SymTab.Contains(Op.Id) and (CompilerContext.SymTab.Lookup(Op.Id) is TZcOpFunctionBase) then
+  begin  //Function
+    FOp := CompilerContext.SymTab.Lookup(Op.Id) as TZcOpFunctionBase;
     if FOp.Arguments.Count<>Op.Children.Count then
     begin
       Error := 'Wrong nr of arguments';
@@ -523,9 +538,9 @@ begin
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
   end else
-  begin //Built in function, assume all arguments are floats
-    for I := 0 to Op.Children.Count - 1 do
-      Op.Children[I] := MakeCompatible(Op.Child(I),zctFloat);
+  begin
+    Error := 'Unknown function';
+    Exit;
   end;
   Result := True;
 end;
@@ -552,6 +567,79 @@ end;
 
 
 
+procedure InitBuiltIns;
+
+  function CharToType(C : char) : TZcDataType;
+  begin
+    case C of
+      'V' : Result := zctVoid;
+      'F' : Result := zctFloat;
+      'I' : Result := zctInt;
+    else
+      raise Exception.Create('Unknown type: ' + C);
+    end;
+  end;
+
+  procedure MakeOne(Id :string; Kind : TExpFuncCallKind; Sig : string);
+  var
+    F : TZcOpFunctionBuiltIn;
+    I : integer;
+    Arg : TZcOpArgumentVar;
+  begin
+    F := TZcOpFunctionBuiltIn.Create(BuiltInCleanUps);
+    F.Id := Id;
+    F.FuncId := Kind;
+    F.ReturnType := CharToType(Sig[1]);
+    for I := 2 to Length(Sig) do
+    begin
+      Arg := TZcOpArgumentVar.Create(BuiltInCleanUps);
+      Arg.Typ := CharToType(Sig[I]);
+      F.AddArgument(Arg);
+    end;
+
+    BuiltInFunctions.Add(F);
+  end;
+
+begin
+  BuiltInFunctions := TObjectList.Create(False);
+  BuiltInCleanUps := TObjectList.Create(True);
+
+  MakeOne('sin',fcSin,'FF');
+  MakeOne('sqrt',fcSqrt,'FF');
+  MakeOne('cos',fcCos,'FF');
+  MakeOne('tan',fcTan,'FF');
+  MakeOne('abs',fcAbs,'FF');
+  MakeOne('rnd',fcRnd,'F');
+  MakeOne('random',fcRandom,'FFF');
+  MakeOne('atan2',fcAtan2,'FFF');
+  MakeOne('noise2',fcNoise2,'FFF');
+  MakeOne('noise3',fcNoise3,'FFFF');
+  MakeOne('frac',fcFrac,'FF');
+  MakeOne('exp',fcExp,'FF');
+  MakeOne('clamp',fcClamp,'FFFF');
+  MakeOne('pow',fcPow,'FFF');
+  MakeOne('centerMouse',fcCenterMouse,'I');
+  MakeOne('setRandomSeed',fcSetRandomSeed,'FF');
+  MakeOne('ceil',fcCeil,'FF');
+  MakeOne('floor',fcFloor,'FF');
+  MakeOne('acos',fcAcos,'FF');
+  MakeOne('asin',fcAsin,'FF');
+  MakeOne('round',fcRound,'IF');
+  MakeOne('quit',fcQuit,'I');
+  MakeOne('joyGetAxis',fcJoyGetAxis,'FII');
+  MakeOne('joyGetButton',fcJoyGetButton,'III');
+  MakeOne('joyGetPOV',fcJoyGetPOV,'FI');
+end;
+
+
+function GetBuiltInFunctions : TObjectList;
+begin
+  if BuiltInFunctions=nil then
+    InitBuiltIns;
+  Result := BuiltInFunctions;
+end;
+
+
 initialization
 
   FunctionCleanUps := TObjectList.Create(True);
@@ -559,5 +647,7 @@ initialization
 finalization
 
   FreeAndNil(FunctionCleanUps);
+  FreeAndNil(BuiltInFunctions);
+  FreeAndNil(BuiltInCleanUps);
 
 end.

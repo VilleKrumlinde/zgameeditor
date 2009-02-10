@@ -14,7 +14,7 @@ DELPHI
     AllowFunctions : boolean;
     GlobalNames : TObjectList;    
   PRIVATE
-    CurrentFunction : TZcOpFunction;
+    CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
@@ -154,7 +154,7 @@ PRODUCTIONS
 
 Zc (. var 
         I : integer; 
-        Func : TZcOpFunction; 
+        Func : TZcOpFunctionUserDefined; 
         Typ : TZcDataType;
     .)
 = 
@@ -165,7 +165,7 @@ Zc (. var
           if SymTab.Contains(LexString) then
             ZError('Name already defined: ' + LexString);
             
-          Func := TZcOpFunction.Create(GlobalNames);
+          Func := TZcOpFunctionUserDefined.Create(GlobalNames);
           Func.Id := LexString;
           Func.ReturnType := Typ;
           SymTab.Add(Func.Id,Func);
@@ -186,7 +186,7 @@ Zc (. var
 
 
   (. 
-       Func := TZcOpFunction.Create(nil);
+       Func := TZcOpFunctionUserDefined.Create(nil);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
        SymTab.PushScope;

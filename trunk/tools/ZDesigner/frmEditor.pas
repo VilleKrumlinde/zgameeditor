@@ -594,15 +594,24 @@ var
   List : TStringList;
   I : integer;
   Con : TDefineConstant;
+  BuiltInFunctions : TObjectList;
+  Func : TZcOpFunctionBuiltIn;
 begin
   ZcGlobalNames.Clear;
   SymTab.ClearAll;
 
-  //Scope 0: global constants
+  //Scope 0: global constants and built-in functions
   for I := 0 to PredefinedConstants.Count - 1 do
   begin
     Con := TDefineConstant(PredefinedConstants[I]);
     SymTab.Add(Con.Name,Con);
+  end;
+
+  BuiltInFunctions := Zc_Ops.GetBuiltInFunctions;
+  for I := 0 to BuiltInFunctions.Count - 1 do
+  begin
+    Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
+    SymTab.Add(Func.Id,Func);
   end;
   SymTab.PushScope;
 
@@ -1679,8 +1688,8 @@ begin
   for I := 0 to ZcGlobalNames.Count - 1 do
   begin
     //Remove user function names from symtab
-    if SymTab.Contains(TZcOpFunction(ZcGlobalNames[I]).Id) then
-      SymTab.Remove(TZcOpFunction(ZcGlobalNames[I]).Id);
+    if SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
+      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id);
   end;
   ZcGlobalNames.Clear;
 

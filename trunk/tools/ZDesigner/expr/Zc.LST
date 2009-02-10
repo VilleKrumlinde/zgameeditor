@@ -1,6 +1,6 @@
 
 
-Compiled: den 16 januari 2009 - 16:37:37
+Compiled: den 10 februari 2009 - 20:24:08
 Output sent to: D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 16 januari 2009 @ 16:37:37
+Time Compiled: den 10 februari 2009 @ 20:24:08
 
 Statistics:
   number of terminals:        77 (limit  2561)
@@ -64,7 +64,7 @@ Listing
    14      AllowFunctions : boolean;
    15      GlobalNames : TObjectList;    
    16    PRIVATE
-   17      CurrentFunction : TZcOpFunction;
+   17      CurrentFunction : TZcOpFunctionUserDefined;
    18      procedure CleanUp;
    19      function NoFunctionsAllowed : boolean;
    20      procedure ZError(const S : string);
@@ -204,7 +204,7 @@ Listing
   154  
   155  Zc (. var 
   156          I : integer; 
-  157          Func : TZcOpFunction; 
+  157          Func : TZcOpFunctionUserDefined; 
   158          Typ : TZcDataType;
   159      .)
   160  = 
@@ -215,7 +215,7 @@ Listing
   165            if SymTab.Contains(LexString) then
   166              ZError('Name already defined: ' + LexString);
   167              
-  168            Func := TZcOpFunction.Create(GlobalNames);
+  168            Func := TZcOpFunctionUserDefined.Create(GlobalNames);
   169            Func.Id := LexString;
   170            Func.ReturnType := Typ;
   171            SymTab.Add(Func.Id,Func);
@@ -236,7 +236,7 @@ Listing
   186  
   187  
   188    (. 
-  189         Func := TZcOpFunction.Create(nil);
+  189         Func := TZcOpFunctionUserDefined.Create(nil);
   190         Func.ReturnType := Self.ReturnType;
   191         Self.CurrentFunction := Func;
   192         SymTab.PushScope;
