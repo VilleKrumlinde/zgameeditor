@@ -84,6 +84,7 @@ type
     //Assigned during codegen
     Lib : TZLibrary;
     LibIndex : integer;
+    function NeedFrame : boolean;
   end;
 
   TZcOpFunctionBuiltIn = class(TZcOpFunctionBase)
@@ -348,12 +349,13 @@ end;
 
 procedure TZcOpFunctionBase.AddArgument(Arg: TZcOpArgumentVar);
 var
-  I : integer;
+  I,Frame : integer;
 begin
   Arguments.Add(Arg);
+  //old bp, return pc
+  Frame := 2;
   for I := 0 to Arguments.Count - 1 do
-    //-2 = old bp, return pc
-    (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - 2 + I;
+    (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - Frame + I;
 end;
 
 function TZcOpFunctionBase.GetDataType: TZcDataType;
@@ -639,6 +641,13 @@ begin
   Result := BuiltInFunctions;
 end;
 
+
+{ TZcOpFunctionUserDefined }
+
+function TZcOpFunctionUserDefined.NeedFrame: boolean;
+begin
+  Result := (Arguments.Count>0) or (GetStackSize>0);
+end;
 
 initialization
 

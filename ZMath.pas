@@ -416,7 +416,7 @@ var
     Result := T[ (B2(I,B) shl 2) or (B2(J,B) shl 1) or B2(K,B) ];
   end;
 
-  function Shuffle(I,J,K : integer) : integer;
+  function Shuffle(I,J,K : integer) : integer; inline;
   begin
     Result := B(i,j,k,0) + B(j,k,i,1) + b(k,i,j,2) + b(i,j,k,3) +
       B(j,k,i,4) + b(k,i,j,5) + B(i,j,k,6) + B(J,K,I,7);

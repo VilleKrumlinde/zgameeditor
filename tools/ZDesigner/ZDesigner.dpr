@@ -74,6 +74,8 @@ uses
 
 {$R *.res}
 
+{$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+
 begin
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;

@@ -56,6 +56,7 @@ uses
 
 {$ifndef fpc}
   {$R Data.res Data.rc}
+  {$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
 {$endif}
 
 begin

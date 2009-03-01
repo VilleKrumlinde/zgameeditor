@@ -544,7 +544,7 @@ var
       Func.LibIndex := Target.Count;
     end;
     Self.CurrentFunction := Func;
-    if Func.GetStackSize>0 then
+    if Func.NeedFrame then
     begin
       Frame := TExpStackFrame.Create(Target);
       Frame.Size := Func.GetStackSize;
@@ -559,7 +559,7 @@ var
       LReturn := nil;
     end;
     Ret := TExpReturn.Create(Target);
-    Ret.HasFrame := Func.GetStackSize>0;
+    Ret.HasFrame := Func.NeedFrame;
     Ret.HasReturnValue := Func.ReturnType<>zctVoid;
     Ret.Arguments := Func.Arguments.Count;
   end;

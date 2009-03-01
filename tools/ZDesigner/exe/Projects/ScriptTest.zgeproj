@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="1 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -33,6 +33,10 @@ float f4() {
 
 int intMultiply(int x,int y) {
   return x*y;
+}
+
+void assignGlobal(float x) {
+  GlobalFloat=x;
 }]]>
       </Source>
     </ZLibrary>
@@ -60,6 +64,10 @@ if(f3()!=0.5)
   
 if(g1(1,2,3)!=42)
   Error=1;
+  
+assignGlobal(2);
+if(GlobalFloat!=2)
+  Error=2;
   
 x=0;]]>
       </Expression>
@@ -252,5 +260,6 @@ else
     </Mesh>
     <Material Name="Material1" TextureWrapMode="1"/>
     <DefineVariable Name="Global1" Type="1"/>
+    <DefineVariable Name="GlobalFloat"/>
   </Content>
 </ZApplication>
