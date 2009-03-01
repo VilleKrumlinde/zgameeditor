@@ -1370,8 +1370,10 @@ begin
     for I := 0 to List.Count - 1 do
     begin
       M := TModel(List[I]);
-      if M is OfType.ClassType then
-        ZApp.Models.Remove(M);
+      //todo: all are of same class TModel, should test some other property
+      //now all of same category are removed
+      //if M is OfType.ClassType then
+      ZApp.Models.Remove(M);
     end;
   end;
 end;
