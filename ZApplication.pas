@@ -91,7 +91,7 @@ type
       end;
     ClearColor : TZColorf;
     Fullscreen : boolean;
-    ScreenMode : (vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
+    ScreenMode : (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
     ShowOptionsDialog : boolean;
     CustomScreenWidth,CustomScreenHeight : integer;
     CameraPosition : TZVector3f;
@@ -577,9 +577,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}integer(@FixedFrameRate) - integer(Self), zptInteger);
 
   List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Use Desktop resolution','640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-    List.GetLast.DefaultValue.ByteValue := 1;
+    List.GetLast.DefaultValue.ByteValue := 2;
   List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}integer(@ShowOptionsDialog) - integer(Self), zptBoolean);
 
   List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}integer(@CustomScreenWidth) - integer(Self), zptInteger);

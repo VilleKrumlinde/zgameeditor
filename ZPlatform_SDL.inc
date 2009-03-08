@@ -35,6 +35,13 @@ begin
   else
     flags := SDL_OPENGL or SDL_RESIZABLE;
 
+  if Width=-1 then
+  begin
+    //Todo: support "current desktop resolution" on sdl
+    Width := 800;
+    Height := 600;
+  end;
+
   SDL_WM_SetCaption(Title, nil);
 
   SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );

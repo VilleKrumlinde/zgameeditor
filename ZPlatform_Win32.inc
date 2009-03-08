@@ -203,14 +203,21 @@ var
 
   R : TRect;
   DesktopSize : TRect;
-  WinX,WinY{,ViewportH,ViewportW},DesktopPixelDepth : integer;
+  WinX,WinY,DesktopPixelDepth : integer;
+  UseFullScreenWindow : boolean;
 begin
-//width := 1600; height := 1200;
-
-//  if not ZOpenGL.InitOpenGL then
-//    raise Exception.Create('Could not init opengl');
+  GetClientRect(GetDesktopWindow,DesktopSize);
 
   FullScreen := UseFullScreen;
+
+  //FullscreenWindow means use full desktop size without making a mode-switch
+  UseFullScreenWindow := Width=-1;
+  if UseFullScreenWindow then
+  begin
+    FullScreen := False;
+    Width := DesktopSize.Right;
+    Height := DesktopSize.Bottom;
+  end;
 
   {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
   if PreviewParentHWnd<>0 then
@@ -246,8 +253,6 @@ begin
     ZHalt('Failed to register window class')
     {$ifend};
 
-  GetClientRect(GetDesktopWindow,DesktopSize);
-
   // Change to fullscreen if so desired
   if Fullscreen then
   begin
@@ -265,8 +270,7 @@ begin
       ZHalt('Unable to switch to fullscreen.');
   end;
 
-  // If we are still in fullscreen then
-  if (Fullscreen) then
+  if Fullscreen or UseFullScreenWindow then
   begin
     dwStyle := WS_POPUP or                // Creates a popup window
                WS_CLIPCHILDREN            // Doesn't draw within child windows
@@ -297,9 +301,9 @@ begin
   end;
   {$ifend}
 
- {$ifndef minimal}
- try
- {$endif}
+  {$ifndef minimal}
+  try
+  {$endif}
     R.Top := 0;
     R.Left := 0;
     R.Bottom := Height;
@@ -307,7 +311,7 @@ begin
 //    ViewportH := Height;
 //    ViewportW := Width;
 
-    if (not Fullscreen)
+    if (not Fullscreen) and (not UseFullScreenWindow)
       {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
       and (PreviewParentHWnd=0)
       {$ifend}
@@ -409,9 +413,6 @@ begin
     raise;
   end;
  {$endif}
-
-  // Initializes the timer used to calculate the FPS
-//  SetTimer(h_Wnd, FPS_TIMER, FPS_INTERVAL, nil);
 
   // Settings to ensure that the window is the topmost window
   ShowWindow(h_Wnd, SW_SHOW);
@@ -1380,6 +1381,7 @@ const
 function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint): Bool; stdcall;
 const
   xstr = 'x'#0;
+  DesktopStr = 'Use Desktop resolution'#0;
 var
   I : integer;
   Tmp1 : array[0..10] of char;
@@ -1392,14 +1394,19 @@ begin
     begin
       for I := 0 to High(ScreenModes) do
       begin
-        //inttofloat conversion
-        ZStrConvertFloat(ScreenModes[I].W, PChar(@Str));
-        ZStrCat(Str,xstr);
-        ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
-        ZStrCat(Str,Tmp1);
+        if I=0 then
+          ZStrCopy(Str,DesktopStr)
+        else
+        begin
+          //inttofloat conversion
+          ZStrConvertFloat(ScreenModes[I].W, PChar(@Str));
+          ZStrCat(Str,xstr);
+          ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
+          ZStrCat(Str,Tmp1);
+        end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
       end;
-      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,1,0);
+      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,2,0);
 
       //Center on screen
       GetWindowRect(GetDesktopWindow, R);
