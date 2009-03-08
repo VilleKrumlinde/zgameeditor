@@ -94,10 +94,11 @@ const
 type
   TScreenMode =
     packed record
-      W,H : word;
+      W,H : smallint;
     end;
 const
-  ScreenModes : packed array[0..4] of TScreenMode = (
+  ScreenModes : packed array[0..5] of TScreenMode = (
+(W:-1; H:-1),  //Fullscreen with desktop resolution
 (W:640; H:480),
 (W:800; H:600),
 (W:1024; H:768),
