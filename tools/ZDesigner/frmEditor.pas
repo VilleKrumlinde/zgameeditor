@@ -28,7 +28,8 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
-  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls, ToolWin;
+  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
+  ToolWin, SynCompletionProposal;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
@@ -322,6 +323,7 @@ type
     procedure LoadSysLibrary;
     procedure OnAddFromLibraryItemClick(Sender: TObject);
     procedure AddNewComponentToTree(C: TZComponent);
+    procedure AutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -350,13 +352,15 @@ implementation
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
   ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitPEFile,unitResourceDetails,
-  u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops;
+  u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
+  SynEditTypes;
 
 { TEditorForm }
 
 constructor TEditorForm.Create(AOwner: TComponent);
 var
   Con : TDefineConstant;
+  AutoComp : TSynCompletionProposal;
 begin
   inherited Create(AOwner);
 
@@ -405,11 +409,19 @@ begin
   SaveDialog.InitialDir := ExePath + 'Projects';
 
   ExprSynEdit := TSynEdit.Create(Self);
-  ExprSynEdit.Highlighter := TSynCppSyn.Create(Self);
   ExprSynEdit.Align := alClient;
   ExprSynEdit.Gutter.Visible := False;
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
+  ExprSynEdit.Highlighter := TSynCppSyn.Create(Self);
+
+  //SynEdit autocompletion
+  AutoComp := TSynCompletionProposal.Create(Self);
+  AutoComp.Editor := ExprSynEdit;
+  AutoComp.EndOfTokenChr := '=()[]. ';
+  AutoComp.TriggerChars := '.';
+  AutoComp.ShortCut := 16416;
+  AutoComp.OnExecute := AutoCompOnExecute;
 
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
@@ -1597,9 +1609,9 @@ begin
   except
     on E : EParseError do
     begin
-      ExprSynEdit.CaretXY := Point(E.Col-1,E.Line);
-      ExprSynEdit.BlockBegin := Point(0,E.Line);
-      ExprSynEdit.BlockEnd := Point(0,E.Line+1);
+      ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
+      ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
+      ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
       ExprSynEdit.SetFocus;
       //ShowMessage( E.Message );
       CompileErrorLabel.Caption := E.Message;
@@ -2931,5 +2943,22 @@ begin
   if SysLibrary=nil then
     LoadSysLibrary;
 end;
+
+procedure AutoCompAddOne(const S : string; Data : pointer);
+begin
+  TSynCompletionProposal(Data).ItemList.Add(S);
+end;
+
+procedure TEditorForm.AutoCompOnExecute(Kind: TSynCompletionType;
+  Sender: TObject; var CurrentInput: string; var x, y: Integer;
+  var CanExecute: Boolean);
+var
+  C : TSynCompletionProposal;
+begin
+  C := Sender as TSynCompletionProposal;
+  C.ItemList.Clear;
+  SymTab.Iterate(AutoCompAddOne,C);
+end;
+
 
 end.
