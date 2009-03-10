@@ -179,12 +179,12 @@ void main(void)
     float diffuse   = max(dot(lightVec, tnorm), 0.0);
     float spec      = 0.0;
 
-    if (diffuse > 0.0)
+    if (diffuse > 0.0)     
     {
         spec = max(dot(reflectVec, viewVec), 0.0);
         spec = pow(spec, 16.0);
     }
-
+           
     LightIntensity  = DiffuseContribution * diffuse +
                       SpecularContribution * spec;
 
@@ -283,8 +283,7 @@ void main() {
 //  gl_Position = ftransform();
 
   vec4 v = vec4(gl_Vertex);
-  //v.z = sin(5.0*v.x + time*0.01)*0.25;
-  v.z += sin(5.0*v.x + time*1.5)*0.1;
+  v.z += sin(2.0*v.x + time*1.5)*0.4;
   gl_Position = gl_ModelViewProjectionMatrix * v;
 }]]>
           </VertexShaderSource>

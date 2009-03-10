@@ -25,6 +25,8 @@ interface
 uses Classes,Contnrs;
 
 type
+  TSymTabFunc = procedure(const S : string; Data : pointer);
+
   TSymbolTable = class
   private
     Scopes : TObjectList;
@@ -40,6 +42,7 @@ type
     procedure ClearAll;
     procedure PushScope;
     procedure PopScope;
+    procedure Iterate(F : TSymTabFunc; Data : pointer);
   end;
 
 implementation
@@ -134,6 +137,19 @@ procedure TSymbolTable.Remove(const Name: string);
 begin
   Assert(ScopeContains(Name));
   CurrentScope.Delete(CurrentScope.IndexOf(Name));
+end;
+
+procedure TSymbolTable.Iterate(F: TSymTabFunc; Data: pointer);
+var
+  I,J : integer;
+  List : TStringList;
+begin
+  for I := Scopes.Count-1 downto 0 do
+  begin
+    List := TStringList(Scopes[I]);
+    for J := 0 to List.Count - 1 do
+      F(List[J],Data);
+  end;
 end;
 
 end.
