@@ -36,7 +36,6 @@ object EditorForm: TEditorForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 816
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
@@ -46,7 +45,6 @@ object EditorForm: TEditorForm
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-      ExplicitHeight = 816
     end
   end
   object ViewerPanel: TPanel
@@ -95,18 +93,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -134,10 +124,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -146,6 +132,7 @@ object EditorForm: TEditorForm
             Top = 0
             Width = 453
             Height = 107
+            Hint = 'Ctrl+Space : Code completion, Ctrl-Shift-Space : Parameter info'
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = '&Code editor'
@@ -194,10 +181,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -283,9 +266,6 @@ object EditorForm: TEditorForm
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
-        ExplicitLeft = 1
-        ExplicitTop = 4
-        ExplicitHeight = 714
       end
       object ViewerPageControl: TPageControl
         Left = 304
@@ -298,10 +278,6 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 644
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -637,10 +613,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -677,10 +649,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 644
         end
       end
     end

@@ -102,6 +102,8 @@ function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 
+function GetZcTypeName(Typ : TZcDataType) : string;
+
 function GetBuiltInFunctions : TObjectList;
 
 var
@@ -126,6 +128,11 @@ var
 const
   ZcTypeNames : array[TZcDataType] of string =
 (('void'),('float'),('int'));
+
+function GetZcTypeName(Typ : TZcDataType) : string;
+begin
+  Result := ZcTypeNames[Typ];
+end;
 
 constructor TZcOp.Create(Owner : TObjectList);
 begin
