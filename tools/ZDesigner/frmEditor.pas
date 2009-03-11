@@ -324,6 +324,7 @@ type
     procedure OnAddFromLibraryItemClick(Sender: TObject);
     procedure AddNewComponentToTree(C: TZComponent);
     procedure AutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure ParamAutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -360,7 +361,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpre
 constructor TEditorForm.Create(AOwner: TComponent);
 var
   Con : TDefineConstant;
-  AutoComp : TSynCompletionProposal;
+  AutoComp,ParamComp : TSynCompletionProposal;
 begin
   inherited Create(AOwner);
 
@@ -422,6 +423,17 @@ begin
   AutoComp.TriggerChars := '.';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
+
+  //SynEdit autocompletion for parameters
+  ParamComp := TSynCompletionProposal.Create(Self);
+  ParamComp.DefaultType := ctParams;
+  ParamComp.Options := [scoLimitToMatchedText, scoUseBuiltInTimer];
+  ParamComp.TriggerChars := '(';
+  ParamComp.EndOfTokenChr := '';
+  ParamComp.ShortCut := 24608;
+  ParamComp.Editor := ExprSynEdit;
+  ParamComp.TimerInterval := 1200;
+  ParamComp.OnExecute := ParamAutoCompOnExecute;
 
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
@@ -2960,5 +2972,61 @@ begin
   SymTab.Iterate(AutoCompAddOne,C);
 end;
 
+procedure TEditorForm.ParamAutoCompOnExecute(Kind: TSynCompletionType;
+  Sender: TObject; var CurrentInput: string; var x, y: Integer;
+  var CanExecute: Boolean);
+var
+  I,J,K,PCount,PIndex : integer;
+  C : char;
+  S,Line,Tmp : string;
+  Comp : TSynCompletionProposal;
+  O : TObject;
+  Func : TZcOpFunctionBase;
+  Arg : TZcOpArgumentVar;
+begin
+  Comp := TSynCompletionProposal(Sender);
+  Line := Comp.Editor.LineText;
+  I := Min(Comp.Editor.CaretX,Length(Line));
+  PCount := 0;
+  PIndex := 0;
+  CanExecute := False;
+  while I>0 do
+  begin
+    C := Line[I];
+    case C  of
+      '(' :
+        if PCount=0 then
+        begin
+          J := I-1;
+          while (J>0) and (Line[J] in ['a'..'z','A'..'Z','_','0'..'9']) do
+            Dec(J);
+          S := Copy(Line,J+1,I-J-1);
+          O := SymTab.Lookup(S);
+          if (O<>nil) and (O is TZcOpFunctionBase) then
+          begin
+            Func := O as TZcOpFunctionBase;
+            Tmp := '';
+            for K := 0 to Func.Arguments.Count - 1 do
+            begin
+              Arg := Func.Arguments[K] as TZcOpArgumentVar;
+              if K>0 then
+                Tmp := Tmp + ',';
+              Tmp := Tmp + '"' + GetZcTypeName(Arg.Typ) + ' arg' + IntToStr(K) + '"';
+            end;
+            Comp.Form.CurrentIndex := PIndex;
+            Comp.ItemList.Clear;
+            Comp.ItemList.Add(Tmp);
+            CanExecute := True;
+          end;
+          Break;
+        end
+        else
+          Dec(PCount);
+      ')' : Inc(PCount);
+      ',' : if PCount=0 then Inc(PIndex);
+    end;
+    Dec(I);
+  end;
+end;
 
 end.
