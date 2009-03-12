@@ -282,7 +282,7 @@ type
     procedure OnPropValueChange;
     procedure OnTreeSelectItem(Sender : TObject; Node : TTreeNode);
     procedure OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
-    function CompileAll : boolean;
+    function CompileAll(ThrowOnFail : boolean = False) : boolean;
     procedure ReadProjectSettingsFromIni;
     procedure WriteProjectSettingsToIni;
     procedure SetShowNode(Node : TZComponent);
@@ -325,6 +325,7 @@ type
     procedure AddNewComponentToTree(C: TZComponent);
     procedure AutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure ParamAutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure OnShaderExprChanged(Sender: TObject);
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -419,7 +420,7 @@ begin
   //SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
-  AutoComp.EndOfTokenChr := '=()[]. ';
+  AutoComp.EndOfTokenChr := '+-/*=()[]. ';
   AutoComp.TriggerChars := '.';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
@@ -440,7 +441,7 @@ begin
   ShaderSynEdit.Align := alClient;
   ShaderSynEdit.Gutter.Visible := False;
   ShaderSynEdit.Parent := ShaderPanel;
-  ShaderSynEdit.OnChange := OnExprChanged;
+  ShaderSynEdit.OnChange := OnShaderExprChanged;
 
   SymTab := TSymbolTable.Create;
 
@@ -1075,14 +1076,16 @@ begin
     (ActiveControl as TEdit).OnExit(ActiveControl)
   else if ActiveControl=ExprSynEdit then
   begin
-    //Spara expression
-    if ExprCompileButton.Enabled then ExprCompileButton.Click;
   end
   else if ActiveControl=ShaderSynEdit then
   begin
-    //Spara shader
-    if CompileShaderButton.Enabled then CompileShaderButton.Click;
   end;
+
+  //Save expression
+  if ExprCompileButton.Enabled then ExprCompileButton.Click;
+
+  //Save shader
+  if CompileShaderButton.Enabled then CompileShaderButton.Click;
 
   AllowChange:=True;
 end;
@@ -1583,11 +1586,16 @@ end;
 procedure TEditorForm.OnExprChanged(Sender: TObject);
 begin
   ExprCompileButton.Enabled := True;
+end;
+
+procedure TEditorForm.OnShaderExprChanged(Sender: TObject);
+begin
   CompileShaderButton.Enabled := True;
 end;
 
 procedure TEditorForm.CompileShaderButtonClick(Sender: TObject);
 begin
+  CompileShaderButton.Enabled := False;
   //Spara ändrad text i edit-ruta
   ExprEditBox.Text := TrimRight(ShaderSynEdit.Text);
   ExprEditBox.OnExit(ExprEditBox);
@@ -1601,6 +1609,7 @@ var
   Success : boolean;
   I : integer;
 begin
+  ExprCompileButton.Enabled := False;
   //Spara ändrad text i edit-ruta
   ExprEditBox.Text := TrimRight(ExprSynEdit.Text);
   ExprEditBox.OnExit(ExprEditBox);
@@ -1612,12 +1621,10 @@ begin
   Success:=False;
   try
     if C is TZLibrary then
-      Success := CompileAll
+      CompileAll(True)
     else
-    begin
       DoCompile(Tree.ZSelected,PropValue,Prop);
-      Success:=True;
-    end;
+    Success:=True;
   except
     on E : EParseError do
     begin
@@ -1639,7 +1646,6 @@ begin
 //  Tree.RefreshNode(Tree.Selected,Selected);
   if Success then
   begin
-    ExprCompileButton.Enabled := False;
     CompileErrorLabel.Caption := '';
     CompileErrorLabel.BevelKind := bkNone;
     if ShowCompilerDetailsAction.Checked then
@@ -1695,7 +1701,7 @@ begin
   end;
 end;
 
-function TEditorForm.CompileAll : boolean;
+function TEditorForm.CompileAll(ThrowOnFail : boolean = False) : boolean;
 var
   I,J,CompiledCount : integer;
   Node : TZComponentTreeNode;
@@ -1736,6 +1742,9 @@ begin
             try
               DoCompile(Node,PropValue,Prop);
             except on E : Exception do
+              if ThrowOnFail then
+                raise
+              else
               begin
                 ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
                 Node.Expand(True);
@@ -2703,6 +2712,9 @@ begin
   if not Assigned(Root) then
     Exit;
 
+  //This force current expression-editor to be saved
+  Tree.Selected := nil;
+
   if _FileChanged then
   begin
     case Application.MessageBox('File has changed. Save changes?', PChar(Self.Caption), MB_YESNOCANCEL) of
@@ -2722,7 +2734,6 @@ begin
 
   WipeUndoHistory;
 
-  Tree.Selected := nil;
   LockShow := False;
 //  Selected := nil;
   SelectComponent(nil);
