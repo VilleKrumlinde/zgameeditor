@@ -136,9 +136,11 @@ type
   TZPropertyComponentEdit = class(TZPropertyEditBase)
   private
     Cb : TComboBox;
+    FocusButton : TButton;
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
     procedure OnDropDown(Sender : TObject);
     procedure OnChange(Sender : TObject);
+    procedure DoFindComponent(Sender: TObject);
   end;
 
   TZPropertyIntegerEdit = class(TZPropertyEditBase)
@@ -601,8 +603,20 @@ end;
 
 procedure TZPropertyComponentEdit.SetProp(C: TZComponent;
   Prop: TZProperty);
+var
+  B : TButton;
 begin
   inherited;
+  B := TButton.Create(Self);
+  B.OnClick := DoFindComponent;
+  B.Caption:='>';
+  B.Hint := 'Click to focus selected component in project tree';
+  B.Width := 16;
+  B.Enabled := Assigned(Value.ComponentValue);
+  B.Align := alRight;
+  B.Parent := ValuePanel;
+  Self.FocusButton := B;
+
   Cb := TComboBox.Create(Self);
   if Value.ComponentValue<>nil then
     Cb.Text := Value.ComponentValue.Name;
@@ -614,6 +628,11 @@ begin
   Cb.Align := alClient;
   Cb.OnEnter := OnFocusControl;
   Cb.Parent := ValuePanel;
+end;
+
+procedure TZPropertyComponentEdit.DoFindComponent(Sender: TObject);
+begin
+  (PropEditor.Owner as TEditorForm).FindComponentAndFocusInTree(Cb.Text);
 end;
 
 procedure TZPropertyComponentEdit.OnDropDown(Sender: TObject);
@@ -670,6 +689,7 @@ begin
     //Componentref kan påverka nodnamnet, gör refresh
     (PropEditor.Owner as TEditorForm).Tree.ZSelected.RefreshNodeName;
   end;
+  FocusButton.Enabled := Cb.ItemIndex>0;
 end;
 
 { TZPropertyIntegerEdit }
