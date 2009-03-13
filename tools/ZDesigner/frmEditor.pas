@@ -335,6 +335,7 @@ type
     procedure ShowShaderEditor(Edit : TEdit);
     procedure HideEditor;
     procedure ValidateNewName(const OldName,NewName : string);
+    procedure FindComponentAndFocusInTree(const CName: string);
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -997,24 +998,28 @@ end;
 procedure TEditorForm.FindComponentActionExecute(Sender: TObject);
 var
   S : string;
+begin
+  if InputQuery('Find component','Enter name of component to search for',S) then
+    FindComponentAndFocusInTree(S);
+end;
+
+procedure TEditorForm.FindComponentAndFocusInTree(const CName : string);
+var
   C : TZComponent;
   I : integer;
   Node : TZComponentTreeNode;
 begin
-  if InputQuery('Find component','Enter name of component to search for',S) then
+  C := SymTab.Lookup(CName) as TZComponent;
+  if C<>nil then
   begin
-    C := SymTab.Lookup(S) as TZComponent;
-    if C<>nil then
+    for I := 0 to Tree.Items.Count-1 do
     begin
-      for I := 0 to Tree.Items.Count-1 do
+      Node := Tree.Items[I] as TZComponentTreeNode;
+      if Node.Component=C then
       begin
-        Node := Tree.Items[I] as TZComponentTreeNode;
-        if Node.Component=C then
-        begin
-          Node.Expand(True);
-          Tree.Selected := Node;
-          Break;
-        end;
+        Node.Expand(True);
+        Tree.Selected := Node;
+        Break;
       end;
     end;
   end;
@@ -2712,6 +2717,8 @@ begin
   if not Assigned(Root) then
     Exit;
 
+  WriteProjectSettingsToIni;
+
   //This force current expression-editor to be saved
   Tree.Selected := nil;
 
@@ -2727,8 +2734,6 @@ begin
         end;
     end;
   end;
-
-  WriteProjectSettingsToIni;
 
   SetShowNode(nil);
 
