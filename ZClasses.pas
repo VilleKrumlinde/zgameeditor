@@ -34,7 +34,7 @@ type
   TZClassIds = (
  LogicalGroupClassId,ZBitmapClassId,
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
- BitmapLoadClassId,BitmapCombineClassId,
+ BitmapLoadClassId,BitmapCombineClassId,BitmapCellsClassId,
  MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
  MeshCombineClassId,MeshLoadClassId,
