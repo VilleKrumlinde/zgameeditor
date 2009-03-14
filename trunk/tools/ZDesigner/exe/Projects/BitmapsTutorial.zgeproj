@@ -285,5 +285,14 @@ this.V.X*=2;
         </Model>
       </Children>
     </Group>
+    <Group Comment="Cell test">
+      <Children>
+        <Bitmap Name="Bitmap3">
+          <Producers>
+            <BitmapCells RandomSeed="54"/>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>
