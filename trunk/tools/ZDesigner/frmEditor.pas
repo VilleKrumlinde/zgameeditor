@@ -425,6 +425,7 @@ begin
   AutoComp.TriggerChars := '.';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
+  AutoComp.Options := DefaultProposalOptions + [scoUseInsertList,scoUsePrettyText];
 
   //SynEdit autocompletion for parameters
   ParamComp := TSynCompletionProposal.Create(Self);
@@ -2972,9 +2973,19 @@ begin
     LoadSysLibrary;
 end;
 
-procedure AutoCompAddOne(const S : string; Data : pointer);
+procedure AutoCompAddOne(const S : string; Item : TObject; Context : pointer);
+var
+  C : TSynCompletionProposal;
+  Desc : string;
 begin
-  TSynCompletionProposal(Data).ItemList.Add(S);
+  C := TSynCompletionProposal(Context);
+  Desc := '';
+  if (Item is TZComponent) then
+    Desc := (Item as TZComponent).GetDisplayName
+  else
+    Desc := S;
+  C.ItemList.Add(Desc);
+  C.InsertList.Add(S);
 end;
 
 procedure TEditorForm.AutoCompOnExecute(Kind: TSynCompletionType;
@@ -2985,6 +2996,7 @@ var
 begin
   C := Sender as TSynCompletionProposal;
   C.ItemList.Clear;
+  C.InsertList.Clear;
   SymTab.Iterate(AutoCompAddOne,C);
 end;
 

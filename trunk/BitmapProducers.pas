@@ -577,7 +577,11 @@ var
   H,W,I,J,K,MinDist,Dist,CurrMin,SaveSeed : integer;
   Pixels,P : PColorf;
   Pixel : TZColorf;
-  CP : array[0..10, 0..4] of Integer;    //Central points: Holds X,Y,R,G,B
+  CP : array[0..10] of
+    record
+      //Central points
+      X,Y,R,G,B : integer;
+    end;
 begin
   B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
 
@@ -585,7 +589,7 @@ begin
   H := B.PixelHeight;
 
   GetMem(Pixels,W * H * Sizeof(Pixel) );
-  FillChar(Pixels^,W * H * Sizeof(Pixel),0);
+//  FillChar(Pixels^,W * H * Sizeof(Pixel),0);
 
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
 
@@ -593,11 +597,11 @@ begin
   RandSeed := Self.RandomSeed;
   for I := 0 to 10 do
   begin
-    CP[I,0] := Random(H);
-    CP[I,1] := Random(W);
-    CP[I,2] := Random(5)*64;
-    CP[I,3] := Random(5)*64;
-    CP[I,4] := Random(5)*64;
+    CP[I].Y := Random(H);
+    CP[I].X := Random(W);
+    CP[I].R := Random(5)*64;
+    CP[I].G := Random(5)*64;
+    CP[I].B := Random(5)*64;
   end;
 
   P := Pixels;
@@ -606,7 +610,7 @@ begin
     for J := 0 to W-1 do  //J is width (X)!
     begin
     //"Loads the pixel"
-      Pixel := P^;
+//      Pixel := P^;
 
       MinDist := -1 + J*J+H*H;
       Dist := MinDist;
@@ -614,19 +618,24 @@ begin
 
       for K := 0 to 10 do
       begin
-        Dist := MinVal(Dist, (I-CP[K,1])*(I-CP[K,1]) + (J-CP[K,0])*(J-CP[K,0]));
-        if (J < W*0.33+1) then Dist := MinVal(Dist, (J+W-CP[K,0])*(J+W-CP[K,0]) + (I-CP[K,1])*(I-CP[K,1]));
-        if (J > W*0.66-1) then Dist := MinVal(Dist, (J-W-CP[K,0])*(J-W-CP[K,0]) + (I-CP[K,1])*(I-CP[K,1]));
-        if (I < H*0.33+1) then Dist := MinVal(Dist, (J-CP[K,0])*(J-CP[K,0]) + (I+H-CP[K,1])*(I+H-CP[K,1]));
-        if (I > H*0.66-1) then Dist := MinVal(Dist, (J-CP[K,0])*(J-CP[K,0]) + (I-H-CP[K,1])*(I-H-CP[K,1]));
+        Dist := MinVal(Dist, (I-CP[K].Y)*(I-CP[K].Y) + (J-CP[K].X)*(J-CP[K].X));
+
+        if (J < W*0.33+1) then
+          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
+        if (J > W*0.66-1) then
+          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
+        if (I < H*0.33+1) then
+          Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
+        if (I > H*0.66-1) then
+          Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
         if (J < W*0.33+1) and (I < H*0.33+1) then
-          Dist := MinVal(Dist, (J+W-CP[K,0])*(J+W-CP[K,0]) + (I+H-CP[K,1])*(I+H-CP[K,1]));
+          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
         if (J < W*0.33+1) and (I > H*0.66-1) then
-          Dist := MinVal(Dist, (J+W-CP[K,0])*(J+W-CP[K,0]) + (I-H-CP[K,1])*(I-H-CP[K,1]));
+          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
         if (J > W*0.66-1) and (I < H*0.33+1) then
-          Dist := MinVal(Dist, (J-W-CP[K,0])*(J-W-CP[K,0]) + (I+H-CP[K,1])*(I+H-CP[K,1]));
+          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
         if (J > W*0.66-1) and (I > H*0.66-1) then
-          Dist := MinVal(Dist, (J-W-CP[K,0])*(J-W-CP[K,0]) + (I-H-CP[K,1])*(I-H-CP[K,1]));
+          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
 
         if (MinDist <> MinVal(MinDist,Dist)) then //if we found a new Minimal Distance:
         begin
@@ -634,13 +643,13 @@ begin
           CurrMin := K;
         end;
       end;
-      if Dist<>0 then
-      begin
-      Pixel.R := CP[CurrMin,2]/256.0;
-      Pixel.G := CP[CurrMin,3]/256.0;
-      Pixel.B := CP[CurrMin,4]/256.0;
+//      if Dist<>0 then
+//      begin
+      Pixel.R := CP[CurrMin].R/256.0;
+      Pixel.G := CP[CurrMin].G/256.0;
+      Pixel.B := CP[CurrMin].B/256.0;
       Pixel.A := 1;
-      end;
+//      end;
       P^ := Pixel;
       Inc(P);
     end;
