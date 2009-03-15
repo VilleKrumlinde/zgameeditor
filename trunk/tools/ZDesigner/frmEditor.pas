@@ -326,6 +326,7 @@ type
     procedure AutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure ParamAutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure OnShaderExprChanged(Sender: TObject);
+    procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
@@ -1004,12 +1005,28 @@ begin
     FindComponentAndFocusInTree(S);
 end;
 
+procedure TEditorForm.DoChangeTreeFocus(var Message : TMessage);
+var
+  Node : TZComponentTreeNode;
+begin
+  Node := TZComponentTreeNode(Message.LParam);
+  Node.Expand(True);
+  Tree.Selected := Node;
+  Tree.SetFocus;
+end;
+
 procedure TEditorForm.FindComponentAndFocusInTree(const CName : string);
 var
   C : TZComponent;
   I : integer;
   Node : TZComponentTreeNode;
 begin
+  {
+    Find a component then post a win-message to change focus.
+    This is neccessary because this method is called from controls in the
+    property-editor, and those controls are destroyed when changing tree-focus
+    causing access violation.
+  }
   C := SymTab.Lookup(CName) as TZComponent;
   if C<>nil then
   begin
@@ -1018,8 +1035,7 @@ begin
       Node := Tree.Items[I] as TZComponentTreeNode;
       if Node.Component=C then
       begin
-        Node.Expand(True);
-        Tree.Selected := Node;
+        PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
         Break;
       end;
     end;
@@ -2977,11 +2993,30 @@ procedure AutoCompAddOne(const S : string; Item : TObject; Context : pointer);
 var
   C : TSynCompletionProposal;
   Desc : string;
+
+  function InGetSig(Func : TZcOpFunctionBase) : string;
+  var
+    I : integer;
+    Arg : TZcOpArgumentVar;
+  begin
+    Result := Func.Id + '(';
+    for I := 0 to Func.Arguments.Count - 1 do
+    begin
+      Arg := Func.Arguments[I] as TZcOpArgumentVar;
+      if I>0 then
+        Result := Result + ',';
+      Result := Result + GetZcTypeName(Arg.Typ);
+    end;
+    Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
+  end;
+
 begin
   C := TSynCompletionProposal(Context);
   Desc := '';
   if (Item is TZComponent) then
     Desc := (Item as TZComponent).GetDisplayName
+  else if (Item is TZcOpFunctionBase) then
+    Desc := InGetSig(Item as TZcOpFunctionBase)
   else
     Desc := S;
   C.ItemList.Add(Desc);
