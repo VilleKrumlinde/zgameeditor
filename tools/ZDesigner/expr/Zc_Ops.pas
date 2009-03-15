@@ -627,14 +627,14 @@ begin
   MakeOne('exp',fcExp,'FF');
   MakeOne('clamp',fcClamp,'FFFF');
   MakeOne('pow',fcPow,'FFF');
-  MakeOne('centerMouse',fcCenterMouse,'I');
+  MakeOne('centerMouse',fcCenterMouse,'V');
   MakeOne('setRandomSeed',fcSetRandomSeed,'FF');
   MakeOne('ceil',fcCeil,'FF');
   MakeOne('floor',fcFloor,'FF');
   MakeOne('acos',fcAcos,'FF');
   MakeOne('asin',fcAsin,'FF');
   MakeOne('round',fcRound,'IF');
-  MakeOne('quit',fcQuit,'I');
+  MakeOne('quit',fcQuit,'V');
   MakeOne('joyGetAxis',fcJoyGetAxis,'FII');
   MakeOne('joyGetButton',fcJoyGetButton,'III');
   MakeOne('joyGetPOV',fcJoyGetPOV,'FI');

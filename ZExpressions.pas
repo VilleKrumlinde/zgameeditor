@@ -606,7 +606,9 @@ procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
   I1,I2 : integer;
+  HasReturnValue : boolean;
 begin
+  HasReturnValue := True;
   case Kind of
     fcSin :  V := Sin(StackPopFloat);
     fcSqrt : V := Sqrt(StackPopFloat);
@@ -662,7 +664,7 @@ begin
       end;
     fcCenterMouse :
       begin
-        V := 0; //todo: does not return a value
+        HasReturnValue := False;
         Platform_SetMousePos(ScreenWidth div 2,ScreenHeight div 2);
       end;
     fcSetRandomSeed :
@@ -672,7 +674,7 @@ begin
       end;
     fcQuit :
       begin
-        V := 0; //todo: does not return a value
+        HasReturnValue := False;
         ZApp.Terminating := True;
       end;
     fcJoyGetAxis :
@@ -694,7 +696,8 @@ begin
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
-  StackPush(V);
+  if HasReturnValue then
+    StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
