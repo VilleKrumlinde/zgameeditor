@@ -583,6 +583,10 @@ var
       X,Y,R,G,B : integer;
     end;
 begin
+  {$ifndef minimal}
+  ZLog.GetLog(Self.ClassName).BeginTimer;
+  {$endif}
+
   B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
 
   W := B.PixelWidth;
@@ -620,22 +624,14 @@ begin
       begin
         Dist := MinVal(Dist, (I-CP[K].Y)*(I-CP[K].Y) + (J-CP[K].X)*(J-CP[K].X));
 
-        if (J < W*0.33+1) then
-          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
-        if (J > W*0.66-1) then
-          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
-        if (I < H*0.33+1) then
-          Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        if (I > H*0.66-1) then
-          Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
-        if (J < W*0.33+1) and (I < H*0.33+1) then
-          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        if (J < W*0.33+1) and (I > H*0.66-1) then
-          Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
-        if (J > W*0.66-1) and (I < H*0.33+1) then
-          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        if (J > W*0.66-1) and (I > H*0.66-1) then
-          Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
+        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
+        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
+        Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
+        Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
+        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
+        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
+        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
+        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
 
         if (MinDist <> MinVal(MinDist,Dist)) then //if we found a new Minimal Distance:
         begin
@@ -663,6 +659,10 @@ begin
   FreeMem(Pixels);
 
   Stack.Push(B);
+
+  {$ifndef minimal}
+  ZLog.GetLog(Self.ClassName).EndTimer('Cell refresh time');
+  {$endif}
 end;
 
 procedure TBitmapCells.DefineProperties(List: TZPropertyList);
