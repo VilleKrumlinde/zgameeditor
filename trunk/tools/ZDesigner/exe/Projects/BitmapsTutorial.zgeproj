@@ -287,9 +287,9 @@ this.V.X*=2;
     </Group>
     <Group Comment="Cell test">
       <Children>
-        <Bitmap Name="Bitmap3" Width="4" Height="3">
+        <Bitmap Name="Bitmap3" Width="6" Height="6">
           <Producers>
-            <BitmapCells RandomSeed="54"/>
+            <BitmapCells RandomSeed="60"/>
           </Producers>
         </Bitmap>
       </Children>

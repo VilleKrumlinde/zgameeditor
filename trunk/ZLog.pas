@@ -33,10 +33,14 @@ type
 
   {$ifdef zlog}
   TLog = class
+  private
+    LastTime : single;
   public
     ID : integer;
     Name : TLogString;
     procedure Write(S : TLogString);
+    procedure BeginTimer;
+    procedure EndTimer(S: TLogString);
   end;
 
   TLogReceiverFunc = procedure(Log : TLog; Mess : TLogString) of object;
@@ -119,6 +123,18 @@ procedure TLog.Write(S: TLogString);
 begin
   if Assigned(ReceiverFunc) then
     ReceiverFunc(Self,S);
+end;
+
+procedure TLog.BeginTimer;
+begin
+  LastTime := Platform_GetTime;
+end;
+
+procedure TLog.EndTimer(S: TLogString);
+begin
+  {$ifndef minimal}
+  Write( S + ': ' + SysUtils.FloatToStr(Platform_GetTime - LastTime) );
+  {$endif}
 end;
 
 {$endif}
