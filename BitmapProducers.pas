@@ -73,7 +73,8 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    RandomSeed : integer;
+    RandomSeed,BorderPixels, NOfPoints : integer;
+    CellStyle : (Standard, NiceTwo, NiceOne);
   end;
 
 implementation
@@ -572,57 +573,67 @@ begin
 end;
 
 procedure TBitmapCells.ProduceOutput(Content : TContent; Stack : TZArrayList);
+type
+  PValueRecord = ^TValueRecord;
+  TValueRecord =
+    record
+      DistFromCenter, CPIndex : integer;
+    end;
 var
   B : TZBitmap;
-  H,W,I,J,K,MinDist,Dist,CurrMin,SaveSeed : integer;
+  H,W,I,J,K,MinDist,Dist,SaveSeed,PixelCount : integer;
   Pixels,P : PColorf;
   Pixel : TZColorf;
-  CP : array[0..10] of
+  ValueBuffer,Value : PValueRecord;
+  CP : array[0..24] of
     record
       //Central points
-      X,Y,R,G,B : integer;
+      X,Y,R,G,B,MaxDist : integer;
     end;
 begin
+
   {$ifndef minimal}
   ZLog.GetLog(Self.ClassName).BeginTimer;
   {$endif}
+
 
   B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
 
   W := B.PixelWidth;
   H := B.PixelHeight;
+  PixelCount := W*H;
 
-  GetMem(Pixels,W * H * Sizeof(Pixel) );
-//  FillChar(Pixels^,W * H * Sizeof(Pixel),0);
+  GetMem(Pixels,PixelCount * Sizeof(Pixel) );
+  GetMem(ValueBuffer,PixelCount * SizeOf(TValueRecord));
+  FillChar(ValueBuffer^,PixelCount * SizeOf(TValueRecord),0);
 
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
 
   SaveSeed := RandSeed;
   RandSeed := Self.RandomSeed;
-  for I := 0 to 10 do
+  for I := 0 to MinVal(24, NOfPoints-1) do
   begin
     CP[I].Y := Random(H);
     CP[I].X := Random(W);
     CP[I].R := Random(5)*64;
     CP[I].G := Random(5)*64;
     CP[I].B := Random(5)*64;
+    CP[I].MaxDist := 0;
   end;
 
-  P := Pixels;
+
+  //For now, only "Computes" the pixels;
+
+  Value := ValueBuffer;
   for I := 0 to H-1 do    //I is height (Y)!
   begin
     for J := 0 to W-1 do  //J is width (X)!
     begin
-    //"Loads the pixel"
-//      Pixel := P^;
+      MinDist := (J-1)*(J-1)+(H-1)*(H-1);
 
-      MinDist := -1 + J*J+H*H;
-      Dist := MinDist;
-      CurrMin := 0;
-
-      for K := 0 to 10 do
+      for K := 0 to MinVal(24, NOfPoints-1) do
       begin
-        Dist := MinVal(Dist, (I-CP[K].Y)*(I-CP[K].Y) + (J-CP[K].X)*(J-CP[K].X));
+        Dist := (I-CP[K].Y)*(I-CP[K].Y) + (J-CP[K].X)*(J-CP[K].X);
 
         Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
         Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
@@ -633,21 +644,60 @@ begin
         Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
         Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
 
-        if (MinDist <> MinVal(MinDist,Dist)) then //if we found a new Minimal Distance:
+        if Dist < MinDist then //if we found a new Minimal Distance:
         begin
           MinDist := Dist;
-          CurrMin := K;
+          Value.DistFromCenter := Dist;
+          Value.CPIndex := K;
         end;
+      end; //For K
+
+      //now we know at what K our pixel belongs, seek the maxdist of the K-nth space!
+      if (Value.DistFromCenter > CP[Value.CPIndex].MaxDist) then
+         CP[Value.CPIndex].MaxDist := Value.DistFromCenter;
+
+      Inc(Value);
+    end; //For J
+  end; //For I
+
+//Now use the pre-calculated values to do something
+  P := Pixels;
+  Value := ValueBuffer;
+  for I := 0 to H-1 do    //I is height (Y)!
+  begin
+    for J := 0 to W-1 do  //J is width (X)!
+    begin
+      //I use K and Dist as a temp variable for optimization
+      K := Value.CPIndex;
+      Dist := Value.DistFromCenter;
+//Several kinds of processing
+      if (CellStyle = Standard)  then //standard/coloured with no borders
+      begin
+        Pixel.R := CP[K].R/256.0;
+        Pixel.G := CP[K].G/256.0;
+        Pixel.B := CP[K].B/256.0;
+        Pixel.A := 1;
       end;
-//      if Dist<>0 then
-//      begin
-      Pixel.R := CP[CurrMin].R/256.0;
-      Pixel.G := CP[CurrMin].G/256.0;
-      Pixel.B := CP[CurrMin].B/256.0;
-      Pixel.A := 1;
-//      end;
+      //Dunno if you do prefere the "if -> else -> else chain"
+      //personally I'm fine with the if/end, if/end blocks. Feel free to modify this!
+      if (CellStyle = NiceOne) or (CellStyle = NiceTwo) then   //Nice effect number 1
+      begin
+        Pixel.R := sqrt(Dist)/sqrt(CP[K].MaxDist);
+        Pixel.G := Pixel.R;
+        Pixel.B := Pixel.G;
+      end;
+
+      //DEBUG: INVERT COLORS
+      if (CellStyle = NiceOne) then
+      begin
+        Pixel.R := 0.75- Pixel.R/2.0;
+        Pixel.G := Pixel.R; //0.75-Pixel.G/2.0;
+        Pixel.B := Pixel.G; //0.75-Pixel.B/2.0;
+      end;
+
       P^ := Pixel;
       Inc(P);
+      Inc(Value);
     end;
   end;
 
@@ -657,6 +707,7 @@ begin
   B.UseTextureBegin;
 
   FreeMem(Pixels);
+  FreeMem(ValueBuffer);
 
   Stack.Push(B);
 
@@ -668,7 +719,13 @@ end;
 procedure TBitmapCells.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice style','Freakin nice style']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 3;
+  List.AddProperty({$IFNDEF MINIMAL}'PointCount',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
 
