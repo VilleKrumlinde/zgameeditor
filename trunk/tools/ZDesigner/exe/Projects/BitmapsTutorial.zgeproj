@@ -279,7 +279,7 @@ this.V.X*=2;
         </Model>
         <Model Name="Model2" RotationVelocity="0 0.1 0">
           <OnRender>
-            <UseMaterial Material="Mat2"/>
+            <UseMaterial Material="CellMaterial"/>
             <RenderMesh Mesh="CubeMesh1"/>
           </OnRender>
         </Model>
@@ -287,11 +287,12 @@ this.V.X*=2;
     </Group>
     <Group Comment="Cell test">
       <Children>
-        <Bitmap Name="Bitmap3" Width="6" Height="6">
+        <Bitmap Name="CellBitmap" Width="5" Height="5">
           <Producers>
-            <BitmapCells RandomSeed="60"/>
+            <BitmapCells CellStyle="2" RandomSeed="57" BorderPixels="0"/>
           </Producers>
         </Bitmap>
+        <Material Name="CellMaterial" Texture="CellBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
       </Children>
     </Group>
   </Content>
