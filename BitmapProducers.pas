@@ -74,7 +74,7 @@ type
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
     RandomSeed,BorderPixels, NOfPoints : integer;
-    CellStyle : (Standard, NiceTwo, NiceOne);
+    CellStyle : (cstStandard, cstNice1, cstTG1, cstTG2, cstTG3, cstWerk);
   end;
 
 implementation
@@ -577,25 +577,31 @@ type
   PValueRecord = ^TValueRecord;
   TValueRecord =
     record
-      DistFromCenter, CPIndex : integer;
+      DistFromCenter, DistSecondCenter, CPIndex, CPSecondIndex : integer;
     end;
 var
   B : TZBitmap;
-  H,W,I,J,K,MinDist,Dist,SaveSeed,PixelCount : integer;
-  Pixels,P : PColorf;
-  Pixel : TZColorf;
-  ValueBuffer,Value : PValueRecord;
+  IsBorder, IsSecondBorder : Boolean;
+  H,W,I,J,K,Dist,SaveSeed,PixelCount,GlobalMax : integer;
+  Pixels : PColorf;
+  Pixel : PColorf;
+  ValueBuffer,Value,Value2 : PValueRecord;
+  PointIndexes : array[0..3] of
+    record
+      Increment, CPIndex, CPSecondIndex : integer;
+    end;
+
   CP : array[0..24] of
     record
       //Central points
-      X,Y,R,G,B,MaxDist : integer;
+      X,Y,MaxDist : integer;
+      R,G,B : single;
     end;
-begin
 
+begin
   {$ifndef minimal}
   ZLog.GetLog(Self.ClassName).BeginTimer;
   {$endif}
-
 
   B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
 
@@ -603,7 +609,7 @@ begin
   H := B.PixelHeight;
   PixelCount := W*H;
 
-  GetMem(Pixels,PixelCount * Sizeof(Pixel) );
+  GetMem(Pixels,PixelCount * Sizeof(TZColorf) );
   GetMem(ValueBuffer,PixelCount * SizeOf(TValueRecord));
   FillChar(ValueBuffer^,PixelCount * SizeOf(TValueRecord),0);
 
@@ -615,21 +621,22 @@ begin
   begin
     CP[I].Y := Random(H);
     CP[I].X := Random(W);
-    CP[I].R := Random(5)*64;
-    CP[I].G := Random(5)*64;
-    CP[I].B := Random(5)*64;
     CP[I].MaxDist := 0;
+    CP[I].R := Random;
+    CP[I].G := Random;
+    CP[I].B := Random;
   end;
-
 
   //For now, only "Computes" the pixels;
 
   Value := ValueBuffer;
+  GlobalMax := 0;
   for I := 0 to H-1 do    //I is height (Y)!
   begin
     for J := 0 to W-1 do  //J is width (X)!
     begin
-      MinDist := (J-1)*(J-1)+(H-1)*(H-1);
+      Value.DistFromCenter := (J-1)*(J-1)+(H-1)*(H-1);
+      Value.DistSecondCenter := Value.DistFromCenter;
 
       for K := 0 to MinVal(24, NOfPoints-1) do
       begin
@@ -643,60 +650,156 @@ begin
         Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
         Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
         Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
+        // now dist is the distance between the pixel and the k-nth point.
 
-        if Dist < MinDist then //if we found a new Minimal Distance:
+        //whatever K it is, if the new distance is the max found, do
+
+        if K = 0 then
         begin
-          MinDist := Dist;
           Value.DistFromCenter := Dist;
           Value.CPIndex := K;
-        end;
+        end
+        else
+        begin
+          if Dist < Value.DistFromCenter then //if we found a new Minimal Distance:
+          begin
+            Value.DistSecondCenter := Value.DistFromCenter; //old min now is new second min
+            Value.CPSecondIndex := Value.CPIndex;
+            Value.DistFromCenter := Dist;
+            Value.CPIndex := K;
+          end
+          else
+          begin
+            if Dist < Value.DistSecondCenter then
+            begin
+              Value.DistSecondCenter := Dist;
+              Value.CPSecondIndex := K;
+            end; //Found the new second nearest center
+          end;
+        end; //IF K = 0;
       end; //For K
 
       //now we know at what K our pixel belongs, seek the maxdist of the K-nth space!
       if (Value.DistFromCenter > CP[Value.CPIndex].MaxDist) then
+      begin
          CP[Value.CPIndex].MaxDist := Value.DistFromCenter;
+         if GlobalMax < Value.DistFromCenter then
+            GlobalMax := Value.DistFromCenter;
+      end;
 
       Inc(Value);
     end; //For J
   end; //For I
 
 //Now use the pre-calculated values to do something
-  P := Pixels;
+  Pixel := Pixels;
   Value := ValueBuffer;
   for I := 0 to H-1 do    //I is height (Y)!
   begin
     for J := 0 to W-1 do  //J is width (X)!
     begin
-      //I use K and Dist as a temp variable for optimization
+      //Borders code: we do calculate the 4 "adiacent" pixels as an increment from the
+      //actual Value pointer
+
+      IsBorder := False;        //default: pixel is not a border one
+      IsSecondBorder := False;
+      if BorderPixels <> 0 then
+      begin
+        //north point
+        if I >= BorderPixels then  //if Y >= BorderPixel, we can just subtract the increment
+          PointIndexes[0].Increment := -W * BorderPixels
+        else                       //if Y < BorderPixel, we must "wrap" to the other side
+          PointIndexes[0].Increment := W * (H - BorderPixels);
+        //south point
+        if I <= H - 1 - BorderPixels then  //same as before
+          PointIndexes[2].Increment := W * BorderPixels
+        else
+          PointIndexes[2].Increment := W * (BorderPixels - H);
+        //west point
+        if J >= BorderPixels then
+          PointIndexes[3].Increment := -BorderPixels
+        else
+          PointIndexes[3].Increment := W-BorderPixels;
+        //east point
+        if J <= W - 1 - BorderPixels then
+          PointIndexes[1].Increment := BorderPixels
+        else
+          PointIndexes[1].Increment := BorderPixels - W;
+
+        for K := 0 to 3 do
+        begin
+          Value2 := Value;
+          Inc(Value2, PointIndexes[K].Increment);
+          if Value.CPIndex <> Value2.CPIndex then
+            IsBorder := True;
+          if Value.CPSecondIndex <> Value2.CPSecondIndex then
+            IsSecondBorder := True;
+        end;
+      end;
+
+      //Several kinds of processing
+      Pixel.A := 1; //alpha is always the same
       K := Value.CPIndex;
       Dist := Value.DistFromCenter;
-//Several kinds of processing
-      if (CellStyle = Standard)  then //standard/coloured with no borders
-      begin
-        Pixel.R := CP[K].R/256.0;
-        Pixel.G := CP[K].G/256.0;
-        Pixel.B := CP[K].B/256.0;
-        Pixel.A := 1;
-      end;
+
       //Dunno if you do prefere the "if -> else -> else chain"
       //personally I'm fine with the if/end, if/end blocks. Feel free to modify this!
-      if (CellStyle = NiceOne) or (CellStyle = NiceTwo) then   //Nice effect number 1
+      if (CellStyle = cstTG1) then   //TG effect number 1
       begin
-        Pixel.R := sqrt(Dist)/sqrt(CP[K].MaxDist);
-        Pixel.G := Pixel.R;
-        Pixel.B := Pixel.G;
+        Pixel.R := sqrt(Dist/(GlobalMax*1.0));
+        if IsBorder then
+          Pixel.R := Pixel.R + 0.25;
       end;
 
-      //DEBUG: INVERT COLORS
-      if (CellStyle = NiceOne) then
+      if (CellStyle = cstTG2) then
       begin
-        Pixel.R := 0.75- Pixel.R/2.0;
-        Pixel.G := Pixel.R; //0.75-Pixel.G/2.0;
-        Pixel.B := Pixel.G; //0.75-Pixel.B/2.0;
+        Pixel.R := (sqrt(Value.DistSecondCenter) - sqrt(Dist))/(sqrt(GlobalMax));
+        if IsBorder then
+          Pixel.R := 0;
       end;
 
-      P^ := Pixel;
-      Inc(P);
+      if (CellStyle = cstTG3) then
+      begin
+        Pixel.R := (sqrt(Dist)*sqrt(Value.DistSecondCenter))/(GlobalMax);
+      end;
+
+      if (CellStyle = cstNice1) then //My nice effect
+      begin
+        Pixel.R := 0.75 - sqrt(Dist*0.1/(CP[K].MaxDist))/2.0;
+        if IsBorder then
+          Pixel.R := 0.25;
+      end;
+
+      if (CellStyle = cstWerk) then
+      begin
+        Pixel.R := ZMath.Power((Dist*0.1/CP[K].MaxDist),1.5);
+        if IsBorder then
+          Pixel.R := Pixel.R + 0.25
+        else if IsSecondBorder then
+          Pixel.R := ZMath.Power((Dist*0.1/CP[K].MaxDist),1.8);// - (1 - Pixel.R)*2;
+      end;
+      //All the styles except the standard one are just white or black, so
+      //we save some instructions by adding the green and blue out of the IFs!
+      Pixel.G := Pixel.R;
+      Pixel.B := Pixel.G;
+
+      if (CellStyle = cstStandard)  then //standard: coloured eventually with black borders
+      begin
+        if IsBorder then
+        begin
+          Pixel.R := 0;
+          Pixel.G := 0;
+          Pixel.B := 0;
+        end
+        else
+        begin
+          Pixel.R := CP[K].R;
+          Pixel.G := CP[K].G;
+          Pixel.B := CP[K].B;
+        end;
+      end;
+
+      Inc(Pixel);
       Inc(Value);
     end;
   end;
@@ -720,10 +823,10 @@ procedure TBitmapCells.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice style','Freakin nice style']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice1','TG1','TG2','TG3','Werk']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
-    List.GetLast.DefaultValue.IntegerValue := 3;
+    List.GetLast.DefaultValue.IntegerValue := 2;
   List.AddProperty({$IFNDEF MINIMAL}'PointCount',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;

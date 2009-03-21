@@ -1406,7 +1406,7 @@ begin
         end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
       end;
-      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,2,0);
+      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(ZApp.ScreenMode),0);
 
       //Center on screen
       GetWindowRect(GetDesktopWindow, R);
@@ -1513,7 +1513,7 @@ type
     dwRpos: DWORD;
     dwUpos: DWORD;
     dwVpos: DWORD;
-    wButtons: UINT;
+    dwButtons: DWORD;
     dwButtonNumber: DWORD;
     wPOV: word;
     filler1 : word;
@@ -1531,7 +1531,7 @@ type
           Scale : single;
         end;
       Values : array[0..MAX_AXES-1] of single;
-      Buttons : LongWord;
+      Buttons : DWORD;
       POV : single;
     end;
 
@@ -1587,21 +1587,20 @@ begin
   Info.dwSize := SizeOf(Info);
   Info.dwFlags := $BF or $200;
 
-  joyGetPosEx(JoyId, @Info);
+  if joyGetPosEx(JoyId, @Info)<>0 then
+    Exit;
 
   Pos := @Info.wXpos;
   Flag := 1;
   for I := 0 to MAX_AXES - 1 do
   begin
     if (Info.dwFlags and Flag)>0 then
-    begin
       Joy.Values[I] := (((Pos^ and Mask) - Joy.TransAxis[I].Offset) * Joy.TransAxis[I].Scale)-1.0;
-    end;
     Flag := Flag shl 1;
     Inc(Pos);
   end;
 
-  Joy.Buttons := Info.wButtons;
+  Joy.Buttons := Info.dwButtons;
 
   if Info.wPOV=$FFFF then
     Joy.POV := -1
