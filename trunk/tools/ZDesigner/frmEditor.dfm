@@ -93,10 +93,18 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -132,7 +140,6 @@ object EditorForm: TEditorForm
             Top = 0
             Width = 453
             Height = 107
-            Hint = 'Ctrl+Space : Code completion, Ctrl+Shift+Space : Parameter info'
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = '&Code editor'
@@ -182,6 +189,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             453
             146)
@@ -594,6 +605,14 @@ object EditorForm: TEditorForm
                     Width = 33
                     ExplicitWidth = 33
                   end
+                  inherited NotesEdit: TComboBox
+                    ItemHeight = 0
+                  end
+                end
+                inherited GroupBox3: TGroupBox
+                  inherited Osc1WaveformCombo: TComboBox
+                    ItemHeight = 0
+                  end
                 end
                 inherited GroupBox2: TGroupBox
                   inherited Label3: TLabel
@@ -610,9 +629,16 @@ object EditorForm: TEditorForm
                     Width = 62
                     ExplicitWidth = 62
                   end
+                  inherited Osc2WaveformCombo: TComboBox
+                    ItemHeight = 0
+                  end
                 end
               end
               inherited TabSheet2: TTabSheet
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -649,6 +675,10 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
       end
     end
@@ -949,7 +979,7 @@ object EditorForm: TEditorForm
       OnExecute = GenerateReleaseOsx86ActionExecute
     end
     object ShowSettingsAction: TAction
-      Caption = 'Options...'
+      Caption = 'Settings...'
       OnExecute = ShowSettingsActionExecute
     end
     object FindComponentAction: TAction
