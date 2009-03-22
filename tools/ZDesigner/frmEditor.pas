@@ -423,10 +423,10 @@ begin
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
   AutoComp.EndOfTokenChr := '+-/*=()[]. ';
-  AutoComp.TriggerChars := '.';
+  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
-  AutoComp.Options := DefaultProposalOptions + [scoUseInsertList,scoUsePrettyText];
+  AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
 
   //SynEdit autocompletion for parameters
   ParamComp := TSynCompletionProposal.Create(Self);
@@ -436,7 +436,6 @@ begin
   ParamComp.EndOfTokenChr := '';
   ParamComp.ShortCut := 24608;
   ParamComp.Editor := ExprSynEdit;
-  ParamComp.TimerInterval := 1200;
   ParamComp.OnExecute := ParamAutoCompOnExecute;
 
   ShaderSynEdit := TSynEdit.Create(Self);
@@ -3033,6 +3032,8 @@ begin
   C.ItemList.Clear;
   C.InsertList.Clear;
   SymTab.Iterate(AutoCompAddOne,C);
+  C.InsertList.Add('CurrentModel');
+  C.ItemList.Add('CurrentModel');
 end;
 
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: TSynCompletionType;

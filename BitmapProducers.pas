@@ -765,18 +765,18 @@ begin
 
       if (CellStyle = cstNice1) then //My nice effect
       begin
-        Pixel.R := 0.75 - sqrt(Dist*0.1/(CP[K].MaxDist))/2.0;
+        Pixel.R := 0.75 - sqrt(Dist/(CP[K].MaxDist))/2.0;
         if IsBorder then
           Pixel.R := 0.25;
       end;
 
       if (CellStyle = cstWerk) then
       begin
-        Pixel.R := ZMath.Power((Dist*0.1/CP[K].MaxDist),1.5);
+        Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.5);
         if IsBorder then
           Pixel.R := Pixel.R + 0.25
         else if IsSecondBorder then
-          Pixel.R := ZMath.Power((Dist*0.1/CP[K].MaxDist),1.8);// - (1 - Pixel.R)*2;
+          Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.8);// - (1 - Pixel.R)*2;
       end;
       //All the styles except the standard one are just white or black, so
       //we save some instructions by adding the green and blue out of the IFs!

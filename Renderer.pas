@@ -734,6 +734,7 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Material',{$ENDIF}integer(@Material) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMaterial]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
 procedure TUseMaterial.Execute;

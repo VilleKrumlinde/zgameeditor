@@ -39,6 +39,9 @@ var
 implementation
 
 uses ZOpenGL, ZLog, Windows, MMSystem, Types, ZApplication,AudioPlayer,
+ {$ifndef minimal}
+   SysUtils,
+ {$endif}
  {$IFDEF FPC}
     WinEvent;
  {$ELSE}
@@ -1573,6 +1576,9 @@ begin
     end;
   end;
   JoyCount := I;
+  {$ifndef minimal}
+  ZLog.GetLog('Platform').Write('Gamepads detected: ' + IntToStr(JoyCount));
+  {$endif}
 end;
 
 procedure UpdateJoystick(JoyId : integer; var Joy : TJoystick);

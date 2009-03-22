@@ -275,7 +275,8 @@ begin
     PEditor.OnPropValueChanged := Self.OnPropEditValueChanged;
     //Autofocus viktiga propertys
     //'Name' får focus
-    if (Prop.NeedRefreshNodeName) or (Prop.PropertyType=zptExpression) then
+    //NeedRefreshNodeName causes focus-error if adding new rendermesh-component, skip for now
+    if {(Prop.NeedRefreshNodeName) or }(Prop.PropertyType=zptExpression) then
       WantsFocus := PEditor;
   end;
 
