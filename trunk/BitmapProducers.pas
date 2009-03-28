@@ -75,6 +75,7 @@ type
   public
     RandomSeed,BorderPixels, NOfPoints : integer;
     CellStyle : (cstStandard, cstNice1, cstTG1, cstTG2, cstTG3, cstWerk);
+    PlacementStyle : (pstRandom, pstHoneycomb, pstSquares);
   end;
 
 implementation
@@ -564,14 +565,6 @@ end;
 
 { TBitmapCells }
 
-function MinVal(A, B : Integer) : Integer;
-begin
-  // Return the lowest of 2 numbers
-  if A < B
-  then Result := A
-  else Result := B;
-end;
-
 procedure TBitmapCells.ProduceOutput(Content : TContent; Stack : TZArrayList);
 type
   PValueRecord = ^TValueRecord;
@@ -582,7 +575,7 @@ type
 var
   B : TZBitmap;
   IsBorder, IsSecondBorder : Boolean;
-  H,W,I,J,K,Dist,SaveSeed,PixelCount,GlobalMax : integer;
+  H,W,I,J,K,Dist,SaveSeed,PixelCount,GlobalMax,XDist,YDist,NOfPointsCopy : integer;
   Pixels : PColorf;
   Pixel : PColorf;
   ValueBuffer,Value,Value2 : PValueRecord;
@@ -591,7 +584,7 @@ var
       Increment, CPIndex, CPSecondIndex : integer;
     end;
 
-  CP : array[0..24] of
+  CP : array[0..29] of
     record
       //Central points
       X,Y,MaxDist : integer;
@@ -617,14 +610,41 @@ begin
 
   SaveSeed := RandSeed;
   RandSeed := Self.RandomSeed;
-  for I := 0 to MinVal(24, NOfPoints-1) do
+
+  //I started using the break command in order to avoid the needing of that
+  //MinVal function (previously I used it in the wrapping code, now it's unnecessary
+
+  //Since with the presets I currenlty SET the NOfPoints (but this screws up things
+  //also in the editor) I locally use a copy of the NOfPoints value.
+  NOfPointsCopy := NOfPoints;
+  for I := 0 to 29 do
   begin
-    CP[I].Y := Random(H);
-    CP[I].X := Random(W);
-    CP[I].MaxDist := 0;
+    if I >= NOfPointsCopy then Break;
+
+    case PlacementStyle of
+      pstRandom :
+        begin
+          CP[I].Y := Random(H);
+          CP[I].X := Random(W);
+        end;
+      pstSquares :
+        begin
+          NOfPointsCopy := 2;
+          CP[I].X := I*W div 2;
+          CP[I].Y := I*H div 2;
+        end;
+      pstHoneyComb :
+        begin
+          NOfPointsCopy := 4;
+          CP[I].X := (I mod 2) * W div 2;
+          CP[I].Y := I*H div 4;
+        end;
+    end;
+
     CP[I].R := Random;
     CP[I].G := Random;
     CP[I].B := Random;
+    CP[I].MaxDist := 0;
   end;
 
   //For now, only "Computes" the pixels;
@@ -638,21 +658,18 @@ begin
       Value.DistFromCenter := (J-1)*(J-1)+(H-1)*(H-1);
       Value.DistSecondCenter := Value.DistFromCenter;
 
-      for K := 0 to MinVal(24, NOfPoints-1) do
+      for K := 0 to 29 do
       begin
-        Dist := (I-CP[K].Y)*(I-CP[K].Y) + (J-CP[K].X)*(J-CP[K].X);
+        if K >= NOfPointsCopy then Break;
 
-        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
-        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-CP[K].Y)*(I-CP[K].Y));
-        Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        Dist := MinVal(Dist, (J-CP[K].X)*(J-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
-        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        Dist := MinVal(Dist, (J+W-CP[K].X)*(J+W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
-        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I+H-CP[K].Y)*(I+H-CP[K].Y));
-        Dist := MinVal(Dist, (J-W-CP[K].X)*(J-W-CP[K].X) + (I-H-CP[K].Y)*(I-H-CP[K].Y));
-        // now dist is the distance between the pixel and the k-nth point.
+        XDist := abs(J-CP[K].X);
+        YDist := abs(I-CP[K].Y);
+        if XDist > W/2 then
+          XDist := W - XDist;
+        if YDist > H/2 then
+          YDist := H - YDist;
 
-        //whatever K it is, if the new distance is the max found, do
+        Dist := (XDist)*(XDist) + (YDist)*(YDist);
 
         if K = 0 then
         begin
@@ -682,9 +699,11 @@ begin
       //now we know at what K our pixel belongs, seek the maxdist of the K-nth space!
       if (Value.DistFromCenter > CP[Value.CPIndex].MaxDist) then
       begin
-         CP[Value.CPIndex].MaxDist := Value.DistFromCenter;
-         if GlobalMax < Value.DistFromCenter then
-            GlobalMax := Value.DistFromCenter;
+        CP[Value.CPIndex].MaxDist := Value.DistFromCenter;
+
+         //If the new distance is the new global max
+        if GlobalMax < Value.DistFromCenter then
+          GlobalMax := Value.DistFromCenter;
       end;
 
       Inc(Value);
@@ -746,28 +765,32 @@ begin
       //personally I'm fine with the if/end, if/end blocks. Feel free to modify this!
       if (CellStyle = cstTG1) then   //TG effect number 1
       begin
-        Pixel.R := sqrt(Dist/(GlobalMax*1.0));
+        Pixel.R := sqrt(Dist/GlobalMax);
         if IsBorder then
           Pixel.R := Pixel.R + 0.25;
       end;
 
       if (CellStyle = cstTG2) then
       begin
-        Pixel.R := (sqrt(Value.DistSecondCenter) - sqrt(Dist))/(sqrt(GlobalMax));
+        Pixel.R := (sqrt(Value.DistSecondCenter) - sqrt(Dist))/sqrt(GlobalMax);
+        if (PlacementStyle = pstSquares) then
+          Pixel.R := Pixel.R / 1.414;
+        if (PlacementStyle = pstHoneycomb) then
+          Pixel.R := Pixel.R / 1.732;
         if IsBorder then
           Pixel.R := 0;
       end;
 
       if (CellStyle = cstTG3) then
       begin
-        Pixel.R := (sqrt(Dist)*sqrt(Value.DistSecondCenter))/(GlobalMax);
+        Pixel.R := (sqrt(Dist)*sqrt(Value.DistSecondCenter))/GlobalMax;
       end;
 
       if (CellStyle = cstNice1) then //My nice effect
       begin
-        Pixel.R := 0.75 - sqrt(Dist/(CP[K].MaxDist))/2.0;
+        Pixel.R := 1 - sqrt(Dist/CP[K].MaxDist);
         if IsBorder then
-          Pixel.R := 0.25;
+          Pixel.R := 0;
       end;
 
       if (CellStyle = cstWerk) then
@@ -776,7 +799,7 @@ begin
         if IsBorder then
           Pixel.R := Pixel.R + 0.25
         else if IsSecondBorder then
-          Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.8);// - (1 - Pixel.R)*2;
+          Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.8);
       end;
       //All the styles except the standard one are just white or black, so
       //we save some instructions by adding the green and blue out of the IFs!
@@ -824,7 +847,10 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice1','TG1','TG2','TG3','Werk']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'PointsPlacement',{$ENDIF}integer(@PlacementStyle) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Random','Honeycomb','Squares']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 42;
   List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 2;
   List.AddProperty({$IFNDEF MINIMAL}'PointCount',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
