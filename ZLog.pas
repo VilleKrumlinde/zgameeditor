@@ -133,7 +133,7 @@ end;
 procedure TLog.EndTimer(S: TLogString);
 begin
   {$ifndef minimal}
-  Write( S + ': ' + SysUtils.FloatToStr(Platform_GetTime - LastTime) );
+  Write( S + ': ' + SysUtils.FormatFloat('0.0###',Platform_GetTime - LastTime) );
   {$endif}
 end;
 

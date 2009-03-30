@@ -372,6 +372,7 @@ type
     NeedParentComp : string;
     NeedParentList : string;
     AutoName : boolean;  //Give name automatically when inserted in designer
+    ParamCount : integer; //Parameter count for contentproducers
     {$ENDIF}
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     public
@@ -3004,9 +3005,9 @@ var
   Stack : TZArrayList;
   Save : TGlobalContent;
 begin
-  {$ifdef zlog}
+  {$ifndef minimal}
   if Producers.Count>0 then
-    ZLog.GetLog(Self.ClassName).Write('Refresh: ' + GetDisplayName);
+    ZLog.GetLog(Self.ClassName).BeginTimer;
   {$endif}
 
   Save := GlobalContent;
@@ -3031,6 +3032,11 @@ begin
 
 //  FillChar(GlobalContent,SizeOf(GlobalContent),0);
   GlobalContent := Save;
+
+  {$ifndef minimal}
+  if Producers.Count>0 then
+    ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + GetDisplayName);
+  {$endif}
 end;
 
 ///////////////////

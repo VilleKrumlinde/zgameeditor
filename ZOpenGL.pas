@@ -824,6 +824,7 @@ const
   GL_BLUE                           = $1905;
   GL_ALPHA                          = $1906;
   GL_RGB                            = $1907;
+  GL_BGR = $80E0; //opengl 1.2
   GL_RGBA                           = $1908;
   GL_LUMINANCE                      = $1909;
   GL_LUMINANCE_ALPHA                = $190A;

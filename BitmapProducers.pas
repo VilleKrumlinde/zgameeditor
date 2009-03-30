@@ -592,10 +592,6 @@ var
     end;
 
 begin
-  {$ifndef minimal}
-  ZLog.GetLog(Self.ClassName).BeginTimer;
-  {$endif}
-
   B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
 
   W := B.PixelWidth;
@@ -664,9 +660,9 @@ begin
 
         XDist := abs(J-CP[K].X);
         YDist := abs(I-CP[K].Y);
-        if XDist > W/2 then
+        if XDist > W div 2 then
           XDist := W - XDist;
-        if YDist > H/2 then
+        if YDist > H div 2 then
           YDist := H - YDist;
 
         Dist := (XDist)*(XDist) + (YDist)*(YDist);
@@ -836,10 +832,6 @@ begin
   FreeMem(ValueBuffer);
 
   Stack.Push(B);
-
-  {$ifndef minimal}
-  ZLog.GetLog(Self.ClassName).EndTimer('Cell refresh time');
-  {$endif}
 end;
 
 procedure TBitmapCells.DefineProperties(List: TZPropertyList);
@@ -862,18 +854,23 @@ initialization
 
   ZClasses.Register(TBitmapRect,BitmapRectClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TBitmapZoomRotate,BitmapZoomRotateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TBitmapExpression,BitmapExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TBitmapFromFile,BitmapFromFileClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
   ZClasses.Register(TBitmapBlur,BitmapBlurClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TBitmapLoad,BitmapLoadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
   ZClasses.Register(TBitmapCombine,BitmapCombineClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TBitmapCells,BitmapCellsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
 

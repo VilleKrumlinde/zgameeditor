@@ -102,6 +102,7 @@ uses
     property OnMouseUp;
     property OnMouseMove;
     property OnMouseWheel;
+    procedure ForceInitGL;
   published
   end;
 
@@ -419,6 +420,8 @@ procedure TCustomGLPanel.NewPaint;
          SwapBuffers(Canvas.Handle);
 //      EndPaint(Handle, ps);
       if Assigned(OnAfterDraw) then OnAfterDraw(self);
+
+
       end;
    end;
 
@@ -452,6 +455,11 @@ destructor TCustomGLPanel.Destroy;
       end;
    inherited;
    end;
+
+procedure TCustomGLPanel.ForceInitGL;
+begin
+  NewPaint;
+end;
 
 procedure TCustomGLPanel.GLReDraw;
    begin
