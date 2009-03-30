@@ -29,7 +29,7 @@ uses
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
-  ToolWin, SynCompletionProposal;
+  ToolWin, SynCompletionProposal, frmBitmapEdit;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
@@ -188,6 +188,8 @@ type
     UndoDeleteAction: TAction;
     Undodelete1: TMenuItem;
     AddFromLibraryMenuItem: TMenuItem;
+    ViewerBitmapTabSheet: TTabSheet;
+    BitmapEditFrame1: TBitmapEditFrame;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -266,7 +268,6 @@ type
     ExePath : string;
     RenderAborted : boolean;
     MruList : TStringList;
-    RendererInitCalled : boolean;
     PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
     ZcGlobalNames : TObjectList;
@@ -290,7 +291,6 @@ type
     procedure OnTreeDragOver(Sender, Source: TObject; X, Y: Integer;
       State: TDragState; var Accept: Boolean);
     procedure OnTreeDragDrop(Sender, Source: TObject; X, Y: Integer);
-    procedure SetFileChanged(Value : Boolean);
     procedure RefreshSymbolTable;
     procedure DoCompile(Node: TZComponentTreeNode;  const Expr: TZPropertyValue; Prop : TZProperty);
     procedure OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -327,9 +327,11 @@ type
     procedure ParamAutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure OnShaderExprChanged(Sender: TObject);
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
+    procedure OnGlInit(Sender: TObject);
   public
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
+    procedure SetFileChanged(Value : Boolean);
     //Custom editors
     procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
     procedure ShowExprEditor(Edit : TEdit);
@@ -402,6 +404,8 @@ begin
   Glp.OnMouseUp := OnGLPanelMouseUp;
   Glp.OnMouseMove := OnGLPanelMouseMove;
   Glp.TabStop := True;
+  Glp.ForceInitGL;
+  Glp.OnGlInit := Self.OnGlInit;
   //Mousewheel måste sättas på formuläret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
@@ -843,6 +847,17 @@ begin
   end;
 end;
 
+procedure TEditorForm.OnGlInit(Sender: TObject);
+begin
+  Renderer.InitRenderer;
+  if not ShadersSupported then
+    ZLog.GetLog(Self.ClassName).Write('GL shaders not supported');
+  if not MultiTextureSupported then
+    ZLog.GetLog(Self.ClassName).Write('GL multitexture not supported');
+  if not VbosSupported then
+    ZLog.GetLog(Self.ClassName).Write('GL VBOs not supported');
+end;
+
 procedure TEditorForm.OnGlDraw(Sender: TObject);
 begin
   if ShowNode=nil then
@@ -869,22 +884,11 @@ begin
     //Gör update på hela trädet för att prop-ändringar skall slå igenom
     Root.Update;
 
+    glViewport(0, 0, Glp.Width, Glp.Height);
+
     ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[2],-1) );
-
-    if not RendererInitCalled then
-    begin
-      Renderer.InitRenderer;
-      if not ShadersSupported then
-        ZLog.GetLog(Self.ClassName).Write('GL shaders not supported');
-      if not MultiTextureSupported then
-        ZLog.GetLog(Self.ClassName).Write('GL multitexture not supported');
-      if not VbosSupported then
-        ZLog.GetLog(Self.ClassName).Write('GL VBOs not supported');
-      RendererInitCalled := True;
-    end;
-    glViewport(0, 0, Glp.Width, Glp.Height);
 
     //ShowNode.Update;
     if {(ShowNode is TBitmapProducer) or }(ShowNode is TZBitmap)then
@@ -949,7 +953,12 @@ begin
     ViewerPageControl.ActivePage := ViewerMusicTabSheet;
     CompEditor := MusicEditFrame1;
   end
-  else if (ShowNode is TZBitmap) or
+  else if ShowNode is TZBitmap then
+  begin
+    ViewerPageControl.ActivePage := ViewerBitmapTabSheet;
+    CompEditor := BitmapEditFrame1;
+  end
+  else if {(ShowNode is TZBitmap) or}
     (ShowNode is TMesh) or
     (ShowNode is TZApplication) or
     (ShowNode is TModel) or

@@ -54,6 +54,9 @@ type
     function PixelWidth : integer;
     function PixelHeight : integer;
     function GetCopyAsFloats : pointer;
+    {$ifndef minimal}
+    function GetCopyAsBytes: pointer;
+    {$endif}
   end;
 
 implementation
@@ -88,6 +91,18 @@ begin
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
   Result := P;
 end;
+
+{$ifndef minimal}
+function TZBitmap.GetCopyAsBytes: pointer;
+var
+  P : PFloat;
+begin
+  GetMem(P,PixelHeight * PixelWidth * 3);
+  UseTextureBegin;
+  glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,P);
+  Result := P;
+end;
+{$endif}
 
 procedure TZBitmap.CleanUp;
 begin
