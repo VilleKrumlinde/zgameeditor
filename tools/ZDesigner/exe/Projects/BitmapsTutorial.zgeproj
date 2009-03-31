@@ -339,9 +339,10 @@ if (this.Pixel.R < 0.2) {
     this.Pixel = 0.3 + noise2(Y*130+374,X*130+2463)/2;}]]>
               </Expression>
             </BitmapExpression>
-            <BitmapZoomRotate Zoom="-1.5"/>
-            <BitmapCells/>
-            <BitmapCombine Method="1"/>
+            <BitmapCells RandomSeed="43"/>
+            <BitmapCombine/>
+            <BitmapRect Color="0 0.251 0.502 1"/>
+            <BitmapRect Size="-0.2 -1.2 0.2 0.2"/>
           </Producers>
         </Bitmap>
       </Children>

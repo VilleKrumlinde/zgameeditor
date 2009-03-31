@@ -258,6 +258,7 @@ procedure RenderModel(Model : TModel);
 procedure Render_End;
 procedure ApplyRotation(const Rotate : TZVector3f);
 
+procedure RenderUnitQuad;
 
 {$ifndef minimal}
 procedure AssertNotRenderMode;
@@ -832,10 +833,12 @@ end;
 
 { TRenderSprite }
 
-procedure RenderUnitQuad(const X,Y : single);
+procedure RenderUnitQuad;
 const
   Width = 1;
   Height = 1;
+  X = 0;
+  Y = 0;
 var
   W,H : single;
 begin
@@ -886,7 +889,7 @@ begin
     Z-Buffer on/off (depth)
     DrawBackFace on/off
   }
-  RenderUnitQuad(0,0);
+  RenderUnitQuad;
 end;
 
 { TRenderBeams }
@@ -1297,7 +1300,7 @@ begin
     begin
       B := TZBitmap(Characters[Char]);
       B.UseTextureBegin;
-      RenderUnitQuad(0,0);
+      RenderUnitQuad;
       //B.UseTextureEnd;
     end;
   end else
@@ -1314,7 +1317,7 @@ begin
       glScalef(BmStruct.ScaleX,BmStruct.ScaleY,1);
       glMatrixMode(GL_MODELVIEW);
         Bitmap.UseTextureBegin;
-        RenderUnitQuad(0,0);
+        RenderUnitQuad;
         //Bitmap.UseTextureEnd;
       glMatrixMode(GL_TEXTURE);
       glPopMatrix();
