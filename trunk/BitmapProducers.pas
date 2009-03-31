@@ -80,7 +80,7 @@ type
 
 implementation
 
-uses {$ifdef zlog}ZLog,{$endif} ZMath;
+uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
 
 { TBitmapRect }
 
@@ -105,6 +105,18 @@ begin
     //Clear if no source
     glClearColor(0.0,0,0,0.0);
     glClear(GL_COLOR_BUFFER_BIT);
+  end else
+  begin
+    //Fill screen with argument first
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    B.UseTextureBegin;
+    glPushMatrix();
+    glScalef(2,2,2);
+    RenderUnitQuad;
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
   end;
 
 //    glColor3f(0.0,1.0,0.0);

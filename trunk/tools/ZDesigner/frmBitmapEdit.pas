@@ -14,6 +14,7 @@ type
     AddMenuItem: TMenuItem;
     PaintBox: TPaintBox;
     Button1: TButton;
+    DeleteMenuItem: TMenuItem;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -22,6 +23,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure PaintBoxPaint(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure DeleteMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -32,6 +34,7 @@ type
     DragPos,DragDst : TPoint;
     procedure RepaintPage;
     procedure ReadFromComponent;
+    procedure WriteToComponent;
     function FindNodeAt(X,Y : integer) : TObject;
     procedure InitPopupMenu;
     procedure OnAddClick(Sender: TObject);
@@ -49,7 +52,7 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor;
 
 {$R *.dfm}
 
@@ -66,12 +69,14 @@ type
     Pos : TPoint;
     Producer : TZComponent;
     Form : TBitmapEditFrame;
-    LayoutId : integer;
+    TempId : integer;
     constructor Create(Form : TBitmapEditFrame; Producer : TZComponent; Page : TBitmap; X, Y, ParamCount: integer);
     destructor Destroy; override;
     procedure DrawLinks;
     procedure Draw;
     procedure AddLink(Node : TBitmapNode);
+    procedure ChangeLink(Node : TBitmapNode; Index : integer);
+    function GetTreeSize : integer;
   end;
 
   TMyLayout = class(TSugiyamaLayout)
@@ -90,6 +95,18 @@ begin
   if Links.Count>=ParamCount then
     raise Exception.Create('No more links allowed');
   Links.Add(Node);
+end;
+
+procedure TBitmapNode.ChangeLink(Node: TBitmapNode; Index: integer);
+begin
+  if Links.IndexOf(Node)>-1 then
+    Exit;
+
+  if (Node=nil) and (Index<Links.Count) then
+    Links.Delete(Index);
+
+  if Node<>nil then
+    Links.Add(Node);
 end;
 
 constructor TBitmapNode.Create(Form : TBitmapEditFrame; Producer : TZComponent; Page : TBitmap; X, Y, ParamCount: integer);
@@ -173,6 +190,22 @@ begin
   C.Pen.Style := psSolid;
 end;
 
+function TBitmapNode.GetTreeSize: integer;
+
+  function InCountChildren(Node : TBitmapNode) : integer;
+  var
+    I : integer;
+  begin
+    Result := Links.Count;
+    for I := 0 to Node.Links.Count - 1 do
+      Inc(Result, InCountChildren(TBitmapNode(Node.Links[I])) );
+  end;
+
+begin
+  Result := 0;
+  Inc(Result, InCountChildren(Self) );
+end;
+
 { TMyLayout }
 
 constructor TMyLayout.Create(BitmapNodes: TObjectList);
@@ -196,7 +229,7 @@ begin
     Node.W := NodeWidth;
     Node.Control := BitmapNode;
     Node.Id := Nodes.Count;
-    BitmapNode.LayoutId := Node.Id;
+    BitmapNode.TempId := Node.Id;
     Nodes.Add(Node);
   end;
 
@@ -206,8 +239,8 @@ begin
     for J := 0 to BitmapNode.Links.Count-1 do
     begin
       Other := TBitmapNode(BitmapNode.Links[J]);
-      FromNode := Nodes[BitmapNode.LayoutId];
-      ToNode := Nodes[Other.LayoutId];
+      FromNode := Nodes[BitmapNode.TempId];
+      ToNode := Nodes[Other.TempId];
       AddEdge(FromNode,ToNode);
     end;
   end;
@@ -289,6 +322,7 @@ begin
   end;
 end;
 
+
 destructor TBitmapEditFrame.Destroy;
 begin
   Nodes.Free;
@@ -331,6 +365,8 @@ begin
 
   if Node<>nil then
   begin
+    (Owner as TEditorForm).FindComponentAndFocusInTree(Node.Producer);
+
     if (X - Node.Pos.X < 10) and (Node.ParamCount>0) then
     begin
       DragMode := drmLink;
@@ -356,8 +392,9 @@ begin
 
   if (DragMode=drmMove) and Assigned(SelectedNode) then
   begin
-    TBitmapNode(SelectedNode).Pos := Point((X - DragPos.X) div 10 * 10, (Y - DragPos.Y) div 10 * 10);
-    DoPaint := True;
+//Disable move for now, only use autolayout
+//    TBitmapNode(SelectedNode).Pos := Point((X - DragPos.X) div 10 * 10, (Y - DragPos.Y) div 10 * 10);
+//    DoPaint := True;
   end;
 
   if DragMode=drmLink then
@@ -374,14 +411,15 @@ procedure TBitmapEditFrame.ImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   Other : TBitmapNode;
+  I : integer;
 begin
   if DragMode=drmLink then
   begin
     Other := TBitmapNode(FindNodeAt(X,Y));
-    if Other<>nil then
-    begin
-      TBitmapNode(SelectedNode).AddLink(Other);
-    end;
+    I := (DragPos.Y - TBitmapNode(SelectedNode).Pos.Y - 21) div 10;
+    TBitmapNode(SelectedNode).ChangeLink(Other,I);
+    WriteToComponent;
+    ReadFromComponent;
   end;
 
   DragMode := drmNone;
@@ -450,7 +488,91 @@ begin
   end;
 
   Layout;
+
+  DragMode := drmNone;
 end;
+
+procedure TBitmapEditFrame.WriteToComponent;
+var
+  I,J : integer;
+  Node : TBitmapNode;
+  InCounts : array of integer;
+  Roots,Producers : TObjectList;
+  C : TZComponent;
+
+  procedure InGenNode(Node : TBitmapNode);
+  var
+    I : integer;
+  begin
+    for I := 0 to Node.Links.Count - 1 do
+      InGenNode(TBitmapNode(Node.Links[I]));
+    Producers.Add(Node.Producer);
+  end;
+
+begin
+{           clear b.producers
+           hitta rot i träd (=den som inte är child till någon annan)
+             om flera rötter generera dom i ordningen minst träd först
+           depth first children
+             först traversera barn
+             sen generera sig själv}
+  if (not IsBitmapConnected) then
+    Exit;
+
+  SetLength(InCounts,Nodes.Count);
+  FillChar(InCounts[0],SizeOf(Integer)*Nodes.Count,0);
+
+  for I := 0 to Nodes.Count-1 do
+  begin
+    Node := TBitmapNode(Nodes[I]);
+    Node.TempId := I;
+  end;
+
+  for I := 0 to Nodes.Count-1 do
+  begin
+    Node := TBitmapNode(Nodes[I]);
+    for J := 0 to Node.Links.Count - 1 do
+      Inc(InCounts[ TBitmapNode(Node.Links[J]).TempId ]);
+  end;
+
+  Roots := TObjectList.Create(False);
+  Producers := TObjectList.Create(False);
+  try
+    for I := 0 to High(InCounts) do
+      if InCounts[I]=0 then
+      begin
+        Node := TBitmapNode(Nodes[I]);
+        Node.TempId := Node.GetTreeSize;
+        Roots.Add( Node );
+      end;
+
+    //TODO: sort roots på tempid stigande
+
+    for I := 0 to Roots.Count-1 do
+    begin
+      Node := TBitmapNode(Roots[I]);
+      InGenNode(Node);
+    end;
+
+    for I := 0 to Producers.Count-1 do
+    begin
+      C := Producers[I] as TZComponent;
+      J := Bitmap.Producers.IndexOf(C);
+      if J<>-1 then
+        Bitmap.Producers.RemoveAt(J);
+      Bitmap.Producers.InsertComponent(C,I)
+    end;
+    Bitmap.Producers.Change;
+
+  finally
+    Roots.Free;
+    Producers.Free;
+  end;
+
+  SetProjectChanged;
+  NeedRefreshTreeNode := True;
+end;
+
 
 procedure TBitmapEditFrame.RepaintPage;
 var
@@ -500,6 +622,7 @@ begin
 
   Bitmap.Producers.AddComponent(C);
   Bitmap.Producers.Change;
+
   ReadFromComponent;
   SetProjectChanged;
   NeedRefreshTreeNode := True;
@@ -508,6 +631,23 @@ begin
   PaintBox.Invalidate;
 end;
 
+procedure TBitmapEditFrame.DeleteMenuItemClick(Sender: TObject);
+var
+  Node : TBitmapNode;
+begin
+  if (not IsBitmapConnected) or (not Assigned(SelectedNode)) then
+    Exit;
+
+  //TODO: anropa editor DeleteComponentActionExecute
+  Node := TBitmapNode(SelectedNode);
+
+  ReadFromComponent;
+  SetProjectChanged;
+  NeedRefreshTreeNode := True;
+
+  RepaintPage;
+  PaintBox.Invalidate;
+end;
 
 procedure TBitmapEditFrame.OnPropChanged;
 begin

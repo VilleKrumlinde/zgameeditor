@@ -338,7 +338,8 @@ type
     procedure ShowShaderEditor(Edit : TEdit);
     procedure HideEditor;
     procedure ValidateNewName(const OldName,NewName : string);
-    procedure FindComponentAndFocusInTree(const CName: string);
+    procedure FindComponentAndFocusInTree(const CName: string); overload;
+    procedure FindComponentAndFocusInTree(C: TZComponent); overload;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -404,8 +405,8 @@ begin
   Glp.OnMouseUp := OnGLPanelMouseUp;
   Glp.OnMouseMove := OnGLPanelMouseMove;
   Glp.TabStop := True;
-  Glp.ForceInitGL;
   Glp.OnGlInit := Self.OnGlInit;
+  Glp.ForceInitGL;
   //Mousewheel måste sättas på formuläret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
@@ -1026,6 +1027,14 @@ end;
 procedure TEditorForm.FindComponentAndFocusInTree(const CName : string);
 var
   C : TZComponent;
+begin
+  C := SymTab.Lookup(CName) as TZComponent;
+  if C<>nil then
+    FindComponentAndFocusInTree(C);
+end;
+
+procedure TEditorForm.FindComponentAndFocusInTree(C : TZComponent);
+var
   I : integer;
   Node : TZComponentTreeNode;
 begin
@@ -1035,17 +1044,13 @@ begin
     property-editor, and those controls are destroyed when changing tree-focus
     causing access violation.
   }
-  C := SymTab.Lookup(CName) as TZComponent;
-  if C<>nil then
+  for I := 0 to Tree.Items.Count-1 do
   begin
-    for I := 0 to Tree.Items.Count-1 do
+    Node := Tree.Items[I] as TZComponentTreeNode;
+    if Node.Component=C then
     begin
-      Node := Tree.Items[I] as TZComponentTreeNode;
-      if Node.Component=C then
-      begin
-        PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
-        Break;
-      end;
+      PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
+      Break;
     end;
   end;
 end;
