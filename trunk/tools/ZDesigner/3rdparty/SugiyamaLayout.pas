@@ -490,13 +490,13 @@ end;
 
 procedure TSugiyamaLayout.SetYPositions;
 const
-  VSpacing = 40;
+  VSpacing = 24;
 var
   Node : TNode;
   I,J : integer;
   Highest,Y : integer;
 begin
-  Y := 40;
+  Y := 12;
   for I := 0 to Layers.Count-1 do
   begin
     //Put all nodes in a layer with the same Y, increase Y with highest node + spacing
@@ -514,7 +514,7 @@ end;
 
 procedure TSugiyamaLayout.SetXPositions;
 const
-  HSpacing = 20;
+  HSpacing = 12;
   MaxIter = 20;
 var
   I,J,X,Z,OldZ,BailOut,RegStart,RegCount,MaxAmount,Amount : integer;

@@ -66,6 +66,7 @@ type
     Osc1PWTrackBar: TTrackBar;
     MasterVolumeTrackBar: TTrackBar;
     Label19: TLabel;
+    Panel1: TPanel;
     procedure NotesEditKeyPress(Sender: TObject; var Key: Char);
     procedure AutoPlayCheckBoxClick(Sender: TObject);
     procedure AutoPlayTimerTimer(Sender: TObject);
@@ -87,6 +88,7 @@ type
   public
     procedure SetComponent(C: TZComponent; TreeNode: TZComponentTreeNode);  override;
     procedure OnKeyPress(var Key: Char); override;
+    constructor Create(AOwner: TComponent) ; override;
   end;
 
 var
@@ -207,6 +209,12 @@ begin
   if AutoPlayCharI>Length(NotesEdit.Text) then
     AutoPlayCharI:=1;
   PlayNoteFromChar(NotesEdit.Text[AutoPlayCharI]);
+end;
+
+constructor TSoundEditFrame.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Panel1.DoubleBuffered := True;
 end;
 
 procedure TSoundEditFrame.TempoTrackBarChange(Sender: TObject);

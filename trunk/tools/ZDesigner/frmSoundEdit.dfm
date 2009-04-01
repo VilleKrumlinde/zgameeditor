@@ -83,17 +83,6 @@ inherited SoundEditFrame: TSoundEditFrame
         AutoSize = False
         Caption = 'Note nr'
       end
-      object SoundGraphPaintBox: TPaintBox
-        Left = 415
-        Top = 63
-        Width = 375
-        Height = 169
-        Anchors = [akLeft, akTop, akRight]
-        Color = clBtnFace
-        Constraints.MinWidth = 100
-        ParentColor = False
-        OnPaint = SoundGraphPaintBoxPaint
-      end
       object Label16: TLabel
         Left = 320
         Top = 38
@@ -107,6 +96,30 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 18
         Height = 13
         Caption = 'Pan'
+      end
+      object Panel1: TPanel
+        Left = 415
+        Top = 63
+        Width = 375
+        Height = 169
+        Anchors = [akLeft, akTop, akRight]
+        BevelOuter = bvNone
+        Constraints.MinWidth = 100
+        FullRepaint = False
+        ParentBackground = False
+        TabOrder = 15
+        object SoundGraphPaintBox: TPaintBox
+          Left = 0
+          Top = 0
+          Width = 375
+          Height = 169
+          Align = alClient
+          Color = clBtnFace
+          ParentColor = False
+          OnPaint = SoundGraphPaintBoxPaint
+          ExplicitWidth = 105
+          ExplicitHeight = 105
+        end
       end
       object ModulationsParent: TScrollBox
         Left = 8
