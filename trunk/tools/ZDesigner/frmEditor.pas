@@ -340,6 +340,7 @@ type
     procedure ValidateNewName(const OldName,NewName : string);
     procedure FindComponentAndFocusInTree(const CName: string); overload;
     procedure FindComponentAndFocusInTree(C: TZComponent); overload;
+    procedure RefreshCompEditorTreeNode;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -912,9 +913,31 @@ end;
 procedure TEditorForm.SelectComponent(C: TZComponent);
 var
   OldFocus : TWinControl;
+
+  function InCheckForBitmapParent : boolean;
+  //Do not change shownode if parent is bitmap
+  //This will keep the texture-diagram visible while editing bitmap-producers
+  var
+    CurParent : TZComponentTreeNode;
+  begin
+    Result := False;
+    if Tree.ZSelected=nil then
+      Exit;
+    CurParent := Tree.ZSelected.Parent as TZComponentTreeNode;
+    while CurParent<>nil do
+    begin
+      if CurParent.Component is TZBitmap then
+      begin
+        Result := True;
+        Exit;
+      end;
+      CurParent := CurParent.Parent as TZComponentTreeNode;
+    end;
+  end;
+
 begin
   Selected := C;
-  if not LockShow then
+  if (not LockShow) and (not InCheckForBitmapParent) then
     SetShowNode(Selected);
   Ed.SetComponent(C);
   RenderAborted := False;
@@ -1087,15 +1110,20 @@ begin
     Ed.SetComponent(nil);
 end;
 
+procedure TEditorForm.RefreshCompEditorTreeNode;
+begin
+  Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
+  CompEditor.TreeNode.Expand(False);
+  CompEditor.NeedRefreshTreeNode := False;
+  SetFileChanged(True);
+end;
 
 procedure TEditorForm.OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
 begin
   //Körs innan selected byts
   if (CompEditor<>nil) and CompEditor.NeedRefreshTreeNode then
   begin
-    Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
-    SetFileChanged(True);
-    CompEditor.NeedRefreshTreeNode := False;
+    RefreshCompEditorTreeNode();
     AllowChange:=False;
     Exit;
   end;
@@ -2169,6 +2197,8 @@ begin
   TZComponentTreeNode(Tree.Selected.Parent).ComponentList.AddComponent(C);
   TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
   SetFileChanged(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.AddComponentActionUpdate(Sender: TObject);
@@ -2641,6 +2671,8 @@ begin
   DestList.Change;
   SetFileChanged(True);
   Result := Tree.AddNode(InsertC,DestTreeNode,Index)as TZComponentTreeNode;
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.PasteComponentActionExecute(Sender: TObject);
@@ -2710,6 +2742,8 @@ begin
   Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index-1],naInsert);
   SetFileChanged(True);
   Tree.ClearSelection(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.MoveDownComponentActionExecute(Sender: TObject);
@@ -2731,6 +2765,8 @@ begin
     Tree.Selected.MoveTo(Tree.Selected.Parent,naAddChild);
   SetFileChanged(True);
   Tree.ClearSelection(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.MoveUpComponentActionUpdate(Sender: TObject);

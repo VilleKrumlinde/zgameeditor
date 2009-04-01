@@ -341,10 +341,11 @@ begin
 
   NamePanel := TPanel.Create(Self);
   NamePanel.Align := alLeft;
+//  NamePanel.Anchors := [akLeft,akTop,akRight];
 //  NamePanel.Caption := Prop.Name;
 //  NamePanel.Alignment := taLeftJustify;
   NamePanel.BevelOuter := bvNone;
-  NamePanel.Width := 140;
+  NamePanel.Width := 120;
   NamePanel.Parent := Self;
   NamePanel.Alignment := taLeftJustify;
 
@@ -781,6 +782,8 @@ var
   Prop : TZProperty;
   Value : TZPropertyValue;
 begin
+  Self.Items.BeginUpdate;
+
   if Node.HasChildren then
     Node.DeleteChildren;
   PropList := C.GetProperties;
@@ -837,6 +840,7 @@ begin
         end;
     end;
   end;
+  Self.Items.EndUpdate;
 end;
 
 procedure TZComponentTreeView.SetRootComponent(C: TZComponent);

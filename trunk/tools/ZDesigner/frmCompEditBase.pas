@@ -9,8 +9,8 @@ uses
 type
   TCompEditFrameBase = class(TFrame)
   protected
-  private
-    { Private declarations }
+    procedure RefreshTreeNode;
+    procedure SetProjectChanged;
   public
     { Public declarations }
     Component : TZComponent;
@@ -20,7 +20,7 @@ type
     procedure OnPropChanged; virtual;
     procedure OnEditorClose; virtual;
     procedure OnKeyPress(var Key : char); virtual;
-    procedure SetProjectChanged;
+    procedure OnTreeChanged; virtual;
   end;
 
 implementation
@@ -46,6 +46,11 @@ begin
   //
 end;
 
+procedure TCompEditFrameBase.OnTreeChanged;
+begin
+  //
+end;
+
 procedure TCompEditFrameBase.SetComponent(C: TZComponent; TreeNode : TZComponentTreeNode);
 begin
   Component := C;
@@ -55,6 +60,11 @@ end;
 procedure TCompEditFrameBase.SetProjectChanged;
 begin
   (Owner as TEditorForm).SetFileChanged(True);
+end;
+
+procedure TCompEditFrameBase.RefreshTreeNode;
+begin
+  (Owner as TEditorForm).RefreshCompEditorTreeNode;
 end;
 
 end.

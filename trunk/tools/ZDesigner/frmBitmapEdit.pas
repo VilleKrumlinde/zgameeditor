@@ -12,9 +12,9 @@ type
     Image: TImage;
     PopupMenu1: TPopupMenu;
     AddMenuItem: TMenuItem;
-    PaintBox: TPaintBox;
-    Button1: TButton;
     DeleteMenuItem: TMenuItem;
+    Panel1: TPanel;
+    PaintBox: TPaintBox;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -22,7 +22,6 @@ type
     procedure ImageMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure PaintBoxPaint(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure DeleteMenuItemClick(Sender: TObject);
   private
     { Private declarations }
@@ -45,6 +44,7 @@ type
     destructor Destroy; override;
     procedure SetComponent(C : TZComponent; TreeNode : TZComponentTreeNode); override;
     procedure OnPropChanged; override;
+    procedure OnTreeChanged; override;
   end;
 
 var
@@ -268,18 +268,14 @@ end;
 
 { TBitmapEditFrame }
 
-procedure TBitmapEditFrame.Button1Click(Sender: TObject);
-begin
-  Layout;
-  RepaintPage;
-end;
-
 constructor TBitmapEditFrame.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   Nodes := TObjectList.Create(True);
 
   InitPopupMenu;
+
+  Panel1.DoubleBuffered := True;
 end;
 
 procedure TBitmapEditFrame.InitPopupMenu;
@@ -314,6 +310,10 @@ var
 begin
   if not IsBitmapConnected then
     Exit;
+
+  if Bitmap.Producers.Count=0 then
+    Exit;
+
   L := TMyLayout.Create(Nodes);
   try
     L.Execute;
@@ -410,16 +410,26 @@ end;
 procedure TBitmapEditFrame.ImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  Other : TBitmapNode;
-  I : integer;
+  Node,Other : TBitmapNode;
+  I,J : integer;
 begin
   if DragMode=drmLink then
   begin
     Other := TBitmapNode(FindNodeAt(X,Y));
     I := (DragPos.Y - TBitmapNode(SelectedNode).Pos.Y - 21) div 10;
     TBitmapNode(SelectedNode).ChangeLink(Other,I);
+    //make sure that no other link has other as target
+    for J := 0 to Nodes.Count - 1 do
+    begin
+      Node := TBitmapNode(Nodes[J]);
+      if Node=SelectedNode then
+        Continue;
+      if Node.Links.IndexOf(Other)>-1 then
+        Node.Links.Remove(Other);
+    end;
     WriteToComponent;
     ReadFromComponent;
+    PaintBox.Invalidate;
   end;
 
   DragMode := drmNone;
@@ -492,6 +502,22 @@ begin
   DragMode := drmNone;
 end;
 
+
+function TempIdSortProc(Item1, Item2: Pointer): Integer;
+var
+  I1,I2 : integer;
+begin
+  I1 := TBitmapNode(Item1).TempId;
+  I2 := TBitmapNode(Item2).TempId;
+  if I1 < I2 then
+    Result := -1
+  else if I1 = I2 then
+    Result:=0
+  else
+    Result := 1;
+end;
+
+
 procedure TBitmapEditFrame.WriteToComponent;
 var
   I,J : integer;
@@ -546,7 +572,7 @@ begin
         Roots.Add( Node );
       end;
 
-    //TODO: sort roots på tempid stigande
+    Roots.Sort(TempIdSortProc);
 
     for I := 0 to Roots.Count-1 do
     begin
@@ -569,8 +595,7 @@ begin
     Producers.Free;
   end;
 
-  SetProjectChanged;
-  NeedRefreshTreeNode := True;
+  RefreshTreeNode;
 end;
 
 
@@ -620,30 +645,24 @@ begin
   Ci := TZComponentInfo(M.Tag);
   C := Ci.ZClass.Create(nil);
 
-  Bitmap.Producers.AddComponent(C);
-  Bitmap.Producers.Change;
+  Nodes.Add( TBitmapNode.Create(Self,C,Image.Picture.Bitmap,0,0,0) );
 
+  WriteToComponent;
   ReadFromComponent;
-  SetProjectChanged;
-  NeedRefreshTreeNode := True;
 
   RepaintPage;
   PaintBox.Invalidate;
 end;
 
 procedure TBitmapEditFrame.DeleteMenuItemClick(Sender: TObject);
-var
-  Node : TBitmapNode;
 begin
   if (not IsBitmapConnected) or (not Assigned(SelectedNode)) then
     Exit;
 
-  //TODO: anropa editor DeleteComponentActionExecute
-  Node := TBitmapNode(SelectedNode);
+  (Owner as TEditorForm).DeleteComponentActionExecute(nil);
 
   ReadFromComponent;
   SetProjectChanged;
-  NeedRefreshTreeNode := True;
 
   RepaintPage;
   PaintBox.Invalidate;
@@ -651,6 +670,13 @@ end;
 
 procedure TBitmapEditFrame.OnPropChanged;
 begin
+  PaintBox.Invalidate;
+end;
+
+procedure TBitmapEditFrame.OnTreeChanged;
+begin
+  ReadFromComponent;
+  RepaintPage;
   PaintBox.Invalidate;
 end;
 
