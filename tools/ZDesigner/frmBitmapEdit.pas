@@ -23,6 +23,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure PaintBoxPaint(Sender: TObject);
     procedure DeleteMenuItemClick(Sender: TObject);
+    procedure FrameResize(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -31,6 +32,7 @@ type
     SelectedNode : TObject;
     DragMode : (drmNone,drmMove,drmLink);
     DragPos,DragDst : TPoint;
+    DragLinkIndex : integer;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -58,7 +60,7 @@ uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor;
 
 const
   NodeWidth = 85;
-  NodeHeight = 40;
+  NodeHeight = 36;
 
 type
   TBitmapNode = class
@@ -77,6 +79,8 @@ type
     procedure AddLink(Node : TBitmapNode);
     procedure ChangeLink(Node : TBitmapNode; Index : integer);
     function GetTreeSize : integer;
+    function GetParamPos(I: integer): TPoint;
+    function GetParamRect(I: integer): TRect;
   end;
 
   TMyLayout = class(TSugiyamaLayout)
@@ -120,6 +124,30 @@ begin
   Self.Form := Form;
 end;
 
+const
+  ParamRadius = 5;
+  ParamStep = ParamRadius * 2 + 4;
+
+function TBitmapNode.GetParamPos(I : integer) : TPoint;
+var
+  Left : integer;
+begin
+  Left := Pos.X + NodeWidth div 2 - ((ParamCount * ParamStep) div 2);
+  Result.X := Left + I * ParamStep + ParamStep div 2;
+  Result.Y := Pos.Y + NodeHeight - ParamStep div 2;
+end;
+
+function TBitmapNode.GetParamRect(I: integer): TRect;
+var
+  P : TPoint;
+begin
+  P := GetParamPos(I);
+  Result.Left := P.X - ParamRadius;
+  Result.Right := P.X + ParamRadius;
+  Result.Top := P.Y - ParamRadius;
+  Result.Bottom := P.Y + ParamRadius;
+end;
+
 destructor TBitmapNode.Destroy;
 begin
   Links.Free;
@@ -131,6 +159,7 @@ var
   I : integer;
   C : TCanvas;
   Selected : boolean;
+  ParamRect : TRect;
 begin
   Selected := Form.SelectedNode = Self;
 
@@ -138,7 +167,7 @@ begin
   Str := StringReplace(Str,'Bitmap','',[]);
 
   C := Page.Canvas;
-  // back
+  //Back
   if Selected then
     C.Brush.Color := RGB(190, 190, 220)
   else
@@ -146,25 +175,29 @@ begin
 
   C.Pen.Color := clGray;
   C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y + NodeHeight);
-  C.Rectangle(Pos.X, Pos.Y, Pos.X + 10, Pos.Y + NodeHeight);
+//  C.Rectangle(Pos.X, Pos.Y + NodeHeight - ParamStep, Pos.X + NodeWidth, Pos.Y + NodeHeight);
 
   if Selected then
     C.Brush.Color := RGB(170, 170, 230)
   else
     C.Brush.Color := RGB(170, 170, 170);
   C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y +  20);
-// text
+
+  //Text
   C.Brush.Style := bsClear;
   C.TextOut(Pos.X + (NodeWidth - C.TextWidth(Str)) div 2, Pos.Y + 4, Str);
   C.Brush.Style := bsSolid;
-// links
+
+  //Links
   for I := 0 to ParamCount-1 do
   begin
     if I<Links.Count then
       C.Brush.Color := clRed
     else
       C.Brush.Color := clLime;
-    C.Ellipse(Pos.X + 1, Pos.Y + 21 + i * 10, Pos.X + 9, Pos.Y + 29 + i * 10);
+    ParamRect := GetParamRect(I);
+    //C.FillRect(ParamPos[I]);
+    C.Ellipse(ParamRect.Left,ParamRect.Top,ParamRect.Right,ParamRect.Bottom);
   end;
   // data
 {    SetStretchBltMode(Handle, HALFTONE);
@@ -177,17 +210,17 @@ var
   I : integer;
   C : TCanvas;
   Link : TBitmapNode;
+  P : TPoint;
 begin
   C := Page.Canvas;
-  C.Pen.Style := psDash;
   for I := 0 to Links.Count-1 do
   begin
     Link := TBitmapNode(Links[I]);
     C.Pen.Color := clBlack;
-    C.MoveTo(Pos.X + 5, Pos.Y + 20 + i * 10 + 5);
+    P := GetParamPos(I);
+    C.MoveTo(P.X,P.Y);
     C.LineTo(Link.Pos.X + NodeWidth div 2, Link.Pos.Y + NodeHeight div 2);
   end;
-  C.Pen.Style := psSolid;
 end;
 
 function TBitmapNode.GetTreeSize: integer;
@@ -354,10 +387,17 @@ begin
   end;
 end;
 
+procedure TBitmapEditFrame.FrameResize(Sender: TObject);
+begin
+  RepaintPage;
+end;
+
 procedure TBitmapEditFrame.ImageMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   Node : TBitmapNode;
+  I : integer;
+  P : TPoint;
 begin
   Node := TBitmapNode(FindNodeAt(X,Y));
 
@@ -367,11 +407,20 @@ begin
   begin
     (Owner as TEditorForm).FindComponentAndFocusInTree(Node.Producer);
 
-    if (X - Node.Pos.X < 10) and (Node.ParamCount>0) then
+    DragLinkIndex := -1;
+    P := Point(X,Y);
+    for I := 0 to Node.ParamCount-1 do
+      if PtInRect(Node.GetParamRect(I),P) then
+      begin
+        DragLinkIndex := I;
+        Break;
+      end;
+
+    if DragLinkIndex >= 0 then
     begin
       DragMode := drmLink;
-      DragPos := Point(X,Y);
-      DragDst := Point(X,Y);
+      DragPos := P;
+      DragDst := P;
     end
     else
     begin
@@ -411,25 +460,27 @@ procedure TBitmapEditFrame.ImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   Node,Other : TBitmapNode;
-  I,J : integer;
+  I : integer;
 begin
   if DragMode=drmLink then
   begin
     Other := TBitmapNode(FindNodeAt(X,Y));
-    I := (DragPos.Y - TBitmapNode(SelectedNode).Pos.Y - 21) div 10;
-    TBitmapNode(SelectedNode).ChangeLink(Other,I);
-    //make sure that no other link has other as target
-    for J := 0 to Nodes.Count - 1 do
+    if SelectedNode<>Other then
     begin
-      Node := TBitmapNode(Nodes[J]);
-      if Node=SelectedNode then
-        Continue;
-      if Node.Links.IndexOf(Other)>-1 then
-        Node.Links.Remove(Other);
+      TBitmapNode(SelectedNode).ChangeLink(Other,DragLinkIndex);
+      //make sure that no other link has other as target
+      for I := 0 to Nodes.Count - 1 do
+      begin
+        Node := TBitmapNode(Nodes[I]);
+        if Node=SelectedNode then
+          Continue;
+        if Node.Links.IndexOf(Other)>-1 then
+          Node.Links.Remove(Other);
+      end;
+      WriteToComponent;
+      ReadFromComponent;
+      PaintBox.Invalidate;
     end;
-    WriteToComponent;
-    ReadFromComponent;
-    PaintBox.Invalidate;
   end;
 
   DragMode := drmNone;

@@ -1,6 +1,7 @@
 inherited BitmapEditFrame: TBitmapEditFrame
   Width = 421
   Height = 354
+  OnResize = FrameResize
   ExplicitWidth = 421
   ExplicitHeight = 354
   DesignSize = (
