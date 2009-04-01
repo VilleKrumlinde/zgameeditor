@@ -483,6 +483,11 @@ begin
     ZLog.GetLog(Self.ClassName).Write('Bitmap size must match target.');
     Exit;
   end;
+  if Bitmap=Content then
+  begin
+    ZLog.GetLog(Self.ClassName).Write('BitmapLoad cannot load itself.');
+    Exit;
+  end;
   {$endif}
 
   B := TZBitmap.CreateFromBitmap(TZBitmap(Content));

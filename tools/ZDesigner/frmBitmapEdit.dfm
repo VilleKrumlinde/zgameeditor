@@ -1,46 +1,48 @@
 inherited BitmapEditFrame: TBitmapEditFrame
   Width = 421
-  Height = 351
+  Height = 354
   ExplicitWidth = 421
-  ExplicitHeight = 351
+  ExplicitHeight = 354
   DesignSize = (
     421
-    351)
+    354)
   object Image: TImage
-    Left = 16
-    Top = 16
+    Left = 5
+    Top = 5
     Width = 223
-    Height = 316
+    Height = 333
     Anchors = [akLeft, akTop, akRight, akBottom]
     PopupMenu = PopupMenu1
     OnMouseDown = ImageMouseDown
     OnMouseMove = ImageMouseMove
     OnMouseUp = ImageMouseUp
-    ExplicitHeight = 329
+    ExplicitHeight = 330
   end
-  object PaintBox: TPaintBox
-    Left = 245
-    Top = 16
-    Width = 162
-    Height = 169
+  object Panel1: TPanel
+    Left = 229
+    Top = 5
+    Width = 180
+    Height = 164
     Anchors = [akTop, akRight]
-    OnPaint = PaintBoxPaint
-    ExplicitLeft = 487
-  end
-  object Button1: TButton
-    Left = 245
-    Top = 307
-    Width = 75
-    Height = 25
-    Anchors = [akRight, akBottom]
-    Caption = 'Layout'
+    BevelOuter = bvNone
+    FullRepaint = False
+    ParentBackground = False
     TabOrder = 0
-    OnClick = Button1Click
-    ExplicitTop = 320
+    object PaintBox: TPaintBox
+      Left = 0
+      Top = 0
+      Width = 180
+      Height = 164
+      Align = alClient
+      OnPaint = PaintBoxPaint
+      ExplicitLeft = 9
+      ExplicitWidth = 178
+      ExplicitHeight = 159
+    end
   end
   object PopupMenu1: TPopupMenu
-    Left = 10
-    Top = 10
+    Left = 65535
+    Top = 1
     object AddMenuItem: TMenuItem
       Caption = 'Add'
     end
