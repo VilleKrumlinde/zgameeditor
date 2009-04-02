@@ -24,6 +24,7 @@ type
     procedure PaintBoxPaint(Sender: TObject);
     procedure DeleteMenuItemClick(Sender: TObject);
     procedure FrameResize(Sender: TObject);
+    procedure PopupMenu1Popup(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -81,6 +82,7 @@ type
     function GetTreeSize : integer;
     function GetParamPos(I: integer): TPoint;
     function GetParamRect(I: integer): TRect;
+    function GetOutputRect: TRect;
   end;
 
   TMyLayout = class(TSugiyamaLayout)
@@ -127,6 +129,20 @@ end;
 const
   ParamRadius = 5;
   ParamStep = ParamRadius * 2 + 4;
+  OutputRadius = 4;
+  OutputStep = OutputRadius * 2 + 4;
+
+function TBitmapNode.GetOutputRect: TRect;
+var
+  P : TPoint;
+begin
+  P.X := Pos.X + NodeWidth div 2;;
+  P.Y := Pos.Y + OutputStep div 2;
+  Result.Left := P.X - OutputRadius;
+  Result.Right := P.X + OutputRadius;
+  Result.Top := P.Y - OutputRadius;
+  Result.Bottom := P.Y + OutputRadius;
+end;
 
 function TBitmapNode.GetParamPos(I : integer) : TPoint;
 var
@@ -159,7 +175,7 @@ var
   I : integer;
   C : TCanvas;
   Selected : boolean;
-  ParamRect : TRect;
+  R : TRect;
 begin
   Selected := Form.SelectedNode = Self;
 
@@ -174,18 +190,17 @@ begin
     C.Brush.Color := RGB(190, 190, 190);
 
   C.Pen.Color := clGray;
-  C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y + NodeHeight);
-//  C.Rectangle(Pos.X, Pos.Y + NodeHeight - ParamStep, Pos.X + NodeWidth, Pos.Y + NodeHeight);
-
   if Selected then
     C.Brush.Color := RGB(170, 170, 230)
   else
-    C.Brush.Color := RGB(170, 170, 170);
-  C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y +  20);
+    C.Brush.Color := RGB(190, 190, 190); //RGB(170, 170, 170);
+  C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y + NodeHeight);
 
   //Text
   C.Brush.Style := bsClear;
-  C.TextOut(Pos.X + (NodeWidth - C.TextWidth(Str)) div 2, Pos.Y + 4, Str);
+  C.TextOut(Pos.X + (NodeWidth - C.TextWidth(Str)) div 2,
+    Pos.Y + (NodeHeight - C.TextHeight(Str)) div 2,
+    Str);
   C.Brush.Style := bsSolid;
 
   //Links
@@ -195,14 +210,16 @@ begin
       C.Brush.Color := clRed
     else
       C.Brush.Color := clLime;
-    ParamRect := GetParamRect(I);
-    //C.FillRect(ParamPos[I]);
-    C.Ellipse(ParamRect.Left,ParamRect.Top,ParamRect.Right,ParamRect.Bottom);
+    R := GetParamRect(I);
+    C.Brush.Color := RGB(200, 200, 200);
+    C.Ellipse(R.Left,R.Top,R.Right,R.Bottom);
   end;
-  // data
-{    SetStretchBltMode(Handle, HALFTONE);
-    StretchDIBits(Handle, Pos.X + 10, Pos.Y + 20 + 63, 64, -64,
-                  0, 0, TEX_SIZE, TEX_SIZE, Data, bmi, DIB_RGB_COLORS, SRCCOPY);}
+
+  R := GetOutputRect;
+  Inc(R.Left,OutputRadius);
+//  C.Brush.Color := clDkGray;
+  C.Brush.Color := RGB(200, 200, 200);
+  C.Polygon([ Point(R.Left,R.Top),Point(R.Right,R.Bottom),Point(R.Left - OutputRadius,R.Bottom) ]);
 end;
 
 procedure TBitmapNode.DrawLinks;
@@ -411,22 +428,28 @@ begin
     P := Point(X,Y);
     for I := 0 to Node.ParamCount-1 do
       if PtInRect(Node.GetParamRect(I),P) then
+      //Drag from parameter
       begin
         DragLinkIndex := I;
+        DragMode := drmLink;
         Break;
       end;
 
-    if DragLinkIndex >= 0 then
-    begin
+    if (DragLinkIndex=-1) and PtInRect(Node.GetOutputRect,P) then
+      //Drag from output
       DragMode := drmLink;
-      DragPos := P;
-      DragDst := P;
-    end
+
+    DragPos := P;
+    DragDst := P;
+
+//    if DragLinkIndex >= 0 then
+//    begin
+{    end
     else
     begin
       DragMode := drmMove;
       DragPos := Point(X - Node.Pos.X,Y - Node.Pos.Y);
-    end;
+    end;}
   end;
 
   RepaintPage;
@@ -459,27 +482,62 @@ end;
 procedure TBitmapEditFrame.ImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  Node,Other : TBitmapNode;
+  Node,Other,FromNode,ToNode : TBitmapNode;
   I : integer;
+  P : TPoint;
+
+  procedure InBreakCycle(Fn,Tn : TBitmapNode);
+  var
+    I,J : integer;
+  begin
+    J := Tn.Links.IndexOf(Fn);
+    if J>-1 then
+      Tn.ChangeLink(nil,J)
+    else for I := 0 to Tn.Links.Count - 1 do
+      InBreakCycle(Fn,TBitmapNode(Tn.Links[I]));
+  end;
+
 begin
   if DragMode=drmLink then
   begin
     Other := TBitmapNode(FindNodeAt(X,Y));
-    if SelectedNode<>Other then
+    if Other<>nil then
     begin
-      TBitmapNode(SelectedNode).ChangeLink(Other,DragLinkIndex);
-      //make sure that no other link has other as target
-      for I := 0 to Nodes.Count - 1 do
-      begin
-        Node := TBitmapNode(Nodes[I]);
-        if Node=SelectedNode then
-          Continue;
-        if Node.Links.IndexOf(Other)>-1 then
-          Node.Links.Remove(Other);
+      if DragLinkIndex=-1 then
+      begin //Link from one nodes output to another nodes input argument
+        FromNode := Other;
+        ToNode := TBitmapNode(SelectedNode);
+        P := Point(X,Y);
+        for I := 0 to FromNode.ParamCount-1 do
+          if PtInRect(FromNode.GetParamRect(I),P) then
+          begin
+            DragLinkIndex := I;
+            Break;
+          end;
+      end else
+      begin //Link from input to output
+        FromNode := TBitmapNode(SelectedNode);
+        ToNode := Other;
       end;
-      WriteToComponent;
-      ReadFromComponent;
-      PaintBox.Invalidate;
+
+      if (FromNode<>ToNode) and (DragLinkIndex>-1) then
+      begin
+        FromNode.ChangeLink(ToNode,DragLinkIndex);
+        //make sure that no other link has ToNode as target
+        for I := 0 to Nodes.Count - 1 do
+        begin
+          Node := TBitmapNode(Nodes[I]);
+          if Node=FromNode then
+            Continue;
+          if Node.Links.IndexOf(ToNode)>-1 then
+            Node.Links.Remove(ToNode);
+        end;
+        //make sure that tonode does not link back to fromnode
+        InBreakCycle(FromNode,ToNode);
+        WriteToComponent;
+        ReadFromComponent;
+        PaintBox.Invalidate;
+      end;
     end;
   end;
 
@@ -658,7 +716,7 @@ begin
   C := Image.Picture.Bitmap.Canvas;
 
   Image.Picture.Bitmap.SetSize(Image.ClientRect.Right,Image.ClientRect.Bottom);
-  C.Brush.Color := clGray;
+  C.Brush.Color := clWhite;
   C.FillRect(Image.ClientRect);
 
   if not IsBitmapConnected then
@@ -710,7 +768,7 @@ begin
   if (not IsBitmapConnected) or (not Assigned(SelectedNode)) then
     Exit;
 
-  (Owner as TEditorForm).DeleteComponentActionExecute(nil);
+  (Owner as TEditorForm).DeleteComponentActionExecute(Self);
 
   ReadFromComponent;
   SetProjectChanged;
@@ -765,5 +823,10 @@ begin
 end;
 
 
+
+procedure TBitmapEditFrame.PopupMenu1Popup(Sender: TObject);
+begin
+  DeleteMenuItem.Enabled := SelectedNode<>nil;
+end;
 
 end.

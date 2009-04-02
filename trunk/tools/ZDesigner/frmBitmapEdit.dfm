@@ -42,6 +42,7 @@ inherited BitmapEditFrame: TBitmapEditFrame
     end
   end
   object PopupMenu1: TPopupMenu
+    OnPopup = PopupMenu1Popup
     Left = 65535
     Top = 1
     object AddMenuItem: TMenuItem
