@@ -2285,6 +2285,8 @@ begin
   UndoParent.ComponentList.Change;
   SelectComponent(nil);
   SetFileChanged(True);
+  if (CompEditor<>nil) and (Sender<>CompEditor) then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.DeleteComponentActionUpdate(Sender: TObject);

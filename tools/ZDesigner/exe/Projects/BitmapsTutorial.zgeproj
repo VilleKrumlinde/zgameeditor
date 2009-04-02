@@ -287,14 +287,20 @@ this.V.X*=2;
     </Group>
     <Group Comment="Cell test">
       <Children>
-        <Bitmap Name="CellBitmap" Width="5" Height="5">
+        <Bitmap Name="CellBitmap">
           <Producers>
             <BitmapCells CellStyle="2" RandomSeed="57" BorderPixels="0"/>
+            <BitmapExpression/>
+            <BitmapCells/>
+            <BitmapCombine/>
+            <BitmapBlur Radius="1"/>
+            <BitmapZoomRotate Zoom="-3.97" Rotation="0.2"/>
           </Producers>
         </Bitmap>
         <Material Name="CellMaterial" Texture="CellBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
         <Bitmap Name="Bitmap3" Width="3" Height="3" Filter="2">
           <Producers>
+            <BitmapLoad Bitmap="FromFile1"/>
             <BitmapExpression>
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
@@ -340,9 +346,9 @@ if (this.Pixel.R < 0.2) {
               </Expression>
             </BitmapExpression>
             <BitmapCells RandomSeed="43"/>
-            <BitmapCombine/>
             <BitmapRect Color="0 0.251 0.502 1"/>
-            <BitmapRect Size="-0.2 -1.2 0.2 0.2"/>
+            <BitmapCombine/>
+            <BitmapBlur/>
           </Producers>
         </Bitmap>
       </Children>
