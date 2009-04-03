@@ -13,8 +13,12 @@ type
     PopupMenu1: TPopupMenu;
     AddMenuItem: TMenuItem;
     DeleteMenuItem: TMenuItem;
-    Panel1: TPanel;
+    PreviewPanel: TPanel;
     PaintBox: TPaintBox;
+    ScrollBox1: TScrollBox;
+    LeftPanel: TGroupBox;
+    RightPanel: TGroupBox;
+    Splitter1: TSplitter;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -34,6 +38,7 @@ type
     DragMode : (drmNone,drmMove,drmLink);
     DragPos,DragDst : TPoint;
     DragLinkIndex : integer;
+    GraphSize : TPoint;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -88,6 +93,7 @@ type
   TMyLayout = class(TSugiyamaLayout)
   private
     BitmapNodes : TObjectList;
+    LayoutWidth,Layoutheight : integer;
   public
     constructor Create(BitmapNodes : TObjectList);
     procedure ExtractNodes; override;
@@ -302,9 +308,11 @@ var
   I : integer;
   Node : TNode;
   BitmapNode : TBitmapNode;
+  MaxX,MaxY : integer;
 begin
   inherited;
 
+  MaxX := 0; MaxY := 0;
   for I := 0 to Nodes.Count-1 do
   begin
     Node := Nodes[I];
@@ -313,7 +321,13 @@ begin
     BitmapNode := Node.Control as TBitmapNode;
     BitmapNode.Pos.X := Node.X;
     BitmapNode.Pos.Y := Node.Y;
+    if MaxX<Node.X + NodeWidth then
+      MaxX:=Node.X + NodeWidth;
+    if MaxY<Node.Y + NodeHeight then
+      MaxY:=Node.Y + NodeHeight;
   end;
+  Self.LayoutWidth := MaxX;
+  Self.LayoutHeight := MaxY;
 end;
 
 { TBitmapEditFrame }
@@ -325,7 +339,7 @@ begin
 
   InitPopupMenu;
 
-  Panel1.DoubleBuffered := True;
+  PreviewPanel.DoubleBuffered := True;
 end;
 
 procedure TBitmapEditFrame.InitPopupMenu;
@@ -367,6 +381,8 @@ begin
   L := TMyLayout.Create(Nodes);
   try
     L.Execute;
+    GraphSize.X := L.LayoutWidth;
+    GraphSize.Y := L.LayoutHeight;
   finally
     L.Free;
   end;
@@ -715,13 +731,22 @@ var
 begin
   C := Image.Picture.Bitmap.Canvas;
 
+  if GraphSize.X<100 then
+    GraphSize.X := 100;
+  if not IsBitmapConnected then
+    GraphSize.X := 500;
+  if GraphSize.Y<100 then
+    GraphSize.Y := 100;
+  Image.Width := GraphSize.X;
+  Image.Height := GraphSize.Y;
   Image.Picture.Bitmap.SetSize(Image.ClientRect.Right,Image.ClientRect.Bottom);
+
   C.Brush.Color := clWhite;
   C.FillRect(Image.ClientRect);
 
   if not IsBitmapConnected then
   begin
-    C.TextOut(10,10,'Diagram cannot be shown of bitmaps containing logical components');
+    C.TextOut(10,10,'Graph can not be displayed for this bitmap');
   end
   else
   begin
@@ -794,6 +819,7 @@ var
   Data : pointer;
   Bmi : TBitmapInfo;
   W,H : integer;
+  DW,DH : integer;
   C : TCanvas;
 begin
   C := PaintBox.Canvas;
@@ -815,8 +841,13 @@ begin
 
   SetStretchBltMode(C.Handle, HALFTONE);
 
+  DW := (Min(PaintBox.ClientWidth,PaintBox.ClientHeight) div 2) - 8;
+  DH := DW;
+  DW := Min(Round(DW * Bitmap.PixelWidth/Bitmap.PixelHeight),DW);
+  DH := Min(Round(DH * Bitmap.PixelHeight/Bitmap.PixelWidth),DH);
+
   StretchDIBits(C.Handle, 0, 0,
-    PaintBox.ClientRect.Right, PaintBox.ClientRect.Bottom,
+    DW*2, DH*2,
     0, 0, W, H, Data, Bmi, DIB_RGB_COLORS, SRCCOPY);
 
   FreeMem(Data);
@@ -827,6 +858,7 @@ end;
 procedure TBitmapEditFrame.PopupMenu1Popup(Sender: TObject);
 begin
   DeleteMenuItem.Enabled := SelectedNode<>nil;
+  AddMenuItem.Enabled := IsBitmapConnected;
 end;
 
 end.
