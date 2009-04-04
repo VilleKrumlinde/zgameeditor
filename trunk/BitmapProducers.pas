@@ -48,6 +48,8 @@ type
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
     Radius : integer;
+    Amplify : single;
+    BlurDirection : (bdBoth, bdVertical, bdHorizontal);
   end;
 
   TBitmapLoad = class(TContentProducer)
@@ -385,12 +387,17 @@ procedure TBitmapBlur.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
 end;
 
 procedure TBitmapBlur.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   SourceB,B : TZBitmap;
   H,W,I,J,K,L : integer;
+  IsVertical, IsHorizontal : integer;
   SourceP,DestP : PColorf;
   Tot : TZVector3f;
   P : PZVector3f;
@@ -400,13 +407,13 @@ var
     Tmp : PZVector4f;
   begin
     if (X<0) then
-      X:=0
+      X := (W+X)               //now the X and the Y
     else if (X>W-1) then
-      X := W-1;
-    if Y<0 then
-      Y := 0
+      X := X mod (W);          //can wrap through the border
+    if (Y<0) then
+      Y := (H+Y)                //and the blur tiles correctly
     else if (Y>H-1) then
-      Y := H-1;
+      Y := Y mod (H);
     Tmp := PZVector4f(SourceP);
     Inc(Tmp, Y*W + X);
     VecAdd3(PZVector3f(Tmp)^,Tot,Tot)
@@ -427,6 +434,14 @@ begin
   GetMem(DestP,SizeOf(TZVector3f)*W*H);
   B.SetMemory(DestP,GL_RGB,GL_FLOAT);
 
+//I think that using this way is the faster and the smaller one.
+//We could also use 2 different tickboxes for every blurring direction
+//Tell me what you do prefer.
+  IsHorizontal := 1;
+  IsVertical := 1;
+
+  if BlurDirection = bdVertical then IsHorizontal := 0;
+  if BlurDirection = bdHorizontal then IsVertical := 0;
   //Reference: http://www.blackpawn.com/texts/blur/default.html
   P := PZVector3f(DestP);
   for I := 0 to H-1 do
@@ -434,10 +449,10 @@ begin
     for J := 0 to W-1 do
     begin
       FillChar(Tot,SizeOf(Tot),0);
-      for K := -Radius to Radius do
-        for L := -Radius to Radius do
-          InAdd(J+K,I + L);
-      VecDiv3(Tot, Power(Radius*2+1,2),P^);
+      for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
+        for L := -(Radius * IsVertical) to Radius*(IsVertical) do
+          InAdd(J+K,I+L);
+      VecDiv3(Tot, Power(Radius*2+1,(IsHorizontal+IsVertical)/Amplify),P^);
       Inc(P);
     end;
   end;
@@ -735,7 +750,7 @@ begin
 
       IsBorder := False;        //default: pixel is not a border one
       IsSecondBorder := False;
-      if BorderPixels <> 0 then
+      if BorderPixels > 0 then  //I put it >0 because giving negative borders crashed the program.
       begin
         //north point
         if I >= BorderPixels then  //if Y >= BorderPixel, we can just subtract the increment
@@ -808,11 +823,11 @@ begin
 
       if (CellStyle = cstWerk) then
       begin
-        Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.5);
+        Pixel.R := Power((Dist/CP[K].MaxDist),1.5);
         if IsBorder then
           Pixel.R := Pixel.R + 0.25
         else if IsSecondBorder then
-          Pixel.R := ZMath.Power((Dist/CP[K].MaxDist),1.8);
+          Pixel.R := Power((Dist/CP[K].MaxDist),1.8);
       end;
       //All the styles except the standard one are just white or black, so
       //we save some instructions by adding the green and blue out of the IFs!
