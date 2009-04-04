@@ -622,74 +622,80 @@ begin
           + c1 * (a2 * b3 - a3 * b2);
 end;
 
-function MatrixDeterminant(const M: TZMatrix4f): Single;
+function SubMatrix(const M : TZMatrix4f; LineSkip, ColumnSkip : integer) : TZMatrix4f;
+var I,J,K,L : integer;
 begin
-  Result:= M[X, X]*MatrixDetInternal(M[Y, Y], M[Z, Y], M[W, Y], M[Y, Z], M[Z, Z], M[W, Z], M[Y, W], M[Z, W], M[W, W])
-          -M[X, Y]*MatrixDetInternal(M[Y, X], M[Z, X], M[W, X], M[Y, Z], M[Z, Z], M[W, Z], M[Y, W], M[Z, W], M[W, W])
-          +M[X, Z]*MatrixDetInternal(M[Y, X], M[Z, X], M[W, X], M[Y, Y], M[Z, Y], M[W, Y], M[Y, W], M[Z, W], M[W, W])
-          -M[X, W]*MatrixDetInternal(M[Y, X], M[Z, X], M[W, X], M[Y, Y], M[Z, Y], M[W, Y], M[Y, Z], M[Z, Z], M[W, Z]);
+  K := 0;
+
+  for I := 0 to 3 do
+    begin
+      if I = LineSkip then
+        continue;
+      L := 0;
+      for J := 0 to 3 do
+      begin
+        if J = ColumnSkip then
+          continue;
+
+        Result[K,L] := M[I,J];
+        L := L + 1;
+      end;
+      K := K+1; //increase current Line position
+    end;
+
 end;
 
-procedure AdjointMatrix(var M : TZMatrix4f);
-var
-   a1, a2, a3, a4,
-   b1, b2, b3, b4,
-   c1, c2, c3, c4,
-   d1, d2, d3, d4: Single;
+function NMatrixDet(const M : TZMatrix4f; const Dimension : integer): single;
+var L : integer;
 begin
-    a1:= M[X, X]; b1:= M[X, Y];
-    c1:= M[X, Z]; d1:= M[X, W];
-    a2:= M[Y, X]; b2:= M[Y, Y];
-    c2:= M[Y, Z]; d2:= M[Y, W];
-    a3:= M[Z, X]; b3:= M[Z, Y];
-    c3:= M[Z, Z]; d3:= M[Z, W];
-    a4:= M[W, X]; b4:= M[W, Y];
-    c4:= M[W, Z]; d4:= M[W, W];
+  if Dimension = 2 then //BASIC CASE
+  begin
+    Result := M[0,0]*M[1,1] - M[0,1]*M[1,0];
+  end
+  else    //DIMENSION <> 2
+  begin
+    Result := 0;
+    for L := 0 to Dimension - 1 do
+      begin
+        //create the SubMatrix
+        //containing all the elements except the first column and the I-nth line
+        //the calc the det of the submatrix and add the result
+        Result := Result + Power(-1,L)*M[L,0]*NMatrixDet(SubMatrix(M,L,0), Dimension-1);
+      end;
+  end;
+end;
 
-    // row column labeling reversed since we transpose rows & columns
-    M[X, X]:= MatrixDetInternal(b2, b3, b4, c2, c3, c4, d2, d3, d4);
-    M[Y, X]:=-MatrixDetInternal(a2, a3, a4, c2, c3, c4, d2, d3, d4);
-    M[Z, X]:= MatrixDetInternal(a2, a3, a4, b2, b3, b4, d2, d3, d4);
-    M[W, X]:=-MatrixDetInternal(a2, a3, a4, b2, b3, b4, c2, c3, c4);
-
-    M[X, Y]:=-MatrixDetInternal(b1, b3, b4, c1, c3, c4, d1, d3, d4);
-    M[Y, Y]:= MatrixDetInternal(a1, a3, a4, c1, c3, c4, d1, d3, d4);
-    M[Z, Y]:=-MatrixDetInternal(a1, a3, a4, b1, b3, b4, d1, d3, d4);
-    M[W, Y]:= MatrixDetInternal(a1, a3, a4, b1, b3, b4, c1, c3, c4);
-
-    M[X, Z]:= MatrixDetInternal(b1, b2, b4, c1, c2, c4, d1, d2, d4);
-    M[Y, Z]:=-MatrixDetInternal(a1, a2, a4, c1, c2, c4, d1, d2, d4);
-    M[Z, Z]:= MatrixDetInternal(a1, a2, a4, b1, b2, b4, d1, d2, d4);
-    M[W, Z]:=-MatrixDetInternal(a1, a2, a4, b1, b2, b4, c1, c2, c4);
-
-    M[X, W]:=-MatrixDetInternal(b1, b2, b3, c1, c2, c3, d1, d2, d3);
-    M[Y, W]:= MatrixDetInternal(a1, a2, a3, c1, c2, c3, d1, d2, d3);
-    M[Z, W]:=-MatrixDetInternal(a1, a2, a3, b1, b2, b3, d1, d2, d3);
-    M[W, W]:= MatrixDetInternal(a1, a2, a3, b1, b2, b3, c1, c2, c3);
+function AdjointMatrix(const M : TZMatrix4f): TZMatrix4f;
+var I,J : integer;
+begin
+  for I := 0 to 3 do
+    for J := 0 to 3 do
+      Result[J,I] := Power(-1,I+J)*NMatrixDet(SubMatrix(M,I,J),3)
 end;
 
 procedure ScaleMatrix(var M : TZMatrix4f; const factor : Single);
 var
-   i : Integer;
+  I : Integer;
 begin
-   for i:=0 to 3 do begin
-      M[I, 0]:=M[I, 0] * Factor;
-      M[I, 1]:=M[I, 1] * Factor;
-      M[I, 2]:=M[I, 2] * Factor;
-      M[I, 3]:=M[I, 3] * Factor;
-   end;
+  for I := 0 to 3 do
+  begin
+    M[I, 0]:=M[I, 0] * Factor;
+    M[I, 1]:=M[I, 1] * Factor;
+    M[I, 2]:=M[I, 2] * Factor;
+    M[I, 3]:=M[I, 3] * Factor;
+  end;
 end;
 
 procedure InvertMatrix(var M : TZMatrix4f);
 var
   det : Single;
 begin
-  det:=MatrixDeterminant(M);
+  det := NMatrixDet(M,4);
   if Abs(Det)<EPSILON then
-    M:=IdentityHmgMatrix
+    M := IdentityHmgMatrix
   else
   begin
-    AdjointMatrix(M);
+    M := AdjointMatrix(M);
     ScaleMatrix(M, 1/det);
   end;
 end;
@@ -764,23 +770,15 @@ begin
 end;
 
 function MatrixMultiply(const M1, M2: TZMatrix4f) : TZMatrix4f;
+var I,J,K : integer;
 begin
-  Result[X,X]:=M1[X,X]*M2[X,X]+M1[X,Y]*M2[Y,X]+M1[X,Z]*M2[Z,X]+M1[X,W]*M2[W,X];
-  Result[X,Y]:=M1[X,X]*M2[X,Y]+M1[X,Y]*M2[Y,Y]+M1[X,Z]*M2[Z,Y]+M1[X,W]*M2[W,Y];
-  Result[X,Z]:=M1[X,X]*M2[X,Z]+M1[X,Y]*M2[Y,Z]+M1[X,Z]*M2[Z,Z]+M1[X,W]*M2[W,Z];
-  Result[X,W]:=M1[X,X]*M2[X,W]+M1[X,Y]*M2[Y,W]+M1[X,Z]*M2[Z,W]+M1[X,W]*M2[W,W];
-  Result[Y,X]:=M1[Y,X]*M2[X,X]+M1[Y,Y]*M2[Y,X]+M1[Y,Z]*M2[Z,X]+M1[Y,W]*M2[W,X];
-  Result[Y,Y]:=M1[Y,X]*M2[X,Y]+M1[Y,Y]*M2[Y,Y]+M1[Y,Z]*M2[Z,Y]+M1[Y,W]*M2[W,Y];
-  Result[Y,Z]:=M1[Y,X]*M2[X,Z]+M1[Y,Y]*M2[Y,Z]+M1[Y,Z]*M2[Z,Z]+M1[Y,W]*M2[W,Z];
-  Result[Y,W]:=M1[Y,X]*M2[X,W]+M1[Y,Y]*M2[Y,W]+M1[Y,Z]*M2[Z,W]+M1[Y,W]*M2[W,W];
-  Result[Z,X]:=M1[Z,X]*M2[X,X]+M1[Z,Y]*M2[Y,X]+M1[Z,Z]*M2[Z,X]+M1[Z,W]*M2[W,X];
-  Result[Z,Y]:=M1[Z,X]*M2[X,Y]+M1[Z,Y]*M2[Y,Y]+M1[Z,Z]*M2[Z,Y]+M1[Z,W]*M2[W,Y];
-  Result[Z,Z]:=M1[Z,X]*M2[X,Z]+M1[Z,Y]*M2[Y,Z]+M1[Z,Z]*M2[Z,Z]+M1[Z,W]*M2[W,Z];
-  Result[Z,W]:=M1[Z,X]*M2[X,W]+M1[Z,Y]*M2[Y,W]+M1[Z,Z]*M2[Z,W]+M1[Z,W]*M2[W,W];
-  Result[W,X]:=M1[W,X]*M2[X,X]+M1[W,Y]*M2[Y,X]+M1[W,Z]*M2[Z,X]+M1[W,W]*M2[W,X];
-  Result[W,Y]:=M1[W,X]*M2[X,Y]+M1[W,Y]*M2[Y,Y]+M1[W,Z]*M2[Z,Y]+M1[W,W]*M2[W,Y];
-  Result[W,Z]:=M1[W,X]*M2[X,Z]+M1[W,Y]*M2[Y,Z]+M1[W,Z]*M2[Z,Z]+M1[W,W]*M2[W,Z];
-  Result[W,W]:=M1[W,X]*M2[X,W]+M1[W,Y]*M2[Y,W]+M1[W,Z]*M2[Z,W]+M1[W,W]*M2[W,W];
+  for I := 0 to 3 do
+    for J := 0 to 3 do
+    begin
+      Result[I,J] := 0;
+      for K := 0 to 3 do
+        Result[I,J] := Result[I,J] + M1[I,K]*M2[K,J];
+    end;
 end;
 
 function CycleToRad(const Cycles: single): single; { Radians := Cycles * 2PI }
@@ -797,7 +795,6 @@ begin
 
   Result := sqrt(yd*yd + xd*xd);
 end;
-
 
 function Ceil(const X: single): single;
 var
