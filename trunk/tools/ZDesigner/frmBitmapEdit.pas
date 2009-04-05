@@ -60,7 +60,7 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers;
 
 {$R *.dfm}
 
@@ -111,6 +111,9 @@ end;
 
 procedure TBitmapNode.ChangeLink(Node: TBitmapNode; Index: integer);
 begin
+  if (Producer is TBitmapProducerWithOptionalArgument) then
+    (Producer as TBitmapProducerWithOptionalArgument).UseBlankSource := Node=nil;
+
   if Links.IndexOf(Node)>-1 then
     Exit;
 
@@ -118,7 +121,12 @@ begin
     Links.Delete(Index);
 
   if Node<>nil then
-    Links.Add(Node);
+  begin
+    if Links.Count<ParamCount then
+      Links.Add(Node)
+    else
+      Links[Index] := Node;
+  end;
 end;
 
 constructor TBitmapNode.Create(Form : TBitmapEditFrame; Producer : TZComponent; Page : TBitmap; X, Y, ParamCount: integer);
@@ -252,7 +260,7 @@ function TBitmapNode.GetTreeSize: integer;
   var
     I : integer;
   begin
-    Result := Links.Count;
+    Result := Node.Links.Count;
     for I := 0 to Node.Links.Count - 1 do
       Inc(Result, InCountChildren(TBitmapNode(Node.Links[I])) );
   end;
@@ -466,7 +474,9 @@ begin
       DragMode := drmMove;
       DragPos := Point(X - Node.Pos.X,Y - Node.Pos.Y);
     end;}
-  end;
+  end else
+    //Click on empty graph canvas selects whole bitmap-component in tree
+    (Owner as TEditorForm).FindComponentAndFocusInTree(Self.Bitmap);
 
   RepaintPage;
 end;
@@ -517,28 +527,29 @@ begin
   if DragMode=drmLink then
   begin
     Other := TBitmapNode(FindNodeAt(X,Y));
-    if Other<>nil then
-    begin
-      if DragLinkIndex=-1 then
-      begin //Link from one nodes output to another nodes input argument
-        FromNode := Other;
-        ToNode := TBitmapNode(SelectedNode);
-        P := Point(X,Y);
-        for I := 0 to FromNode.ParamCount-1 do
-          if PtInRect(FromNode.GetParamRect(I),P) then
-          begin
-            DragLinkIndex := I;
-            Break;
-          end;
-      end else
-      begin //Link from input to output
-        FromNode := TBitmapNode(SelectedNode);
-        ToNode := Other;
-      end;
 
-      if (FromNode<>ToNode) and (DragLinkIndex>-1) then
+    if (Other<>nil) and (DragLinkIndex=-1) then
+    begin //Link from one nodes output to another nodes input argument
+      FromNode := Other;
+      ToNode := TBitmapNode(SelectedNode);
+      P := Point(X,Y);
+      for I := 0 to FromNode.ParamCount-1 do
+        if PtInRect(FromNode.GetParamRect(I),P) then
+        begin
+          DragLinkIndex := I;
+          Break;
+        end;
+    end else
+    begin //Link from input to output
+      FromNode := TBitmapNode(SelectedNode);
+      ToNode := Other;
+    end;
+
+    if (FromNode<>ToNode) and (DragLinkIndex>-1) then
+    begin
+      FromNode.ChangeLink(ToNode,DragLinkIndex);
+      if ToNode<>nil then
       begin
-        FromNode.ChangeLink(ToNode,DragLinkIndex);
         //make sure that no other link has ToNode as target
         for I := 0 to Nodes.Count - 1 do
         begin
@@ -550,10 +561,10 @@ begin
         end;
         //make sure that tonode does not link back to fromnode
         InBreakCycle(FromNode,ToNode);
-        WriteToComponent;
-        ReadFromComponent;
-        PaintBox.Invalidate;
       end;
+      WriteToComponent;
+      ReadFromComponent;
+      PaintBox.Invalidate;
     end;
   end;
 
@@ -608,6 +619,10 @@ begin
       Node := TBitmapNode.Create(Self,C,Image.Picture.Bitmap,I*100,10,ParamCount);
       Nodes.Add( Node );
 
+      if (C is TBitmapProducerWithOptionalArgument) and
+        (C as TBitmapProducerWithOptionalArgument).UseBlankSource then
+        ParamCount := 0;
+
       while (ParamCount>0) and (Stack.Count>0) do
       begin
         Node.AddLink( TBitmapNode(Stack.Pop) );
@@ -631,15 +646,21 @@ end;
 function TempIdSortProc(Item1, Item2: Pointer): Integer;
 var
   I1,I2 : integer;
+  N1,N2 : TBitmapNode;
 begin
-  I1 := TBitmapNode(Item1).TempId;
-  I2 := TBitmapNode(Item2).TempId;
-  if I1 < I2 then
+  N1 := TBitmapNode(Item1);
+  N2 := TBitmapNode(Item2);
+  I1 := N1.TempId;
+  I2 := N2.TempId;
+  Result := I1-I2;
+  if Result=0 then
+    Result := N2.ParamCount - N1.ParamCount;
+{  if I1 < I2 then
     Result := -1
   else if I1 = I2 then
     Result:=0
   else
-    Result := 1;
+    Result := 1;}
 end;
 
 
@@ -655,7 +676,8 @@ var
   var
     I : integer;
   begin
-    for I := 0 to Node.Links.Count - 1 do
+    //Reverse order is needed here otherwise children inverts positions in ReadFromComponent
+    for I := Node.Links.Count-1 downto 0 do
       InGenNode(TBitmapNode(Node.Links[I]));
     Producers.Add(Node.Producer);
   end;
@@ -778,6 +800,8 @@ begin
   M := Sender as TMenuItem;
   Ci := TZComponentInfo(M.Tag);
   C := Ci.ZClass.Create(nil);
+  if C is TBitmapProducerWithOptionalArgument then
+    (C as TBitmapProducerWithOptionalArgument).UseBlankSource := True;
 
   Nodes.Add( TBitmapNode.Create(Self,C,Image.Picture.Bitmap,0,0,0) );
 

@@ -190,6 +190,7 @@ type
     AddFromLibraryMenuItem: TMenuItem;
     ViewerBitmapTabSheet: TTabSheet;
     BitmapEditFrame1: TBitmapEditFrame;
+    Import3DSfile1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
