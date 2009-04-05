@@ -5,7 +5,16 @@ interface
 uses ZOpenGL, ZClasses, ZExpressions,ZBitmap;
 
 type
-  TBitmapRect = class(TContentProducer)
+  TBitmapProducerWithOptionalArgument  = class(TContentProducer)
+  private
+    function GetOptionalArgument(Stack : TZArrayList): TZBitmap;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    UseBlankSource : boolean;
+  end;
+
+  TBitmapRect = class(TBitmapProducerWithOptionalArgument)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
@@ -22,7 +31,7 @@ type
     Zoom,Rotation,ScaleX,ScaleY : single;
   end;
 
-  TBitmapExpression = class(TContentProducer)
+  TBitmapExpression = class(TBitmapProducerWithOptionalArgument)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
@@ -89,20 +98,17 @@ uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
 procedure TBitmapRect.ProduceOutput(Content : TContent; Stack : TZArrayList);
 var
   B : TZBitmap;
-  Arg : boolean;
+  HasArg : boolean;
 begin
   //one optional argument
-  Arg := Stack.Count>0;
-  if Arg then
-    B := TZBitmap(Stack.Pop())
-  else
-  begin
+  B := GetOptionalArgument(Stack);
+  HasArg := B<>nil;
+  if not HasArg then
     B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
-  end;
 
   B.RenderTargetBegin;
 
-  if not Arg then
+  if not HasArg then
   begin
     //Clear if no source
     glClearColor(0.0,0,0,0.0);
@@ -244,9 +250,9 @@ var
   Pixels,P : PColorf;
   XStep,YStep : single;
 begin
-  if Stack.Count>0 then
+  SourceB := GetOptionalArgument(Stack);
+  if SourceB<>nil then
   begin
-    SourceB := TZBitmap(Stack.Pop());
     B := TZBitmap.CreateFromBitmap( SourceB );
     Pixels := SourceB.GetCopyAsFloats;
     SourceB.Free;
@@ -881,6 +887,23 @@ begin
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
+
+{ TBitmapProducerWithOptionalArgument }
+
+procedure TBitmapProducerWithOptionalArgument.DefineProperties(
+  List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'UseBlankSource',{$ENDIF}integer(@UseBlankSource) - integer(Self), zptBoolean);
+end;
+
+function TBitmapProducerWithOptionalArgument.GetOptionalArgument(Stack : TZArrayList): TZBitmap;
+begin
+  if (Stack.Count>0) and (not Self.UseBlankSource) then
+    Result := TZBitmap(Stack.Pop())
+  else
+    Result := nil;
+end;
 
 initialization
 

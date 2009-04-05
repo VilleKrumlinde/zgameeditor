@@ -2,7 +2,7 @@ object EditorForm: TEditorForm
   Left = 0
   Top = 0
   Caption = 'ZDesigner'
-  ClientHeight = 657
+  ClientHeight = 677
   ClientWidth = 801
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -24,7 +24,7 @@ object EditorForm: TEditorForm
     Left = 80
     Top = 22
     Width = 4
-    Height = 635
+    Height = 655
     ExplicitLeft = 433
     ExplicitTop = 30
     ExplicitHeight = 537
@@ -33,31 +33,34 @@ object EditorForm: TEditorForm
     Left = 0
     Top = 22
     Width = 80
-    Height = 635
+    Height = 655
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitHeight = 635
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
       Width = 80
-      Height = 635
+      Height = 655
       Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
+      ExplicitHeight = 635
     end
   end
   object ViewerPanel: TPanel
     Left = 84
     Top = 22
     Width = 717
-    Height = 635
+    Height = 655
     Align = alClient
     TabOrder = 1
+    ExplicitHeight = 635
     object Splitter1: TSplitter
       Left = 1
-      Top = 474
+      Top = 494
       Width = 715
       Height = 4
       Cursor = crVSplit
@@ -67,12 +70,13 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 1
-      Top = 478
+      Top = 498
       Width = 715
       Height = 156
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitTop = 478
       object Splitter4: TSplitter
         Left = 542
         Top = 0
@@ -248,15 +252,16 @@ object EditorForm: TEditorForm
       Left = 1
       Top = 1
       Width = 715
-      Height = 473
+      Height = 493
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
+      ExplicitHeight = 473
       object Splitter3: TSplitter
         Left = 291
         Top = 0
         Width = 4
-        Height = 473
+        Height = 493
         ExplicitLeft = 100
         ExplicitHeight = 574
       end
@@ -264,22 +269,25 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 291
-        Height = 473
+        Height = 493
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
+        ExplicitHeight = 473
       end
       object ViewerPageControl: TPageControl
         Left = 295
         Top = 0
         Width = 420
-        Height = 473
+        Height = 493
         ActivePage = ViewerBitmapTabSheet
         Align = alClient
         TabOrder = 0
+        ExplicitHeight = 473
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitHeight = 463
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -537,11 +545,12 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
+          ExplicitHeight = 463
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
             Width = 412
-            Height = 463
+            Height = 483
             Align = alClient
             ParentShowHint = False
             ShowHint = True
@@ -551,7 +560,7 @@ object EditorForm: TEditorForm
             ExplicitHeight = 463
             inherited PageControl1: TPageControl
               Width = 412
-              Height = 463
+              Height = 483
               ExplicitWidth = 412
               ExplicitHeight = 463
               inherited TabSheet1: TTabSheet
@@ -636,11 +645,12 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
+          ExplicitHeight = 463
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
             Width = 412
-            Height = 463
+            Height = 483
             Align = alClient
             TabOrder = 0
             TabStop = True
@@ -652,45 +662,50 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitHeight = 463
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
           TabVisible = False
+          ExplicitHeight = 463
           inline BitmapEditFrame1: TBitmapEditFrame
             Left = 0
             Top = 0
             Width = 412
-            Height = 463
+            Height = 483
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 412
             ExplicitHeight = 463
             inherited Splitter1: TSplitter
               Left = 223
-              Height = 463
+              Height = 483
               ExplicitLeft = 223
               ExplicitHeight = 463
             end
-            inherited LeftPanel: TPanel
+            inherited LeftPanel: TGroupBox
               Width = 223
-              Height = 463
+              Height = 483
               ExplicitWidth = 223
               ExplicitHeight = 463
               inherited ScrollBox1: TScrollBox
-                Height = 442
-                ExplicitHeight = 442
+                Width = 219
+                Height = 466
+                ExplicitWidth = 219
+                ExplicitHeight = 446
               end
             end
-            inherited RightPanel: TPanel
+            inherited RightPanel: TGroupBox
               Left = 227
-              Height = 463
+              Height = 483
               ExplicitLeft = 227
               ExplicitHeight = 463
               inherited PreviewPanel: TPanel
-                Height = 442
-                ExplicitHeight = 442
+                Height = 466
+                ExplicitHeight = 446
                 inherited PaintBox: TPaintBox
-                  Height = 442
+                  Height = 466
+                  ExplicitHeight = 442
                 end
               end
             end
@@ -1025,6 +1040,9 @@ object EditorForm: TEditorForm
       OnClick = AddFromLibraryMenuItemClick
       object TMenuItem
       end
+    end
+    object Import3DSfile1: TMenuItem
+      Action = Import3dsAction
     end
     object N12: TMenuItem
       Caption = '-'
