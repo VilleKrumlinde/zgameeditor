@@ -407,6 +407,7 @@ var
   SourceP,DestP : PColorf;
   Tot : TZVector3f;
   P : PZVector3f;
+  TmpDiv : single;
 
   procedure InAdd(X,Y:integer);
   var
@@ -448,6 +449,10 @@ begin
 
   if BlurDirection = bdVertical then IsHorizontal := 0;
   if BlurDirection = bdHorizontal then IsVertical := 0;
+
+  //This value is constant throughout the loop
+  TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
+
   //Reference: http://www.blackpawn.com/texts/blur/default.html
   P := PZVector3f(DestP);
   for I := 0 to H-1 do
@@ -458,7 +463,7 @@ begin
       for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
         for L := -(Radius * IsVertical) to Radius*(IsVertical) do
           InAdd(J+K,I+L);
-      VecDiv3(Tot, Power(Radius*2+1,(IsHorizontal+IsVertical)/Amplify),P^);
+      VecDiv3(Tot, TmpDiv, P^);
       Inc(P);
     end;
   end;
