@@ -713,7 +713,7 @@ begin
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
     LeftPanel.Width := Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20);
 
-    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}kkrunchy.exe');
+    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
   finally
     Ini.Free;
@@ -2426,6 +2426,9 @@ begin
 
         //Flytta trädnoder
         FromNode.MoveTo(ToNode,naAddChild);
+
+        if CompEditor<>nil then
+          CompEditor.OnTreeChanged;
       end;
     end;
   finally

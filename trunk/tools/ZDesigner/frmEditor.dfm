@@ -37,7 +37,6 @@ object EditorForm: TEditorForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 635
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
@@ -47,7 +46,6 @@ object EditorForm: TEditorForm
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-      ExplicitHeight = 635
     end
   end
   object ViewerPanel: TPanel
@@ -57,7 +55,6 @@ object EditorForm: TEditorForm
     Height = 655
     Align = alClient
     TabOrder = 1
-    ExplicitHeight = 635
     object Splitter1: TSplitter
       Left = 1
       Top = 494
@@ -76,7 +73,6 @@ object EditorForm: TEditorForm
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 478
       object Splitter4: TSplitter
         Left = 542
         Top = 0
@@ -98,10 +94,18 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             534
             146)
@@ -186,6 +190,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             534
             146)
@@ -256,7 +264,6 @@ object EditorForm: TEditorForm
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitHeight = 473
       object Splitter3: TSplitter
         Left = 291
         Top = 0
@@ -273,7 +280,6 @@ object EditorForm: TEditorForm
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
-        ExplicitHeight = 473
       end
       object ViewerPageControl: TPageControl
         Left = 295
@@ -283,10 +289,12 @@ object EditorForm: TEditorForm
         ActivePage = ViewerBitmapTabSheet
         Align = alClient
         TabOrder = 0
-        ExplicitHeight = 473
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
           ExplicitHeight = 463
           object RotateModelPanel: TPanel
             Left = 0
@@ -545,7 +553,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
-          ExplicitHeight = 463
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
@@ -557,17 +564,17 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 412
-            ExplicitHeight = 463
+            ExplicitHeight = 483
             inherited PageControl1: TPageControl
               Width = 412
               Height = 483
               ExplicitWidth = 412
-              ExplicitHeight = 463
+              ExplicitHeight = 483
               inherited TabSheet1: TTabSheet
                 ExplicitLeft = 4
                 ExplicitTop = 24
                 ExplicitWidth = 404
-                ExplicitHeight = 435
+                ExplicitHeight = 455
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -625,6 +632,10 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -645,7 +656,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitHeight = 463
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -655,19 +665,21 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 412
-            ExplicitHeight = 463
+            ExplicitHeight = 483
           end
         end
         object ViewerBlankTabSheet: TTabSheet
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
           ExplicitHeight = 463
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
           TabVisible = False
-          ExplicitHeight = 463
           inline BitmapEditFrame1: TBitmapEditFrame
             Left = 0
             Top = 0
@@ -676,7 +688,7 @@ object EditorForm: TEditorForm
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 412
-            ExplicitHeight = 463
+            ExplicitHeight = 483
             inherited Splitter1: TSplitter
               Left = 223
               Height = 483
@@ -687,22 +699,22 @@ object EditorForm: TEditorForm
               Width = 223
               Height = 483
               ExplicitWidth = 223
-              ExplicitHeight = 463
+              ExplicitHeight = 483
               inherited ScrollBox1: TScrollBox
                 Width = 219
                 Height = 466
                 ExplicitWidth = 219
-                ExplicitHeight = 446
+                ExplicitHeight = 466
               end
             end
             inherited RightPanel: TGroupBox
               Left = 227
               Height = 483
               ExplicitLeft = 227
-              ExplicitHeight = 463
+              ExplicitHeight = 483
               inherited PreviewPanel: TPanel
                 Height = 466
-                ExplicitHeight = 446
+                ExplicitHeight = 466
                 inherited PaintBox: TPaintBox
                   Height = 466
                   ExplicitHeight = 442
