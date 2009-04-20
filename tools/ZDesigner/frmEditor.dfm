@@ -133,6 +133,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             534
             146)
@@ -571,8 +575,6 @@ object EditorForm: TEditorForm
               ExplicitWidth = 412
               ExplicitHeight = 483
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 404
                 ExplicitHeight = 455
                 inherited Label8: TLabel

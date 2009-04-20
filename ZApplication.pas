@@ -419,17 +419,17 @@ begin
     end;
     if ScreenWidth/ScreenHeight > ActualViewportRatio then
     begin
-      ViewportWidth := Trunc(ScreenHeight*ActualViewportRatio);
+      ViewportWidth := Round(ScreenHeight*ActualViewportRatio);
       ViewportHeight := ScreenHeight;
-      ViewportX := Trunc((ScreenWidth-ScreenHeight*ActualViewportRatio)*0.5);
+      ViewportX := Round((ScreenWidth-ScreenHeight*ActualViewportRatio)*0.5);
       ViewportY := 0;
     end
     else
     begin
       ViewportWidth := ScreenWidth;
-      ViewportHeight := Trunc(ScreenWidth/ActualViewportRatio);
+      ViewportHeight := Round(ScreenWidth/ActualViewportRatio);
       ViewportX := 0;
-      ViewportY := Trunc((ScreenHeight-ScreenWidth/ActualViewportRatio)*0.5);
+      ViewportY := Round((ScreenHeight-ScreenWidth/ActualViewportRatio)*0.5);
     end;
     glViewport(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
   end;

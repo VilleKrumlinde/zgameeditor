@@ -824,6 +824,8 @@ begin
 
   RepaintPage;
   PaintBox.Invalidate;
+
+  (Owner as TEditorForm).Tree.Selected := Self.TreeNode;
 end;
 
 procedure TBitmapEditFrame.OnPropChanged;
