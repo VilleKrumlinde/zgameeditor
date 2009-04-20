@@ -82,8 +82,11 @@ function Clamp(const X,Min,Max : single) : single;
 
 function Random(const Base,Diff : single) : single; overload;
 
-function Min(const A,B : single) : single;
-function Max(const A, B: Single): Single;
+function Min(const A,B : single) : single; overload;
+function Max(const A, B: Single): Single; overload;
+
+function Min(const A,B : Integer) : Integer; overload;
+function Max(const A, B: Integer): Integer; overload;
 
 function Ceil(const X: single): single;
 function Floor(const X: single): single;
@@ -134,7 +137,7 @@ begin
 end;
 
 
-function Min(const A,B : single) : single;
+function Min(const A,B : single) : single;  overload;
 begin
   if A < B then
     Result := A
@@ -142,7 +145,24 @@ begin
     Result := B;
 end;
 
-function Max(const A, B: Single): Single;
+function Min(const A,B : Integer) : integer; overload;
+begin
+  if A < B then
+    Result := A
+  else
+    Result := B;
+end;
+
+function Max(const A, B: Single): Single; overload;
+begin
+  if A > B then
+    Result := A
+  else
+    Result := B;
+end;
+
+
+function Max(const A, B: Integer): Integer; overload;
 begin
   if A > B then
     Result := A
