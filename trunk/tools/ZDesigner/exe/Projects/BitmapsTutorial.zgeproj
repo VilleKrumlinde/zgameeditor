@@ -291,61 +291,17 @@ this.V.X*=2;
           <Producers>
             <BitmapCells CellStyle="2" RandomSeed="57" BorderPixels="0"/>
             <BitmapExpression/>
-            <BitmapCells/>
+            <BitmapCells UsedMetrics="1"/>
             <BitmapCombine/>
             <BitmapBlur Radius="1"/>
-            <BitmapZoomRotate Zoom="-3.97" Rotation="0.2"/>
           </Producers>
         </Bitmap>
         <Material Name="CellMaterial" Texture="CellBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
         <Bitmap Name="Bitmap3" Width="3" Height="3" Filter="2">
           <Producers>
-            <BitmapLoad Bitmap="FromFile1"/>
-            <BitmapExpression>
-              <Expression>
-<![CDATA[//X,Y : current coordinate (0..1)
-//Pixel : current color (rgb)
-float Temp=0, Down = 0;
-
-Temp = this.Pixel.B - pow(sin(X*pi),0.33)*noise2(X*3+768,Y+187)*1;
-if (this.Pixel.G > 0.5) Down = 1;
-this.Pixel = 0;
-if (Temp < 0.7) {
-    this.Pixel.G = clamp(pow(sin(X*pi),0.3),0,0.5) * noise2(X*15+500,Y*12+170);
-    this.Pixel.R = 0.8 + noise2(X*35+350,Y*35)/3;
-    if (noise2(X*35+350,Y*35) < -0.2) this.Pixel.R -= 0.1;
-   if (noise2(X*35+350,Y*35) < -0.25) this.Pixel.R -= 0.3;
-}
-if (Temp < 0.7 && Temp > 0.45) {
-    if (Down == 1) this.Pixel.R -= 0.3;
-    else this.Pixel.R += 0.2;
-}
-
-if (Temp >= 0.7) {this.Pixel = 0.3 + noise2(X*130+2463,Y*130+374)/2;}
-/*
-if (this.Pixel.R > 0.2) {
-    this.Pixel.R -= 0.2 + noise2(Y*12+2015,X*12+1021)/3;}
-
-if (this.Pixel.G > 0.2) {
-    this.Pixel.G = 0.1 + noise2(Y*12+715,X*12+321)/4;}
-
-if (this.Pixel.B > 0.2) {
-    this.Pixel.R += 0.1;
-    this.Pixel.G += 0.2 + noise2(Y*12+203,X*12+821)/3;
-    this.Pixel.B = 0;
-}
-
-if (this.Pixel.A > 0.2) {
-    this.Pixel.R -= 0.3 + noise2(Y*12+2015,X*12+1021)/4;
-    this.Pixel.A = 0;
-
-}
-
-if (this.Pixel.R < 0.2) {
-    this.Pixel = 0.3 + noise2(Y*130+374,X*130+2463)/2;}]]>
-              </Expression>
-            </BitmapExpression>
-            <BitmapCells RandomSeed="43"/>
+            <BitmapPixels NOfPoints="3" RandomSeed="36"/>
+            <BitmapBlur Radius="3" Amplify="4" Passes="3"/>
+            <BitmapCells UsedMetrics="1" RandomSeed="43"/>
             <BitmapRect Color="0 0.251 0.502 1"/>
             <BitmapCombine/>
             <BitmapBlur/>

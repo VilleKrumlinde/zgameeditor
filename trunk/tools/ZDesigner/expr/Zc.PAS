@@ -103,7 +103,6 @@ destructor Destroy; override;
   private
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
-    function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
 
   protected
@@ -188,11 +187,6 @@ begin
   ZFunctions.Free;
 end;
 
-function TZc.NoFunctionsAllowed : boolean;
-begin
-  Result := not AllowFunctions;
-end;
-
 procedure TZc.ZError(const S : string);
 var
   E : EParseError;
@@ -237,7 +231,6 @@ begin
   startLine := CurrLine;
   oldLineStart := StartOfLine;
   CommentStr := CharAt(BufferPosition);
-Result := false;
 if (CurrInputCh = '/') then
   begin
 NextCh;
@@ -281,7 +274,6 @@ StartOfLine := oldLineStart
 end;
 BufferPosition := BufferPosition - 1;
 CurrInputCh := LastInputCh;
-Result := false;
 end;
 end;
 Result := false;

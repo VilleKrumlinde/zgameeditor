@@ -7021,11 +7021,11 @@ end;
 
 {$ifndef VER140}
 
-procedure RaiseLastOSError;
+(*procedure RaiseLastOSError;
 
 begin
   RaiseLastWin32Error;
-end;
+end;*)
 
 {$endif VER140}
 

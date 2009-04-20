@@ -4,6 +4,7 @@ interface
 
 uses ZOpenGL, ZClasses, ZExpressions,ZBitmap;
 
+
 type
   TBitmapProducerWithOptionalArgument  = class(TContentProducer)
   private
@@ -58,6 +59,7 @@ type
   public
     Radius : integer;
     Amplify : single;
+    Passes : Integer;
     BlurDirection : (bdBoth, bdVertical, bdHorizontal);
   end;
 
@@ -87,11 +89,42 @@ type
     RandomSeed,BorderPixels, NOfPoints : integer;
     CellStyle : (cstStandard, cstNice1, cstTG1, cstTG2, cstTG3, cstWerk);
     PlacementStyle : (pstRandom, pstHoneycomb, pstSquares);
+    UsedMetrics: (mtrEuclidean, mtrManhattan, mtrMaxMin, mtrProduct);
+  end;
+
+  TBitmapDistort = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Multiplier : integer;
+  end;
+
+  TBitmapPixels = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    RandomSeed, NOfPoints, Colour : integer;
   end;
 
 implementation
 
 uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
+
+function GetIncrement(X,Y,W,H : integer) : integer;
+begin
+  if (X<0) then
+    X := (W+X)               //now the X and the Y
+  else if (X>W-1) then
+    X := X mod (W);          //can wrap through the border
+  if (Y<0) then
+    Y := (H+Y)                //and the blur tiles correctly
+  else if (Y>H-1) then
+    Y := Y mod (H);
+
+  Result := Y*W + X;
+end;
 
 { TBitmapRect }
 
@@ -395,6 +428,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'Passes',{$ENDIF}integer(@Passes) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['1','2','3', '4']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
 end;
@@ -402,7 +437,7 @@ end;
 procedure TBitmapBlur.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   SourceB,B : TZBitmap;
-  H,W,I,J,K,L : integer;
+  H,W,I,J,K,L,N : integer;
   IsVertical, IsHorizontal : integer;
   SourceP,DestP : PColorf;
   Tot : TZVector3f;
@@ -413,16 +448,8 @@ var
   var
     Tmp : PZVector4f;
   begin
-    if (X<0) then
-      X := (W+X)               //now the X and the Y
-    else if (X>W-1) then
-      X := X mod (W);          //can wrap through the border
-    if (Y<0) then
-      Y := (H+Y)                //and the blur tiles correctly
-    else if (Y>H-1) then
-      Y := Y mod (H);
     Tmp := PZVector4f(SourceP);
-    Inc(Tmp, Y*W + X);
+    Inc(Tmp, GetIncrement(X,Y,W,H));
     VecAdd3(PZVector3f(Tmp)^,Tot,Tot)
   end;
 
@@ -430,51 +457,55 @@ begin
   if Stack.Count=0 then
     Exit;
 
-  SourceB := TZBitmap(Stack.Pop());
-  B := TZBitmap.CreateFromBitmap( SourceB );
-  SourceP := SourceB.GetCopyAsFloats;
-  SourceB.Free;
-
-  W := B.PixelWidth;
-  H := B.PixelHeight;
-
-  GetMem(DestP,SizeOf(TZVector3f)*W*H);
-  B.SetMemory(DestP,GL_RGB,GL_FLOAT);
-
-//I think that using this way is the faster and the smaller one.
-//We could also use 2 different tickboxes for every blurring direction
-//Tell me what you do prefer.
-  IsHorizontal := 1;
-  IsVertical := 1;
-
-  if BlurDirection = bdVertical then IsHorizontal := 0;
-  if BlurDirection = bdHorizontal then IsVertical := 0;
-
-  //This value is constant throughout the loop
-  TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
-
-  //Reference: http://www.blackpawn.com/texts/blur/default.html
-  P := PZVector3f(DestP);
-  for I := 0 to H-1 do
+  for N := 0 to Passes do
   begin
-    for J := 0 to W-1 do
+    SourceB := TZBitmap(Stack.Pop());
+    B := TZBitmap.CreateFromBitmap( SourceB );
+    SourceP := SourceB.GetCopyAsFloats;
+    SourceB.Free;
+
+    W := B.PixelWidth;
+    H := B.PixelHeight;
+
+    GetMem(DestP,SizeOf(TZVector3f)*W*H);
+    B.SetMemory(DestP,GL_RGB,GL_FLOAT);
+
+  //I think that using this way is the faster and the smaller one.
+  //We could also use 2 different tickboxes for every blurring direction
+  //Tell me what you do prefer.
+    IsHorizontal := 1;
+    IsVertical := 1;
+
+    if BlurDirection = bdVertical then IsHorizontal := 0;
+    if BlurDirection = bdHorizontal then IsVertical := 0;
+
+    //This value is constant throughout the loop
+    TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
+
+    //Reference: http://www.blackpawn.com/texts/blur/default.html
+
+    P := PZVector3f(DestP);
+    for I := 0 to H-1 do
     begin
-      FillChar(Tot,SizeOf(Tot),0);
-      for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
-        for L := -(Radius * IsVertical) to Radius*(IsVertical) do
-          InAdd(J+K,I+L);
-      VecDiv3(Tot, TmpDiv, P^);
-      Inc(P);
+      for J := 0 to W-1 do
+      begin
+        FillChar(Tot,SizeOf(Tot),0);
+        for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
+          for L := -(Radius * IsVertical) to Radius*(IsVertical) do
+            InAdd(J+K,I+L);
+        VecDiv3(Tot, TmpDiv, P^);
+        Inc(P);
+      end;
     end;
-  end;
+    //Needed to send the bitmap to opengl
+    B.UseTextureBegin;
 
-  //Needed to send the bitmap to opengl
-  B.UseTextureBegin;
+    FreeMem(SourceP);
+    FreeMem(DestP);
 
-  FreeMem(SourceP);
-  FreeMem(DestP);
+    Stack.Push(B);
+  end; //passes
 
-  Stack.Push(B);
 end;
 
 { TBitmapLoad }
@@ -690,6 +721,7 @@ begin
 
   Value := ValueBuffer;
   GlobalMax := 0;
+  Dist := 0;
   for I := 0 to H-1 do    //I is height (Y)!
   begin
     for J := 0 to W-1 do  //J is width (X)!
@@ -708,7 +740,15 @@ begin
         if YDist > H div 2 then
           YDist := H - YDist;
 
-        Dist := (XDist)*(XDist) + (YDist)*(YDist);
+        case UsedMetrics of
+          mtrEuclidean: Dist := (XDist)*(XDist) + (YDist)*(YDist);
+          mtrManhattan: Dist := XDist+YDist;
+          mtrMaxMin:    Dist := abs(XDist-YDist);
+          mtrProduct:   Dist := (XDist+2)*(YDist+2);
+        end;                      //   ^         ^
+                        //it you add a higher constant to the mtrProduct, it will
+                        //make the "carved lines" do disappear faster. IMO good
+                        //values are the ones from 1 to 4
 
         if K = 0 then
         begin
@@ -764,35 +804,24 @@ begin
       if BorderPixels > 0 then  //I put it >0 because giving negative borders crashed the program.
       begin
         //north point
-        if I >= BorderPixels then  //if Y >= BorderPixel, we can just subtract the increment
-          PointIndexes[0].Increment := -W * BorderPixels
-        else                       //if Y < BorderPixel, we must "wrap" to the other side
-          PointIndexes[0].Increment := W * (H - BorderPixels);
-        //south point
-        if I <= H - 1 - BorderPixels then  //same as before
-          PointIndexes[2].Increment := W * BorderPixels
-        else
-          PointIndexes[2].Increment := W * (BorderPixels - H);
-        //west point
-        if J >= BorderPixels then
-          PointIndexes[3].Increment := -BorderPixels
-        else
-          PointIndexes[3].Increment := W-BorderPixels;
+        PointIndexes[0].Increment := GetIncrement(J,I-BorderPixels,W,H);
         //east point
-        if J <= W - 1 - BorderPixels then
-          PointIndexes[1].Increment := BorderPixels
-        else
-          PointIndexes[1].Increment := BorderPixels - W;
+        PointIndexes[1].Increment := GetIncrement(J+BorderPixels,I,W,H);
+        //south point
+        PointIndexes[2].Increment := GetIncrement(J,I+BorderPixels,W,H);
+        //west point
+        PointIndexes[3].Increment := GetIncrement(J-BorderPixels,I,W,H);
 
         for K := 0 to 3 do
         begin
-          Value2 := Value;
+          Value2 := ValueBuffer;
           Inc(Value2, PointIndexes[K].Increment);
           if Value.CPIndex <> Value2.CPIndex then
             IsBorder := True;
           if Value.CPSecondIndex <> Value2.CPSecondIndex then
             IsSecondBorder := True;
         end;
+
       end;
 
       //Several kinds of processing
@@ -834,11 +863,11 @@ begin
 
       if (CellStyle = cstWerk) then
       begin
-        Pixel.R := Power((Dist/CP[K].MaxDist),1.5);
+        Pixel.R := Power((Dist/GlobalMax),1.5);
         if IsBorder then
           Pixel.R := Pixel.R + 0.25
         else if IsSecondBorder then
-          Pixel.R := Power((Dist/CP[K].MaxDist),1.8);
+          Pixel.R := Power((Dist/GlobalMax),1.8);
       end;
       //All the styles except the standard one are just white or black, so
       //we save some instructions by adding the green and blue out of the IFs!
@@ -884,6 +913,8 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice1','TG1','TG2','TG3','Werk']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'PointsPlacement',{$ENDIF}integer(@PlacementStyle) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Random','Honeycomb','Squares']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'UsedMetrics',{$ENDIF}integer(@UsedMetrics) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Euclidean','Manhattan','MaxMin','Product']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 42;
   List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
@@ -892,6 +923,130 @@ begin
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
+{ TBitmapDistort }
+
+procedure TBitmapDistort.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Multiplier',{$ENDIF}integer(@Multiplier) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 20;
+end;
+
+procedure TBitmapDistort.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  B,B1,B2 : TZBitmap;
+  Data1,Data2,DataF,P1,P2,PF : PColorf;
+  I,J,W,H : integer;
+begin
+  if Stack.Count<2 then
+    Exit;
+
+  B1 := TZBitmap(Stack.Pop());
+  B2 := TZBitmap(Stack.Pop());
+
+  {$ifndef minimal}
+  if (B1.PixelWidth<>B2.PixelWidth) or
+     (B1.PixelHeight<>B2.PixelHeight) then
+  begin
+    ZLog.GetLog(Self.ClassName).Write('Bitmap sizes must match.');
+    Exit;
+  end;
+  {$endif}
+
+  B := TZBitmap.CreateFromBitmap(TZBitmap(Content));
+
+  Data1 := B1.GetCopyAsFloats;
+  Data2 := B2.GetCopyAsFloats;
+
+  W := B.PixelWidth;
+  H := B.PixelHeight;
+  GetMem(DataF,H*W * Sizeof(TZColorf));
+
+  B.SetMemory(DataF,GL_RGBA,GL_FLOAT);
+
+
+  P2 := Data2;
+  PF := DataF;
+
+  if Multiplier > 100 then Multiplier := 100;        //Must must be less then 100%
+  if Multiplier < 0 then Multiplier := 0;            //and more than 0
+
+  for I := 0 to H-1 do
+  begin
+    for J := 0 to W-1 do
+    begin
+      P1 := Data1;
+      inc(P1, GetIncrement(J + Integer(Round(P2.B*W)) * Multiplier div 100 ,
+                           I + Integer(Round(P2.G*H)) * Multiplier div 100 ,
+                           W,H)
+          );
+      PF^ := P1^;
+      Inc(PF);
+      Inc(P2);
+    end;
+  end;
+//Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(Data1);
+  FreeMem(Data2);
+  FreeMem(DataF);
+
+  B1.Free;
+  B2.Free;
+
+  Stack.Push(B);
+end;
+
+{ TBitmapPixels}
+
+procedure TBitmapPixels.ProduceOutput(Content : TContent; Stack : TZArrayList);
+var
+  B : TZBitmap;
+  I,SaveSeed,PixelCount : integer;
+  Temp : Single;
+  Pixels : PColorf;
+  Pixel : PColorf;
+begin
+  B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
+
+  PixelCount := B.PixelHeight*B.PixelWidth;
+  GetMem(Pixels,PixelCount * Sizeof(TZColorf) );
+  FillChar(Pixels^,PixelCount * Sizeof(TZColorf),0);
+
+  SaveSeed := RandSeed;
+  RandSeed := Self.RandomSeed;
+  for I := 0 to NOfPoints*(PixelCount div 4096) - 1 do    //the mean is <NOfPoints> pixels in 64x64 texture
+  begin
+    Pixel := Pixels;
+    inc(Pixel,Random(PixelCount));
+    Temp := 0.2 + Random() * 0.8;
+    if (Colour = 0) or (Colour = 1) then Pixel.R := Temp;
+    if (Colour = 0) or (Colour = 2) then Pixel.G := Temp;
+    if (Colour = 0) or (Colour = 3) then Pixel.B := Temp;
+  end;
+  RandSeed := SaveSeed;
+
+  B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(Pixels);
+
+  Stack.Push(B);
+end;
+
+procedure TBitmapPixels.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'NOfPoints',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 10;
+  List.AddProperty({$IFNDEF MINIMAL}'Colour',{$ENDIF}integer(@Colour) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['White','Red','Green','Blue']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 42;
+end;
 
 { TBitmapProducerWithOptionalArgument }
 
@@ -932,6 +1087,11 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TBitmapCells,BitmapCellsClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+  ZClasses.Register(TBitmapDistort,BitmapDistortClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
+  ZClasses.Register(TBitmapPixels,BitmapPixelsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
 
 end.
