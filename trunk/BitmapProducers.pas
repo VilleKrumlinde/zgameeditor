@@ -937,6 +937,7 @@ var
   B,B1,B2 : TZBitmap;
   Data1,Data2,DataF,P1,P2,PF : PColorf;
   I,J,W,H : integer;
+  M : single;
 begin
   if Stack.Count<2 then
     Exit;
@@ -970,14 +971,15 @@ begin
 
   if Multiplier > 100 then Multiplier := 100;        //Must must be less then 100%
   if Multiplier < 0 then Multiplier := 0;            //and more than 0
+  M := Multiplier / 100;
 
   for I := 0 to H-1 do
   begin
     for J := 0 to W-1 do
     begin
       P1 := Data1;
-      inc(P1, GetIncrement(J + Integer(Round(P2.B*W)) * Multiplier div 100 ,
-                           I + Integer(Round(P2.G*H)) * Multiplier div 100 ,
+      Inc(P1, GetIncrement(J + Integer(Round(P2.B * W * M)),
+                           I + Integer(Round(P2.G * H * M))  ,
                            W,H)
           );
       PF^ := P1^;

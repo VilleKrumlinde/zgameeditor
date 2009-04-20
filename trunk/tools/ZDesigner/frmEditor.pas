@@ -2241,6 +2241,7 @@ begin
 
   NodeList := Tree.SortSelections;
   try
+    Tree.Selected := nil;
     for J := 0 to NodeList.Count - 1 do
     begin
       Node := NodeList[J] as TZComponentTreeNode;
@@ -2872,9 +2873,9 @@ var
   Tmp : TPoint;
   DeltaX,DeltaY : integer;
 begin
-  //From ESS-doll
-  if not Glp.MouseCapture then
+  if (not Glp.MouseCapture) or IsAppRunning then
     Exit;
+  //From ESS-doll
 
   Tmp := Glp.ClientToScreen( Point(X,Y) );
   DeltaX := tmp.X - lockmouse.X;
@@ -2920,17 +2921,23 @@ end;
 procedure TEditorForm.OnGLPanelMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  Glp.MouseCapture := True;
-  LockMouse := Glp.ClientToScreen( Point(X,Y) );
-  ShowCursor(False);
+  if not IsAppRunning then
+  begin
+    Glp.MouseCapture := True;
+    LockMouse := Glp.ClientToScreen( Point(X,Y) );
+    ShowCursor(False);
+  end;
 end;
 
 procedure TEditorForm.OnGLPanelMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  Glp.MouseCapture := False;
-  ShowCursor(True);
-  Glp.SetFocus;
+  if not IsAppRunning then
+  begin
+    Glp.MouseCapture := False;
+    ShowCursor(True);
+    Glp.SetFocus;
+  end;
 end;
 
 procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl;
