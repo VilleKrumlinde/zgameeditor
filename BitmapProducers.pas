@@ -97,7 +97,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    Multiplier : integer;
+    Amount : single;
   end;
 
   TBitmapPixels = class(TContentProducer)
@@ -112,18 +112,11 @@ implementation
 
 uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
 
-function GetIncrement(X,Y,W,H : integer) : integer;
+function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
-  if (X<0) then
-    X := (W+X)               //now the X and the Y
-  else if (X>W-1) then
-    X := X mod (W);          //can wrap through the border
-  if (Y<0) then
-    Y := (H+Y)                //and the blur tiles correctly
-  else if (Y>H-1) then
-    Y := Y mod (H);
-
-  Result := Y*W + X;
+  //Wrap X & Y
+  //Use the fact that W & H always are power-of-two values
+  Result := (Y and (H-1)) * W + (X and (W-1));
 end;
 
 { TBitmapRect }
@@ -640,6 +633,8 @@ end;
 { TBitmapCells }
 
 procedure TBitmapCells.ProduceOutput(Content : TContent; Stack : TZArrayList);
+const
+  MaxPoints = 64;
 type
   PValueRecord = ^TValueRecord;
   TValueRecord =
@@ -658,7 +653,7 @@ var
       Increment, CPIndex, CPSecondIndex : integer;
     end;
 
-  CP : array[0..29] of
+  CP : array[0..MaxPoints-1] of
     record
       //Central points
       X,Y,MaxDist : integer;
@@ -687,7 +682,7 @@ begin
   //Since with the presets I currenlty SET the NOfPoints (but this screws up things
   //also in the editor) I locally use a copy of the NOfPoints value.
   NOfPointsCopy := NOfPoints;
-  for I := 0 to 29 do
+  for I := 0 to MaxPoints-1 do
   begin
     if I >= NOfPointsCopy then Break;
 
@@ -729,7 +724,7 @@ begin
       Value.DistFromCenter := (J-1)*(J-1)+(H-1)*(H-1);
       Value.DistSecondCenter := Value.DistFromCenter;
 
-      for K := 0 to 29 do
+      for K := 0 to MaxPoints-1 do
       begin
         if K >= NOfPointsCopy then Break;
 
@@ -928,8 +923,8 @@ end;
 procedure TBitmapDistort.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Multiplier',{$ENDIF}integer(@Multiplier) - integer(Self), zptInteger);
-    List.GetLast.DefaultValue.IntegerValue := 20;
+  List.AddProperty({$IFNDEF MINIMAL}'Amount',{$ENDIF}integer(@Amount) - integer(Self), zptScalar);
+    List.GetLast.DefaultValue.FloatValue := 0.2;
 end;
 
 procedure TBitmapDistort.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -937,7 +932,7 @@ var
   B,B1,B2 : TZBitmap;
   Data1,Data2,DataF,P1,P2,PF : PColorf;
   I,J,W,H : integer;
-  M : single;
+  Mw,Mh : single;
 begin
   if Stack.Count<2 then
     Exit;
@@ -969,17 +964,16 @@ begin
   P2 := Data2;
   PF := DataF;
 
-  if Multiplier > 100 then Multiplier := 100;        //Must must be less then 100%
-  if Multiplier < 0 then Multiplier := 0;            //and more than 0
-  M := Multiplier / 100;
+  Mw := W * Self.Amount;
+  Mh := H * Self.Amount;
 
   for I := 0 to H-1 do
   begin
     for J := 0 to W-1 do
     begin
       P1 := Data1;
-      Inc(P1, GetIncrement(J + Integer(Round(P2.B * W * M)),
-                           I + Integer(Round(P2.G * H * M))  ,
+      Inc(P1, GetIncrement(J + Integer(Round(P2.B * Mw)),
+                           I + Integer(Round(P2.G * Mh))  ,
                            W,H)
           );
       PF^ := P1^;
