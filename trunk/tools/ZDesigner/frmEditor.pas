@@ -2303,7 +2303,7 @@ end;
 
 procedure TEditorForm.AppPreviewStartActionExecute(Sender: TObject);
 begin
-  if (Tree.ZSelected.Component<>ZApp) and (ShowNode<>ZApp) then
+  if ((Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>ZApp)) and (ShowNode<>ZApp) then
     Exit;
   if not CompileAll then
     Exit;

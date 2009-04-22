@@ -575,6 +575,8 @@ object EditorForm: TEditorForm
               ExplicitWidth = 412
               ExplicitHeight = 483
               inherited TabSheet1: TTabSheet
+                ExplicitLeft = 4
+                ExplicitTop = 24
                 ExplicitWidth = 404
                 ExplicitHeight = 455
                 inherited Label8: TLabel
