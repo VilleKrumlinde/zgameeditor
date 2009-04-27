@@ -622,7 +622,7 @@ begin
     fcFloor : V := Floor(StackPopFloat);
     fcAcos : V := ArcCos(StackPopFloat);
     fcAsin : V := ArcSin(StackPopFloat);
-    fcRound : V := Round(StackPopFloat);
+    fcRound : PInteger(@V)^ := Round(StackPopFloat);
 
     fcRandom :
       begin
