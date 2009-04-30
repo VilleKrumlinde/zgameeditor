@@ -150,7 +150,6 @@ begin
   else
   begin
     //Create as a texgen buffer
-    //todo: create pbuffers ifall available
     glGenTextures(1, @TexObject);
     glBindTexture(GL_TEXTURE_2D, TexObject);
 
@@ -158,7 +157,9 @@ begin
     H := PixelHeight;
 
     //Generate mipmaps automatically, must be set before call to glTexImage2D
+    {$ifdef minimal}  //attempt to fix weird ati-bug
     if Filter=bmfMipmap then
+    {$endif}
       glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 
     if Memory<>nil then
@@ -181,19 +182,6 @@ begin
       I := FilterTypes[Ord(Self.Filter)];
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
-
-    //Gör setup-anrop som behövs varje gång bitmap ska användas som rendertarget
-    {glMatrixMode(GL_PROJECTION);
-    glPushMatrix;
-
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    DynTex.BeginSetup;
-    DynTex.EndSetup;
-    glPopAttrib();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix;
-    glMatrixMode(GL_MODELVIEW);}
   end;
   IsChanged := False;
   Producers.IsChanged := False;
@@ -205,9 +193,6 @@ procedure TZBitmap.RenderTargetBegin;
 begin
   if not IsInitialized then
     ReInit;
-
-//  glMatrixMode(GL_PROJECTION);
-//  glPushMatrix;
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
     //Skippa perspektiv och sätt upp -1.0 .. 1.0 upplösning
@@ -229,10 +214,6 @@ begin
     glBindTexture(GL_TEXTURE_2D, TexObject);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
   glPopAttrib;
-
-//  glMatrixMode(GL_PROJECTION);
-//  glPopMatrix;
-//  glMatrixMode(GL_MODELVIEW);
 end;
 
 //Set this bitmap as current opengl texture

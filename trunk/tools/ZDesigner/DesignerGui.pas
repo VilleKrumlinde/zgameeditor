@@ -1345,6 +1345,9 @@ begin
       end;
     end;
 
+    if not (Bm.PixelFormat in [pf24Bit,pf32Bit]) then
+      Bm.PixelFormat := pf24Bit;
+
     UseAlpha := Bm.PixelFormat=pf32bit;
 
     if UseAlpha then
