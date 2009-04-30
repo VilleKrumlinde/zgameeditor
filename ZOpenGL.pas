@@ -1649,11 +1649,29 @@ var
 procedure FreeOpenGL;}
 procedure LoadOpenGLExtensions;
 
+{$ifndef minimal}
+procedure CheckGLError;
+{$endif}
 
 implementation
 
 
-uses ZMath,ZLog,ZPlatform;
+uses ZMath,ZLog,ZPlatform
+  {$ifndef minimal}
+  ,SysUtils
+  {$endif}
+  ;
+
+{$ifndef minimal}
+procedure CheckGLError;
+var
+  Error : GLenum;
+begin
+  Error := glGetError;
+  if Error<>0 then
+    ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
+end;
+{$endif}
 
 procedure FreeOpenGL;
 begin

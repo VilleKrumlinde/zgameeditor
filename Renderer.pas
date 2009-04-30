@@ -279,19 +279,6 @@ var
 
 procedure EnableMaterial(OldM,NewM : TMaterial); forward;
 
-{$ifndef minimal}
-procedure CheckGLError;
-var
-  Error : GLenum;
-begin
-  Error := glGetError;
-  if Error<>0 then
-  begin
-    ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
-  end;
-end;
-{$endif}
-
 procedure ApplyRotation(const Rotate : TZVector3f);
 begin
   //*180/PI
