@@ -19,6 +19,7 @@ type
     LeftPanel: TGroupBox;
     RightPanel: TGroupBox;
     Splitter1: TSplitter;
+    DisablePreviewCheckBox: TCheckBox;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -29,6 +30,7 @@ type
     procedure DeleteMenuItemClick(Sender: TObject);
     procedure FrameResize(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
+    procedure DisablePreviewCheckBoxClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -401,6 +403,11 @@ destructor TBitmapEditFrame.Destroy;
 begin
   Nodes.Free;
   inherited;
+end;
+
+procedure TBitmapEditFrame.DisablePreviewCheckBoxClick(Sender: TObject);
+begin
+  PaintBox.Invalidate;
 end;
 
 function TBitmapEditFrame.FindNodeAt(X, Y: integer): TObject;
@@ -848,6 +855,9 @@ var
   DW,DH : integer;
   C : TCanvas;
 begin
+  if DisablePreviewCheckBox.Checked then
+    Exit;
+
   C := PaintBox.Canvas;
 
   Data := Bitmap.GetCopyAsBytes;

@@ -77,7 +77,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    Method : (cmeAdd,cmeSubtract);
+    Method : (cmeAdd,cmeSubtract,cmeMultiply);
     ExcludeAlpha : boolean;
   end;
 
@@ -88,8 +88,8 @@ type
   public
     RandomSeed,BorderPixels, NOfPoints : integer;
     CellStyle : (cstStandard, cstNice1, cstTG1, cstTG2, cstTG3, cstWerk);
-    PlacementStyle : (pstRandom, pstHoneycomb, pstSquares);
-    UsedMetrics: (mtrEuclidean, mtrManhattan, mtrMaxMin, mtrProduct);
+    PlacementStyle : (pstRandom, pstHoneycomb, pstSquares, pstUnregularSquares);
+    UsedMetrics: (mtrEuclidean, mtrManhattan, mtrMaxMin, mtrProduct, mtrStripes);
   end;
 
   TBitmapDistort = class(TContentProducer)
@@ -560,7 +560,7 @@ procedure TBitmapCombine.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Method',{$ENDIF}integer(@Method) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Add','Subtract']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Add','Subtract','Multiply']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ExcludeAlpha',{$ENDIF}integer(@ExcludeAlpha) - integer(Self), zptBoolean);
 end;
 
@@ -611,6 +611,11 @@ begin
           for J := 0 to EndI do
             P2^.V[J] := Clamp(P1^.V[J] - P2^.V[J],0,1);
         end;
+      cmeMultiply:
+        begin
+           for J := 0 to EndI do
+             P2^.V[J] := P1^.V[J] * P2^.V[J];
+        end;
     end;
     Inc(P1);
     Inc(P2);
@@ -645,6 +650,7 @@ var
   B : TZBitmap;
   IsBorder, IsSecondBorder : Boolean;
   H,W,I,J,K,Dist,SaveSeed,PixelCount,GlobalMax,XDist,YDist,NOfPointsCopy : integer;
+  YIsNegative : integer; //used with the "Strip" style, used integer to avoid boolean conversion (if any)
   Pixels : PColorf;
   Pixel : PColorf;
   ValueBuffer,Value,Value2 : PValueRecord;
@@ -694,9 +700,15 @@ begin
         end;
       pstSquares :
         begin
-          NOfPointsCopy := 2;
-          CP[I].X := I*W div 2;
-          CP[I].Y := I*H div 2;
+          K := Round(sqrt(NOfPointsCopy+1));
+          CP[I].X := (I div K)*(W div K);
+          CP[I].Y := (I mod K)*(H div K);
+        end;
+      pstUnregularSquares :
+        begin
+          K := Round(sqrt(NOfPointsCopy+1));
+          CP[I].X := Random(W);
+          CP[I].Y := (I mod K)*(H div K);
         end;
       pstHoneyComb :
         begin
@@ -721,23 +733,28 @@ begin
   begin
     for J := 0 to W-1 do  //J is width (X)!
     begin
-      Value.DistFromCenter := (J-1)*(J-1)+(H-1)*(H-1);
-      Value.DistSecondCenter := Value.DistFromCenter;
-
+      Value.DistFromCenter := 2147483647; //2^31-1
+      Value.DistSecondCenter := 2147483647; //2^31-1
       for K := 0 to MaxPoints-1 do
       begin
         if K >= NOfPointsCopy then Break;
 
         XDist := abs(J-CP[K].X);
-        YDist := abs(I-CP[K].Y);
-        if XDist > W div 2 then
-          XDist := W - XDist;
-        if YDist > H div 2 then
-          YDist := H - YDist;
+        YDist := CP[K].Y-I;
+        if (YDist < 0) then YIsNegative := 1 else YIsNegative := 0;
+        YDist := abs(YDist);
 
+        if XDist > (W div 2) then
+          XDist := W - XDist;
+        if YDist > (H div 2) then
+        begin
+          YDist := H - YDist;
+          YIsNegative := not YIsNegative;
+        end;
         case UsedMetrics of
           mtrEuclidean: Dist := (XDist)*(XDist) + (YDist)*(YDist);
           mtrManhattan: Dist := XDist+YDist;
+          mtrStripes:   Dist := YDist * 2048 + YIsNegative * 1024 + XDist;
           mtrMaxMin:    Dist := abs(XDist-YDist);
           mtrProduct:   Dist := (XDist+2)*(YDist+2);
         end;                      //   ^         ^
@@ -907,9 +924,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice1','TG1','TG2','TG3','Werk']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'PointsPlacement',{$ENDIF}integer(@PlacementStyle) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Random','Honeycomb','Squares']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Random','Honeycomb','Squares', 'Cobblestone']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'UsedMetrics',{$ENDIF}integer(@UsedMetrics) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Euclidean','Manhattan','MaxMin','Product']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Euclidean','Manhattan','MaxMin','Product', 'Stripes']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 42;
   List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);

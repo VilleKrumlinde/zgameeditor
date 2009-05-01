@@ -55,22 +55,36 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Left = 2
       Top = 15
       Width = 181
-      Height = 337
+      Height = 319
       Align = alClient
       BevelOuter = bvNone
       FullRepaint = False
       ParentBackground = False
       TabOrder = 0
+      ExplicitHeight = 337
       object PaintBox: TPaintBox
         Left = 0
         Top = 0
         Width = 181
-        Height = 337
+        Height = 319
         Align = alClient
         OnPaint = PaintBoxPaint
         ExplicitWidth = 180
         ExplicitHeight = 161
       end
+    end
+    object DisablePreviewCheckBox: TCheckBox
+      Left = 2
+      Top = 334
+      Width = 181
+      Height = 18
+      Align = alBottom
+      Caption = 'Hide preview'
+      TabOrder = 1
+      OnClick = DisablePreviewCheckBoxClick
+      ExplicitLeft = 40
+      ExplicitTop = 325
+      ExplicitWidth = 65
     end
   end
   object PopupMenu1: TPopupMenu
