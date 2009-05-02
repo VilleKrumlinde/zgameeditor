@@ -36,7 +36,7 @@ uses
 //    DC: HDC;
     hrc: HGLRC;
     Palette: HPALETTE;
-    FFirstTimeInFlag: Boolean;
+    FFirstTimeInFlag,InitCalled: Boolean;
     FNotifyRedraw: Boolean;
     FPFDChanged: Boolean;
     FPixelType: TPFDPixelTypes;
@@ -103,6 +103,7 @@ uses
     property OnMouseMove;
     property OnMouseWheel;
     procedure ForceInitGL;
+    procedure ParentChanged;
   published
   end;
 
@@ -398,19 +399,25 @@ procedure TCustomGLPanel.NewPaint;
          end;
 
       if FFirstTimeInFlag then
-         begin
-         FFirstTimeInFlag := False;
-         // Create a rendering context.
-         SetDCPixelFormat(Canvas.Handle);
-         hrc := wglCreateContext(Canvas.Handle);
-         if hrc = 0 then
-           FFirstTimeInFlag := True
-         else
-           ActivateRenderingContext(Canvas.Handle,hrc);
-         if Assigned(OnGLInit) then OnGlInit(self);
-         if Assigned(OnGLPrep) then OnGLPrep(self);
-         if Assigned(OnResize) then OnResize(self);
-         end;
+      begin
+        FFirstTimeInFlag := False;
+        // Create a rendering context.
+        SetDCPixelFormat(Canvas.Handle);
+        if hrc=0 then
+          hrc := wglCreateContext(Canvas.Handle);
+        if hrc = 0 then
+          FFirstTimeInFlag := True
+        else
+          ActivateRenderingContext(Canvas.Handle,hrc);
+      end;
+
+      if not InitCalled then
+      begin
+        InitCalled := True;
+        if Assigned(OnGLInit) then OnGlInit(self);
+        if Assigned(OnGLPrep) then OnGLPrep(self);
+        if Assigned(OnResize) then OnResize(self);
+      end;
 
 //      BeginPaint(Handle, ps);
       if (wglGetCurrentContext <> hrc) and (hrc<>0) then
@@ -455,6 +462,13 @@ destructor TCustomGLPanel.Destroy;
       end;
    inherited;
    end;
+
+procedure TCustomGLPanel.ParentChanged;
+begin
+  if HasActiveContext then
+    DeactivateRenderingContext;
+  FFirstTimeInFlag := True;
+end;
 
 procedure TCustomGLPanel.ForceInitGL;
 begin

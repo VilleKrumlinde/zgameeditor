@@ -103,6 +103,9 @@ begin
     WM_RBUTTONDOWN,WM_RBUTTONUP :
       //Use '}' as key for right mouse button
       Keys[ Ord('}') ] := Msg=WM_RBUTTONDOWN;
+    WM_MBUTTONDOWN,WM_MBUTTONUP :
+      //Use '|' as key for middle mouse button
+      Keys[ Ord('|') ] := Msg=WM_MBUTTONDOWN;
 {$ifdef minimal}
     else
       Result := DefWindowProc(hWnd, Msg, wParam, lParam);    // Default result if nothing happens

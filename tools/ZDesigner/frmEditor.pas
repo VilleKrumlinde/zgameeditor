@@ -251,7 +251,6 @@ type
   private
     { Private declarations }
     Ed : TZPropertyEditor;
-    Glp : TCustomGLPanel;
     Selected,ShowNode : TZComponent;
     LockShow : boolean;
     Root : TZComponent;
@@ -330,6 +329,7 @@ type
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
   public
+    Glp : TCustomGLPanel;
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
     procedure SetFileChanged(Value : Boolean);

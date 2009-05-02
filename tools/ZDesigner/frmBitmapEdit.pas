@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
-  Menus, StdCtrls;
+  Menus, StdCtrls,GlPanel;
 
 type
   TBitmapEditFrame = class(TCompEditFrameBase)
@@ -14,7 +14,6 @@ type
     AddMenuItem: TMenuItem;
     DeleteMenuItem: TMenuItem;
     PreviewPanel: TPanel;
-    PaintBox: TPaintBox;
     ScrollBox1: TScrollBox;
     LeftPanel: TGroupBox;
     RightPanel: TGroupBox;
@@ -26,7 +25,6 @@ type
       Y: Integer);
     procedure ImageMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure PaintBoxPaint(Sender: TObject);
     procedure DeleteMenuItemClick(Sender: TObject);
     procedure FrameResize(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
@@ -41,6 +39,8 @@ type
     DragPos,DragDst : TPoint;
     DragLinkIndex : integer;
     GraphSize : TPoint;
+    Glp : TCustomGLPanel;
+    OldGlParent : TWinControl;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -55,6 +55,7 @@ type
     procedure SetComponent(C : TZComponent; TreeNode : TZComponentTreeNode); override;
     procedure OnPropChanged; override;
     procedure OnTreeChanged; override;
+    procedure OnEditorClose; override;
   end;
 
 var
@@ -349,7 +350,7 @@ begin
 
   InitPopupMenu;
 
-  PreviewPanel.DoubleBuffered := True;
+//  PreviewPanel.DoubleBuffered := True;
 end;
 
 procedure TBitmapEditFrame.InitPopupMenu;
@@ -407,7 +408,8 @@ end;
 
 procedure TBitmapEditFrame.DisablePreviewCheckBoxClick(Sender: TObject);
 begin
-  PaintBox.Invalidate;
+  Glp.Invalidate;
+  Glp.Visible := not (Sender as TCheckBox).Checked;
 end;
 
 function TBitmapEditFrame.FindNodeAt(X, Y: integer): TObject;
@@ -571,7 +573,7 @@ begin
       end;
       WriteToComponent;
       ReadFromComponent;
-      PaintBox.Invalidate;
+      Glp.Invalidate;
     end;
   end;
 
@@ -586,8 +588,21 @@ begin
   Self.Bitmap := C as TZBitmap;
   ReadFromComponent;
 
+  Glp := (Owner as TEditorForm).Glp;
+  Glp.Visible := not DisablePreviewCheckBox.Checked;
+  OldGlParent := Glp.Parent;
+  Glp.Parent := PreviewPanel;
+  Glp.ParentChanged;
+
   RepaintPage;
-  PaintBox.Invalidate;
+  Glp.Invalidate;
+end;
+
+procedure TBitmapEditFrame.OnEditorClose;
+begin
+  Glp.Visible := True;
+  Glp.Parent:= OldGlParent;
+  Glp.ParentChanged;
 end;
 
 procedure TBitmapEditFrame.ReadFromComponent;
@@ -816,7 +831,7 @@ begin
   ReadFromComponent;
 
   RepaintPage;
-  PaintBox.Invalidate;
+  Glp.Invalidate;
 end;
 
 procedure TBitmapEditFrame.DeleteMenuItemClick(Sender: TObject);
@@ -830,66 +845,22 @@ begin
   SetProjectChanged;
 
   RepaintPage;
-  PaintBox.Invalidate;
+  Glp.Invalidate;
 
   (Owner as TEditorForm).Tree.Selected := Self.TreeNode;
 end;
 
 procedure TBitmapEditFrame.OnPropChanged;
 begin
-  PaintBox.Invalidate;
+  Glp.Invalidate;
 end;
 
 procedure TBitmapEditFrame.OnTreeChanged;
 begin
   ReadFromComponent;
   RepaintPage;
-  PaintBox.Invalidate;
+  Glp.Invalidate;
 end;
-
-procedure TBitmapEditFrame.PaintBoxPaint(Sender: TObject);
-var
-  Data : pointer;
-  Bmi : TBitmapInfo;
-  W,H : integer;
-  DW,DH : integer;
-  C : TCanvas;
-begin
-  if DisablePreviewCheckBox.Checked then
-    Exit;
-
-  C := PaintBox.Canvas;
-
-  Data := Bitmap.GetCopyAsBytes;
-
-  W := Bitmap.PixelWidth;
-  H := Bitmap.PixelHeight;
-
-  ZeroMemory(@Bmi, SizeOf(Bmi));
-  with Bmi.bmiHeader do
-  begin
-    biSize     := SizeOf(bmi.bmiHeader);
-    biWidth    := W;
-    biHeight   := H;
-    biPlanes   := 1;
-    biBitCount := 24;
-  end;
-
-  SetStretchBltMode(C.Handle, HALFTONE);
-
-  DW := (Min(PaintBox.ClientWidth,PaintBox.ClientHeight) div 2) - 8;
-  DH := DW;
-  DW := Min(Round(DW * Bitmap.PixelWidth/Bitmap.PixelHeight),DW);
-  DH := Min(Round(DH * Bitmap.PixelHeight/Bitmap.PixelWidth),DH);
-
-  StretchDIBits(C.Handle, 0, 0,
-    DW*2, DH*2,
-    0, 0, W, H, Data, Bmi, DIB_RGB_COLORS, SRCCOPY);
-
-  FreeMem(Data);
-end;
-
-
 
 procedure TBitmapEditFrame.PopupMenu1Popup(Sender: TObject);
 begin
