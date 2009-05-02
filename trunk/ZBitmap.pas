@@ -99,6 +99,7 @@ var
 begin
   GetMem(P,PixelHeight * PixelWidth * 3);
   UseTextureBegin;
+  //This call seems to cause problems with ATI cards (Radeon x1650)
   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,P);
   Result := P;
 end;
@@ -157,9 +158,7 @@ begin
     H := PixelHeight;
 
     //Generate mipmaps automatically, must be set before call to glTexImage2D
-    {$ifdef minimal}  //attempt to fix weird ati-bug
     if Filter=bmfMipmap then
-    {$endif}
       glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 
     if Memory<>nil then
