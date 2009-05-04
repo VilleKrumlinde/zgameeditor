@@ -74,13 +74,18 @@ inherited BitmapEditFrame: TBitmapEditFrame
   object PopupMenu1: TPopupMenu
     OnPopup = PopupMenu1Popup
     Left = 63
-    Top = 169
+    Top = 153
     object AddMenuItem: TMenuItem
       Caption = 'Add'
     end
     object DeleteMenuItem: TMenuItem
       Caption = 'Delete'
       OnClick = DeleteMenuItemClick
+    end
+    object PreviewMenuItem: TMenuItem
+      Caption = 'Preview'
+      ShortCut = 83
+      OnClick = PreviewMenuItemClick
     end
   end
 end

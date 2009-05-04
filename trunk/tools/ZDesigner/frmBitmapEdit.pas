@@ -19,6 +19,7 @@ type
     RightPanel: TGroupBox;
     Splitter1: TSplitter;
     DisablePreviewCheckBox: TCheckBox;
+    PreviewMenuItem: TMenuItem;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -29,6 +30,7 @@ type
     procedure FrameResize(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure DisablePreviewCheckBoxClick(Sender: TObject);
+    procedure PreviewMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -56,6 +58,7 @@ type
     procedure OnPropChanged; override;
     procedure OnTreeChanged; override;
     procedure OnEditorClose; override;
+    procedure OnKeyPress(var Key : char); override;
   end;
 
 var
@@ -211,7 +214,13 @@ begin
     C.Brush.Color := RGB(170, 170, 230)
   else
     C.Brush.Color := RGB(190, 190, 190); //RGB(170, 170, 170);
+  if DesignerPreviewProducer=Producer then
+    C.Pen.Width := 2
+  else
+    C.Pen.Width := 1;
   C.Rectangle(Pos.X, Pos.Y, Pos.X + NodeWidth, Pos.Y + NodeHeight);
+
+  C.Pen.Width := 1;
 
   //Text
   C.Brush.Style := bsClear;
@@ -603,7 +612,13 @@ begin
   Glp.Visible := True;
   Glp.Parent:= OldGlParent;
   Glp.ParentChanged;
+  if DesignerPreviewProducer<>nil then
+  begin
+    DesignerPreviewProducer := nil;
+    Bitmap.Change;
+  end;
 end;
+
 
 procedure TBitmapEditFrame.ReadFromComponent;
 var
@@ -866,6 +881,24 @@ procedure TBitmapEditFrame.PopupMenu1Popup(Sender: TObject);
 begin
   DeleteMenuItem.Enabled := SelectedNode<>nil;
   AddMenuItem.Enabled := IsBitmapConnected;
+  PreviewMenuItem.Enabled := SelectedNode<>nil;
+end;
+
+procedure TBitmapEditFrame.PreviewMenuItemClick(Sender: TObject);
+begin
+  DesignerPreviewProducer := TBitmapNode(SelectedNode).Producer;
+  Bitmap.Change;
+  RepaintPage;
+  Glp.Invalidate;
+end;
+
+procedure TBitmapEditFrame.OnKeyPress(var Key: char);
+begin
+  if (Key in ['s','S']) and (SelectedNode<>nil) then
+  begin
+    PreviewMenuItemClick(nil);
+    Key := #0;
+  end;
 end;
 
 end.

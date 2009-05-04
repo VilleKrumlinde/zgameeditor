@@ -500,6 +500,9 @@ const
   FloatTextDecimals = 4;  //Nr of fraction digits when presenting float-values as text
 
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
+
+var
+  DesignerPreviewProducer : TZComponent;
 {$endif}
 
 implementation
@@ -2880,8 +2883,13 @@ begin
     if C is TCommand then
       TCommand(C).Execute
     else
-      //Anropa Update på allt som inte är kommandon (expressions)
+      //Call update on everything that isn't commands (expressions)
       C.Update;
+    {$ifndef minimal}
+    //Break after the producer that is marked as preview (in bitmap graph)
+    if C=DesignerPreviewProducer then
+      Break;
+    {$endif}
   end;
 end;
 
