@@ -84,7 +84,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
     end
     object PreviewMenuItem: TMenuItem
       Caption = 'Preview'
-      ShortCut = 83
       OnClick = PreviewMenuItemClick
     end
   end
