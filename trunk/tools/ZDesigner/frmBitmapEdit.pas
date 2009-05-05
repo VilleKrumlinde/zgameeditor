@@ -58,7 +58,6 @@ type
     procedure OnPropChanged; override;
     procedure OnTreeChanged; override;
     procedure OnEditorClose; override;
-    procedure OnKeyPress(var Key : char); override;
   end;
 
 var
@@ -460,6 +459,13 @@ var
 begin
   Node := TBitmapNode(FindNodeAt(X,Y));
 
+  if (Node<>nil) and (SelectedNode=Node) then
+  begin
+    //Clicking a already selected node makes it the preview-node
+    DesignerPreviewProducer := TBitmapNode(SelectedNode).Producer;
+    Bitmap.Change;
+  end;
+
   SelectedNode := Node;
 
   if Node<>nil then
@@ -785,17 +791,19 @@ end;
 
 procedure TBitmapEditFrame.RepaintPage;
 var
-  I : integer;
+  I,Min : integer;
   C : TCanvas;
 begin
   C := Image.Picture.Bitmap.Canvas;
 
-  if GraphSize.X<100 then
-    GraphSize.X := 100;
-  if not IsBitmapConnected then
-    GraphSize.X := 500;
-  if GraphSize.Y<100 then
-    GraphSize.Y := 100;
+  Min := Image.Parent.ClientWidth;
+  if GraphSize.X<Min then
+    GraphSize.X := Min;
+//  if not IsBitmapConnected then
+//    GraphSize.X := 500;
+  Min := Image.Parent.ClientHeight;
+  if GraphSize.Y<Min then
+    GraphSize.Y := Min;
   Image.Width := GraphSize.X;
   Image.Height := GraphSize.Y;
   Image.Picture.Bitmap.SetSize(Image.ClientRect.Right,Image.ClientRect.Bottom);
@@ -890,15 +898,6 @@ begin
   Bitmap.Change;
   RepaintPage;
   Glp.Invalidate;
-end;
-
-procedure TBitmapEditFrame.OnKeyPress(var Key: char);
-begin
-  if (Key in ['s','S']) and (SelectedNode<>nil) then
-  begin
-    PreviewMenuItemClick(nil);
-    Key := #0;
-  end;
 end;
 
 end.

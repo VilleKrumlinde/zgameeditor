@@ -54,9 +54,7 @@ type
     function PixelWidth : integer;
     function PixelHeight : integer;
     function GetCopyAsFloats : pointer;
-    {$ifndef minimal}
-    function GetCopyAsBytes: pointer;
-    {$endif}
+    function GetCopyAs3f: pointer;
   end;
 
 implementation
@@ -81,7 +79,6 @@ begin
   inherited;
 end;
 
-
 function TZBitmap.GetCopyAsFloats: pointer;
 var
   P : PFloat;
@@ -92,18 +89,15 @@ begin
   Result := P;
 end;
 
-{$ifndef minimal}
-function TZBitmap.GetCopyAsBytes: pointer;
+function TZBitmap.GetCopyAs3f: pointer;
 var
   P : PFloat;
 begin
-  GetMem(P,PixelHeight * PixelWidth * 3);
+  GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
   UseTextureBegin;
-  //This call seems to cause problems with ATI cards (Radeon x1650)
-  glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,P);
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_FLOAT,P);
   Result := P;
 end;
-{$endif}
 
 procedure TZBitmap.CleanUp;
 begin

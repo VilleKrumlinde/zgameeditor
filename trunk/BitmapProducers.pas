@@ -436,47 +436,48 @@ var
   Tot : TZVector3f;
   P : PZVector3f;
   TmpDiv : single;
+  SizeBytes : integer;
 
   procedure InAdd(X,Y:integer);
   var
-    Tmp : PZVector4f;
+    Tmp : PZVector3f;
   begin
-    Tmp := PZVector4f(SourceP);
+    Tmp := PZVector3f(SourceP);
     Inc(Tmp, GetIncrement(X,Y,W,H));
-    VecAdd3(PZVector3f(Tmp)^,Tot,Tot)
+    VecAdd3(Tmp^,Tot,Tot)
   end;
 
 begin
   if Stack.Count=0 then
     Exit;
 
-  for N := 0 to Passes do
-  begin
-    SourceB := TZBitmap(Stack.Pop());
-    B := TZBitmap.CreateFromBitmap( SourceB );
-    SourceP := SourceB.GetCopyAsFloats;
-    SourceB.Free;
+  SourceB := TZBitmap(Stack.Pop());
+  B := TZBitmap.CreateFromBitmap( SourceB );
+  SourceP := SourceB.GetCopyAs3f;
+  SourceB.Free;
 
-    W := B.PixelWidth;
-    H := B.PixelHeight;
+  W := B.PixelWidth;
+  H := B.PixelHeight;
 
-    GetMem(DestP,SizeOf(TZVector3f)*W*H);
-    B.SetMemory(DestP,GL_RGB,GL_FLOAT);
+  SizeBytes := SizeOf(TZVector3f)*W*H;
+  GetMem(DestP,SizeBytes);
+  B.SetMemory(DestP,GL_RGB,GL_FLOAT);
 
   //I think that using this way is the faster and the smaller one.
   //We could also use 2 different tickboxes for every blurring direction
   //Tell me what you do prefer.
-    IsHorizontal := 1;
-    IsVertical := 1;
+  IsHorizontal := 1;
+  IsVertical := 1;
 
-    if BlurDirection = bdVertical then IsHorizontal := 0;
-    if BlurDirection = bdHorizontal then IsVertical := 0;
+  if BlurDirection = bdVertical then IsHorizontal := 0;
+  if BlurDirection = bdHorizontal then IsVertical := 0;
 
-    //This value is constant throughout the loop
-    TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
+  //This value is constant throughout the pixel-loop
+  TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
 
+  for N := 0 to Passes do
+  begin
     //Reference: http://www.blackpawn.com/texts/blur/default.html
-
     P := PZVector3f(DestP);
     for I := 0 to H-1 do
     begin
@@ -490,15 +491,18 @@ begin
         Inc(P);
       end;
     end;
-    //Needed to send the bitmap to opengl
-    B.UseTextureBegin;
 
-    FreeMem(SourceP);
-    FreeMem(DestP);
-
-    Stack.Push(B);
+    if (Passes>0) and (N<Passes) then
+      Move(DestP^,SourceP^,SizeBytes);
   end; //passes
 
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(SourceP);
+  FreeMem(DestP);
+
+  Stack.Push(B);
 end;
 
 { TBitmapLoad }
