@@ -29,12 +29,14 @@ uses uSymTab;
 {$endif}
 
 type
-  //Baseclasse for all central koncepts in ZGE
+  //Baseclasses for all central concepts in ZGE
+
   //List with unique ClassIDs
   TZClassIds = (
  LogicalGroupClassId,ZBitmapClassId,
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
  BitmapLoadClassId,BitmapCombineClassId,BitmapCellsClassId,BitmapDistortClassId,BitmapPixelsClassId,
+ BitmapBlurGPUClassId,
  MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
  MeshCombineClassId,MeshLoadClassId,

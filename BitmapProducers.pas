@@ -108,6 +108,15 @@ type
     RandomSeed, NOfPoints, Colour : integer;
   end;
 
+  TBitmapBlurGPU = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Passes : integer;
+    Radius : single;
+  end;
+
 implementation
 
 uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
@@ -437,16 +446,7 @@ var
   P : PZVector3f;
   TmpDiv : single;
   SizeBytes : integer;
-
-  procedure InAdd(X,Y:integer);
-  var
-    Tmp : PZVector3f;
-  begin
-    Tmp := PZVector3f(SourceP);
-    Inc(Tmp, GetIncrement(X,Y,W,H));
-    VecAdd3(Tmp^,Tot,Tot)
-  end;
-
+  Tmp : PZVector3f;
 begin
   if Stack.Count=0 then
     Exit;
@@ -484,9 +484,15 @@ begin
       for J := 0 to W-1 do
       begin
         FillChar(Tot,SizeOf(Tot),0);
-        for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
-          for L := -(Radius * IsVertical) to Radius*(IsVertical) do
-            InAdd(J+K,I+L);
+        for L := -(Radius * IsVertical) to Radius*(IsVertical) do
+          for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
+          begin
+            Tmp := PZVector3f(SourceP);
+            Inc(Tmp, GetIncrement(J+K,I+L,W,H));
+            Tot[0] := Tot[0] + Tmp^[0];
+            Tot[1] := Tot[1] + Tmp^[1];
+            Tot[2] := Tot[2] + Tmp^[2];
+          end;
         VecDiv3(Tot, TmpDiv, P^);
         Inc(P);
       end;
@@ -1041,6 +1047,7 @@ begin
     if (Colour = 0) or (Colour = 1) then Pixel.R := Temp;
     if (Colour = 0) or (Colour = 2) then Pixel.G := Temp;
     if (Colour = 0) or (Colour = 3) then Pixel.B := Temp;
+    Pixel.A := Temp;
   end;
   RandSeed := SaveSeed;
 
@@ -1082,6 +1089,86 @@ begin
     Result := nil;
 end;
 
+{ TBitmapBlurGPU }
+
+procedure TBitmapBlurGPU.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Passes',{$ENDIF}integer(@Passes) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 0.5;
+end;
+
+procedure TBitmapBlurGPU.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  B,SourceB : TZBitmap;
+  I : integer;
+  W,H : integer;
+  PassesLeft : integer;
+begin
+  //one argument required
+  if Stack.Count=0 then
+    Exit;
+  SourceB := TZBitmap(Stack.Pop());
+
+  B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
+
+  W := SourceB.PixelWidth;
+  H := SourceB.PixelHeight;
+
+  PassesLeft := Self.Passes;
+
+  B.RenderTargetBegin;
+  SourceB.UseTextureBegin;
+
+  glEnable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_GEN_S);
+  glDisable(GL_TEXTURE_GEN_T);
+
+  glEnable (GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  while PassesLeft > 0 do
+  begin
+    for I := 0 to 1 do
+    begin
+        glColor4f (1.0,1.0,1.0,1.0 / (I+1));
+        glBegin (GL_TRIANGLE_STRIP);
+           glTexCoord2f (0 - (i*Radius)/W, 1 + (i*Radius)/H); glVertex2f (-1, 1);
+           glTexCoord2f (0 - (i*Radius)/W, 0 - (i*Radius)/H); glVertex2f (-1, -1);
+           glTexCoord2f (1 + (i*Radius)/W, 1 + (i*Radius)/H); glVertex2f (1, 1);
+           glTexCoord2f (1 + (i*Radius)/W, 0 - (i*Radius)/H); glVertex2f (1, -1);
+        glEnd ();
+    end;
+
+{    I := 0;
+    for X := 0 to 1 do
+    begin
+      for Y := 0 to 1 do
+      begin
+        glColor4f (1.0,1.0,1.0,1.0 / (I+1));
+        glBegin (GL_TRIANGLE_STRIP);
+           glTexCoord2f (0 + (i*0.5)/W, 1 + (i*0.5)/H); glVertex2f (-1, 1);
+           glTexCoord2f (0 + (i*0.5)/W, 0 + (i*0.5)/H); glVertex2f (-1, -1);
+           glTexCoord2f (1 + (i*0.5)/W, 1 + (i*0.5)/H); glVertex2f (1, 1);
+           glTexCoord2f (1 + (i*0.5)/W, 0 + (i*0.5)/H); glVertex2f (1, -1);
+        glEnd ();
+        Inc(I);
+      end;
+    end;}
+
+    if PassesLeft>0 then
+      glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, W, H);
+    Dec(PassesLeft);
+  end;
+  B.RenderTargetEnd;
+
+  SourceB.Free;
+
+  Stack.Push(B);
+end;
+
 initialization
 
   ZClasses.Register(TBitmapRect,BitmapRectClassId);
@@ -1110,5 +1197,10 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TBitmapPixels,BitmapPixelsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+
+  ZClasses.Register(TBitmapBlurGPU,BitmapBlurGPUClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'BitmapBlurGPU_Test';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
 
 end.
