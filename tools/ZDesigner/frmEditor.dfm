@@ -102,6 +102,10 @@ object EditorForm: TEditorForm
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             534
             146)
@@ -186,6 +190,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             534
             146)
@@ -284,6 +292,10 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -601,6 +613,14 @@ object EditorForm: TEditorForm
                     Width = 33
                     ExplicitWidth = 33
                   end
+                  inherited NotesEdit: TComboBox
+                    ItemHeight = 0
+                  end
+                end
+                inherited GroupBox3: TGroupBox
+                  inherited Osc1WaveformCombo: TComboBox
+                    ItemHeight = 0
+                  end
                 end
                 inherited GroupBox2: TGroupBox
                   inherited Label3: TLabel
@@ -616,6 +636,9 @@ object EditorForm: TEditorForm
                   inherited Label18: TLabel
                     Width = 62
                     ExplicitWidth = 62
+                  end
+                  inherited Osc2WaveformCombo: TComboBox
+                    ItemHeight = 0
                   end
                 end
               end
@@ -701,12 +724,12 @@ object EditorForm: TEditorForm
               ExplicitLeft = 227
               ExplicitHeight = 483
               inherited PreviewPanel: TPanel
-                Height = 466
-                ExplicitHeight = 466
-                inherited PaintBox: TPaintBox
-                  Height = 466
-                  ExplicitHeight = 442
-                end
+                Height = 448
+                ExplicitHeight = 448
+              end
+              inherited DisablePreviewCheckBox: TCheckBox
+                Top = 463
+                ExplicitTop = 463
               end
             end
           end
