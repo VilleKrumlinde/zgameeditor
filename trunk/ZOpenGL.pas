@@ -987,9 +987,10 @@ const
   GL_TEXTURE_WRAP_T                 = $2803;
   //      GL_TEXTURE_BORDER_COLOR
   //      GL_TEXTURE_PRIORITY
-                    
+
   //Ville: Finns i opengl 1.4
-  GL_GENERATE_MIPMAP                           = $8191;
+  GL_GENERATE_MIPMAP                = $8191;
+  GL_CONVOLUTION_2D                 = $8011;
 
   // TextureTarget
   //      GL_TEXTURE_1D
@@ -1642,6 +1643,9 @@ var
   glBufferDataARB : procedure(target: GLenum; size: integer; const data: pointer; usage: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glBufferSubDataARB : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
+  //Imaging
+  glConvolutionFilter2D: procedure(target, internalformat: GLEnum; width, height: GLsizei; format, Atype: GLEnum;  image: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
 
   ShadersSupported,MultiTextureSupported,VbosSupported : boolean;
 
@@ -2030,7 +2034,7 @@ const FuncArray : packed array[0..335{$ifdef win32}+1{$endif}] of
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..18{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..19{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -2101,7 +2105,8 @@ const ExtFuncArray : packed array[0..18{$ifndef minimal}+4{$endif}] of
 (Name : 'glDeleteBuffersARB'; Ptr : @@glDeleteBuffersARB),
 (Name : 'glGenBuffersARB'; Ptr : @@glGenBuffersARB),
 (Name : 'glBufferDataARB'; Ptr : @@glBufferDataARB),
-(Name : 'glBufferSubDataARB'; Ptr : @@glBufferSubDataARB)
+(Name : 'glBufferSubDataARB'; Ptr : @@glBufferSubDataARB),
+(Name : 'glConvolutionFilter2D'; Ptr : @@glConvolutionFilter2D)
 //(Name : 'glVertexAttrib4ubv'; Ptr : @@glVertexAttrib4ubv),
 //(Name : 'glVertexAttrib4sv'; Ptr : @@glVertexAttrib4sv),
 //(Name : 'glVertexAttrib4s'; Ptr : @@glVertexAttrib4s),
