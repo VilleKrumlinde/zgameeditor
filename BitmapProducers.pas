@@ -1101,11 +1101,16 @@ begin
 end;
 
 procedure TBitmapBlurGPU.ProduceOutput(Content: TContent; Stack: TZArrayList);
+const
+  Filter : packed array[0..2,0..2] of single = (
+  (1/9,1/9,1/9),
+  (1/9,1/9,1/9),
+  (1/9,1/9,1/9));
 var
   B,SourceB : TZBitmap;
-  I : integer;
   W,H : integer;
   PassesLeft : integer;
+  Pixels : pointer;
 begin
   //one argument required
   if Stack.Count=0 then
@@ -1119,50 +1124,28 @@ begin
 
   PassesLeft := Self.Passes;
 
-  B.RenderTargetBegin;
-  SourceB.UseTextureBegin;
-
-  glEnable(GL_TEXTURE_2D);
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
-
-  glEnable (GL_BLEND);
-  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+  Pixels := SourceB.GetCopyAsFloats;
   while PassesLeft > 0 do
   begin
-    for I := 0 to 1 do
-    begin
-        glColor4f (1.0,1.0,1.0,1.0 / (I+1));
-        glBegin (GL_TRIANGLE_STRIP);
-           glTexCoord2f (0 - (i*Radius)/W, 1 + (i*Radius)/H); glVertex2f (-1, 1);
-           glTexCoord2f (0 - (i*Radius)/W, 0 - (i*Radius)/H); glVertex2f (-1, -1);
-           glTexCoord2f (1 + (i*Radius)/W, 1 + (i*Radius)/H); glVertex2f (1, 1);
-           glTexCoord2f (1 + (i*Radius)/W, 0 - (i*Radius)/H); glVertex2f (1, -1);
-        glEnd ();
-    end;
+    B.RenderTargetBegin;
 
-{    I := 0;
-    for X := 0 to 1 do
-    begin
-      for Y := 0 to 1 do
-      begin
-        glColor4f (1.0,1.0,1.0,1.0 / (I+1));
-        glBegin (GL_TRIANGLE_STRIP);
-           glTexCoord2f (0 + (i*0.5)/W, 1 + (i*0.5)/H); glVertex2f (-1, 1);
-           glTexCoord2f (0 + (i*0.5)/W, 0 + (i*0.5)/H); glVertex2f (-1, -1);
-           glTexCoord2f (1 + (i*0.5)/W, 1 + (i*0.5)/H); glVertex2f (1, 1);
-           glTexCoord2f (1 + (i*0.5)/W, 0 + (i*0.5)/H); glVertex2f (1, -1);
-        glEnd ();
-        Inc(I);
-      end;
-    end;}
+    glEnable(GL_CONVOLUTION_2D);
+    glConvolutionFilter2D(GL_CONVOLUTION_2D, GL_RGBA, 3, 3, GL_LUMINANCE, GL_FLOAT, @Filter);
+    glRasterPos2f(-1, -1);
+    glDrawPixels(W, H, GL_RGBA, GL_FLOAT, Pixels);
+
+    B.RenderTargetEnd;
 
     if PassesLeft>0 then
-      glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, W, H);
+    begin
+      FreeMem(Pixels);
+      Pixels := B.GetCopyAsFloats;
+    end;
+
     Dec(PassesLeft);
   end;
-  B.RenderTargetEnd;
+
+  FreeMem(Pixels);
 
   SourceB.Free;
 
