@@ -422,6 +422,66 @@ begin
   Stack.Push(BM);
 end;
 
+{ Convolution }
+
+procedure ConvolveImage(SourceP, DestP: PColorf;ImageW, ImageH : integer; ConvMatrix : PFloat; ConvW,ConvH : integer; TmpDiv : single);
+var
+  Tot : TZVector3f;
+  P,Tmp : PZVector3f;
+  M : PFloat;
+  I,J,K,L,N : integer;
+  XBound,YBound : integer;
+begin
+
+  //if (ConvW = -1) then Separable convolution:
+  //we apply the same filter twice: once vertically and once horizontally
+  for N := integer((ConvW = -1)) downto 0 do
+  begin
+    if N = 1 then                 //first pass (done only if filter is separable)
+    begin
+      XBound := (ConvH-1) div 2;
+      YBound := 0;
+    end
+    else
+    begin
+      XBound := (abs(ConvW)-1) div 2;  //ConvW might be equal to -1, so I use an abs;
+      YBound := (ConvH-1) div 2;
+    end;
+    P := PZVector3f(DestP);
+    for I := 0 to ImageH-1 do
+      for J := 0 to ImageW-1 do
+      begin
+        FillChar(Tot,SizeOf(Tot),0);
+        M := ConvMatrix;
+        for L := -(XBound) to XBound do
+          for K := -(YBound) to YBound do
+          begin
+            Tmp := PZVector3f(SourceP);
+            Inc(Tmp, GetIncrement(J+K,I+L,ImageW,ImageH));
+            Tot[0] := Tot[0] + Tmp^[0]*M^;
+            Tot[1] := Tot[1] + Tmp^[1]*M^;
+            Tot[2] := Tot[2] + Tmp^[2]*M^;
+            Inc(M);
+          end;
+        VecDiv3(Tot, TmpDiv, P^);
+        Inc(P);
+      end;  //for J (the I cycle has no begin-end block)
+    if N = 1 then //before applying the convolution again,
+    begin         //copy the destination to the source!
+    //don't know if I can use the command
+    //Move(DestP^,SourceP^,SizeOf(DestP));
+      P := PZVector3f(DestP);
+      Tmp := PZVector3f(SourceP);
+      for I := 0 to ImageH*ImageW-1 do
+      begin
+        Tmp^ := P^;
+        inc(P);
+        inc(Tmp);
+      end;
+    end;//end if N=1 then -> copy source into dest
+  end; //end N
+
+end;
 { TBitmapBlur }
 
 procedure TBitmapBlur.DefineProperties(List: TZPropertyList);
@@ -439,14 +499,13 @@ end;
 procedure TBitmapBlur.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   SourceB,B : TZBitmap;
-  H,W,I,J,K,L,N : integer;
-  IsVertical, IsHorizontal : integer;
+  H,W,N : integer;
   SourceP,DestP : PColorf;
-  Tot : TZVector3f;
-  P : PZVector3f;
   TmpDiv : single;
   SizeBytes : integer;
-  Tmp : PZVector3f;
+  ConvMatrix : PFloat;
+  ConvTmp : PFloat;
+  ConvW, ConvH : integer;
 begin
   if Stack.Count=0 then
     Exit;
@@ -463,50 +522,56 @@ begin
   GetMem(DestP,SizeBytes);
   B.SetMemory(DestP,GL_RGB,GL_FLOAT);
 
-  //I think that using this way is the faster and the smaller one.
-  //We could also use 2 different tickboxes for every blurring direction
-  //Tell me what you do prefer.
-  IsHorizontal := 1;
-  IsVertical := 1;
-
-  if BlurDirection = bdVertical then IsHorizontal := 0;
-  if BlurDirection = bdHorizontal then IsVertical := 0;
-
-  //This value is constant throughout the pixel-loop
-  TmpDiv := Power(Radius*2+1,(IsHorizontal+IsVertical))/Amplify;
-
-  for N := 0 to Passes do
-  begin
-    //Reference: http://www.blackpawn.com/texts/blur/default.html
-    P := PZVector3f(DestP);
-    for I := 0 to H-1 do
-    begin
-      for J := 0 to W-1 do
+  case BlurDirection of
+    bdBoth:
       begin
-        FillChar(Tot,SizeOf(Tot),0);
-        for L := -(Radius * IsVertical) to Radius*(IsVertical) do
-          for K := -(Radius * IsHorizontal) to Radius*(IsHorizontal) do
-          begin
-            Tmp := PZVector3f(SourceP);
-            Inc(Tmp, GetIncrement(J+K,I+L,W,H));
-            Tot[0] := Tot[0] + Tmp^[0];
-            Tot[1] := Tot[1] + Tmp^[1];
-            Tot[2] := Tot[2] + Tmp^[2];
-          end;
-        VecDiv3(Tot, TmpDiv, P^);
-        Inc(P);
+        ConvH := Radius*2+1;
+        ConvW := -1;    //we use a separable filter for the blur
       end;
-    end;
+    bdVertical:
+      begin
+        ConvW := 1;
+        ConvH := Radius*2+1;
+      end;
+    else //bdHorizontal:
+      begin
+        ConvW := Radius*2+1;
+        ConvH := 1;
+      end;
+  end;
 
-    if (Passes>0) and (N<Passes) then
-      Move(DestP^,SourceP^,SizeBytes);
-  end; //passes
+  GetMem(ConvMatrix,SizeOf(single)*(Radius*2+1));
+  ConvTmp := ConvMatrix;
+  TmpDiv := 0;
+
+  for N := -Radius to Radius do
+  begin
+    case Passes of
+      0: ConvTmp^ := 1;
+      1: ConvTmp^ := abs(N);
+      2: ConvTmp^ := Power(2.71, -(N*N)/(6*Radius));
+      3: ConvTmp^ := 1;
+    end;
+    TmpDiv := TmpDiv + ConvTmp^;
+    Inc(ConvTmp);
+  end; //for N
+  TmpDiv := TmpDiv/Amplify;
+
+  //for N := 0 to Passes do
+  //begin
+
+  ConvolveImage(SourceP, DestP, W, H, ConvMatrix, ConvW, ConvH, TmpDiv );
+
+  //  if (Passes>0) and (N<Passes) then
+  //    Move(DestP^,SourceP^,SizeBytes);
+  //end; //passes
 
   //Needed to send the bitmap to opengl
   B.UseTextureBegin;
 
   FreeMem(SourceP);
   FreeMem(DestP);
+  FreeMem(ConvMatrix);
 
   Stack.Push(B);
 end;
@@ -1102,10 +1167,13 @@ end;
 
 procedure TBitmapBlurGPU.ProduceOutput(Content: TContent; Stack: TZArrayList);
 const
-  Filter : packed array[0..2,0..2] of single = (
-  (1/9,1/9,1/9),
-  (1/9,1/9,1/9),
-  (1/9,1/9,1/9));
+  a = 1/20;
+  Filter : packed array[0..4,0..4] of single = (
+  (a,a,a,a,a),
+  (a,a,a,a,a),
+  (a,a,a,a,a),
+  (a,a,a,a,a),
+  (a,a,a,a,a));
 var
   B,SourceB : TZBitmap;
   W,H : integer;
@@ -1130,7 +1198,7 @@ begin
     B.RenderTargetBegin;
 
     glEnable(GL_CONVOLUTION_2D);
-    glConvolutionFilter2D(GL_CONVOLUTION_2D, GL_RGBA, 3, 3, GL_LUMINANCE, GL_FLOAT, @Filter);
+    glConvolutionFilter2D(GL_CONVOLUTION_2D, GL_RGBA, 5, 5, GL_LUMINANCE, GL_FLOAT, @Filter);
     glRasterPos2f(-1, -1);
     glDrawPixels(W, H, GL_RGBA, GL_FLOAT, Pixels);
 
