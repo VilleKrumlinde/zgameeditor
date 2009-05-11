@@ -286,16 +286,12 @@ object EditorForm: TEditorForm
         Top = 0
         Width = 420
         Height = 493
-        ActivePage = ViewerBitmapTabSheet
+        ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -571,8 +567,6 @@ object EditorForm: TEditorForm
               ExplicitWidth = 412
               ExplicitHeight = 483
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 404
                 ExplicitHeight = 455
                 inherited Label8: TLabel
@@ -686,7 +680,7 @@ object EditorForm: TEditorForm
           ExplicitLeft = 0
           ExplicitTop = 0
           ExplicitWidth = 0
-          ExplicitHeight = 463
+          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -726,6 +720,52 @@ object EditorForm: TEditorForm
               inherited PreviewPanel: TPanel
                 Height = 448
                 ExplicitHeight = 448
+              end
+              inherited DisablePreviewCheckBox: TCheckBox
+                Top = 463
+                ExplicitTop = 463
+              end
+            end
+          end
+        end
+        object ViewerMeshTabSheet: TTabSheet
+          ImageIndex = 5
+          TabVisible = False
+          inline MeshEditFrame1: TMeshEditFrame
+            Left = 0
+            Top = 0
+            Width = 412
+            Height = 483
+            Align = alClient
+            TabOrder = 0
+            ExplicitWidth = 412
+            ExplicitHeight = 483
+            inherited Splitter1: TSplitter
+              Left = 223
+              Height = 483
+              ExplicitLeft = 223
+              ExplicitHeight = 483
+            end
+            inherited LeftPanel: TGroupBox
+              Width = 223
+              Height = 483
+              ExplicitWidth = 223
+              ExplicitHeight = 483
+              inherited ScrollBox1: TScrollBox
+                Width = 219
+                Height = 466
+                ExplicitWidth = 219
+                ExplicitHeight = 466
+              end
+            end
+            inherited RightPanel: TGroupBox
+              Left = 227
+              Height = 483
+              ExplicitLeft = 227
+              ExplicitHeight = 483
+              inherited PreviewPanel: TPanel
+                Height = 414
+                ExplicitHeight = 414
               end
               inherited DisablePreviewCheckBox: TCheckBox
                 Top = 463

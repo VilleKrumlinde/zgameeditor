@@ -1715,13 +1715,16 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
   ZClasses.Register(TMeshNoise,MeshNoiseClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TMeshExpression,MeshExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TMeshImport,MeshImportClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate := True;{$endif}
   ZClasses.Register(TMeshCombine,MeshCombineClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TMeshLoad,MeshLoadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
 
