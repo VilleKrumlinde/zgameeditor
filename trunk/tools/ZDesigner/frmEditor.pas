@@ -29,7 +29,7 @@ uses
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
-  ToolWin, SynCompletionProposal, frmBitmapEdit;
+  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
@@ -191,6 +191,8 @@ type
     ViewerBitmapTabSheet: TTabSheet;
     BitmapEditFrame1: TBitmapEditFrame;
     Import3DSfile1: TMenuItem;
+    ViewerMeshTabSheet: TTabSheet;
+    MeshEditFrame1: TMeshEditFrame;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -915,9 +917,9 @@ procedure TEditorForm.SelectComponent(C: TZComponent);
 var
   OldFocus : TWinControl;
 
-  function InCheckForBitmapParent : boolean;
-  //Do not change shownode if parent is bitmap
-  //This will keep the texture-diagram visible while editing bitmap-producers
+  function InCheckForGraphParent : boolean;
+  //Do not change shownode if parent is bitmap or mesh
+  //This will keep the graph-diagram visible while editing producers
   var
     CurParent : TZComponentTreeNode;
   begin
@@ -927,7 +929,7 @@ var
     CurParent := Tree.ZSelected.Parent as TZComponentTreeNode;
     while CurParent<>nil do
     begin
-      if CurParent.Component is TZBitmap then
+      if (CurParent.Component is TZBitmap) or (CurParent.Component is TMesh) then
       begin
         Result := True;
         Exit;
@@ -938,7 +940,7 @@ var
 
 begin
   Selected := C;
-  if (not LockShow) and (not InCheckForBitmapParent) then
+  if (not LockShow) and (not InCheckForGraphParent) then
     SetShowNode(Selected);
   Ed.SetComponent(C);
   RenderAborted := False;
@@ -983,8 +985,13 @@ begin
     ViewerPageControl.ActivePage := ViewerBitmapTabSheet;
     CompEditor := BitmapEditFrame1;
   end
+  else if ShowNode is TMesh then
+  begin
+    ViewerPageControl.ActivePage := ViewerMeshTabSheet;
+    CompEditor := MeshEditFrame1;
+  end
   else if {(ShowNode is TZBitmap) or}
-    (ShowNode is TMesh) or
+    {(ShowNode is TMesh) or}
     (ShowNode is TZApplication) or
     (ShowNode is TModel) or
     (ShowNode is TStateBase) then
@@ -1345,7 +1352,7 @@ begin
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-    if WireframeCheckBox.Checked then
+    if MeshEditFrame1.WireframeCheckBox.Checked then
       glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
     else
       SetupGLShading;
@@ -2857,7 +2864,7 @@ begin
   begin
     //Enter as tab
     Key := #0; // Eat the Beep
-    SelectNext(ActiveControl AS TWinControl, True, True) // Forward
+    SelectNext(ActiveControl as TWinControl, True, True) // Forward
   end;
   if Assigned(CompEditor) then
     CompEditor.OnKeyPress(Key);
