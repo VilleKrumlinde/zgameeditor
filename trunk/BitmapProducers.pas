@@ -59,7 +59,7 @@ type
   public
     Radius : integer;
     Amplify : single;
-    Passes : Integer;
+    Kind : Integer;
     BlurDirection : (bdBoth, bdVertical, bdHorizontal);
   end;
 
@@ -106,15 +106,6 @@ type
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
     RandomSeed, NOfPoints, Colour : integer;
-  end;
-
-  TBitmapBlurGPU = class(TContentProducer)
-  protected
-    procedure DefineProperties(List: TZPropertyList); override;
-    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
-  public
-    Passes : integer;
-    Radius : single;
   end;
 
 implementation
@@ -490,7 +481,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Passes',{$ENDIF}integer(@Passes) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['1','2','3', '4']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
@@ -546,10 +537,10 @@ begin
 
   for N := -Radius to Radius do
   begin
-    case Passes of
+    case Kind of
       0: ConvTmp^ := 1;
       1: ConvTmp^ := abs(N);
-      2: ConvTmp^ := Power(2.71, -(N*N)/(6*Radius));
+      2: ConvTmp^ := Power(2.71, -(N*N)/(4*Radius));
       3: ConvTmp^ := 1;
     end;
     TmpDiv := TmpDiv + ConvTmp^;
@@ -1154,71 +1145,6 @@ begin
     Result := nil;
 end;
 
-{ TBitmapBlurGPU }
-
-procedure TBitmapBlurGPU.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Passes',{$ENDIF}integer(@Passes) - integer(Self), zptInteger);
-    List.GetLast.DefaultValue.IntegerValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptFloat);
-    List.GetLast.DefaultValue.FloatValue := 0.5;
-end;
-
-procedure TBitmapBlurGPU.ProduceOutput(Content: TContent; Stack: TZArrayList);
-const
-  a = 1/20;
-  Filter : packed array[0..4,0..4] of single = (
-  (a,a,a,a,a),
-  (a,a,a,a,a),
-  (a,a,a,a,a),
-  (a,a,a,a,a),
-  (a,a,a,a,a));
-var
-  B,SourceB : TZBitmap;
-  W,H : integer;
-  PassesLeft : integer;
-  Pixels : pointer;
-begin
-  //one argument required
-  if Stack.Count=0 then
-    Exit;
-  SourceB := TZBitmap(Stack.Pop());
-
-  B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
-
-  W := SourceB.PixelWidth;
-  H := SourceB.PixelHeight;
-
-  PassesLeft := Self.Passes;
-
-  Pixels := SourceB.GetCopyAsFloats;
-  while PassesLeft > 0 do
-  begin
-    B.RenderTargetBegin;
-
-    glEnable(GL_CONVOLUTION_2D);
-    glConvolutionFilter2D(GL_CONVOLUTION_2D, GL_RGBA, 5, 5, GL_LUMINANCE, GL_FLOAT, @Filter);
-    glRasterPos2f(-1, -1);
-    glDrawPixels(W, H, GL_RGBA, GL_FLOAT, Pixels);
-
-    B.RenderTargetEnd;
-
-    if PassesLeft>0 then
-    begin
-      FreeMem(Pixels);
-      Pixels := B.GetCopyAsFloats;
-    end;
-
-    Dec(PassesLeft);
-  end;
-
-  FreeMem(Pixels);
-
-  SourceB.Free;
-
-  Stack.Push(B);
-end;
 
 initialization
 
@@ -1248,10 +1174,5 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TBitmapPixels,BitmapPixelsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
-
-  ZClasses.Register(TBitmapBlurGPU,BitmapBlurGPUClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'BitmapBlurGPU_Test';{$endif}
-    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
-    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
 
 end.
