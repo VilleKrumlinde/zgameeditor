@@ -1860,7 +1860,7 @@ var
     end
     else
     begin
-      ZLog.GetLog(Self.ClassName).Write( 'Error in ' + S + ' shader compilation' );
+      ZLog.GetLog(Self.ClassName).Warning( 'Error in ' + S + ' shader compilation' );
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
@@ -1874,11 +1874,11 @@ var
   begin
     glGetProgramiv(ProgHandle,GL_LINK_STATUS,@Status);
     if Status=GL_FALSE then
-      ZLog.GetLog(Self.ClassName).Write( 'Error when linking shader program' );
+      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
     glValidateProgram(ProgHandle);
     glGetProgramiv(ProgHandle,GL_VALIDATE_STATUS,@Status);
     if Status=GL_FALSE then
-      ZLog.GetLog(Self.ClassName).Write( 'Error when linking shader program' );
+      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
   end;
   {$endif}
 
@@ -1957,7 +1957,7 @@ begin
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
     {$ifndef minimal}
     if Sv.Location=-1 then
-      ZLog.GetLog(Self.ClassName).Write( 'Shader variable error: ' + Sv.VariableName );
+      ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + Sv.VariableName );
     {$endif}
   end;
 end;

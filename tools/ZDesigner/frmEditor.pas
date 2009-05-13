@@ -250,6 +250,8 @@ type
     procedure UndoDeleteActionUpdate(Sender: TObject);
     procedure UndoDeleteActionExecute(Sender: TObject);
     procedure AddFromLibraryMenuItemClick(Sender: TObject);
+    procedure LogListBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -304,7 +306,7 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     function InsertAndRenameComponent(InsertC: TZComponent;
       DestTreeNode: TZComponentTreeNode; Index : integer = -1) : TZComponentTreeNode;
-    procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString);
+    procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString; Level : TLogLevel);
     procedure OpenProject(const FileName: string);
     procedure NewProject;
     function CloseProject: boolean;
@@ -598,16 +600,20 @@ begin
   ResetCamera;
 end;
 
-procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString);
+procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
 var
   I : integer;
   Tmp : TStringList;
+  P : integer;
 
   procedure InAddOne(const S : String);
   begin
     while LogListBox.Items.Count>500 do
       LogListBox.Items.Delete(0);
-    LogListBox.Items.AddObject(S,Log);
+    P := integer(Log);
+    if Level=lleWarning then
+      P := P or 1;
+    LogListBox.Items.AddObject(S,TObject(P));
   end;
 
 begin
@@ -618,7 +624,7 @@ begin
     Tmp := TStringList.Create;
     Tmp.Text := Mess;
     for I := 0 to Tmp.Count - 1 do
-        InAddOne(Tmp[I]);
+      InAddOne(Tmp[I]);
     Tmp.Free;
   end;
   LogListBox.ItemIndex := LogListBox.Items.Count-1;
@@ -2947,6 +2953,34 @@ begin
   end;
 end;
 
+procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+const Levels : array[boolean] of string = ('Normal','Warning');
+var
+  Point : TPoint;
+  Index,I : Integer;
+  S : string;
+  Log : TLog;
+  IsWarning : boolean;
+begin
+  Point.X := X;
+  Point.Y := Y;
+  Index := LogListBox.ItemAtPos(Point,True);
+  if Index<>-1 then
+  begin
+    I := Integer(LogListBox.Items.Objects[Index]);
+    IsWarning := I and 1=1;
+    Log := TLog( (I shr 1) shl 1 );
+    if Log=nil then
+      Exit;
+    S := Format('Level: %s'#13'Log: %s'#13'Message: %s',
+      [ Levels[IsWarning], Log.Name, LogListBox.Items[Index] ]);
+    LogListBox.Hint := S;
+    Point := LogListBox.ClientToScreen(Point);
+    Application.ActivateHint(Point);
+  end;
+end;
+
 procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 const
@@ -2960,28 +2994,42 @@ var
   Log : TLog;
   S : string;
   I : integer;
+  IsWarning : boolean;
 begin
-  Log := (Control as TListBox).Items.Objects[Index] as TLog;
+  I := Integer((Control as TListBox).Items.Objects[Index]);
+  IsWarning := I and 1=1;
+  Log := TLog( (I shr 1) shl 1 );
   if Log=nil then
     Exit;
 
   C := (Control as TListBox).Canvas;
 
+  if IsWarning then
+  begin
+    C.Font.Style:=[fsBold];
+    C.Brush.Color := clWhite;
+    C.Font.Color := (Control as TListBox).Color;
+  end
+  else
+  begin
+    C.Font.Style:=[];
+    C.Brush.Color := (Control as TListBox).Color;
+    C.Font.Color := clWhite;
+  end;
+
   //Clear area in listbox-color, this avoids highlighting selected
-  C.Brush.Color := (Control as TListBox).Color;
   C.FillRect(Rect);
 
-//  C.Font.Style:=[fsBold];
-  C.Font.Color := clWhite;
   C.TextOut(Rect.Left + 2, Rect.Top, Copy(LogChars[ (Log.ID mod Length(LogChars))+1 ] ,1,1));
 
-  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
+//  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
   S := (Control as TListBox).Items[Index];
   C.TextOut(Rect.Left + 12, Rect.Top, S);
   I := C.TextWidth(S) + 16;
   if I>(Control as TListBox).ScrollWidth then
     (Control as TListBox).ScrollWidth := I;
 end;
+
 
 procedure TEditorForm.SaveProjectActionExecute(Sender: TObject);
 begin

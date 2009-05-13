@@ -89,6 +89,7 @@ type
     Dimensions : (dadOne,dadTwo,dadThree);
     SizeDim1,SizeDim2,SizeDim3 : integer;
     destructor Destroy; override;
+    function GetData : PFloat;
   end;
 
   //Virtual machine instruction baseclass
@@ -387,7 +388,7 @@ begin
     StackPopTo(gReturnValue);
   {$ifndef minimal}
   if StackGetDepth>0 then
-    ZLog.GetLog('Zc').Write('Warning, stack not empty on script completion');
+    ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
 
@@ -766,6 +767,11 @@ begin
   inherited;
 end;
 
+function TDefineArray.GetData: PFloat;
+begin
+  Result := PFloat(Data);
+end;
+
 function TDefineArray.PopAndGetElement : PFloat;
 var
   Index : integer;
@@ -814,7 +820,7 @@ begin
     then
   begin
     {$ifdef zlog}
-    ZLog.GetLog(Self.ClassName).Write('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
+    ZLog.GetLog(Self.ClassName).Warning('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     {$endif}
     Result := nil;
     Exit;

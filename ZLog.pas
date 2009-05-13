@@ -32,6 +32,8 @@ type
   TLogString = {$ifdef zlog}string{$else}PChar{$endif};
 
   {$ifdef zlog}
+  TLogLevel = (lleNormal,lleWarning);
+
   TLog = class
   private
     LastTime : single;
@@ -39,11 +41,12 @@ type
     ID : integer;
     Name : TLogString;
     procedure Write(S : TLogString);
+    procedure Warning(S : TLogString);
     procedure BeginTimer;
     procedure EndTimer(S: TLogString);
   end;
 
-  TLogReceiverFunc = procedure(Log : TLog; Mess : TLogString) of object;
+  TLogReceiverFunc = procedure(Log : TLog; Mess : TLogString; Level : TLogLevel) of object;
   {$endif}
 
   {$ifndef minimal}
@@ -122,7 +125,13 @@ end;
 procedure TLog.Write(S: TLogString);
 begin
   if Assigned(ReceiverFunc) then
-    ReceiverFunc(Self,S);
+    ReceiverFunc(Self,S,lleNormal);
+end;
+
+procedure TLog.Warning(S: TLogString);
+begin
+  if Assigned(ReceiverFunc) then
+    ReceiverFunc(Self,S,lleWarning);
 end;
 
 procedure TLog.BeginTimer;

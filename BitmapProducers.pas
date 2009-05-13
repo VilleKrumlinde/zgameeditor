@@ -59,7 +59,7 @@ type
   public
     Radius : integer;
     Amplify : single;
-    Kind : Integer;
+    Kind : (bkiSquare,bkiTriangle,bkiGaussian,bkiAngles);
     BlurDirection : (bdBoth, bdVertical, bdHorizontal);
   end;
 
@@ -107,6 +107,17 @@ type
   public
     RandomSeed, NOfPoints, Colour : integer;
   end;
+
+  TBitmapConvolution = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    ConvArray : TDefineArray;
+    SwapDim : boolean;
+    Divisor, Bias : single;
+  end;
+
 
 implementation
 
@@ -415,64 +426,43 @@ end;
 
 { Convolution }
 
-procedure ConvolveImage(SourceP, DestP: PColorf;ImageW, ImageH : integer; ConvMatrix : PFloat; ConvW,ConvH : integer; TmpDiv : single);
+procedure ConvolveImage(SourceP, DestP: PColorf;ImageW, ImageH : integer; ConvMatrix : PFloat; ConvW,ConvH : integer; TmpDiv, Bias : single);
 var
   Tot : TZVector3f;
   P,Tmp : PZVector3f;
   M : PFloat;
-  I,J,K,L,N : integer;
+  I,J,K,L : integer;
   XBound,YBound : integer;
 begin
 
-  //if (ConvW = -1) then Separable convolution:
-  //we apply the same filter twice: once vertically and once horizontally
-  for N := integer((ConvW = -1)) downto 0 do
-  begin
-    if N = 1 then                 //first pass (done only if filter is separable)
+  XBound := (ConvW-1) div 2;
+  YBound := (ConvH-1) div 2;
+  P := PZVector3f(DestP);
+  for I := 0 to ImageH-1 do
+    for J := 0 to ImageW-1 do
     begin
-      XBound := (ConvH-1) div 2;
-      YBound := 0;
-    end
-    else
-    begin
-      XBound := (abs(ConvW)-1) div 2;  //ConvW might be equal to -1, so I use an abs;
-      YBound := (ConvH-1) div 2;
-    end;
-    P := PZVector3f(DestP);
-    for I := 0 to ImageH-1 do
-      for J := 0 to ImageW-1 do
-      begin
-        FillChar(Tot,SizeOf(Tot),0);
-        M := ConvMatrix;
-        for L := -(XBound) to XBound do
-          for K := -(YBound) to YBound do
-          begin
-            Tmp := PZVector3f(SourceP);
-            Inc(Tmp, GetIncrement(J+K,I+L,ImageW,ImageH));
-            Tot[0] := Tot[0] + Tmp^[0]*M^;
-            Tot[1] := Tot[1] + Tmp^[1]*M^;
-            Tot[2] := Tot[2] + Tmp^[2]*M^;
-            Inc(M);
-          end;
-        VecDiv3(Tot, TmpDiv, P^);
-        Inc(P);
-      end;  //for J (the I cycle has no begin-end block)
-    if N = 1 then //before applying the convolution again,
-    begin         //copy the destination to the source!
-    //don't know if I can use the command
-    //Move(DestP^,SourceP^,SizeOf(DestP));
-      P := PZVector3f(DestP);
-      Tmp := PZVector3f(SourceP);
-      for I := 0 to ImageH*ImageW-1 do
-      begin
-        Tmp^ := P^;
-        inc(P);
-        inc(Tmp);
-      end;
-    end;//end if N=1 then -> copy source into dest
-  end; //end N
+      FillChar(Tot,SizeOf(Tot),0);
+      M := ConvMatrix;
+      for L := -(YBound) to YBound do
+        for K := -(XBound) to XBound do
+        begin
+          Tmp := PZVector3f(SourceP);
+          Inc(Tmp, GetIncrement(J+K,I+L,ImageW,ImageH));
+          Tot[0] := Tot[0] + Tmp^[0]*M^;
+          Tot[1] := Tot[1] + Tmp^[1]*M^;
+          Tot[2] := Tot[2] + Tmp^[2]*M^;
+          Inc(M);
+        end;
+      VecDiv3(Tot, TmpDiv, P^);
+      P^[0] := P^[0] + Bias;
+      P^[1] := P^[1] + Bias;
+      P^[2] := P^[2] + Bias;
+
+      Inc(P);
+    end;  //for J (the I cycle has no begin-end block)
 
 end;
+
 { TBitmapBlur }
 
 procedure TBitmapBlur.DefineProperties(List: TZPropertyList);
@@ -482,7 +472,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['1','2','3', '4']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Square','Triangle','Gaussian', 'Angles']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
 end;
@@ -513,11 +503,32 @@ begin
   GetMem(DestP,SizeBytes);
   B.SetMemory(DestP,GL_RGB,GL_FLOAT);
 
+  GetMem(ConvMatrix,SizeOf(single)*(Radius*2+1));
+  ConvTmp := ConvMatrix;
+  TmpDiv := 0;
+
+  for N := -Radius to Radius do
+  begin
+    case Kind of
+      bkiSquare: ConvTmp^ := 1;
+      bkiTriangle: ConvTmp^ := Radius - abs(N);
+      bkiGaussian: ConvTmp^ := Power(2.71, -(N*N)/(0.2*Radius*Radius));
+      bkiAngles: ConvTmp^ := abs(N);
+    end;
+    TmpDiv := TmpDiv + ConvTmp^;
+    Inc(ConvTmp);
+  end; //FOR N
+  TmpDiv := TmpDiv/Amplify;
+
   case BlurDirection of
     bdBoth:
       begin
         ConvH := Radius*2+1;
-        ConvW := -1;    //we use a separable filter for the blur
+        ConvW := 1;
+        ConvolveImage(SourceP, DestP, W, H, ConvMatrix, ConvW, ConvH, TmpDiv, 0);
+        Move(DestP^,SourceP^,SizeBytes);
+        ConvW := Radius*2+1;
+        ConvH := 1;
       end;
     bdVertical:
       begin
@@ -531,31 +542,7 @@ begin
       end;
   end;
 
-  GetMem(ConvMatrix,SizeOf(single)*(Radius*2+1));
-  ConvTmp := ConvMatrix;
-  TmpDiv := 0;
-
-  for N := -Radius to Radius do
-  begin
-    case Kind of
-      0: ConvTmp^ := 1;
-      1: ConvTmp^ := abs(N);
-      2: ConvTmp^ := Power(2.71, -(N*N)/(4*Radius));
-      3: ConvTmp^ := 1;
-    end;
-    TmpDiv := TmpDiv + ConvTmp^;
-    Inc(ConvTmp);
-  end; //for N
-  TmpDiv := TmpDiv/Amplify;
-
-  //for N := 0 to Passes do
-  //begin
-
-  ConvolveImage(SourceP, DestP, W, H, ConvMatrix, ConvW, ConvH, TmpDiv );
-
-  //  if (Passes>0) and (N<Passes) then
-  //    Move(DestP^,SourceP^,SizeBytes);
-  //end; //passes
+  ConvolveImage(SourceP, DestP, W, H, ConvMatrix, ConvW, ConvH, TmpDiv, 0);
 
   //Needed to send the bitmap to opengl
   B.UseTextureBegin;
@@ -596,12 +583,12 @@ begin
   if (Bitmap.PixelWidth<>TZBitmap(Content).PixelWidth) or
      (Bitmap.PixelHeight<>TZBitmap(Content).PixelHeight) then
   begin
-    ZLog.GetLog(Self.ClassName).Write('Bitmap size must match target.');
+    ZLog.GetLog(Self.ClassName).Warning('Bitmap size must match target.');
     Exit;
   end;
   if Bitmap=Content then
   begin
-    ZLog.GetLog(Self.ClassName).Write('BitmapLoad cannot load itself.');
+    ZLog.GetLog(Self.ClassName).Warning('BitmapLoad cannot load itself.');
     Exit;
   end;
   {$endif}
@@ -646,7 +633,7 @@ begin
   if (B1.PixelWidth<>B2.PixelWidth) or
      (B1.PixelHeight<>B2.PixelHeight) then
   begin
-    ZLog.GetLog(Self.ClassName).Write('Bitmap sizes must match.');
+    ZLog.GetLog(Self.ClassName).Warning('Bitmap sizes must match.');
     Exit;
   end;
   {$endif}
@@ -1027,7 +1014,7 @@ begin
   if (B1.PixelWidth<>B2.PixelWidth) or
      (B1.PixelHeight<>B2.PixelHeight) then
   begin
-    ZLog.GetLog(Self.ClassName).Write('Bitmap sizes must match.');
+    ZLog.GetLog(Self.ClassName).Warning('Bitmap sizes must match.');
     Exit;
   end;
   {$endif}
@@ -1128,6 +1115,105 @@ begin
     List.GetLast.DefaultValue.IntegerValue := 42;
 end;
 
+{ TBitmapConvolution }
+
+procedure TBitmapConvolution.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SwapDimensions',{$ENDIF}integer(@SwapDim) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ConvArray',{$ENDIF}integer(@ConvArray) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Divisor',{$ENDIF}integer(@Divisor) - integer(Self), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'Bias',{$ENDIF}integer(@Bias) - integer(Self), zptFloat);
+end;
+
+procedure TBitmapConvolution.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  SourceB,B : TZBitmap;
+  J,K,I1,I2 : integer;
+  SourceP,DestP : PColorf;
+  SizeBytes : integer;
+  ConvMatrix : PFloat;
+  ConvTmp : PFloat;
+  P : PFloat;
+  ConvW, ConvH : integer;
+begin
+  if Stack.Count=0 then
+    Exit;
+
+  {$ifndef minimal}
+  if ConvArray=nil then
+  begin
+    ZLog.GetLog(Self.ClassName).Warning('Property ConvArray not set.');
+    Exit;
+  end;
+  if ConvArray.Dimensions <> dadTwo then
+  begin
+    ZLog.GetLog(Self.ClassName).Warning('ConvArray must be 2D.');
+    Exit;
+  end;
+  if (ConvArray.SizeDim1 and 1=0) or (ConvArray.SizeDim2 and 1=0) then
+  begin
+    ZLog.GetLog(Self.ClassName).Warning('ConvArray must be odd-sized.');
+    Exit;
+  end;
+  {$endif}
+
+  SourceB := TZBitmap(Stack.Pop());
+  B := TZBitmap.CreateFromBitmap( SourceB );
+  SourceP := SourceB.GetCopyAs3f;
+  SourceB.Free;
+
+  SizeBytes := SizeOf(TZVector3f)*B.PixelWidth*B.PixelHeight;
+  GetMem(DestP,SizeBytes);
+  B.SetMemory(DestP,GL_RGB,GL_FLOAT);
+
+  if SwapDim then
+  begin
+    ConvH := ConvArray.SizeDim1;
+    ConvW := ConvArray.SizeDim2;
+  end
+  else
+  begin
+    ConvW := ConvArray.SizeDim1;
+    ConvH := ConvArray.SizeDim2;
+  end;
+
+  GetMem(ConvMatrix,SizeOf(single)*(ConvH*ConvW-1));
+  ConvTmp := ConvMatrix;
+
+  for J := 0 to (ConvW - 1) do
+    for K := 0 to (ConvH - 1) do
+    begin
+      if SwapDim then
+      begin
+        I1 := K;
+        I2 := J;
+      end else
+      begin
+        I1 := J;
+        I2 := K;
+      end;
+      P := ConvArray.GetData;
+      Inc(P,I1 * ConvArray.SizeDim1 + I2);
+      ConvTmp^ := P^;
+      Inc(ConvTmp);
+    end;
+
+  ConvolveImage(SourceP, DestP, B.PixelWidth, B.PixelHeight, ConvMatrix, ConvW, ConvH, Divisor, Bias);
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(SourceP);
+  FreeMem(DestP);
+  FreeMem(ConvMatrix);
+
+  Stack.Push(B);
+end;
+
+
 { TBitmapProducerWithOptionalArgument }
 
 procedure TBitmapProducerWithOptionalArgument.DefineProperties(
@@ -1174,5 +1260,10 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TBitmapPixels,BitmapPixelsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+  ZClasses.Register(TBitmapConvolution,BitmapConvolutionClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
+
+
 
 end.

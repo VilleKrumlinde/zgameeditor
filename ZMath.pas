@@ -634,14 +634,6 @@ const
   Z = 2;
   W = 3;
 
-function MatrixDetInternal(const a1, a2, a3, b1, b2, b3, c1, c2, c3: Single): Single;
-// internal version for the determinant of a 3x3 matrix
-begin
-  Result:=  a1 * (b2 * c3 - b3 * c2)
-          - b1 * (a2 * c3 - a3 * c2)
-          + c1 * (a2 * b3 - a3 * b2);
-end;
-
 function SubMatrix(const M : TZMatrix4f; LineSkip, ColumnSkip : integer) : TZMatrix4f;
 var I,J,K,L : integer;
 begin
@@ -668,7 +660,7 @@ end;
 function NMatrixDet(const M : TZMatrix4f; const Dimension : integer): single;
 var L : integer;
 begin
-  if Dimension = 2 then //BASIC CASE
+  if Dimension = 2 then //BASE CASE
   begin
     Result := M[0,0]*M[1,1] - M[0,1]*M[1,0];
   end
