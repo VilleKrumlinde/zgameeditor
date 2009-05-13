@@ -59,7 +59,7 @@ type
   public
     Radius : integer;
     Amplify : single;
-    Kind : (bkiSquare,bkiTriangle,bkiGaussian,bkiAngles);
+    Kind : (bkiSquare,bkiTriangle,bkiGaussian,bkiCorners);
     BlurDirection : (bdBoth, bdVertical, bdHorizontal);
   end;
 
@@ -472,7 +472,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Square','Triangle','Gaussian', 'Angles']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Square','Triangle','Gaussian', 'Corners']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
 end;
@@ -513,7 +513,7 @@ begin
       bkiSquare: ConvTmp^ := 1;
       bkiTriangle: ConvTmp^ := Radius - abs(N);
       bkiGaussian: ConvTmp^ := Power(2.71, -(N*N)/(0.2*Radius*Radius));
-      bkiAngles: ConvTmp^ := abs(N);
+      bkiCorners: ConvTmp^ := abs(N);
     end;
     TmpDiv := TmpDiv + ConvTmp^;
     Inc(ConvTmp);
@@ -1196,7 +1196,7 @@ begin
         I2 := K;
       end;
       P := ConvArray.GetData;
-      Inc(P,I1 * ConvArray.SizeDim1 + I2);
+      Inc(P,I1 + ConvArray.SizeDim1 * I2);
       ConvTmp^ := P^;
       Inc(ConvTmp);
     end;
