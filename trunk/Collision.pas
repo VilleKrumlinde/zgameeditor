@@ -444,7 +444,7 @@ begin
   begin
     //Unsupported collision style
     {$ifndef minimal}
-    ZLog.GetLog(Self.ClassName).Write('Collision combination not supported: ' + CollisionStyleNames[Ord(Act1.CollisionStyle)] + ' ' + CollisionStyleNames[Ord(Act2.CollisionStyle)]);
+    ZLog.GetLog(Self.ClassName).Warning('Collision combination not supported: ' + CollisionStyleNames[Ord(Act1.CollisionStyle)] + ' ' + CollisionStyleNames[Ord(Act2.CollisionStyle)]);
     {$endif}
     Exit;
   end;

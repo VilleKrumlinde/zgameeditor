@@ -449,18 +449,6 @@ end;
 procedure TMesh.BeforeRender;
 var
   VertSize,NormSize,ColsSize,TexSize : integer;
-
- { procedure CheckGLError;
-  var
-    Error : GLenum;
-  begin
-    Error := glGetError;
-    if Error<>0 then
-    begin
-      ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
-    end;
-  end;}
-
 begin
   if (Vertices=nil) or (Producers.IsChanged) or (IsChanged) then
   begin

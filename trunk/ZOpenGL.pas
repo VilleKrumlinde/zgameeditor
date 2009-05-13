@@ -1673,7 +1673,7 @@ var
 begin
   Error := glGetError;
   if Error<>0 then
-    ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
+    ZLog.GetLog('GL').Warning( 'GL ERROR: ' + IntToStr(Error) );
 end;
 {$endif}
 
