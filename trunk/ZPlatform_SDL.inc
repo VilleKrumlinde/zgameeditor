@@ -102,13 +102,13 @@ begin
           end;
         SDL_MOUSEBUTTONDOWN,SDL_MOUSEBUTTONUP :
           begin
-            //Button 1:	Left mouse button
-            //Button 2:	Middle mouse button
-            //Button 3:	Right mouse button
+            //Button 1: Left mouse button
+            //Button 2: Middle mouse button
+            //Button 3: Right mouse button
             case E.Button.button of
               1 : Keys[ Ord('{') ] := E.type_=SDL_MOUSEBUTTONDOWN;
-              2 : Keys[ Ord('|') ] := E.type_=SDL_MOUSEBUTTONDOWN
-              3 : Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN
+              2 : Keys[ Ord('|') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+              3 : Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN;
             end;
           end;
       end;
