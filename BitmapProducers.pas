@@ -748,8 +748,8 @@ begin
     case PlacementStyle of
       pstRandom :
         begin
-          CP[I].Y := Random(H);
-          CP[I].X := Random(W);
+          CP[I].Y := System.Random(H);
+          CP[I].X := System.Random(W);
         end;
       pstSquares :
         begin
@@ -760,7 +760,7 @@ begin
       pstUnregularSquares :
         begin
           K := Round(sqrt(NOfPointsCopy+1));
-          CP[I].X := Random(W);
+          CP[I].X := System.Random(W);
           CP[I].Y := (I mod K)*(H div K);
         end;
       pstHoneyComb :
@@ -771,9 +771,9 @@ begin
         end;
     end;
 
-    CP[I].R := Random;
-    CP[I].G := Random;
-    CP[I].B := Random;
+    CP[I].R := System.Random;
+    CP[I].G := System.Random;
+    CP[I].B := System.Random;
     CP[I].MaxDist := 0;
   end;
 
@@ -1085,8 +1085,8 @@ begin
   for I := 0 to NOfPoints*(PixelCount div 4096) - 1 do    //the mean is <NOfPoints> pixels in 64x64 texture
   begin
     Pixel := Pixels;
-    inc(Pixel,Random(PixelCount));
-    Temp := 0.2 + Random() * 0.8;
+    inc(Pixel,System.Random(PixelCount));
+    Temp := 0.2 + System.Random() * 0.8;
     if (Colour = 0) or (Colour = 1) then Pixel.R := Temp;
     if (Colour = 0) or (Colour = 2) then Pixel.G := Temp;
     if (Colour = 0) or (Colour = 3) then Pixel.B := Temp;

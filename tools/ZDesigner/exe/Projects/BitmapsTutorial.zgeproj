@@ -161,7 +161,7 @@ this.Pixel.R=sin(X*3.14)*0.5 + sin(Y*3.14)*0.5;
           <Producers>
             <Repeat Comment="While-expression sets rect parameters">
               <OnIteration>
-                <BitmapRect Name="Rect1" Color="0.768 0.768 0.768 1" Size="0.0239 -0.3919 0.2239 -0.1919"/>
+                <BitmapRect Name="Rect1" Color="0.0071 0.0071 0.0071 1" Size="-0.1074 -0.102 0.0926 0.098"/>
               </OnIteration>
               <WhileExp>
 <![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
@@ -204,7 +204,7 @@ return this.Iteration<128;]]>
             </BitmapFromFile>
           </Producers>
         </Bitmap>
-        <Material Name="Mat1" Texture="FromFile1" TextureScale="0.49 0.49 0.49" TextureX="0.25" TextureY="0.2" TexCoords="1"/>
+        <Material Name="Mat1" Texture="DistortBitmap" TextureScale="0.49 0.49 0.49" TextureX="0.25" TextureY="0.2" TexCoords="1"/>
         <Bitmap Name="FromFile2" Width="4" Height="4">
           <Producers>
             <BitmapFromFile>
@@ -296,7 +296,7 @@ this.V.X*=2;
             <BitmapBlur Radius="1" Amplify="0.89"/>
           </Producers>
         </Bitmap>
-        <Material Name="CellMaterial" Texture="CellBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
+        <Material Name="CellMaterial" Texture="DistortBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
         <Bitmap Name="Bitmap3" Width="3" Height="3" Filter="2">
           <Producers>
             <BitmapPixels NOfPoints="3" RandomSeed="36"/>
@@ -313,7 +313,6 @@ this.V.X*=2;
             <BitmapBlur Radius="16" Amplify="12.25" Kind="2"/>
             <BitmapCells CellStyle="1" PointsPlacement="1" RandomSeed="40" BorderPixels="0"/>
             <BitmapDistort/>
-            <BitmapConvolution/>
           </Producers>
         </Bitmap>
       </Children>
