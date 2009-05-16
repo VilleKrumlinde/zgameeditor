@@ -78,11 +78,13 @@ type
   end;
 
   TDefineArray = class(TDefineVariableBase)
+  strict private
+    procedure CleanUp;
+    procedure AllocData;
   private
     Limit : integer;
     Data : PFloatArray;
     function PopAndGetElement : PFloat;
-    procedure CleanUp;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -769,13 +771,24 @@ end;
 
 function TDefineArray.GetData: PFloat;
 begin
+  if Data=nil then
+    AllocData;
   Result := PFloat(Data);
+end;
+
+procedure TDefineArray.AllocData;
+var
+  ByteSize: Integer;
+begin
+  Limit := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
+  ByteSize := Limit * SizeOf(single);
+  GetMem(Data, ByteSize);
+  FillChar(Data^, ByteSize, 0);
 end;
 
 function TDefineArray.PopAndGetElement : PFloat;
 var
-  Index : integer;
-  I1,I2,I3,ByteSize : integer;
+  Index,I1,I2,I3 : integer;
 begin
   StackPopTo(I3);
   if Self.Dimensions>=dadTwo then
@@ -797,12 +810,7 @@ begin
   {$endif}
 
   if Data=nil then
-  begin
-    Limit := SizeDim1 * (SizeDim2+1) * (SizeDim3+1);;
-    ByteSize := Limit*SizeOf(single);
-    GetMem(Data, ByteSize );
-    FillChar(Data^, ByteSize ,0);
-  end;
+    AllocData;
 
   case Self.Dimensions of
     dadOne: Index := I3;
