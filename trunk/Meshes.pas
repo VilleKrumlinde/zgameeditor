@@ -1686,6 +1686,14 @@ begin
   if Mesh=nil then
     Exit;
 
+  {$ifndef minimal}
+  if Mesh=Content then
+  begin
+    ZLog.GetLog(Self.ClassName).Warning('MeshLoad cannot load itself.');
+    Exit;
+  end;
+  {$endif}
+
   M := TMesh(Mesh.Clone);
   M.RefreshFromProducers;
 

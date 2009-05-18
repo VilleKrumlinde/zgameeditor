@@ -626,8 +626,8 @@ begin
   if Stack.Count<2 then
     Exit;
 
-  B2 := TZBitmap(Stack.Pop());
   B1 := TZBitmap(Stack.Pop());
+  B2 := TZBitmap(Stack.Pop());
 
   {$ifndef minimal}
   if (B1.PixelWidth<>B2.PixelWidth) or

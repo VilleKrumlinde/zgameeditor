@@ -332,6 +332,7 @@ type
     procedure OnShaderExprChanged(Sender: TObject);
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
+    procedure OnAppException(Sender: TObject; E: Exception);
   public
     Glp : TCustomGLPanel;
     Tree : TZComponentTreeView;
@@ -488,7 +489,17 @@ begin
 
   Platform_InitGlobals;  //Nollställ timer etc
 
+  Application.OnException := OnAppException;
+
   Assert(Self.SoundEditFrame1.Osc1WaveformCombo.Items.Count>0,'Dåligt bygge: osc count=0');
+end;
+
+procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
+begin
+  if E is EZHalted then
+    ZLog.GetLog(Self.ClassName).Error(E.Message)
+  else
+    Application.ShowException(E);
 end;
 
 procedure TEditorForm.OnMruItemClick(Sender : TObject);
@@ -600,20 +611,33 @@ begin
   ResetCamera;
 end;
 
+type
+  TListLogItem = class
+  public
+    Level : TLogLevel;
+    Log : TLog;
+    Msg : string;
+  end;
+
 procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
 var
   I : integer;
   Tmp : TStringList;
-  P : integer;
 
   procedure InAddOne(const S : String);
+  var
+    Data : TListLogItem;
   begin
     while LogListBox.Items.Count>500 do
+    begin
+      LogListBox.Items.Objects[0].Free;
       LogListBox.Items.Delete(0);
-    P := integer(Log);
-    if Level=lleWarning then
-      P := P or 1;
-    LogListBox.Items.AddObject(S,TObject(P));
+    end;
+    Data := TListLogItem.Create;
+    Data.Log := Log;
+    Data.Msg := Mess;
+    Data.Level := Level;
+    LogListBox.Items.AddObject(S,Data);
   end;
 
 begin
@@ -1093,6 +1117,8 @@ begin
 end;
 
 procedure TEditorForm.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  I : integer;
 begin
   Action := caFree;
 
@@ -1104,6 +1130,12 @@ begin
   Self.RemoveComponent(ShaderSynEdit);
   ShaderSynEdit.Free;
   ShaderSynEdit:=nil;
+
+  for I := 0 to LogListBox.Items.Count - 1 do
+  begin
+    LogListBox.Items.Objects[I].Free;
+    LogListBox.Items.Objects[I] := nil;
+  end;
 end;
 
 procedure TEditorForm.OnPropValueChange;
@@ -2955,26 +2987,25 @@ end;
 
 procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
-const Levels : array[boolean] of string = ('Normal','Warning');
+const Levels : array[TLogLevel] of string = ('Normal','Warning','Error');
 var
   Point : TPoint;
-  Index,I : Integer;
+  Index : Integer;
   S : string;
   Log : TLog;
-  IsWarning : boolean;
+  Data : TListLogItem;
 begin
   Point.X := X;
   Point.Y := Y;
   Index := LogListBox.ItemAtPos(Point,True);
   if Index<>-1 then
   begin
-    I := Integer(LogListBox.Items.Objects[Index]);
-    IsWarning := I and 1=1;
-    Log := TLog( (I shr 1) shl 1 );
-    if Log=nil then
+    Data := LogListBox.Items.Objects[Index] as TListLogItem;
+    if Data=nil then
       Exit;
+    Log := Data.Log;
     S := Format('Level: %s'#13'Log: %s'#13'Message: %s',
-      [ Levels[IsWarning], Log.Name, LogListBox.Items[Index] ]);
+      [ Levels[ Data.Level ], Log.Name, Data.Msg ]);
     LogListBox.Hint := S;
     Point := LogListBox.ClientToScreen(Point);
     Application.ActivateHint(Point);
@@ -2994,21 +3025,23 @@ var
   Log : TLog;
   S : string;
   I : integer;
-  IsWarning : boolean;
+  Data : TListLogItem;
 begin
-  I := Integer((Control as TListBox).Items.Objects[Index]);
-  IsWarning := I and 1=1;
-  Log := TLog( (I shr 1) shl 1 );
-  if Log=nil then
+  Data := LogListBox.Items.Objects[Index] as TListLogItem;
+  if Data=nil then
     Exit;
+  Log := Data.Log;
 
   C := (Control as TListBox).Canvas;
 
-  if IsWarning then
+  if Data.Level in [lleWarning,lleError] then
   begin
     C.Font.Style:=[fsBold];
     C.Brush.Color := clWhite;
-    C.Font.Color := (Control as TListBox).Color;
+    if Data.Level=lleWarning then
+      C.Font.Color := (Control as TListBox).Color
+    else
+      C.Font.Color := clRed;
   end
   else
   begin
