@@ -3023,6 +3023,9 @@ begin
   Save := GlobalContent;
 
   Stack := TZArrayList.Create;
+  {$ifndef minimal}
+  try
+  {$endif}
     Stack.ReferenceOnly := True;
 
     GlobalContent.Content := Self;
@@ -3036,9 +3039,15 @@ begin
       CopyAndDestroy(TContent(Stack.Pop));
     while(Stack.Count>0) do
       Stack.Pop().Free;
+  {$ifndef minimal}
+  finally
+  {$endif}
     IsChanged := False;
     Producers.IsChanged := False;
   Stack.Free;
+  {$ifndef minimal}
+  end;
+  {$endif}
 
 //  FillChar(GlobalContent,SizeOf(GlobalContent),0);
   GlobalContent := Save;
