@@ -105,7 +105,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
-    RandomSeed, NOfPoints, Colour : integer;
+    RandomSeed, NOfPoints, Color : integer;
   end;
 
   TBitmapConvolution = class(TContentProducer)
@@ -1087,9 +1087,9 @@ begin
     Pixel := Pixels;
     inc(Pixel,System.Random(PixelCount));
     Temp := 0.2 + System.Random() * 0.8;
-    if (Colour = 0) or (Colour = 1) then Pixel.R := Temp;
-    if (Colour = 0) or (Colour = 2) then Pixel.G := Temp;
-    if (Colour = 0) or (Colour = 3) then Pixel.B := Temp;
+    if (Color = 0) or (Color = 1) then Pixel.R := Temp;
+    if (Color = 0) or (Color = 2) then Pixel.G := Temp;
+    if (Color = 0) or (Color = 3) then Pixel.B := Temp;
     Pixel.A := Temp;
   end;
   RandSeed := SaveSeed;
@@ -1109,7 +1109,7 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'NOfPoints',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'Colour',{$ENDIF}integer(@Colour) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['White','Red','Green','Blue']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 42;
