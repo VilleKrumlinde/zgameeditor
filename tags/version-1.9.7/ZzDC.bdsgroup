@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <PersonalityInfo>
+    <Option>
+      <Option Name="Personality">Default.Personality</Option>
+      <Option Name="ProjectType"></Option>
+      <Option Name="Version">1.0</Option>
+      <Option Name="GUID">{EF16421A-1672-4C44-9D41-498E6D299D39}</Option>
+    </Option>
+  </PersonalityInfo>
+  <Default.Personality>
+    
+    <Projects>
+      <Projects Name="ZzDC.exe">ZzDC.bdsproj</Projects>
+      <Projects Name="ZDesigner.exe">tools\ZDesigner\ZDesigner.bdsproj</Projects>
+      <Projects Name="ExprTest.exe">tools\ZDesigner\expr\ExprTest.bdsproj</Projects>
+      <Projects Name="Targets">ZzDC.exe ZDesigner.exe ExprTest.exe</Projects>
+    </Projects>
+    <Dependencies/>
+  </Default.Personality>
+</BorlandProject>
