@@ -1180,7 +1180,7 @@ begin
     ConvH := ConvArray.SizeDim2;
   end;
 
-  GetMem(ConvMatrix,SizeOf(single)*(ConvH*ConvW-1));
+  GetMem(ConvMatrix,SizeOf(single)*(ConvH*ConvW));
   ConvTmp := ConvMatrix;
 
   for J := 0 to (ConvW - 1) do
