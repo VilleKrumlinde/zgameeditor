@@ -79,12 +79,14 @@ procedure GetObjectNames(C : TZComponent; List : TStringList);
 function HasReferers(Root, Target : TZComponent) : boolean;
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
+function DesignerFormatFloat(V : single) : string;
 
 implementation
 
 uses StdCtrls,SysUtils,Math,Dialogs,Graphics,frmEditor,ExprEdit,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
-  frmRawAudioImportOptions,ZFile,BitmapProducers;
+  frmRawAudioImportOptions,ZFile,BitmapProducers,
+  frmArrayEdit,ZExpressions;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1521,6 +1523,28 @@ var
     end;
   end;
 
+  procedure InEditArray;
+  var
+    A : TDefineArray;
+  begin
+    A := Component as TDefineArray;
+    if not A.Persistent then
+    begin
+      ShowMessage('Set "Persistent" before editing arrays');
+      Exit;
+    end;
+    if A.Dimensions>dadTwo then
+    begin
+      ShowMessage('Cannot edit three-dimensional arrays');
+      Exit;
+    end;
+
+    if ArrayEditForm=nil then
+      Application.CreateForm(TArrayEditForm,ArrayEditForm);
+    ArrayEditForm.SetArray(A);
+    ArrayEditForm.ShowModal;
+  end;
+
 begin
   M := TMemoryStream.Create;
   try
@@ -1540,14 +1564,19 @@ begin
       ApplicationClassId :
         if not InGetIcon then
           Exit;
+      DefineArrayClassId :
+        InEditArray;
     else
       raise Exception.Create('Unknown binary property');
     end;
 
-    Value.BinaryValue.Size := M.Size;
-    GetMem(Value.BinaryValue.Data,M.Size);
-    Move(M.Memory^,Value.BinaryValue.Data^,M.Size);
-    UpdateProp;
+    if ComponentManager.GetInfo(Component).ClassId<>DefineArrayClassId then
+    begin
+      Value.BinaryValue.Size := M.Size;
+      GetMem(Value.BinaryValue.Data,M.Size);
+      Move(M.Memory^,Value.BinaryValue.Data^,M.Size);
+      UpdateProp;
+    end;
     DataChanged;
 
   finally
@@ -1587,8 +1616,15 @@ begin
   B.Align := alRight;
   B.Left := 1000;
   B.Width := 60;
-  B.Caption := 'Import...';
-  B.Hint := 'Select a file to import';
+  if (ComponentManager.GetInfo(C).ClassId=DefineArrayClassId) then
+  begin
+    B.Caption := 'Edit...';
+  end
+  else
+  begin
+    B.Caption := 'Import...';
+    B.Hint := 'Select a file to import';
+  end;
   B.OnClick := OnStoreValue;
   B.Parent := ValuePanel;
   B.Enabled := IsEnabled;

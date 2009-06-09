@@ -15,5 +15,7 @@
     <Transaction>2008-09-09 13:42:03.468.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
     <Transaction>2009-03-28 15:43:29.453.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas</Transaction>
     <Transaction>2009-03-28 15:43:29.468.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm</Transaction>
+    <Transaction>2009-06-08 17:14:22.572.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas</Transaction>
+    <Transaction>2009-06-08 17:14:22.572.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm</Transaction>
   </Transactions>
 </BorlandProject>

@@ -79,17 +79,18 @@ type
 
   TDefineArray = class(TDefineVariableBase)
   strict private
-    procedure CleanUp;
-    procedure AllocData;
-  private
     Limit : integer;
     Data : PFloatArray;
+    procedure AllocData;
+  private
     function PopAndGetElement : PFloat;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Dimensions : (dadOne,dadTwo,dadThree);
     SizeDim1,SizeDim2,SizeDim3 : integer;
+    Persistent : boolean;
+    Values : TZBinaryPropValue;
     destructor Destroy; override;
     function GetData : PFloat;
   end;
@@ -744,12 +745,6 @@ end;
 
 { TDefineArray }
 
-procedure TDefineArray.CleanUp;
-begin
-  if Data<>nil then
-    FreeMem(Data);
-end;
-
 procedure TDefineArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
@@ -761,34 +756,63 @@ begin
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim3',{$ENDIF}integer(@SizeDim3) - integer(Self), zptInteger);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Persistent',{$ENDIF}integer(@Persistent) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Values',{$ENDIF}integer(@Values) - integer(Self), zptBinary);
 end;
 
 destructor TDefineArray.Destroy;
 begin
-  CleanUp;
+  if Data<>nil then
+    FreeMem(Data);
   inherited;
 end;
 
 function TDefineArray.GetData: PFloat;
 begin
-  if Data=nil then
+  {$ifndef minimal}
+  //Array size can only be changed in zdesigner, not runtime
+  if Limit<>SizeDim1 * (SizeDim2+1) * (SizeDim3+1) then
     AllocData;
-  Result := PFloat(Data);
+  {$endif}
+  if Persistent then
+  begin
+    if Values.Data=nil then
+      AllocData;
+    Result := PFloat(Values.Data)
+  end
+  else
+  begin
+    if Data=nil then
+      AllocData;
+    Result := PFloat(Data);
+  end;
 end;
 
 procedure TDefineArray.AllocData;
 var
   ByteSize: Integer;
+  P : PPointer;
+  WasNil : boolean;
 begin
   Limit := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
   ByteSize := Limit * SizeOf(single);
-  GetMem(Data, ByteSize);
-  FillChar(Data^, ByteSize, 0);
+  if Persistent then
+  begin
+    Self.Values.Size := ByteSize;
+    P := @Self.Values.Data
+  end
+  else
+    P := @Self.Data;
+  WasNil := P^ = nil;
+  ReallocMem(P^, ByteSize);
+  if WasNil then
+    FillChar(P^^, ByteSize, 0);
 end;
 
 function TDefineArray.PopAndGetElement : PFloat;
 var
   Index,I1,I2,I3 : integer;
+  P : PFloatArray;
 begin
   StackPopTo(I3);
   if Self.Dimensions>=dadTwo then
@@ -800,24 +824,14 @@ begin
   else
     I1 := 0;
 
-  {$ifndef minimal}
-  //Array size can only be changed in zdesigner, not runtime
-  if Limit<>SizeDim1 * (SizeDim2+1) * (SizeDim3+1) then
-  begin
-    CleanUp;
-    Data := nil;
-  end;
-  {$endif}
-
-  if Data=nil then
-    AllocData;
-
   case Self.Dimensions of
     dadOne: Index := I3;
     dadTwo: Index := (I2*SizeDim2) + I3;
   else
     Index := (I1*SizeDim2*SizeDim3) + (I2*SizeDim3) + I3;
   end;
+
+  P := PFloatArray(GetData);
 
   {$ifndef minimal}
   if ((Index<0) or (Index>=Limit)) or
@@ -835,7 +849,7 @@ begin
   end;
   {$endif}
 
-  Result := @Data^[ Index ];
+  Result := @P^[Index];
 end;
 
 { TExpArrayWrite }

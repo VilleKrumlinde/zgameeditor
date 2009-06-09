@@ -356,7 +356,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.7';
+  AppVersion = '1.9.8b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -917,7 +917,8 @@ begin
   else if not RenderAborted then
   begin
     //Gör update på hela trädet för att prop-ändringar skall slå igenom
-    Root.Update;
+//    Root.Update;
+    ShowNode.Update;
 
     glViewport(0, 0, Glp.Width, Glp.Height);
 
@@ -925,7 +926,6 @@ begin
       FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[2],-1) );
 
-    //ShowNode.Update;
     if {(ShowNode is TBitmapProducer) or }(ShowNode is TZBitmap)then
       DrawZBitmap
     else if {(ShowNode is TMeshProducer) or }(ShowNode is TMesh) then
