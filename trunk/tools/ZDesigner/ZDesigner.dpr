@@ -72,7 +72,8 @@ uses
   Zc_Ops in 'expr\Zc_Ops.pas',
   frmBitmapEdit in 'frmBitmapEdit.pas' {BitmapEditFrame: TFrame},
   SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
-  frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame};
+  frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame},
+  frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm};
 
 {$R *.res}
 

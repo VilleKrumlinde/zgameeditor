@@ -1136,7 +1136,7 @@ begin
   Buf.dwSize := SizeOf(Buf);
   Buf.dwBufferBytes := SoundBufferByteSize;
   Buf.lpwfxFormat := @Fmt;
-  Buf.dwFlags := DSBCAPS_GETCURRENTPOSITION2;
+  Buf.dwFlags := DSBCAPS_GETCURRENTPOSITION2 or DSBCAPS_GLOBALFOCUS;
   Err:=DS.Vtbl.CreateSoundBuffer(DS,Buf,@DSBuffer,nil);
   if Err<>0 then
     ZHalt('dsound.createSoundBuffer failed');
