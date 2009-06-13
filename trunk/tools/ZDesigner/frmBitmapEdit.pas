@@ -43,6 +43,7 @@ type
     GraphSize : TPoint;
     Glp : TCustomGLPanel;
     OldGlParent : TWinControl;
+    PreviewThread : TThread;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -103,6 +104,15 @@ type
     constructor Create(BitmapNodes : TObjectList);
     procedure ExtractNodes; override;
     procedure ApplyNodes; override;
+  end;
+
+  TPreviewThread = class(TThread)
+  private
+    CurMsg : string;
+    procedure DoMsg;
+    procedure Status(const Msg : string);
+  protected
+    procedure Execute; override;
   end;
 
 { TBitmapNode }
@@ -359,6 +369,17 @@ begin
   InitPopupMenu;
 
 //  PreviewPanel.DoubleBuffered := True;
+{  PreviewThread := TPreviewThread.Create(True);
+  PreviewThread.FreeOnTerminate := True;
+  PreviewThread.Resume;}
+end;
+
+
+destructor TBitmapEditFrame.Destroy;
+begin
+  Nodes.Free;
+//  PreviewThread.Terminate;
+  inherited;
 end;
 
 procedure TBitmapEditFrame.InitPopupMenu;
@@ -405,13 +426,6 @@ begin
   finally
     L.Free;
   end;
-end;
-
-
-destructor TBitmapEditFrame.Destroy;
-begin
-  Nodes.Free;
-  inherited;
 end;
 
 procedure TBitmapEditFrame.DisablePreviewCheckBoxClick(Sender: TObject);
@@ -899,5 +913,28 @@ begin
   RepaintPage;
   Glp.Invalidate;
 end;
+
+{ TPreviewThread }
+
+procedure TPreviewThread.Execute;
+begin
+//  Status('Thread started');
+  while not Terminated do
+  begin
+    Sleep(100);
+  end;
+end;
+
+procedure TPreviewThread.Status(const Msg: string);
+begin
+  CurMsg := Msg;
+  Synchronize(Self,DoMsg);
+end;
+
+procedure TPreviewThread.DoMsg;
+begin
+  GetLog(Self.ClassName).Write(CurMsg);
+end;
+
 
 end.

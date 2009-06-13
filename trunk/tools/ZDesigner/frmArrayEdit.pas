@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs,ZExpressions, Grids, StdCtrls;
+  Dialogs,ZExpressions, Grids, StdCtrls, ZClasses;
 
 type
   TArrayEditForm = class(TForm)
@@ -15,6 +15,8 @@ type
   private
     { Private declarations }
     TheArray : TDefineArray;
+    function ValueAsText(P : PFloat) : string;
+    procedure SetValueFromText(const S: String; P: PFloat);
   public
     { Public declarations }
     procedure SetArray(A : TDefineArray);
@@ -27,17 +29,15 @@ implementation
 
 {$R *.dfm}
 
-uses ZClasses,DesignerGUI;
+uses DesignerGUI;
 
 { TArrayEditForm }
 
 procedure TArrayEditForm.GridSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
 var
-  FValue : single;
   P : PFloat;
   Index : integer;
 begin
-  FValue := StrToFloatDef(Value,0);
   P := TheArray.GetData;
   Index := 0;
   case TheArray.Dimensions of
@@ -51,7 +51,7 @@ begin
       end;
   end;
   Inc(P,Index);
-  P^ := FValue;
+  SetValueFromText(Value,P);
 end;
 
 procedure TArrayEditForm.SetArray(A: TDefineArray);
@@ -70,7 +70,7 @@ begin
         P := A.GetData;
         for I := 0 to A.SizeDim1 - 1 do
         begin
-          Grid.Cells[I+1,1] := DesignerFormatFloat(P^);
+          Grid.Cells[I+1,1] := ValueAsText(P);
           Inc(P);
         end;
       end;
@@ -87,12 +87,28 @@ begin
         begin
           for J := 0 to A.SizeDim2 - 1 do
           begin
-            Grid.Cells[J+1,I+1] := DesignerFormatFloat(P^);
+            Grid.Cells[J+1,I+1] := ValueAsText(P);
             Inc(P);
           end;
         end;
       end;
     dadThree: ;
+  end;
+end;
+
+function TArrayEditForm.ValueAsText(P: PFloat): string;
+begin
+  case TheArray._Type of
+    dvbFloat: Result := DesignerFormatFloat(P^);
+    dvbInt: Result := IntToStr(PInteger(P)^);
+  end;
+end;
+
+procedure TArrayEditForm.SetValueFromText(const S : String; P: PFloat);
+begin
+  case TheArray._Type of
+    dvbFloat: P^ := StrToFloatDef(S,0);
+    dvbInt: PInteger(P)^ := StrToIntDef(S,0);
   end;
 end;
 
