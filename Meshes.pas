@@ -209,6 +209,8 @@ type
     LastPosition : TZVector3f;  //Används i collision
     CollisionCoordinates : TCollisionCoordinates;
     CollisionCoordinatesUpdatedTime : single;
+    RenderOrder : (roNormal,roDepthsorted);
+    SortKey : single; //Used when depthsorting models
     procedure Update; override;        //anropas ej ifall active=false
     procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
@@ -688,6 +690,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CollisionOffset',{$ENDIF}integer(@CollisionOffset) - integer(Self), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'CollisionStyle',{$ENDIF}integer(@CollisionStyle) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(CollisionStyleNames);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderOrder',{$ENDIF}integer(@RenderOrder) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Normal','Depthsorted']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}integer(@Personality) - integer(Self), zptFloat);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;

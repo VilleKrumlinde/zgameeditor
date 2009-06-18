@@ -50,6 +50,9 @@ type
   end;
 
   TZApplication = class(TZComponent)
+  strict private
+    DepthList : TZArrayList;
+    procedure RenderModels;
   private
     FpsFrames : integer;
     FpsCounter,FpsTime : single;
@@ -150,7 +153,7 @@ var
 
 implementation
 
-uses ZPlatform,ZOpenGL,ZLog,AudioPlayer
+uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -168,6 +171,7 @@ begin
   Models := TModels.Create;
 
   Collisions := TCollisionChecks.Create(Models);
+  DepthList := TZArrayList.CreateReferenced;
 end;
 
 destructor TZApplication.Destroy;
@@ -181,6 +185,7 @@ begin
 
   Collisions.Free;
   Font.Free;
+  DepthList.Free;
   if not HasShutdown then
     Shutdown;
   inherited;
@@ -436,11 +441,86 @@ begin
 end;
 
 
-procedure TZApplication.UpdateScreen;
+procedure SortModels(List : TZArrayList);
+//http://en.wikipedia.org/wiki/Cocktail_sort
+//http://www.algorithm-code.com/wiki/Cocktail_sort
+var
+  First,Last,I,Shift : integer;
+begin
+  Shift := 0;
+  First := 0;
+  Last := List.Count-1;
+  while First<Last do
+  begin
+    for I := First+1 to Last do
+    begin
+      if TModel(List[I]).SortKey<TModel(List[I-1]).SortKey then
+      begin
+        List.Swap(I,I-1);
+        Shift := I;
+      end;
+    end;
+    Last := Shift;
+    for I := Last downto First+1 do
+    begin
+      if TModel(List[I]).SortKey<TModel(List[I-1]).SortKey then
+      begin
+        List.Swap(I,I-1);
+        Shift := I;
+      end;
+    end;
+    First := Shift;
+  end;
+end;
+
+procedure TZApplication.RenderModels;
 var
   I,J : integer;
   Model : TModel;
   List : TZArrayList;
+  Matrix{,TmpM} : TZMatrix4f;
+  V : TZVector3f;
+begin
+  DepthList.Clear;
+
+  glGetFloatv(GL_PROJECTION_MATRIX, @Matrix);
+//  glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
+//  Matrix := MatrixMultiply(TmpM,Matrix);
+
+  for I := 0 to Models.Cats.Count-1 do
+  begin
+    List := Models.Get(I);
+    for J := 0 to List.Count-1 do
+    begin
+      Model := TModel(List[J]);
+      if Model.RenderOrder=roDepthsorted then
+      begin
+        //Get screen Z-position
+        VectorTransform(Model.Position,Matrix,V);
+        Model.SortKey := V[2];
+        DepthList.Add(Model)
+      end
+      else
+      begin
+        Meshes.CurrentModel := Model;
+        Renderer.RenderModel(Model);
+      end;
+    end;
+  end;
+
+  SortModels(DepthList);
+
+  for I := DepthList.Count-1 downto 0 do
+  begin
+    Model := TModel(DepthList[I]);
+    Meshes.CurrentModel := Model;
+    Renderer.RenderModel(Model);
+  end;
+
+  Meshes.CurrentModel := nil;
+end;
+
+procedure TZApplication.UpdateScreen;
 begin
   {$ifdef zminimal}
   //always update in designer because user may have changed the ViewportRatio dropdown
@@ -475,18 +555,7 @@ begin
 
   Renderer.Render_Begin;
 
-  //Render models
-  for I := 0 to Models.Cats.Count-1 do
-  begin
-    List := Models.Get(I);
-    for J := 0 to List.Count-1 do
-    begin
-      Model := TModel(List[J]);
-      Meshes.CurrentModel := Model;
-      Renderer.RenderModel(Model);
-    end;
-  end;
-  Meshes.CurrentModel := nil;
+  RenderModels;
 
   //Render application
   glPushMatrix;

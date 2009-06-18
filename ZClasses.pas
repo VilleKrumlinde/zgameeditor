@@ -172,6 +172,7 @@ type
     procedure Push(Item : TObject);
     function Pop : TObject;
     function GetPtrToItem(Index: Integer): pointer;
+    procedure Swap(Index1,Index2 : integer);
   end;
 
   //Används som property i komponenter för att hålla children-komponenter
@@ -1141,6 +1142,15 @@ function TZArrayList.GetPtrToItem(Index: Integer): pointer;
 begin
   {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Result := @List^[Index];
+end;
+
+procedure TZArrayList.Swap(Index1,Index2 : integer);
+var
+  Tmp : TObject;
+begin
+  Tmp := List^[Index1];
+  List^[Index1] := List^[Index2];
+  List^[Index2] := Tmp;
 end;
 
 procedure TZArrayList.SetItem(Index: Integer; const Value: TObject);
