@@ -37,4 +37,25 @@ object ArrayEditForm: TArrayEditForm
     TabOrder = 1
     OnSetEditText = GridSetEditText
   end
+  object UpDown1: TUpDown
+    Left = 57
+    Top = 246
+    Width = 24
+    Height = 21
+    Anchors = [akLeft, akBottom]
+    Associate = Dim3Edit
+    Orientation = udHorizontal
+    TabOrder = 2
+    OnChangingEx = UpDown1ChangingEx
+  end
+  object Dim3Edit: TEdit
+    Left = 16
+    Top = 246
+    Width = 41
+    Height = 21
+    Anchors = [akLeft, akBottom]
+    ReadOnly = True
+    TabOrder = 3
+    Text = '0'
+  end
 end

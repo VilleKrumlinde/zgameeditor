@@ -1533,12 +1533,6 @@ var
       ShowMessage('Set "Persistent" before editing arrays');
       Exit;
     end;
-    if A.Dimensions>dadTwo then
-    begin
-      ShowMessage('Cannot edit three-dimensional arrays');
-      Exit;
-    end;
-
     if ArrayEditForm=nil then
       Application.CreateForm(TArrayEditForm,ArrayEditForm);
     ArrayEditForm.SetArray(A);
