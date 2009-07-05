@@ -30,13 +30,16 @@ type
   TZPropertyEditor =  class(TScrollBox)
   private
     C : TZComponent;
+    LastWidth : integer;
     procedure RebuildGui;
     procedure OnPropEditValueChanged;
+    procedure MyOnResize(Sender: TObject);
   public
     RootComponent : TZComponent;
     OnPropValueChanged : TPropValueChangedEvent;
     WantsFocus : TWinControl;
     procedure SetComponent(C : TZComponent);
+    constructor Create(Owner : TComponent); override;
   end;
 
   TZComponentTreeNode = class(TTreeNode)
@@ -227,6 +230,19 @@ begin
   RebuildGui;
 end;
 
+constructor TZPropertyEditor.Create(Owner: TComponent);
+begin
+  inherited Create(Owner);
+  Self.OnResize := MyOnResize;
+end;
+
+procedure TZPropertyEditor.MyOnResize(Sender : TObject);
+begin
+  if Visible and (Self.Width<>LastWidth) then
+    RebuildGUI;
+  LastWidth := Self.Width;
+end;
+
 procedure TZPropertyEditor.RebuildGui;
 var
   PropList : TZPropertyList;
@@ -343,11 +359,8 @@ begin
 
   NamePanel := TPanel.Create(Self);
   NamePanel.Align := alLeft;
-//  NamePanel.Anchors := [akLeft,akTop,akRight];
-//  NamePanel.Caption := Prop.Name;
-//  NamePanel.Alignment := taLeftJustify;
   NamePanel.BevelOuter := bvNone;
-  NamePanel.Width := 120;
+  NamePanel.Width := Max(120, (Owner as TWinControl).Width div 3);
   NamePanel.Parent := Self;
   NamePanel.Alignment := taLeftJustify;
 
@@ -361,6 +374,7 @@ begin
   NameLabel.Caption := Prop.Name;
   NameLabel.Parent := NamePanel;}
   NamePanel.Caption := ' ' + Prop.Name;
+  NamePanel.Hint := Prop.Name;
 
   if IsReadOnlyProp then
     NamePanel.Font.Color := clGrayText

@@ -80,6 +80,7 @@ type
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
     UniformVariables : TZComponentList;
+    UpdateVarsOnEachUse : boolean;
     destructor Destroy; override;
   end;
 
@@ -1828,6 +1829,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}integer(@FragmentShaderSource) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}integer(@UniformVariables) - integer(Self), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}integer(@UpdateVarsOnEachUse) - integer(Self), zptBoolean);
 end;
 
 destructor TShader.Destroy;
@@ -1977,9 +1979,8 @@ begin
   glUseProgram(ProgHandle);
 
   //Update uniform variables once each frame
-  if (UniformVariables.Count>0)
-    //Time is not moving in designer, need to update anyway
-    {$ifdef minimal}and (LastVariableUpdate<>ZApp.Time){$endif}
+  if (UniformVariables.Count>0) and
+    ((LastVariableUpdate<>ZApp.Time) or Self.UpdateVarsOnEachUse)
     then
   begin
     if ReinitDone then
