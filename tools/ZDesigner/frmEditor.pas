@@ -378,6 +378,8 @@ var
 begin
   inherited Create(AOwner);
 
+  ZLog.SetReceiverFunc(OnReceiveLogMessage);
+
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
   DecimalSeparator := '.';
@@ -466,8 +468,6 @@ begin
   PredefinedConstants.Add(Con);
 
   ResetCamera;
-
-  ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
   AboutAction.Caption := 'About ' + AppName;
 
@@ -883,10 +883,18 @@ begin
 end;
 
 procedure TEditorForm.OnGlInit(Sender: TObject);
+var
+  P : PChar;
 begin
   Renderer.InitRenderer;
   if not ShadersSupported then
-    ZLog.GetLog(Self.ClassName).Write('GL shaders not supported');
+    ZLog.GetLog(Self.ClassName).Write('GL shaders not supported')
+  else
+  begin
+    P := glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if P<>nil then
+      ZLog.GetLog(Self.ClassName).Write('GL shaders: ' + P)
+  end;
   if not MultiTextureSupported then
     ZLog.GetLog(Self.ClassName).Write('GL multitexture not supported');
   if not VbosSupported then
