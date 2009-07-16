@@ -199,7 +199,7 @@ function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : 
 begin
   Result := ParsePropRef(SymTab,Component,VarName,Ref);
   if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes)
-    or (Ref.Prop.PropertyType in [zptInteger,zptByte]))) then
+    or (Ref.Prop.PropertyType in [zptInteger,zptByte,zptBoolean]))) then
     raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
 end;
 
@@ -269,7 +269,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       //Property reference
       if not GetPropRef(Op.Id,Source) then
         raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
-      if Source.Prop.PropertyType=zptByte then
+      if Source.Prop.PropertyType in [zptByte,zptBoolean] then
         C := TExpPropValue1.Create(Target)
       else
         C := TExpPropValue4.Create(Target);
@@ -406,7 +406,7 @@ begin
     if C.Target.Prop.IsReadOnly then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
 
-    if C.Target.Prop.PropertyType=zptByte then
+    if C.Target.Prop.PropertyType in [zptByte,zptBoolean] then
       AssignSize:=1
     else
       AssignSize:=4;

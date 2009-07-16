@@ -159,7 +159,7 @@ function TZcOp.GetDataType: TZcDataType;
         Result := zctFloat
       else
         case Ref.Prop.PropertyType of
-          zptInteger,zptByte : Result := zctInt;
+          zptInteger,zptByte,zptBoolean : Result := zctInt;
         end;
     end;
   end;

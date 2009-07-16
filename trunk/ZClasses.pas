@@ -39,7 +39,7 @@ type
  BitmapConvolutionClassId,
  MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
- MeshCombineClassId,MeshLoadClassId,
+ MeshCombineClassId,MeshLoadClassId,MeshTransformClassId,
  RemoveAllModelsClassId,
  MeshImplicitClassId,ImplicitPrimitiveClassId,ImplicitExpressionClassId,ImplicitCombineClassId,
  ImplicitWarpClassId,MeshImportClassId,

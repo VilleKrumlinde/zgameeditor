@@ -100,6 +100,7 @@ procedure InvertMatrix(var M : TZMatrix4f);
 procedure ScaleMatrix(var M : TZMatrix4f; const factor : Single);
 procedure VectorTransform(const V: TZVector3f; const M: TZMatrix4f; out Result : TZVector3f);
 procedure CreateScaleAndTranslationMatrix(const scale, offset : TZVector3f; out Result : TZMatrix4f);
+function CreateTransform(const Rotation,Scale,Position : TZVector3f) : TZMatrix4f;
 
 procedure SinCos(const Theta: Single; out Sin, Cos: Single);
 procedure CreateRotationMatrixX(const Angle : Single; out Result : TZMatrix4f);
@@ -897,6 +898,33 @@ asm
   fxch
   fpatan
 end;
+
+function CreateTransform(const Rotation,Scale,Position : TZVector3f) : TZMatrix4f;
+var
+  Tmp : TZMatrix4f;
+begin
+  Result := IdentityHmgMatrix;
+  //Rotation är i cycles för att då är det lättare att rotera interaktivt i zdesigner
+  //0.5 = ett kvarts varv etc
+  if Rotation[0]<>0 then
+  begin
+    CreateRotationMatrixX( CycleToRad(Rotation[0]) ,Tmp);
+    Result := MatrixMultiply(Result,Tmp);
+  end;
+  if Rotation[1]<>0 then
+  begin
+    CreateRotationMatrixY( CycleToRad(Rotation[1]),Tmp);
+    Result := MatrixMultiply(Result,Tmp);
+  end;
+  if Rotation[2]<>0 then
+  begin
+    CreateRotationMatrixZ( CycleToRad(Rotation[2]),Tmp);
+    Result := MatrixMultiply(Result,Tmp);
+  end;
+  CreateScaleAndTranslationMatrix(Scale,Position,Tmp);
+  Result := MatrixMultiply(Result,Tmp);
+end;
+
 
 //http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
 
