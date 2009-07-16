@@ -1012,28 +1012,9 @@ end;
 
 procedure TImplicitFunction.Prepare;
 var
-  M,Tmp : TZMatrix4f;
+  M : TZMatrix4f;
 begin
-  M := IdentityHmgMatrix;
-  //Rotation är i cycles för att då är det lättare att rotera interaktivt i zdesigner
-  //0.5 = ett kvarts varv etc
-  if Rotation[0]<>0 then
-  begin
-    CreateRotationMatrixX( CycleToRad(Rotation[0]) ,Tmp);
-    M := MatrixMultiply(M,Tmp);
-  end;
-  if Rotation[1]<>0 then
-  begin
-    CreateRotationMatrixY( CycleToRad(Rotation[1]),Tmp);
-    M := MatrixMultiply(M,Tmp);
-  end;
-  if Rotation[2]<>0 then
-  begin
-    CreateRotationMatrixZ( CycleToRad(Rotation[2]),Tmp);
-    M := MatrixMultiply(M,Tmp);
-  end;
-  CreateScaleAndTranslationMatrix(Scale,Position,Tmp);
-  M := MatrixMultiply(M,Tmp);
+  M := CreateTransform(Self.Rotation,Self.Scale,Self.Position);
   InvertMatrix(M);
   InverseTransform := M;
 end;

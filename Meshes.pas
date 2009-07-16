@@ -149,6 +149,17 @@ type
     {$ifndef minimal}function GetDisplayName: String; override;{$endif}
   end;
 
+  //Transforms the vertices of the incoming mesh
+  TMeshTransform = class(TMeshProducer)
+  protected
+    Matrix : TZMatrix4f;
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+    Position : TZVector3f;
+    Rotation : TZVector3f;
+    Accumulate : boolean;
+  end;
 
   //State for models
   TModelState = class(TStateBase)
@@ -1704,6 +1715,41 @@ begin
   Stack.Push(M);
 end;
 
+{ TMeshTransform }
+
+procedure TMeshTransform.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Accumulate',{$ENDIF}integer(@Accumulate) - integer(Self), zptBoolean);
+end;
+
+procedure TMeshTransform.ProduceOutput(Content : TContent; Stack: TZArrayList);
+var
+  Mesh : TMesh;
+  I : integer;
+  V : TZVector3f;
+begin
+  {$ifndef minimal}
+  if Stack.Count=0 then exit;
+  {$endif}
+  Mesh := TMesh(Stack.Pop);
+
+  if not Self.Accumulate then
+    Self.Matrix := IdentityHmgMatrix;
+
+  Self.Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Self.Matrix);
+
+  for I := 0 to Mesh.VerticesCount-1 do
+  begin
+    VecCopy3(Mesh.Vertices^[I],V);
+    VectorTransform(V,Self.Matrix,Mesh.Vertices^[I]);
+  end;
+
+  Stack.Push(Mesh);
+end;
+
 initialization
 
   ZClasses.Register(TMesh,MeshClassId);
@@ -1727,6 +1773,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
   ZClasses.Register(TMeshLoad,MeshLoadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+  ZClasses.Register(TMeshTransform,MeshTransformClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
 
   ZClasses.Register(TModel,ModelClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 13;{$endif}

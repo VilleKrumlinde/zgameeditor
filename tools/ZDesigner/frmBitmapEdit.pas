@@ -43,7 +43,7 @@ type
     GraphSize : TPoint;
     Glp : TCustomGLPanel;
     OldGlParent : TWinControl;
-    PreviewThread : TThread;
+    //PreviewThread : TThread;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -106,14 +106,14 @@ type
     procedure ApplyNodes; override;
   end;
 
-  TPreviewThread = class(TThread)
+{  TPreviewThread = class(TThread)
   private
     CurMsg : string;
     procedure DoMsg;
     procedure Status(const Msg : string);
   protected
     procedure Execute; override;
-  end;
+  end;}
 
 { TBitmapNode }
 
@@ -916,9 +916,8 @@ end;
 
 { TPreviewThread }
 
-procedure TPreviewThread.Execute;
+(*procedure TPreviewThread.Execute;
 begin
-//  Status('Thread started');
   while not Terminated do
   begin
     Sleep(100);
@@ -934,7 +933,7 @@ end;
 procedure TPreviewThread.DoMsg;
 begin
   GetLog(Self.ClassName).Write(CurMsg);
-end;
+end;*)
 
 
 end.
