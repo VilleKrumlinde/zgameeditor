@@ -394,7 +394,8 @@ begin
   M.Colors :=nil;
   M.Free;
   {$ifdef zlog}
-  ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+  if (not ZApp.DesignerIsRunning) then
+    ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
   {$endif}
 end;
 

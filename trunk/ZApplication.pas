@@ -111,6 +111,7 @@ type
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
+    DesignerIsRunning : boolean;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -699,10 +700,12 @@ begin
   //Uppdatera träd initialt
   Content.Update;
   OnLoaded.ExecuteCommands;
+  DesignerIsRunning := True;
 end;
 
 procedure TZApplication.DesignerStop;
 begin
+  DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;
   Collisions.ClearAll
