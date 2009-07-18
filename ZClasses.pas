@@ -511,7 +511,7 @@ var
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$IFNDEF MINIMAL},Classes,LibXmlParser,SysUtils,Contnrs,Math,zlib{$ENDIF}
+  {$IFNDEF MINIMAL},Classes,LibXmlParser,SysUtils,Contnrs,Math,zlib, ZApplication{$ENDIF}
   ;
 
 
@@ -3063,7 +3063,7 @@ begin
   GlobalContent := Save;
 
   {$ifndef minimal}
-  if Producers.Count>0 then
+  if (Producers.Count>0) and (not ZApp.DesignerIsRunning) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + GetDisplayName);
   {$endif}
 end;
