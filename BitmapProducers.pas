@@ -1082,7 +1082,7 @@ begin
 
   SaveSeed := RandSeed;
   RandSeed := Self.RandomSeed;
-  for I := 0 to NOfPoints*(PixelCount div 4096) - 1 do    //the mean is <NOfPoints> pixels in 64x64 texture
+  for I := 0 to Round(NOfPoints*(PixelCount / 4096)) - 1 do    //the mean is <NOfPoints> pixels in 64x64 texture
   begin
     Pixel := Pixels;
     inc(Pixel,System.Random(PixelCount));
