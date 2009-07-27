@@ -903,7 +903,7 @@ function CreateTransform(const Rotation,Scale,Position : TZVector3f) : TZMatrix4
 var
   Tmp : TZMatrix4f;
 begin
-  Result := IdentityHmgMatrix;
+  CreateScaleAndTranslationMatrix(Scale, Vector3f(0,0,0), Result);
   //Rotation är i cycles för att då är det lättare att rotera interaktivt i zdesigner
   //0.5 = ett kvarts varv etc
   if Rotation[0]<>0 then
@@ -921,7 +921,7 @@ begin
     CreateRotationMatrixZ( CycleToRad(Rotation[2]),Tmp);
     Result := MatrixMultiply(Result,Tmp);
   end;
-  CreateScaleAndTranslationMatrix(Scale,Position,Tmp);
+  CreateScaleAndTranslationMatrix(UNIT_XYZ3 ,Position,Tmp);
   Result := MatrixMultiply(Result,Tmp);
 end;
 
