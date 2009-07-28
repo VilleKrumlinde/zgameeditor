@@ -152,7 +152,7 @@ type
   //Transforms the vertices of the incoming mesh
   TMeshTransform = class(TMeshProducer)
   protected
-    Matrix : TZMatrix4f;
+    Matrix,NormalMatrix : TZMatrix4f;
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
   public
@@ -1738,14 +1738,20 @@ begin
   Mesh := TMesh(Stack.Pop);
 
   if not Self.Accumulate then
+  begin
     Self.Matrix := IdentityHmgMatrix;
+    Self.NormalMatrix := IdentityHmgMatrix;
+  end;
 
   Self.Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Self.Matrix);
+  Self.NormalMatrix := MatrixMultiply(CreateTransform(Self.Rotation,UNIT_XYZ3,Vector3f(0,0,0)),Self.NormalMatrix);
 
   for I := 0 to Mesh.VerticesCount-1 do
   begin
     VecCopy3(Mesh.Vertices^[I],V);
     VectorTransform(V,Self.Matrix,Mesh.Vertices^[I]);
+    VecCopy3(Mesh.Normals^[I],V);
+    VectorTransform(V,Self.NormalMatrix,Mesh.Normals^[I]);
   end;
 
   Stack.Push(Mesh);
