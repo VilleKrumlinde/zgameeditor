@@ -2,8 +2,8 @@ object EditorForm: TEditorForm
   Left = 0
   Top = 0
   Caption = 'ZDesigner'
-  ClientHeight = 677
-  ClientWidth = 801
+  ClientHeight = 685
+  ClientWidth = 992
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,10 +21,10 @@ object EditorForm: TEditorForm
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter2: TSplitter
-    Left = 80
+    Left = 280
     Top = 22
     Width = 4
-    Height = 655
+    Height = 663
     ExplicitLeft = 433
     ExplicitTop = 30
     ExplicitHeight = 537
@@ -32,33 +32,37 @@ object EditorForm: TEditorForm
   object LeftPanel: TPanel
     Left = 0
     Top = 22
-    Width = 80
-    Height = 655
+    Width = 280
+    Height = 663
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitHeight = 655
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
-      Width = 80
-      Height = 655
+      Width = 280
+      Height = 663
       Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
+      ExplicitHeight = 655
     end
   end
   object ViewerPanel: TPanel
-    Left = 84
+    Left = 284
     Top = 22
-    Width = 717
-    Height = 655
+    Width = 708
+    Height = 663
     Align = alClient
     TabOrder = 1
+    ExplicitWidth = 523
+    ExplicitHeight = 655
     object Splitter1: TSplitter
       Left = 1
-      Top = 494
-      Width = 715
+      Top = 502
+      Width = 706
       Height = 4
       Cursor = crVSplit
       Align = alBottom
@@ -67,14 +71,16 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 1
-      Top = 498
-      Width = 715
+      Top = 506
+      Width = 706
       Height = 156
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitTop = 498
+      ExplicitWidth = 521
       object Splitter4: TSplitter
-        Left = 542
+        Left = 533
         Top = 0
         Height = 156
         Align = alRight
@@ -85,18 +91,19 @@ object EditorForm: TEditorForm
       object CustomPropEditorsPageControl: TPageControl
         Left = 0
         Top = 0
-        Width = 542
+        Width = 533
         Height = 156
         ActivePage = TabSheet3
         Align = alClient
         TabOrder = 0
+        ExplicitWidth = 348
         object TabSheet2: TTabSheet
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
           ExplicitLeft = 0
           ExplicitTop = 0
-          ExplicitWidth = 0
+          ExplicitWidth = 534
           ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
@@ -104,10 +111,10 @@ object EditorForm: TEditorForm
           TabVisible = False
           ExplicitLeft = 0
           ExplicitTop = 0
-          ExplicitWidth = 0
+          ExplicitWidth = 534
           ExplicitHeight = 0
           DesignSize = (
-            534
+            525
             146)
           object Label1: TLabel
             Left = 16
@@ -120,35 +127,34 @@ object EditorForm: TEditorForm
           object TrackBar1: TTrackBar
             Left = 8
             Top = 25
-            Width = 523
+            Width = 514
             Height = 45
             Anchors = [akLeft, akTop, akRight]
             Max = 1000
             TabOrder = 0
             TickStyle = tsNone
             OnChange = TrackBar1Change
+            ExplicitWidth = 523
           end
         end
         object TabSheet3: TTabSheet
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
+          ExplicitWidth = 340
           DesignSize = (
-            534
+            525
             146)
           object ExprPanel: TGroupBox
             Left = 0
             Top = 0
-            Width = 534
+            Width = 525
             Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = '&Code editor'
             TabOrder = 0
+            ExplicitWidth = 340
           end
           object ExprCompileButton: TButton
             Left = 8
@@ -164,7 +170,7 @@ object EditorForm: TEditorForm
           object CompileErrorLabel: TStaticText
             Left = 168
             Top = 113
-            Width = 363
+            Width = 354
             Height = 26
             Anchors = [akLeft, akRight, akBottom]
             AutoSize = False
@@ -178,6 +184,7 @@ object EditorForm: TEditorForm
             ParentFont = False
             TabOrder = 2
             Transparent = False
+            ExplicitWidth = 169
           end
           object ExprHelpButton: TButton
             Left = 87
@@ -196,10 +203,10 @@ object EditorForm: TEditorForm
           TabVisible = False
           ExplicitLeft = 0
           ExplicitTop = 0
-          ExplicitWidth = 0
+          ExplicitWidth = 534
           ExplicitHeight = 0
           DesignSize = (
-            534
+            525
             146)
           object Label6: TLabel
             Left = 96
@@ -224,22 +231,24 @@ object EditorForm: TEditorForm
           object ShaderPanel: TPanel
             Left = 0
             Top = 0
-            Width = 534
+            Width = 525
             Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = 'Placeholder f'#246'r synedit'
             TabOrder = 1
+            ExplicitWidth = 534
           end
         end
       end
       object LogPanel: TPanel
-        Left = 545
+        Left = 536
         Top = 0
         Width = 170
         Height = 156
         Align = alRight
         TabOrder = 1
+        ExplicitLeft = 351
         object LogListBox: TListBox
           Left = 1
           Top = 1
@@ -264,16 +273,18 @@ object EditorForm: TEditorForm
     object Panel2: TPanel
       Left = 1
       Top = 1
-      Width = 715
-      Height = 493
+      Width = 706
+      Height = 501
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
+      ExplicitWidth = 521
+      ExplicitHeight = 493
       object Splitter3: TSplitter
         Left = 291
         Top = 0
         Width = 4
-        Height = 493
+        Height = 501
         ExplicitLeft = 100
         ExplicitHeight = 574
       end
@@ -281,33 +292,35 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 291
-        Height = 493
+        Height = 501
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
+        ExplicitHeight = 493
       end
       object ViewerPageControl: TPageControl
         Left = 295
         Top = 0
-        Width = 420
-        Height = 493
+        Width = 411
+        Height = 501
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
+        ExplicitWidth = 226
+        ExplicitHeight = 493
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
+          ExplicitWidth = 218
+          ExplicitHeight = 483
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
-            Width = 412
+            Width = 403
             Height = 50
             Align = alTop
             TabOrder = 0
+            ExplicitWidth = 218
             object ViewTranslateLabel: TLabel
               Left = 416
               Top = 5
@@ -394,7 +407,7 @@ object EditorForm: TEditorForm
               OnChange = ZoomTrackBarChange
             end
             object Panel4: TPanel
-              Left = 157
+              Left = 148
               Top = 1
               Width = 254
               Height = 48
@@ -402,6 +415,7 @@ object EditorForm: TEditorForm
               BevelOuter = bvNone
               ParentBackground = False
               TabOrder = 4
+              ExplicitLeft = -37
               DesignSize = (
                 254
                 48)
@@ -460,10 +474,11 @@ object EditorForm: TEditorForm
           object AppControlPanel: TPanel
             Left = 0
             Top = 50
-            Width = 412
+            Width = 403
             Height = 41
             Align = alTop
             TabOrder = 1
+            ExplicitWidth = 218
             object AppStartButton: TBitBtn
               Left = 7
               Top = 6
@@ -558,28 +573,28 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
+          ExplicitWidth = 218
+          ExplicitHeight = 483
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
-            Width = 412
-            Height = 483
+            Width = 403
+            Height = 491
             Align = alClient
             ParentShowHint = False
             ShowHint = True
             TabOrder = 0
             TabStop = True
-            ExplicitWidth = 412
+            ExplicitWidth = 218
             ExplicitHeight = 483
             inherited PageControl1: TPageControl
-              Width = 412
-              Height = 483
-              ExplicitWidth = 412
-              ExplicitHeight = 483
+              Width = 403
+              Height = 491
+              ExplicitWidth = 218
+              ExplicitHeight = 487
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
-                ExplicitWidth = 404
-                ExplicitHeight = 455
+                ExplicitWidth = 210
+                ExplicitHeight = 459
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -605,7 +620,10 @@ object EditorForm: TEditorForm
                   ExplicitWidth = 19
                 end
                 inherited Panel1: TPanel
+                  Width = 366
+                  ExplicitWidth = 181
                   inherited SoundGraphPaintBox: TPaintBox
+                    Width = 181
                     ExplicitWidth = 245
                   end
                 end
@@ -661,16 +679,18 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
+          ExplicitWidth = 218
+          ExplicitHeight = 487
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
-            Width = 412
-            Height = 483
+            Width = 403
+            Height = 491
             Align = alClient
             TabOrder = 0
             TabStop = True
-            ExplicitWidth = 412
-            ExplicitHeight = 483
+            ExplicitWidth = 218
+            ExplicitHeight = 487
           end
         end
         object ViewerBlankTabSheet: TTabSheet
@@ -679,42 +699,44 @@ object EditorForm: TEditorForm
           TabVisible = False
           ExplicitLeft = 0
           ExplicitTop = 0
-          ExplicitWidth = 0
+          ExplicitWidth = 412
           ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
           TabVisible = False
+          ExplicitWidth = 218
+          ExplicitHeight = 483
           inline BitmapEditFrame1: TBitmapEditFrame
             Left = 0
             Top = 0
-            Width = 412
-            Height = 483
+            Width = 403
+            Height = 491
             Align = alClient
             TabOrder = 0
-            ExplicitWidth = 412
+            ExplicitWidth = 218
             ExplicitHeight = 483
             inherited Splitter1: TSplitter
-              Left = 223
-              Height = 483
+              Left = 214
+              Height = 491
               ExplicitLeft = 223
               ExplicitHeight = 463
             end
             inherited LeftPanel: TGroupBox
-              Width = 223
-              Height = 483
+              Width = 214
+              Height = 491
               ExplicitWidth = 223
               ExplicitHeight = 483
               inherited ScrollBox1: TScrollBox
-                Width = 219
+                Width = 25
                 Height = 466
                 ExplicitWidth = 219
                 ExplicitHeight = 466
               end
             end
             inherited RightPanel: TGroupBox
-              Left = 227
-              Height = 483
+              Left = 218
+              Height = 491
               ExplicitLeft = 227
               ExplicitHeight = 483
               inherited PreviewPanel: TPanel
@@ -731,36 +753,38 @@ object EditorForm: TEditorForm
         object ViewerMeshTabSheet: TTabSheet
           ImageIndex = 5
           TabVisible = False
+          ExplicitWidth = 218
+          ExplicitHeight = 483
           inline MeshEditFrame1: TMeshEditFrame
             Left = 0
             Top = 0
-            Width = 412
-            Height = 483
+            Width = 403
+            Height = 491
             Align = alClient
             TabOrder = 0
-            ExplicitWidth = 412
+            ExplicitWidth = 218
             ExplicitHeight = 483
             inherited Splitter1: TSplitter
-              Left = 223
-              Height = 483
+              Left = 214
+              Height = 491
               ExplicitLeft = 223
               ExplicitHeight = 483
             end
             inherited LeftPanel: TGroupBox
-              Width = 223
-              Height = 483
+              Width = 214
+              Height = 491
               ExplicitWidth = 223
               ExplicitHeight = 483
               inherited ScrollBox1: TScrollBox
-                Width = 219
+                Width = 25
                 Height = 466
                 ExplicitWidth = 219
                 ExplicitHeight = 466
               end
             end
             inherited RightPanel: TGroupBox
-              Left = 227
-              Height = 483
+              Left = 218
+              Height = 491
               ExplicitLeft = 227
               ExplicitHeight = 483
               inherited PreviewPanel: TPanel
@@ -780,7 +804,7 @@ object EditorForm: TEditorForm
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 801
+    Width = 992
     Height = 22
     AutoSize = True
     ButtonWidth = 178
@@ -793,6 +817,7 @@ object EditorForm: TEditorForm
     AllowTextButtons = True
     TabOrder = 2
     Transparent = True
+    ExplicitWidth = 807
     object ToolButton8: TToolButton
       Left = 0
       Top = 0
