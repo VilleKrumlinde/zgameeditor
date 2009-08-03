@@ -1004,6 +1004,9 @@ begin
   if CompEditor<>nil then
     CompEditor.OnEditorClose;
 
+  if IsAppRunning and (not (Node is TZApplication)) then
+    AppPreviewStopAction.Execute;
+
   CompEditor := nil;
   CompEditorTreeNode := nil;
 
