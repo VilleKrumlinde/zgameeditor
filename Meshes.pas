@@ -42,6 +42,7 @@ type
     VboOffsets : array[0..2] of integer;
     procedure FreeData;
   protected
+    procedure Transform(const Matrix,NormalMatrix : TZMatrix4f);
     procedure CopyAndDestroy(Source : TContent); override;
     {$ifndef minimal}
     procedure DefineProperties(List: TZPropertyList); override;
@@ -159,6 +160,18 @@ type
     Position : TZVector3f;
     Rotation : TZVector3f;
     Accumulate : boolean;
+  end;
+
+  TMeshLoop = class(TMeshProducer)
+  protected
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Count : integer;
+    OnIteration : TZComponentList;
+    Iteration : integer;
+    Position : TZVector3f;
+    Rotation : TZVector3f;
   end;
 
   //State for models
@@ -367,6 +380,20 @@ begin
   //Normalize
   for I := 0 to VerticesCount-1 do
     VecNormalize3(Normals^[I]);
+end;
+
+procedure TMesh.Transform(const Matrix,NormalMatrix : TZMatrix4f);
+var
+  I : integer;
+  V : TZVector3f;
+begin
+  for I := 0 to Self.VerticesCount-1 do
+  begin
+    VecCopy3(Self.Vertices^[I],V);
+    VectorTransform(V,Matrix,Self.Vertices^[I]);
+    VecCopy3(Self.Normals^[I],V);
+    VectorTransform(V,NormalMatrix,Self.Normals^[I]);
+  end;
 end;
 
 procedure TMesh.CopyAndDestroy(Source: TContent);
@@ -1643,7 +1670,7 @@ begin
   M := TMesh.Create(nil);
 
   CopyTex := (Mesh1.TexCoords<>nil) and (Mesh2.TexCoords<>nil);
-  CopyCols := (Mesh1.Colors<>nil) and (Mesh2.Colors<>nil);
+  CopyCols := (Mesh1.Colors<>nil) or (Mesh2.Colors<>nil);
   M.CreateData(Mesh1.VerticesCount + Mesh2.VerticesCount,
     (Mesh1.IndicesCount + Mesh2.IndicesCount) div 3,
     CopyTex,CopyCols);
@@ -1661,8 +1688,10 @@ begin
 
   if CopyCols then
   begin
-    Move(Mesh1.Colors^,M.Colors^,Mesh1.VerticesCount * SizeOf(TMeshVertexColor));
-    Move(Mesh2.Colors^,M.Colors^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TMeshVertexColor));
+    if Mesh1.Colors<>nil then
+      Move(Mesh1.Colors^,M.Colors^,Mesh1.VerticesCount * SizeOf(TMeshVertexColor));
+    if Mesh2.Colors<>nil then
+      Move(Mesh2.Colors^,M.Colors^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TMeshVertexColor));
   end;
 
   if CopyTex then
@@ -1729,8 +1758,6 @@ end;
 procedure TMeshTransform.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   Mesh : TMesh;
-  I : integer;
-  V : TZVector3f;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
@@ -1746,15 +1773,68 @@ begin
   Self.Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Self.Matrix);
   Self.NormalMatrix := MatrixMultiply(CreateTransform(Self.Rotation,UNIT_XYZ3,Vector3f(0,0,0)),Self.NormalMatrix);
 
-  for I := 0 to Mesh.VerticesCount-1 do
-  begin
-    VecCopy3(Mesh.Vertices^[I],V);
-    VectorTransform(V,Self.Matrix,Mesh.Vertices^[I]);
-    VecCopy3(Mesh.Normals^[I],V);
-    VectorTransform(V,Self.NormalMatrix,Mesh.Normals^[I]);
-  end;
+  Mesh.Transform(Matrix,NormalMatrix);
 
   Stack.Push(Mesh);
+end;
+
+{ TMeshLoop }
+
+procedure TMeshLoop.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptInteger);
+    List.GetLast.NeverPersist:=True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptVector3f);
+end;
+
+procedure TMeshLoop.ProduceOutput(Content : TContent; Stack: TZArrayList);
+var
+  Mesh : TMesh;
+  I : integer;
+  Matrix,NormalMatrix : TZMatrix4f;
+  Combiner : TMeshCombine;
+  CombineStack : TZArrayList;
+begin
+  Matrix := IdentityHmgMatrix;
+  NormalMatrix := IdentityHmgMatrix;
+
+  CombineStack := TZArrayList.CreateReferenced;
+  Combiner := TMeshCombine.Create(nil);
+
+  Self.Iteration := 0;
+  for I := 0 to Count-1 do
+  begin
+    OnIteration.ExecuteCommands;
+    Inc(Self.Iteration);
+
+    if (I>0) and (Stack.Count>0) then
+    begin
+      Mesh := TMesh(Stack.Pop);
+      Mesh.Transform(Matrix,NormalMatrix);
+
+      if (Stack.Count>0) then
+      begin
+        CombineStack.Clear;
+        CombineStack.Push(Mesh);
+        CombineStack.Push(Stack.Pop);
+        Combiner.ProduceOutput(nil,CombineStack);
+        Mesh := TMesh(CombineStack.Pop);
+      end;
+
+      Stack.Push(Mesh);
+    end;
+
+    Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Matrix);
+    NormalMatrix := MatrixMultiply(CreateTransform(Self.Rotation,UNIT_XYZ3,Vector3f(0,0,0)),NormalMatrix);
+  end;
+
+  CombineStack.Free;
+  Combiner.Free;
 end;
 
 initialization
@@ -1783,6 +1863,8 @@ initialization
   ZClasses.Register(TMeshTransform,MeshTransformClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
+  ZClasses.Register(TMeshLoop,MeshLoopClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
 
   ZClasses.Register(TModel,ModelClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 13;{$endif}
