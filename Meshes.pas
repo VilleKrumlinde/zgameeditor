@@ -421,7 +421,9 @@ begin
   M.Colors :=nil;
   M.Free;
   {$ifdef zlog}
-  if (not ZApp.DesignerIsRunning) then
+  if VerticesCount>High(TMeshVertexIndex) then
+    ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
+  else if (not ZApp.DesignerIsRunning) then
     ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
   {$endif}
 end;
