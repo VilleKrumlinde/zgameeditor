@@ -27,7 +27,7 @@ uses ZClasses, ZBitmap, ZExpressions, ZOpenGL;
 
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
-  TMeshVertexIndex = word;
+  TMeshVertexIndex = integer; //word,integer
   PIndicesArray = ^TIndicesArray;
   TIndicesArray = array[0..10000] of TMeshVertexIndex;
 
@@ -51,7 +51,7 @@ type
   public
     //Note: keep fields in sync with CopyAndDestroy-method
     Vertices : PZVector3Array;
-    VerticesCount : integer;
+    VerticesCount : TMeshVertexIndex;
     Indices : PIndicesArray;
     IndicesCount : integer;
     Normals : PZVector3Array;
@@ -421,7 +421,7 @@ begin
   M.Colors :=nil;
   M.Free;
   {$ifdef zlog}
-  if VerticesCount>High(TMeshVertexIndex) then
+  if VerticesCount>=High(TMeshVertexIndex) then
     ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
   else if (not ZApp.DesignerIsRunning) then
     ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
@@ -1610,8 +1610,17 @@ begin
   //Indices
   IndP := pointer(Mesh.Indices);
   PrevIndP := IndP;
+  {$if sizeof(TMeshVertexIndex)=2}
   Stream.Read(IndP^,2*3);
   Inc(IndP,3);
+  {$else}
+  for I := 0 to 2 do
+  begin
+    Stream.Read(Sm,2);
+    IndP^:=Sm;
+    Inc(IndP);
+  end;
+  {$ifend}
   for I := 0 to ((TriCount-1)*3)-1 do
   begin
     Stream.Read(Sm,2);

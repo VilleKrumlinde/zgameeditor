@@ -278,6 +278,16 @@ uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZExpressions
 var
   DefaultMaterial : TMaterial;
 
+const
+  {$if SizeOf(TMeshVertexIndex)=2}
+  TMeshVertexIndex_GL = GL_UNSIGNED_SHORT;
+  {$ifend}
+  {$if SizeOf(TMeshVertexIndex)=4}
+  TMeshVertexIndex_GL = GL_UNSIGNED_INT;
+  {$ifend}
+
+
+
 procedure EnableMaterial(OldM,NewM : TMaterial); forward;
 
 procedure ApplyRotation(const Rotate : TZVector3f);
@@ -327,7 +337,7 @@ begin
         begin
           //Use vertex buffer objects
           //vbo is prepared in Mesh.BeforeRender
-          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,nil);
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
 
           glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
           glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
@@ -348,7 +358,7 @@ begin
             glEnableClientState(GL_COLOR_ARRAY);
             glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
           end;
-          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,Mesh.Indices);
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,Mesh.Indices);
         end;
       end;
   end;
