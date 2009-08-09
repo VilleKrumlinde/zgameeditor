@@ -12,10 +12,14 @@ type
     Grid: TStringGrid;
     UpDown1: TUpDown;
     Dim3Edit: TEdit;
+    CopyAllButton: TButton;
+    PasteAllButton: TButton;
     procedure GridSetEditText(Sender: TObject; ACol, ARow: Integer;
       const Value: string);
     procedure UpDown1ChangingEx(Sender: TObject; var AllowChange: Boolean;
       NewValue: Smallint; Direction: TUpDownDirection);
+    procedure CopyAllButtonClick(Sender: TObject);
+    procedure PasteAllButtonClick(Sender: TObject);
   private
     { Private declarations }
     TheArray : TDefineArray;
@@ -35,7 +39,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesignerGUI;
+uses DesignerGUI,Clipbrd;
 
 { TArrayEditForm }
 
@@ -167,5 +171,50 @@ begin
   else
     AllowChange := False;
 end;
+
+procedure TArrayEditForm.CopyAllButtonClick(Sender: TObject);
+var
+  I,J : integer;
+  List : TStringList;
+  S : string;
+begin
+  List := TStringList.Create;
+  for I := 0 to Grid.RowCount-2 do
+  begin
+    S := '';
+    for J := 0 to Grid.ColCount-2 do
+    begin
+      S := S + Grid.Cells[J+1,I+1] + ',';
+    end;
+    List.Add( Copy(S,1,Length(S)-1) );
+  end;
+  Clipboard.AsText := List.Text;
+  List.Free;
+end;
+
+
+procedure TArrayEditForm.PasteAllButtonClick(Sender: TObject);
+var
+  I,J : integer;
+  List1,List2 : TStringList;
+begin
+  List1 := TStringList.Create;
+  List2 := TStringList.Create;
+  List1.Text := Clipboard.AsText;
+
+  for I := 0 to List1.Count - 1 do
+  begin
+    List2.CommaText := List1[I];
+    for J := 0 to List2.Count - 1 do
+    begin
+      Grid.Cells[J+1,I+1] := List2[J];
+      GridSetEditText(Grid, J+1, I+1,List2[J]);
+    end;
+  end;
+
+  List1.Free;
+  List2.Free;
+end;
+
 
 end.

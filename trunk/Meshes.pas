@@ -44,8 +44,8 @@ type
   protected
     procedure Transform(const Matrix,NormalMatrix : TZMatrix4f);
     procedure CopyAndDestroy(Source : TContent); override;
-    {$ifndef minimal}
     procedure DefineProperties(List: TZPropertyList); override;
+    {$ifndef minimal}
     procedure UpdateBounds;
     {$endif}
   public
@@ -58,6 +58,7 @@ type
     TexCoords : PZVector2Array;
     Colors : PMeshColorArray;
     Style : (msTris,msQuads);
+    CurrentRecursion : integer;
     {$ifndef minimal}
     BoundSphere :
       record
@@ -168,6 +169,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Count : integer;
+    RecursionCount : integer;
     OnIteration : TZComponentList;
     Iteration : integer;
     Position : TZVector3f;
@@ -421,10 +423,13 @@ begin
   M.Colors :=nil;
   M.Free;
   {$ifdef zlog}
-  if VerticesCount>=High(TMeshVertexIndex) then
-    ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
-  else if (not ZApp.DesignerIsRunning) then
-    ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+  if CurrentRecursion=0 then
+  begin
+    if VerticesCount>=High(TMeshVertexIndex) then
+      ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
+    else if (not ZApp.DesignerIsRunning) then
+      ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+  end;
   {$endif}
 end;
 
@@ -614,13 +619,18 @@ begin
 
   Self.BoundSphere.Radius := sqrt(R);
 end;
+{$endif}
 
 procedure TMesh.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  {$ifndef minimal}
   List.GetByName('Producers').SetChildClasses([TMeshProducer]);
+  {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRecursion',{$ENDIF}integer(@CurrentRecursion) - integer(Self), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
-{$endif}
 
 procedure TMesh.MakeNet(XCount, YCount: integer);
 var
@@ -1795,6 +1805,7 @@ procedure TMeshLoop.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RecursionCount',{$ENDIF}integer(@RecursionCount) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptInteger);
     List.GetLast.NeverPersist:=True;
@@ -1820,7 +1831,21 @@ begin
   Self.Iteration := 0;
   for I := 0 to Count-1 do
   begin
-    OnIteration.ExecuteCommands;
+
+    if (RecursionCount>0) and (Self.Iteration=Count-1) then
+    begin
+      if TMesh(Content).CurrentRecursion>=RecursionCount then
+        Break
+      else
+      begin
+        Mesh := TMesh(Content.Clone);
+        Mesh.CurrentRecursion := TMesh(Content).CurrentRecursion + 1;
+        Mesh.RefreshFromProducers;
+        Stack.Push(Mesh);
+      end;
+    end else
+      OnIteration.ExecuteCommands;
+
     Inc(Self.Iteration);
 
     if (I>0) and (Stack.Count>0) then
