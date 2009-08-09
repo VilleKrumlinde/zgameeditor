@@ -11,6 +11,7 @@ object ArrayEditForm: TArrayEditForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  ShowHint = True
   DesignSize = (
     426
     286)
@@ -57,5 +58,27 @@ object ArrayEditForm: TArrayEditForm
     ReadOnly = True
     TabOrder = 3
     Text = '0'
+  end
+  object CopyAllButton: TButton
+    Left = 143
+    Top = 253
+    Width = 86
+    Height = 25
+    Hint = 'Copy all values as comma-seperated text to clipboard'
+    Anchors = [akRight, akBottom]
+    Caption = 'Copy all values'
+    TabOrder = 4
+    OnClick = CopyAllButtonClick
+  end
+  object PasteAllButton: TButton
+    Left = 235
+    Top = 253
+    Width = 86
+    Height = 25
+    Hint = 'Paste all values from clipboard'
+    Anchors = [akRight, akBottom]
+    Caption = 'Paste all values'
+    TabOrder = 5
+    OnClick = PasteAllButtonClick
   end
 end
