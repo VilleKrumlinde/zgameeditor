@@ -15,6 +15,7 @@ copy .\exe\player_linux.bin ..\..\Deploy\%tool%\
 copy .\exe\player_osx86.bin ..\..\Deploy\%tool%\
 copy .\exe\MidiInstruments.xml ..\..\Deploy\%tool%\
 copy .\exe\Library.xml ..\..\Deploy\%tool%\
+copy .\exe\zzdc.map ..\..\Deploy\%tool%\
 
 copy .\exe\projects\About.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\Implicit.zgeproj ..\..\Deploy\%tool%\projects\

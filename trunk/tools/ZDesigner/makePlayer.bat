@@ -19,7 +19,7 @@ rem -DZDEBUG to make debug player (large)
 
 if %1.==. (
   rem Normal
-  %dcc% -DMINIMAL %commonparams%
+  %dcc% -DMINIMAL %commonparams% -GD
   set playername=Player.bin
 ) else if %1.==SS. (
   rem Screensaver
@@ -34,6 +34,11 @@ cd tools\zdesigner
 dir .\exe\%playername%
 del .\exe\%playername%
 copy zzdc.exe .\exe\%playername%
+
+if %1.==. (
+  copy zzdc.map .\exe\
+)
+
 dir .\exe\%playername%
 
 :exit
