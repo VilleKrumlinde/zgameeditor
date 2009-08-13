@@ -3346,6 +3346,8 @@ begin
       begin
         Item.MapClassName := Splitter[1];
         Item.MapMethodName := Splitter[2];
+        if Length(Item.MapClassName)=0 then
+          Item.MapClassName := Item.MapMethodName;
       end;
       Names.Add(Item);
     end;
@@ -3361,7 +3363,10 @@ begin
     GetAllObjects(Self.Root,ALLOBJECTS);
     UsedComponents.Sorted := True;
     UsedComponents.Add('TFont');
-    UsedComponents.Add('TMeshCombine');
+    UsedComponents.Add('TAudioMixer');
+    UsedComponents.Add('TMaterial');
+    if UsedComponents.IndexOf('TMeshLoop')>=0 then
+      UsedComponents.Add('TMeshCombine');
     for I := 0 to AllObjects.Count - 1 do
     begin
       UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
@@ -3376,6 +3381,8 @@ begin
       if UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1 then
         NamesToRemove.Add(Ci.ZClass.ClassName);
     end;
+    if UsedComponents.IndexOf('TMeshImplicit')=-1 then
+      NamesToRemove.Add('TImpProcess');
 
     //ok, start removing
     Stream := Section.RawData;
@@ -3384,9 +3391,15 @@ begin
     begin
       Item := TMapName(Names[I]);
       if (Item.Size=0) or (Length(Item.MapClassName)=0) then
+      begin
+        //Log.Write(Item.Name + ' ' + IntToStr(Item.Size));
         Continue;
+      end;
       if NamesToRemove.IndexOf(Item.MapClassName)=-1 then
+      begin
+        //Log.Write(Item.Name + ' ' + IntToStr(Item.Size));
         Continue;
+      end;
       Stream.Seek(Item.Start,soBeginning);
       B := $90; //nop
       for J := 0 to Item.Size - 1 do
