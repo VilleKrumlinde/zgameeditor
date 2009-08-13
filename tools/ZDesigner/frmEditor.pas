@@ -29,7 +29,7 @@ uses
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
-  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit;
+  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
@@ -193,6 +193,7 @@ type
     Import3DSfile1: TMenuItem;
     ViewerMeshTabSheet: TTabSheet;
     MeshEditFrame1: TMeshEditFrame;
+    RemoveUnusedMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -279,6 +280,7 @@ type
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
     SysLibrary : TZComponent;
+    Log : TLog;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -319,7 +321,7 @@ type
     procedure WriteAppSettingsToIni;
     function VerifyToolExists(const ToolName, ToolUrl, ExeFile : string): boolean;
     procedure SetCurrentFileName(const F : string);
-    procedure ReplaceResource(const ExeFile, OutFile, DataFile: string);
+    procedure ReplaceResource(const ExeFile, OutFile, DataFile: string; UseCodeRemoval : boolean);
     procedure RefreshMenuFromMruList;
     procedure OnMruItemClick(Sender: TObject);
     procedure DrawOnRenderComponent;
@@ -333,6 +335,7 @@ type
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
     procedure OnAppException(Sender: TObject; E: Exception);
+    procedure RemoveUnusedCode(Module: TPEModule);
   public
     Glp : TCustomGLPanel;
     Tree : TZComponentTreeView;
@@ -365,7 +368,7 @@ implementation
 
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
   ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
-  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitPEFile,unitResourceDetails,
+  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes;
 
@@ -379,6 +382,8 @@ begin
   inherited Create(AOwner);
 
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
+
+  Self.Log := ZLog.GetLog(Self.ClassName);
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -497,7 +502,7 @@ end;
 procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
 begin
   if E is EZHalted then
-    ZLog.GetLog(Self.ClassName).Error(E.Message)
+    Log.Error(E.Message)
   else
     Application.ShowException(E);
 end;
@@ -888,17 +893,17 @@ var
 begin
   Renderer.InitRenderer;
   if not ShadersSupported then
-    ZLog.GetLog(Self.ClassName).Write('GL shaders not supported')
+    Log.Write('GL shaders not supported')
   else
   begin
     P := glGetString(GL_SHADING_LANGUAGE_VERSION);
     if P<>nil then
-      ZLog.GetLog(Self.ClassName).Write('GL shaders: ' + P)
+      Log.Write('GL shaders: ' + P)
   end;
   if not MultiTextureSupported then
-    ZLog.GetLog(Self.ClassName).Write('GL multitexture not supported');
+    Log.Write('GL multitexture not supported');
   if not VbosSupported then
-    ZLog.GetLog(Self.ClassName).Write('GL VBOs not supported');
+    Log.Write('GL VBOs not supported');
 end;
 
 procedure TEditorForm.OnGlDraw(Sender: TObject);
@@ -1754,13 +1759,13 @@ begin
       ExprSynEdit.SetFocus;
       //ShowMessage( E.Message );
       CompileErrorLabel.Caption := E.Message;
-      ZLog.GetLog(Self.ClassName).Write(E.Message);
+      Log.Write(E.Message);
     end;
     on E : ECodeGenError do
     begin
       CompileErrorLabel.BevelKind := bkTile;
       CompileErrorLabel.Caption := E.Message;
-      ZLog.GetLog(Self.ClassName).Write(E.Message);
+      Log.Write(E.Message);
     end;
   end;
 //  Tree.RefreshNode(Tree.Selected,Selected);
@@ -1773,7 +1778,7 @@ begin
       ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
-        ZLog.GetLog(Self.ClassName).Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+        Log.Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
   end;
 end;
@@ -1884,7 +1889,7 @@ begin
   finally
     Tree.Items.EndUpdate;
   end;
-  ZLog.GetLog(Self.ClassName).Write('Compiled expressions: ' + IntToStr(CompiledCount));
+  Log.Write('Compiled expressions: ' + IntToStr(CompiledCount));
   Result := Success;
 end;
 
@@ -1912,7 +1917,7 @@ begin
     M1.Free;
     M2.Free;
   end;
-  ZLog.GetLog(Self.ClassName).Write('File generated: ' + OutputName);
+  Log.Write('File generated: ' + OutputName);
 end;
 
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
@@ -1959,7 +1964,7 @@ var
   SEInfo: TShellExecuteInfo;
   ExitCode: DWORD;
 begin
-  ZLog.GetLog(Self.ClassName).Write(ExeFile + ' ' + ParamString);
+  Log.Write(ExeFile + ' ' + ParamString);
   FillChar(SEInfo, SizeOf(SEInfo), 0) ;
   SEInfo.cbSize := SizeOf(TShellExecuteInfo) ;
   with SEInfo do
@@ -1981,7 +1986,8 @@ begin
     ShowMessage('Error ' + ExeFile);
 end;
 
-procedure TEditorForm.ReplaceResource(const ExeFile,OutFile,DataFile : string);
+
+procedure TEditorForm.ReplaceResource(const ExeFile,OutFile,DataFile : string; UseCodeRemoval : boolean);
 var
   M : TPEResourceModule;
   R : TResourceDetails;
@@ -2004,18 +2010,18 @@ begin
     end;
 
     //Remove the other two resource (packageinfo), saves about 1kb
-    //todo: remove more resources if ocx
     if ExtractFileExt(OutFile)<>'.ocx' then
     begin
       R := M.FindResource('10','DVCLAL',0);
       if R<>nil then
-        M.DeleteResource(M.IndexOfResource(R));
+        M.DeleteResource(M.IndexOfResource(R))
+      else
+        Log.Warning('Resource not found');
       R := M.FindResource('10','PACKAGEINFO',0);
       if R<>nil then
-        M.DeleteResource(M.IndexOfResource(R));
-
-//      M.DeleteResource(1);
-//      M.DeleteResource(1);
+        M.DeleteResource(M.IndexOfResource(R))
+      else
+        Log.Warning('Resource not found');
     end;
 
     if not ZApp.ShowOptionsDialog then
@@ -2042,6 +2048,9 @@ begin
       //IconR.LoadImage(ExePath + 'test.ico');
     end;
 
+    if UseCodeRemoval then
+      RemoveUnusedCode(M);
+
     M.SaveToFile( OutFile );
   finally
     M.Free;
@@ -2053,7 +2062,7 @@ function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
   OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
   ToolPath : string;
-  UsePiggyback : boolean;
+  UsePiggyback,UseCodeRemoval : boolean;
 
   function InGetSize : integeR;
   var
@@ -2066,11 +2075,13 @@ var
 
 begin
   UsePiggyback := False;
+  UseCodeRemoval := False;
   case Kind of
     bbNormal, bbNormalUncompressed :
       begin
         Ext := 'exe';
         PlayerName := ExePath + 'player.bin';
+        UseCodeRemoval := RemoveUnusedMenuItem.Checked;
       end;
     bbScreenSaver :
       begin
@@ -2108,7 +2119,7 @@ begin
   begin
     TempFile := ExePath + 'temp.dat';
     BuildBinary('',TempFile);
-    ReplaceResource(PlayerName,OutFile,TempFile);
+    ReplaceResource(PlayerName,OutFile,TempFile,UseCodeRemoval);
     DeleteFile(TempFile);
   end;
 
@@ -3124,7 +3135,7 @@ begin
   S := ExePath + 'Library.xml';
   if not FileExists(S) then
   begin
-    ZLog.GetLog(Self.ClassName).Write( 'Lib file missing: ' + S );
+    Log.Write( 'Lib file missing: ' + S );
     Exit;
   end;
   AddFromLibraryMenuItem.Clear;
@@ -3254,5 +3265,146 @@ begin
     Dec(I);
   end;
 end;
+
+
+type
+  TMapName = class
+    Name,MapClassName,MapMethodName : string;
+    Start : integer;
+    Size : integer;
+  end;
+
+function MapNameSortProc(Item1, Item2: Pointer): Integer;
+var
+  I1,I2 : integer;
+  N1,N2 : TMapName;
+begin
+  N1 := TMapName(Item1);
+  N2 := TMapName(Item2);
+  I1 := N1.Start;
+  I2 := N2.Start;
+  Result := I1-I2;
+end;
+
+procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
+var
+  TotalRemovedBytes,I,J,FirstLine : integer;
+  Section : TImageSection;
+  Stream : TMemoryStream;
+  Names : TObjectList;
+  B : byte;
+  S,MapFile : string;
+  Splitter,Lines : TStringList;
+  Item : TMapName;
+  Id : TZClassIds;
+
+  Infos : PComponentInfoArray;
+  Ci : TZComponentInfo;
+  UsedComponents,NamesToRemove : TStringList;
+  AllObjects : TObjectList;
+begin
+  Section := Module.ImageSection[0];
+  if Section.SectionName<>'.text' then
+  begin
+    Log.Warning('wrong section');
+    Exit;
+  end;
+
+  MapFile := ExePath + 'zzdc.map';
+  if not FileExists(MapFile) then
+  begin
+    Log.Error('map file not found');
+    Exit;
+  end;
+
+  Lines := TStringList.Create;
+  Names := TObjectList.Create(True);
+  NamesToRemove := TStringList.Create;
+  UsedComponents := TStringList.Create;
+  Splitter := TStringList.Create;
+  Splitter.Delimiter := '.';
+  try
+    Lines.LoadFromFile(MapFile);
+    FirstLine := Lines.IndexOf('  Address             Publics by Name');
+    if FirstLine=-1 then
+    begin
+      Log.Error('error in map file');
+      Exit;
+    end;
+    for I := FirstLine+2 to Lines.Count - 1 do
+    begin
+      S := Trim(Lines[I]);
+      if Length(S)=0 then
+        Break;
+      if Copy(S,1,4)<>'0001' then
+        Continue;
+      Item := TMapName.Create;
+      Item.Name := Copy(S,21,255);
+      Item.Start := StrToInt('$' + Copy(S,6,8));
+      Splitter.DelimitedText := Item.Name;
+      if Splitter.Count=3 then
+      begin
+        Item.MapClassName := Splitter[1];
+        Item.MapMethodName := Splitter[2];
+      end;
+      Names.Add(Item);
+    end;
+    Names.Sort(MapNameSortProc);
+    for I := 0 to Names.Count - 2 do
+    begin
+      Item := Names[I] as TMapName;
+      Item.Size := TMapName(Names[I+1]).Start - Item.Start;
+    end;
+
+    //Get names of used classes
+    AllObjects := TObjectList.Create(False);
+    GetAllObjects(Self.Root,ALLOBJECTS);
+    UsedComponents.Sorted := True;
+    UsedComponents.Add('TFont');
+    UsedComponents.Add('TMeshCombine');
+    for I := 0 to AllObjects.Count - 1 do
+    begin
+      UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
+    end;
+    AllObjects.Free;
+
+    //NamesToRemove = AllNames - UsedNames
+    Infos := ZClasses.ComponentManager.GetAllInfos;
+    for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
+    begin
+      Ci := TZComponentInfo(Infos[Id]);
+      if UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1 then
+        NamesToRemove.Add(Ci.ZClass.ClassName);
+    end;
+
+    //ok, start removing
+    Stream := Section.RawData;
+    TotalRemovedBytes := 0;
+    for I := 0 to Names.Count - 1 do
+    begin
+      Item := TMapName(Names[I]);
+      if (Item.Size=0) or (Length(Item.MapClassName)=0) then
+        Continue;
+      if NamesToRemove.IndexOf(Item.MapClassName)=-1 then
+        Continue;
+      Stream.Seek(Item.Start,soBeginning);
+      B := $90; //nop
+      for J := 0 to Item.Size - 1 do
+        Stream.Write(B,1);
+      Inc(TotalRemovedBytes,Item.Size);
+      //Log.Write(Item.Name);
+    end;
+    Log.Write('Removed: ' + IntToStr(TotalRemovedBytes) );
+
+  finally
+    Lines.Free;
+    Names.Free;
+    NamesToRemove.Free;
+    UsedComponents.Free;
+    Splitter.Free;
+  end;
+
+end;
+
 
 end.
