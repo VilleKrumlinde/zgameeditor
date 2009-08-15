@@ -94,10 +94,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
@@ -622,10 +618,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -662,10 +654,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -1608,6 +1596,7 @@ object EditorForm: TEditorForm
       object RemoveUnusedMenuItem: TMenuItem
         AutoCheck = True
         Caption = 'Remove unused code (experimental)'
+        Checked = True
       end
       object N9: TMenuItem
         Caption = '-'

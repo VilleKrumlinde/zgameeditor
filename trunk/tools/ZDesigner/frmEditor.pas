@@ -3362,16 +3362,18 @@ begin
     AllObjects := TObjectList.Create(False);
     GetAllObjects(Self.Root,ALLOBJECTS);
     UsedComponents.Sorted := True;
-    UsedComponents.Add('TFont');
     UsedComponents.Add('TAudioMixer');
     UsedComponents.Add('TMaterial');
+    for I := 0 to AllObjects.Count - 1 do
+      UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
+    AllObjects.Free;
+    if UsedComponents.IndexOf('TRenderText')>=0 then
+    begin
+      UsedComponents.Add('TZBitmap');
+      UsedComponents.Add('TFont');
+    end;
     if UsedComponents.IndexOf('TMeshLoop')>=0 then
       UsedComponents.Add('TMeshCombine');
-    for I := 0 to AllObjects.Count - 1 do
-    begin
-      UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
-    end;
-    AllObjects.Free;
 
     //NamesToRemove = AllNames - UsedNames
     Infos := ZClasses.ComponentManager.GetAllInfos;

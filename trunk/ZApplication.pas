@@ -22,7 +22,7 @@ unit ZApplication;
 
 interface
 
-uses ZClasses,Meshes,Collision,Commands,Renderer{Tfont},AudioComponents;
+uses ZClasses,Meshes,Collision,Commands,AudioComponents;
 
 type
 
@@ -83,7 +83,6 @@ type
     OnRender : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
-    Font : TFont;
     CurrentMusic : TMusic;
     Caption : TPropString;
     EventState : //Global variables reachable from zc event-code
@@ -154,7 +153,7 @@ var
 
 implementation
 
-uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath
+uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -165,8 +164,6 @@ uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath
 constructor TZApplication.Create(OwnerList: TZComponentList);
 begin
   inherited;
-  //todo: font ska kanske skapas vid laddning? inline-komponent?
-  Font := TFont.Create(nil);
   Clock := TClock.Create;
 
   Models := TModels.Create;
@@ -185,7 +182,6 @@ begin
   Models.Free;
 
   Collisions.Free;
-  Font.Free;
   DepthList.Free;
   if not HasShutdown then
     Shutdown;

@@ -1004,7 +1004,7 @@ type
     _AddRef : function(This : PDirectSound) : Integer; stdcall;
     _Release : function(This : PDirectSound) : Integer; stdcall;
     // IDirectSound methods
-    CreateSoundBuffer : function(This : PDirectSound;const pcDSBufferDesc: TDSBufferDesc; ppDSBuffer: pointer; pUnkOuter: IUnknown): HResult; stdcall;
+    CreateSoundBuffer : function(This : PDirectSound;const pcDSBufferDesc: TDSBufferDesc; ppDSBuffer: pointer; pUnkOuter: pointer): HResult; stdcall;
     GetCaps : function (This : PDirectSound; out pDSCaps: TDSCaps): HResult; stdcall;
     DuplicateSoundBuffer : function (This : PDirectSound; pDSBufferOriginal: pointer; out ppDSBufferDuplicate: pointer): HResult; stdcall;
     SetCooperativeLevel : function (This : PDirectSound; hwnd: HWND; dwLevel: DWORD): HResult; stdcall;
@@ -1082,7 +1082,7 @@ const
 
 var
   DirectSoundLib: THandle;
-  DirectSoundCreate: function(lpGuid: PGUID; ppDS: pointer; pUnkOuter: IUnknown): HResult; stdcall;
+  DirectSoundCreate: function(lpGuid: PGUID; ppDS: pointer; pUnkOuter: pointer): HResult; stdcall;
   DS : PDirectSound;
   DSBuffer : PDirectSoundBuffer;
   DSPrimary : PDirectSoundBuffer;
