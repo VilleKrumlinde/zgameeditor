@@ -277,6 +277,7 @@ uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZExpressions
 
 var
   DefaultMaterial : TMaterial;
+  DefaultFont : TFont;
 
 const
   {$if SizeOf(TMeshVertexIndex)=2}
@@ -1070,7 +1071,9 @@ begin
   end
   else
   begin
-    CurFont := ZApp.Font;
+    if DefaultFont=nil then
+      DefaultFont := TFont.Create(nil);
+    CurFont := DefaultFont;
     Spacing := BuiltInSpacing;
   end;
   CurFont.Prepare;
@@ -2046,6 +2049,8 @@ end;
 procedure CleanUp;
 begin
   DefaultMaterial.Free;
+  if DefaultFont<>nil then
+    DefaultFont.Free;
 end;
 {$endif}
 
