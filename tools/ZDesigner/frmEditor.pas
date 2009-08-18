@@ -194,6 +194,10 @@ type
     ViewerMeshTabSheet: TTabSheet;
     MeshEditFrame1: TMeshEditFrame;
     RemoveUnusedMenuItem: TMenuItem;
+    LogPopupMenu: TPopupMenu;
+    LogCopytoclipboardMenuItem: TMenuItem;
+    ForceRefreshAction: TAction;
+    Refresh1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -253,6 +257,8 @@ type
     procedure AddFromLibraryMenuItemClick(Sender: TObject);
     procedure LogListBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure LogCopytoclipboardMenuItemClick(Sender: TObject);
+    procedure ForceRefreshActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -1132,6 +1138,14 @@ begin
   end;
 end;
 
+procedure TEditorForm.ForceRefreshActionExecute(Sender: TObject);
+begin
+  if Assigned(Tree.ZSelected.ComponentList) then
+    Tree.ZSelected.ComponentList.Change
+  else if Assigned(Tree.ZSelected.Component) then
+    Tree.ZSelected.Component.Change;
+end;
+
 procedure TEditorForm.FormClose(Sender: TObject; var Action: TCloseAction);
 var
   I : integer;
@@ -1889,7 +1903,8 @@ begin
   finally
     Tree.Items.EndUpdate;
   end;
-  Log.Write('Compiled expressions: ' + IntToStr(CompiledCount));
+  if CompiledCount>0 then
+    Log.Write('Compiled expressions: ' + IntToStr(CompiledCount));
   Result := Success;
 end;
 
@@ -3034,6 +3049,21 @@ begin
   end;
 end;
 
+procedure TEditorForm.LogCopytoclipboardMenuItemClick(Sender: TObject);
+var
+  //Data : TListLogItem;
+  I : integer;
+  S : string;
+begin
+  S := '';
+  for I := 0 to LogListBox.Items.Count - 1 do
+  begin
+    //Data := LogListBox.Items.Objects[Index] as TListLogItem;
+    S := S + LogListBox.Items[I] + #13#10;
+  end;
+  Clipboard.AsText := S;
+end;
+
 procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
 const
@@ -3286,12 +3316,26 @@ begin
   Result := I1-I2;
 end;
 
+function MapNameSortProcSize(Item1, Item2: Pointer): Integer;
+var
+  I1,I2 : integer;
+  N1,N2 : TMapName;
+begin
+  N1 := TMapName(Item1);
+  N2 := TMapName(Item2);
+  I1 := N1.Size;
+  I2 := N2.Size;
+  Result := I2-I1;
+end;
+
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
+const
+  DisplayDetailedReport = False;
 var
   TotalRemovedBytes,I,J,FirstLine : integer;
   Section : TImageSection;
   Stream : TMemoryStream;
-  Names : TObjectList;
+  MapNames : TObjectList;
   B : byte;
   S,MapFile : string;
   Splitter,Lines : TStringList;
@@ -3301,7 +3345,7 @@ var
   Infos : PComponentInfoArray;
   Ci : TZComponentInfo;
   UsedComponents,NamesToRemove : TStringList;
-  AllObjects : TObjectList;
+  NamesKept,AllObjects : TObjectList;
 begin
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then
@@ -3318,7 +3362,7 @@ begin
   end;
 
   Lines := TStringList.Create;
-  Names := TObjectList.Create(True);
+  MapNames := TObjectList.Create(True);
   NamesToRemove := TStringList.Create;
   UsedComponents := TStringList.Create;
   Splitter := TStringList.Create;
@@ -3349,18 +3393,18 @@ begin
         if Length(Item.MapClassName)=0 then
           Item.MapClassName := Item.MapMethodName;
       end;
-      Names.Add(Item);
+      MapNames.Add(Item);
     end;
-    Names.Sort(MapNameSortProc);
-    for I := 0 to Names.Count - 2 do
+    MapNames.Sort(MapNameSortProc);
+    for I := 0 to MapNames.Count - 2 do
     begin
-      Item := Names[I] as TMapName;
-      Item.Size := TMapName(Names[I+1]).Start - Item.Start;
+      Item := MapNames[I] as TMapName;
+      Item.Size := TMapName(MapNames[I+1]).Start - Item.Start;
     end;
 
     //Get names of used classes
     AllObjects := TObjectList.Create(False);
-    GetAllObjects(Self.Root,ALLOBJECTS);
+    GetAllObjects(Self.Root,AllObjects);
     UsedComponents.Sorted := True;
     UsedComponents.Add('TAudioMixer');
     UsedComponents.Add('TMaterial');
@@ -3387,19 +3431,23 @@ begin
       NamesToRemove.Add('TImpProcess');
 
     //ok, start removing
+    if DisplayDetailedReport then
+      NamesKept := TObjectList.Create(False);
     Stream := Section.RawData;
     TotalRemovedBytes := 0;
-    for I := 0 to Names.Count - 1 do
+    for I := 0 to MapNames.Count - 1 do
     begin
-      Item := TMapName(Names[I]);
+      Item := TMapName(MapNames[I]);
       if (Item.Size=0) or (Length(Item.MapClassName)=0) then
       begin
-        //Log.Write(Item.Name + ' ' + IntToStr(Item.Size));
+        if DisplayDetailedReport then
+          NamesKept.Add(Item);
         Continue;
       end;
       if NamesToRemove.IndexOf(Item.MapClassName)=-1 then
       begin
-        //Log.Write(Item.Name + ' ' + IntToStr(Item.Size));
+        if DisplayDetailedReport then
+          NamesKept.Add(Item);
         Continue;
       end;
       Stream.Seek(Item.Start,soBeginning);
@@ -3411,9 +3459,20 @@ begin
     end;
     Log.Write('Removed: ' + IntToStr(TotalRemovedBytes) );
 
+    if DisplayDetailedReport then
+    begin
+      NamesKept.Sort( MapNameSortProcSize );
+      for I := 0 to NamesKept.Count - 1 do
+      begin
+        Item := TMapName(NamesKept[I]);
+        Log.Write(IntToStr(Item.Size) + ' ' + Item.Name);
+      end;
+      NamesKept.Free;
+    end;
+
   finally
     Lines.Free;
-    Names.Free;
+    MapNames.Free;
     NamesToRemove.Free;
     UsedComponents.Free;
     Splitter.Free;
