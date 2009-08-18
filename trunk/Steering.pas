@@ -136,6 +136,10 @@ var
 begin
   //Jobba mot currentmodel
   Self.Model := Meshes.CurrentModel;
+  {$ifndef minimal}
+  if Model=nil then
+    Exit;
+  {$endif}
 
   //Beräkna forward-vector
   VecCopy3(Model.Velocity,Self.ForwardV);

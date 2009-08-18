@@ -780,8 +780,10 @@ begin
       {$endif}
     zptBinary :
       Value.BinaryValue := PZBinaryPropValue(P)^;
+    {$ifdef minimal}
     else
       ZHalt('GetProperty no handler');
+    {$endif}
   end;
 end;
 
@@ -846,8 +848,10 @@ begin
         {$endif}
         PZBinaryPropValue(P)^ := Value.BinaryValue;
       end
+    {$ifdef minimal}
     else
       ZHalt('SetProperty no handler');
+    {$endif}
   end;
   Change;
 end;
@@ -1133,8 +1137,6 @@ end;
 function TZArrayList.GetItem(Index: Integer): TObject;
 begin
   {$ifndef minimal}CheckValidIndex(Index);{$endif}
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
   Result := List^[Index];
 end;
 
