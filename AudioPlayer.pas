@@ -163,7 +163,7 @@ type
   end;
 
 const
-  AudioRate = 22050;  //22khz
+  AudioRate = 44100;  //44khz
 
   OutputBits = SizeOf(TSoundOutputUnit)*8;
 
