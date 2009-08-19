@@ -637,6 +637,7 @@ begin
     DesignerPreviewProducer := nil;
     Bitmap.Change;
   end;
+  Nodes.Clear;
 end;
 
 

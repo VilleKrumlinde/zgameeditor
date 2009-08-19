@@ -626,6 +626,7 @@ begin
     DesignerPreviewProducer := nil;
     Mesh.Change;
   end;
+  Nodes.Clear;
 end;
 
 
