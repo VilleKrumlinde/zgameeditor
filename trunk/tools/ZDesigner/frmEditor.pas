@@ -639,7 +639,7 @@ var
   var
     Data : TListLogItem;
   begin
-    while LogListBox.Items.Count>500 do
+    while LogListBox.Items.Count>2000 do
     begin
       LogListBox.Items.Objects[0].Free;
       LogListBox.Items.Delete(0);
@@ -663,7 +663,7 @@ begin
     Tmp.Free;
   end;
   LogListBox.ItemIndex := LogListBox.Items.Count-1;
-  LogListBox.Repaint;
+  LogListBox.Invalidate;
 end;
 
 procedure TEditorForm.RefreshSymbolTable;
@@ -3329,10 +3329,8 @@ begin
 end;
 
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
-const
-  DisplayDetailedReport = False;
 var
-  TotalRemovedBytes,I,J,FirstLine : integer;
+  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine : integer;
   Section : TImageSection;
   Stream : TMemoryStream;
   MapNames : TObjectList;
@@ -3346,7 +3344,11 @@ var
   Ci : TZComponentInfo;
   UsedComponents,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
+  DisplayDetailedReport : boolean;
 begin
+  DisplayDetailedReport := False;
+  //DisplayDetailedReport := True;
+
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then
   begin
@@ -3418,6 +3420,8 @@ begin
     end;
     if UsedComponents.IndexOf('TMeshLoop')>=0 then
       UsedComponents.Add('TMeshCombine');
+    if UsedComponents.IndexOf('TRenderNet')>=0 then
+      UsedComponents.Add('TMesh');
 
     //NamesToRemove = AllNames - UsedNames
     Infos := ZClasses.ComponentManager.GetAllInfos;
@@ -3430,9 +3434,10 @@ begin
     if UsedComponents.IndexOf('TMeshImplicit')=-1 then
       NamesToRemove.Add('TImpProcess');
 
+
+
     //ok, start removing
-    if DisplayDetailedReport then
-      NamesKept := TObjectList.Create(False);
+    NamesKept := TObjectList.Create(False);
     Stream := Section.RawData;
     TotalRemovedBytes := 0;
     for I := 0 to MapNames.Count - 1 do
@@ -3462,13 +3467,16 @@ begin
     if DisplayDetailedReport then
     begin
       NamesKept.Sort( MapNameSortProcSize );
+      TotalKeptBytes := 0;
       for I := 0 to NamesKept.Count - 1 do
       begin
         Item := TMapName(NamesKept[I]);
+        Inc(TotalKeptBytes,Item.Size);
         Log.Write(IntToStr(Item.Size) + ' ' + Item.Name);
       end;
-      NamesKept.Free;
+      Log.Write('Kept: ' + IntToStr(TotalKeptBytes) );
     end;
+    NamesKept.Free;
 
   finally
     Lines.Free;
