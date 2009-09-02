@@ -1960,6 +1960,18 @@ var
     end;
   end;
 
+  function SafeCdata(const S : string) : string;
+  begin
+    //Cdata cannot contain ']]>' string
+    if Pos(']]>',S)>0 then
+      //As recommended here: http://en.wikipedia.org/wiki/CDATA
+      //Result := StringReplace(S,']]>',']]]]><![CDATA[>',[rfReplaceAll])
+      //This is simpler to parse
+      Result := StringReplace(S,']]>',']] >',[rfReplaceAll])
+    else
+      Result := S;
+  end;
+
 begin
   Ci := ComponentManager.GetInfo(C);
 
@@ -2044,9 +2056,9 @@ begin
         WriteLine('<' + Prop.Name + '>');
         case Prop.PropertyType of
           zptString :
-            WriteString('<![CDATA[' + Value.StringValue + ']]>'#13#10);
+            WriteString('<![CDATA[' + SafeCdata(Value.StringValue) + ']]>'#13#10);
           zptExpression :
-            WriteString('<![CDATA[' + Value.ExpressionValue.Source + ']]>'#13#10);
+            WriteString('<![CDATA[' + SafeCdata(Value.ExpressionValue.Source) + ']]>'#13#10);
           zptInlineComponent :
             begin
               LevelDown;
