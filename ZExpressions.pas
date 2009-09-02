@@ -316,7 +316,10 @@ const
 
 function StackGetDepth : integer;
 begin
-  Result := (integer(ZcStackPtr) - integer(ZcStackBegin)) div SizeOf(Integer);
+  {$if SizeOf(Integer)<>4}
+  'update shift bits to divide with word length below'
+  {$ifend}
+  Result := (integer(ZcStackPtr) - integer(ZcStackBegin)) shr 2;
 end;
 
 procedure StackPush(const X);
@@ -329,7 +332,7 @@ begin
   Inc(ZcStackPtr);
 end;
 
-procedure StackPushValue(X : pointer);
+procedure StackPushValue(X : pointer); inline;
 begin
   StackPush(X);
 end;
