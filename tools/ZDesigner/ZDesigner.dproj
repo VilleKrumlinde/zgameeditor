@@ -73,10 +73,6 @@
       
       
       
-      
-      
-      
-      
       <Excluded_Packages Name="$(BDS)\Bin\dclIndyCore100.bpl">Indy 10 Core Design Time</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\Bin\dclintraweb_90_100.bpl">VCL for the Web 9.0 Design Package for CodeGear RAD Studio</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\Bin\dclIndyProtocols100.bpl">Indy 10 Protocols Design Time</Excluded_Packages>
@@ -94,6 +90,13 @@
     <DCCReference Include="..\..\BitmapProducers.pas" />
     <DCCReference Include="..\..\Collision.pas" />
     <DCCReference Include="..\..\Commands.pas" />
+    <DCCReference Include="..\..\F.pas" />
+    <DCCReference Include="..\..\Fa.pas" />
+    <DCCReference Include="..\..\Fas.pas" />
+    <DCCReference Include="..\..\Fast.pas" />
+    <DCCReference Include="..\..\FastM.pas" />
+    <DCCReference Include="..\..\FastMM.pas" />
+    <DCCReference Include="..\..\FastMM4.pas" />
     <DCCReference Include="..\..\ImplicitMeshes.pas" />
     <DCCReference Include="..\..\Meshes.pas" />
     <DCCReference Include="..\..\Steering.pas" />
@@ -111,8 +114,8 @@
     <DCCReference Include="3rdparty\uTinyGif.pas" />
     <DCCReference Include="DesignerGui.pas" />
     <DCCReference Include="dmCommon.pas">
-      <Form>CommonModule</Form>
       <DesignClass>TDataModule</DesignClass>
+      <Form>CommonModule</Form>
     </DCCReference>
     <DCCReference Include="ExprEdit.pas" />
     <DCCReference Include="expr\CocoBase.pas" />
@@ -129,42 +132,42 @@
       <Form>ArrayEditForm</Form>
     </DCCReference>
     <DCCReference Include="frmBitmapEdit.pas">
-      <Form>BitmapEditFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>BitmapEditFrame</Form>
     </DCCReference>
     <DCCReference Include="frmChannelFrame.pas">
-      <Form>ChannelFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>ChannelFrame</Form>
     </DCCReference>
     <DCCReference Include="frmCompEditBase.pas">
-      <Form>CompEditFrameBase</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>CompEditFrameBase</Form>
     </DCCReference>
     <DCCReference Include="frmEditor.pas">
       <Form>EditorForm</Form>
     </DCCReference>
     <DCCReference Include="frmEnvelopeFrame.pas">
-      <Form>EnvelopeFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>EnvelopeFrame</Form>
     </DCCReference>
     <DCCReference Include="frmLfoFrame.pas">
-      <Form>LfoFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>LfoFrame</Form>
     </DCCReference>
     <DCCReference Include="frmMemoEdit.pas">
       <Form>MemoEditForm</Form>
     </DCCReference>
     <DCCReference Include="frmMeshEdit.pas">
-      <Form>MeshEditFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>MeshEditFrame</Form>
     </DCCReference>
     <DCCReference Include="frmModulationFrame.pas">
-      <Form>ModulationFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>ModulationFrame</Form>
     </DCCReference>
     <DCCReference Include="frmMusicEdit.pas">
-      <Form>MusicEditFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>MusicEditFrame</Form>
     </DCCReference>
     <DCCReference Include="frmRawAudioImportOptions.pas">
       <Form>ImportRawAudioForm</Form>
@@ -176,8 +179,8 @@
       <Form>SettingsForm</Form>
     </DCCReference>
     <DCCReference Include="frmSoundEdit.pas">
-      <Form>SoundEditFrame</Form>
       <DesignClass>TFrame</DesignClass>
+      <Form>SoundEditFrame</Form>
     </DCCReference>
     <DCCReference Include="frmToolMissing.pas">
       <Form>ToolMissingForm</Form>

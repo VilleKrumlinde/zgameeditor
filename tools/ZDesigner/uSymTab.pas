@@ -22,15 +22,17 @@ unit uSymTab;
 
 interface
 
-uses Classes,Contnrs;
+uses Classes,Contnrs,ZLog;
 
 type
   TSymTabFunc = procedure(const S : string; Item : TObject; Context : pointer);
 
   TSymbolTable = class
   private
+    Log : TLog;
     Scopes : TObjectList;
     function CurrentScope : TStringList;
+    //procedure DumpToLog(const Header : string);
   public
     constructor Create;
     destructor Destroy; override;
@@ -47,10 +49,13 @@ type
 
 implementation
 
+uses SysUtils;
+
 { TSymbolTable }
 
 constructor TSymbolTable.Create;
 begin
+  Log := GetLog(Self.ClassName);
   Scopes := TObjectList.Create(True);
   ClearAll;
 end;
@@ -64,6 +69,7 @@ procedure TSymbolTable.PushScope;
 var
   List : TStringList;
 begin
+//  DumpToLog('pushscope');
   List := TStringList.Create;
   List.Sorted := True;
   List.Duplicates := dupIgnore;
@@ -73,6 +79,7 @@ end;
 
 procedure TSymbolTable.PopScope;
 begin
+//  DumpToLog('popscope');
   Assert(Scopes.Count>1);
   Scopes.Delete(Scopes.Count-1);
 end;
@@ -115,6 +122,19 @@ begin
   inherited;
 end;
 
+{procedure TSymbolTable.DumpToLog(const Header : string);
+var
+  I : integer;
+  List : TStringList;
+begin
+  Log.Write(Header);
+  for I := 0 to Scopes.Count-1 do
+  begin
+    List := TStringList(Scopes[I]);
+    Log.Write( IntToStr(I) + ': ' + List.CommaText );
+  end;
+end;}
+
 function TSymbolTable.Lookup(const Name: string): TObject;
 var
   I,J : integer;
@@ -135,8 +155,10 @@ end;
 
 procedure TSymbolTable.Remove(const Name: string);
 begin
+//  DumpToLog('before remove: ' + Name);
   Assert(ScopeContains(Name));
   CurrentScope.Delete(CurrentScope.IndexOf(Name));
+//  DumpToLog('after remove: ' + Name);
 end;
 
 procedure TSymbolTable.Iterate(F: TSymTabFunc; Context: pointer);
