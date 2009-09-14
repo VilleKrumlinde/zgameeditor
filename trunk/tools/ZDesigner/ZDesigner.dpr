@@ -21,6 +21,7 @@ THE SOFTWARE.}
 program ZDesigner;
 
 uses
+//  FastMM4 in '..\..\FastMM4.pas',
   Forms,
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
@@ -77,7 +78,10 @@ uses
 
 {$R *.res}
 
-{$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+{.$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+
+//+>2gb memory in 64-bitwindows
+{$SetPEFlags $21}
 
 begin
   //Report memleaks when run inside delphi debugger

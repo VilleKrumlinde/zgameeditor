@@ -1857,7 +1857,7 @@ begin
   for I := 0 to ZcGlobalNames.Count - 1 do
   begin
     //Remove user function names from symtab
-    if SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
+    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
       SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id);
   end;
   ZcGlobalNames.Clear;
@@ -3083,6 +3083,8 @@ begin
   if Data=nil then
     Exit;
   Log := Data.Log;
+  if Log=nil then
+    Exit;
 
   C := (Control as TListBox).Canvas;
 
@@ -3105,7 +3107,7 @@ begin
   //Clear area in listbox-color, this avoids highlighting selected
   C.FillRect(Rect);
 
-  C.TextOut(Rect.Left + 2, Rect.Top, Copy(LogChars[ (Log.ID mod Length(LogChars))+1 ] ,1,1));
+  C.TextOut(Rect.Left + 2, Rect.Top, LogChars[ (Log.ID mod Length(LogChars))+1 ] );
 
 //  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
   S := (Control as TListBox).Items[Index];
