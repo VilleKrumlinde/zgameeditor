@@ -20,6 +20,8 @@ type
     Splitter1: TSplitter;
     DisablePreviewCheckBox: TCheckBox;
     PreviewMenuItem: TMenuItem;
+    SaveToFileButton: TButton;
+    Panel1: TPanel;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -31,6 +33,7 @@ type
     procedure PopupMenu1Popup(Sender: TObject);
     procedure DisablePreviewCheckBoxClick(Sender: TObject);
     procedure PreviewMenuItemClick(Sender: TObject);
+    procedure SaveToFileButtonClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -66,7 +69,7 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs;
 
 {$R *.dfm}
 
@@ -935,6 +938,59 @@ procedure TPreviewThread.DoMsg;
 begin
   GetLog(Self.ClassName).Write(CurMsg);
 end;*)
+
+function ZColorToColor(C : TZColorf) : TColor;
+var
+  R,G,B,A : longint;
+begin
+  R := Round(255 * C.R);
+  G := Round(255 * C.G);
+  B := Round(255 * C.B);
+  A := Round(255 * C.A);
+  Result:=(A shl 24) or (R shl 16) or (G shl 8) or B;
+end;
+
+var
+  ImgDialog : TSavePictureDialog;
+
+procedure TBitmapEditFrame.SaveToFileButtonClick(Sender: TObject);
+var
+  B : TBitmap;
+  P : PColor;
+  X,Y : integer;
+  Ps,PSource : PZVector4f;
+begin
+  if not IsBitmapConnected then
+    Exit;
+  if ImgDialog=nil then
+  begin
+    ImgDialog := TSavePictureDialog.Create(EditorForm);
+  end;
+  if not ImgDialog.Execute then
+    Exit;
+  B := TBitmap.Create;
+  PSource := Bitmap.GetCopyAsFloats;
+  try
+    B.Width := Bitmap.PixelWidth;
+    B.Height := Bitmap.PixelHeight;
+    B.PixelFormat := pf32bit;
+    Ps := PSource;
+    for Y := B.Height-1 downto 0 do
+    begin
+      P := B.ScanLine[Y];
+      for X := 0 to B.Width-1 do
+      begin
+        P^ := ZColorToColor(TZColorf(PS^));
+        Inc(P);
+        Inc(Ps);
+      end;
+    end;
+    B.SaveToFile(ImgDialog.FileName);
+  finally
+    B.Free;
+    FreeMem(PSource);
+  end;
+end;
 
 
 end.
