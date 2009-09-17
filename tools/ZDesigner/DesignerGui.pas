@@ -86,10 +86,10 @@ function DesignerFormatFloat(V : single) : string;
 
 implementation
 
-uses StdCtrls,SysUtils,Math,Dialogs,Graphics,frmEditor,ExprEdit,ZLog,ZBitmap,
+uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,ExprEdit,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit,ZExpressions;
+  frmArrayEdit, ZExpressions, Graphics;
 
 type
   TZPropertyEditBase = class(TCustomPanel)

@@ -55,20 +55,38 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Left = 2
       Top = 15
       Width = 181
-      Height = 319
+      Height = 337
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-    end
-    object DisablePreviewCheckBox: TCheckBox
-      Left = 2
-      Top = 334
-      Width = 181
-      Height = 18
-      Align = alBottom
-      Caption = 'Hide preview'
-      TabOrder = 1
-      OnClick = DisablePreviewCheckBoxClick
+      ExplicitHeight = 319
+      object Panel1: TPanel
+        Left = 0
+        Top = 315
+        Width = 181
+        Height = 22
+        Align = alBottom
+        BevelOuter = bvNone
+        TabOrder = 0
+        object DisablePreviewCheckBox: TCheckBox
+          Left = 2
+          Top = 1
+          Width = 100
+          Height = 18
+          Caption = 'Hide preview'
+          TabOrder = 0
+          OnClick = DisablePreviewCheckBoxClick
+        end
+        object SaveToFileButton: TButton
+          Left = 104
+          Top = 1
+          Width = 75
+          Height = 20
+          Caption = 'Save to file'
+          TabOrder = 1
+          OnClick = SaveToFileButtonClick
+        end
+      end
     end
   end
   object PopupMenu1: TPopupMenu
