@@ -56,17 +56,13 @@ uses
 
 {$ifndef fpc}
   {$R Data.res Data.rc}
-  {$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+  {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
 {$endif}
 
 begin
 
   ZApp := ZApplication.LoadApplicationComponent;
-//  try
-    ZApp.Run;
-//    ZApp.Terminate;
-//  finally
-    ZApp.Free;
-//  end;
+  ZApp.Run;
+  ZApp.Free;
 
 end.

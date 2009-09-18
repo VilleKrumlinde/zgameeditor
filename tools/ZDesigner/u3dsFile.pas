@@ -59,11 +59,12 @@ type
     DataFile : T3dsFileParser;
     FileName,NamePrefix : string;
     MeshScale : single;
-    AutoCenter,AutoScale,InvertNormals : boolean;
+    AutoCenter,AutoScale,InvertNormals,SingleMesh: boolean;
     procedure ScaleAndCenter;
     function GenerateMesh(M : TObject) : TZComponent;
     function GenerateModel: TZComponent;
     procedure ApplyPivotPoint;
+    procedure CollapseToSingleMesh;
   public
     constructor Create(const FileName : string);
     destructor Destroy; override;
@@ -74,7 +75,7 @@ type
 implementation
 
 uses ZLog,SysUtils,Meshes,ZMath,Renderer,
-  frm3dsImportOptions,Controls;
+  frm3dsImportOptions, Controls, Forms;
 
 type
   T3dsVertex = TZVector3f;
@@ -105,6 +106,7 @@ type
     MaxFacesMaterial : integer;
     UsedMaterials : integer;
     ZMesh : TMesh;
+    procedure CombineWith(M : T3dsMesh);
   end;
 
 
@@ -459,7 +461,7 @@ begin
       Stream.Write(Sm,2);
     end;
 
-    if DataFile.IncludeVertexColors and (InMesh.UsedMaterials>1) then
+    if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to InMesh.NVertices - 1 do
@@ -511,6 +513,18 @@ begin
   Result := OutMesh;
 end;
 
+procedure T3dsImport.CollapseToSingleMesh;
+var
+  Mesh : T3dsMesh;
+begin
+  while DataFile.MeshList.Count>1 do
+  begin
+    Mesh := DataFile.MeshList[0] as T3dsMesh;
+    Mesh.CombineWith(DataFile.MeshList[1] as T3dsMesh);
+    DataFile.MeshList.Delete(1);
+  end;
+end;
+
 function T3dsImport.GenerateModel : TZComponent;
 var
   M : TModel;
@@ -527,7 +541,8 @@ begin
       Continue;
 
     if ((not DataFile.IncludeVertexColors) or (Mesh.UsedMaterials=1)) and
-      (Mesh.DominatingMaterial<>nil) then
+      (Mesh.DominatingMaterial<>nil) and
+      (not SingleMesh) then
     begin
       SColor := TRenderSetColor.Create(M.OnRender);
       SColor.Color := Mesh.DominatingMaterial.DiffuseColor;
@@ -540,30 +555,44 @@ begin
   Result := M;
 end;
 
+var
+  OptionDialog : TImport3dsForm;
+
 function T3dsImport.Import: TZComponent;
 var
   Group,MeshGroup : TLogicalGroup;
   I : integer;
   Mesh : T3dsMesh;
-  F : TImport3dsForm;
 begin
-  F := TImport3dsForm.Create(nil);
-  try
-    F.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
-    if F.ShowModal=mrCancel then
-      Abort;
-    Self.NamePrefix := F.GetValidatedName(F.NamePrefixEdit.Text);
-    Self.MeshScale := StrToIntDef(F.MeshScaleEdit.Text,100) / 100.0;
-    Self.DataFile.IncludeVertexColors := F.ColorsCheckBox.Checked;
-    Self.AutoCenter := F.AutoCenterCheckBox.Checked;
-    Self.AutoScale := F.AutoScaleCheckBox.Checked;
-    Self.InvertNormals := F.InvertNormalsCheckBox.Checked;
-    Self.DataFile.IncludeTextureCoords := F.TexCoordsCheckBox.Checked;
-  finally
-    F.Free;
-  end;
+  if OptionDialog=nil then
+    OptionDialog := TImport3dsForm.Create(Application.MainForm);
+  OptionDialog.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
+  if OptionDialog.ShowModal=mrCancel then
+    Abort;
+  Self.NamePrefix := OptionDialog.GetValidatedName(OptionDialog.NamePrefixEdit.Text);
+  Self.MeshScale := StrToIntDef(OptionDialog.MeshScaleEdit.Text,100) / 100.0;
+  Self.DataFile.IncludeVertexColors := OptionDialog.ColorsCheckBox.Checked;
+  Self.AutoCenter := OptionDialog.AutoCenterCheckBox.Checked;
+  Self.AutoScale := OptionDialog.AutoScaleCheckBox.Checked;
+  Self.InvertNormals := OptionDialog.InvertNormalsCheckBox.Checked;
+  Self.SingleMesh := OptionDialog.SingleMeshCheckBox.Checked;
+  Self.DataFile.IncludeTextureCoords := OptionDialog.TexCoordsCheckBox.Checked;
 
   Self.DataFile.Parse;
+
+  I := 0;
+  while I<DataFile.MeshList.Count do
+  begin
+    Mesh := DataFile.MeshList[I] as T3dsMesh;
+    //Some meshes are faulty, others are lights or cameras without geometry
+    if Mesh.NVertices<=2 then
+      DataFile.MeshList.Delete(I)
+    else
+      Inc(I);
+  end;
+
+  if SingleMesh then
+    CollapseToSingleMesh;
 
   if not AutoCenter then
     ApplyPivotPoint;
@@ -578,9 +607,7 @@ begin
   for I := 0 to DataFile.MeshList.Count - 1 do
   begin
     Mesh := DataFile.MeshList[I] as T3dsMesh;
-    //Some meshes are faulty, others are lights or cameras without geometry
-    if Mesh.NVertices>2 then
-      MeshGroup.Children.AddComponent( GenerateMesh(Mesh) );
+    MeshGroup.Children.AddComponent( GenerateMesh(Mesh) );
   end;
 
   Group.Children.AddComponent( GenerateModel );
@@ -646,12 +673,12 @@ begin
 end;
 
 procedure T3dsImport.ApplyPivotPoint;
-var
+{var
   I,J : integer;
-  Mesh : T3dsMesh;
+  Mesh : T3dsMesh;}
 begin
-exit; //todo: this needs more debugging
-  for I := 0 to DataFile.MeshList.Count - 1 do
+//todo: this needs more debugging
+{  for I := 0 to DataFile.MeshList.Count - 1 do
   begin
     Mesh := T3dsMesh(DataFile.MeshList[I]);
     for J := 0 to High(Mesh.Vertices) do
@@ -659,8 +686,42 @@ exit; //todo: this needs more debugging
       VecSub3(Mesh.Vertices[J],DataFile.Pivot,Mesh.Vertices[J]);
       VecSub3(Mesh.Vertices[J],Mesh.LocalOrigin,Mesh.Vertices[J]);
     end;
-  end;
+  end;}
 end;
 
+
+{ T3dsMesh }
+
+procedure T3dsMesh.CombineWith(M: T3dsMesh);
+var
+  I : integer;
+begin
+  if Self.NVertices + M.NVertices>High(Word) then
+    raise Exception.Create('Too many vertices in combined 3ds-mesh. Import with "Single mesh" off.');
+
+  SetLength(Self.Vertices, Self.NVertices + M.NVertices);
+  Move(M.Vertices[0],Self.Vertices[Self.NVertices],M.NVertices * SizeOf(M.Vertices[0]));
+
+  SetLength(Self.VertexColors, Self.NVertices + M.NVertices);
+  Move(M.VertexColors[0],Self.VertexColors[Self.NVertices],M.NVertices * SizeOf(M.VertexColors[0]));
+
+  if Length(M.TextureCoords)>0 then
+  begin
+    SetLength(Self.TextureCoords, Self.NVertices + M.NVertices);
+    Move(M.TextureCoords[0],Self.TextureCoords[Self.NVertices],M.NVertices * SizeOf(M.TextureCoords[0]));
+  end;
+
+  SetLength(Self.Faces, Self.NFaces + M.NFaces);
+  Move(M.Faces[0],Self.Faces[Self.NFaces],M.NFaces * SizeOf(M.Faces[0]));
+  for I := 0 to M.NFaces-1 do
+  begin
+    Inc(Self.Faces[ Self.NFaces + I ].V1, Self.NVertices );
+    Inc(Self.Faces[ Self.NFaces + I ].V2, Self.NVertices );
+    Inc(Self.Faces[ Self.NFaces + I ].V3, Self.NVertices );
+  end;
+
+  Inc(Self.NVertices,M.NVertices);
+  Inc(Self.NFaces,M.NFaces);
+end;
 
 end.

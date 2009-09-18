@@ -44,6 +44,7 @@ type
     DownloadURLLabel: TLabel;
     InvertNormalsCheckBox: TCheckBox;
     TexCoordsCheckBox: TCheckBox;
+    SingleMeshCheckBox: TCheckBox;
     procedure NamePrefixEditChange(Sender: TObject);
     procedure AutoScaleCheckBoxClick(Sender: TObject);
     procedure DownloadURLLabelClick(Sender: TObject);
