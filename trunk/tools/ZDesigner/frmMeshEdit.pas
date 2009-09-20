@@ -22,6 +22,8 @@ type
     PreviewMenuItem: TMenuItem;
     WireframeCheckBox: TCheckBox;
     NormalsCheckBox: TCheckBox;
+    Panel1: TPanel;
+    SaveMeshToFileButton: TButton;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -34,6 +36,7 @@ type
     procedure DisablePreviewCheckBoxClick(Sender: TObject);
     procedure PreviewMenuItemClick(Sender: TObject);
     procedure MeshNormalsCheckBoxClick(Sender: TObject);
+    procedure SaveMeshToFileButtonClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -68,7 +71,7 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer;
+uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile;
 
 {$R *.dfm}
 
@@ -897,5 +900,34 @@ begin
   RepaintPage;
   Glp.Invalidate;
 end;
+
+
+var
+  SaveDialog : TSaveDialog;
+
+procedure TMeshEditFrame.SaveMeshToFileButtonClick(Sender: TObject);
+var
+  Exp : T3dsExport;
+begin
+  if not IsMeshConnected then
+    Exit;
+
+  if SaveDialog=nil then
+  begin
+    SaveDialog := TSaveDialog.Create(Application.MainForm);
+    SaveDialog.Filter := '3D-studio files (*.3ds)|*.3ds';
+    SaveDialog.DefaultExt := '*.3ds';
+  end;
+  if not SaveDialog.Execute then
+    Exit;
+
+  Exp := T3dsExport.Create;
+  try
+    Exp.DoExport(Mesh,SaveDialog.FileName);
+  finally
+    Exp.Free;
+  end;
+end;
+
 
 end.

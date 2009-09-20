@@ -24,7 +24,7 @@ unit u3dsFile;
 
 interface
 
-uses ZClasses,Classes,Contnrs;
+uses ZClasses, Classes, Contnrs, Meshes;
 
 type
   TChunkInfo = record
@@ -71,16 +71,27 @@ type
     function Import : TZComponent;
   end;
 
+  T3dsExport = class
+  private
+    Stream : TMemoryStream;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure DoExport(M : TMesh; const FileName : string);
+    function MakeChunk(Id : word) : pointer;
+    procedure CloseChunk(P : pointer);
+  end;
+
 
 implementation
 
-uses ZLog,SysUtils,Meshes,ZMath,Renderer,
+uses ZLog,SysUtils,ZMath,Renderer,
   frm3dsImportOptions, Controls, Forms;
 
 type
   T3dsVertex = TZVector3f;
 
-  T3dsFace = record
+  T3dsFace = packed record
     V1, V2, V3, Flag: Word;
   end;
 
@@ -106,7 +117,9 @@ type
     MaxFacesMaterial : integer;
     UsedMaterials : integer;
     ZMesh : TMesh;
+    constructor CreateFromMesh(M : TMesh);
     procedure CombineWith(M : T3dsMesh);
+    procedure WriteTo(Exporter : T3dsExport);
   end;
 
 
@@ -226,7 +239,7 @@ begin
   //3ds xyz are different to zzdc coordinate system
   Stream.Read(Dest^[0],4);
   Stream.Read(Dest^[2],4);
-  Dest^[2] := Dest^[2] * -1;   //Invert Y-axis 
+  Dest^[2] := Dest^[2] * -1;   //Invert Y-axis
   Stream.Read(Dest^[1],4);
 end;
 
@@ -722,6 +735,130 @@ begin
 
   Inc(Self.NVertices,M.NVertices);
   Inc(Self.NFaces,M.NFaces);
+end;
+
+constructor T3dsMesh.CreateFromMesh(M: TMesh);
+var
+  I,J : integer;
+begin
+  Name := M.Name;
+  if M.VerticesCount>High(Word) then
+    raise Exception.Create('Cannot convert: too many vertices');
+  NVertices := M.VerticesCount;
+  SetLength(Vertices,NVertices);
+  for I := 0 to NVertices-1 do
+  begin
+    Vertices[I][0] := M.Vertices[I][0];
+    Vertices[I][1] := M.Vertices[I][2] * -1;
+    Vertices[I][2] := M.Vertices[I][1];
+  end;
+  if M.Colors<>nil then
+  begin
+    SetLength(VertexColors,NVertices);
+    Move(M.Colors^,Self.VertexColors[0],SizeOf(TZColorf));
+  end;
+  NFaces := M.IndicesCount div 3;
+  SetLength(Faces,NFaces);
+  J := 0;
+  for I := 0 to NFaces-1 do
+  begin
+    Faces[I].V1 := M.Indices^[J];
+    Faces[I].V2 := M.Indices^[J+1];
+    Faces[I].V3 := M.Indices^[J+2];
+    Inc(J,3);
+  end;
+end;
+
+const
+  MdataChunkId = $3d3d;
+  ObjectChunkId = $4000;
+  TriMeshChunkId = $4100;
+  VerticesChunkId = $4110;
+  FacesChunkId = $4120;
+
+procedure T3dsMesh.WriteTo(Exporter: T3dsExport);
+var
+  Stream : TStream;
+  MdataChunk,ObjectChunk,MeshChunk,Chunk : pointer;
+  W : word;
+begin
+  Stream := Exporter.Stream;
+
+  MdataChunk := Exporter.MakeChunk(MdataChunkId);
+  ObjectChunk := Exporter.MakeChunk(ObjectChunkId);
+
+  W := 0;
+  Stream.Write(W,1);
+
+  MeshChunk := Exporter.MakeChunk(TriMeshChunkId);
+
+  Chunk := Exporter.MakeChunk(VerticesChunkId);
+  W := Self.NVertices;
+  Stream.Write(W,2);
+  Stream.Write(Self.Vertices[0],NVertices * SizeOf(Vertices[0]));
+  Exporter.CloseChunk(Chunk);
+
+  Chunk := Exporter.MakeChunk(FacesChunkId);
+  W := Self.NFaces;
+  Stream.Write(W,2);
+  Stream.Write(Self.Faces[0],NFaces * SizeOf(Faces[0]));
+  Exporter.CloseChunk(Chunk);
+
+  Exporter.CloseChunk(MeshChunk);
+  Exporter.CloseChunk(ObjectChunk);
+  Exporter.CloseChunk(MdataChunk);
+end;
+
+{ T3dsExport }
+
+procedure T3dsExport.CloseChunk(P: pointer);
+var
+  L : longword;
+  OldP : integer;
+begin
+  L := Stream.Position - integer(P) + 2;
+  OldP := Stream.Position;
+  Stream.Position := integer(P);
+  Stream.Write(L,4);
+  Stream.Position := OldP;
+end;
+
+constructor T3dsExport.Create;
+begin
+  Stream := TMemoryStream.Create
+end;
+
+destructor T3dsExport.Destroy;
+begin
+  Stream.Free;
+  inherited;
+end;
+
+procedure T3dsExport.DoExport(M: TMesh; const FileName : string);
+var
+  Mesh3ds : T3dsMesh;
+  FileChunk : pointer;
+begin
+  Mesh3ds := T3dsMesh.CreateFromMesh(M);
+  try
+    FileChunk := MakeChunk($4d4d);
+    Mesh3ds.WriteTo(Self);
+    CloseChunk(FileChunk);
+  finally
+    Mesh3ds.Free;
+  end;
+
+  Stream.SaveToFile(FileName);
+end;
+
+function T3dsExport.MakeChunk(Id: word): pointer;
+var
+  I : integer;
+begin
+  Stream.Write(Id,2);
+  Result := pointer(Stream.Position);
+  I := 0;
+  Stream.Write(I,4)
 end;
 
 end.

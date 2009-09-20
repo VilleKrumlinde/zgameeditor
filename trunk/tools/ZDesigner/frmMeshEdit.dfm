@@ -30,7 +30,6 @@ inherited MeshEditFrame: TMeshEditFrame
       BorderStyle = bsNone
       PopupMenu = PopupMenu1
       TabOrder = 0
-      ExplicitWidth = 245
       object Image: TImage
         Left = 0
         Top = 0
@@ -51,29 +50,6 @@ inherited MeshEditFrame: TMeshEditFrame
     Align = alClient
     Caption = 'Preview'
     TabOrder = 1
-    ExplicitLeft = 253
-    ExplicitWidth = 185
-    object PreviewPanel: TPanel
-      Left = 2
-      Top = 49
-      Width = 230
-      Height = 285
-      Align = alClient
-      BevelOuter = bvNone
-      TabOrder = 0
-      ExplicitWidth = 181
-    end
-    object DisablePreviewCheckBox: TCheckBox
-      Left = 2
-      Top = 334
-      Width = 230
-      Height = 18
-      Align = alBottom
-      Caption = 'Hide preview'
-      TabOrder = 1
-      OnClick = DisablePreviewCheckBoxClick
-      ExplicitWidth = 181
-    end
     object WireframeCheckBox: TCheckBox
       Left = 2
       Top = 32
@@ -81,8 +57,7 @@ inherited MeshEditFrame: TMeshEditFrame
       Height = 17
       Align = alTop
       Caption = 'Wireframe'
-      TabOrder = 2
-      ExplicitWidth = 181
+      TabOrder = 0
     end
     object NormalsCheckBox: TCheckBox
       Left = 2
@@ -91,9 +66,50 @@ inherited MeshEditFrame: TMeshEditFrame
       Height = 17
       Align = alTop
       Caption = 'Normals'
-      TabOrder = 3
+      TabOrder = 1
       OnClick = MeshNormalsCheckBoxClick
+    end
+    object Panel1: TPanel
+      Left = 2
+      Top = 330
+      Width = 230
+      Height = 22
+      Align = alBottom
+      BevelOuter = bvNone
+      TabOrder = 2
+      ExplicitLeft = 0
+      ExplicitTop = 315
       ExplicitWidth = 181
+      object SaveMeshToFileButton: TButton
+        Left = 104
+        Top = 1
+        Width = 75
+        Height = 20
+        Caption = 'Save to file'
+        TabOrder = 0
+        OnClick = SaveMeshToFileButtonClick
+      end
+      object DisablePreviewCheckBox: TCheckBox
+        Left = 2
+        Top = 2
+        Width = 100
+        Height = 18
+        Caption = 'Hide preview'
+        TabOrder = 1
+        OnClick = DisablePreviewCheckBoxClick
+      end
+    end
+    object PreviewPanel: TPanel
+      Left = 2
+      Top = 49
+      Width = 230
+      Height = 281
+      Align = alClient
+      BevelOuter = bvNone
+      TabOrder = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitHeight = 22
     end
   end
   object PopupMenu1: TPopupMenu
