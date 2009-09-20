@@ -259,6 +259,7 @@ type
       Y: Integer);
     procedure LogCopytoclipboardMenuItemClick(Sender: TObject);
     procedure ForceRefreshActionExecute(Sender: TObject);
+    procedure ExprPanelClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -1800,6 +1801,15 @@ end;
 procedure TEditorForm.ExprHelpButtonClick(Sender: TObject);
 begin
   uHelp.ShowHelp('Main/WritingExpressions');
+end;
+
+procedure TEditorForm.ExprPanelClick(Sender: TObject);
+var
+  X : integer;
+begin
+  X := LowerRightPanel.Height;
+  LowerRightPanel.Height := Panel2.Height;
+  Panel2.Height := X;
 end;
 
 procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZPropertyValue; Prop : TZProperty);

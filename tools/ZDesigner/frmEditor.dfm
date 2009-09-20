@@ -94,18 +94,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -133,10 +125,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -149,6 +137,7 @@ object EditorForm: TEditorForm
             Anchors = [akLeft, akTop, akRight, akBottom]
             Caption = '&Code editor'
             TabOrder = 0
+            OnClick = ExprPanelClick
           end
           object ExprCompileButton: TButton
             Left = 8
@@ -194,10 +183,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -292,16 +277,12 @@ object EditorForm: TEditorForm
         Top = 0
         Width = 411
         Height = 541
-        ActivePage = ViewerGlTabSheet
+        ActivePage = ViewerBitmapTabSheet
         Align = alClient
         TabOrder = 0
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -641,10 +622,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -677,10 +654,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 491
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -704,26 +677,26 @@ object EditorForm: TEditorForm
               Width = 214
               Height = 531
               ExplicitWidth = 214
-              ExplicitHeight = 491
+              ExplicitHeight = 531
               inherited ScrollBox1: TScrollBox
                 Width = 210
                 Height = 514
                 ExplicitWidth = 210
-                ExplicitHeight = 474
+                ExplicitHeight = 514
               end
             end
             inherited RightPanel: TGroupBox
               Left = 218
               Height = 531
               ExplicitLeft = 218
-              ExplicitHeight = 491
+              ExplicitHeight = 531
               inherited PreviewPanel: TPanel
-                Height = 496
-                ExplicitHeight = 456
-              end
-              inherited DisablePreviewCheckBox: TCheckBox
-                Top = 511
-                ExplicitTop = 471
+                Height = 514
+                ExplicitHeight = 514
+                inherited Panel1: TPanel
+                  Top = 492
+                  ExplicitTop = 492
+                end
               end
             end
           end
@@ -750,12 +723,12 @@ object EditorForm: TEditorForm
               Width = 214
               Height = 531
               ExplicitWidth = 214
-              ExplicitHeight = 491
+              ExplicitHeight = 531
               inherited ScrollBox1: TScrollBox
                 Width = 210
                 Height = 514
                 ExplicitWidth = 210
-                ExplicitHeight = 474
+                ExplicitHeight = 514
               end
             end
             inherited RightPanel: TGroupBox
@@ -763,22 +736,29 @@ object EditorForm: TEditorForm
               Width = 185
               Height = 531
               ExplicitLeft = 218
-              ExplicitHeight = 491
-              inherited PreviewPanel: TPanel
-                Width = 181
-                Height = 462
-                ExplicitHeight = 422
-              end
-              inherited DisablePreviewCheckBox: TCheckBox
-                Top = 511
-                Width = 181
-                ExplicitTop = 471
-              end
+              ExplicitWidth = 185
+              ExplicitHeight = 531
               inherited WireframeCheckBox: TCheckBox
                 Width = 181
+                ExplicitWidth = 181
               end
               inherited NormalsCheckBox: TCheckBox
                 Width = 181
+                ExplicitWidth = 181
+              end
+              inherited Panel1: TPanel
+                Top = 507
+                Width = 181
+                ExplicitLeft = 2
+                ExplicitTop = 507
+              end
+              inherited PreviewPanel: TPanel
+                Width = 181
+                Height = 458
+                ExplicitLeft = 2
+                ExplicitTop = 49
+                ExplicitWidth = 181
+                ExplicitHeight = 458
               end
             end
           end
