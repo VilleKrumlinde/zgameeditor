@@ -383,7 +383,7 @@ procedure TZApplication.Run;
 begin
   Init;
   //Initial tree update
-  Self.Update;
+//  Self.Update;
   OnLoaded.ExecuteCommands;
   Platform_Run(Self.Main);
 end;

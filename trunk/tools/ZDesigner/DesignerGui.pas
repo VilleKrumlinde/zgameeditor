@@ -22,7 +22,7 @@ unit DesignerGui;
 
 interface
 
-uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -83,13 +83,15 @@ function HasReferers(Root, Target : TZComponent) : boolean;
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
+function ZColorToColor(C : TZColorf) : TColor;
+function ColorToZColor(C : TColor) : TZColorf;
 
 implementation
 
 uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,ExprEdit,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions, Graphics;
+  frmArrayEdit, ZExpressions;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
