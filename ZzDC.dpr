@@ -34,6 +34,7 @@ program ZzDC;
 }
 
 uses
+//  FastMM4 in 'FastMM4.pas',
   ZClasses in 'ZClasses.pas',
   ZOpenGL in 'ZOpenGL.pas',
   ZBitmap in 'ZBitmap.pas',

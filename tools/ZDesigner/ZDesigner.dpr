@@ -81,7 +81,7 @@ uses
 {.$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
 
 //+>2gb memory in 64-bitwindows
-{$SetPEFlags $21}
+{$SETPEFLAGS $21}
 
 begin
   //Report memleaks when run inside delphi debugger

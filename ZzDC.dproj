@@ -33,7 +33,7 @@
     <DCC_ResourcePath>.\3rdparty</DCC_ResourcePath>
     <DCC_ObjPath>.\3rdparty</DCC_ObjPath>
     <DCC_IncludePath>.\3rdparty</DCC_IncludePath>
-    <DCC_Define>MINIMAL;DEBUG</DCC_Define>
+    <DCC_Define>MINIMAL</DCC_Define>
     <DCC_IOChecking>False</DCC_IOChecking>
   </PropertyGroup>
   <ProjectExtensions>
@@ -47,12 +47,19 @@
     <DelphiCompile Include="ZzDC.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..FastMM4.pas" />
+    <DCCReference Include="..\..FastMM4.pas" />
+    <DCCReference Include="..\..\FastMM4.pas" />
+    <DCCReference Include="..\.FastMM4.pas" />
+    <DCCReference Include="..\FastMM4.pas" />
+    <DCCReference Include=".FastMM4.pas" />
     <DCCReference Include="Animators.pas" />
     <DCCReference Include="AudioComponents.pas" />
     <DCCReference Include="AudioPlayer.pas" />
     <DCCReference Include="BitmapProducers.pas" />
     <DCCReference Include="Collision.pas" />
     <DCCReference Include="Commands.pas" />
+    <DCCReference Include="FastMM4.pas" />
     <DCCReference Include="ImplicitMeshes.pas" />
     <DCCReference Include="Meshes.pas" />
     <DCCReference Include="Renderer.pas" />
