@@ -32,7 +32,8 @@ uses
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile;
 
 type
-  TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbNormalLinux,bbNormalOsx86);
+  TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
+    bbNormalLinux,bbNormalOsx86);
 
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
@@ -1956,15 +1957,8 @@ begin
 end;
 
 procedure TEditorForm.GenerateScreenSaverActionExecute(Sender: TObject);
-var
-  OutFile : string;
 begin
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.scr'
-  else
-    OutFile := ChangeFileExt(CurrentFileName,'.scr');
-  BuildBinary('player_ss.bin',OutFile);
-  ShowMessage('Created file: ' + OutFile);
+  BuildRelease(bbScreenSaverUncompressed);
 end;
 
 function TEditorForm.VerifyToolExists(const ToolName,ToolUrl,ExeFile : string) : boolean;
@@ -2108,10 +2102,10 @@ begin
         PlayerName := ExePath + 'player.bin';
         UseCodeRemoval := RemoveUnusedMenuItem.Checked;
       end;
-    bbScreenSaver :
+    bbScreenSaver, bbScreenSaverUncompressed :
       begin
         Ext := 'scr';
-        PlayerName := ExePath + 'player_ss.bin'
+        PlayerName := ExePath + 'player_ss.bin';
       end;
     bbNormalLinux :
       begin
@@ -2161,9 +2155,6 @@ begin
     ToolParams := StringReplace(PackerParams,'{$exename}','"' + OutFile + '"',[rfReplaceAll, rfIgnoreCase]);
     ExecToolAndWait(Tool,ToolParams);
   end;
-
-  //Need to update filedate, the file created by reshacker has same date as original
-//  FileSetDate(OutFile,DateTimeToFileDate(Now));
 
   if Kind<>bbNormalUncompressed then
     ShowMessage('Created file: '#13#13'  ' + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
