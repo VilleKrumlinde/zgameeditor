@@ -37,7 +37,7 @@ type
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
  BitmapLoadClassId,BitmapCombineClassId,BitmapCellsClassId,BitmapDistortClassId,BitmapPixelsClassId,
  BitmapConvolutionClassId,
- MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
+ MeshClassId,ModelClassId,MaterialClassId,MaterialTextureClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
  MeshCombineClassId,MeshLoadClassId,MeshTransformClassId,MeshLoopClassId,
  RemoveAllModelsClassId,
@@ -597,7 +597,7 @@ type
 
   TZXmlReader = class(TZReader)
   private
-    Xml : LibXmlParser.TXmlParser;
+    MainXml : LibXmlParser.TXmlParser;
     FixUps : TZArrayList;
     SymTab : TSymbolTable;
     OldSeparator : char;
@@ -607,6 +607,7 @@ type
     procedure LoadFromFile(const FileName: string);
     procedure LoadFromString(const XmlData: string; SymTab : TSymbolTable);
     function DoReadComponent(OwnerList : TZComponentList) : TZComponent; override;
+    function XmlDoReadComponent(Xml : TXmlParser; OwnerList : TZComponentList) : TZComponent;
     procedure OnDocumentStart; override;
     procedure OnDocumentEnd; override;
   end;
@@ -2561,7 +2562,7 @@ end;
 {$IFNDEF MINIMAL}
 constructor TZXmlReader.Create;
 begin
-  Xml := TXmlParser.Create;
+  MainXml := TXmlParser.Create;
   FixUps := TZArrayList.Create;
   Self.OldSeparator := SysUtils.DecimalSeparator;
   SysUtils.DecimalSeparator := '.';
@@ -2572,7 +2573,7 @@ begin
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
   ExternalSymTab := False;
   SymTab := TSymbolTable.Create;
-  Xml.LoadFromFile(FileName);
+  MainXml.LoadFromFile(FileName);
 end;
 
 procedure TZXmlReader.LoadFromString(const XmlData: string; SymTab : TSymbolTable);
@@ -2582,13 +2583,13 @@ begin
   //Use the global symbol table
   //Let the locals be defines in a local scope
   SymTab.PushScope;
-  Xml.LoadFromBuffer(PChar(XmlData));;
+  MainXml.LoadFromBuffer(PChar(XmlData));;
 end;
 
 destructor TZXmlReader.Destroy;
 begin
   SysUtils.DecimalSeparator := Self.OldSeparator;
-  Xml.Free;
+  MainXml.Free;
   FixUps.Free;
   if ExternalSymTab then
     SymTab.PopScope
@@ -2598,6 +2599,11 @@ begin
 end;
 
 function TZXmlReader.DoReadComponent(OwnerList: TZComponentList): TZComponent;
+begin
+  Result := XmlDoReadComponent(MainXml,OwnerList);
+end;
+
+function TZXmlReader.XmlDoReadComponent(Xml : TXmlParser; OwnerList: TZComponentList): TZComponent;
 var
   ZClassName : string;
   C : TZComponent;
@@ -2607,8 +2613,9 @@ var
   Value : TZPropertyValue;
   Prop,NestedProp : TZProperty;
   S : string;
-  L : TStringList;
+  L,NotFounds : TStringList;
   Fix : TZXmlFixUp;
+  Found : boolean;
 
   procedure InDecodeBinary(const HexS : string; var BinaryValue : TZBinaryPropValue);
   var
@@ -2648,6 +2655,53 @@ var
     end;
   end;
 
+  procedure PatchMaterialTextures;
+  var
+    S : string;
+    OtherXml : TXmlParser;
+    procedure InFixTex(const Name : string);
+    begin
+      if NotFounds.Values[Name]<>'' then
+        S := S + Name + '="' + NotFounds.Values[Name] + '" '
+    end;
+  begin
+    if NotFounds.Values['Texture']='' then
+      Exit;
+    Prop := PropList.GetByName('Textures');
+    C.GetProperty(Prop,Value);
+    //DoReadComponent(Value.ComponentListValue);
+    S := '<MaterialTexture Texture="' + NotFounds.Values['Texture'] + '" ';
+    InFixTex('TextureScale');
+    InFixTex('TextureX');
+    InFixTex('TextureY');
+    InFixTex('TextureRotate');
+    InFixTex('TextureWrapMode');
+    InFixTex('TexCoords');
+    S := S + '/>';
+    OtherXml := TXmlParser.Create;
+
+    OtherXml.LoadFromBuffer(PAnsiChar(S));
+    OtherXml.Scan;
+    XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+
+    if NotFounds.Values['Texture2']<>'' then
+    begin
+      OtherXml.LoadFromBuffer( PAnsiChar('<MaterialTexture Texture="' + NotFounds.Values['Texture2'] + '"/>'));
+      OtherXml.StartScan;
+      OtherXml.Scan;
+      XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+    end;
+    if NotFounds.Values['Texture3']<>'' then
+    begin
+      OtherXml.LoadFromBuffer( PAnsiChar('<MaterialTexture Texture="' + NotFounds.Values['Texture3'] + '"/>'));
+      OtherXml.StartScan;
+      OtherXml.Scan;
+      XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+    end;
+
+    OtherXml.Free;
+  end;
+
 begin
   ZClassName := Xml.CurName;
 
@@ -2655,6 +2709,7 @@ begin
   C := Ci.ZClass.Create(OwnerList);
 
   L := TStringList.Create;
+  NotFounds := TStringList.Create;
   try
     L.Delimiter := ' ';
     //read properties
@@ -2663,12 +2718,14 @@ begin
     for I := 0 to Xml.CurAttr.Count-1 do
     begin
       S:=Xml.CurAttr.Name(I);
+      Found := False;
       for J := 0 to PropList.Count-1 do
       begin
         Prop := TZProperty(PropList[J]);
         if SameText(Prop.Name,S) then
         begin
           S := Xml.CurAttr.Value(I);
+          Found := True;
           case Prop.PropertyType of
             zptString :
               Value.StringValue := S;
@@ -2743,72 +2800,78 @@ begin
           Break;
         end;
       end;
+      if not Found then
+        NotFounds.Values[S] := Xml.CurAttr.Value(I);
     end;
 
-  if Xml.CurPartType=ptStartTag then
-  begin
-    while Xml.Scan do
-      case Xml.CurPartType of
-        ptStartTag :
-          begin
-            //Hantera nästlade komponnenter
-            //Det gäller componentlists och inlinecomponent
-            S := Xml.CurName;
-            NestedProp:=nil;
-            for I := 0 to PropList.Count-1 do
+    if (NotFounds.Count>0) and (ZClassName='Material') then
+      PatchMaterialTextures;
+
+    if Xml.CurPartType=ptStartTag then
+    begin
+      while Xml.Scan do
+        case Xml.CurPartType of
+          ptStartTag :
             begin
-              Prop := TZProperty(PropList[I]);
-              if SameText(Prop.Name,Xml.CurName) and
-                (Prop.PropertyType in [zptComponentList,zptInlineComponent,zptString,zptExpression,zptBinary]) then
+              //Hantera nästlade komponnenter
+              //Det gäller componentlists och inlinecomponent
+              S := Xml.CurName;
+              NestedProp:=nil;
+              for I := 0 to PropList.Count-1 do
               begin
-                NestedProp := Prop;
-                Break;
+                Prop := TZProperty(PropList[I]);
+                if SameText(Prop.Name,Xml.CurName) and
+                  (Prop.PropertyType in [zptComponentList,zptInlineComponent,zptString,zptExpression,zptBinary]) then
+                begin
+                  NestedProp := Prop;
+                  Break;
+                end;
               end;
-            end;
-            if NestedProp=nil then
-              raise Exception.Create('TZXmlReader: Unknown nested property ' + Xml.CurName);
-            C.GetProperty(NestedProp,Value);
-            while Xml.Scan do
-              case Xml.CurPartType of
-                ptStartTag,ptEmptyTag,ptCData  :
-                  case NestedProp.PropertyType of
-                    zptComponentList : DoReadComponent(Value.ComponentListValue);
-                    zptInlineComponent :
-                      begin
-                        Value.ComponentValue := DoReadComponent(nil);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptString :
-                      begin
-                        Value.StringValue := Trim(Xml.CurContent);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptExpression :
-                      begin
-                        Value.ExpressionValue.Source := Trim(Xml.CurContent);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptBinary :
-                      begin
-                        try
-                          InDecodeBinary(Xml.CurContent,Value.BinaryValue);
+              if NestedProp=nil then
+                raise Exception.Create('TZXmlReader: Unknown nested property ' + Xml.CurName);
+              C.GetProperty(NestedProp,Value);
+              while Xml.Scan do
+                case Xml.CurPartType of
+                  ptStartTag,ptEmptyTag,ptCData  :
+                    case NestedProp.PropertyType of
+                      zptComponentList : DoReadComponent(Value.ComponentListValue);
+                      zptInlineComponent :
+                        begin
+                          Value.ComponentValue := DoReadComponent(nil);
                           C.SetProperty(NestedProp,Value);
-                        except
-                          ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + C.Name);
                         end;
-                      end;
-                  end;
-                ptEndTag :
-                  if SameText(NestedProp.Name,Xml.CurName) then
-                    Break;
-              end;
-          end;
-        ptEndTag : Break;
-      end;
-  end;
+                      zptString :
+                        begin
+                          Value.StringValue := Trim(Xml.CurContent);
+                          C.SetProperty(NestedProp,Value);
+                        end;
+                      zptExpression :
+                        begin
+                          Value.ExpressionValue.Source := Trim(Xml.CurContent);
+                          C.SetProperty(NestedProp,Value);
+                        end;
+                      zptBinary :
+                        begin
+                          try
+                            InDecodeBinary(Xml.CurContent,Value.BinaryValue);
+                            C.SetProperty(NestedProp,Value);
+                          except
+                            ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + C.Name);
+                          end;
+                        end;
+                    end;
+                  ptEndTag :
+                    if SameText(NestedProp.Name,Xml.CurName) then
+                      Break;
+                end;
+            end;
+          ptEndTag : Break;
+        end;
+    end;
 
   finally
     L.Free;
+    NotFounds.Free;
   end;
 
   if C.Name<>'' then
@@ -2859,8 +2922,8 @@ end;
 
 procedure TZXmlReader.OnDocumentStart;
 begin
-  while Xml.Scan do
-    if Xml.CurPartType in [ptStartTag,ptEmptyTag] then
+  while MainXml.Scan do
+    if MainXml.CurPartType in [ptStartTag,ptEmptyTag] then
       Break;
 end;
 {$ENDIF}
