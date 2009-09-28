@@ -36,21 +36,28 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Textures : array[0..2] of TZBitmap;
-    TextureScale : TZVector3f;
-    TextureX,TextureY : single;
-    TextureRotate : single;
-    TextureWrapMode : (tmMirror,tmTile,tmClamp);
+    Textures : TZComponentList;
     Shading : TMaterialShading;
     Color : TZColorf;
     Light : boolean;
     Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1);
-    TexCoords : TMaterialTexCoords;
     ZBuffer : boolean;
     DrawBackFace : boolean;
     Font : TFont;
     Shader : TShader;
     WireframeWidth : single;
+  end;
+
+  TMaterialTexture = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Texture : TZBitmap;
+    TextureScale : TZVector3f;
+    TextureX,TextureY : single;
+    TextureRotate : single;
+    TextureWrapMode : (tmMirror,tmTile,tmClamp);
+    TexCoords : TMaterialTexCoords;
   end;
 
   TShaderVariable = class(TZComponent)
@@ -399,7 +406,8 @@ const
   TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
 var
   NilOld : boolean;
-  Tmp,I,StartI : integer;
+  Tmp,I,TexCount : integer;
+  Tex : TMaterialTexture;
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -491,7 +499,68 @@ begin
     end;
   end;
 
-  if MultiTextureSupported then
+
+  TexCount := NewM.Textures.Count;
+  if (not NilOld) and (OldM.Textures.Count>TexCount) then
+    TexCount := OldM.Textures.Count;
+  for I := 0 to TexCount-1 do
+  begin
+    if MultiTextureSupported then
+      glActiveTexture($84C0 + I)
+    else if I>0 then
+      Break;
+
+    if I<NewM.Textures.Count then
+    begin
+      Tex := TMaterialTexture(NewM.Textures[I]);
+
+      {$ifndef minimal}
+      if Tex.Texture=nil then
+      begin
+        GetLog('Material').Warning('No texture set');
+        Continue;
+      end;
+      {$endif}
+
+      glEnable(GL_TEXTURE_2D);
+      Tex.Texture.UseTextureBegin;
+
+      //Texture matrix
+      //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
+      glMatrixMode(GL_TEXTURE);
+      glLoadIdentity();
+        glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+        glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
+        glRotatef(Tex.TextureRotate*360,0,0,1);
+        glTranslatef(-0.5,-0.5,0);
+      glMatrixMode(GL_MODELVIEW);
+
+      if Tex.TexCoords=tcGenerated then
+      begin
+        glEnable(GL_TEXTURE_GEN_S);
+        glEnable(GL_TEXTURE_GEN_T);
+        glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+        glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      end
+      else
+      begin
+        glDisable(GL_TEXTURE_GEN_S);
+        glDisable(GL_TEXTURE_GEN_T);
+      end;
+
+      //This is a local parameter for every texture
+      Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
+    end
+    else
+    begin
+      glDisable(GL_TEXTURE_2D);
+    end;
+  end;
+
+
+(*  if MultiTextureSupported then
     StartI := High(NewM.Textures)
   else
     StartI := 0;
@@ -555,7 +624,7 @@ begin
     //This is a local parameter for every texture
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
-  end;
+  end;*)
 
   if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
   begin
@@ -692,20 +761,8 @@ end;
 procedure TMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Textures[0]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Texture2',{$ENDIF}integer(@Textures[1]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Texture3',{$ENDIF}integer(@Textures[2]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-
-  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
-    List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}integer(@TextureWrapMode) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Textures',{$ENDIF}integer(@Textures) - integer(Self), zptComponentList);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TMaterialTexture]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}integer(@WireframeWidth) - integer(Self), zptFloat);
     List.GetLast.DefaultValue.FloatValue:=4.0;
   List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading) - integer(Self), zptByte);
@@ -715,8 +772,6 @@ begin
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}integer(@ZBuffer) - integer(Self), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}integer(@DrawBackFace) - integer(Self), zptBoolean);
@@ -2054,10 +2109,30 @@ begin
 end;
 {$endif}
 
+{ TMaterialTexture }
+
+procedure TMaterialTexture.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
+    List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
+  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}integer(@TextureWrapMode) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
+end;
+
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TMaterialTexture,MaterialTextureClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Material';{$endif}
   ZClasses.Register(TShader,ShaderClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TShaderVariable,ShaderVariableClassId);
