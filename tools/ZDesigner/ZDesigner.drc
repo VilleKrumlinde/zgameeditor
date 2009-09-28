@@ -8,73 +8,74 @@
   resources were bound to the produced executable.
 */
 
-#define unitResourceGraphics_rstCursors 65200
-#define unitResourceGraphics_rstIcons 65201
-#define uTinyGif_sGIFImageFile 65202
-#define SynEditStrConst_SYNS_ScrollInfoFmtTop 65216
-#define SynEditStrConst_SYNS_EDuplicateShortcut 65217
-#define SynEditStrConst_SYNS_FilterCPP 65218
-#define SynEditStrConst_SYNS_LangCPP 65219
-#define SynEditTextBuffer_SListIndexOutOfBounds 65220
-#define SynEditTextBuffer_SInvalidCapacity 65221
-#define unitResourceDetails_rstNoStreaming 65222
-#define unitPEFile_rstInvalidDOSSignature 65223
-#define unitPEFile_rstInvalidCOFFSignature 65224
-#define unitPEFile_rstInvalidOptionalHeader 65225
-#define unitPEFile_rstBadDictionaryIndex 65226
-#define unitPEFile_rstBadLangID 65227
-#define unitExIcon_rstInvalidIcon 65228
-#define unitExIcon_rstInvalidCursor 65229
-#define unitExIcon_rstInvalidBitmap 65230
-#define unitExIcon_rstInvalidPixelFormat 65231
-#define OpenGL12_SDefaultGLULibrary 65232
-#define SynEditStrConst_SYNS_AttrAssembler 65233
-#define SynEditStrConst_SYNS_AttrCharacter 65234
-#define SynEditStrConst_SYNS_AttrComment 65235
-#define SynEditStrConst_SYNS_AttrFloat 65236
-#define SynEditStrConst_SYNS_AttrHexadecimal 65237
-#define SynEditStrConst_SYNS_AttrIdentifier 65238
-#define SynEditStrConst_SYNS_AttrIllegalChar 65239
-#define SynEditStrConst_SYNS_AttrNumber 65240
-#define SynEditStrConst_SYNS_AttrOctal 65241
-#define SynEditStrConst_SYNS_AttrPreprocessor 65242
-#define SynEditStrConst_SYNS_AttrReservedWord 65243
-#define SynEditStrConst_SYNS_AttrSpace 65244
-#define SynEditStrConst_SYNS_AttrString 65245
-#define SynEditStrConst_SYNS_AttrSymbol 65246
-#define SynEditStrConst_SYNS_ScrollInfoFmt 65247
-#define ComStrs_sInsertError 65248
-#define ComStrs_sInvalidOwner 65249
-#define ComStrs_sUDAssociated 65250
-#define ComStrs_sPageIndexError 65251
-#define ComStrs_sInvalidComCtl32 65252
-#define ZLibConst_sInvalidStreamOp 65253
-#define ZLibConst_sError 65254
-#define ComConst_SOleError 65255
-#define ComConst_SNoMethod 65256
-#define ComConst_SVarNotObject 65257
-#define ComConst_STooManyParams 65258
-#define OpenGL12_SRCAlreadyActive 65259
-#define OpenGL12_SMakeCurrentFailed 65260
-#define OpenGL12_SDeleteContextFailed 65261
-#define OpenGL12_SContextInUse 65262
-#define OpenGL12_SDefaultGLLibrary 65263
-#define Consts_SANSIEncoding 65264
-#define Consts_SASCIIEncoding 65265
-#define Consts_SUnicodeEncoding 65266
-#define Consts_SBigEndianEncoding 65267
-#define Consts_SUTF8Encoding 65268
-#define Consts_SUTF7Encoding 65269
-#define Consts_SPageControlNotSet 65270
-#define Consts_SWindowsVistaRequired 65271
-#define ComStrs_sTabFailClear 65272
-#define ComStrs_sTabFailDelete 65273
-#define ComStrs_sTabFailRetrieve 65274
-#define ComStrs_sTabFailGetObject 65275
-#define ComStrs_sTabFailSet 65276
-#define ComStrs_sTabFailSetObject 65277
-#define ComStrs_sTabMustBeMultiLine 65278
-#define ComStrs_sInvalidIndex 65279
+#define unitExIcon_rstInvalidPixelFormat 65200
+#define unitResourceGraphics_rstCursors 65201
+#define unitResourceGraphics_rstIcons 65202
+#define uTinyGif_sGIFImageFile 65203
+#define SynEditStrConst_SYNS_ScrollInfoFmt 65216
+#define SynEditStrConst_SYNS_ScrollInfoFmtTop 65217
+#define SynEditStrConst_SYNS_EDuplicateShortcut 65218
+#define SynEditStrConst_SYNS_FilterCPP 65219
+#define SynEditStrConst_SYNS_LangCPP 65220
+#define SynEditTextBuffer_SListIndexOutOfBounds 65221
+#define SynEditTextBuffer_SInvalidCapacity 65222
+#define unitResourceDetails_rstNoStreaming 65223
+#define unitPEFile_rstInvalidDOSSignature 65224
+#define unitPEFile_rstInvalidCOFFSignature 65225
+#define unitPEFile_rstInvalidOptionalHeader 65226
+#define unitPEFile_rstBadDictionaryIndex 65227
+#define unitPEFile_rstBadLangID 65228
+#define unitExIcon_rstInvalidIcon 65229
+#define unitExIcon_rstInvalidCursor 65230
+#define unitExIcon_rstInvalidBitmap 65231
+#define OpenGL12_SDefaultGLLibrary 65232
+#define OpenGL12_SDefaultGLULibrary 65233
+#define SynEditStrConst_SYNS_AttrAssembler 65234
+#define SynEditStrConst_SYNS_AttrCharacter 65235
+#define SynEditStrConst_SYNS_AttrComment 65236
+#define SynEditStrConst_SYNS_AttrFloat 65237
+#define SynEditStrConst_SYNS_AttrHexadecimal 65238
+#define SynEditStrConst_SYNS_AttrIdentifier 65239
+#define SynEditStrConst_SYNS_AttrIllegalChar 65240
+#define SynEditStrConst_SYNS_AttrNumber 65241
+#define SynEditStrConst_SYNS_AttrOctal 65242
+#define SynEditStrConst_SYNS_AttrPreprocessor 65243
+#define SynEditStrConst_SYNS_AttrReservedWord 65244
+#define SynEditStrConst_SYNS_AttrSpace 65245
+#define SynEditStrConst_SYNS_AttrString 65246
+#define SynEditStrConst_SYNS_AttrSymbol 65247
+#define ComStrs_sInvalidIndex 65248
+#define ComStrs_sInsertError 65249
+#define ComStrs_sInvalidOwner 65250
+#define ComStrs_sUDAssociated 65251
+#define ComStrs_sPageIndexError 65252
+#define ComStrs_sInvalidComCtl32 65253
+#define ZLibConst_sInvalidStreamOp 65254
+#define ZLibConst_sError 65255
+#define ComConst_SOleError 65256
+#define ComConst_SNoMethod 65257
+#define ComConst_SVarNotObject 65258
+#define ComConst_STooManyParams 65259
+#define OpenGL12_SRCAlreadyActive 65260
+#define OpenGL12_SMakeCurrentFailed 65261
+#define OpenGL12_SDeleteContextFailed 65262
+#define OpenGL12_SContextInUse 65263
+#define Consts_SNoGetItemEventHandler 65264
+#define Consts_SANSIEncoding 65265
+#define Consts_SASCIIEncoding 65266
+#define Consts_SUnicodeEncoding 65267
+#define Consts_SBigEndianEncoding 65268
+#define Consts_SUTF8Encoding 65269
+#define Consts_SUTF7Encoding 65270
+#define Consts_SPageControlNotSet 65271
+#define Consts_SWindowsVistaRequired 65272
+#define ComStrs_sTabFailClear 65273
+#define ComStrs_sTabFailDelete 65274
+#define ComStrs_sTabFailRetrieve 65275
+#define ComStrs_sTabFailGetObject 65276
+#define ComStrs_sTabFailSet 65277
+#define ComStrs_sTabFailSetObject 65278
+#define ComStrs_sTabMustBeMultiLine 65279
 #define Consts_SCannotOpenClipboard 65280
 #define Consts_SInvalidMemoSize 65281
 #define Consts_SDuplicateMenus 65282
@@ -86,11 +87,11 @@
 #define Consts_SDockZoneNotFound 65288
 #define Consts_SDockZoneHasNoCtl 65289
 #define Consts_SDockZoneVersionConflict 65290
-#define Consts_SMultiSelectRequired 65291
-#define Consts_SSeparator 65292
-#define Consts_SErrorSettingCount 65293
-#define Consts_SListBoxMustBeVirtual 65294
-#define Consts_SNoGetItemEventHandler 65295
+#define Consts_STextNotFound 65291
+#define Consts_SMultiSelectRequired 65292
+#define Consts_SSeparator 65293
+#define Consts_SErrorSettingCount 65294
+#define Consts_SListBoxMustBeVirtual 65295
 #define Consts_SmkcEnd 65296
 #define Consts_SmkcHome 65297
 #define Consts_SmkcLeft 65298
@@ -333,9 +334,11 @@
 #define SysConst_SDivByZero 65535
 STRINGTABLE
 BEGIN
+	unitExIcon_rstInvalidPixelFormat,	"Pixel Format Not Valid for Icons or Cursors"
 	unitResourceGraphics_rstCursors,	"Cursors"
 	unitResourceGraphics_rstIcons,	"Icons"
 	uTinyGif_sGIFImageFile,	"GIF Image"
+	SynEditStrConst_SYNS_ScrollInfoFmt,	"%d - %d"
 	SynEditStrConst_SYNS_ScrollInfoFmtTop,	"Top Line: %d"
 	SynEditStrConst_SYNS_EDuplicateShortcut,	"Shortcut already exists"
 	SynEditStrConst_SYNS_FilterCPP,	"C/C++ Files (*.c;*.cpp;*.h;*.hpp)|*.c;*.cpp;*.h;*.hpp"
@@ -351,7 +354,7 @@ BEGIN
 	unitExIcon_rstInvalidIcon,	"Invalid Icon or Cursor"
 	unitExIcon_rstInvalidCursor,	"Invalid cursor"
 	unitExIcon_rstInvalidBitmap,	"Invalid Bitmap"
-	unitExIcon_rstInvalidPixelFormat,	"Pixel Format Not Valid for Icons or Cursors"
+	OpenGL12_SDefaultGLLibrary,	"OpenGL32.dll"
 	OpenGL12_SDefaultGLULibrary,	"GLU32.dll"
 	SynEditStrConst_SYNS_AttrAssembler,	"Assembler"
 	SynEditStrConst_SYNS_AttrCharacter,	"Character"
@@ -367,7 +370,7 @@ BEGIN
 	SynEditStrConst_SYNS_AttrSpace,	"Space"
 	SynEditStrConst_SYNS_AttrString,	"String"
 	SynEditStrConst_SYNS_AttrSymbol,	"Symbol"
-	SynEditStrConst_SYNS_ScrollInfoFmt,	"%d - %d"
+	ComStrs_sInvalidIndex,	"Invalid index"
 	ComStrs_sInsertError,	"Unable to insert an item"
 	ComStrs_sInvalidOwner,	"Invalid owner"
 	ComStrs_sUDAssociated,	"%s is already associated with %s"
@@ -383,7 +386,7 @@ BEGIN
 	OpenGL12_SMakeCurrentFailed,	"wglMakeCurrent failed"
 	OpenGL12_SDeleteContextFailed,	"wglDeleteContext failed"
 	OpenGL12_SContextInUse,	"Cannot delete rendering context. It is still in use by another thread."
-	OpenGL12_SDefaultGLLibrary,	"OpenGL32.dll"
+	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
 	Consts_SANSIEncoding,	"ANSI"
 	Consts_SASCIIEncoding,	"ASCII"
 	Consts_SUnicodeEncoding,	"Unicode"
@@ -399,7 +402,6 @@ BEGIN
 	ComStrs_sTabFailSet,	"Failed to set tab \"%s\" at index %d"
 	ComStrs_sTabFailSetObject,	"Failed to set object at index %d"
 	ComStrs_sTabMustBeMultiLine,	"MultiLine must be True when TabPosition is tpLeft or tpRight"
-	ComStrs_sInvalidIndex,	"Invalid index"
 	Consts_SCannotOpenClipboard,	"Cannot open clipboard"
 	Consts_SInvalidMemoSize,	"Text exceeds memo capacity"
 	Consts_SDuplicateMenus,	"Menu '%s' is already being used by another form"
@@ -411,11 +413,11 @@ BEGIN
 	Consts_SDockZoneNotFound,	" - Dock zone not found"
 	Consts_SDockZoneHasNoCtl,	" - Dock zone has no control"
 	Consts_SDockZoneVersionConflict,	"Error loading dock zone from the stream. Expecting version %d, but found %d."
+	Consts_STextNotFound,	"Text not found: \"%s\""
 	Consts_SMultiSelectRequired,	"Multiselect mode must be on for this feature"
 	Consts_SSeparator,	"Separator"
 	Consts_SErrorSettingCount,	"Error setting %s.Count"
 	Consts_SListBoxMustBeVirtual,	"Listbox (%s) style must be virtual in order to set Count"
-	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
 	Consts_SmkcEnd,	"End"
 	Consts_SmkcHome,	"Home"
 	Consts_SmkcLeft,	"Left"
@@ -680,9 +682,9 @@ END
 /* frmToolMissing.dfm */
 /* frmSettings.DFM */
 /* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmEditor.dfm */
-/* frmMeshEdit.dfm */
-/* frmBitmapEdit.dfm */
-/* frmCompEditBase.dfm */
+/* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmMeshEdit.dfm */
+/* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm */
+/* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmCompEditBase.dfm */
 /* frmSoundEdit.dfm */
 /* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\ZDesigner.res */
 /* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\ZDesigner.drf */
