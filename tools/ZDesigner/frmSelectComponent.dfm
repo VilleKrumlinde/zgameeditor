@@ -37,7 +37,6 @@ object SelectComponentForm: TSelectComponentForm
     OnDblClick = CompListViewDblClick
     OnInfoTip = CompListViewInfoTip
     OnSelectItem = CompListViewSelectItem
-    ExplicitWidth = 619
   end
   object OkButton: TButton
     Left = 618
@@ -50,7 +49,6 @@ object SelectComponentForm: TSelectComponentForm
     Enabled = False
     ModalResult = 1
     TabOrder = 1
-    ExplicitLeft = 469
   end
   object Button2: TButton
     Left = 701
@@ -62,7 +60,6 @@ object SelectComponentForm: TSelectComponentForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 2
-    ExplicitLeft = 552
   end
   object HelpButton: TButton
     Left = 8

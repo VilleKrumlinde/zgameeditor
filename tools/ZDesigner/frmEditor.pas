@@ -454,6 +454,7 @@ begin
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
   AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
+  AutoComp.TimerInterval := 2000;
 
   //SynEdit autocompletion for parameters
   ParamComp := TSynCompletionProposal.Create(Self);
@@ -464,6 +465,7 @@ begin
   ParamComp.ShortCut := 24608;
   ParamComp.Editor := ExprSynEdit;
   ParamComp.OnExecute := ParamAutoCompOnExecute;
+  ParamComp.TimerInterval := 2000;
 
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
@@ -3413,6 +3415,7 @@ begin
     UsedComponents.Sorted := True;
     UsedComponents.Add('TAudioMixer');
     UsedComponents.Add('TMaterial');
+    UsedComponents.Add('TMaterialTexture');
     for I := 0 to AllObjects.Count - 1 do
       UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
     AllObjects.Free;

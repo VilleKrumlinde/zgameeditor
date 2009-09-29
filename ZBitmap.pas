@@ -247,7 +247,7 @@ procedure TZBitmap.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   {$ifndef minimal}
-  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
+//  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}

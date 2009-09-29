@@ -284,6 +284,7 @@ uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZExpressions
 
 var
   DefaultMaterial : TMaterial;
+  DefaultMaterialTexture : TMaterialTexture;
   DefaultFont : TFont;
 
 const
@@ -511,52 +512,44 @@ begin
       Break;
 
     if I<NewM.Textures.Count then
+      Tex := TMaterialTexture(NewM.Textures[I])
+    else
+      Tex := DefaultMaterialTexture;
+
+    if Tex.Texture<>nil then
     begin
-      Tex := TMaterialTexture(NewM.Textures[I]);
-
-      {$ifndef minimal}
-      if Tex.Texture=nil then
-      begin
-        GetLog('Material').Warning('No texture set');
-        Continue;
-      end;
-      {$endif}
-
       glEnable(GL_TEXTURE_2D);
       Tex.Texture.UseTextureBegin;
+    end else
+      glDisable(GL_TEXTURE_2D);
 
-      //Texture matrix
-      //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
-      glMatrixMode(GL_TEXTURE);
-      glLoadIdentity();
-        glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
-        glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
-        glRotatef(Tex.TextureRotate*360,0,0,1);
-        glTranslatef(-0.5,-0.5,0);
-      glMatrixMode(GL_MODELVIEW);
+    //Texture matrix
+    //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+      glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+      glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
+      glRotatef(Tex.TextureRotate*360,0,0,1);
+      glTranslatef(-0.5,-0.5,0);
+    glMatrixMode(GL_MODELVIEW);
 
-      if Tex.TexCoords=tcGenerated then
-      begin
-        glEnable(GL_TEXTURE_GEN_S);
-        glEnable(GL_TEXTURE_GEN_T);
-        glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-        glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      end
-      else
-      begin
-        glDisable(GL_TEXTURE_GEN_S);
-        glDisable(GL_TEXTURE_GEN_T);
-      end;
-
-      //This is a local parameter for every texture
-      Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
+    if Tex.TexCoords=tcGenerated then
+    begin
+      glEnable(GL_TEXTURE_GEN_S);
+      glEnable(GL_TEXTURE_GEN_T);
+      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     end
     else
     begin
-      glDisable(GL_TEXTURE_2D);
+      glDisable(GL_TEXTURE_GEN_S);
+      glDisable(GL_TEXTURE_GEN_T);
     end;
+
+    //This is a local parameter for every texture
+    Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
   end;
 
 
@@ -702,8 +695,8 @@ const
   no_shininess = 0;
   low_shininess = 5;
   high_shininess = 100;
-var
-  I : integer;
+//var
+//  I : integer;
 //  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
   glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
@@ -740,7 +733,7 @@ begin
 //_ShaderTest;
 
   //Initialize autmatic coords for other textures
-  if MultiTextureSupported then
+{  if MultiTextureSupported then
     for I := 2 downto 0 do
     begin
       glActiveTexture($84C0 + I);
@@ -748,7 +741,7 @@ begin
       glEnable(GL_TEXTURE_GEN_T);
       glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
       glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    end;
+    end;}
 
   //Set other default properties using the material-handler
   {$ifndef minimal}IsRendering := True;{$endif}
@@ -865,7 +858,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate) - integer(Self), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate) - integer(Self), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
 end;
 
 procedure TRenderTransformGroup.Execute;
@@ -2104,6 +2096,7 @@ end;
 procedure CleanUp;
 begin
   DefaultMaterial.Free;
+  DefaultMaterialTexture.Free;
   if DefaultFont<>nil then
     DefaultFont.Free;
 end;
@@ -2168,5 +2161,6 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
   DefaultMaterial := TMaterial.Create(nil);
+  DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
 end.

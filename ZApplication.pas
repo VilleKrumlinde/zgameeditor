@@ -612,7 +612,7 @@ begin
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderCommand]);{$endif}
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime) - integer(Self), zptFloat);
