@@ -35,7 +35,11 @@ CurrentModel.Position.Z=TileCurZ;]]>
             <MeshBox/>
           </Producers>
         </Mesh>
-        <Material Name="WallMaterial" Texture="WallTexture" TextureWrapMode="1" Color="0.4 0.82 0.34 1" TexCoords="1"/>
+        <Material Name="WallMaterial" Color="0.4 0.82 0.34 1">
+          <Textures>
+            <MaterialTexture Texture="WallTexture" TextureWrapMode="1" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Bitmap Name="WallTexture">
           <Producers>
             <BitmapRect Color="0.24 0.53 0.37 1" Size="-1 1 1 -1"/>

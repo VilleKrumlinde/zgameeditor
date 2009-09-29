@@ -159,9 +159,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
     {$ifndef minimal}List.GetLast.ReturnType := zctFloat;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}integer(@OnTrue) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}integer(@OnFalse) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
 end;
 
 procedure TCondition.Execute;
@@ -258,7 +258,7 @@ procedure TZTimer.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'OnTimer',{$ENDIF}integer(@OnTimer) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}integer(@Interval) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount) - integer(Self), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := -1;

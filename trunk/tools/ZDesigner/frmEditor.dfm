@@ -133,10 +133,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -623,6 +619,14 @@ object EditorForm: TEditorForm
                     Width = 33
                     ExplicitWidth = 33
                   end
+                  inherited NotesEdit: TComboBox
+                    ItemHeight = 0
+                  end
+                end
+                inherited GroupBox3: TGroupBox
+                  inherited Osc1WaveformCombo: TComboBox
+                    ItemHeight = 0
+                  end
                 end
                 inherited GroupBox2: TGroupBox
                   inherited Label3: TLabel
@@ -638,6 +642,9 @@ object EditorForm: TEditorForm
                   inherited Label18: TLabel
                     Width = 62
                     ExplicitWidth = 62
+                  end
+                  inherited Osc2WaveformCombo: TComboBox
+                    ItemHeight = 0
                   end
                 end
               end
