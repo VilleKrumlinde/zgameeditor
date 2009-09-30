@@ -991,6 +991,7 @@ const
   //Ville: Finns i opengl 1.4
   GL_GENERATE_MIPMAP                = $8191;
   GL_CONVOLUTION_2D                 = $8011;
+  GL_MAX_TEXTURE_UNITS = 34018;
 
   // TextureTarget
   //      GL_TEXTURE_1D

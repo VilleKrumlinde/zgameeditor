@@ -7055,7 +7055,7 @@ begin
           end;
         end;
       ecTab:
-        if not ReadOnly then DoTabKey;
+          if not ReadOnly then DoTabKey;
       ecShiftTab:
         if not ReadOnly then DoShiftTabKey;
       ecMatchBracket:
@@ -9076,7 +9076,8 @@ var
     if (Run[0] = #9) and (Result < FTabWidth) then
       Inc(Result);
   end;
-
+var
+  v_StrToDeleteBuffer: String;
 begin
   OrgSelectionMode := fActiveSelectionMode;
   Len := 0;
@@ -9098,14 +9099,15 @@ begin
     // build string to delete
     StrToDeleteLen := (FTabWidth + 2) * (e - BB.Line) + FTabWidth + 1;
     //                chars per line * lines-1    + last line + null char
-    StrToDelete := StrAlloc(StrToDeleteLen);
+    SetLength(v_StrToDeleteBuffer, StrToDeleteLen);
+    StrToDelete := PChar(v_StrToDeleteBuffer);
     StrToDelete[0] := #0;
     SomethingToDelete := False;
     for i := BB.Line to e-1 do
     begin
        Line := PChar(Lines[i-1]);
        //'Line' is 0-based, 'BB.x' is 1-based, so the '-1'
-       //And must not increment 'Line' pointer by more than its 'Length' 
+       //And must not increment 'Line' pointer by more than its 'Length'
        if fActiveSelectionMode = smColumn then
          Inc( Line, MinIntValue([ BB.Char-1, BE.Char-1, Length(Lines[i-1]) ]) );
        //Instead of doing a StringOfChar, we need to get *exactly* what was
