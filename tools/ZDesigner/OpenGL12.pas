@@ -776,6 +776,8 @@ const
   GL_MINMAX_SINK                                    = $8030;
   {$EXTERNALSYM GL_MINMAX_SINK}
 
+  GL_MAX_TEXTURE_UNITS = 34018;
+
   // buffers
   GL_NONE                                           = 0;
   {$EXTERNALSYM GL_NONE}

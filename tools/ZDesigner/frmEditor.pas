@@ -445,6 +445,11 @@ begin
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
   ExprSynEdit.Highlighter := TSynCppSyn.Create(Self);
+  ExprSynEdit.WantTabs := True;
+  ExprSynEdit.TabWidth := 2;
+  ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
 
   //SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
@@ -473,6 +478,11 @@ begin
   ShaderSynEdit.Gutter.Visible := False;
   ShaderSynEdit.Parent := ShaderPanel;
   ShaderSynEdit.OnChange := OnShaderExprChanged;
+  ShaderSynEdit.WantTabs := True;
+  ShaderSynEdit.TabWidth := 2;
+  ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
 
   SymTab := TSymbolTable.Create;
 
@@ -900,6 +910,7 @@ end;
 procedure TEditorForm.OnGlInit(Sender: TObject);
 var
   P : PChar;
+  I : integer;
 begin
   Renderer.InitRenderer;
   if not ShadersSupported then
@@ -911,7 +922,12 @@ begin
       Log.Write('GL shaders: ' + P)
   end;
   if not MultiTextureSupported then
-    Log.Write('GL multitexture not supported');
+    Log.Write('GL multitexture not supported')
+  else
+  begin
+    glGetIntegerv(GL_MAX_TEXTURE_UNITS,@I);
+    Log.Write('GL texture units: ' + IntToStr(I))
+  end;
   if not VbosSupported then
     Log.Write('GL VBOs not supported');
 end;

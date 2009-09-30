@@ -1970,15 +1970,16 @@ begin
   glLinkProgram(ProgHandle);
   {$ifndef minimal}InCheckProgramStatus;{$endif}
 
-  //Initialize uniform variables for accessing textures 0-2
+  //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
-  for I := 0 to 2 do
-  begin
-    TexVar[3]:=char(ord('1') + I);
-    J := glGetUniformLocation(ProgHandle,pchar(@TexVar));
-    if J>-1 then
-      glUniform1i(J,I);
-  end;
+  if CurrentMaterial<>nil then
+    for I := 0 to CurrentMaterial.Textures.Count-1 do
+    begin
+      TexVar[3]:=char(ord('1') + I);
+      J := glGetUniformLocation(ProgHandle,pchar(@TexVar));
+      if J>-1 then
+        glUniform1i(J,I);
+    end;
 
   IsChanged := False;
 end;
@@ -2040,7 +2041,7 @@ begin
 
   //Update uniform variables once each frame
   if (UniformVariables.Count>0) and
-    ((LastVariableUpdate<>ZApp.Time) or Self.UpdateVarsOnEachUse)
+    ((LastVariableUpdate=0) or (LastVariableUpdate<>ZApp.Time) or Self.UpdateVarsOnEachUse)
     then
   begin
     if ReinitDone then

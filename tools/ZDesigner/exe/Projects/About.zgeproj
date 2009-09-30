@@ -26,8 +26,7 @@
             </Condition>
             <ZExpression>
               <Expression>
-<![CDATA[
-SpinnerTime+=App.DeltaTime*0.75;
+<![CDATA[SpinnerTime+=App.DeltaTime*0.75;
 
 Temp1=-4.5 + SpinnerTime;
 Temp1+=noise2(CurrentModel.Personality,SpinnerTime*0.5) * 1.0;
