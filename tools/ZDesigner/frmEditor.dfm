@@ -218,15 +218,16 @@ object EditorForm: TEditorForm
             TabOrder = 0
             OnClick = CompileShaderButtonClick
           end
-          object ShaderPanel: TPanel
+          object ShaderPanel: TGroupBox
             Left = 0
             Top = 0
             Width = 525
             Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
-            Caption = 'Placeholder f'#246'r synedit'
+            Caption = '&Shader editor'
             TabOrder = 1
+            OnClick = ExprPanelClick
           end
         end
       end

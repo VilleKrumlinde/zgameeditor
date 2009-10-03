@@ -168,7 +168,7 @@ type
     ViewTranslateLabel: TLabel;
     ShaderTabSheet: TTabSheet;
     CompileShaderButton: TButton;
-    ShaderPanel: TPanel;
+    ShaderPanel: TGroupBox;
     Label6: TLabel;
     GenerateReleaseLinuxAction: TAction;
     BuildandcompressLinuxbinary1: TMenuItem;
@@ -378,7 +378,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpre
   ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes;
+  SynEditTypes, SynEditSearch;
 
 { TEditorForm }
 
@@ -450,6 +450,8 @@ begin
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
+  ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 
   //SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
@@ -483,6 +485,8 @@ begin
   ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
+  ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 
   SymTab := TSymbolTable.Create;
 
@@ -3250,14 +3254,31 @@ procedure TEditorForm.AutoCompOnExecute(Kind: TSynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
 var
-  C : TSynCompletionProposal;
+  Comp : TSynCompletionProposal;
+  Line : string;
+  I : integer;
+  IsGlobal : boolean;
 begin
-  C := Sender as TSynCompletionProposal;
-  C.ItemList.Clear;
-  C.InsertList.Clear;
-  SymTab.Iterate(AutoCompAddOne,C);
-  C.InsertList.Add('CurrentModel');
-  C.ItemList.Add('CurrentModel');
+  Comp := Sender as TSynCompletionProposal;
+  Comp.ItemList.Clear;
+  Comp.InsertList.Clear;
+
+  IsGlobal := True;
+
+  //Disable global suggestions after dot-character
+  Line := Comp.Editor.LineText;
+  I := Min(Comp.Editor.CaretX,Length(Line));
+  while (I>0) and (Line[I] in ['a'..'z','A'..'Z','_','0'..'9']) do
+    Dec(I);
+  if (I>0) and (Line[I]='.') then
+    IsGlobal := False;
+
+  if IsGlobal then
+  begin
+    SymTab.Iterate(AutoCompAddOne,Comp);
+    Comp.InsertList.Add('CurrentModel');
+    Comp.ItemList.Add('CurrentModel');
+  end;
 end;
 
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: TSynCompletionType;
