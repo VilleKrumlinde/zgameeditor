@@ -8,73 +8,88 @@
   resources were bound to the produced executable.
 */
 
-#define unitResourceGraphics_rstCursors 65200
-#define unitResourceGraphics_rstIcons 65201
-#define uTinyGif_sGIFImageFile 65202
-#define SynEditStrConst_SYNS_AttrPreprocessor 65216
-#define SynEditStrConst_SYNS_AttrReservedWord 65217
-#define SynEditStrConst_SYNS_AttrSpace 65218
-#define SynEditStrConst_SYNS_AttrString 65219
-#define SynEditStrConst_SYNS_AttrSymbol 65220
-#define SynEditStrConst_SYNS_ScrollInfoFmt 65221
-#define SynEditStrConst_SYNS_ScrollInfoFmtTop 65222
-#define SynEditStrConst_SYNS_EDuplicateShortcut 65223
-#define SynEditStrConst_SYNS_FilterCPP 65224
-#define SynEditStrConst_SYNS_LangCPP 65225
-#define SynEditTextBuffer_SListIndexOutOfBounds 65226
-#define SynEditTextBuffer_SInvalidCapacity 65227
-#define unitExIcon_rstInvalidIcon 65228
-#define unitExIcon_rstInvalidCursor 65229
-#define unitExIcon_rstInvalidBitmap 65230
-#define unitExIcon_rstInvalidPixelFormat 65231
-#define unitPEFile_rstBadLangID 65232
-#define OpenGL12_SRCAlreadyActive 65233
-#define OpenGL12_SMakeCurrentFailed 65234
-#define OpenGL12_SDeleteContextFailed 65235
-#define OpenGL12_SContextInUse 65236
-#define OpenGL12_SDefaultGLLibrary 65237
-#define OpenGL12_SDefaultGLULibrary 65238
-#define SynEditStrConst_SYNS_AttrAssembler 65239
-#define SynEditStrConst_SYNS_AttrCharacter 65240
-#define SynEditStrConst_SYNS_AttrComment 65241
-#define SynEditStrConst_SYNS_AttrFloat 65242
-#define SynEditStrConst_SYNS_AttrHexadecimal 65243
-#define SynEditStrConst_SYNS_AttrIdentifier 65244
-#define SynEditStrConst_SYNS_AttrIllegalChar 65245
-#define SynEditStrConst_SYNS_AttrNumber 65246
-#define SynEditStrConst_SYNS_AttrOctal 65247
-#define ComStrs_sInsertError 65248
-#define ComStrs_sInvalidOwner 65249
-#define ComStrs_sUDAssociated 65250
-#define ComStrs_sPageIndexError 65251
-#define ComStrs_sInvalidComCtl32 65252
-#define ZLibConst_sInvalidStreamOp 65253
-#define ZLibConst_sError 65254
-#define ComConst_SOleError 65255
-#define ComConst_SNoMethod 65256
-#define ComConst_SVarNotObject 65257
-#define ComConst_STooManyParams 65258
-#define unitResourceDetails_rstNoStreaming 65259
-#define unitPEFile_rstInvalidDOSSignature 65260
-#define unitPEFile_rstInvalidCOFFSignature 65261
-#define unitPEFile_rstInvalidOptionalHeader 65262
-#define unitPEFile_rstBadDictionaryIndex 65263
-#define Consts_SANSIEncoding 65264
-#define Consts_SASCIIEncoding 65265
-#define Consts_SUnicodeEncoding 65266
-#define Consts_SBigEndianEncoding 65267
-#define Consts_SUTF8Encoding 65268
-#define Consts_SUTF7Encoding 65269
-#define Consts_SPageControlNotSet 65270
-#define Consts_SWindowsVistaRequired 65271
-#define ComStrs_sTabFailClear 65272
-#define ComStrs_sTabFailDelete 65273
-#define ComStrs_sTabFailRetrieve 65274
-#define ComStrs_sTabFailGetObject 65275
-#define ComStrs_sTabFailSet 65276
-#define ComStrs_sTabFailSetObject 65277
-#define ComStrs_sTabMustBeMultiLine 65278
-#define ComStrs_sInvalidIndex 65279
+#define unitResourceGraphics_rstIcons 65184
+#define uTinyGif_sGIFImageFile 65185
+#define SynEditStrConst_SYNS_EDuplicateShortcut 65200
+#define SynEditStrConst_SYNS_FilterCPP 65201
+#define SynEditStrConst_SYNS_LangCPP 65202
+#define SynEditTextBuffer_SListIndexOutOfBounds 65203
+#define SynEditTextBuffer_SInvalidCapacity 65204
+#define unitResourceDetails_rstNoStreaming 65205
+#define unitPEFile_rstInvalidDOSSignature 65206
+#define unitPEFile_rstInvalidCOFFSignature 65207
+#define unitPEFile_rstInvalidOptionalHeader 65208
+#define unitPEFile_rstBadDictionaryIndex 65209
+#define unitPEFile_rstBadLangID 65210
+#define unitExIcon_rstInvalidIcon 65211
+#define unitExIcon_rstInvalidCursor 65212
+#define unitExIcon_rstInvalidBitmap 65213
+#define unitExIcon_rstInvalidPixelFormat 65214
+#define unitResourceGraphics_rstCursors 65215
+#define SynEditStrConst_SYNS_AttrAssembler 65216
+#define SynEditStrConst_SYNS_AttrCharacter 65217
+#define SynEditStrConst_SYNS_AttrComment 65218
+#define SynEditStrConst_SYNS_AttrFloat 65219
+#define SynEditStrConst_SYNS_AttrHexadecimal 65220
+#define SynEditStrConst_SYNS_AttrIdentifier 65221
+#define SynEditStrConst_SYNS_AttrIllegalChar 65222
+#define SynEditStrConst_SYNS_AttrNumber 65223
+#define SynEditStrConst_SYNS_AttrOctal 65224
+#define SynEditStrConst_SYNS_AttrPreprocessor 65225
+#define SynEditStrConst_SYNS_AttrReservedWord 65226
+#define SynEditStrConst_SYNS_AttrSpace 65227
+#define SynEditStrConst_SYNS_AttrString 65228
+#define SynEditStrConst_SYNS_AttrSymbol 65229
+#define SynEditStrConst_SYNS_ScrollInfoFmt 65230
+#define SynEditStrConst_SYNS_ScrollInfoFmtTop 65231
+#define ComStrs_sInvalidOwner 65232
+#define ComStrs_sUDAssociated 65233
+#define ComStrs_sPageIndexError 65234
+#define ComStrs_sInvalidComCtl32 65235
+#define ZLibConst_sInvalidStreamOp 65236
+#define ZLibConst_sError 65237
+#define ComConst_SOleError 65238
+#define ComConst_SNoMethod 65239
+#define ComConst_SVarNotObject 65240
+#define ComConst_STooManyParams 65241
+#define OpenGL12_SRCAlreadyActive 65242
+#define OpenGL12_SMakeCurrentFailed 65243
+#define OpenGL12_SDeleteContextFailed 65244
+#define OpenGL12_SContextInUse 65245
+#define OpenGL12_SDefaultGLLibrary 65246
+#define OpenGL12_SDefaultGLULibrary 65247
+#define Consts_SASCIIEncoding 65248
+#define Consts_SUnicodeEncoding 65249
+#define Consts_SBigEndianEncoding 65250
+#define Consts_SUTF8Encoding 65251
+#define Consts_SUTF7Encoding 65252
+#define Consts_SPageControlNotSet 65253
+#define Consts_SWindowsVistaRequired 65254
+#define ComStrs_sTabFailClear 65255
+#define ComStrs_sTabFailDelete 65256
+#define ComStrs_sTabFailRetrieve 65257
+#define ComStrs_sTabFailGetObject 65258
+#define ComStrs_sTabFailSet 65259
+#define ComStrs_sTabFailSetObject 65260
+#define ComStrs_sTabMustBeMultiLine 65261
+#define ComStrs_sInvalidIndex 65262
+#define ComStrs_sInsertError 65263
+#define Consts_SMoreButtons 65264
+#define Consts_SExpand 65265
+#define Consts_SErrorLoadingFile 65266
+#define Consts_SNoName 65267
+#define Consts_SAddRemoveButtons 65268
+#define Consts_SResetActionToolBar 65269
+#define Consts_SSeparator 65270
+#define Consts_SCirularReferencesNotAllowed 65271
+#define Consts_SCannotHideActionBand 65272
+#define Consts_SErrorSettingCount 65273
+#define Consts_SListBoxMustBeVirtual 65274
+#define Consts_SUnableToSaveSettings 65275
+#define Consts_SRestoreDefaultSchedule 65276
+#define Consts_SNoGetItemEventHandler 65277
+#define Consts_SActionBarStyleMissing 65278
+#define Consts_SANSIEncoding 65279
 #define Consts_SCannotOpenClipboard 65280
 #define Consts_SInvalidMemoSize 65281
 #define Consts_SDuplicateMenus 65282
@@ -87,10 +102,10 @@
 #define Consts_SDockZoneHasNoCtl 65289
 #define Consts_SDockZoneVersionConflict 65290
 #define Consts_SMultiSelectRequired 65291
-#define Consts_SSeparator 65292
-#define Consts_SErrorSettingCount 65293
-#define Consts_SListBoxMustBeVirtual 65294
-#define Consts_SNoGetItemEventHandler 65295
+#define Consts_SAssignSubItemError 65292
+#define Consts_SDeleteItemWithSubItems 65293
+#define Consts_SDeleteNotAllowed 65294
+#define Consts_SMoveNotAllowed 65295
 #define Consts_SmkcEnd 65296
 #define Consts_SmkcHome 65297
 #define Consts_SmkcLeft 65298
@@ -333,32 +348,24 @@
 #define SysConst_SDivByZero 65535
 STRINGTABLE
 BEGIN
-	unitResourceGraphics_rstCursors,	"Cursors"
 	unitResourceGraphics_rstIcons,	"Icons"
 	uTinyGif_sGIFImageFile,	"GIF Image"
-	SynEditStrConst_SYNS_AttrPreprocessor,	"Preprocessor"
-	SynEditStrConst_SYNS_AttrReservedWord,	"Reserved Word"
-	SynEditStrConst_SYNS_AttrSpace,	"Space"
-	SynEditStrConst_SYNS_AttrString,	"String"
-	SynEditStrConst_SYNS_AttrSymbol,	"Symbol"
-	SynEditStrConst_SYNS_ScrollInfoFmt,	"%d - %d"
-	SynEditStrConst_SYNS_ScrollInfoFmtTop,	"Top Line: %d"
 	SynEditStrConst_SYNS_EDuplicateShortcut,	"Shortcut already exists"
 	SynEditStrConst_SYNS_FilterCPP,	"C/C++ Files (*.c;*.cpp;*.h;*.hpp)|*.c;*.cpp;*.h;*.hpp"
 	SynEditStrConst_SYNS_LangCPP,	"C/C++"
 	SynEditTextBuffer_SListIndexOutOfBounds,	"Invalid stringlist index %d"
 	SynEditTextBuffer_SInvalidCapacity,	"Stringlist capacity cannot be smaller than count"
+	unitResourceDetails_rstNoStreaming,	"Module doesn't support streaming"
+	unitPEFile_rstInvalidDOSSignature,	"Invalid DOS signature"
+	unitPEFile_rstInvalidCOFFSignature,	"Invalid COFF signature"
+	unitPEFile_rstInvalidOptionalHeader,	"Invalid Windows Image"
+	unitPEFile_rstBadDictionaryIndex,	"Index exceeds data dictionary count"
+	unitPEFile_rstBadLangID,	"Unsupported non-integer language ID in resource"
 	unitExIcon_rstInvalidIcon,	"Invalid Icon or Cursor"
 	unitExIcon_rstInvalidCursor,	"Invalid cursor"
 	unitExIcon_rstInvalidBitmap,	"Invalid Bitmap"
 	unitExIcon_rstInvalidPixelFormat,	"Pixel Format Not Valid for Icons or Cursors"
-	unitPEFile_rstBadLangID,	"Unsupported non-integer language ID in resource"
-	OpenGL12_SRCAlreadyActive,	"Rendering context already active in another thread."
-	OpenGL12_SMakeCurrentFailed,	"wglMakeCurrent failed"
-	OpenGL12_SDeleteContextFailed,	"wglDeleteContext failed"
-	OpenGL12_SContextInUse,	"Cannot delete rendering context. It is still in use by another thread."
-	OpenGL12_SDefaultGLLibrary,	"OpenGL32.dll"
-	OpenGL12_SDefaultGLULibrary,	"GLU32.dll"
+	unitResourceGraphics_rstCursors,	"Cursors"
 	SynEditStrConst_SYNS_AttrAssembler,	"Assembler"
 	SynEditStrConst_SYNS_AttrCharacter,	"Character"
 	SynEditStrConst_SYNS_AttrComment,	"Comment"
@@ -368,7 +375,13 @@ BEGIN
 	SynEditStrConst_SYNS_AttrIllegalChar,	"Illegal Char"
 	SynEditStrConst_SYNS_AttrNumber,	"Number"
 	SynEditStrConst_SYNS_AttrOctal,	"Octal"
-	ComStrs_sInsertError,	"Unable to insert an item"
+	SynEditStrConst_SYNS_AttrPreprocessor,	"Preprocessor"
+	SynEditStrConst_SYNS_AttrReservedWord,	"Reserved Word"
+	SynEditStrConst_SYNS_AttrSpace,	"Space"
+	SynEditStrConst_SYNS_AttrString,	"String"
+	SynEditStrConst_SYNS_AttrSymbol,	"Symbol"
+	SynEditStrConst_SYNS_ScrollInfoFmt,	"%d - %d"
+	SynEditStrConst_SYNS_ScrollInfoFmtTop,	"Top Line: %d"
 	ComStrs_sInvalidOwner,	"Invalid owner"
 	ComStrs_sUDAssociated,	"%s is already associated with %s"
 	ComStrs_sPageIndexError,	"%d is an invalid PageIndex value.  PageIndex must be between 0 and %d"
@@ -379,12 +392,12 @@ BEGIN
 	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
 	ComConst_SVarNotObject,	"Variant does not reference an automation object"
 	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
-	unitResourceDetails_rstNoStreaming,	"Module doesn't support streaming"
-	unitPEFile_rstInvalidDOSSignature,	"Invalid DOS signature"
-	unitPEFile_rstInvalidCOFFSignature,	"Invalid COFF signature"
-	unitPEFile_rstInvalidOptionalHeader,	"Invalid Windows Image"
-	unitPEFile_rstBadDictionaryIndex,	"Index exceeds data dictionary count"
-	Consts_SANSIEncoding,	"ANSI"
+	OpenGL12_SRCAlreadyActive,	"Rendering context already active in another thread."
+	OpenGL12_SMakeCurrentFailed,	"wglMakeCurrent failed"
+	OpenGL12_SDeleteContextFailed,	"wglDeleteContext failed"
+	OpenGL12_SContextInUse,	"Cannot delete rendering context. It is still in use by another thread."
+	OpenGL12_SDefaultGLLibrary,	"OpenGL32.dll"
+	OpenGL12_SDefaultGLULibrary,	"GLU32.dll"
 	Consts_SASCIIEncoding,	"ASCII"
 	Consts_SUnicodeEncoding,	"Unicode"
 	Consts_SBigEndianEncoding,	"Big Endian Unicode"
@@ -400,6 +413,23 @@ BEGIN
 	ComStrs_sTabFailSetObject,	"Failed to set object at index %d"
 	ComStrs_sTabMustBeMultiLine,	"MultiLine must be True when TabPosition is tpLeft or tpRight"
 	ComStrs_sInvalidIndex,	"Invalid index"
+	ComStrs_sInsertError,	"Unable to insert an item"
+	Consts_SMoreButtons,	"More Buttons"
+	Consts_SExpand,	"Expand"
+	Consts_SErrorLoadingFile,	"Error loading previously saved settings file: %s\rWould you like to delete it?"
+	Consts_SNoName,	"(No Name)"
+	Consts_SAddRemoveButtons,	"&Add or Remove Buttons"
+	Consts_SResetActionToolBar,	"Reset Toolbar"
+	Consts_SSeparator,	"Separator"
+	Consts_SCirularReferencesNotAllowed,	"Circular references not allowed"
+	Consts_SCannotHideActionBand,	"%s does not allow hiding"
+	Consts_SErrorSettingCount,	"Error setting %s.Count"
+	Consts_SListBoxMustBeVirtual,	"Listbox (%s) style must be virtual in order to set Count"
+	Consts_SUnableToSaveSettings,	"Unable to save settings"
+	Consts_SRestoreDefaultSchedule,	"Would you like to reset to the default Priority Schedule?"
+	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
+	Consts_SActionBarStyleMissing,	"No ActionBand style unit present in the uses clause.\rYour application must include either XPStyleActnCtrls, StdStyleActnCtrls or a third party ActionBand style unit in its uses clause"
+	Consts_SANSIEncoding,	"ANSI"
 	Consts_SCannotOpenClipboard,	"Cannot open clipboard"
 	Consts_SInvalidMemoSize,	"Text exceeds memo capacity"
 	Consts_SDuplicateMenus,	"Menu '%s' is already being used by another form"
@@ -412,10 +442,10 @@ BEGIN
 	Consts_SDockZoneHasNoCtl,	" - Dock zone has no control"
 	Consts_SDockZoneVersionConflict,	"Error loading dock zone from the stream. Expecting version %d, but found %d."
 	Consts_SMultiSelectRequired,	"Multiselect mode must be on for this feature"
-	Consts_SSeparator,	"Separator"
-	Consts_SErrorSettingCount,	"Error setting %s.Count"
-	Consts_SListBoxMustBeVirtual,	"Listbox (%s) style must be virtual in order to set Count"
-	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
+	Consts_SAssignSubItemError,	"Cannot assign a subitem to an actionbar when one of it's parent's is already assigned to an actionbar"
+	Consts_SDeleteItemWithSubItems,	"Item %s has subitems, delete anyway?"
+	Consts_SDeleteNotAllowed,	"You are not allowed to delete this item"
+	Consts_SMoveNotAllowed,	"Item %s is not allowed to be moved"
 	Consts_SmkcEnd,	"End"
 	Consts_SmkcHome,	"Home"
 	Consts_SmkcLeft,	"Left"
@@ -665,24 +695,24 @@ END
 /* frmArrayEdit.dfm */
 /* frmRawAudioImportOptions.dfm */
 /* frmMemoEdit.dfm */
-/* frm3dsImportOptions.dfm */
 /* .\3rdparty\SynEdit.res */
-/* c:\program files\codegear\rad studio\5.0\lib\WindowsXP.res */
-/* frmMusicEdit.dfm */
 /* c:\program files\codegear\rad studio\5.0\lib\SPIN.RES */
 /* frmEnvelopeFrame.dfm */
 /* frmChannelFrame.dfm */
 /* frmLfoFrame.dfm */
 /* frmModulationFrame.dfm */
-/* frmSoundEdit.dfm */
-/* frmSettings.DFM */
-/* frmToolMissing.dfm */
-/* frmAbout.dfm */
+/* frmMusicEdit.dfm */
+/* c:\program files\codegear\rad studio\5.0\lib\WindowsXP.res */
+/* frm3dsImportOptions.dfm */
 /* dmCommon.dfm */
 /* frmSelectComponent.dfm */
+/* frmAbout.dfm */
+/* frmToolMissing.dfm */
+/* frmSettings.DFM */
+/* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmEditor.dfm */
+/* frmMeshEdit.dfm */
 /* frmBitmapEdit.dfm */
 /* frmCompEditBase.dfm */
-/* frmMeshEdit.dfm */
-/* frmEditor.dfm */
+/* frmSoundEdit.dfm */
 /* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\ZDesigner.res */
 /* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\ZDesigner.drf */

@@ -2656,6 +2656,7 @@ var
   end;
 
   procedure PatchMaterialTextures;
+  //Translate old-style texture settings to new MaterialTexture-component
   var
     S : string;
     OtherXml : TXmlParser;
@@ -2669,7 +2670,6 @@ var
       Exit;
     Prop := PropList.GetByName('Textures');
     C.GetProperty(Prop,Value);
-    //DoReadComponent(Value.ComponentListValue);
     S := '<MaterialTexture Texture="' + NotFounds.Values['Texture'] + '" ';
     InFixTex('TextureScale');
     InFixTex('TextureX');

@@ -553,72 +553,6 @@ begin
   end;
 
 
-(*  if MultiTextureSupported then
-    StartI := High(NewM.Textures)
-  else
-    StartI := 0;
-  for I := StartI downto 0 do
-  begin
-    if MultiTextureSupported and ((NewM.Textures[I]<>nil) or ((not NilOld) and (OldM.Textures[I]<>nil))) then
-      glActiveTexture($84C0 + I);
-
-    if NilOld or (NewM.Textures[I]<>OldM.Textures[I])
-    {$ifndef minimal}or ((NewM.Textures[I]<>nil) and (TZBitmap(NewM.Textures[I]).Producers.IsChanged)){$endif}
-    then
-    begin
-      if NewM.Textures[I]<>nil then
-      begin
-        glEnable(GL_TEXTURE_2D);
-        NewM.Textures[I].UseTextureBegin;
-      end
-      else
-        glDisable(GL_TEXTURE_2D);
-    end;
-  end;
-
-  if NilOld or
-    (NewM.TextureScale[0]<>OldM.TextureScale[0]) or
-    (NewM.TextureScale[1]<>OldM.TextureScale[1]) or
-    (NewM.TextureX<>OldM.TextureX) or
-    (NewM.TextureY<>OldM.TextureY) or
-    (NewM.TextureRotate<>OldM.TextureRotate) then
-  begin
-    //Texture matrix
-    //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-      glTranslatef(NewM.TextureX+0.5,NewM.TextureY+0.5,0);
-      glScalef(NewM.TextureScale[0],NewM.TextureScale[1],1);
-      glRotatef(NewM.TextureRotate*360,0,0,1);
-      glTranslatef(-0.5,-0.5,0);
-    glMatrixMode(GL_MODELVIEW);
-  end;
-
-  if NilOld or (NewM.TexCoords<>OldM.TexCoords) then
-  begin
-    //Tex coord generation
-    if NewM.TexCoords=tcGenerated then
-    begin
-      glEnable(GL_TEXTURE_GEN_S);
-      glEnable(GL_TEXTURE_GEN_T);
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    end
-    else
-    begin
-      glDisable(GL_TEXTURE_GEN_S);
-      glDisable(GL_TEXTURE_GEN_T);
-    end;
-  end;
-
-  if NilOld or ((NewM.TextureWrapMode<>OldM.TextureWrapMode) or (NewM.Textures[0]<>OldM.Textures[0])) then
-  begin
-    Tmp := TexWrapModes[Ord(NewM.TextureWrapMode)];
-    //This is a local parameter for every texture
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
-  end;*)
-
   if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
   begin
     if NewM.Shader<>nil then
@@ -731,17 +665,6 @@ begin
   //per-context basis in Win32
   LoadOpenGLExtensions;
 //_ShaderTest;
-
-  //Initialize autmatic coords for other textures
-{  if MultiTextureSupported then
-    for I := 2 downto 0 do
-    begin
-      glActiveTexture($84C0 + I);
-      glEnable(GL_TEXTURE_GEN_S);
-      glEnable(GL_TEXTURE_GEN_T);
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    end;}
 
   //Set other default properties using the material-handler
   {$ifndef minimal}IsRendering := True;{$endif}
