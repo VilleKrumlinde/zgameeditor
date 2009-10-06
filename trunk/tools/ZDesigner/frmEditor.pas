@@ -600,7 +600,10 @@ begin
 
   RefreshSymbolTable;
 
-//  Root.Update;
+  //Initial tree update.
+  //Slows down opening project but without this call the walls in FpsDemo
+  //become black when WallModel is selected.
+  Root.Update;
 
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
