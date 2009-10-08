@@ -27,7 +27,7 @@ replace them with the notice and other provisions required by the GPL.
 If you do not delete the provisions above, a recipient may use your version
 of this file under either the MPL or the GPL.
 
-$Id: SynEdit.pas,v 1.457.2.12 2007/07/11 22:41:34 etrusco Exp $
+$Id: SynEdit.pas,v 1.460 2009/06/12 15:19:00 romankassebaum Exp $
 
 You may retrieve the latest version of this file at the SynEdit home page,
 located at http://SynEdit.SourceForge.net
@@ -115,15 +115,13 @@ var
 type
 {$IFDEF SYN_CLX}
   TSynBorderStyle = bsNone..bsSingle;
-	TBufferCoord = QSynEditTypes.TBufferCoord;
-	TDisplayCoord = QSynEditTypes.TDisplayCoord;
-	TSynEditMark = QSynEditMiscClasses.TSynEditMark;
 {$ELSE}
   TSynBorderStyle = TBorderStyle;
+{$ENDIF}
+
   TBufferCoord = SynEditTypes.TBufferCoord;
   TDisplayCoord = SynEditTypes.TDisplayCoord;
   TSynEditMark = SynEditMiscClasses.TSynEditMark;
-{$ENDIF}
 
   TSynReplaceAction = (raCancel, raSkip, raReplace, raReplaceAll);
 
@@ -515,7 +513,7 @@ type
   protected
 {$IFDEF SYN_COMPILER_6_UP}
     function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer;
-      {$IFDEF SYN_CLX}const{$ENDIF} MousePos: TPoint): Boolean; override;
+      MousePos: TPoint): Boolean; override;
 {$ENDIF}
 {$IFDEF SYN_CLX}
     procedure Resize; override;
@@ -774,7 +772,6 @@ type
     property CharWidth: integer read fCharWidth;
     property Color;
     property Font: TFont read GetFont write SetFont;
-    property GutterWidth: Integer read fGutterWidth;
     property Highlighter: TSynCustomHighlighter
       read fHighlighter write SetHighlighter;
     property LeftChar: Integer read fLeftChar write SetLeftChar;
@@ -1006,29 +1003,22 @@ const
   FrameWidth = 2; { the border width when BoderStyle = bsSingle (until we support TWidgetStyle...)  }
 {$ENDIF}
 
+//Text-Format for the clipboard
+const
+{$IFDEF UNICODE}
+  cClipboardTextFormat = CF_UNICODETEXT;
+{$ELSE}
+  cClipboardTextFormat = CF_TEXT;
+{$ENDIF}
+
 function TrimTrailingSpaces(const S: string): string;
 var
   I: Integer;
 begin
   I := Length(S);
-  while (I > 0) and (S[I] in [#32, #9]) do
+  while (I > 0) and SECharInset(S[I], [#32, #9]) do
     Dec(I);
   Result := Copy(S, 1, I);
-end;
-
-function StringIsBlank(const S: String): Boolean;
-var
-  i: Integer;
-begin
-  for i := Length(S) downto 1 do
-  begin
-    if not (S[i] in [#32, #9]) then
-    begin
-      Result := False;
-      Exit;
-    end;
-  end;
-  Result := True;
 end;
 
 { THookedCommandHandlerEntry }
@@ -1039,7 +1029,7 @@ type
     fEvent: THookedCommandEvent;
     fData: pointer;
     constructor Create(AEvent: THookedCommandEvent; AData: pointer);
-    function Equals(AEvent: THookedCommandEvent): boolean;
+    function EqualEntry(AEvent: THookedCommandEvent): boolean;
   end;
 
 constructor THookedCommandHandlerEntry.Create(AEvent: THookedCommandEvent;
@@ -1050,7 +1040,7 @@ begin
   fData := AData;
 end;
 
-function THookedCommandHandlerEntry.Equals(AEvent: THookedCommandEvent): boolean;
+function THookedCommandHandlerEntry.EqualEntry(AEvent: THookedCommandEvent): boolean;
 begin
   with TMethod(fEvent) do
     Result := (Code = TMethod(AEvent).Code) and (Data = TMethod(AEvent).Data);
@@ -1176,14 +1166,14 @@ begin
       EmptyClipboard;
       // Put it on the clipboard as normal text format so it can be pasted into
       // things like notepad or Delphi.
-      Mem := GlobalAlloc(GMEM_MOVEABLE or GMEM_DDESHARE, SLen + 1);
+      Mem := GlobalAlloc(GMEM_MOVEABLE or GMEM_DDESHARE, (SLen + 1) * SizeOf(Char));
       if Mem <> 0 then begin
         P := GlobalLock(Mem);
         try
           if P <> nil then begin
-            Move(PChar(SText)^, P^, SLen + 1);
+            Move(PChar(SText)^, P^, (SLen + 1) * SizeOf(Char));
             // Put it on the clipboard in text format
-            Failed := SetClipboardData(CF_TEXT, Mem) = 0;
+            Failed := SetClipboardData(cClipboardTextFormat, Mem) = 0;
           end;
         finally
           GlobalUnlock(Mem);
@@ -1194,15 +1184,14 @@ begin
       if not Failed then begin
         // Copy it in our custom format so we know what kind of block it is.
         // That effects how it is pasted in.
-        Mem := GlobalAlloc(GMEM_MOVEABLE or GMEM_DDESHARE, SLen +
-          SizeOf(TSynSelectionMode) + 1);
+        Mem := GlobalAlloc(GMEM_MOVEABLE or GMEM_DDESHARE, (SLen + SizeOf(TSynSelectionMode) + 1) * SizeOf(Char));
         P := GlobalLock(Mem);
         try
           if P <> nil then begin
             // Our format:  TSynSelectionMode value followed by text.
             PSynSelectionMode(P)^ := fActiveSelectionMode;
             inc(P, SizeOf(TSynSelectionMode));
-            Move(PChar(SText)^, P^, SLen + 1);
+            Move(PChar(SText)^, P^, (SLen + 1) * SizeOf(Char));
             Failed := SetClipboardData(SynEditClipboardFormat, Mem) = 0;
           end;
         finally
@@ -1568,7 +1557,7 @@ function TCustomSynEdit.GetSelText: string;
       P := PChar(Result);
       StrPCopy(P, Copy(S, Index, Count));
       Inc(P, Length(S));
-      FillChar(P^, DstLen - Srclen, $20);
+      FillChar(P^, (DstLen - Srclen) * SizeOf(Char), $20);
     end;
   end;
 
@@ -1585,7 +1574,7 @@ function TCustomSynEdit.GetSelText: string;
       Dec(Index);
       pSrc := PChar(S) + Index;
       DstLen := Min(SrcLen - Index, Count);
-      Move(pSrc^, P^, DstLen);
+      Move(pSrc^, P^, DstLen * SizeOf(Char));
       Inc(P, DstLen);
       P^ := #0;
     end;
@@ -1604,7 +1593,7 @@ function TCustomSynEdit.GetSelText: string;
     Len := Count - (P - OldP);
     if not (eoTrimTrailingSpaces in Options) then
     begin
-      FillChar(P^, Len, #$20);
+      FillChar(P^, Len * SizeOf(Char), #$20);
       Inc(P, Len);
     end
     else
@@ -2023,7 +2012,7 @@ begin
   if Assigned(p) and (eoAutoIndent in fOptions) then
   begin
     Result := 0;
-    while p^ in [#1..#32] do
+    while SECharInset(p^, [#1..#32]) do
     begin
       if (p^=#9) and (WantTabs) then
         Inc(Result,TabWidth)
@@ -2102,7 +2091,7 @@ begin
 
   fKbdHandler.ExecuteMouseDown(Self, Button, Shift, X, Y);
 
-  if (Button in [mbLeft, mbRight]) then
+  if (Button in [mbLeft, mbRight]) and (X >= fGutterWidth + 2) then
   begin
     if Button = mbRight then
     begin
@@ -3039,7 +3028,7 @@ var
   // Store the token chars with the attributes in the TokenAccu
   // record. This will paint any chars already stored if there is
   // a (visible) change in the attributes.
-  procedure AddHighlightToken(const Token: AnsiString;
+  procedure AddHighlightToken(const Token: string;
     CharsBefore, TokenLen: integer; p_Attri: TSynHighlighterAttributes);
   var
     bSpacesTest, bIsSpaces: boolean;
@@ -3100,7 +3089,7 @@ var
           // background color must be the same and
           ((TokenAccu.BG = Background) and
           // foreground color must be the same or token is only spaces
-          ((TokenAccu.FG = Foreground) or (TokenIsSpaces and not fShowSpecChar))) then
+          ((TokenAccu.FG = Foreground) or TokenIsSpaces)) then
         begin
           bCanAppend := TRUE;
         end;
@@ -3309,14 +3298,10 @@ var
           while not fHighlighter.GetEol do
           begin
             sToken := fHighlighter.GetToken;
-            // Work-around buggy highlighters which return empty tokens.
+            // Cooperate with some buggy highlighters...
             if sToken = '' then
             begin
-              fHighlighter.Next;
-              if fHighlighter.GetEol then
-                break;
               sToken := fHighlighter.GetToken;
-              // Maybe should also test whether GetTokenPos changed...
               if sToken = '' then
                 raise Exception.Create('The highlighter seems to be in an infinite loop');
             end;
@@ -3536,7 +3521,7 @@ begin
         Clipboard.Close;
       end;
     // If our special format isn't there, check for regular text format.
-    end else if Clipboard.HasFormat(CF_TEXT) then begin
+    end else if Clipboard.HasFormat(cClipboardTextFormat) then begin
 {$ENDIF}
       fUndoList.AddChange(crPasteBegin, BlockBegin, BlockEnd, '', smNormal);
       AddPasteEndMarker := True;
@@ -3885,7 +3870,7 @@ begin
   Result := (vCaretRowCol.Column >= LeftChar)
     and (vCaretRowCol.Column <= LeftChar + CharsInWindow)
     and (vCaretRowCol.Row >= TopLine)
-    and (vCaretRowCol.Column <= TopLine + LinesInWindow);
+    and (vCaretRowCol.Row <= TopLine + LinesInWindow);
 end;
 
 procedure TCustomSynEdit.SetActiveLineColor(Value: TColor);
@@ -4154,17 +4139,13 @@ var
       Str: string;
       Start: PChar;
       P: PChar;
-      bChangeScroll: Boolean;
     begin
       Result := 0;
       sLeftSide := Copy(LineText, 1, CaretX - 1);
       if CaretX - 1 > Length(sLeftSide) then
       begin
-        if not(eoTabsToSpaces in Options) and StringIsBlank(sLeftSide) then
-          sLeftSide := GetLeftSpacing(DisplayX -1, True)
-        else
-          sLeftSide := sLeftSide + StringOfChar(#32,
-            CaretX - 1 - Length(sLeftSide));
+        sLeftSide := sLeftSide + StringOfChar(#32,
+          CaretX - 1 - Length(sLeftSide));
       end;
       sRightSide := Copy(LineText, CaretX, Length(LineText) - (CaretX - 1));
       // step1: insert the first line of Value into current line
@@ -4180,7 +4161,7 @@ var
         Str := sLeftSide + Value + sRightSide;
         ProperSetLine( CaretY -1, Str );
       end;
-      // step2: insert remaining lines of Value
+      // step2: insert left lines of Value
       while P^ <> #0 do
       begin
         if P^ = #13 then
@@ -4206,19 +4187,13 @@ var
         ProperSetLine( CaretY -1, Str );
         Inc(Result);
       end;
-      bChangeScroll := not (eoScrollPastEol in fOptions);
-      Include(fOptions, eoScrollPastEol);
-      try
-        if (eoTrimTrailingSpaces in Options) and (sRightSide = '') then
-        begin
-          InternalCaretX := Length(LineText) + GetExpandedLength(Str, TabWidth)
-            - GetExpandedLength(LineText, TabWidth) +1;
-        end
+      if eoTrimTrailingSpaces in Options then
+        if sRightSide = '' then
+          fCaretX := GetExpandedLength( Str, TabWidth ) +1
         else
-          InternalCaretX := Length(Str) - Length(sRightSide) +1;
-      finally
-        if bChangeScroll then Exclude(fOptions, eoScrollPastEol);
-      end;
+          fCaretX := 1 + Length(Lines[CaretY - 1]) - Length(TrimTrailingSpaces(sRightSide))
+      else fCaretX := 1 + Length(Lines[CaretY - 1]) - Length(sRightSide);
+      StatusChanged([scCaretX]);
     end;
 
     function InsertColumn: Integer;
@@ -4239,7 +4214,7 @@ var
         if P <> Start then
         begin
           SetLength(Str, P - Start);
-          Move(Start^, Str[1], P - Start);
+          Move(Start^, Str[1], (P - Start) * SizeOf(Char));
           if CaretY > Lines.Count then
           begin
             Inc( Result );
@@ -4355,7 +4330,8 @@ var
         Inc( StartLine );
       DoLinesInserted(StartLine, InsertedLines);
     end;
-    EnsureCursorPosVisible;
+    // Force caret reset
+    InternalCaretXY := CaretXY;
   end;
 
 begin
@@ -4718,7 +4694,7 @@ end;
 
 {$IFDEF SYN_COMPILER_6_UP}
 function TCustomSynEdit.DoMouseWheel(Shift: TShiftState;
-  WheelDelta: Integer; {$IFDEF SYN_CLX}const{$ENDIF} MousePos: TPoint): Boolean;
+  WheelDelta: Integer; MousePos: TPoint): Boolean;
 const
   WHEEL_DIVISOR = 120; // Mouse Wheel standard
 var
@@ -4952,7 +4928,7 @@ end;
 
 procedure TCustomSynEdit.WMVScroll(var Msg: TWMScroll);
 var
-  s: ShortString;
+  s: string;
   rc: TRect;
   pt: TPoint;
   ScrollHint: THintWindow;
@@ -5230,8 +5206,7 @@ begin
 {$IFDEF SYN_CLX}
   Result := not ReadOnly and Clipboard.Provides(CF_TEXT);
 {$ELSE}
-  Result := not ReadOnly and ( Clipboard.HasFormat(CF_TEXT)
-    or Clipboard.HasFormat(SynEditClipboardFormat) );
+  Result := not ReadOnly and (Clipboard.HasFormat(cClipboardTextFormat) or Clipboard.HasFormat(SynEditClipboardFormat));
 {$ENDIF}
 end;
 
@@ -6373,6 +6348,7 @@ end;
 
 procedure TCustomSynEdit.EnsureCursorPosVisibleEx(ForceToMiddle: Boolean);
 var
+  TmpMiddle: Integer;
   VisibleX: Integer;
   vCaretRow: integer;
 begin
@@ -6391,13 +6367,24 @@ begin
     vCaretRow := DisplayY;
     if ForceToMiddle then
     begin
-      if (vCaretRow < TopLine) or (vCaretRow > (TopLine + (LinesInWindow - 1))) then
-        TopLine := vCaretRow - (LinesInWindow - 1) div 2;
+      if vCaretRow < (TopLine - 1) then
+      begin
+        TmpMiddle := LinesInWindow div 2;
+        if vCaretRow - TmpMiddle < 0 then
+          TopLine := 1
+        else
+          TopLine := vCaretRow - TmpMiddle + 1;
+      end
+      else if vCaretRow > (TopLine + (LinesInWindow - 2)) then
+      begin
+        TmpMiddle := LinesInWindow div 2;
+        TopLine := vCaretRow - (LinesInWindow - 1) + TmpMiddle;
+      end;
     end
     else begin
       if vCaretRow < TopLine then
         TopLine := vCaretRow
-      else if vCaretRow > TopLine + (LinesInWindow - 1) then
+      else if vCaretRow > TopLine + Max(1, LinesInWindow) - 1 then
         TopLine := vCaretRow - (LinesInWindow - 1)
       else
         TopLine := TopLine;
@@ -7055,7 +7042,7 @@ begin
           end;
         end;
       ecTab:
-          if not ReadOnly then DoTabKey;
+        if not ReadOnly then DoTabKey;
       ecShiftTab:
         if not ReadOnly then DoShiftTabKey;
       ecMatchBracket:
@@ -7065,10 +7052,6 @@ begin
         if not ReadOnly and (AChar >= #32) and (AChar <> #127) then
         begin
           DoOnPaintTransient(ttBefore);
-          if (InsertMode = False) and (not SelAvail) then
-          begin
-            SelLength := 1;
-          end;
           SelText := AChar;
           DoOnPaintTransient(ttAfter);
         end;
@@ -7196,7 +7179,7 @@ begin
       ecImeStr:
         if not ReadOnly then
         begin
-          SetString(s, PChar(Data), StrLen(Data));
+          SetString(s, PChar(Data), StrLen(PChar(Data)));
           if SelAvail then begin
             BeginUndoBlock;                                                   
             try
@@ -7331,7 +7314,7 @@ begin
 {$IFDEF SYN_MBCSSUPPORT}
       MultiPos := StrScanForMultiByteChar(Line, CX + 1);
       // find next "whitespace" if current char is an IdentChar
-      if (Line[CX] in IdentChars) and (ByteType(Line, CX) = mbSingleByte) then
+      if SECharInset(Line[CX], IdentChars) and (ByteType(Line, CX) = mbSingleByte) then
         CX := StrScanForCharInSet(Line, CX, WhiteChars);
 {$ELSE}
       MultiPos := 0;
@@ -7373,7 +7356,7 @@ begin
     if CX > 1 then
     begin  // only find previous char, if not already on start of line
       // if previous char isn't a "whitespace" search for the last IdentChar
-      if not (Line[CX - 1] in WhiteChars) then
+      if not SECharInset(Line[CX - 1], WhiteChars) then
         CX := StrRScanForCharInSet(Line, CX - 1, WhiteChars) + 1;
     end;
   end;
@@ -7435,7 +7418,7 @@ begin
 {$IFDEF SYN_MBCSSUPPORT}
       MultiPos := StrRScanForMultiByteChar(Line, CX - 1);
       // if previous char is a "whitespace" search for the last IdentChar
-      if (Line[CX - 1] in WhiteChars) and (ByteType(Line, CX - 1) = mbSingleByte) then
+      if SECharInset(Line[CX - 1], WhiteChars) and (ByteType(Line, CX - 1) = mbSingleByte) then
         CX := StrRScanForCharInSet(Line, CX - 1, IdentChars);
 {$ELSE}
       MultiPos := 0;
@@ -8580,14 +8563,14 @@ begin
           p := @PrevLine[MinLen];
           // scan over non-whitespaces
           repeat
-            if p^ in [#9, #32] then break;
+            if SECharInset(p^, [#9, #32]) then break;
             Inc(i);
             Inc(p);
           until p^ = #0;
           // scan over whitespaces
           if p^ <> #0 then
             repeat
-              if not (p^ in [#9, #32]) then break;
+              if not SECharInset(p^, [#9, #32]) then break;
               Inc(i);
               Inc(p);
             until p^ = #0;
@@ -8822,7 +8805,7 @@ begin
       vMaxX := LastCharInRow() -1
     else
       vMaxX := Length(s);
-    while (first_nonblank <= vMaxX) and (s[first_nonblank] in [#32, #9]) do
+    while (first_nonblank <= vMaxX) and SECharInset(s[first_nonblank], [#32, #9]) do
       inc(first_nonblank);
     dec(first_nonblank);
 
@@ -8893,7 +8876,7 @@ begin
       vMinX := FirstCharInRow() -1
     else
       vMinX := 0;
-    while (vLastNonBlank > vMinX) and (vText[vLastNonBlank] in [#32, #9]) do
+    while (vLastNonBlank > vMinX) and SECharInset(vText[vLastNonBlank], [#32, #9]) do
       Dec(vLastNonBlank);
 
     vNewX := CaretX -1;
@@ -9050,6 +9033,7 @@ var
   TempString: String;
   OrgSelectionMode : TSynSelectionMode;
   SomethingToDelete : Boolean;
+  v_StrToDeleteBuffer: String;
 
   function GetDelLen : integer;
   var
@@ -9076,8 +9060,7 @@ var
     if (Run[0] = #9) and (Result < FTabWidth) then
       Inc(Result);
   end;
-var
-  v_StrToDeleteBuffer: String;
+
 begin
   OrgSelectionMode := fActiveSelectionMode;
   Len := 0;
@@ -9348,7 +9331,7 @@ begin
               Dec(PosX);
               Test := Line[PosX];
 {$IFDEF SYN_MBCSSUPPORT}
-              if (Test in LeadBytes) then
+              if SECharInset(Test, LeadBytes) then
               begin
                 Dec(PosX);
                 Continue;
@@ -9392,7 +9375,7 @@ begin
               Inc(PosX);
               Test := Line[PosX];
 {$IFDEF SYN_MBCSSUPPORT}
-              if (Test in LeadBytes) then
+              if SECharInset(Test, LeadBytes) then
               begin
                 Inc(PosX);
                 Continue;
@@ -9487,7 +9470,7 @@ begin
   while Result >= 0 do
   begin
     Entry := THookedCommandHandlerEntry(fHookedCommandHandlers[Result]);
-    if Entry.Equals(AHandlerProc) then
+    if Entry.EqualEntry(AHandlerProc) then
       break;
     Dec(Result);
   end;
@@ -10305,3 +10288,4 @@ initialization
   SynEditClipboardFormat := RegisterClipboardFormat(SYNEDIT_CLIPBOARD_FORMAT);
 {$ENDIF}
 end.
+

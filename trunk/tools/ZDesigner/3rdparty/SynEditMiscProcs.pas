@@ -27,7 +27,7 @@ replace them with the notice and other provisions required by the GPL.
 If you do not delete the provisions above, a recipient may use your version
 of this file under either the MPL or the GPL.
 
-$Id: SynEditMiscProcs.pas,v 1.38 2005/01/02 16:51:03 markonjezic Exp $
+$Id: SynEditMiscProcs.pas,v 1.39 2009/04/23 14:24:16 romankassebaum Exp $
 
 You may retrieve the latest version of this file at the SynEdit home page,
 located at http://SynEdit.SourceForge.net
@@ -59,7 +59,7 @@ uses
 {$IFDEF SYN_COMPILER_4_UP}
   Math,
 {$ENDIF}
-  Classes;
+  SysUtils, Classes;
 
 type
   PIntArray = ^TIntArray;
@@ -77,6 +77,8 @@ function MinPoint(const P1, P2: TPoint): TPoint;
 
 function GetIntArray(Count: Cardinal; InitialValue: integer): PIntArray;
 
+function SECharInSet(C: Char; const CharSet: TSysCharSet): Boolean;
+
 {$IFNDEF SYN_CLX}
 procedure InternalFillRect(dc: HDC; const rcPaint: TRect);
 {$ENDIF}
@@ -84,16 +86,16 @@ procedure InternalFillRect(dc: HDC; const rcPaint: TRect);
 // Converting tabs to spaces: To use the function several times it's better
 // to use a function pointer that is set to the fastest conversion function.
 type
-  TConvertTabsProc = function(const Line: AnsiString;
-    TabWidth: integer): AnsiString;
+  TConvertTabsProc = function(const Line: string;
+    TabWidth: integer): string;
 
 function GetBestConvertTabsProc(TabWidth: integer): TConvertTabsProc;
 // This is the slowest conversion function which can handle TabWidth <> 2^n.
 function ConvertTabs(const Line: AnsiString; TabWidth: integer): AnsiString;
 
 type
-  TConvertTabsProcEx = function(const Line: AnsiString; TabWidth: integer;
-    var HasTabs: boolean): AnsiString;
+  TConvertTabsProcEx = function(const Line: string; TabWidth: integer;
+    var HasTabs: boolean): string;
 
 function GetBestConvertTabsProcEx(TabWidth: integer): TConvertTabsProcEx;
 // This is the slowest conversion function which can handle TabWidth <> 2^n.
@@ -204,7 +206,6 @@ procedure SynDrawGradient(const ACanvas: TCanvas; const AStartColor, AEndColor: 
 implementation
 
 uses
-  SysUtils,
   {$IFDEF SYN_CLX}
   QSynHighlighterMulti;
   {$ELSE}
@@ -273,6 +274,15 @@ begin
   end;
 end;
 
+function SECharInSet(C: Char; const CharSet: TSysCharSet): Boolean;
+begin
+{$IFDEF UNICODE}
+  Result := SysUtils.CharInSet(C, CharSet);
+{$ELSE}
+  Result := C in CharSet;
+{$ENDIF}
+end;
+
 {$IFNDEF SYN_CLX}
 procedure InternalFillRect(dc: HDC; const rcPaint: TRect);
 begin
@@ -328,7 +338,7 @@ function ConvertTabs2nEx(const Line: AnsiString; TabWidth: integer;
   var HasTabs: boolean): AnsiString;
 var
   i, DestLen, TabCount, TabMask: integer;
-  pSrc, pDest: PChar;
+  pSrc, pDest: PAnsiChar;
 begin
   Result := Line;  // increment reference count only
   if GetHasTabs(pointer(Line), DestLen) then begin
@@ -350,8 +360,8 @@ begin
     // Set the length of the expanded string.
     SetLength(Result, DestLen);
     DestLen := 0;
-    pSrc := PChar(Line);
-    pDest := PChar(Result);
+    pSrc := PAnsiChar(Line);
+    pDest := PAnsiChar(Result);
     // We use another TabMask here to get the difference to 2^n.
     TabMask := TabWidth - 1;
     repeat
@@ -395,7 +405,7 @@ function ConvertTabsEx(const Line: AnsiString; TabWidth: integer;
   var HasTabs: boolean): AnsiString;
 var
   i, DestLen, TabCount: integer;
-  pSrc, pDest: PChar;
+  pSrc, pDest: PAnsiChar;
 begin
   Result := Line;  // increment reference count only
   if GetHasTabs(pointer(Line), DestLen) then begin
@@ -416,8 +426,8 @@ begin
     // Set the length of the expanded string.
     SetLength(Result, DestLen);
     DestLen := 0;
-    pSrc := PChar(Line);
-    pDest := PChar(Result);
+    pSrc := PAnsiChar(Line);
+    pDest := PAnsiChar(Result);
     repeat
       if (pSrc^ = #9) then begin
         i := TabWidth - (DestLen mod TabWidth);
@@ -612,7 +622,7 @@ begin
     repeat
 {$IFDEF SYN_MBCSSUPPORT}
       // skip over multibyte characters
-      if p^ in LeadBytes then
+      if SECharInSet(p^, LeadBytes) then
       begin
         Inc(p);
         Inc(Start);
@@ -621,7 +631,7 @@ begin
       end
       else
 {$ENDIF}
-      if p^ in AChars then
+      if SECharInSet(p^, AChars) then
       begin
         Result := Start;
         exit;
@@ -644,7 +654,7 @@ begin
     if not SysLocale.FarEast then begin
 {$ENDIF}
       for I := Start downto 1 do
-        if Line[I] in AChars then begin
+        if SECharInSet(Line[I], AChars) then begin
           Result := I;
           Exit;
         end;
@@ -655,9 +665,9 @@ begin
       // backward and call ByteType on every character
       I := 1;
       while I <= Start do begin
-        if Line[I] in LeadBytes then
+        if SECharInSet(Line[I], LeadBytes) then
           Inc(I)
-        else if Line[I] in AChars then
+        else if SECharInSet(Line[I], AChars) then
           Result := I;
         Inc(I);
       end;
@@ -676,7 +686,7 @@ begin
     if ByteType(Line, Start) = mbTrailByte then
       Inc(Start);
     for I := Start to Length(Line) do
-      if Line[I] in LeadBytes then begin
+      if SECharInSet(Line[I], LeadBytes) then begin
         Result := I;
         Exit;
       end;
@@ -696,7 +706,7 @@ begin
     // backward and call ByteType on every character
     I := 1;
     while I <= Start do begin
-      if Line[I] in LeadBytes then begin
+      if SECharInSet(Line[I], LeadBytes) then begin
         Result := I;
         Inc(I);
       end;
@@ -710,7 +720,7 @@ function GetEOL(Line: PChar): PChar;
 begin
   Result := Line;
   if Assigned(Result) then
-    while not (Result^ in [#0, #10, #13]) do
+    while not SECharInSet(Result^, [#0, #10, #13]) do
       Inc(Result);
 end;
 
@@ -917,7 +927,7 @@ end;
 function DeleteTypePrefixAndSynSuffix(S: string): string;
 begin
   Result := S;
-  if Result[1] in ['T', 't'] then //ClassName is never empty so no AV possible
+  if SECharInSet(Result[1], ['T', 't']) then //ClassName is never empty so no AV possible
     if Pos('tsyn', LowerCase(Result)) = 1 then
       Delete(Result, 1, 4)
     else
@@ -1126,3 +1136,4 @@ begin
 end;
 
 end.
+
