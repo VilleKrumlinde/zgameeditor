@@ -600,11 +600,6 @@ begin
 
   RefreshSymbolTable;
 
-  //Initial tree update.
-  //Slows down opening project but without this call the walls in FpsDemo
-  //become black when WallModel is selected.
-  Root.Update;
-
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
   SetFileChanged(False);
@@ -613,6 +608,11 @@ begin
 
   //Must compile directly after load because no zc-instructions are saved in the xml
   CompileAll;
+
+  //Initial tree update. Must be after compileall.
+  //Slows down opening project but without this call the walls in FpsDemo
+  //become black when WallModel is selected.
+  Root.Update;
 
   //Read settings last. Must be after compileall because it selects nodes which
   //will call RefreshContent that requires to have expressions already compiled.
