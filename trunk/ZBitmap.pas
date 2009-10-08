@@ -25,7 +25,7 @@ interface
 uses ZOpenGL, ZClasses;
 
 type
-  TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024);
+  TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024,bs2048,bs4096);
 
   //32 bits per pixel image
   TZBitmap = class(TContent)
@@ -250,10 +250,10 @@ begin
 //  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048','4096']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048','4096']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
