@@ -746,7 +746,6 @@ object CommonModule: TCommonModule
       Caption = '&Delete'
       Hint = 'Delete|Erases the selection'
       ImageIndex = 5
-      ShortCut = 46
     end
     object EditSelectAll1: TEditSelectAll
       Category = 'Edit'
