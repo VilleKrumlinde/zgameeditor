@@ -419,6 +419,7 @@ begin
   Glp := TCustomGLPanel.Create(Self);
   Glp.Align := alClient;
   Glp.Parent := ViewerGlTabSheet;
+  Glp.ParentChanged;
   Glp.OnGLDraw := Self.OnGlDraw;
   //Byt ut windowproc mot vår platform_windowproc
   OldGlWindowProc := Glp.WindowProc;
@@ -433,7 +434,6 @@ begin
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
 
-  Platform_DesignerSetDC(Glp.Canvas.Handle, Glp.Handle);
   Platform_InitAudio;
 
   ExePath := ExtractFilePath(Application.ExeName);

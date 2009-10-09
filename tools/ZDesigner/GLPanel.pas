@@ -161,7 +161,7 @@ procedure Register;
 
 implementation
 
-uses ZLog;
+uses ZLog, ZPlatform;
 
 var
    errmess: String;
@@ -468,6 +468,7 @@ begin
   if HasActiveContext then
     DeactivateRenderingContext;
   FFirstTimeInFlag := True;
+  Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
 end;
 
 procedure TCustomGLPanel.ForceInitGL;
