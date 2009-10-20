@@ -506,6 +506,8 @@ begin
 
   ZcGlobalNames := TObjectList.Create(True);
 
+  Platform_InitGlobals;  //Nollställ timer etc
+
   ReadAppSettingsFromIni;
 
   RefreshMenuFromMruList;
@@ -515,8 +517,6 @@ begin
 
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
-
-  Platform_InitGlobals;  //Nollställ timer etc
 
   Application.OnException := OnAppException;
 
