@@ -3857,6 +3857,8 @@ begin
     // case, just save the value of fLastCaretX before assigning to CaretXY and
     // restore it afterward as appropriate.
     UpdateLastCaretX;
+    if CallEnsureCursorPos then
+      EnsureCursorPosVisible;
   end;
   if vTriggerPaint then
     DoOnPaintTransient(ttAfter);
@@ -4329,6 +4331,7 @@ var
       if (PasteMode = smNormal) and (StartCol > 1) then
         Inc( StartLine );
       DoLinesInserted(StartLine, InsertedLines);
+      Invalidate;
     end;
     // Force caret reset
     InternalCaretXY := CaretXY;

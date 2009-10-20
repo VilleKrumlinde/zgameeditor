@@ -691,12 +691,12 @@ END
 /* c:\program files\codegear\rad studio\5.0\lib\Controls.res */
 /* c:\program files\codegear\rad studio\5.0\lib\Buttons.res */
 /* c:\program files\codegear\rad studio\5.0\lib\ExtDlgs.res */
-/* D:\Data\Delphi32\ZzDC_Public\OptionsDialog.res */
+/* ..\..\OptionsDialog.res */
 /* frmArrayEdit.dfm */
 /* frmRawAudioImportOptions.dfm */
 /* frmMemoEdit.dfm */
 /* frm3dsImportOptions.dfm */
-/* .\3rdparty\SynEdit.res */
+/* D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\3rdparty\SynEdit.res */
 /* c:\program files\codegear\rad studio\5.0\lib\WindowsXP.res */
 /* frmMusicEdit.dfm */
 /* c:\program files\codegear\rad studio\5.0\lib\SPIN.RES */
