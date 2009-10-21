@@ -4,8 +4,8 @@ object SettingsForm: TSettingsForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 322
-  ClientWidth = 358
+  ClientHeight = 382
+  ClientWidth = 343
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,13 +16,13 @@ object SettingsForm: TSettingsForm
   Position = poScreenCenter
   OnCreate = FormCreate
   DesignSize = (
-    358
-    322)
+    343
+    382)
   PixelsPerInch = 96
   TextHeight = 13
   object OkButton: TButton
-    Left = 195
-    Top = 290
+    Left = 180
+    Top = 350
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -30,24 +30,30 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
+    ExplicitLeft = 195
+    ExplicitTop = 290
   end
   object Button2: TButton
-    Left = 277
-    Top = 290
+    Left = 262
+    Top = 350
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
+    ExplicitLeft = 277
+    ExplicitTop = 290
   end
   object GroupBox1: TGroupBox
     Left = 8
     Top = 118
-    Width = 339
+    Width = 327
     Height = 154
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Packer settings'
     TabOrder = 2
+    ExplicitWidth = 339
     object Label1: TLabel
       Left = 14
       Top = 32
@@ -119,10 +125,12 @@ object SettingsForm: TSettingsForm
   object GroupBox2: TGroupBox
     Left = 8
     Top = 63
-    Width = 339
+    Width = 327
     Height = 49
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Explorer'
     TabOrder = 3
+    ExplicitWidth = 339
     object ShellCheck: TCheckBox
       Left = 10
       Top = 16
@@ -136,10 +144,12 @@ object SettingsForm: TSettingsForm
   object GroupBox3: TGroupBox
     Left = 8
     Top = 8
-    Width = 339
+    Width = 327
     Height = 49
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Designer layout'
     TabOrder = 4
+    ExplicitWidth = 339
     object Label6: TLabel
       Left = 14
       Top = 19
@@ -158,6 +168,49 @@ object SettingsForm: TSettingsForm
       Items.Strings = (
         'Left'
         'Middle')
+    end
+  end
+  object GroupBox4: TGroupBox
+    Left = 8
+    Top = 278
+    Width = 327
+    Height = 59
+    Anchors = [akLeft, akTop, akRight]
+    Caption = 'Code editor'
+    TabOrder = 5
+    DesignSize = (
+      327
+      59)
+    object Label7: TLabel
+      Left = 14
+      Top = 24
+      Width = 188
+      Height = 13
+      Caption = 'Delay for code completion (milliseconds)'
+    end
+    object UpDown1: TUpDown
+      Left = 263
+      Top = 22
+      Width = 24
+      Height = 21
+      Anchors = [akLeft, akBottom]
+      Associate = CompDelayEdit
+      Min = 100
+      Max = 10000
+      Increment = 100
+      Orientation = udHorizontal
+      Position = 100
+      TabOrder = 0
+    end
+    object CompDelayEdit: TEdit
+      Left = 224
+      Top = 22
+      Width = 41
+      Height = 21
+      Anchors = [akLeft, akBottom]
+      ReadOnly = True
+      TabOrder = 1
+      Text = '0'
     end
   end
 end

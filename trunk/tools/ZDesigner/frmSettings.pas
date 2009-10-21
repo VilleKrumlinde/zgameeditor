@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls;
+  StdCtrls, ComCtrls;
 
 type
   TSettingsForm = class(TForm)
@@ -24,6 +24,10 @@ type
     GroupBox3: TGroupBox;
     Label6: TLabel;
     GuiLayoutCombo: TComboBox;
+    GroupBox4: TGroupBox;
+    UpDown1: TUpDown;
+    CompDelayEdit: TEdit;
+    Label7: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
@@ -128,7 +132,6 @@ end;
 procedure TSettingsForm.ReadSettings;
 begin
   ShellCheck.Checked := IsRegZgeExt;
-
 end;
 
 procedure TSettingsForm.SaveSettings;
