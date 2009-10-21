@@ -288,6 +288,7 @@ type
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
     SysLibrary : TZComponent;
+    AutoComp,ParamComp : TSynCompletionProposal;
     Log : TLog;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
@@ -385,7 +386,6 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpre
 constructor TEditorForm.Create(AOwner: TComponent);
 var
   Con : TDefineConstant;
-  AutoComp,ParamComp : TSynCompletionProposal;
 begin
   inherited Create(AOwner);
 
@@ -772,13 +772,16 @@ begin
     S := Ini.ReadString(Section,'MruList', '');
     MruList.CommaText := S;
 
-
     LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
     LeftPanel.Width := Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20);
 
     Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
+
+    Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
+    Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
+
   finally
     Ini.Free;
   end;
@@ -822,6 +825,8 @@ begin
 
     Ini.WriteString(Section,'PackerProg', Self.PackerProg);
     Ini.WriteString(Section,'PackerParams', Self.PackerParams);
+
+    Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
 
   finally
     Ini.Free;
@@ -1729,11 +1734,14 @@ begin
     F.PackerEdit.Text := Self.PackerProg;
     F.PackerParamsEdit.Text := Self.PackerParams;
     F.GuiLayoutCombo.ItemIndex := Self.GuiLayout;
+    F.UpDown1.Position := Self.AutoComp.TimerInterval;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
       Self.PackerParams := F.PackerParamsEdit.Text;
       Self.GuiLayout := F.GuiLayoutCombo.ItemIndex;
+      Self.AutoComp.TimerInterval := F.UpDown1.Position;
+      Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
     end;
   finally
     F.Free;
