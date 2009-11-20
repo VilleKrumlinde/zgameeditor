@@ -49,6 +49,7 @@ type
  UseMaterialClassId,RenderMeshClassId,RenderTransformClassId,RenderSpriteClassId,
  RenderBeamsClassId,RenderTransformGroupClassId,RenderTextClassId,RenderSetColorClassId,RenderNetClassId,
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
+ RenderBufferClassId,ActivateRenderBufferClassId,
  RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,
  ApplicationClassId,AppStateClassId,SetAppStateClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
