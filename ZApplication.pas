@@ -529,12 +529,8 @@ begin
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
 
-  //we'll use a perspective matrix to view our scene
   gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
-//  glOrtho(-1,1,-1,1,-100,100);
-//  glFrustum(-1, 1, -1, 1, 9, 100);
 
-  //Använd sedan property CameraPosition
   //Måste ta negativt på cameraposition för att dess axlar ska bete sig
   //likadant som modell-koordinater (positiv y = uppåt t.ex.)
   ApplyRotation(CameraRotation);
@@ -551,17 +547,15 @@ begin
   glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
 
   Renderer.Render_Begin;
+    RenderModels;
 
-  RenderModels;
-
-  //Render application
-  glPushMatrix;
-  if Self.OnRender.Count>0 then
-    Self.OnRender.ExecuteCommands;
-  if Self.CurrentState<>nil then
-    Self.CurrentState.OnRender.ExecuteCommands;
-  glPopMatrix;
-
+    //Render application
+    glPushMatrix;
+    if Self.OnRender.Count>0 then
+      Self.OnRender.ExecuteCommands;
+    if Self.CurrentState<>nil then
+      Self.CurrentState.OnRender.ExecuteCommands;
+    glPopMatrix;
   Renderer.Render_End;
 
   //End frame

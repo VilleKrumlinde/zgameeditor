@@ -29,7 +29,7 @@ type
 
   TFont = class;
   TShader = class;
-  TRenderBuffer = class;
+  TRenderTarget = class;
 
   TMaterialShading = (msSmooth,msFlat,msWireframe);
   TMaterialTexCoords = (tcGenerated,tcModelDefined);
@@ -54,7 +54,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Texture : TZBitmap;
-    RenderBuffer : TRenderBuffer;
+    RenderTarget : TRenderTarget;
     TextureScale : TZVector3f;
     TextureX,TextureY : single;
     TextureRotate : single;
@@ -261,7 +261,7 @@ type
     {$endif}
   end;
 
-  TRenderBuffer = class(TZComponent)
+  TRenderTarget = class(TZComponent)
   strict private
     TexId,RboId,FboId : integer;
   protected
@@ -271,11 +271,11 @@ type
     destructor Destroy; override;
   end;
 
-  TActivateRenderBuffer = class(TRenderCommand)
+  TSetRenderTarget = class(TRenderCommand)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    RenderBuffer : TRenderBuffer;
+    RenderTarget : TRenderTarget;
     procedure Execute; override;
     {$ifndef minimal}function GetDisplayName: String; override;{$endif}
   end;
@@ -422,6 +422,7 @@ end;
 
 var
   CurrentMaterial : TMaterial;
+  CurrentRenderTarget : TRenderTarget;
 
 procedure EnableMaterial(OldM,NewM : TMaterial);
 const
@@ -542,10 +543,10 @@ begin
     begin
       glEnable(GL_TEXTURE_2D);
       Tex.Texture.UseTextureBegin;
-    end else if Tex.RenderBuffer<>nil then
+    end else if Tex.RenderTarget<>nil then
     begin
       glEnable(GL_TEXTURE_2D);
-      Tex.RenderBuffer.UseTextureBegin;
+      Tex.RenderTarget.UseTextureBegin;
     end else
       glDisable(GL_TEXTURE_2D);
 
@@ -604,6 +605,7 @@ end;
 procedure Render_End;
 begin
   EnableMaterial(CurrentMaterial,DefaultMaterial);
+  CurrentRenderTarget := nil;
   {$ifndef minimal}
   IsRendering:=false;
   {$endif}
@@ -2059,8 +2061,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RenderBuffer',{$ENDIF}integer(@RenderBuffer) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderBuffer]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
   List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
@@ -2076,23 +2078,23 @@ end;
 function TMaterialTexture.GetDisplayName: String;
 begin
   Result := inherited GetDisplayName;
-  if Assigned(RenderBuffer) then
-    Result := Result + '  ' + RenderBuffer.Name
+  if Assigned(RenderTarget) then
+    Result := Result + '  ' + RenderTarget.Name
   else if Assigned(Texture) then
     Result := Result + '  ' + Texture.Name;
 end;
 {$endif}
 
-{ TRenderBuffer }
+{ TRenderTarget }
 
-procedure TRenderBuffer.Activate;
+procedure TRenderTarget.Activate;
 var
   W,H : integer;
 begin
   if not FbosSupported then
     Exit;
 
-  W := ScreenWidth div 2; H := ScreenHeight div 2;
+  W := ScreenWidth{ div 2}; H := ScreenHeight{ div 2};
 
   if TexId=0 then
   begin
@@ -2139,7 +2141,7 @@ begin
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 end;
 
-destructor TRenderBuffer.Destroy;
+destructor TRenderTarget.Destroy;
 begin
   if FbosSupported and (TexId<>0) then
   begin
@@ -2150,41 +2152,47 @@ begin
   inherited;
 end;
 
-procedure TRenderBuffer.UseTextureBegin;
+procedure TRenderTarget.UseTextureBegin;
 begin
   glBindTexture(GL_TEXTURE_2D, TexId);
 end;
 
-{ TActivateRenderBuffer }
+{ TSetRenderTarget }
 
-procedure TActivateRenderBuffer.DefineProperties(List: TZPropertyList);
+procedure TSetRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'RenderBuffer',{$ENDIF}integer(@RenderBuffer) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderBuffer]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
-procedure TActivateRenderBuffer.Execute;
+procedure TSetRenderTarget.Execute;
 begin
   if FbosSupported then
   begin
-    if RenderBuffer=nil then
+    if RenderTarget=nil then
     begin
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-      ZApp.UpdateViewport;
+      if CurrentRenderTarget<>nil then
+      begin
+        CurrentRenderTarget.UseTextureBegin;
+        glGenerateMipmapEXT(GL_TEXTURE_2D);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        ZApp.UpdateViewport;
+      end;
     end
     else
-      RenderBuffer.Activate;
+      RenderTarget.Activate;
+    CurrentRenderTarget := RenderTarget;
   end;
 end;
 
 {$ifndef minimal}
-function TActivateRenderBuffer.GetDisplayName: String;
+function TSetRenderTarget.GetDisplayName: String;
 begin
   Result := inherited GetDisplayName;
-  if Assigned(RenderBuffer) then
-    Result := Result + '  ' + RenderBuffer.Name;
+  if Assigned(RenderTarget) then
+    Result := Result + '  ' + RenderTarget.Name;
 end;
 {$endif}
 
@@ -2228,9 +2236,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Simple 2D particlesystem';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
-  ZClasses.Register(TRenderBuffer,RenderBufferClassId);
+  ZClasses.Register(TRenderTarget,RenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
-  ZClasses.Register(TActivateRenderBuffer,ActivateRenderBufferClassId);
+  ZClasses.Register(TSetRenderTarget,SetRenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
   DefaultMaterial := TMaterial.Create(nil);
