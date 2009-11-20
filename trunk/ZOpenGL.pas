@@ -1153,7 +1153,7 @@ const
   GL_EDGE_FLAG_ARRAY_POINTER_EXT    = $8093;
   GL_DOUBLE_EXT                     = GL_DOUBLE;
 
-  // EXT_bgra 
+  // EXT_bgra
   GL_BGR_EXT                        = $80E0;
   GL_BGRA_EXT                       = $80E1;
 
@@ -1195,6 +1195,56 @@ const
   GL_ELEMENT_ARRAY_BUFFER_ARB = $8893;
 
   STATIC_DRAW_ARB = $88E4;
+
+  //***** GL_EXT_framebuffer_object *****//
+  GL_FRAMEBUFFER_EXT = $8D40;
+  GL_RENDERBUFFER_EXT = $8D41;
+  GL_STENCIL_INDEX_EXT = $8D45;
+  GL_STENCIL_INDEX1_EXT = $8D46;
+  GL_STENCIL_INDEX4_EXT = $8D47;
+  GL_STENCIL_INDEX8_EXT = $8D48;
+  GL_STENCIL_INDEX16_EXT = $8D49;
+  GL_RENDERBUFFER_WIDTH_EXT = $8D42;
+  GL_RENDERBUFFER_HEIGHT_EXT = $8D43;
+  GL_RENDERBUFFER_INTERNAL_FORMAT_EXT = $8D44;
+  GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT = $8CD0;
+  GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT = $8CD1;
+  GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL_EXT = $8CD2;
+  GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE_EXT = $8CD3;
+  GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_3D_ZOFFSET_EXT = $8CD4;
+  GL_COLOR_ATTACHMENT0_EXT = $8CE0;
+  GL_COLOR_ATTACHMENT1_EXT = $8CE1;
+  GL_COLOR_ATTACHMENT2_EXT = $8CE2;
+  GL_COLOR_ATTACHMENT3_EXT = $8CE3;
+  GL_COLOR_ATTACHMENT4_EXT = $8CE4;
+  GL_COLOR_ATTACHMENT5_EXT = $8CE5;
+  GL_COLOR_ATTACHMENT6_EXT = $8CE6;
+  GL_COLOR_ATTACHMENT7_EXT = $8CE7;
+  GL_COLOR_ATTACHMENT8_EXT = $8CE8;
+  GL_COLOR_ATTACHMENT9_EXT = $8CE9;
+  GL_COLOR_ATTACHMENT10_EXT = $8CEA;
+  GL_COLOR_ATTACHMENT11_EXT = $8CEB;
+  GL_COLOR_ATTACHMENT12_EXT = $8CEC;
+  GL_COLOR_ATTACHMENT13_EXT = $8CED;
+  GL_COLOR_ATTACHMENT14_EXT = $8CEE;
+  GL_COLOR_ATTACHMENT15_EXT = $8CEF;
+  GL_DEPTH_ATTACHMENT_EXT = $8D00;
+  GL_STENCIL_ATTACHMENT_EXT = $8D20;
+  GL_FRAMEBUFFER_COMPLETE_EXT = $8CD5;
+  GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT = $8CD6;
+  GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT = $8CD7;
+  GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT = $8CD8;
+  GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT = $8CD9;
+  GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT = $8CDA;
+  GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT = $8CDB;
+  GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT = $8CDC;
+  GL_FRAMEBUFFER_UNSUPPORTED_EXT = $8CDD;
+  GL_FRAMEBUFFER_STATUS_ERROR_EXT = $8CDE;
+  GL_FRAMEBUFFER_BINDING_EXT = $8CA6;
+  GL_RENDERBUFFER_BINDING_EXT = $8CA7;
+  GL_MAX_COLOR_ATTACHMENTS_EXT = $8CDF;
+  GL_MAX_RENDERBUFFER_SIZE_EXT = $84E8;
+  GL_INVALID_FRAMEBUFFER_OPERATION_EXT = $0506;
 
 {******************************************************************************}
 
@@ -1558,11 +1608,26 @@ var
   glBufferDataARB : procedure(target: GLenum; size: integer; const data: pointer; usage: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glBufferSubDataARB : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
-  //Imaging
-  glConvolutionFilter2D: procedure(target, internalformat: GLEnum; width, height: GLsizei; format, Atype: GLEnum;  image: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  //***** GL_EXT_framebuffer_object *****//
+  glIsRenderbufferEXT: function(renderbuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindRenderbufferEXT: procedure(target: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteRenderbuffersEXT: procedure(n: GLsizei; const renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenRenderbuffersEXT: procedure(n: GLsizei; renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glRenderbufferStorageEXT: procedure(target: GLenum; internalformat: GLenum; width: GLsizei; height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetRenderbufferParameterivEXT: procedure(target: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glIsFramebufferEXT: function(framebuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindFramebufferEXT: procedure(target: GLenum; framebuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteFramebuffersEXT: procedure(n: GLsizei; const framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenFramebuffersEXT: procedure(n: GLsizei; framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCheckFramebufferStatusEXT: function(target: GLenum): GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFramebufferTexture2DEXT: procedure(target: GLenum; attachment: GLenum; textarget: GLenum; texture: GLuint; level: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFramebufferRenderbufferEXT: procedure(target: GLenum; attachment: GLenum; renderbuffertarget: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetFramebufferAttachmentParameterivEXT: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenerateMipmapEXT: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
+  ShadersSupported,MultiTextureSupported,VbosSupported,FbosSupported : boolean;
 
 
-  ShadersSupported,MultiTextureSupported,VbosSupported : boolean;
 
 {procedure LoadOpenGL( const dll: PChar );
 procedure FreeOpenGL;}
@@ -1861,7 +1926,7 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..19{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..30{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pchar;
     Ptr : ^pointer;
@@ -1933,44 +1998,19 @@ const ExtFuncArray : packed array[0..19{$ifndef minimal}+4{$endif}] of
 (Name : 'glGenBuffersARB'; Ptr : @@glGenBuffersARB),
 (Name : 'glBufferDataARB'; Ptr : @@glBufferDataARB),
 (Name : 'glBufferSubDataARB'; Ptr : @@glBufferSubDataARB),
-(Name : 'glConvolutionFilter2D'; Ptr : @@glConvolutionFilter2D)
-//(Name : 'glVertexAttrib4ubv'; Ptr : @@glVertexAttrib4ubv),
-//(Name : 'glVertexAttrib4sv'; Ptr : @@glVertexAttrib4sv),
-//(Name : 'glVertexAttrib4s'; Ptr : @@glVertexAttrib4s),
-//(Name : 'glVertexAttrib4iv'; Ptr : @@glVertexAttrib4iv),
-//(Name : 'glVertexAttrib4fv'; Ptr : @@glVertexAttrib4fv),
-//(Name : 'glVertexAttrib4f'; Ptr : @@glVertexAttrib4f),
-//(Name : 'glVertexAttrib4uiv'; Ptr : @@glVertexAttrib4uiv),
-//(Name : 'glVertexAttrib4d'; Ptr : @@glVertexAttrib4d),
-//(Name : 'glVertexAttrib4bv'; Ptr : @@glVertexAttrib4bv),
-//(Name : 'glVertexAttrib4Nusv'; Ptr : @@glVertexAttrib4Nusv),
-//(Name : 'glVertexAttrib4Nuiv'; Ptr : @@glVertexAttrib4Nuiv),
-//(Name : 'glVertexAttrib4Nubv'; Ptr : @@glVertexAttrib4Nubv),
-//(Name : 'glVertexAttrib4Nub'; Ptr : @@glVertexAttrib4Nub),
-//(Name : 'glVertexAttrib4Nsv'; Ptr : @@glVertexAttrib4Nsv),
-//(Name : 'glVertexAttrib4dv'; Ptr : @@glVertexAttrib4dv),
-//(Name : 'glVertexAttrib4Niv'; Ptr : @@glVertexAttrib4Niv),
-//(Name : 'glVertexAttrib4Nbv'; Ptr : @@glVertexAttrib4Nbv),
-//(Name : 'glVertexAttrib3sv'; Ptr : @@glVertexAttrib3sv),
-//(Name : 'glVertexAttrib3s'; Ptr : @@glVertexAttrib3s),
-//(Name : 'glVertexAttrib3fv'; Ptr : @@glVertexAttrib3fv),
-//(Name : 'glVertexAttrib3f'; Ptr : @@glVertexAttrib3f),
-//(Name : 'glVertexAttrib3dv'; Ptr : @@glVertexAttrib3dv),
-//(Name : 'glVertexAttrib3d'; Ptr : @@glVertexAttrib3d),
-//(Name : 'glVertexAttrib2sv'; Ptr : @@glVertexAttrib2sv),
-//(Name : 'glVertexAttrib2s'; Ptr : @@glVertexAttrib2s),
-//(Name : 'glVertexAttrib2fv'; Ptr : @@glVertexAttrib2fv),
-//(Name : 'glVertexAttrib2f'; Ptr : @@glVertexAttrib2f),
-//(Name : 'glVertexAttrib2dv'; Ptr : @@glVertexAttrib2dv),
-//(Name : 'glVertexAttrib2d'; Ptr : @@glVertexAttrib2d),
-//(Name : 'glVertexAttrib1sv'; Ptr : @@glVertexAttrib1sv),
-//(Name : 'glVertexAttrib1s'; Ptr : @@glVertexAttrib1s),
-//(Name : 'glVertexAttrib1fv'; Ptr : @@glVertexAttrib1fv),
-//(Name : 'glVertexAttrib1f'; Ptr : @@glVertexAttrib1f),
-//(Name : 'glVertexAttrib1dv'; Ptr : @@glVertexAttrib1dv),
-//(Name : 'glVertexAttrib1d'; Ptr : @@glVertexAttrib1d),
-//(Name : 'glVertexAttribPointer'; Ptr : @@glVertexAttribPointer),
-//(Name : 'glVertexAttrib4usv'; Ptr : @@glVertexAttrib4usv),
+//FBO
+(Name : 'glIsRenderbufferEXT'; Ptr : @@glIsRenderbufferEXT),
+(Name : 'glBindRenderbufferEXT'; Ptr : @@glBindRenderbufferEXT),
+(Name : 'glDeleteRenderbuffersEXT'; Ptr : @@glDeleteRenderbuffersEXT),
+(Name : 'glGenRenderbuffersEXT'; Ptr : @@glGenRenderbuffersEXT),
+(Name : 'glRenderbufferStorageEXT'; Ptr : @@glRenderbufferStorageEXT),
+(Name : 'glBindFramebufferEXT'; Ptr : @@glBindFramebufferEXT),
+(Name : 'glDeleteFramebuffersEXT'; Ptr : @@glDeleteFramebuffersEXT),
+(Name : 'glGenFramebuffersEXT'; Ptr : @@glGenFramebuffersEXT),
+(Name : 'glCheckFramebufferStatusEXT'; Ptr : @@glCheckFramebufferStatusEXT),
+(Name : 'glFramebufferTexture2DEXT'; Ptr : @@glFramebufferTexture2DEXT),
+(Name : 'glFramebufferRenderbufferEXT'; Ptr : @@glFramebufferRenderbufferEXT),
+(Name : 'glGenerateMipmapEXT'; Ptr : @@glGenerateMipmapEXT)
 );
 
 procedure LoadOpenGLExtensions;
@@ -1991,6 +2031,7 @@ begin
   //VBOs crash on my ubuntu-linux setup.
   VbosSupported := False;
   {$endif}
+  FbosSupported := @glIsRenderbufferEXT<>nil;
 end;
 
 procedure LoadOpenGL(const dll: PChar);

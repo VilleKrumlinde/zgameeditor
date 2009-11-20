@@ -29,6 +29,7 @@ type
 
   TFont = class;
   TShader = class;
+  TRenderBuffer = class;
 
   TMaterialShading = (msSmooth,msFlat,msWireframe);
   TMaterialTexCoords = (tcGenerated,tcModelDefined);
@@ -53,11 +54,13 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Texture : TZBitmap;
+    RenderBuffer : TRenderBuffer;
     TextureScale : TZVector3f;
     TextureX,TextureY : single;
     TextureRotate : single;
     TextureWrapMode : (tmMirror,tmTile,tmClamp);
     TexCoords : TMaterialTexCoords;
+    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
   end;
 
   TShaderVariable = class(TZComponent)
@@ -256,6 +259,25 @@ type
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
+  end;
+
+  TRenderBuffer = class(TZComponent)
+  strict private
+    TexId,RboId,FboId : integer;
+  protected
+    procedure Activate;
+    procedure UseTextureBegin;
+  public
+    destructor Destroy; override;
+  end;
+
+  TActivateRenderBuffer = class(TRenderCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    RenderBuffer : TRenderBuffer;
+    procedure Execute; override;
+    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
   end;
 
 procedure InitRenderer;
@@ -520,6 +542,10 @@ begin
     begin
       glEnable(GL_TEXTURE_2D);
       Tex.Texture.UseTextureBegin;
+    end else if Tex.RenderBuffer<>nil then
+    begin
+      glEnable(GL_TEXTURE_2D);
+      Tex.RenderBuffer.UseTextureBegin;
     end else
       glDisable(GL_TEXTURE_2D);
 
@@ -2033,6 +2059,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderBuffer',{$ENDIF}integer(@RenderBuffer) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderBuffer]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
   List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
@@ -2043,6 +2071,122 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords) - integer(Self), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
 end;
+
+{$ifndef minimal}
+function TMaterialTexture.GetDisplayName: String;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(RenderBuffer) then
+    Result := Result + '  ' + RenderBuffer.Name
+  else if Assigned(Texture) then
+    Result := Result + '  ' + Texture.Name;
+end;
+{$endif}
+
+{ TRenderBuffer }
+
+procedure TRenderBuffer.Activate;
+var
+  W,H : integer;
+begin
+  if not FbosSupported then
+    Exit;
+
+  W := ScreenWidth div 2; H := ScreenHeight div 2;
+
+  if TexId=0 then
+  begin
+    //http://www.songho.ca/opengl/gl_fbo.html
+    // create a texture object
+    glGenTextures(1, @TexId);
+    glBindTexture(GL_TEXTURE_2D, TexId);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // create a renderbuffer object to store depth info
+    glGenRenderbuffersEXT(1, @RboId);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, RboId);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,W, H);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+
+    // create a framebuffer object
+    glGenFramebuffersEXT(1, @FboId);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+
+    // attach the texture to FBO color attachment point
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
+
+    // attach the renderbuffer to depth attachment point
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
+
+    // check FBO status
+    {$ifndef minimal}
+    if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+    begin
+      ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) );
+    end;
+    {$endif}
+  end else
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+
+  glViewport(0, 0, W, H);
+
+  glClearColor(1,0,0,0);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+end;
+
+destructor TRenderBuffer.Destroy;
+begin
+  if FbosSupported and (TexId<>0) then
+  begin
+    glDeleteTextures(1, @TexId);
+    glDeleteFramebuffersEXT(1, @FboId);
+    glDeleteRenderbuffersEXT(1, @RboId);
+  end;
+  inherited;
+end;
+
+procedure TRenderBuffer.UseTextureBegin;
+begin
+  glBindTexture(GL_TEXTURE_2D, TexId);
+end;
+
+{ TActivateRenderBuffer }
+
+procedure TActivateRenderBuffer.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'RenderBuffer',{$ENDIF}integer(@RenderBuffer) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderBuffer]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+end;
+
+procedure TActivateRenderBuffer.Execute;
+begin
+  if FbosSupported then
+  begin
+    if RenderBuffer=nil then
+    begin
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      ZApp.UpdateViewport;
+    end
+    else
+      RenderBuffer.Activate;
+  end;
+end;
+
+{$ifndef minimal}
+function TActivateRenderBuffer.GetDisplayName: String;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(RenderBuffer) then
+    Result := Result + '  ' + RenderBuffer.Name;
+end;
+{$endif}
 
 initialization
 
@@ -2082,6 +2226,11 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
   ZClasses.Register(TRenderParticles,RenderParticlesClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Simple 2D particlesystem';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+
+  ZClasses.Register(TRenderBuffer,RenderBufferClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TActivateRenderBuffer,ActivateRenderBufferClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
   DefaultMaterial := TMaterial.Create(nil);

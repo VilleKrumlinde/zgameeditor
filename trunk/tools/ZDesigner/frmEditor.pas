@@ -368,7 +368,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.8';
+  AppVersion = '1.9.9b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -942,6 +942,8 @@ begin
   end;
   if not VbosSupported then
     Log.Write('GL VBOs not supported');
+  if not FbosSupported then
+    Log.Write('GL FBOs not supported');
 end;
 
 procedure TEditorForm.OnGlDraw(Sender: TObject);

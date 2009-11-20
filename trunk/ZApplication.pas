@@ -65,7 +65,6 @@ type
     procedure Shutdown;
     procedure MainSlice;
     procedure UpdateScreen;
-    procedure UpdateViewport;
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
@@ -117,6 +116,7 @@ type
     procedure Run;
     procedure AddModel(Model : TModel);
     procedure Update; override;
+    procedure UpdateViewport;
     {$ifndef minimal}
     procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer);
