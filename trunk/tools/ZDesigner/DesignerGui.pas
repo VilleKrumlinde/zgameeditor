@@ -79,7 +79,7 @@ type
 
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
-function HasReferers(Root, Target : TZComponent) : boolean;
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
@@ -1119,7 +1119,7 @@ begin
   end;
 end;
 
-function HasReferers(Root, Target : TZComponent) : boolean;
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
 var
   TargetList,List : TObjectList;
   I,J : integer;
@@ -1129,7 +1129,10 @@ begin
   List:=TObjectList.Create(False);
   try
     //Hämta alla barnen till Target
-    GetAllObjects(Target,TargetList);
+    if Deep then
+      GetAllObjects(Target,TargetList)
+    else
+      TargetList.Add(Target);
     for I := 0 to TargetList.Count-1 do
     begin
       //Kolla alla barnen om det finns referens som är utanför targetlist

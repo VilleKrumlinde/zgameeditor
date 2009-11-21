@@ -293,6 +293,7 @@ procedure RenderUnitQuad;
 {$ifndef minimal}
 procedure AssertNotRenderMode;
 procedure CleanUp;
+procedure DesignerRenderStop;
 
 var
   IsRendering : boolean;
@@ -605,7 +606,6 @@ end;
 procedure Render_End;
 begin
   EnableMaterial(CurrentMaterial,DefaultMaterial);
-  CurrentRenderTarget := nil;
   {$ifndef minimal}
   IsRendering:=false;
   {$endif}
@@ -2052,6 +2052,16 @@ begin
   if DefaultFont<>nil then
     DefaultFont.Free;
 end;
+
+procedure DesignerRenderStop;
+begin
+  if FbosSupported then
+  begin
+    if CurrentRenderTarget<>nil then
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  end;
+  CurrentRenderTarget := nil;
+end;
 {$endif}
 
 { TMaterialTexture }
@@ -2137,7 +2147,6 @@ begin
 
   glViewport(0, 0, W, H);
 
-  glClearColor(1,0,0,0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 end;
 

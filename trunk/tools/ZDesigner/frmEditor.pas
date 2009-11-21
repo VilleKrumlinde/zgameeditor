@@ -2632,7 +2632,7 @@ begin
     ShowMessage('An component with this name already exists: ' + NewName);
     Abort;
   end;
-  if (NewName='') and HasReferers(Root, C) then
+  if (NewName='') and HasReferers(Root, C, False) then
   begin
     ShowMessage('Cannot set the name to blank, other components refer to this component.');
     Abort;
