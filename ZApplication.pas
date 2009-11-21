@@ -80,15 +80,16 @@ type
     OnLoaded : TZComponentList;
     OnUpdate : TZComponentList;
     OnRender : TZComponentList;
+    OnStartRenderPass : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
     Caption : TPropString;
     EventState : //Global variables reachable from zc event-code
       record
-        CollidedCategory : single;  //should be int
+        CollidedCategory : integer;
         MousePosition : TZVector3f;
-        ClearScreenMode : single;  //should be int
+        ClearScreenMode : integer;
       end;
     ClearColor : TZColorf;
     Fullscreen : boolean;
@@ -106,6 +107,7 @@ type
     FixedFrameRate : integer;
     MouseVisible : boolean;
     EscapeToQuit : boolean;
+    CurrentRenderPass,RenderPasses : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
@@ -518,45 +520,55 @@ begin
 end;
 
 procedure TZApplication.UpdateScreen;
+var
+  I : integer;
 begin
-  {$ifdef zminimal}
-  //always update in designer because user may have changed the ViewportRatio dropdown
-  if ViewportRation=vprCustom then
-  {$endif}
-     UpdateViewport;
 
-  //Setup view and camera
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
+  for I := 0 to Self.RenderPasses-1 do
+  begin
+    Self.CurrentRenderPass := I;
+    if Self.OnStartRenderPass.Count>0 then
+      Self.OnStartRenderPass.ExecuteCommands;
 
-  gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
+    {$ifdef zminimal}
+    //always update in designer because user may have changed the ViewportRatio dropdown
+    if ViewportRation=vprCustom then
+    {$endif}
+       UpdateViewport;
 
-  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  ApplyRotation(CameraRotation);
-  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+    //Setup view and camera
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
+    gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 
-  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+    //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+    //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+    ApplyRotation(CameraRotation);
+    glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 
-  if EventState.ClearScreenMode=0 then
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
 
-  glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
 
-  Renderer.Render_Begin;
-    RenderModels;
+    if EventState.ClearScreenMode=0 then
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
-    //Render application
-    glPushMatrix;
-    if Self.OnRender.Count>0 then
-      Self.OnRender.ExecuteCommands;
-    if Self.CurrentState<>nil then
-      Self.CurrentState.OnRender.ExecuteCommands;
-    glPopMatrix;
-  Renderer.Render_End;
+    glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+
+    Renderer.Render_Begin;
+      RenderModels;
+
+      //Render application
+      glPushMatrix;
+      if Self.OnRender.Count>0 then
+        Self.OnRender.ExecuteCommands;
+      if Self.CurrentState<>nil then
+        Self.CurrentState.OnRender.ExecuteCommands;
+      glPopMatrix;
+    Renderer.Render_End;
+  end;
 
   //End frame
   glFlush;
@@ -607,6 +619,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnStartRenderPass',{$ENDIF}integer(@OnStartRenderPass) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime) - integer(Self), zptFloat);
@@ -619,14 +632,19 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}integer(@FpsCounter) - integer(Self), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@EventState.CollidedCategory) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass) - integer(Self), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@EventState.CollidedCategory) - integer(Self), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@EventState.MousePosition) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@EventState.ClearScreenMode) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@EventState.ClearScreenMode) - integer(Self), zptInteger);
     List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}integer(@RenderPasses) - integer(Self), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 1;
 
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
 
@@ -686,7 +704,8 @@ begin
   Self.Time := 0;
   Self.DeltaTime := 0;
   Self.Clock.LastTime := 0;
-
+  Self.FpsTime := 0;
+   
   //Uppdatera träd initialt
   Content.Update;
   OnLoaded.ExecuteCommands;
@@ -698,7 +717,8 @@ begin
   DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;
-  Collisions.ClearAll
+  Collisions.ClearAll;
+  Renderer.DesignerRenderStop;
 end;
 {$endif}
 
