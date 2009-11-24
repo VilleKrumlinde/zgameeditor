@@ -80,7 +80,7 @@ type
     OnLoaded : TZComponentList;
     OnUpdate : TZComponentList;
     OnRender : TZComponentList;
-    OnStartRenderPass : TZComponentList;
+    OnBeginRenderPass : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
@@ -118,7 +118,8 @@ type
     procedure Run;
     procedure AddModel(Model : TModel);
     procedure Update; override;
-    procedure UpdateViewport;
+    procedure UpdateViewport; overload;
+    procedure UpdateViewport(const W,H : integer); overload;
     {$ifndef minimal}
     procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer);
@@ -398,15 +399,20 @@ begin
 end;
 {$endif}
 
-//Update ActualViewportRatio which is the ratio that is used
 procedure TZApplication.UpdateViewport;
+begin
+  UpdateViewport(ScreenWidth,ScreenHeight);
+end;
+
+//Update ActualViewportRatio which is the ratio that is used
+procedure TZApplication.UpdateViewport(const W,H : integer);
 begin
   if Self.ViewportRatio=vprFullWindow then
   begin
-    ActualViewportRatio := ScreenWidth/ScreenHeight;
-    glViewport(0,0,ScreenWidth,ScreenHeight);
-    ViewportWidth := ScreenWidth;
-    ViewportHeight := ScreenHeight;
+    ActualViewportRatio := W/H;
+    glViewport(0,0,W,H);
+    ViewportWidth := W;
+    ViewportHeight := H;
     ViewportX := 0;
     ViewportY := 0;
   end
@@ -421,19 +427,19 @@ begin
       ;
     {$endif}
     end;
-    if ScreenWidth/ScreenHeight > ActualViewportRatio then
+    if W/H > ActualViewportRatio then
     begin
-      ViewportWidth := Round(ScreenHeight*ActualViewportRatio);
-      ViewportHeight := ScreenHeight;
-      ViewportX := Round((ScreenWidth-ScreenHeight*ActualViewportRatio)*0.5);
+      ViewportWidth := Round(H*ActualViewportRatio);
+      ViewportHeight := H;
+      ViewportX := Round((W-H*ActualViewportRatio)*0.5);
       ViewportY := 0;
     end
     else
     begin
-      ViewportWidth := ScreenWidth;
-      ViewportHeight := Round(ScreenWidth/ActualViewportRatio);
+      ViewportWidth := W;
+      ViewportHeight := Round(W/ActualViewportRatio);
       ViewportX := 0;
-      ViewportY := Round((ScreenHeight-ScreenWidth/ActualViewportRatio)*0.5);
+      ViewportY := Round((H-W/ActualViewportRatio)*0.5);
     end;
     glViewport(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
   end;
@@ -527,14 +533,13 @@ begin
   for I := 0 to Self.RenderPasses-1 do
   begin
     Self.CurrentRenderPass := I;
-    if Self.OnStartRenderPass.Count>0 then
-      Self.OnStartRenderPass.ExecuteCommands;
+    if Self.OnBeginRenderPass.Count>0 then
+      Self.OnBeginRenderPass.ExecuteCommands;
 
-    {$ifdef zminimal}
-    //always update in designer because user may have changed the ViewportRatio dropdown
-    if ViewportRation=vprCustom then
-    {$endif}
-       UpdateViewport;
+
+    if {$ifdef zminimal}(ViewportRatio=vprCustom) and {$endif}
+      (CurrentRenderTarget=nil) then
+      UpdateViewport;
 
     //Setup view and camera
     glMatrixMode(GL_PROJECTION);
@@ -550,10 +555,11 @@ begin
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity;
 
-    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
-
-    if EventState.ClearScreenMode=0 then
+    if (EventState.ClearScreenMode=0) and (CurrentRenderTarget=nil) then
+    begin
+      glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    end;
 
     glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
 
@@ -619,7 +625,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnStartRenderPass',{$ENDIF}integer(@OnStartRenderPass) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}integer(@OnBeginRenderPass) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content) - integer(Self), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime) - integer(Self), zptFloat);

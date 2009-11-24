@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="Render to texture demo" ClearColor="0 0 0 1" ScreenMode="0" CameraPosition="0 0 6.11">
+<ZApplication Name="App" Caption="Render to texture demo" ClearColor="0 0 0 1" ScreenMode="1" CameraPosition="0 0 6.11">
   <OnRender>
     <Group Comment="Generate texture">
       <Children>
@@ -11,15 +11,9 @@
 Rt1.Rotate.Y = App.Time*0.1;]]>
           </Expression>
         </ZExpression>
-        <RenderTransformGroup Name="Rt1" Translate="0 0.9832 0" Rotate="0 0.0877 0">
+        <RenderTransformGroup Name="Rt1" Translate="0 0.1672 0" Rotate="0 0.777 0">
           <Children>
             <RenderMesh Mesh="Mesh1"/>
-          </Children>
-        </RenderTransformGroup>
-        <RenderTransformGroup Scale="100 100 1">
-          <Children>
-            <RenderSetColor Color="0.502 0.502 0.502 1"/>
-            <RenderSprite/>
           </Children>
         </RenderTransformGroup>
         <SetRenderTarget/>
@@ -34,7 +28,7 @@ Rt1.Rotate.Y = App.Time*0.1;]]>
 Rt2.Rotate.X = 0.05;]]>
           </Expression>
         </ZExpression>
-        <RenderTransformGroup Name="Rt2" Rotate="0.05 0.1316 0">
+        <RenderTransformGroup Name="Rt2" Rotate="0.05 1.1655 0">
           <Children>
             <RenderMesh Mesh="Mesh2"/>
           </Children>
@@ -43,7 +37,7 @@ Rt2.Rotate.X = 0.05;]]>
     </Group>
   </OnRender>
   <Content>
-    <RenderTarget Name="RenderTarget1"/>
+    <RenderTarget Name="RenderTarget1" ClearColor="0 0.251 0 1"/>
     <Material Name="TexMaterial" Color="1 1 1 1" ZBuffer="0">
       <Textures>
         <MaterialTexture RenderTarget="RenderTarget1" TextureWrapMode="2" TexCoords="1"/>
