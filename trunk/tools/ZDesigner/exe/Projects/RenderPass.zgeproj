@@ -24,18 +24,16 @@
       </OnFalse>
     </Condition>
   </OnRender>
-  <OnStartRenderPass>
+  <OnBeginRenderPass>
     <Condition Expression="return App.CurrentRenderPass==0;">
       <OnTrue>
-        <ZExpression Expression="App.ClearColor.R =0.1;"/>
         <SetRenderTarget RenderTarget="RenderTarget1"/>
       </OnTrue>
       <OnFalse>
-        <ZExpression Expression="App.ClearColor.R = 1;"/>
         <SetRenderTarget/>
       </OnFalse>
     </Condition>
-  </OnStartRenderPass>
+  </OnBeginRenderPass>
   <Content>
     <Group Comment="Spinner">
       <Children>
@@ -95,7 +93,7 @@ CurrentModel.Position.Z=Temp1;]]>
     </Group>
     <Group Comment="Render target">
       <Children>
-        <RenderTarget Name="RenderTarget1"/>
+        <RenderTarget Name="RenderTarget1" ClearColor="0.502 0.502 0.502 1"/>
         <Material Name="RenderTargetSourceMaterial">
           <Textures>
             <MaterialTexture RenderTarget="RenderTarget1" TexCoords="1"/>

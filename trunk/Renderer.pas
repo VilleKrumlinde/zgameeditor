@@ -267,7 +267,12 @@ type
   protected
     procedure Activate;
     procedure UseTextureBegin;
+    procedure DefineProperties(List: TZPropertyList); override;
   public
+    ClearBeforeUse : boolean;
+    ClearColor : TZColorf;
+    Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen);
+    CustomWidth,CustomHeight : integer;
     destructor Destroy; override;
   end;
 
@@ -299,6 +304,10 @@ var
   IsRendering : boolean;
   NormalsVisible : boolean;
 {$endif}
+
+var
+  CurrentRenderTarget : TRenderTarget;
+
 
 implementation
 
@@ -423,7 +432,6 @@ end;
 
 var
   CurrentMaterial : TMaterial;
-  CurrentRenderTarget : TRenderTarget;
 
 procedure EnableMaterial(OldM,NewM : TMaterial);
 const
@@ -2104,7 +2112,16 @@ begin
   if not FbosSupported then
     Exit;
 
-  W := ScreenWidth{ div 2}; H := ScreenHeight{ div 2};
+  W := Self.CustomWidth;
+  if W=0 then
+  begin
+    W := ScreenWidth shr Ord(Self.Width);
+  end;
+  H := Self.CustomHeight;
+  if H=0 then
+  begin
+    H := ScreenHeight shr Ord(Self.Height);
+  end;
 
   if TexId=0 then
   begin
@@ -2145,9 +2162,27 @@ begin
   end else
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
 
-  glViewport(0, 0, W, H);
+  ZApp.UpdateViewport(W, H);
 
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  if Self.ClearBeforeUse then
+  begin
+    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  end;
+end;
+
+procedure TRenderTarget.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Screen width','Half screen width','Quarter screen width']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@Height) - integer(Self), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Screen height','Half screen height','Quarter screen height']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}integer(@CustomWidth) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse) - integer(Self), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
 end;
 
 destructor TRenderTarget.Destroy;
@@ -2191,7 +2226,9 @@ begin
       end;
     end
     else
+    begin
       RenderTarget.Activate;
+    end;
     CurrentRenderTarget := RenderTarget;
   end;
 end;
