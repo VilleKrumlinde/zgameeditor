@@ -199,6 +199,9 @@ type
     LogCopytoclipboardMenuItem: TMenuItem;
     ForceRefreshAction: TAction;
     Refresh1: TMenuItem;
+    Contents1: TMenuItem;
+    HelpContentsAction: TAction;
+    N13: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -261,6 +264,7 @@ type
     procedure LogCopytoclipboardMenuItemClick(Sender: TObject);
     procedure ForceRefreshActionExecute(Sender: TObject);
     procedure ExprPanelClick(Sender: TObject);
+    procedure HelpContentsActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -496,6 +500,8 @@ begin
   Con.Value := PI;
   PredefinedConstants.Add(Con);
 
+  Application.HelpFile := ExePath + 'ZGameEditor.chm';
+
   ResetCamera;
 
   AboutAction.Caption := 'About ' + AppName;
@@ -673,7 +679,7 @@ var
   end;
 
 begin
-  if Pos(#13,Mess)=0 then
+  if Pos(#10,Mess)=0 then
     InAddOne(Mess)
   else
   begin
@@ -1706,6 +1712,11 @@ begin
   end;
   TrackBar1.Position := Round((CurValue-MinFloat) / ((MaxFloat-MinFloat)/TrackBar1.Max));
   FloatEdit := Edit;
+end;
+
+procedure TEditorForm.HelpContentsActionExecute(Sender: TObject);
+begin
+  Application.HelpContext(1);
 end;
 
 procedure TEditorForm.HideEditor;
