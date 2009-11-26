@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{0013ce13-0683-43fe-8199-f801ac4e5054}</ProjectGuid>
@@ -47,19 +47,12 @@
     <DelphiCompile Include="ZzDC.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..FastMM4.pas" />
-    <DCCReference Include="..\..FastMM4.pas" />
-    <DCCReference Include="..\..\FastMM4.pas" />
-    <DCCReference Include="..\.FastMM4.pas" />
-    <DCCReference Include="..\FastMM4.pas" />
-    <DCCReference Include=".FastMM4.pas" />
     <DCCReference Include="Animators.pas" />
     <DCCReference Include="AudioComponents.pas" />
     <DCCReference Include="AudioPlayer.pas" />
     <DCCReference Include="BitmapProducers.pas" />
     <DCCReference Include="Collision.pas" />
     <DCCReference Include="Commands.pas" />
-    <DCCReference Include="FastMM4.pas" />
     <DCCReference Include="ImplicitMeshes.pas" />
     <DCCReference Include="Meshes.pas" />
     <DCCReference Include="Renderer.pas" />

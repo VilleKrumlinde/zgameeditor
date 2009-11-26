@@ -264,6 +264,10 @@ type
   TRenderTarget = class(TZComponent)
   strict private
     TexId,RboId,FboId : integer;
+    {$ifndef minimal}
+    LastW,LastH : integer;
+    {$endif}
+    procedure CleanUp;
   protected
     procedure Activate;
     procedure UseTextureBegin;
@@ -1868,6 +1872,8 @@ var
   var
     Status : GLUInt;
     S : string;
+    GlMess : array[0..511] of char;
+    MessLen : integer;
   begin
     glGetShaderiv(Shader^,GL_COMPILE_STATUS,@Status);
     if Kind=GL_VERTEX_SHADER then
@@ -1882,6 +1888,11 @@ var
     else
     begin
       ZLog.GetLog(Self.ClassName).Warning( 'Error in ' + S + ' shader compilation' );
+
+      glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
+      if MessLen>0 then
+        ZLog.GetLog(Self.ClassName).Write( PChar(@GlMess) );
+
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
@@ -2123,6 +2134,12 @@ begin
     H := ScreenHeight shr Ord(Self.Height);
   end;
 
+  {$ifndef minimal}
+  if (LastW<>W) or (LastH<>H) then
+    CleanUp;
+  LastW := W; LastH := H;
+  {$endif}
+
   if TexId=0 then
   begin
     //http://www.songho.ca/opengl/gl_fbo.html
@@ -2185,14 +2202,22 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
 end;
 
-destructor TRenderTarget.Destroy;
+procedure TRenderTarget.CleanUp;
 begin
   if FbosSupported and (TexId<>0) then
   begin
     glDeleteTextures(1, @TexId);
     glDeleteFramebuffersEXT(1, @FboId);
     glDeleteRenderbuffersEXT(1, @RboId);
+    {$ifndef minimal}
+    TexId := 0;
+    {$endif}
   end;
+end;
+
+destructor TRenderTarget.Destroy;
+begin
+  CleanUp;
   inherited;
 end;
 

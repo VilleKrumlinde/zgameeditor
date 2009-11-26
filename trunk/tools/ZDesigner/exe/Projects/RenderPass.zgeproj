@@ -67,7 +67,7 @@ CurrentModel.Position.Y=Temp1;
 Temp1=sin(SpinnerTime*2)*2;
 //Temp1+=App.MousePosition.X*4*(CurrentModel.Personality*0.1);
 //Temp1+=noise2(CurrentModel.Personality,SpinnerTime*1) * 1;
-Temp1+=noise2((SpinnerTime+App.Time)*0.2,0)*8;
+Temp1+=noise2((SpinnerTime*0.25+App.Time)*0.2,0)*18;
 CurrentModel.Position.X=Temp1;
 
 Temp1=cos(SpinnerTime*2)*2;
