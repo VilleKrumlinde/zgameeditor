@@ -461,7 +461,7 @@ begin
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
   AutoComp.EndOfTokenChr := '+-/*=()[]. ';
-  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz';
+  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
   AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
@@ -3279,30 +3279,93 @@ procedure TEditorForm.AutoCompOnExecute(Kind: TSynCompletionType;
   var CanExecute: Boolean);
 var
   Comp : TSynCompletionProposal;
-  Line : string;
-  I : integer;
-  IsGlobal : boolean;
+  Line,Ident,PropName : string;
+  I,J,K : integer;
+  C : TZComponent;
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+
+  procedure InAdd(const Items : array of string);
+  var
+    I : integer;
+  begin
+    for I := 0 to High(Items) do
+    begin
+      Comp.InsertList.Add(Items[I]);
+      Comp.ItemList.Add(Items[I]);
+    end;
+  end;
+
+  function InGetC(S : string) : TZComponent;
+  begin
+    if SameText(S,'this') then
+      Result := Tree.ZSelected.Component
+    else
+      Result := SymTab.Lookup(S) as TZComponent;
+  end;
+
 begin
   Comp := Sender as TSynCompletionProposal;
   Comp.ItemList.Clear;
   Comp.InsertList.Clear;
 
-  IsGlobal := True;
-
-  //Disable global suggestions after dot-character
   Line := Comp.Editor.LineText;
   I := Min(Comp.Editor.CaretX,Length(Line));
   while (I>0) and (Line[I] in ['a'..'z','A'..'Z','_','0'..'9']) do
     Dec(I);
   if (I>0) and (Line[I]='.') then
-    IsGlobal := False;
-
-  if IsGlobal then
   begin
+    J := I-1;
+    while (J>0) and (Line[J] in ['a'..'z','A'..'Z','_','0'..'9']) do
+      Dec(J);
+    Ident := Copy(Line,J+1,I-J-1);
+    if (J>0) and (Line[J]='.') then
+    begin
+      PropName := Ident;
+      K := J-1;
+      while (K>0) and (Line[K] in ['a'..'z','A'..'Z','_','0'..'9']) do
+        Dec(K);
+      Ident := Copy(Line,K+1,J-K-1);
+      C := InGetC(Ident);
+      if C<>nil then
+      begin
+        PropList := C.GetProperties;
+        Prop := PropList.GetByName(PropName);
+        if Prop<>nil then
+        begin
+          //List members of a property
+          if Prop.PropertyType=zptColorf then
+            InAdd(['R','G','B','A']);
+          if Prop.PropertyType=zptVector3f then
+            InAdd(['X','Y','Z']);
+        end;
+      end;
+    end else
+    begin
+      //List properties of an identifier
+      C := InGetC(Ident);
+      if C<>nil then
+      begin
+        PropList := C.GetProperties;
+        for I := 0 to PropList.Count - 1 do
+        begin
+          Prop := TZProperty(PropList[I]);
+          if (Prop.PropertyType in [zptString,zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
+            Prop.ExcludeFromBinary or Prop.ExcludeFromXml then
+            Continue;
+          InAdd([Prop.Name]);
+        end;
+      end;
+    end;
+  end else
+  begin
+    //List global identifiers
     SymTab.Iterate(AutoCompAddOne,Comp);
-    Comp.InsertList.Add('CurrentModel');
-    Comp.ItemList.Add('CurrentModel');
+    InAdd(['CurrentModel']);
+    InAdd(['this']);
   end;
+  (Comp.ItemList as TStringList).Sort;
+  (Comp.InsertList as TStringList).Sort;
 end;
 
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: TSynCompletionType;
