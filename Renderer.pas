@@ -2126,12 +2126,12 @@ begin
   W := Self.CustomWidth;
   if W=0 then
   begin
-    W := ScreenWidth shr Ord(Self.Width);
+    W := ZApp.ViewportWidth shr Ord(Self.Width);
   end;
   H := Self.CustomHeight;
   if H=0 then
   begin
-    H := ScreenHeight shr Ord(Self.Height);
+    H := ZApp.ViewportHeight  shr Ord(Self.Height);
   end;
 
   {$ifndef minimal}
@@ -2179,7 +2179,9 @@ begin
   end else
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
 
-  ZApp.UpdateViewport(W, H);
+//  ZApp.UpdateViewport(W, H);
+  glViewport(0,0,W,H);
+  Zapp.ActualViewportRatio := W/H;
 
   if Self.ClearBeforeUse then
   begin
@@ -2240,10 +2242,11 @@ procedure TSetRenderTarget.Execute;
 begin
   if FbosSupported then
   begin
-    if RenderTarget=nil then
+    if Self.RenderTarget=nil then
     begin
       if CurrentRenderTarget<>nil then
       begin
+        //Restore main framebuffer, disable current rendertarget and update texture mipmap
         CurrentRenderTarget.UseTextureBegin;
         glGenerateMipmapEXT(GL_TEXTURE_2D);
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -2252,9 +2255,9 @@ begin
     end
     else
     begin
-      RenderTarget.Activate;
+      Self.RenderTarget.Activate;
     end;
-    CurrentRenderTarget := RenderTarget;
+    CurrentRenderTarget := Self.RenderTarget;
   end;
 end;
 

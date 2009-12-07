@@ -60,7 +60,6 @@ type
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
-    ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     procedure Init;
     procedure Shutdown;
     procedure MainSlice;
@@ -108,6 +107,7 @@ type
     MouseVisible : boolean;
     EscapeToQuit : boolean;
     CurrentRenderPass,RenderPasses : integer;
+    ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
