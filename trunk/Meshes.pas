@@ -120,7 +120,8 @@ type
     Expression : TZExpressionPropValue;
     V,N : TZVector3f;
     C : TZColorf;
-    AutoNormals,VertexColors : boolean;
+    TexCoord : TZVector2f;
+    AutoNormals,VertexColors,HasTexCoords : boolean;
   end;
 
   //Created by 3ds-import
@@ -1103,16 +1104,20 @@ begin
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source := '//V : current vertex'#13#10+
       '//N : current normal (turn off AutoNormals when modifying normals)'#13#10+
-      '//C : current color (turn on VertexColors)';
+      '//C : current color (turn on VertexColors)'#13#10 +
+      '//TexCoord : current texture coordinate (turn on HasTexCoords)';
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}integer(@AutoNormals) - integer(Self), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
   List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasTexCoords',{$ENDIF}integer(@HasTexCoords) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'V',{$ENDIF}integer(@V) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'N',{$ENDIF}integer(@N) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'C',{$ENDIF}integer(@C) - integer(Self), zptColorf);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord) - integer(Self), zptVector3f);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -1121,6 +1126,7 @@ var
   Mesh : TMesh;
   I : integer;
   PColor : PMeshVertexColor;
+  PTex : PZVector2f;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
@@ -1131,17 +1137,28 @@ begin
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
   PColor := PMeshVertexColor(Mesh.Colors);
 
+  if HasTexCoords and (Mesh.TexCoords=nil) then
+    GetMem(Mesh.TexCoords,SizeOf(TZVector2f) * Mesh.VerticesCount);
+  PTex := pointer(Mesh.TexCoords);
+
   for I := 0 to Mesh.VerticesCount-1 do
   begin
-    VecCopy3(Mesh.Vertices^[I],V);
-    VecCopy3(Mesh.Normals^[I],N);
+    VecCopy3(Mesh.Vertices^[I],Self.V);
+    VecCopy3(Mesh.Normals^[I],Self.N);
+    if HasTexCoords then
+      PZVector2f(@Self.TexCoord)^ := PTex^;
     ZExpressions.RunCode(Expression.Code);
-    VecCopy3(V,Mesh.Vertices^[I]);
-    VecCopy3(N,Mesh.Normals^[I]);
+    VecCopy3(Self.V,Mesh.Vertices^[I]);
+    VecCopy3(Self.N,Mesh.Normals^[I]);
     if VertexColors then
     begin
       PColor^ := ColorFtoB(Self.C);
       Inc(PColor);
+    end;
+    if HasTexCoords then
+    begin
+      PTex^ := Self.TexCoord;
+      Inc(PTex);
     end;
   end;
 
