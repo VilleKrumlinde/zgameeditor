@@ -2194,9 +2194,9 @@ procedure TRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Screen width','Half screen width','Quarter screen width']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@Height) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Screen height','Half screen height','Quarter screen height']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}integer(@CustomWidth) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight) - integer(Self), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse) - integer(Self), zptBoolean);
