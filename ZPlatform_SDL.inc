@@ -17,7 +17,7 @@ var
   //Current mouse pos, written to in eventhandling
   SdlMousePos : TZPointi;
   Keys : array[0..511] of boolean;
-  KeyMap : array[char] of word;
+  KeyMap : array[AnsiChar] of word;
 
 procedure Platform_ShowMouse(Visible : boolean);
 const vals : array[boolean] of integer = (0,1);
@@ -25,7 +25,7 @@ begin
   SDL_ShowCursor(vals[Visible]);
 end;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
@@ -124,12 +124,12 @@ begin
   Result := SDL_GetTicks/1000.0;
 end;
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
   Result := Keys[ KeyMap[C] ];
 end;
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 var
   P : string;
   I : integer;
@@ -148,7 +148,7 @@ begin
   end;
 end;
 
-procedure Platform_Error(ErrorMessage : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
   WriteLn(ErrorMessage);
 end;
@@ -163,13 +163,13 @@ begin
   SDL_WarpMouse(X,Y);
 end;
 
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 {$ifdef fpc}
 var
   S : string;
   I : integer;
 begin
-  //In Fpc paramstr returns shortstring, must manually copy to pchar
+  //In Fpc paramstr returns shortstring, must manually copy to PAnsiChar
   S := System.ParamStr(0);
   I := Length(S);
   if I=0 then
@@ -185,14 +185,14 @@ begin
   end;
 {$else}
 begin
-  Result := PChar(System.ParamStr(0));
+  Result := PAnsiChar(System.ParamStr(0));
 {$endif}
 end;
 
-procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
 var
   I : integer;
-  Tmp : PChar;
+  Tmp : PAnsiChar;
 begin
   Tmp := @Buf;
   ZStrCopy(Tmp,Platform_GetExeFileName);
@@ -205,9 +205,9 @@ begin
   ZStrCat(Tmp,FileName);
 end;
 
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
-  Buf : array[0..511] of char;
+  Buf : array[0..511] of AnsiChar;
   Written : longint;
   F : file;
 begin
@@ -238,10 +238,10 @@ begin
   System.Close(F);
 end;
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   F : file;
-  Buf : array[0..511] of char;
+  Buf : array[0..511] of AnsiChar;
 begin
   //Open file relative to path of exe-file
   if IsRelative then
@@ -390,16 +390,16 @@ end;
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 begin
   //todo
-  result := 0;
+  Result := 0;
 end;
 
 function Platform_LoadLinkedResource : TZInputStream;
 begin
   //todo
-  result := nil;
+  Result := nil;
 end;
 
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := SDL_GL_GetProcAddress(P);
 end;
@@ -412,8 +412,8 @@ const
   xcom = ','#0;
 var
   I : integer;
-  Tmp1 : array[0..10] of char;
-  Str : array[0..511] of char;
+  Tmp1 : array[0..10] of AnsiChar;
+  Str : array[0..511] of AnsiChar;
 begin
   Str[0]:=#0;
   ZStrCat(Str,Xdef);
@@ -421,10 +421,10 @@ begin
   for I := 0 to High(ScreenModes) do
   begin
     //inttofloat conversion
-    ZStrConvertFloat(ScreenModes[I].W, PChar(@Tmp1));
+    ZStrConvertFloat(ScreenModes[I].W, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     ZStrCat(Str,xstr);
-    ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
+    ZStrConvertFloat(ScreenModes[I].H, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     if I<High(ScreenModes) then
       ZStrCat(Str,xcom);

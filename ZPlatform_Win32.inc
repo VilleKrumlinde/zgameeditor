@@ -57,7 +57,7 @@ var
   h_RC   : HGLRC;                    // OpenGL rendering context
 
   Keys : array[0..255] of boolean;
-  KeyMap : array[char] of byte;
+  KeyMap : array[AnsiChar] of byte;
   LastMouse : TPoint;
 
 
@@ -195,7 +195,7 @@ begin
   KillWnd(FullScreen);
 end;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
 var
   wndClass : TWndClass;         // Window class
   dwStyle : DWORD;              // Window styles
@@ -540,7 +540,7 @@ begin
 end;
 
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
 //  {$ifndef minimal}
 //  Result := GetAsyncKeyState( MapVirtualKey(ord(C),1) )<0;
@@ -550,9 +550,9 @@ begin
 //  {$endif}
 end;
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 var
-  P : PChar;
+  P : PAnsiChar;
 begin
   {$ifdef zzdc_screensaver}
   if Switch[0] in ['f','s'] then
@@ -574,7 +574,7 @@ begin
   end;
 end;
 
-procedure Platform_Error(ErrorMessage : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
   Windows.MessageBox(H_Wnd, ErrorMessage, 'ZZDC Error', MB_OK);
 end;
@@ -603,7 +603,7 @@ begin
   SetCursorPos(Tmp.X,Tmp.Y)
 end;
 
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 begin
   GetMem(Result,256);
   GetModuleFileName(0, Result, 256)
@@ -620,7 +620,7 @@ begin
 end;
 {$endif}
 
-procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of char);
 {$ifdef minimal}
 var
   I : integer;
@@ -634,20 +634,20 @@ begin
   begin
     Buf[I+1]:=#0;
     //lstrcat(Buf,FileName);
-    ZStrCat(PChar(@Buf),FileName);
+    ZStrCat(PAnsiChar(@Buf),FileName);
   end;
   {$else}
   Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
-  ZStrCopy(PChar(@Buf),PChar(DesignerFilePath));
-  ZStrCat(PChar(@Buf),FileName);
+  ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+  ZStrCat(PAnsiChar(@Buf),FileName);
   {$endif}
 end;
 
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
   Handle : THandle;
   Dummy : longword;
-  Buf : array[0..254] of char;
+  Buf : array[0..254] of AnsiChar;
   OpenFlag : LongWord;
 begin
   MakeFullPath(FileName,Buf);
@@ -676,11 +676,11 @@ begin
   CloseHandle(Handle);
 end;
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   Handle : THandle;
   Dummy : longword;
-  Buf : array[0..254] of char;
+  Buf : array[0..254] of AnsiChar;
 begin
 
   //Open file relative to path of exe-file
@@ -709,7 +709,7 @@ begin
 end;
 
 
-procedure Platform_SimpleText(Scale,X,Y : single; Msg : PChar);
+procedure Platform_SimpleText(Scale,X,Y : single; Msg : PAnsiChar);
 const
   Base : integer = 0;
 var
@@ -1353,7 +1353,7 @@ begin
 end;
 {$endif}
 
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := wglGetProcAddress(P);
 end;
@@ -1390,8 +1390,8 @@ const
   DesktopStr = 'Use Desktop resolution'#0;
 var
   I : integer;
-  Tmp1 : array[0..10] of char;
-  Str : array[0..100] of char;
+  Tmp1 : array[0..10] of AnsiChar;
+  Str : array[0..100] of AnsiChar;
   R : TRect;
 begin
 //  Result := True;
@@ -1405,9 +1405,9 @@ begin
         else
         begin
           //inttofloat conversion
-          ZStrConvertFloat(ScreenModes[I].W, PChar(@Str));
+          ZStrConvertFloat(ScreenModes[I].W, PAnsiChar(@Str));
           ZStrCat(Str,xstr);
-          ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
+          ZStrConvertFloat(ScreenModes[I].H, PAnsiChar(@Tmp1));
           ZStrCat(Str,Tmp1);
         end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));

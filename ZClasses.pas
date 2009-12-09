@@ -246,7 +246,7 @@ type
       3 : (ColorfValue : TZColorf);
       4 : (IntegerValue : integer);
       5 : (ComponentValue : TZComponent); //även inlinecomponent
-      {$IFDEF MINIMAL}6 : (StringValue : PChar);{$ENDIF}
+      {$IFDEF MINIMAL}6 : (StringValue : PAnsiChar);{$ENDIF}
       7 : (PropertyValue : TZPropertyRef);
       8 : (Vector3fValue : TZVector3f);
       9 : (ComponentListValue : TZComponentList);
@@ -305,7 +305,7 @@ type
   end;
 
   //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
-  TPropString = {$IFNDEF MINIMAL}string{$else}PChar{$ENDIF};
+  TPropString = {$IFNDEF MINIMAL}string{$else}PAnsiChar{$ENDIF};
   PPropString = ^TPropString;
 
   //Baskomponentklass för allt som ska kunna redigeras i tool
@@ -471,7 +471,7 @@ type
     procedure Read(p,count)
   }
     Size,Position : integer;
-    constructor CreateFromFile(FileName : PChar; IsRelative : Boolean);
+    constructor CreateFromFile(FileName : PAnsiChar; IsRelative : Boolean);
     constructor CreateFromMemory(M : pointer; Size : integer);
     destructor Destroy; override;
     procedure Read(var Buf; Count : integer);
@@ -493,10 +493,10 @@ function ComponentManager : TZComponentManager;
 procedure Register(C : TZComponentClass; ClassId : TZClassIds);
 
 //String functions
-function ZStrLength(P : PChar) : integer;
-procedure ZStrCopy(P : PChar; const Src : PChar);
-procedure ZStrCat(P : PChar; const Src : PChar);
-procedure ZStrConvertFloat(const S : single; Dest : PChar);
+function ZStrLength(P : PAnsiChar) : integer;
+procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
+procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
+procedure ZStrConvertFloat(const S : single; Dest : PAnsiChar);
 
 {$ifndef minimal}
 const
@@ -752,7 +752,7 @@ begin
       Value.FloatValue := PFloat(P)^;
     zptString :
       {$IFDEF MINIMAL}
-      Value.StringValue := PChar(PPointer(P)^);
+      Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ELSE}
       Value.StringValue := PString(P)^;
       {$ENDIF}
@@ -800,7 +800,7 @@ begin
     zptString :
       {$IFDEF MINIMAL}
       //todo copy characters? nix, string ska vara immutable.
-      PPChar(P)^ := Value.StringValue;
+      PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
       PString(P)^ := Value.StringValue;
       {$ENDIF}
@@ -1424,7 +1424,7 @@ var
 
   function InLoadPiggyback : TZInputStream;
   var
-    FileName : PChar;
+    FileName : PAnsiChar;
     DataSize,Magic : integer;
     Stream : TZInputStream;
   begin
@@ -2196,7 +2196,7 @@ end;
 
 { TZInputStream }
 
-constructor TZInputStream.CreateFromFile(FileName: PChar; IsRelative : Boolean);
+constructor TZInputStream.CreateFromFile(FileName: PAnsiChar; IsRelative : Boolean);
 begin
   Platform_ReadFile(FileName,pointer(Memory),Size,IsRelative);
   OwnsMemory := True;
@@ -2366,7 +2366,7 @@ begin
       zptString :
         begin
           //String is null-terminated
-          Temp := ZStrLength(PChar(PStream.GetMemory));
+          Temp := ZStrLength(PAnsiChar(PStream.GetMemory));
           if Temp>0 then
           begin
             {$IFDEF MINIMAL}
@@ -3205,18 +3205,18 @@ end;
 
 //String functions
 
-function ZStrFindEnd(P : PChar) : PChar;
+function ZStrFindEnd(P : PAnsiChar) : PAnsiChar;
 begin
   while P^<>#0 do Inc(P);
   Result := P;
 end;
 
-function ZStrLength(P : PChar) : integer;
+function ZStrLength(P : PAnsiChar) : integer;
 begin
   Result := ZStrFindEnd(P) - P;
 end;
 
-procedure ZStrCopy(P : PChar; const Src : PChar);
+procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
 var
   Len : integer;
 begin
@@ -3224,17 +3224,17 @@ begin
   System.Move(Src^,P^,Len+1);
 end;
 
-procedure ZStrCat(P : PChar; const Src : PChar);
+procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
 begin
   P := ZStrFindEnd(P);
   ZStrCopy(P,Src);
 end;
 
-procedure ZStrConvertFloat(const S : single; Dest : PChar);
+procedure ZStrConvertFloat(const S : single; Dest : PAnsiChar);
 var
   Value : integer;
-  Tmp : PChar;
-  Buf : array[0..15] of char;
+  Tmp : PAnsiChar;
+  Buf : array[0..15] of ansichar;
 begin
   Value := Abs(Trunc(S));
   Tmp := @Buf[High(Buf)];
@@ -3242,11 +3242,11 @@ begin
   Dec(Tmp);
   while (Value>9) and (Tmp>@Buf) do
   begin
-    Tmp^:=Chr(Value mod 10 + 48);
+    Tmp^:=AnsiChar(Value mod 10 + 48);
     Dec(Tmp);
     Value := Value div 10;
   end;
-  Tmp^ := Chr(Value + 48);
+  Tmp^ := AnsiChar(Value + 48);
   if S<0 then
   begin
     Dec(Tmp);

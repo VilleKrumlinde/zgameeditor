@@ -79,8 +79,8 @@ type
 
   TDefineArray = class(TDefineVariableBase)
   strict private
-    Limit : integer;
     Data : PFloatArray;
+    Limit : integer;
     procedure AllocData;
   private
     function PopAndGetElement : PFloat;
@@ -93,6 +93,7 @@ type
     Values : TZBinaryPropValue;
     destructor Destroy; override;
     function GetData : PFloat;
+    function CalcLimit : integer;
   end;
 
   //Virtual machine instruction baseclass
@@ -429,10 +430,8 @@ end;
 procedure TExpPropValue1.Execute;
 var
   I : integer;
-  B : integer;
 begin
-  B := PByte(ZClasses.GetPropertyRef(Source))^;
-  I := B;
+  I := PByte(ZClasses.GetPropertyRef(Source))^;
   StackPush(I);
 end;
 
@@ -774,7 +773,7 @@ function TDefineArray.GetData: PFloat;
 begin
   {$ifndef minimal}
   //Array size can only be changed in zdesigner, not runtime
-  if Limit<>SizeDim1 * (SizeDim2+1) * (SizeDim3+1) then
+  if Limit<>CalcLimit then
     AllocData;
   {$endif}
   if Persistent then
@@ -791,13 +790,18 @@ begin
   end;
 end;
 
+function TDefineArray.CalcLimit: integer;
+begin
+  Result := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
+end;
+
 procedure TDefineArray.AllocData;
 var
   ByteSize: Integer;
   P : PPointer;
   WasNil : boolean;
 begin
-  Limit := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
+  Self.Limit := CalcLimit;
   ByteSize := Limit * SizeOf(single);
   if Persistent then
   begin
