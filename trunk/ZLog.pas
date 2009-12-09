@@ -29,7 +29,7 @@ uses SysUtils;
 {$endif}
 
 type
-  TLogString = {$ifdef zlog}string{$else}PChar{$endif};
+  TLogString = {$ifdef zlog}string{$else}PAnsiChar{$endif};
 
   {$ifdef zlog}
   TLogLevel = (lleNormal,lleWarning,lleError);
@@ -74,7 +74,7 @@ uses ZPlatform
 procedure ZHalt(ErrorMessage : TLogString);
 begin
  {$ifdef minimal}
-  Platform_Error(PChar(ErrorMessage));
+  Platform_Error(PAnsiChar(ErrorMessage));
   System.Halt;
  {$else}
   raise EZHalted.Create(ErrorMessage);

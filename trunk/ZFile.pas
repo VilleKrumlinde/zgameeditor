@@ -27,7 +27,7 @@ uses ZClasses;
 type
   TZFile = class(TZComponent)
   private
-    WriteFileName : array[0..254] of char;
+    WriteFileName : array[0..254] of AnsiChar;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -125,9 +125,9 @@ end;
 
 procedure TFileAction.Execute;
 var
-  S : PChar;
-  FloatBuf : array[0..15] of char;
-  NameBuf : array[0..254] of char;
+  S : PAnsiChar;
+  FloatBuf : array[0..15] of ansichar;
+  NameBuf : array[0..254] of ansichar;
 begin
   {$ifndef minimal}
   if CurFileState<>fsNone then
@@ -153,12 +153,12 @@ begin
       ZStrConvertFloat(
         PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^,
         PChar(@FloatBuf));
-      ZStrCopy(NameBuf,PChar(ZFile.FileName));
-      ZStrCat(NameBuf,PChar(@FloatBuf));
-      S := PChar(@NameBuf);
+      ZStrCopy(NameBuf,PAnsiChar(ZFile.FileName));
+      ZStrCat(NameBuf,PAnsiChar(@FloatBuf));
+      S := PAnsiChar(@NameBuf);
     end
     else
-      S := PChar(ZFile.FileName);
+      S := PAnsiChar(ZFile.FileName);
 
     {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('ZFile Open: ' + S);

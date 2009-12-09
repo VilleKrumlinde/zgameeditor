@@ -30,30 +30,30 @@ type
 procedure Platform_InitGlobals;
 
 //W and H is desired rez, returns actual rez.
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
 function Platform_GetDisplayRefreshRate : integer;
 
 procedure Platform_ShutdownScreen;
 procedure Platform_SwapBuffers;
 procedure Platform_Run(Callback : TRunCallback);
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 
 //Return time in seonds since program start
 function Platform_GetTime : single;
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 
 function Platform_GetMousePos : TZPointi;
 procedure Platform_SetMousePos(const X,Y : integer);
 procedure Platform_ShowMouse(Visible : boolean);
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 
-procedure Platform_Error(ErrorMessage : PChar);
-//procedure Platform_SimpleText(Scale,X,Y : single; Msg : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
+//procedure Platform_SimpleText(Scale,X,Y : single; Msg : PAnsiChar);
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 
 procedure Platform_InitAudio;
 procedure Platform_ShutdownAudio;
@@ -68,7 +68,7 @@ function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : 
 //function Platform_GenerateFontTexture(Char : integer) : integer;
 
 function Platform_LoadLinkedResource : TZInputStream;
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 
 function Platform_ShowOptionDialog : boolean;
 
@@ -76,6 +76,10 @@ function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
 function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
 function Platform_GetJoystickPOV(JoyId : integer) : single;
 
+
+{type
+  TNetOpenCallback = procedure(Context : pointer; Handle : integer);
+procedure Platform_NetOpen(Url : PAnsiChar; Callback : TNetOpenCallback; Context : pointer);}
 
 {$ifndef minimal}
 type

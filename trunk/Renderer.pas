@@ -187,8 +187,9 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Text : TPropString;                     //Text att printa
+    Text : TPropString;               //Text att printa
     TextFloatRef : TZPropertyRef;     //Propvalue att printa, en av dessa gäller
+    TextArrayRef : pointer;           //DefineArray to print
     X,Y,Scale : single;
     Align : (alCenter,alLeft);
     CharX,CharY,CharRotate,CharScale : single;
@@ -1016,6 +1017,9 @@ begin
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef) - integer(Self), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TextArrayRef',{$ENDIF}integer(@TextArrayRef) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y) - integer(Self), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptFloat);
@@ -1055,14 +1059,16 @@ const
   BuiltInSpacing = -0.18; //Slight overlap to put chars closer to each other (for built-in font)
   CharsScreen = 20; //Scale 1 = 20 characters on screen
 var
-  CurChar,CharLen : integer;
+  CurChar,CharLen,I,ArrayLimit : integer;
   P : PByte;
   XStep,StartX : single;
   Spacing,YScaleFactor : single;
+  ArrayRef : TDefineArray;
+  PInt : ^integer;
   TheText : PByte;
   FontSize : integer;
-  FloatBuf : array[0..19] of char;
-  TextBuf : array[0..254] of char;
+  FloatBuf : array[0..19] of ansichar;
+  TextBuf : array[0..254] of ansichar;
   CurFont : TFont;
   UseBuiltInFont : boolean;
 begin
@@ -1094,12 +1100,26 @@ begin
     ZStrConvertFloat(
       PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
       * Self.FloatMultiply,
-      PChar(@FloatBuf));
+      PAnsiChar(@FloatBuf));
     if pointer(Self.Text)<>nil then
-      ZStrCopy(TextBuf,PChar(Self.Text))
+      ZStrCopy(TextBuf,PAnsiChar(Self.Text))
     else
       TextBuf[0]:=#0;
-    ZStrCat(TextBuf,PChar(@FloatBuf));
+    ZStrCat(TextBuf,PAnsiChar(@FloatBuf));
+    TheText := @TextBuf;
+  end else if TextArrayRef<>nil then
+  begin
+    ArrayRef := TDefineArray(TextArrayRef);
+    ArrayLimit := ArrayRef.CalcLimit;
+    PInt := pointer(ArrayRef.GetData);
+    I := 0;
+    while (I<High(TextBuf)-1) and (I<ArrayLimit) and (PInt^<>0) do
+    begin
+      TextBuf[I] := AnsiChar(PInt^);
+      Inc(PInt);
+      Inc(I);
+    end;
+    TextBuf[I] := #0;
     TheText := @TextBuf;
   end
   else
@@ -1863,7 +1883,7 @@ end;
 
 procedure TShader.ReInit;
 const
-  TexVar : array[0..4] of char = 'tex'#0#0;
+  TexVar : array[0..4] of ansichar = 'tex'#0#0;
 var
   I,J : integer;
 
@@ -1872,7 +1892,7 @@ var
   var
     Status : GLUInt;
     S : string;
-    GlMess : array[0..511] of char;
+    GlMess : array[0..511] of ansichar;
     MessLen : integer;
   begin
     glGetShaderiv(Shader^,GL_COMPILE_STATUS,@Status);
@@ -1917,7 +1937,7 @@ var
   function InCreate(const Source : TPropString; const Kind: GLEnum) : cardinal;
   begin
     Result := 0;
-    if (pointer(Source)=nil) or (ZStrLength(PChar(Source))=0) then
+    if (pointer(Source)=nil) or (ZStrLength(PAnsiChar(Source))=0) then
       Exit;
     Result := glCreateShader(Kind);
     glShaderSource(Result,1,@Source,nil);
@@ -1945,8 +1965,8 @@ begin
   if CurrentMaterial<>nil then
     for I := 0 to CurrentMaterial.Textures.Count-1 do
     begin
-      TexVar[3]:=char(ord('1') + I);
-      J := glGetUniformLocation(ProgHandle,pchar(@TexVar));
+      TexVar[3]:=ansichar(ord('1') + I);
+      J := glGetUniformLocation(ProgHandle,pansichar(@TexVar));
       if J>-1 then
         glUniform1i(J,I);
     end;

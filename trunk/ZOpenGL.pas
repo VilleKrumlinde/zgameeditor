@@ -1502,7 +1502,7 @@ var
   glActiveTexture: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   {$ifdef WIN32}
-  wglGetProcAddress : function(P : pchar) : pointer; stdcall;
+  wglGetProcAddress : function(P : pansichar) : pointer; stdcall;
   {$endif}
 
   //OpenGL 2.0
@@ -1666,7 +1666,7 @@ end;
 
 const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
   packed record
-    Name : pchar;
+    Name : pansichar;
     Ptr : ^pointer;
   end =
 (
@@ -1928,7 +1928,7 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
 const ExtFuncArray : packed array[0..30{$ifndef minimal}+4{$endif}] of
   packed record
-    Name : pchar;
+    Name : pansichar;
     Ptr : ^pointer;
   end =
 (
@@ -2034,7 +2034,7 @@ begin
   FbosSupported := @glIsRenderbufferEXT<>nil;
 end;
 
-procedure LoadOpenGL(const dll: PChar);
+procedure LoadOpenGL(const dll: PAnsiChar);
 var
   I : integer;
 begin

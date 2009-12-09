@@ -225,7 +225,7 @@ begin
       ScreenHeight := ScreenModes[ I ].H;
     end;
 
-    Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PChar(Self.Caption) );
+    Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption) );
     Platform_ShowMouse(MouseVisible);
     Renderer.InitRenderer;
     UpdateViewport;
@@ -712,7 +712,7 @@ begin
   Self.Clock.LastTime := 0;
   Self.FpsTime := 0;
    
-  //Uppdatera träd initialt
+  //Initial tree update
   Content.Update;
   OnLoaded.ExecuteCommands;
   DesignerIsRunning := True;
@@ -732,7 +732,7 @@ end;
 
 procedure TClock.Slice(Callback : TSliceCallback);
 begin
-  //Skip slicing now, detlatime is maxed out directly in updatetime instead
+  //Skip slicing now, DeltaTime is maxed out directly in updatetime instead
   Callback;
 end;
 
