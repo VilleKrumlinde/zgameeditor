@@ -380,6 +380,10 @@ begin
   //Emit sounds queued by models and music
   if not NoSound then
     AudioPlayer.EmitSoundsInEmitList;
+
+  //Notify that net-data has been read
+  if TWebOpen.ResultList.Count>0 then
+    TWebOpen.FlushResultList;
 end;
 
 procedure TZApplication.Run;

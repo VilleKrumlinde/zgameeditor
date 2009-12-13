@@ -3319,7 +3319,7 @@ begin
   Comp.InsertList.Clear;
 
   Line := Comp.Editor.LineText;
-  I := Min(Comp.Editor.CaretX,Length(Line));
+  I := Min(Comp.Editor.CaretX+1,Length(Line));
   while (I>0) and (Line[I] in ['a'..'z','A'..'Z','_','0'..'9']) do
     Dec(I);
   if (I>0) and (Line[I]='.') then
@@ -3485,7 +3485,7 @@ var
   DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := False;
-  DisplayDetailedReport := True;
+//  DisplayDetailedReport := True;
 
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then

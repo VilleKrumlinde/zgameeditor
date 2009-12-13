@@ -97,15 +97,24 @@ type
     Buffer : pointer;
     BufferSize : integer;
     IsWaiting : boolean;
+  private
+    class var NetMutex : pointer;
+    procedure AddToResultList;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Url : TPropString;
     ResultArray : TDefineArray;
+    OnResult : TZComponentList;
     Handle : pointer;
+    class var ResultList : TZArrayList;
+    class procedure FlushResultList;
     procedure Execute; override;
     procedure StartReading;
     destructor Destroy; override;
+    {$ifndef minimal}
+    function GetDisplayName: string; override;
+    {$endif}
   end;
 
 implementation
@@ -317,6 +326,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}integer(@OnResult) - integer(Self), zptComponentList);
 end;
 
 destructor TWebOpen.Destroy;
@@ -333,6 +343,27 @@ begin
     Platform_NetOpen(PAnsiChar(Self.Url),Self);
   end;
 end;
+
+class procedure TWebOpen.FlushResultList;
+var
+  I : integer;
+begin
+  Platform_EnterMutex(NetMutex);
+    for I := 0 to ResultList.Count - 1 do
+    begin
+      TWebOpen(ResultList[I]).OnResult.ExecuteCommands;
+    end;
+    ResultList.Clear;
+  Platform_LeaveMutex(NetMutex);
+end;
+
+{$ifndef minimal}
+function TWebOpen.GetDisplayName: string;
+begin
+  Result := inherited GetDisplayName;
+  Result := Result + '  ' + Url;
+end;
+{$endif}
 
 procedure TWebOpen.StartReading;
 var
@@ -360,6 +391,14 @@ begin
       Dec(I);
     end;
   end;
+  AddToResultList;
+end;
+
+procedure TWebOpen.AddToResultList;
+begin
+  Platform_EnterMutex(TWebOpen.NetMutex);
+    TWebOpen.ResultList.Add(Self);
+  Platform_LeaveMutex(TWebOpen.NetMutex);
 end;
 
 initialization
@@ -375,5 +414,13 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
   ZClasses.Register(TWebOpen,WebOpenClassId);
+
+  TWebOpen.ResultList := TZArrayList.CreateReferenced;
+  TWebOpen.NetMutex := Platform_CreateMutex;
+{$ifndef minimal}
+finalization
+  TWebOpen.ResultList.Free;
+  Platform_FreeMutex( TWebOpen.NetMutex );
+{$endif}
 
 end.
