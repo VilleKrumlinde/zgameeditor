@@ -1017,7 +1017,7 @@ begin
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef) - integer(Self), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextArrayRef',{$ENDIF}integer(@TextArrayRef) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TextArray',{$ENDIF}integer(@TextArrayRef) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X) - integer(Self), zptFloat);
@@ -1067,10 +1067,10 @@ var
   PInt : ^integer;
   TheText : PByte;
   FontSize : integer;
-  FloatBuf : array[0..19] of ansichar;
-  TextBuf : array[0..254] of ansichar;
   CurFont : TFont;
   UseBuiltInFont : boolean;
+  FloatBuf : array[0..19] of ansichar;
+  TextBuf : array[0..(8*1024-1)] of ansichar;
 begin
   {$ifndef minimal}
   AssertRenderMode;

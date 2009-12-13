@@ -38,7 +38,8 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, Windows, MMSystem, Types, ZApplication,AudioPlayer,
+uses ZOpenGL, ZLog, Windows, MMSystem, Types, ZApplication, AudioPlayer,
+  WinInet, Commands,
  {$ifndef minimal}
    SysUtils,
  {$endif}
@@ -355,6 +356,14 @@ begin
     h_DC := GetDC(h_Wnd);
     if (h_DC = 0) then
       ZHalt('Unable to get a device context.');
+
+
+//if LoadIcon(MainInstance,'MAINICON' )=0 then
+//  zhalt('crash');
+//    if not Fullscreen then
+//    begin
+//      SendMessage(h_Wnd, WM_SETICON, 1, LoadIcon(MainInstance, '1'));
+//    end;
 
     // Settings for the OpenGL window
     ZeroMemory(@pfd, SizeOf(pfd));
@@ -709,86 +718,6 @@ begin
 end;
 
 
-procedure Platform_SimpleText(Scale,X,Y : single; Msg : PAnsiChar);
-const
-  Base : integer = 0;
-var
-  FirstChar : integer;
-  Quantity : integer;
-  Start : integer;
-  NChars : integer;
-  Font : HFONT;
-  Size : Types.TSize;
-  CenteredX,CenteredY : single;
-begin
-//  TextOut(h_dc,10,10,Msg,10);
-
-  //first time
-  if Base=0 then
-  begin
-    FirstChar := ord(' ');
-    Quantity := 127 - FirstChar;
-    Start := glGenLists(Quantity);
-    Base := Start - FirstChar;
-//    SelectObject(h_DC,GetStockObject(SYSTEM_FONT));
-
-  Font := CreateFont( -48,              // Height Of Font
-            0,                // Width Of Font
-            0,                // Angle Of Escapement
-            0,                // Orientation Angle
-            0,            // Font Weight
-            0,              // Italic
-            0,              // Underline
-            0,              // Strikeout
-            ANSI_CHARSET,         // Character Set Identifier
-            OUT_TT_PRECIS,          // Output Precision
-            CLIP_DEFAULT_PRECIS,      // Clipping Precision
-            ANTIALIASED_QUALITY,      // Output Quality
-            FF_DONTCARE or DEFAULT_PITCH,   // Family And Pitch
-            'Arial Black');
-  SelectObject(h_DC, font);           // Selects The Font We Want
-  wglUseFontBitmaps(h_DC,FirstChar,Quantity,Start);
-//  SelectObject(h_DC, oldfont);              // Selects The Font We Want
-//  DeleteObject(font);                 // Delete The Font
-
-//    wglUseFontBitmaps(h_DC,FirstChar,Quantity,Start);
-    //todo delete lists on finalization
-  end;
-
-  NChars := Windows.LStrLen(Msg);
-
-  Windows.GetTextExtentPoint32(h_DC, Msg, NChars, Size);
-  CenteredX := X - (Size.Cx/ZApplication.ScreenWidth);
-  CenteredY := Y - (Size.Cy/ZApplication.ScreenHeight);
-
-  //  glClearColor(random,random,random,0);
-
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glOrtho(-1, 1, -1, 1, 1, -1.0);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-
-//glColor3f(1,1,0.6f);
-
-//  glColor3f(1,1,1);
-//  glPixelZoom(Scale,Scale);
-  glRasterPos2f(CenteredX,CenteredY);
-
-  glPushAttrib(GL_LIST_BIT);
-    glListBase(Base);
-    glCallLists( NChars, GL_UNSIGNED_BYTE, Msg);
-  glPopAttrib();
-
-  // restore matrices
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 var
@@ -828,59 +757,6 @@ begin
   Result := Start;
 end;
 
-function Platform_GenerateFontTexture(Char : integer) : integer;
-const
-  Size = 32;
-var
-  OldFont,Font : HFONT;
-  lpgm : TGLYPHMETRICS;
-  lpmat2 : TMAT2;
-  BufferSize : integer;
-  Buf : pointer;
-  TexId : integer;
-begin
-  Font := CreateFont( -Size,              // Height Of Font
-                          0,              // Width Of Font
-                          0,              // Angle Of Escapement
-                          0,              // Orientation Angle
-                          0,              // Font Weight
-                          0,              // Italic
-                          0,              // Underline
-                          0,              // Strikeout
-                          ANSI_CHARSET,           // Character Set Identifier
-                          OUT_TT_PRECIS,          // Output Precision
-                          CLIP_DEFAULT_PRECIS,          // Clipping Precision
-                          ANTIALIASED_QUALITY,          // Output Quality
-                          FF_DONTCARE or DEFAULT_PITCH, // Family And Pitch
-                          'Courier New'); //'Courier New');
-  oldfont := HFONT(SelectObject(h_DC, font));           // Selects The Font We Want
-
-//      lpMat->eM11 = FixedFromDouble(1);
-//    lpMat->eM12 = FixedFromDouble(0);
-//    lpMat->eM21 = FixedFromDouble(0);
-//    lpMat->eM22 = FixedFromDouble(1);
-  FillChar(lpmat2,sizeof(lpmat2),0);
-  lpmat2.em11.value:=1;
-  lpmat2.em22.value:=1;
-
-  FillChar(lpgm,sizeof(lpgm),0);
-  BufferSize := GetGlyphOutline(h_DC,Char, GGO_BITMAP, lpgm, 0,  nil, lpmat2);
-  GetMem(buf,BufferSize);
-  GetGlyphOutline(h_DC,Char, GGO_BITMAP, lpgm, 0,  nil, lpmat2);
-
-  //buffer måset resizas för att passa en gltexture
-
-  glGenTextures(1, @TexId);
-  glBindTexture(GL_TEXTURE_2D,TexId);
-  glTexImage2D(GL_TEXTURE_2D, 0, 1, Size, Size, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, Buf);
-
-  Freemem(Buf);
-
-  SelectObject(h_DC, oldfont);
-  DeleteObject(font);
-
-  Result := TexId;
-end;
 
 var
   TimerFreq,TimerStart : int64;
@@ -1652,6 +1528,81 @@ begin
   if JoyId<JoyCount then
     Result := (Joysticks[JoyId]).POV;
 end;
+
+
+//Net-support
+
+var
+  SessionHandle : HINTERNET;
+  SessionWait : boolean;
+
+procedure NetCallback(hInternet : HINTERNET;
+    dwContext : DWORD_PTR;
+    dwInternetStatus :DWORD;
+    lpvStatusInformation : pointer;
+    dwStatusInformationLength : DWORD
+    ); stdcall;
+begin
+  case dwInternetStatus of
+    INTERNET_STATUS_HANDLE_CREATED :
+      begin
+        TWebOpen(dwContext).Handle := pointer(PInternetAsyncResult(lpvStatusInformation).dwResult);
+      end;
+    INTERNET_STATUS_REQUEST_COMPLETE :
+      begin
+        if SessionWait then
+          SessionWait := False
+        else
+          TWebOpen(dwContext).StartReading;
+      end;
+  end;
+end;
+
+procedure Platform_NetOpen(Url : PAnsiChar; WebOpen : pointer);
+begin
+  if SessionHandle=nil then
+  begin
+    SessionHandle := InternetOpen('ZGE',
+      INTERNET_OPEN_TYPE_PRECONFIG,
+      nil,nil,INTERNET_FLAG_ASYNC);
+    InternetSetStatusCallback(SessionHandle,@NetCallBack);
+  end;
+  InternetOpenUrlA(SessionHandle,Url,nil,0,0,Cardinal(WebOpen));
+  {$ifndef minimal}
+  ZLog.GetLog('Platform').Write('Net open: ' + Url);
+  {$endif}
+end;
+
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+var
+  BytesRead : dword;
+  B : boolean;
+begin
+  while True and (Size>0) do
+  begin
+    SessionWait := True;
+    B := InternetReadFile(Handle,Buffer,Size,BytesRead);
+    if (not B) and (GetLastError()=ERROR_IO_PENDING) then
+    begin
+      while SessionWait do
+        Sleep(100);
+      B := True;
+    end;
+
+    if B and (BytesRead=0) then
+      Break;
+    if B then
+    begin
+      Inc(pbyte(Buffer),BytesRead);
+      Dec(Size,BytesRead);
+    end;
+  end;
+  InternetCloseHandle(Handle);
+  {$ifndef minimal}
+  ZLog.GetLog('Platform').Write('Net read');
+  {$endif}
+end;
+
 
 {initialization
 

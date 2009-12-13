@@ -110,9 +110,6 @@ procedure CreateRotationMatrixZ(const Angle : Single; out Result : TZMatrix4f);
 function MatrixMultiply(const M1, M2: TZMatrix4f) : TZMatrix4f;
 
 function Vec2DDistance(const v1,v2 : TZVector2f) : single;
-function LineIntersection2D(const A,B,C,D : TZVector2f;
-  out Dist : single;
-  out HitPoint : TZVector2f) : boolean;
 
 const
   UNIT_Z3: TZVector3f = (0,0,1);
@@ -829,50 +826,6 @@ begin
     Result := Result - 1.0;
 end;
 
-
-//-------------------- LineIntersection2D-------------------------
-//
-//	Given 2 lines in 2D space AB, CD this returns true if an
-//	intersection occurs and sets dist to the distance the intersection
-//  occurs along AB. Also sets the 2d vector point to the point of
-//  intersection
-//-----------------------------------------------------------------
-function LineIntersection2D(const A,B,C,D : TZVector2f;
-  out Dist : single;
-  out HitPoint : TZVector2f) : boolean;
-var
-  rTop,rBot : single;
-  sTop,sBot : single;
-  r,s : single;
-  Tmp : TZVector2f;
-begin
-  Result := False;
-
-  rTop := (A[1]-C[1])*(D[0]-C[0])-(A[0]-C[0])*(D[1]-C[1]);
-  rBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
-
-  sTop := (A[1]-C[1])*(B[0]-A[0])-(A[0]-C[0])*(B[1]-A[1]);
-  sBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
-
-  if (rBot=0) or (sBot=0) then
-    //lines are parallel
-    Exit;
-
-  r := rTop/rBot;
-  s := sTop/sBot;
-
-  if (r > 0) and (r < 1) and (s > 0) and (s < 1) then
-  begin
-    Dist := Vec2DDistance(A,B) * r;
-    VecSub2(B,A,Tmp);
-    Tmp := VecScalarMult2(Tmp,R);
-    HitPoint := VecAdd2(A,Tmp);
-    //point = A + r * (B - A);
-    Result := True;
-  end
-  else
-    Dist := 0;
-end;
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa
 function ArcSin(const X : Single) : Single;

@@ -349,6 +349,7 @@ type
     procedure OnGlInit(Sender: TObject);
     procedure OnAppException(Sender: TObject; E: Exception);
     procedure RemoveUnusedCode(Module: TPEModule);
+    procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
   public
     Glp : TCustomGLPanel;
     Tree : TZComponentTreeView;
@@ -1652,6 +1653,25 @@ begin
   SysLibrary.Free;
 end;
 
+procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
+var
+  CurParent: TZComponentTreeNode;
+begin
+  CurParent := Node.Parent as TZComponentTreeNode;
+  Model := nil;
+  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
+  //så att den kan användas i uttryck.
+  while CurParent <> nil do
+  begin
+    if Assigned(CurParent.Component) and (CurParent.Component is TModel) then
+    begin
+      Model := CurParent.Component as TModel;
+      Break;
+    end;
+    CurParent := CurParent.Parent as TZComponentTreeNode;
+  end;
+end;
+
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
 begin
   if not LockShow then
@@ -1861,9 +1881,7 @@ end;
 
 procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZPropertyValue; Prop : TZProperty);
 var
-  C : TZComponent;
-  CurParent : TZComponentTreeNode;
-  Model : TModel;
+  C,Model : TZComponent;
 begin
   if Prop.IsDefaultValue(Expr) then
   begin
@@ -1873,20 +1891,7 @@ begin
   end;
 
   C := Node.Component;
-  CurParent := Node.Parent as TZComponentTreeNode;
-  Model := nil;
-  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
-  //så att den kan användas i uttryck.
-  while CurParent<>nil do
-  begin
-    if Assigned(CurParent.Component) and
-      (CurParent.Component is TModel) then
-    begin
-      Model := CurParent.Component as TModel;
-      Break;
-    end;
-    CurParent := CurParent.Parent as TZComponentTreeNode;
-  end;
+  FindCurrentModel(Node, Model);
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
   try
@@ -3300,6 +3305,10 @@ var
   begin
     if SameText(S,'this') then
       Result := Tree.ZSelected.Component
+    else if SameText(S,'CurrentModel') then
+    begin
+      FindCurrentModel(Tree.ZSelected,Result);
+    end
     else
       Result := SymTab.Lookup(S) as TZComponent;
   end;
@@ -3351,7 +3360,7 @@ begin
         begin
           Prop := TZProperty(PropList[I]);
           if (Prop.PropertyType in [zptString,zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
-            Prop.ExcludeFromBinary or Prop.ExcludeFromXml then
+            (Prop.Name='ObjId') then
             Continue;
           InAdd([Prop.Name]);
         end;
@@ -3471,12 +3480,12 @@ var
 
   Infos : PComponentInfoArray;
   Ci : TZComponentInfo;
-  UsedComponents,NamesToRemove : TStringList;
+  UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
   DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := False;
-  //DisplayDetailedReport := True;
+  DisplayDetailedReport := True;
 
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then
@@ -3495,6 +3504,7 @@ begin
   Lines := TStringList.Create;
   MapNames := TObjectList.Create(True);
   NamesToRemove := TStringList.Create;
+  ClassesToRemove := TStringList.Create;
   UsedComponents := TStringList.Create;
   Splitter := TStringList.Create;
   Splitter.Delimiter := '.';
@@ -3559,12 +3569,25 @@ begin
     begin
       Ci := TZComponentInfo(Infos[Id]);
       if UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1 then
-        NamesToRemove.Add(Ci.ZClass.ClassName);
+        ClassesToRemove.Add(Ci.ZClass.ClassName);
     end;
     if UsedComponents.IndexOf('TMeshImplicit')=-1 then
-      NamesToRemove.Add('TImpProcess');
-
-
+      ClassesToRemove.Add('TImpProcess');
+    ClassesToRemove.Add('TDefineConstant');
+    if not ZApp.ShowOptionsDialog then
+    begin
+      NamesToRemove.Add('ZPlatform.Options');
+      NamesToRemove.Add('ZPlatform.Platform_ShowOptionDialog');
+    end;
+    if UsedComponents.IndexOf('TSound')=-1 then
+    begin
+      NamesToRemove.Add('AudioPlayer.UpdateModulators');
+      NamesToRemove.Add('AudioPlayer.RenderVoice');
+      NamesToRemove.Add('AudioPlayer.SetVoiceFrameConstants');
+      NamesToRemove.Add('AudioPlayer.UpdateEnvelope');
+      NamesToRemove.Add('AudioPlayer.UpdateLfo');
+      NamesToRemove.Add('AudioPlayer.UpdateFrame');
+    end;
 
     //ok, start removing
     NamesKept := TObjectList.Create(False);
@@ -3573,13 +3596,13 @@ begin
     for I := 0 to MapNames.Count - 1 do
     begin
       Item := TMapName(MapNames[I]);
-      if (Item.Size=0) or (Length(Item.MapClassName)=0) then
+      if (Item.Size=0) then
       begin
         if DisplayDetailedReport then
           NamesKept.Add(Item);
         Continue;
       end;
-      if NamesToRemove.IndexOf(Item.MapClassName)=-1 then
+      if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and (NamesToRemove.IndexOf(Item.Name)=-1) then
       begin
         if DisplayDetailedReport then
           NamesKept.Add(Item);
@@ -3611,6 +3634,7 @@ begin
   finally
     Lines.Free;
     MapNames.Free;
+    ClassesToRemove.Free;
     NamesToRemove.Free;
     UsedComponents.Free;
     Splitter.Free;
