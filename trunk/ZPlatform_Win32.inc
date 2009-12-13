@@ -1584,6 +1584,7 @@ begin
     B := InternetReadFile(Handle,Buffer,Size,BytesRead);
     if (not B) and (GetLastError()=ERROR_IO_PENDING) then
     begin
+      //BytesRead isn't updated until INTERNET_STATUS_REQUEST_COMPLETE
       while SessionWait do
         Sleep(100);
       B := True;
