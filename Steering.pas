@@ -57,6 +57,8 @@ type
     procedure SteerWallAvoidance(WallModels : TZArrayList; out Result : TZVector3f);
     procedure ApplySteeringForce(const Force : TZVector3f);
     function AccumulateForce(var RunningTot : TZVector3f; const ForceToAdd : TZVector3f) : boolean;
+    class function LineIntersection2D(const A, B, C, D: TZVector2f; out Dist: single;
+      out HitPoint: TZVector2f): boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -333,6 +335,52 @@ begin
   ZExpressions.RunCode(B.Expression.Code);
   Result := B.OutVector;
 end;
+
+
+//-------------------- LineIntersection2D-------------------------
+//
+//	Given 2 lines in 2D space AB, CD this returns true if an
+//	intersection occurs and sets dist to the distance the intersection
+//  occurs along AB. Also sets the 2d vector point to the point of
+//  intersection
+//-----------------------------------------------------------------
+class function TSteeringController.LineIntersection2D(const A,B,C,D : TZVector2f;
+  out Dist : single;
+  out HitPoint : TZVector2f) : boolean;
+var
+  rTop,rBot : single;
+  sTop,sBot : single;
+  r,s : single;
+  Tmp : TZVector2f;
+begin
+  Result := False;
+
+  rTop := (A[1]-C[1])*(D[0]-C[0])-(A[0]-C[0])*(D[1]-C[1]);
+  rBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
+
+  sTop := (A[1]-C[1])*(B[0]-A[0])-(A[0]-C[0])*(B[1]-A[1]);
+  sBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
+
+  if (rBot=0) or (sBot=0) then
+    //lines are parallel
+    Exit;
+
+  r := rTop/rBot;
+  s := sTop/sBot;
+
+  if (r > 0) and (r < 1) and (s > 0) and (s < 1) then
+  begin
+    Dist := Vec2DDistance(A,B) * r;
+    VecSub2(B,A,Tmp);
+    Tmp := VecScalarMult2(Tmp,R);
+    HitPoint := VecAdd2(A,Tmp);
+    //point = A + r * (B - A);
+    Result := True;
+  end
+  else
+    Dist := 0;
+end;
+
 
 procedure TSteeringController.SteerWallAvoidance(WallModels: TZArrayList; out Result: TZVector3f);
 //Från boken "Programming game AI by example"

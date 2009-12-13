@@ -92,6 +92,22 @@ type
     {$endif}
   end;
 
+  TWebOpen = class(TCommand)
+  strict private
+    Buffer : pointer;
+    BufferSize : integer;
+    IsWaiting : boolean;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Url : TPropString;
+    ResultArray : TDefineArray;
+    Handle : pointer;
+    procedure Execute; override;
+    procedure StartReading;
+    destructor Destroy; override;
+  end;
+
 implementation
 
 uses ZPlatform,ZApplication
@@ -293,6 +309,59 @@ begin
 end;
 
 
+{ TWebOpen }
+
+procedure TWebOpen.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url) - integer(Self), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+end;
+
+destructor TWebOpen.Destroy;
+begin
+  FreeMem(Buffer);
+  inherited;
+end;
+
+procedure TWebOpen.Execute;
+begin
+  if not Self.IsWaiting then
+  begin
+    IsWaiting := True;
+    Platform_NetOpen(PAnsiChar(Self.Url),Self);
+  end;
+end;
+
+procedure TWebOpen.StartReading;
+var
+  Pd : PInteger;
+  Ps : PByte;
+  I : integer;
+begin
+  if not Self.IsWaiting then
+    Exit;
+  Self.IsWaiting := False;
+  if ResultArray<>nil then
+    BufferSize := ResultArray.CalcLimit;
+  ReAllocMem(Buffer,BufferSize);
+  Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
+  if ResultArray<>nil then
+  begin
+    Ps := Buffer;
+    Pd := PInteger(ResultArray.GetData);
+    I := BufferSize;
+    while I>0 do
+    begin
+      Pd^ := Ps^;
+      Inc(Pd);
+      Inc(Ps);
+      Dec(I);
+    end;
+  end;
+end;
+
 initialization
 
   ZClasses.Register(TRepeat,RepeatClassId);
@@ -305,5 +374,6 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Timer';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
+  ZClasses.Register(TWebOpen,WebOpenClassId);
 
 end.

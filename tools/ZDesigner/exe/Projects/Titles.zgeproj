@@ -31,7 +31,7 @@ this.CharScale = 0.1 + abs(sin(App.Time-CharI*0.1))*2.8;]]>
             <RenderText Text="ABCDAV" X="-1" Y="0.46" Scale="3.2" Align="1"/>
           </Children>
         </RenderTransformGroup>
-        <RenderText TextArrayRef="Ar1" X="-1" Y="-0.84" Align="1"/>
+        <RenderText TextArray="Ar1" X="-1" Y="-0.84" Align="1"/>
       </OnRender>
       <OnUpdate>
         <ZExpression>

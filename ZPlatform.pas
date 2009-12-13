@@ -77,9 +77,8 @@ function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean
 function Platform_GetJoystickPOV(JoyId : integer) : single;
 
 
-{type
-  TNetOpenCallback = procedure(Context : pointer; Handle : integer);
-procedure Platform_NetOpen(Url : PAnsiChar; Callback : TNetOpenCallback; Context : pointer);}
+procedure Platform_NetOpen(Url : PAnsiChar; WebOpen : pointer);
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 
 {$ifndef minimal}
 type

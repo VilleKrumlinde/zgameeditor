@@ -50,7 +50,7 @@ type
  RenderBeamsClassId,RenderTransformGroupClassId,RenderTextClassId,RenderSetColorClassId,RenderNetClassId,
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
  RenderTargetClassId,SetRenderTargetClassId,
- RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,
+ RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,WebOpenClassId,
  ApplicationClassId,AppStateClassId,SetAppStateClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
  ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,ExpPropValue4ClassId,ExpPropValue1ClassId,
