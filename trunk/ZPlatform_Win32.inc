@@ -1543,6 +1543,7 @@ procedure NetCallback(hInternet : HINTERNET;
     dwStatusInformationLength : DWORD
     ); stdcall;
 begin
+//  OutputDebugString( PChar(IntToStr(dwInternetStatus)) );
   case dwInternetStatus of
     INTERNET_STATUS_HANDLE_CREATED :
       begin
@@ -1555,14 +1556,18 @@ begin
         else
           TWebOpen(dwContext).StartReading;
       end;
+    INTERNET_STATUS_RESPONSE_RECEIVED :
+        if SessionWait then
+          SessionWait := False
   end;
+
 end;
 
 procedure Platform_NetOpen(Url : PAnsiChar; WebOpen : pointer);
 begin
   if SessionHandle=nil then
   begin
-    SessionHandle := InternetOpen('ZGE',
+    SessionHandle := InternetOpenA(PAnsiChar('ZGE'),
       INTERNET_OPEN_TYPE_PRECONFIG,
       nil,nil,INTERNET_FLAG_ASYNC);
     InternetSetStatusCallback(SessionHandle,@NetCallBack);
@@ -1575,33 +1580,42 @@ end;
 
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 var
-  BytesRead : dword;
-  B : boolean;
+  BytesRead,Avail,ThisSize : dword;
 begin
   while True and (Size>0) do
   begin
     SessionWait := True;
-    B := InternetReadFile(Handle,Buffer,Size,BytesRead);
-    if (not B) and (GetLastError()=ERROR_IO_PENDING) then
+    ThisSize := Size;
+    if InternetQueryDataAvailable(Handle,Avail,0,0) then
     begin
-      //BytesRead isn't updated until INTERNET_STATUS_REQUEST_COMPLETE
-      while SessionWait do
-        Sleep(100);
-      B := True;
+      if Avail=0 then
+        Break;
+      if ThisSize>Avail then
+        ThisSize:=Avail;
+      //Without this sleep InternetReadFile will hang on status 40
+      Sleep(100);
     end;
 
-    if B and (BytesRead=0) then
-      Break;
-    if B then
+    if not InternetReadFile(Handle,Buffer,ThisSize,BytesRead) then
     begin
-      Inc(pbyte(Buffer),BytesRead);
-      Dec(Size,BytesRead);
+      if (GetLastError()<>ERROR_IO_PENDING) then
+        Break;
+      //BytesRead isn't updated until INTERNET_STATUS_REQUEST_COMPLETE
+      while SessionWait do
+        Sleep(200);
     end;
+
+    if (BytesRead=0) then
+      Break;
+
+    Inc(pbyte(Buffer),BytesRead);
+    Dec(Size,BytesRead);
+  end;
+  if Size>0 then
+  begin
+    PByte(Buffer)^:=0;
   end;
   InternetCloseHandle(Handle);
-  {$ifndef minimal}
-  ZLog.GetLog('Platform').Write('Net read');
-  {$endif}
 end;
 
 

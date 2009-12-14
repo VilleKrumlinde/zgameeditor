@@ -3588,6 +3588,11 @@ begin
       NamesToRemove.Add('AudioPlayer.UpdateLfo');
       NamesToRemove.Add('AudioPlayer.UpdateFrame');
     end;
+    if UsedComponents.IndexOf('TWebOpen')=-1 then
+    begin
+      NamesToRemove.Add('ZPlatform.Platform_NetOpen');
+      NamesToRemove.Add('ZPlatform.Platform_NetRead');
+    end;
 
     //ok, start removing
     NamesKept := TObjectList.Create(False);
