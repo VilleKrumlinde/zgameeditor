@@ -1,21 +1,57 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" MouseVisible="255">
+<ZApplication Name="App" Caption="YakYak new posts" ViewportRatio="3" MouseVisible="255">
   <OnLoaded>
     <ZExpression>
       <Expression>
 <![CDATA[Color1.Color=1;
-RefreshTimer.Interval=0.1;]]>
+RefreshTimer.Interval=0.1;
+GoTimer.Interval=0;
+IsUpdating=0;]]>
       </Expression>
     </ZExpression>
+    <ZLibrary>
+      <Source>
+<![CDATA[void writeLink(int link, int i) {
+  int j=0;
+
+  int quotes=0;
+  int start,end;
+  for( ;i>0; i--) {
+    int c=HtmlAr[i];
+    if(c==34) {
+      quotes++;
+      if(quotes==1) {
+        end=i;
+      }
+      if(quotes==2) {
+        start=i+1;
+        i=0;
+      }
+    }
+  }
+  
+  for(i=start; i<end; i++) {
+    int c=HtmlAr[i];
+    //test for escaped "&"-character
+    if((c==38))
+      i+=4;
+    Links[link,j++] = c;
+  }
+
+  Links[link,j]=0;
+}]]>
+      </Source>
+    </ZLibrary>
   </OnLoaded>
   <OnUpdate>
-    <AnimatorSimple Duration="1" AutoStart="255" Target="Rt1 Translate" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+    <AnimatorSimple Duration="10" AutoStart="255" Target="Rt1 Rotate 2" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
     <Timer Name="RefreshTimer" Interval="10">
       <OnTimer>
         <ZExpression>
           <Expression>
 <![CDATA[Color1.Color=1;
-RefreshTimer.Interval=10;]]>
+RefreshTimer.Interval=10;
+IsUpdating=1;]]>
           </Expression>
         </ZExpression>
         <WebOpen Url="http://www.yakyak.org/search.php?search_id=newposts" ResultArray="HtmlAr">
@@ -24,6 +60,7 @@ RefreshTimer.Interval=10;]]>
               <Expression>
 <![CDATA[Color1.Color.G=0;
 Color1.Color.B=0;
+IsUpdating=0;
 
 int j=0;
 int mode=0;
@@ -32,8 +69,9 @@ int limit=HtmlAr.SizeDim1-4;
 for(int i=0; i<limit; ++i) {
 
   if(mode==0) {
-    //tle"
+    //match 'tle"' (topictitle)
     if( (HtmlAr[i]==116) && (HtmlAr[i+1]==108) && (HtmlAr[i+2]==101) && (HtmlAr[i+3]==34) ) {
+       writeLink(linkCount, i-10);
        mode=1;
        i+=5;
        linkCount++;
@@ -91,21 +129,49 @@ return (this.Iteration<HtmlAr.SizeDim1-1) && (HtmlAr[this.Iteration]!=0);]]>
         </WebOpen>
       </OnTimer>
     </Timer>
+    <KeyPress Comment="Click" Keys="{" RepeatDelay="0.5">
+      <OnPressed>
+        <ZExpression>
+          <Expression>
+<![CDATA[int clicked=round( (1.0 - ((App.MousePosition.Y+1.0)/2.0)) * 9 );
+
+for(int i=0; i<ParamAr.SizeDim1; i++) {
+  ParamAr[i]=Links[clicked,i];
+}
+
+GoTimer.Interval=0.25;]]>
+          </Expression>
+        </ZExpression>
+        <DefineArray Name="ParamAr" Type="1" SizeDim1="256"/>
+      </OnPressed>
+    </KeyPress>
+    <Timer Name="GoTimer">
+      <OnTimer>
+        <ZExpression Expression="GoTimer.Interval=0;"/>
+        <WebOpen Url="http://www.yakyak.org/" ParamArray="ParamAr" InBrowser="255"/>
+      </OnTimer>
+    </Timer>
   </OnUpdate>
   <OnRender>
-    <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="0.7 -3.4 0">
-      <Children>
-        <RenderSetColor Name="Color1" Color="1 0 0 1"/>
-        <RenderSprite/>
-      </Children>
-    </RenderTransformGroup>
+    <Condition Expression="return IsUpdating==1;">
+      <OnTrue>
+        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 -3.98 0">
+          <Children>
+            <RenderSetColor Name="Color1" Color="1 0 0 1"/>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+      </OnTrue>
+    </Condition>
     <UseMaterial Material="Material1"/>
-    <RenderText TextArray="DisplayAr" X="-0.94" Y="0.89" Scale="0.31" Align="1" StretchY="2.17"/>
+    <RenderText TextArray="DisplayAr" X="-0.97" Y="0.92" Scale="0.3" Align="1" StretchY="3.11"/>
   </OnRender>
   <Content>
+    <Group/>
     <DefineArray Name="HtmlAr" Type="1" SizeDim1="200000"/>
     <DefineArray Name="DisplayAr" Type="1" SizeDim1="200000"/>
-    <DefineArray Name="Links" Dimensions="1" SizeDim1="10" SizeDim2="256"/>
+    <DefineArray Name="Links" Type="1" Dimensions="1" SizeDim1="10" SizeDim2="256"/>
     <Material Name="Material1"/>
+    <DefineVariable Name="IsUpdating" Type="1"/>
   </Content>
 </ZApplication>

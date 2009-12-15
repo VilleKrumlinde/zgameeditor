@@ -104,7 +104,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Url : TPropString;
-    ResultArray : TDefineArray;
+    ParamArray,ResultArray : TDefineArray;
     OnResult : TZComponentList;
     InBrowser : boolean;
     Handle : pointer;
@@ -327,6 +327,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}integer(@ParamArray) - integer(Self), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}integer(@InBrowser) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}integer(@OnResult) - integer(Self), zptComponentList);
 end;
@@ -338,11 +340,41 @@ begin
 end;
 
 procedure TWebOpen.Execute;
+var
+  Ps : PInteger;
+  Pd : PByte;
+  I,Limit : integer;
+  Buf : array[0..1024-1] of byte;
 begin
   if not Self.IsWaiting then
   begin
-    IsWaiting := True;
-    Platform_NetOpen(PAnsiChar(Self.Url),Self.InBrowser,Self);
+    if not Self.InBrowser then
+      IsWaiting := True;
+
+    Pd := @Buf;
+    ZStrCopy(@Buf,PAnsiChar(Self.Url));
+    Inc(Pd,ZStrLength(@Buf));
+
+    if ParamArray<>nil then
+    begin
+      {$ifndef minimal}
+      if ParamArray._Type<>dvbInt then
+        GetLog(Self.ClassName).Warning('ParamArray must be of int-type');
+      {$endif}
+      Limit := ParamArray.CalcLimit;
+      Ps := PInteger(ParamArray.GetData);
+      I := 0;
+      while (I<Limit) and (I<High(Buf)-1) and (Ps^<>0) do
+      begin
+        Pd^ := Ps^;
+        Inc(Pd);
+        Inc(Ps);
+        Inc(I);
+      end;
+      Pd^ := 0;
+    end;
+
+    Platform_NetOpen(PAnsiChar(@Buf),Self.InBrowser,Self);
   end;
 end;
 
@@ -382,6 +414,10 @@ begin
   Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
   if ResultArray<>nil then
   begin
+    {$ifndef minimal}
+    if ResultArray._Type<>dvbInt then
+      GetLog(Self.ClassName).Warning('ResultArray must be of int-type');
+    {$endif}
     Ps := Buffer;
     Pd := PInteger(ResultArray.GetData);
     I := BufferSize;
