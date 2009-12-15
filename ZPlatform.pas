@@ -77,7 +77,7 @@ function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean
 function Platform_GetJoystickPOV(JoyId : integer) : single;
 
 
-procedure Platform_NetOpen(Url : PAnsiChar; WebOpen : pointer);
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 
 {$ifndef minimal}

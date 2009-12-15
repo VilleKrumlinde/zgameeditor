@@ -106,6 +106,7 @@ type
     Url : TPropString;
     ResultArray : TDefineArray;
     OnResult : TZComponentList;
+    InBrowser : boolean;
     Handle : pointer;
     class var ResultList : TZArrayList;
     class procedure FlushResultList;
@@ -326,6 +327,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url) - integer(Self), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray) - integer(Self), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}integer(@InBrowser) - integer(Self), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}integer(@OnResult) - integer(Self), zptComponentList);
 end;
 
@@ -340,7 +342,7 @@ begin
   if not Self.IsWaiting then
   begin
     IsWaiting := True;
-    Platform_NetOpen(PAnsiChar(Self.Url),Self);
+    Platform_NetOpen(PAnsiChar(Self.Url),Self.InBrowser,Self);
   end;
 end;
 

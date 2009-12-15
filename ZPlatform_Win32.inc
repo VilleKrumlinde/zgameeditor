@@ -39,7 +39,7 @@ var
 implementation
 
 uses ZOpenGL, ZLog, Windows, MMSystem, Types, ZApplication, AudioPlayer,
-  WinInet, Commands,
+  WinInet, Commands, ShellAPI,
  {$ifndef minimal}
    SysUtils,
  {$endif}
@@ -1563,16 +1563,23 @@ begin
 
 end;
 
-procedure Platform_NetOpen(Url : PAnsiChar; WebOpen : pointer);
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
 begin
-  if SessionHandle=nil then
+  if InBrowser then
   begin
-    SessionHandle := InternetOpenA(PAnsiChar('ZGE'),
-      INTERNET_OPEN_TYPE_PRECONFIG,
-      nil,nil,INTERNET_FLAG_ASYNC);
-    InternetSetStatusCallback(SessionHandle,@NetCallBack);
+    ShellExecuteA(0, PAnsiChar('open'),Url, nil, nil, SW_SHOWDEFAULT);
+  end
+  else
+  begin
+    if SessionHandle=nil then
+    begin
+      SessionHandle := InternetOpenA(PAnsiChar('ZGE'),
+        INTERNET_OPEN_TYPE_PRECONFIG,
+        nil,nil,INTERNET_FLAG_ASYNC);
+      InternetSetStatusCallback(SessionHandle,@NetCallBack);
+    end;
+    InternetOpenUrlA(SessionHandle,Url,nil,0,0,Cardinal(WebOpen));
   end;
-  InternetOpenUrlA(SessionHandle,Url,nil,0,0,Cardinal(WebOpen));
   {$ifndef minimal}
   ZLog.GetLog('Platform').Write('Net open: ' + Url);
   {$endif}
