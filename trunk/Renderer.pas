@@ -1076,8 +1076,6 @@ begin
   AssertRenderMode;
   {$endif}
 
-  //builtin font måste init innan rendering börjar
-
   UseBuiltInFont := (CurrentMaterial=nil) or (CurrentMaterial.Font=nil);
 
   if not UseBuiltInFont then
@@ -1148,19 +1146,12 @@ begin
   end;
 
 
-//glEnable(GL_BLEND);
-//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//glDisable(GL_DEPTH_TEST);
-
-
   glPushAttrib(GL_TEXTURE_BIT);
 
   glEnable(GL_TEXTURE_2D);
   //Force disable automatic tex-coords
   glDisable(GL_TEXTURE_GEN_S);
   glDisable(GL_TEXTURE_GEN_T);
-
-// glColor3f(1,1,1);
 
   glTranslatef(Self.X,Self.Y,0);
   //Scale 1 = 20 characters width on screen
@@ -1398,12 +1389,6 @@ begin
       glClearColor(0,0,0,0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
-  //    glColor4f(0.5,0,0,1);
-  //    RenderUnitQuad(0,0);
-  //    glColor4f(0,0.5,0,0.5);
-   //   RenderUnitQuad(0.2,0.2);
-  //     glColor4f(1,1,1,1);
-
       //Draw each letter twice to get letter width
       glColor3f(1,1,1);
 
@@ -1416,45 +1401,16 @@ begin
       glRasterPos2f( Clamp(0 - CharWidth,-1,1),-0.7);
 
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-  {  glColor3f(0.5,0.1,0.1);
-    glRasterPos2f(0,0);
-
-    glCallList(LargerLists + I);
-    glColor3f(1,1,1);
-    glRasterPos2f(0 - RasterPos[0]/FontSize,-0.7);}
-  //glDisable(GL_BLEND);
 
       glCallList(Lists + I);
 
-  {  glColor4f(1,1,1,0.5);
-    RenderUnitQuad(-0.5,-0.5);
-    glColor3f(1,1,1);}
-
       B.RenderTargetEnd;
-
-  {    B.RenderTargetBegin;
-      B.UseTextureBegin;
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_TEXTURE_2D);
-        glScalef(2,2,0);
-        glColor3f(0.6,0.6,0.6);
-        RenderUnitQuad(0,0);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
-        glScalef(1,1,0);
-        glColor3f(1,1,1);
-        RenderUnitQuad(0.05,0.05);
-
-      B.UseTextureEnd;
-      B.RenderTargetEnd;}
     end;
 
     glDeleteLists(Lists,CharCount);
     Inc(CurSize1);
     Inc(CurSize2,CurSize2);
   end;
-  //glDeleteLists(LargerLists,CharCount);
 end;
 
 { TRenderSetColor }

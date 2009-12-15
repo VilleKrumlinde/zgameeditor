@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" MouseVisible="255">
+  <OnLoaded>
+    <ZExpression>
+      <Expression>
+<![CDATA[Color1.Color=1;
+RefreshTimer.Interval=0.1;]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <AnimatorSimple Duration="1" AutoStart="255" Target="Rt1 Translate" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+    <Timer Name="RefreshTimer" Interval="10">
+      <OnTimer>
+        <ZExpression>
+          <Expression>
+<![CDATA[Color1.Color=1;
+RefreshTimer.Interval=10;]]>
+          </Expression>
+        </ZExpression>
+        <WebOpen Url="http://www.yakyak.org/search.php?search_id=newposts" ResultArray="HtmlAr">
+          <OnResult>
+            <ZExpression>
+              <Expression>
+<![CDATA[Color1.Color.G=0;
+Color1.Color.B=0;
+
+int j=0;
+int mode=0;
+int linkCount=0;
+int limit=HtmlAr.SizeDim1-4;
+for(int i=0; i<limit; ++i) {
+
+  if(mode==0) {
+    //tle"
+    if( (HtmlAr[i]==116) && (HtmlAr[i+1]==108) && (HtmlAr[i+2]==101) && (HtmlAr[i+3]==34) ) {
+       mode=1;
+       i+=5;
+       linkCount++;
+    }
+  }
+  
+  if(mode==1) {
+    int ch = HtmlAr[i];
+    //>
+    if (ch==60) {
+      if(linkCount==Links.SizeDim1)
+        //End
+        i=limit;
+      else {
+        mode=0;
+        DisplayAr[j++]=13;
+        DisplayAr[j++]=10;
+      }
+    } else if (ch==0)
+      //End
+      i=limit;
+    else {
+      if((ch>=97) && (ch<=126))
+        //uppercase
+        ch-=(97-65);
+      DisplayAr[j++]=ch;
+    }
+  }
+
+}
+DisplayAr[j]=0;]]>
+              </Expression>
+            </ZExpression>
+            <File Name="File1" FileName="out.txt">
+              <OnWrite>
+                <Repeat>
+                  <OnIteration>
+                    <FileMoveData Property="Temp1 Value"/>
+                  </OnIteration>
+                  <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+Temp1=HtmlAr[this.Iteration];
+return (this.Iteration<HtmlAr.SizeDim1-1) && (HtmlAr[this.Iteration]!=0);]]>
+                  </WhileExp>
+                </Repeat>
+              </OnWrite>
+            </File>
+            <DefineVariable Name="Temp1"/>
+            <Condition Comment="Debug, return 1 to dump content to file" Expression="return 0;">
+              <OnTrue>
+                <FileAction File="File1" Action="1"/>
+              </OnTrue>
+            </Condition>
+          </OnResult>
+        </WebOpen>
+      </OnTimer>
+    </Timer>
+  </OnUpdate>
+  <OnRender>
+    <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="0.7 -3.4 0">
+      <Children>
+        <RenderSetColor Name="Color1" Color="1 0 0 1"/>
+        <RenderSprite/>
+      </Children>
+    </RenderTransformGroup>
+    <UseMaterial Material="Material1"/>
+    <RenderText TextArray="DisplayAr" X="-0.94" Y="0.89" Scale="0.31" Align="1" StretchY="2.17"/>
+  </OnRender>
+  <Content>
+    <DefineArray Name="HtmlAr" Type="1" SizeDim1="200000"/>
+    <DefineArray Name="DisplayAr" Type="1" SizeDim1="200000"/>
+    <DefineArray Name="Links" Dimensions="1" SizeDim1="10" SizeDim2="256"/>
+    <Material Name="Material1"/>
+  </Content>
+</ZApplication>
