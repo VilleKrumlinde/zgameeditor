@@ -1567,6 +1567,8 @@ procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : point
 begin
   if InBrowser then
   begin
+    //Workaround for mouse/key-up messages being lost
+    FillChar(Keys,SizeOf(Keys),0);
     ShellExecuteA(0, PAnsiChar('open'),Url, nil, nil, SW_SHOWDEFAULT);
   end
   else

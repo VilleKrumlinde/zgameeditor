@@ -30,6 +30,7 @@ copy .\exe\projects\FpsDemo\FpsLevelLayout.txt ..\..\Deploy\%tool%\projects\FpsD
 copy .\exe\projects\ZBlast.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderTexture.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderPass.zgeproj ..\..\Deploy\%tool%\projects\
+copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
 
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini
