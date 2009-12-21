@@ -5,7 +5,6 @@
       <Expression>
 <![CDATA[Color1.Color=1;
 RefreshTimer.Interval=0.1;
-GoTimer.Interval=0;
 IsUpdating=0;]]>
       </Expression>
     </ZExpression>
@@ -137,25 +136,18 @@ return (this.Iteration<HtmlAr.SizeDim1-1) && (HtmlAr[this.Iteration]!=0);]]>
 
 for(int i=0; i<ParamAr.SizeDim1; i++) {
   ParamAr[i]=Links[clicked,i];
-}
-
-GoTimer.Interval=0.25;]]>
+}]]>
           </Expression>
         </ZExpression>
         <DefineArray Name="ParamAr" Type="1" SizeDim1="256"/>
+        <WebOpen Url="http://www.yakyak.org/" ParamArray="ParamAr" InBrowser="255"/>
       </OnPressed>
     </KeyPress>
-    <Timer Name="GoTimer">
-      <OnTimer>
-        <ZExpression Expression="GoTimer.Interval=0;"/>
-        <WebOpen Url="http://www.yakyak.org/" ParamArray="ParamAr" InBrowser="255"/>
-      </OnTimer>
-    </Timer>
   </OnUpdate>
   <OnRender>
     <Condition Expression="return IsUpdating==1;">
       <OnTrue>
-        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 -3.98 0">
+        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 -3.98 0" Rotate="0 0 3.6049">
           <Children>
             <RenderSetColor Name="Color1" Color="1 0 0 1"/>
             <RenderSprite/>
