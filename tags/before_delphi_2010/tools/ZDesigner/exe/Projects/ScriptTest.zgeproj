@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="1 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
+  <OnLoaded>
+    <ZLibrary Name="Lib1">
+      <Source>
+<![CDATA[void f1() {
+  App.ClearColor.R=1.0;
+}
+
+void f2() {
+  App.ClearColor.G=1.0;
+}
+
+float f3() {
+  return 0.5;
+}
+
+float f4() {
+  float x1;
+  x1=0.5;
+  return noise2(app.time*x1,app.time * 4);
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Name="Lib2">
+      <Source>
+<![CDATA[float g1(float x,float y,float z) {
+  if( (x==1) && (y==2) && (z==3) )
+    return 42;
+  else
+    return 0;
+}
+
+int intMultiply(int x,int y) {
+  return x*y;
+}
+
+void assignGlobal(float x) {
+  GlobalFloat=x;
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[Error=0;
+
+float x,y,z;
+
+x=0.9;
+y=0.5;
+z=0.1;
+
+if( (x==0.9) && (y==0.5) && (z==0.1) ) {
+  App.ClearColor.R=x;
+  App.ClearColor.G=y;
+  App.ClearColor.B=z;
+} else
+  Error=1;
+
+app.clearcolor.r=f3();
+
+if(f3()!=0.5)
+  Error=1;
+  
+if(g1(1,2,3)!=42)
+  Error=1;
+  
+GlobalFloat=0;
+assignGlobal(2);
+if(GlobalFloat!=2)
+  Error=2;
+  
+x=0;
+
+int i=42;
+GlobalFloat=i*i+42f+20;
+x=round(i*i+42f+20);
+if(GlobalFloat!=x)
+  Error=8;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Int tests">
+      <Expression>
+<![CDATA[int x=42;
+float y;
+
+if(1==1) {
+  float xx=22+22;
+}
+
+y=x;
+x=y;
+
+if((x!=y) || (x!=42))
+  Error=2;
+
+//Assign int property
+MeshBox1.XCount=50;
+if(MeshBox1.XCount!=50)
+  Error=3;
+  
+x=x*2;
+x+=1;
+if(x!=85)
+  Error=4;
+  
+x=intMultiply(5,5);
+if(x!=25)
+  Error=5;
+  
+x=-10;
+if(x>0)
+  Error=6;
+if(x<-11)
+  Error=7;
+if(x!=-10)
+  Error=8;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="byte tests">
+      <Expression>
+<![CDATA[int x;
+float y;
+
+Material1.TextureWrapMode=0;
+if(Material1.TextureWrapMode!=0)
+  Error=10;
+
+x=Material1.TextureWrapMode+1;
+Material1.TextureWrapMode=x;
+if(Material1.TextureWrapMode!=1)
+  Error=11;
+
+x=Material1.TextureWrapMode+1;
+if(x!=2)
+  Error=12;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="For-loops">
+      <Expression>
+<![CDATA[int sum=0;
+
+for(int i=0; i<10; i++) {
+  sum+=10;
+}
+
+if(sum!=100)
+  Error=100;
+
+for(int i=0, k=0; i<10; i++,k++) {
+  sum+=10;
+  if(i!=k)
+    Error=101;
+}]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Assignment as value">
+      <Expression>
+<![CDATA[int x,y,z;
+
+x=y=z=1;
+
+if((x!=1) || (y!=1) || (z!=1))
+  Error=201;
+  
+if( (x=2) != 2 )
+  Error=201;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Pre/post inc/dec">
+      <Expression>
+<![CDATA[int x,y,z;
+
+x=1;
+y= ++x;
+if( (y!=2) || (x!=2) )
+  Error=300;
+  
+++x;
+if( (x!=3) )
+  Error=301;
+
+int sum=0;
+for(int i=0; i<10; ++i)
+  sum+=10;
+if( (sum!=100) )
+  Error=302;
+  
+x=1;
+x++;
+if(x!=2)
+  Error=303;
+
+y=x++;
+if( (y!=2) || (x!=3) )
+  Error=304;
+  
+sum=0;
+for(int i=10; i>0; --i)
+  sum+=10;
+if( (sum!=100) )
+  Error=305;
+  
+Global1=10;
+Global1++;
+if( (Global1++ !=11) )
+  Error=306;
+//if( (++Global1 !=13) )
+//  Error=307;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Boolean values">
+      <Expression>
+<![CDATA[int i;
+float f;
+
+//Boolean values
+//True = 1
+//False = 0
+
+i=1<2;
+if(i!=1)
+  Error=1;
+  
+i=1>2;
+if(i!=0)
+  Error=2;
+  
+f=1f<2f;
+if(f!=1)
+  Error=3;
+
+f=1f>2f;
+if(f!=0)
+  Error=4;]]>
+      </Expression>
+    </ZExpression>
+    <SpawnModel Model="Model1"/>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[if(Error==0)
+  App.ClearColor.R=0;
+else
+  App.ClearColor.R=1;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <RenderText TextFloatRef="Error Value"/>
+  </OnRender>
+  <Content>
+    <Model Name="Model1">
+      <OnRender>
+        <RenderSprite/>
+      </OnRender>
+      <OnUpdate>
+        <ZExpression Expression="currentmodel.position.x=f4()*8;"/>
+      </OnUpdate>
+    </Model>
+    <DefineVariable Name="Error"/>
+    <Mesh Name="Mesh1">
+      <Producers>
+        <MeshBox Name="MeshBox1" XCount="50"/>
+      </Producers>
+    </Mesh>
+    <Material Name="Material1" TextureWrapMode="1"/>
+    <DefineVariable Name="Global1" Type="1"/>
+    <DefineVariable Name="GlobalFloat"/>
+  </Content>
+</ZApplication>

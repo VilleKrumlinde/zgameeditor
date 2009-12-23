@@ -1,0 +1,937 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Particle Toy   0.03   www.emix8.org">
+  <OnLoaded>
+    <SpawnModel Model="ScreenFadeOutModel" Position="0 -100 0" SpawnStyle="1"/>
+    <SpawnModel Model="GuiModel"/>
+    <ZExpression Expression="Temp1=0;"/>
+    <Repeat>
+      <OnIteration>
+        <SpawnModel Model="ParamModel"/>
+      </OnIteration>
+      <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+Temp1=this.Iteration;
+return Temp1<ParamCount;]]>
+      </WhileExp>
+    </Repeat>
+    <ZExpression>
+      <Expression>
+<![CDATA[//Default particle size
+CursorSize=0.2;]]>
+      </Expression>
+    </ZExpression>
+    <DefineCollision Cat1="1" Cat2="1"/>
+    <ZExpression>
+      <Expression>
+<![CDATA[//Signal before spawn: Cursor is not clone
+Temp1=0;]]>
+      </Expression>
+    </ZExpression>
+    <SpawnModel Model="CursorModel" SpawnStyle="1"/>
+  </OnLoaded>
+  <Content>
+    <Group Name="Globals">
+      <Children>
+        <DefineVariable Name="Temp1"/>
+        <DefineVariable Name="Temp2"/>
+        <DefineVariable Name="Temp3"/>
+        <DefineVariable Name="Temp4"/>
+        <DefineVariable Name="ParamIndex"/>
+        <DefineConstant Name="ParamCount" Value="8"/>
+        <DefineConstant Name="MaxPatterns" Value="4"/>
+        <DefineConstant Name="MaxColors" Value="3"/>
+        <DefineConstant Name="MaxSize" Value="2"/>
+        <DefineConstant Name="MaxGraphic" Value="3"/>
+        <DefineConstant Name="MaxLifeTime" Value="8"/>
+        <DefineConstant Name="MaxPCount" Value="800"/>
+        <DefineVariable Name="HideGui"/>
+        <DefineConstant Name="BitmapAlpha" Comment="Max alpha for cursor textures" Value="0.25"/>
+        <DefineVariable Name="CloneCount"/>
+        <DefineConstant Name="IsScreenSaver" Comment="1 for running in screensaver more"/>
+      </Children>
+    </Group> <!-- Globals -->
+
+    <Group Name="Bitmaps">
+      <Children>
+        <Bitmap Name="ExplosionBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[this.Pixel.R=
+  (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
+  (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
+this.Pixel.G=this.Pixel.R;
+this.Pixel.B=this.Pixel.R;
+this.Pixel.A=this.Pixel.R;
+
+/*
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) )*2;
+//Angle 0..1
+Temp2 = (1 + (atan2(Temp3,Temp2) / 33.14)) * 0.5;
+//Temp1 = Temp1 + Temp2*0.5;
+
+Temp1=Temp1*1.6 + noise2(Temp2*33,Temp2*27) * 0.8;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1;
+*/]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="DebrisBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.Pixel.R=1;
+
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+Temp1+=noise2(X*5,Y*3)*0.2;
+if(Temp1<0.6)
+  Temp1=0;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+
+if(Temp1==0)
+  this.Pixel.A=0;
+else
+  this.Pixel.A=Temp1;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="BeamBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[this.Pixel.R=1;
+
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+
+this.Pixel.R=Temp1;//*0.2;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1*BitmapAlpha;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="SmokeBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
+
+Temp2=this.X-0.5;
+Temp3=this.Y-0.5;
+Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*1.8;
+
+Temp1+=1-Temp2;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1*BitmapAlpha;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="RingBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+
+Temp1=sin(Temp1*5);
+
+this.Pixel.R=Temp1;//*0.2;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1*BitmapAlpha;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="AbsNoiseBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[Temp1=abs(noise2(this.X*4,this.Y*4));
+
+Temp2=this.X-0.5;
+Temp3=this.Y-0.5;
+Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*2.5;
+
+Temp1+=1-Temp2;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1*BitmapAlpha;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Name="SpaceRingBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[Temp2=X-0.5 + noise2(X*3,Y*3)*0.1;;
+Temp3=Y-0.5 + noise2(X*3,Y*3)*0.1;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( pow(Temp2*Temp2,1.5) + pow(Temp3*Temp3,1.5) ) * 2.75;
+
+Temp1=sin(Temp1*8);
+
+this.Pixel.R=Temp1;//*0.2;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1*BitmapAlpha;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group> <!-- Bitmaps -->
+
+    <Group Name="FeedbackGroup">
+      <Children>
+        <Material Name="ScreenFadeMaterial" Color="-1.4974 -1.4974 -1.4974 1" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="ScreenFadeBitmap" TextureX="1.5" TextureY="1.5"/>
+          </Textures>
+        </Material>
+        <Model Name="ScreenFadeOutModel" Position="-0.0245 -0.0601 0" Rotation="0 0 0.9359" Scale="16 16 1">
+          <OnRender>
+            <UseMaterial Material="ScreenFadeMaterial"/>
+            <RenderSprite/>
+          </OnRender>
+          <OnUpdate>
+            <Condition Comment="If feedback" Expression="return App.ClearScreenMode!=0;">
+              <OnTrue>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//Randomize feedback-colors
+Temp1=App.DeltaTime*0.04;
+if((ScreenFadeMaterial.Color.R<0) && (rnd()<0.0005))
+  ScreenFadeMaterial.Color.R=rnd() * 0.6;
+else
+  ScreenFadeMaterial.Color.R-=Temp1;
+
+
+if((ScreenFadeMaterial.Color.G<0) && (rnd()<0.0005))
+  ScreenFadeMaterial.Color.G=rnd() * 0.6;
+else
+  ScreenFadeMaterial.Color.G-=Temp1;
+  
+if((ScreenFadeMaterial.Color.B<0) && (rnd()<0.0005))
+  ScreenFadeMaterial.Color.B=rnd() * 0.6;
+else
+  ScreenFadeMaterial.Color.B-=Temp1;
+
+//if(rnd()>0.999)
+//  ScreenFadeMaterial.Color.A=random(0.09,0.09*0.5);
+ScreenFadeMaterial.Color.A=1;
+
+//Wobble slightly
+CurrentModel.Rotation.Z+=App.DeltaTime*0.05;
+//  ScreenFadeMaterial.Color.B=1;
+
+Temp1=noise2(App.Time*0.5,App.Time*0.5);
+CurrentModel.Position.X=Temp1*2.5;
+Temp1=noise2(App.Time*0.75,App.Time*0.75);
+CurrentModel.Position.Y=Temp1*1;]]>
+                  </Expression>
+                </ZExpression>
+              </OnTrue>
+            </Condition>
+          </OnUpdate>
+        </Model>
+        <Bitmap Name="ScreenFadeBitmap" Width="5" Height="4">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1.0 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.5;
+
+Temp1-=noise2(X*8,Y*8)*0.25;
+this.Pixel.R=Temp1;//*0.2;
+this.Pixel.G=1-Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=1-Temp1*0.5;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group> <!-- FeedbackGroup -->
+
+    <Group Name="GuiGroup">
+      <Children>
+        <Model Name="GuiModel" Category="3">
+          <Definitions>
+            <DefineVariable Name="HeartTimer"/>
+            <DefineVariable Name="HeartSoundSwitch"/>
+            <DefineVariable Name="IsAutoPilot" Comment="1=If autopilot active"/>
+            <DefineVariable Name="AutoPilotRandomTimer"/>
+            <DefineConstant Name="AutoPilotSpeed" Value="0.2"/>
+          </Definitions>
+          <OnRender>
+            <Condition Expression="return HideGui==0;">
+              <OnTrue>
+                <UseMaterial Material="TextMaterial"/>
+                <RenderText Text="FPS" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
+                <RenderText TextFloatRef="App FpsCounter" X="-0.74" Y="-0.92" Scale="0.4"/>
+                <RenderTransformGroup>
+                  <Children>
+                    <RenderSetColor Color="0.67 0 0 1"/>
+                    <RenderText Text="RIGHT MOUSE" X="-0.96" Y="0.83" Scale="0.35" Align="1"/>
+                    <RenderText Text="LEFT MOUSE" X="-0.2" Y="0.83" Scale="0.35" Align="1"/>
+                    <RenderText Text="CURSOR KEYS" X="-0.96" Y="0.9" Scale="0.35" Align="1"/>
+                    <RenderText Text="F" X="-0.1" Y="0.9" Scale="0.4" Align="1"/>
+                    <RenderText Text="H" X="0.27" Y="0.9" Scale="0.4" Align="1"/>
+                    <RenderText Text="A" X="0.63" Y="0.9" Scale="0.4" Align="1"/>
+                    <RenderText Text="M" X="0.4" Y="0.83" Scale="0.35" Align="1"/>
+                  </Children>
+                </RenderTransformGroup>
+                <RenderTransformGroup>
+                  <Children>
+                    <RenderSetColor Color="0.75 0.75 0.75 1"/>
+                    <RenderText Text="=RANDOMIZE" X="-0.57" Y="0.83" Scale="0.3" Align="1"/>
+                    <RenderText Text="=CLONE" X="0.15" Y="0.83" Scale="0.3" Align="1"/>
+                    <RenderText Text="=CHANGE PARAMS" X="-0.57" Y="0.9" Scale="0.3" Align="1"/>
+                    <RenderText Text="=FEEDBACK" X="-0.06" Y="0.9" Scale="0.3" Align="1"/>
+                    <RenderText Text="=HIDE GUI" X="0.31" Y="0.9" Scale="0.3" Align="1"/>
+                    <RenderText Text="=AUTOPILOT" X="0.67" Y="0.9" Scale="0.3" Align="1"/>
+                    <RenderText Text="=MINOR ADJUST" X="0.44" Y="0.83" Scale="0.3" Align="1"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnTrue>
+            </Condition>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Temp1=0;//noise2(App.Time*2,App.Time*2)*0.25;
+//Temp2=0;//noise2(App.Time*1.3,App.Time*1.3)*0.25;
+
+if(IsAutoPilot==0) {
+  CursorModel.Position.X=App.MousePosition.X*5;
+  CursorModel.Position.Y=App.MousePosition.Y*4;
+} else {
+  Temp1= clamp(noise2(App.Time*AutoPilotSpeed*1.9,App.Time*AutoPilotSpeed*1.9)*3.5,-1,1);
+  CursorModel.Position.X=Temp1*5;
+  Temp1= clamp(noise2(App.Time*AutoPilotSpeed,App.Time*AutoPilotSpeed)*3.5,-1,1);
+  CursorModel.Position.Y=Temp1*4;;
+}]]>
+              </Expression>
+            </ZExpression>
+            <KeyPress Name="FeedbackKey" Keys="F" RepeatDelay="0.25">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[App.ClearScreenMode=1-App.ClearScreenMode;
+if(App.ClearScreenMode==0) {
+  ScreenFadeOutModel.Position.Y=-100;
+//  Mixer.Ch0DelayLength=0.14;
+} else {
+  ScreenFadeOutModel.Position.Y=0;
+//  Mixer.Ch0DelayLength=1.0;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Name="SpawnKey" Keys="{" RepeatDelay="0.25">
+              <OnPressed>
+                <PlaySound Sound="CursorCloneSound" NoteNr="48"/>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CloneCount+=1;
+HeartTimer/=2;
+//Signal: Cursor is clone
+Temp1=1;]]>
+                  </Expression>
+                </ZExpression>
+                <SpawnModel Model="CursorModel"/>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Name="SelectParamKeys" Keys="&lt;&gt;" RepeatDelay="0.12">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[if(SelectParamKeys.KeyIndex==0) {
+  ParamIndex=ParamIndex-1;
+  if(ParamIndex==-1)
+    ParamIndex=ParamCount-1;
+} else {
+  ParamIndex=ParamIndex+1;
+  if(ParamIndex==ParamCount)
+    ParamIndex=0;
+}]]>
+                  </Expression>
+                </ZExpression>
+                <PlaySound Sound="ParamSelectSound" NoteNr="41" Channel="1"/>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Name="IncDecKeys" Keys="_^" RepeatDelay="0.25">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//1 or -1 depending on inc/dec
+Temp4=1-(IncDecKeys.KeyIndex==0)*2;
+
+if(ParamIndex==0) {
+  Temp1=PEmitter1.ParticlesPerSecond*0.25 * Temp4;
+  PEmitter1.ParticlesPerSecond+=Temp1;
+  PEmitter1.ParticlesPerSecond=clamp(PEmitter1.ParticlesPerSecond,10,MaxPCount);
+} else if(ParamIndex==1) {
+  Temp1=PEmitter1.ParticleLifeTime*0.25 * Temp4;
+  PEmitter1.ParticleLifeTime+=Temp1;
+  PEmitter1.ParticleLifeTime=clamp(PEmitter1.ParticleLifeTime,0.05,MaxLifeTime);
+  PEmitter1.AnimateAlpha=0-(1/PEmitter1.ParticleLifeTime);
+} else if(ParamIndex==2) {
+  Temp1=abs(PEmitter1.Gravity.X)*0.25;
+  if(Temp1<=0.2)
+    Temp1=0.3;
+  Temp1*=Temp4;
+  PEmitter1.Gravity.X+=Temp1;
+  if(abs(PEmitter1.Gravity.X)<0.2)
+    PEmitter1.Gravity.X=0;
+} else if(ParamIndex==3) {
+  Temp1=abs(PEmitter1.Gravity.Y)*0.25;
+  if(Temp1<=0.2)
+    Temp1=0.3;
+  Temp1*=Temp4;
+  PEmitter1.Gravity.Y+=Temp1;
+  if(abs(PEmitter1.Gravity.Y)<0.2)
+    PEmitter1.Gravity.Y=0;
+} else if(ParamIndex==4) {
+  CursorGraphic=clamp(CursorGraphic+Temp4,0,MaxGraphic);
+} else if(ParamIndex==5) {
+  Temp1=(CursorSize*0.25) * Temp4;
+  CursorSize=clamp(CursorSize+Temp1,0.1,MaxSize);
+  PEmitter1.ParticleWidth=CursorSize;
+  PEmitter1.ParticleHeight=CursorSize;
+} else if(ParamIndex==6) {
+  CursorColor=clamp(CursorColor+Temp4,0,MaxColors);
+} else if(ParamIndex==7) {
+  CursorPattern=clamp(CursorPattern+Temp4,0,MaxPatterns);
+}
+
+
+/*if(LeftRightKeys.KeyIndex==0) {
+  ParamIndex=ParamIndex-1;
+} else {
+  ParamIndex=ParamIndex+1;
+}
+ParamIndex=clamp(ParamIndex,0,1);*/]]>
+                  </Expression>
+                </ZExpression>
+              </OnPressed>
+            </KeyPress>
+            <KeyPress Name="HideGuiKey" Keys="H" RepeatDelay="0.25">
+              <OnPressed>
+                <ZExpression Expression="HideGui=1-HideGui;"/>
+              </OnPressed>
+            </KeyPress>
+            <Condition Name="HeartSoundTest">
+              <Expression>
+<![CDATA[HeartTimer-=App.DeltaTime;
+return HeartTimer<0;]]>
+              </Expression>
+              <OnTrue>
+                <Condition>
+                  <Expression>
+<![CDATA[HeartSoundSwitch=1-HeartSoundSwitch;
+return HeartSoundSwitch==1;]]>
+                  </Expression>
+                  <OnTrue>
+                    <PlaySound Sound="HeartBeatSound_1" NoteNr="24"/>
+                  </OnTrue>
+                  <OnFalse>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Play sound in random octave
+Temp1=rnd()*4;
+Temp1-=frac(Temp1);
+PlayHBSound2.NoteNr=24 + 12*Temp1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <PlaySound Name="PlayHBSound2" Sound="HeartBeatSound_2" NoteNr="36"/>
+                  </OnFalse>
+                </Condition>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//Increase heartbeat with clonecount
+HeartTimer=16/clamp(CloneCount+1,1,4);]]>
+                  </Expression>
+                </ZExpression>
+              </OnTrue>
+            </Condition>
+            <KeyPress Name="AutoPilotKey" Keys="A" RepeatDelay="0.25">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[IsAutoPilot=1-IsAutoPilot;
+if(IsAutoPilot==1) {
+  AutoPilotRandomTimer=20;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnPressed>
+            </KeyPress>
+            <Group Name="RandomGroup" Comment="Random antingen via R eller AutoPilot">
+              <Children>
+                <ZExpression Expression="Temp1=0;"/>
+                <KeyPress Name="RandomKey" Keys="R}" RepeatDelay="0.25">
+                  <OnPressed>
+                    <ZExpression Expression="Temp1=1;"/>
+                  </OnPressed>
+                </KeyPress>
+                <ZExpression>
+                  <Expression>
+<![CDATA[if(IsAutoPilot==1) {
+  AutoPilotRandomTimer-=App.DeltaTime;
+  if(AutoPilotRandomTimer<0) {
+    AutoPilotRandomTimer=20 + random(0,2);
+    Temp1=1;
+  }
+}]]>
+                  </Expression>
+                </ZExpression>
+                <Condition Expression="return Temp1==1;">
+                  <OnTrue>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[PEmitter1.ParticlesPerSecond=clamp( rnd() * MaxPCount*0.75, 10,MaxPCount);
+
+PEmitter1.ParticleLifeTime=clamp( rnd() * MaxLifeTime*0.75, 0.05,MaxLifeTime);
+PEmitter1.AnimateAlpha=0-(1/PEmitter1.ParticleLifeTime);
+
+PEmitter1.Gravity.X=random(0,2);
+PEmitter1.Gravity.Y=random(0,2);
+
+CursorGraphic=rnd() * (MaxGraphic+0.9);
+CursorGraphic-=frac(CursorGraphic);
+
+CursorSize=clamp( rnd()*MaxSize*0.75 ,0.1,MaxSize);
+if(PEmitter1.ParticlesPerSecond>300)
+  CursorSize=clamp(CursorSize,0,0.6);
+PEmitter1.ParticleWidth=CursorSize;
+PEmitter1.ParticleHeight=CursorSize;
+
+CursorColor=rnd() * (MaxColors+0.9);
+CursorColor-=frac(CursorColor);
+
+CursorPattern=rnd() * (MaxPatterns+0.9);
+CursorPattern-=frac(CursorPattern);]]>
+                      </Expression>
+                    </ZExpression>
+                    <PlaySound Sound="RandomizeSound" NoteNr="41"/>
+                  </OnTrue>
+                </Condition>
+              </Children>
+            </Group> <!-- RandomGroup -->
+
+            <KeyPress Name="MinorAdjustKey" Keys="M" RepeatDelay="0.25">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//10 percent adjustment of parameters
+
+Temp1=random(0,1);
+
+PEmitter1.ParticlesPerSecond*=1+Temp1*0.2;
+PEmitter1.ParticleLifeTime*=1+Temp1*0.2;
+PEmitter1.AnimateAlpha*=1+Temp1*0.2;
+PEmitter1.Gravity.X*=1+Temp1*0.2;
+PEmitter1.Gravity.Y*=1+Temp1*0.2;
+
+/*CursorSize=clamp( rnd()*MaxSize*0.75 ,0.1,MaxSize);
+if(PEmitter1.ParticlesPerSecond>300)
+  CursorSize=clamp(CursorSize,0,0.6);
+PEmitter1.ParticleWidth=CursorSize;
+PEmitter1.ParticleHeight=CursorSize;*/]]>
+                  </Expression>
+                </ZExpression>
+                <PlaySound Sound="MinorSound" NoteNr="52"/>
+              </OnPressed>
+            </KeyPress>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[HeartTimer=5;
+
+//Screensaver settings
+if(IsScreenSaver==1) {
+  IsAutoPilot=1;
+  HideGui=1;
+  App.ClearScreenMode=1;
+  ScreenFadeOutModel.Position.Y=0;
+}]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+        <Material Name="TextMaterial" Color="0.82 0.82 0.82 1" Light="0" ZBuffer="0"/>
+        <Model Name="ParamModel" Comment="One instance per parameter" Category="2">
+          <Definitions>
+            <DefineVariable Name="ThisParamIndex"/>
+          </Definitions>
+          <OnRender>
+            <Condition Expression="return HideGui==0;">
+              <OnTrue>
+                <UseMaterial Material="TextMaterial"/>
+                <Condition Expression="return (ThisParamIndex==0);">
+                  <OnTrue>
+                    <RenderText Text="PCOUNT" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="PEmitter1 ParticlesPerSecond" Y="-0.16" UseModelSpace="255"/>
+                  </OnTrue>
+                  <OnFalse>
+                    <Condition Expression="return (ThisParamIndex==1);">
+                      <OnTrue>
+                        <RenderText Text="PLIFE" UseModelSpace="255"/>
+                        <RenderText TextFloatRef="PEmitter1 ParticleLifetime" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                      </OnTrue>
+                      <OnFalse>
+                        <Condition Expression="return (ThisParamIndex==2);">
+                          <OnTrue>
+                            <RenderText Text="GRAV X" UseModelSpace="255"/>
+                            <RenderText TextFloatRef="PEmitter1 Gravity" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                          </OnTrue>
+                          <OnFalse>
+                            <Condition Expression="return (ThisParamIndex==3);">
+                              <OnTrue>
+                                <RenderText Text="GRAV Y" UseModelSpace="255"/>
+                                <RenderText TextFloatRef="PEmitter1 Gravity 1" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                              </OnTrue>
+                              <OnFalse>
+                                <Condition Expression="return (ThisParamIndex==4);">
+                                  <OnTrue>
+                                    <RenderText Text="BITMAP" UseModelSpace="255"/>
+                                    <RenderText TextFloatRef="CursorGraphic Value" Y="-0.16" UseModelSpace="255"/>
+                                  </OnTrue>
+                                </Condition>
+                              </OnFalse>
+                            </Condition>
+                          </OnFalse>
+                        </Condition>
+                      </OnFalse>
+                    </Condition>
+                  </OnFalse>
+                </Condition>
+                <Condition Expression="return (ThisParamIndex==5);">
+                  <OnTrue>
+                    <RenderText Text="SIZE" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorSize Value" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                  </OnTrue>
+                </Condition>
+                <Condition Expression="return (ThisParamIndex==6);">
+                  <OnTrue>
+                    <RenderText Text="COLOR" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorColor Value" Y="-0.16" UseModelSpace="255"/>
+                  </OnTrue>
+                </Condition>
+                <Condition Expression="return (ThisParamIndex==7);">
+                  <OnTrue>
+                    <RenderText Text="PATT" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorPattern Value" Y="-0.16" UseModelSpace="255"/>
+                  </OnTrue>
+                </Condition>
+              </OnTrue>
+            </Condition>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[Temp1=App.DeltaTime*8;
+if(ParamIndex==ThisParamIndex) {
+  CurrentModel.Scale.X+=Temp1;
+} else {
+  CurrentModel.Scale.X-=Temp1;
+}
+CurrentModel.Scale.X=clamp(CurrentModel.Scale.X,1,2);
+CurrentModel.Scale.Y=CurrentModel.Scale.X;
+
+//ParamSteer.Radius=CurrentModel.Scale.X * 0.25;]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[ThisParamIndex=Temp1;
+CurrentModel.Position.X=-4.5 + Temp1*1;
+CurrentModel.Position.Y=3;]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+        <Sound Name="ParamSelectSound" Length="0.05" Volume="0.21" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.69" FilterQ="0.49" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="12" Mod1Amount="0.57" Mod2Active="1" Mod2Source="4" Mod2Amount="0.09" Mod3Active="1" Mod3Source="4" Mod3Destination="9" Mod3Amount="0.02" Env0Active="1" Env0ReleaseTime="0.2"/>
+        <Sound Name="RandomizeSound" Length="0.3" Volume="0.21" UseOsc2="1" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.5" FilterQ="0.32" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="12" Mod1Amount="0.42" Mod2Active="1" Mod2Source="4" Mod2Destination="1" Mod2Amount="0.54" Mod3Active="1" Mod3Source="2" Mod3Destination="2" Mod3Amount="0.43" Env0Active="1" Env0ReleaseTime="0.15" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Style="1" Lfo0Speed="0.36"/>
+        <Sound Name="HeartBeatSound_1" Length="2" Volume="0.48" UseOsc2="1" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.31" FilterQ="0.46" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Amount="0.15" Mod2Active="1" Mod2Source="5" Mod2Destination="1" Mod2Amount="0.14" Mod3Active="1" Mod3Source="5" Mod3Destination="12" Mod3Amount="0.14" Env0Active="1" Env0AttackTime="0.3" Env0ReleaseTime="0.5"/>
+        <Sound Name="HeartBeatSound_2" Comment="36" Length="2" Volume="0.4" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.47" FilterQ="0.5" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="1" Mod1Amount="0.43" Mod2Active="1" Mod2Source="2" Mod2Destination="2" Mod2Amount="0.58" Mod3Active="1" Mod3Source="5" Mod3Amount="0.23" Env0Active="1" Env0AttackTime="0.6" Env0ReleaseTime="0.45" Lfo0Active="1" Lfo0Style="2" Lfo0Speed="0.08"/>
+        <Sound Name="MinorSound" Length="0.1" Volume="0.21" Osc1Waveform="1" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.28" FilterQ="0.89" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="4" Mod1Destination="9" Mod1Amount="1" Mod2Source="4" Mod2Destination="1" Mod2Amount="0.54" Mod3Active="1" Mod3Source="2" Mod3Destination="2" Mod3Amount="0.21" Env0Active="1" Env0ReleaseTime="0.15" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Style="1" Lfo0Speed="1"/>
+      </Children>
+    </Group> <!-- GuiGroup -->
+
+    <Group Name="CursorGroup">
+      <Children>
+        <Model Name="CursorModel" Position="-3.7155 4 0" Category="1" CollisionBounds="0.75 0.75 0 0">
+          <Definitions>
+            <DefineVariable Name="CursorRotation"/>
+            <DefineVariable Name="CursorGraphic"/>
+            <DefineVariable Name="CursorSize"/>
+            <DefineVariable Name="CursorColor"/>
+            <DefineVariable Name="CursorPattern"/>
+          </Definitions>
+          <States>
+            <ModelState Name="ActiveClone_CursorState">
+              <OnStart>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CursorEnergy=1;
+CursorInitialPLife=PEmitter1.ParticleLifeTime;
+CursorInitialPCount=PEmitter1.ParticlesPerSecond;]]>
+                  </Expression>
+                </ZExpression>
+              </OnStart>
+              <OnUpdate>
+                <SteeringController Mass="0.01" MaxSpeed="4" MaxForce="4" Radius="0.3">
+                  <Behaviours>
+                    <SteeringBehaviour Kind="1" TargetCategory="1"/>
+                  </Behaviours>
+                </SteeringController>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//DAmpen velocity set by steeringcontroller
+Temp1=1.0 - clamp(16*App.DeltaTime,0,0.8);
+CurrentModel.Velocity.X *= Temp1;
+CurrentModel.Velocity.Y *= Temp1;
+
+//CursorRotation=CurrentModel.Personality*0.1;
+//CurrentModel.Rotation.Z+=CursorRotation*App.DeltaTime;
+
+if(CursorEnergyBoost>0) {
+  CursorEnergy+=2*App.DeltaTime;
+  CursorEnergyBoost-=App.DeltaTime;
+} else {
+  Temp1=App.DeltaTime* (0.1+(CurrentModel.Personality*0.15));
+  CursorEnergy-=Temp1;
+}
+
+//Slowly fade out clone
+CursorEnergy=clamp(CursorEnergy,-1,1.25);
+PEmitter1.ParticlesPerSecond=clamp(CursorInitialPCount*CursorEnergy,1,CursorInitialPCount);
+PEmitter1.ParticleLifeTime=clamp(CursorInitialPLife*CursorEnergy,0.1,CursorInitialPLife);
+if(CursorEnergy<0.1) {
+  Temp1=CursorEnergy*10;
+//  CurrentModel.Scale.X=Temp1;
+//  CurrentModel.Scale.Y=Temp1;
+}]]>
+                  </Expression>
+                </ZExpression>
+                <Condition Comment="Remove if out of bounds">
+                  <Expression>
+<![CDATA[return (abs(CurrentModel.Position.X)>5.1) ||
+  (abs(CurrentModel.Position.Y)>4.1) ||
+  (CursorEnergy<0);]]>
+                  </Expression>
+                  <OnTrue>
+                    <RemoveModel/>
+                    <PlaySound Sound="CursorRemoveSound" NoteNr="41"/>
+                  </OnTrue>
+                </Condition>
+              </OnUpdate>
+              <Definitions>
+                <DefineVariable Name="CursorEnergy"/>
+                <DefineVariable Name="CursorEnergyBoost"/>
+                <DefineVariable Name="CursorInitialPLife"/>
+                <DefineVariable Name="CursorInitialPCount"/>
+              </Definitions>
+              <OnCollision>
+                <PlaySound Sound="CursorHitCursorSound" NoteNr="36" ReplayDelay="0.2"/>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CursorEnergyBoost=0.5;
+CurrentModel.Scale.X=1;
+CurrentModel.Scale.Y=1;]]>
+                  </Expression>
+                </ZExpression>
+              </OnCollision>
+            </ModelState>
+          </States>
+          <OnRender>
+            <Condition Expression="return CursorGraphic==0;">
+              <OnTrue>
+                <UseMaterial Material="CursorMaterial1"/>
+              </OnTrue>
+              <OnFalse>
+                <Condition Expression="return CursorGraphic==1;">
+                  <OnTrue>
+                    <UseMaterial Material="CursorMaterial2"/>
+                  </OnTrue>
+                  <OnFalse>
+                    <Condition Expression="return CursorGraphic==2;">
+                      <OnTrue>
+                        <UseMaterial Material="CursorMaterial3"/>
+                      </OnTrue>
+                      <OnFalse>
+                        <Condition Expression="return CursorGraphic==3;">
+                          <OnTrue>
+                            <UseMaterial Material="CursorMaterial4"/>
+                          </OnTrue>
+                        </Condition>
+                      </OnFalse>
+                    </Condition>
+                  </OnFalse>
+                </Condition>
+              </OnFalse>
+            </Condition>
+            <RenderParticles Name="PEmitter1" ParticlesPerSecond="53.6947" Spread="3.14" ParticleWidth="0.844" ParticleHeight="0.844" Speed="1" SpeedRange="0.05" ParticleLifetime="1.8803" AnimateAlpha="-0.5318" Gravity="-1.7997 1.294 0" FollowModel="0">
+              <OnEmitExpression>
+<![CDATA[//Emit particle.
+//PColor : particle color, pangle
+
+if(CursorPattern==0) {
+  Temp2=frac(App.Time+CurrentModel.Personality);
+} else if(CursorPattern==1) {
+  this.PAngle-=frac(this.PAngle);
+  this.PAngle+=App.Time*2;
+//  this.PAngle/=1.5;
+  Temp2=abs(frac(this.PAngle*(3.14*2*1.5)));
+} else if(CursorPattern==2) {
+  this.PAngle=App.Time*8;
+  Temp2=frac(App.Time+CurrentModel.Personality);
+} else if(CursorPattern==3) {
+  this.PAngle=noise2(sin(App.Time*2),App.Time*2)*3.14*4;
+  Temp2=frac(App.Time+CurrentModel.Personality);
+} else if(CursorPattern==4) {
+  this.PAngle=(sin(App.Time*8)+App.Time*0.5) + ((frac(App.Time*20)<0.5)*3.14);
+  Temp2=frac(App.Time+CurrentModel.Personality);
+}
+
+/*this.PAngle*=1;
+this.PAngle-=frac(this.PAngle);
+this.PAngle/=1;
+Temp2=abs(frac(this.PAngle*(3.14*2*1.5)));*/
+
+Temp1=random(0,CurrentModel.Personality*0.1);
+if(CursorColor==0) {
+  if( Temp2<0.5 ) {
+    this.PColor.R=1;
+    this.PColor.G=0.5;
+    this.PColor.B=0.25;
+  } else {
+    this.PColor.R=0.15;
+    this.PColor.G=0.44;
+    this.PColor.B=0.75;
+  }
+} else if(CursorColor==1) {
+  if( Temp2<0.5 ) {
+    this.PColor.R=0.9;
+    this.PColor.G=0.9;
+    this.PColor.B=0.9;
+  } else {
+    this.PColor.R=0.9;
+    this.PColor.G=0.15;
+    this.PColor.B=0.15;
+  }
+} else if(CursorColor==2) {
+  if( Temp2<0.5 ) {
+    this.PColor.R=abs(noise2(App.Time,App.Time)*2.5);
+    this.PColor.G=abs(noise2(App.Time*14,App.Time*14)*2.5);
+    this.PColor.B=abs(noise2(App.Time*27,App.Time*27)*2.5);
+  } else {
+    this.PColor.R=abs(noise2(App.Time*42,App.Time*42)*2.5);
+    this.PColor.G=abs(noise2(App.Time*17,App.Time*17)*2.5);
+    this.PColor.B=abs(noise2(App.Time,App.Time)*2.5);
+  }
+} else if(CursorColor==3) {
+  if( Temp2<0.5 ) {
+    this.PColor.R=0.56; //Lila
+    this.PColor.G=0.1;
+    this.PColor.B=0.58;
+  } else {
+    this.PColor.R=1.0;  //Gul
+    this.PColor.G=0.92;
+    this.PColor.B=0.24;
+  }
+}
+this.PColor.R+=Temp1;
+this.PColor.G+=Temp1;
+this.PColor.B+=Temp1;
+
+
+//this.PColor.A=1-Temp1;]]>
+              </OnEmitExpression>
+            </RenderParticles>
+          </OnRender>
+          <OnSpawn>
+            <Condition Expression="return Temp1==1;">
+              <OnTrue>
+                <SetModelState State="ActiveClone_CursorState"/>
+              </OnTrue>
+            </Condition>
+          </OnSpawn>
+          <OnRemove>
+            <ZExpression Expression="CloneCount-=1;"/>
+          </OnRemove>
+        </Model>
+        <Sound Name="CursorRemoveSound" Length="0.2" Volume="0.56" UseOsc2="1" Osc2Waveform="1" Osc2NoteModifier="5" UseFilter="1" FilterCutoff="0.61" FilterQ="0.44" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.6" Lfo0Active="1" Lfo0Speed="0.02"/>
+        <Sound Name="CursorCloneSound" Length="0.1" Volume="0.56" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.61" FilterQ="0.44" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.05" Lfo0Active="1" Lfo0Speed="0.02"/>
+        <Sound Name="CursorHitCursorSound" Length="0.05" Volume="0.35" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.61" FilterQ="0.83" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.05" Lfo0Active="1" Lfo0Speed="0.02"/>
+        <Group Name="CursorMaterialGroup">
+          <Children>
+            <Material Name="CursorMaterial1" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial2" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="AbsNoiseBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial3" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="RingBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial4" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="SpaceRingBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group> <!-- CursorMaterialGroup -->
+
+        <Mesh Name="CursorEmitMesh">
+          <Producers>
+            <MeshBox Scale="0.1 0.7 0.5"/>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group> <!-- CursorGroup -->
+
+    <AudioMixer Name="Mixer" Ch0Active="1" Ch0Volume="0.5" Ch0UseDelay="1" Ch0DelayLength="0.14" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.06" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
+  </Content>
+</ZApplication>

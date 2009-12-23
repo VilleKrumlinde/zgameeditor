@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" ScreenMode="0">
+  <OnLoaded>
+    <DefineVariable Name="Temp1"/>
+    <DefineVariable Name="Temp2"/>
+  </OnLoaded>
+  <OnRender>
+    <ZExpression>
+      <Expression>
+<![CDATA[
+rt1.Translate.X=App.MousePosition.X;
+rt1.Translate.Y=App.MousePosition.Y;]]>
+      </Expression>
+    </ZExpression>
+    <RenderSetColor Color="0.46 0.82 0.24 1"/>
+    <RenderParticles Name="Particles1" ParticlesPerSecond="100" ParticleWidth="0.1" ParticleHeight="0.1" Speed="1" ParticleLifetime="1">
+      <OnEmitExpression>
+<![CDATA[
+//Emit particle.
+//PColor : particle color, PAngle : particle angle
+this.PColor.R=1;
+this.PColor.A=1;
+
+Temp1=App.MousePosition.X;
+Temp2=App.MousePosition.Y;
+this.PAngle=atan2(Temp1,Temp2);]]>
+      </OnEmitExpression>
+    </RenderParticles>
+    <RenderTransformGroup Name="rt1" Translate="-0.68 1 0">
+      <Children>
+        <RenderTransform Scale="0.1 0.1 0.1"/>
+        <RenderSprite/>
+      </Children>
+    </RenderTransformGroup>
+    <RenderText TextFloatRef="Particles1 PAngle" X="-0.5" FloatMultiply="1000"/>
+  </OnRender>
+</ZApplication>
