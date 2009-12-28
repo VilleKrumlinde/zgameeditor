@@ -105,7 +105,7 @@ type
   TBitSet = set of 0..15;
   PStartTable = ^TStartTable;
   TStartTable = array[0..255] of integer;
-  TCharSet = set of char;
+  TCharSet = set of ansichar;
 
   TAfterGenListEvent = procedure(Sender : TObject;
     var PrintErrorCount : boolean) of object;
@@ -478,8 +478,8 @@ begin
     Result := _EF;
     exit;
   end;
-  SrcStream.Seek(pos, soFromBeginning);
-  SrcStream.ReadBuffer(Ch, 1);
+  SrcStream.Seek(pos * SizeOf(Char), soFromBeginning);
+  SrcStream.ReadBuffer(Ch, SizeOf(Char));
   if ch <> _EOF then
     Result := ch
   else
@@ -529,11 +529,11 @@ begin
   { Make sure that the stream has the _EF character at the end. }
   CurrInputCh := _EF;
   SrcStream.Seek(0, soFromEnd);
-  SrcStream.WriteBuffer(CurrInputCh, 1);
+  SrcStream.WriteBuffer(CurrInputCh, SizeOf(Char));
   SrcStream.Seek(0, soFromBeginning);
 
   LastInputCh := _EF;
-  len := SrcStream.Size;
+  len := SrcStream.Size div SizeOf(Char);
   SourceLen := len;
   CurrLine := 1;
   StartOfLine := -2;
@@ -650,7 +650,7 @@ begin
   eof := false;
   ch := Scanner.CharAt(pos);
   inc(pos);
-  while not (ch in LineEnds) do
+  while not (ansichar(ch) in LineEnds) do
   begin
     SetLength(line, length(Line) + 1);
     line[i] := ch;
@@ -761,7 +761,7 @@ begin
   if AddEndOfLine then
     s := s + chEOL;
   if length(s) > 0 then
-    ListStream.WriteBuffer(s[1], length(s));
+    ListStream.WriteBuffer(s[1], length(s)*SizeOf(Char));
 end; {StreamToListFile}
 
 procedure TCocoRGrammar.SynError(const errNo : integer);

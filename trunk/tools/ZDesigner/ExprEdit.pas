@@ -908,7 +908,7 @@ begin
     Compiler.SymTab := SymTab;
     Compiler.ReturnType := ReturnType;
     Compiler.GlobalNames := GlobalNames;
-    Compiler.SourceStream.Write(S[1],Length(S));
+    Compiler.SourceStream.Write(S[1],Length(S)*SizeOf(Char));
     Compiler.AllowFunctions := AllowFuncDefs;
     Compiler.Execute;
     if not Compiler.Successful then

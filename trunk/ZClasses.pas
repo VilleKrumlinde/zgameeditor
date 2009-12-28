@@ -70,8 +70,14 @@ type
   TZComponentClass = class of TZComponent;
   TZProperty = class;
 
+  //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
+  TPropString = {$IFNDEF MINIMAL}AnsiString{$else}PAnsiChar{$ENDIF};
+  PPropString = ^TPropString;
+
   PObjectArray = ^TObjectArray;
   TObjectArray = array[0..100000] of TObject;
+
+  PPAnsiChar = ^PAnsiChar;
 
   TBytes = array[0..100000] of byte;
   PBytes = ^TBytes;
@@ -237,7 +243,7 @@ type
   TZPropertyValue = record
     {$IFNDEF MINIMAL}
     //String-props kan ej ligga i case-switch för designer
-    StringValue : string;
+    StringValue : TPropString;
     ExpressionValue : TZExpressionPropValue;
     {$ENDIF}
     case integer of
@@ -303,10 +309,6 @@ type
     function GetLast : TZProperty;
     function GetById(PropId : integer) : TZProperty;
   end;
-
-  //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
-  TPropString = {$IFNDEF MINIMAL}string{$else}PAnsiChar{$ENDIF};
-  PPropString = ^TPropString;
 
   //Baskomponentklass för allt som ska kunna redigeras i tool
   TZComponent = class
@@ -754,7 +756,7 @@ begin
       {$IFDEF MINIMAL}
       Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ELSE}
-      Value.StringValue := PString(P)^;
+      Value.StringValue := PAnsiString(P)^;
       {$ENDIF}
     zptComponentRef,zptInlineComponent :
       Value.ComponentValue := TZComponent(PPointer(P)^);
@@ -802,7 +804,7 @@ begin
       //todo copy characters? nix, string ska vara immutable.
       PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
-      PString(P)^ := Value.StringValue;
+      PAnsiString(P)^ := Value.StringValue;
       {$ENDIF}
     zptComponentRef :
       PPointer(P)^ := pointer(Value.ComponentValue);
@@ -2574,7 +2576,7 @@ begin
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
   ExternalSymTab := False;
   SymTab := TSymbolTable.Create;
-  MainXml.LoadFromFile(FileName);
+  MainXml.LoadFromFile(ansistring(FileName));
 end;
 
 procedure TZXmlReader.LoadFromString(const XmlData: string; SymTab : TSymbolTable);
@@ -2584,7 +2586,7 @@ begin
   //Use the global symbol table
   //Let the locals be defines in a local scope
   SymTab.PushScope;
-  MainXml.LoadFromBuffer(PChar(XmlData));;
+  MainXml.LoadFromBuffer(PAnsiChar(XmlData));;
 end;
 
 destructor TZXmlReader.Destroy;
@@ -2613,7 +2615,7 @@ var
   PropList : TZPropertyList;
   Value : TZPropertyValue;
   Prop,NestedProp : TZProperty;
-  S : string;
+  S : ansistring;
   L,NotFounds : TStringList;
   Fix : TZXmlFixUp;
   Found : boolean;
@@ -2659,19 +2661,19 @@ var
   procedure PatchMaterialTextures;
   //Translate old-style texture settings to new MaterialTexture-component
   var
-    S : string;
+    S : ansistring;
     OtherXml : TXmlParser;
     procedure InFixTex(const Name : string);
     begin
       if NotFounds.Values[Name]<>'' then
-        S := S + Name + '="' + NotFounds.Values[Name] + '" '
+        S := S + ansistring(Name) + '="' + ansistring(NotFounds.Values[Name]) + '" '
     end;
   begin
     if NotFounds.Values['Texture']='' then
       Exit;
     Prop := PropList.GetByName('Textures');
     C.GetProperty(Prop,Value);
-    S := '<MaterialTexture Texture="' + NotFounds.Values['Texture'] + '" ';
+    S := '<MaterialTexture Texture="' + ansistring(NotFounds.Values['Texture']) + '" ';
     InFixTex('TextureScale');
     InFixTex('TextureX');
     InFixTex('TextureY');
@@ -2704,7 +2706,7 @@ var
   end;
 
 begin
-  ZClassName := Xml.CurName;
+  ZClassName := string(Xml.CurName);
 
   Ci := ComponentManager.GetInfoFromName(ZClassName);
   C := Ci.ZClass.Create(OwnerList);

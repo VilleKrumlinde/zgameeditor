@@ -84,7 +84,7 @@ procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 type
   TDesignerAudioCallback = procedure(P : pointer; Count : integer);
 procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
-procedure Platform_DesignerSetFilePath(const P : string);
+procedure Platform_DesignerSetFilePath(const P : AnsiString);
 {$endif}
 
 const
@@ -112,7 +112,5 @@ const
 {$IFDEF ZZDC_SDL}
   {$INCLUDE ZPlatform_SDL.inc}
 {$ELSE}
-  {$IFDEF win32}
-    {$INCLUDE ZPlatform_Win32.inc}
-  {$ENDIF}
+  {$INCLUDE ZPlatform_Win32.inc}
 {$ENDIF}

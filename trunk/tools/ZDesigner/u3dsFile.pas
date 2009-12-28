@@ -909,7 +909,7 @@ var
 begin
   for I := 1 to Length(S) do
   begin
-    C := S[I];
+    C := AnsiChar(S[I]);
     Stream.Write(C,1);
   end;
   C := #0;

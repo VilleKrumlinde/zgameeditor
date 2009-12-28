@@ -152,7 +152,7 @@ begin
       //If ref is set then convert float-value to string
       ZStrConvertFloat(
         PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^,
-        PChar(@FloatBuf));
+        PAnsiChar(@FloatBuf));
       ZStrCopy(NameBuf,PAnsiChar(ZFile.FileName));
       ZStrCat(NameBuf,PAnsiChar(@FloatBuf));
       S := PAnsiChar(@NameBuf);

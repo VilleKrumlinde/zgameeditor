@@ -395,7 +395,7 @@ const
   //      GL_PIXEL_MAP_I_TO_A
   //      GL_PIXEL_MAP_R_TO_R
   //      GL_PIXEL_MAP_G_TO_G 
-  //      GL_PIXEL_MAP_B_TO_B 
+  //      GL_PIXEL_MAP_B_TO_B
   //      GL_PIXEL_MAP_A_TO_A 
 
   // GetPointerTarget 
@@ -1327,7 +1327,7 @@ var
   glGetPixelMapusv: procedure(map: GLenum; values: PGLushort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetPointerv: procedure(pname: GLenum; params: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetPolygonStipple: procedure(mask: PGLubyte); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetString: function(name: GLenum): PChar; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetString: function(name: GLenum): PAnsiChar; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetTexEnvfv: procedure(target, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetTexEnviv: procedure(target, pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetTexGendv: procedure(coord, pname: GLenum; params: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1629,7 +1629,7 @@ var
 
 
 
-{procedure LoadOpenGL( const dll: PChar );
+{procedure LoadOpenGL( const dll: PAnsiChar );
 procedure FreeOpenGL;}
 procedure LoadOpenGLExtensions;
 

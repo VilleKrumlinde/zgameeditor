@@ -209,7 +209,7 @@ procedure TZcScanner.NextCh;
 begin
   LastInputCh := CurrInputCh;
   BufferPosition := BufferPosition + 1;
-  SrcStream.Seek(BufferPosition,soFromBeginning);
+  SrcStream.Seek(BufferPosition * SizeOf(Char),soFromBeginning);
   CurrInputCh := CurrentCh(BufferPosition);
   if (CurrInputCh = _EL) OR ((CurrInputCh = _LF) AND (LastInputCh <> _EL)) then
   begin
@@ -959,7 +959,7 @@ fStartState[  0] := 56; fStartState[  1] := 57; fStartState[  2] := 57; fStartSt
 fStartState[  4] := 57; fStartState[  5] := 57; fStartState[  6] := 57; fStartState[  7] := 57; 
 fStartState[  8] := 57; fStartState[  9] := 57; fStartState[ 10] := 57; fStartState[ 11] := 57; 
 fStartState[ 12] := 57; fStartState[ 13] := 57; fStartState[ 14] := 57; fStartState[ 15] := 57; 
-fStartState[ 16] := 57; fStartState[ 17] := 57; fStartState[ 18] := 57; fStartState[ 19] := 57; 
+fStartState[ 16] := 57; fStartState[ 17] := 57; fStartState[ 18] := 57; fStartState[ 19] := 57;
 fStartState[ 20] := 57; fStartState[ 21] := 57; fStartState[ 22] := 57; fStartState[ 23] := 57; 
 fStartState[ 24] := 57; fStartState[ 25] := 57; fStartState[ 26] := 57; fStartState[ 27] := 57; 
 fStartState[ 28] := 57; fStartState[ 29] := 57; fStartState[ 30] := 57; fStartState[ 31] := 57; 
@@ -999,7 +999,7 @@ fStartState[160] := 57; fStartState[161] := 57; fStartState[162] := 57; fStartSt
 fStartState[164] := 57; fStartState[165] := 57; fStartState[166] := 57; fStartState[167] := 57; 
 fStartState[168] := 57; fStartState[169] := 57; fStartState[170] := 57; fStartState[171] := 57; 
 fStartState[172] := 57; fStartState[173] := 57; fStartState[174] := 57; fStartState[175] := 57; 
-fStartState[176] := 57; fStartState[177] := 57; fStartState[178] := 57; fStartState[179] := 57; 
+fStartState[176] := 57; fStartState[177] := 57; fStartState[178] := 57; fStartState[179] := 57;
 fStartState[180] := 57; fStartState[181] := 57; fStartState[182] := 57; fStartState[183] := 57; 
 fStartState[184] := 57; fStartState[185] := 57; fStartState[186] := 57; fStartState[187] := 57; 
 fStartState[188] := 57; fStartState[189] := 57; fStartState[190] := 57; fStartState[191] := 57; 

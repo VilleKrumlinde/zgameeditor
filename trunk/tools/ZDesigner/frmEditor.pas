@@ -342,8 +342,8 @@ type
     procedure LoadSysLibrary;
     procedure OnAddFromLibraryItemClick(Sender: TObject);
     procedure AddNewComponentToTree(C: TZComponent);
-    procedure AutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
-    procedure ParamAutoCompOnExecute(Kind: TSynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure AutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure ParamAutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure OnShaderExprChanged(Sender: TObject);
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
@@ -928,7 +928,7 @@ end;
 
 procedure TEditorForm.OnGlInit(Sender: TObject);
 var
-  P : PChar;
+  P : PAnsiChar;
   I : integer;
 begin
   Renderer.InitRenderer;
@@ -982,6 +982,8 @@ begin
 
     glViewport(0, 0, Glp.Width, Glp.Height);
 
+    //todo: delphi 2010 needs this line
+    Set8087CW($133F);
     ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[2],-1) );
@@ -2577,7 +2579,7 @@ const
   MruListMax=8;
 begin
   CurrentFileName := F;
-  Platform_DesignerSetFilePath( ExtractFilePath(CurrentFileName) );
+  Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
   //Add to MRU-list
   if F<>'' then
   begin
@@ -3279,7 +3281,7 @@ begin
   C.InsertList.Add(S);
 end;
 
-procedure TEditorForm.AutoCompOnExecute(Kind: TSynCompletionType;
+procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
 var
@@ -3377,7 +3379,7 @@ begin
   (Comp.InsertList as TStringList).Sort;
 end;
 
-procedure TEditorForm.ParamAutoCompOnExecute(Kind: TSynCompletionType;
+procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
 var
@@ -3485,7 +3487,7 @@ var
   DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := False;
-//  DisplayDetailedReport := True;
+  DisplayDetailedReport := True;
 
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then
