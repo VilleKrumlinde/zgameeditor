@@ -514,7 +514,7 @@ var
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$IFNDEF MINIMAL},Classes,LibXmlParser,SysUtils,Contnrs,Math,zlib, ZApplication{$ENDIF}
+  {$IFNDEF MINIMAL},Classes,LibXmlParser,AnsiStrings,SysUtils,Contnrs,Math,zlib, ZApplication {$ENDIF}
   ;
 
 
@@ -1933,9 +1933,9 @@ var
     Result := Trim(S);
   end;
 
-  function InAttrValue(const S : string) : string;
+  function InAttrValue(const S : ansistring) : string;
   begin
-    Result := S;
+    Result := String(S);
     Result := StringReplace(Result,'&','&amp;',[rfReplaceAll]);
     Result := StringReplace(Result,'"','&quot;',[rfReplaceAll]);
     Result := StringReplace(Result,'<','&lt;',[rfReplaceAll]);
@@ -1958,22 +1958,21 @@ var
       end;
       Mem.Position:=0;
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PChar(Mem.Memory),PChar(Result),Mem.Size);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),PChar(Result),Mem.Size);
     finally
       Mem.Free;
     end;
   end;
 
-  function SafeCdata(const S : string) : string;
+  function SafeCdata(const S : ansistring) : string;
   begin
+    Result := String(S);
     //Cdata cannot contain ']]>' string
-    if Pos(']]>',S)>0 then
+    if Pos(']]>',Result)>0 then
       //As recommended here: http://en.wikipedia.org/wiki/CDATA
       //Result := StringReplace(S,']]>',']]]]><![CDATA[>',[rfReplaceAll])
       //This is simpler to parse
-      Result := StringReplace(S,']]>',']] >',[rfReplaceAll])
-    else
-      Result := S;
+      Result := StringReplace(Result,']]>',']] >',[rfReplaceAll])
   end;
 
 begin
@@ -1993,7 +1992,7 @@ begin
         Continue;
       case Prop.PropertyType of
         zptString :
-          if (Pos(#13,Value.StringValue)=0) {and
+          if (AnsiStrings.AnsiPos(#13,Value.StringValue)=0) {and
             (Pos('<',Value.StringValue)=0) and
             (Pos('>',Value.StringValue)=0)} then
             NormalProps.Add(Prop)
@@ -2036,7 +2035,7 @@ begin
         zptVector3f : V := InArray(Value.Vector3fValue);
         zptByte : V := IntToStr(Value.ByteValue);
         zptBoolean : V := IntToStr( byte(Value.BooleanValue) );
-        zptExpression : V := InAttrValue( Value.ExpressionValue.Source );
+        zptExpression : V := InAttrValue( AnsiString(Value.ExpressionValue.Source) );
       else
         raise Exception.Create('TZXmlWriter: No writehandler ' + Prop.Name);
       end;
@@ -2062,7 +2061,7 @@ begin
           zptString :
             WriteString('<![CDATA[' + SafeCdata(Value.StringValue) + ']]>'#13#10);
           zptExpression :
-            WriteString('<![CDATA[' + SafeCdata(Value.ExpressionValue.Source) + ']]>'#13#10);
+            WriteString('<![CDATA[' + SafeCdata( AnsiString(Value.ExpressionValue.Source) ) + ']]>'#13#10);
           zptInlineComponent :
             begin
               LevelDown;
@@ -2123,19 +2122,21 @@ end;
 
 procedure TZXmlWriter.WriteString(const S: string);
 begin
-  Write(S[1],Length(S));
+  Write(S[1],Length(S)*2);
 end;
 
 procedure TZXmlWriter.WriteLine(const S: string);
 var
   Spaces : string;
+  I : integer;
 begin
   if Length(S)>0 then
   begin
     if IndentLevel>0 then
     begin
       SetLength(Spaces,IndentLevel*2);
-      FillChar(Spaces[1],Length(Spaces),' ');
+      for I := 1 to Length(Spaces) do
+        Spaces[I] := ' ';
       WriteString(Spaces);
     end;
     WriteString(S);
@@ -2586,7 +2587,7 @@ begin
   //Use the global symbol table
   //Let the locals be defines in a local scope
   SymTab.PushScope;
-  MainXml.LoadFromBuffer(PAnsiChar(XmlData));;
+  MainXml.LoadFromBuffer(PAnsiChar(AnsiString(XmlData)));;
 end;
 
 destructor TZXmlReader.Destroy;
@@ -2624,7 +2625,7 @@ var
   var
     CompMem,DecompMem : TMemoryStream;
     Zs : zlib.TDecompressionStream;
-    S : string;
+    S : ansistring;
     Buf : array[0..1023] of byte;
     I : integer;
   begin
@@ -2632,7 +2633,7 @@ var
     DecompMem := TMemoryStream.Create;
     try
       SetLength(S,Length(HexS) div 2);
-      Classes.HexToBin(PChar(HexS),PChar(S),Length(S));
+      Classes.HexToBin(PChar(HexS),PAnsiChar(S),Length(S));
 
       CompMem.Write(S[1],Length(S));
       CompMem.Position := 0;
@@ -2689,14 +2690,14 @@ var
 
     if NotFounds.Values['Texture2']<>'' then
     begin
-      OtherXml.LoadFromBuffer( PAnsiChar('<MaterialTexture Texture="' + NotFounds.Values['Texture2'] + '"/>'));
+      OtherXml.LoadFromBuffer( PAnsiChar( AnsiString('<MaterialTexture Texture="' + NotFounds.Values['Texture2'] + '"/>') ));
       OtherXml.StartScan;
       OtherXml.Scan;
       XmlDoReadComponent(OtherXml,Value.ComponentListValue);
     end;
     if NotFounds.Values['Texture3']<>'' then
     begin
-      OtherXml.LoadFromBuffer( PAnsiChar('<MaterialTexture Texture="' + NotFounds.Values['Texture3'] + '"/>'));
+      OtherXml.LoadFromBuffer( PAnsiChar( AnsiString('<MaterialTexture Texture="' + NotFounds.Values['Texture3'] + '"/>') ));
       OtherXml.StartScan;
       OtherXml.Scan;
       XmlDoReadComponent(OtherXml,Value.ComponentListValue);
@@ -2725,7 +2726,7 @@ begin
       for J := 0 to PropList.Count-1 do
       begin
         Prop := TZProperty(PropList[J]);
-        if SameText(Prop.Name,S) then
+        if SameText(Prop.Name,String(S)) then
         begin
           S := Xml.CurAttr.Value(I);
           Found := True;
@@ -2733,10 +2734,10 @@ begin
             zptString :
               Value.StringValue := S;
             zptFloat,zptScalar :
-              Value.FloatValue := StrToFloat(S);
+              Value.FloatValue := StrToFloat( String(S) );
             zptRectf :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.RectfValue.Area[0] := StrToFloat(L[0]);
                 Value.RectfValue.Area[1] := StrToFloat(L[1]);
                 Value.RectfValue.Area[2] := StrToFloat(L[2]);
@@ -2744,7 +2745,7 @@ begin
               end;
             zptColorf :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.ColorfValue.V[0] := StrToFloat(L[0]);
                 Value.ColorfValue.V[1] := StrToFloat(L[1]);
                 Value.ColorfValue.V[2] := StrToFloat(L[2]);
@@ -2752,7 +2753,7 @@ begin
               end;
             zptVector3f :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.Vector3fValue[0] := StrToFloat(L[0]);
                 //Allow a single value to be specified, this is copied to all three elements
                 //Used when switching type from float to vector3d (material.texturescale)
@@ -2766,27 +2767,27 @@ begin
                   Value.Vector3fValue[2] := Value.Vector3fValue[0];
               end;
             zptInteger :
-              Value.IntegerValue := StrToInt(S);
+              Value.IntegerValue := StrToInt(String(S));
             zptByte :
-              Value.ByteValue := StrToInt(S);
+              Value.ByteValue := StrToInt(String(S));
             zptBoolean :
-              Value.BooleanValue := ByteBool(StrToInt(S));
+              Value.BooleanValue := ByteBool(StrToInt(String(S)));
             zptComponentRef :
               begin
                 Fix := TZXmlFixUp.Create;
-                Fix.Name := LowerCase(S);
+                Fix.Name := String(LowerCase(S));
                 Fix.Prop := Prop;
                 Fix.Obj := C;
                 FixUps.Add( Fix );
               end;
             zptPropertyRef :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 if L.Count<2 then
-                  raise Exception.Create('TZXmlReader: Bad property ref ' + S);
+                  raise Exception.Create('TZXmlReader: Bad property ref ' + String(S));
                 Fix := TZXmlFixUp.Create;
-                Fix.Name := LowerCase(L[0]);
-                Fix.PropName := LowerCase(L[1]);
+                Fix.Name := String(LowerCase(L[0]));
+                Fix.PropName := String(LowerCase(L[1]));
                 if L.Count>2 then
                   Value.PropertyValue.Index := StrToIntDef(L[2],0);
                 Fix.Prop := Prop;
@@ -2794,7 +2795,7 @@ begin
                 FixUps.Add( Fix );
               end;
             zptExpression :
-              Value.ExpressionValue.Source := S;
+              Value.ExpressionValue.Source := String(S);
           else
             ZHalt('TZXmlReader: No readhandler');
           end;
@@ -2804,7 +2805,7 @@ begin
         end;
       end;
       if not Found then
-        NotFounds.Values[S] := Xml.CurAttr.Value(I);
+        NotFounds.Values[String(S)] := String(Xml.CurAttr.Value(I));
     end;
 
     if (NotFounds.Count>0) and (ZClassName='Material') then
@@ -2823,7 +2824,7 @@ begin
               for I := 0 to PropList.Count-1 do
               begin
                 Prop := TZProperty(PropList[I]);
-                if SameText(Prop.Name,Xml.CurName) and
+                if SameText(Prop.Name,String(Xml.CurName)) and
                   (Prop.PropertyType in [zptComponentList,zptInlineComponent,zptString,zptExpression,zptBinary]) then
                 begin
                   NestedProp := Prop;
@@ -2831,7 +2832,7 @@ begin
                 end;
               end;
               if NestedProp=nil then
-                raise Exception.Create('TZXmlReader: Unknown nested property ' + Xml.CurName);
+                raise Exception.Create('TZXmlReader: Unknown nested property ' + String(Xml.CurName));
               C.GetProperty(NestedProp,Value);
               while Xml.Scan do
                 case Xml.CurPartType of
@@ -2850,13 +2851,13 @@ begin
                         end;
                       zptExpression :
                         begin
-                          Value.ExpressionValue.Source := Trim(Xml.CurContent);
+                          Value.ExpressionValue.Source := String(Trim(Xml.CurContent));
                           C.SetProperty(NestedProp,Value);
                         end;
                       zptBinary :
                         begin
                           try
-                            InDecodeBinary(Xml.CurContent,Value.BinaryValue);
+                            InDecodeBinary(String(Xml.CurContent),Value.BinaryValue);
                             C.SetProperty(NestedProp,Value);
                           except
                             ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + C.Name);
@@ -2864,7 +2865,7 @@ begin
                         end;
                     end;
                   ptEndTag :
-                    if SameText(NestedProp.Name,Xml.CurName) then
+                    if SameText(NestedProp.Name,String(Xml.CurName)) then
                       Break;
                 end;
             end;

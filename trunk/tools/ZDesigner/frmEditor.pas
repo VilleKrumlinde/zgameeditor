@@ -2701,9 +2701,9 @@ begin
 
   Stream := ComponentManager.SaveXmlToStream(C) as TMemoryStream;
   try
-    SetLength(S,Stream.Size);
+    SetLength(S,Stream.Size div 2);
     Stream.Position := 0;
-    Stream.Read(S[1],Stream.Size);
+    Stream.Read(S[1],Stream.Size*2);
     S := 'ZZDC' + S;
     Clipboard.SetTextBuf(PChar(S));
   finally

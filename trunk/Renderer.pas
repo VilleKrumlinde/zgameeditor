@@ -1230,7 +1230,7 @@ function TRenderText.GetDisplayName: String;
 begin
   Result := inherited GetDisplayName;
   if Text<>'' then
-    Result := Result + '  ' + Text;
+    Result := Result + '  ' + String(Text);
   if TextFloatRef.Component<>nil then
     Result := Result + '  ' + GetPropRefAsString(TextFloatRef);
 end;
@@ -1966,7 +1966,7 @@ begin
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
     {$ifndef minimal}
     if Sv.Location=-1 then
-      ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + Sv.VariableName );
+      ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + String(Sv.VariableName) );
     {$endif}
   end;
 end;
@@ -2035,7 +2035,7 @@ end;
 function TShaderVariable.GetDisplayName: String;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + VariableName;
+  Result := Result + '  ' + String(VariableName);
 end;
 {$endif}
 
