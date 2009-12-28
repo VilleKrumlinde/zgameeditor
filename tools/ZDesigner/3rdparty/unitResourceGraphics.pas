@@ -48,10 +48,10 @@ type
     procedure InternalSetImage (s : TStream; image : TPicture);
 
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
     procedure GetImage (picture : TPicture); override;
     procedure SetImage (image : TPicture); override;
-    procedure LoadImage (const FileName : string);
+    procedure LoadImage (const FileName : ansistring);
   end;
 
 //------------------------------------------------------------------------
@@ -66,7 +66,7 @@ type
     class function SupportsData (Size : Integer; data : Pointer) : Boolean; override;
     procedure InitNew; override;
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
     procedure GetImage (picture : TPicture); override;
     procedure SetImage (image : TPicture); override;
   end;
@@ -99,7 +99,7 @@ type
 
   TIconGroupResourceDetails = class (TIconCursorGroupResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -107,7 +107,7 @@ type
 
   TCursorGroupResourceDetails = class (TIconCursorGroupResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -134,7 +134,7 @@ type
 
   TIconResourceDetails = class (TIconCursorResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -143,7 +143,7 @@ type
   TCursorResourceDetails = class (TIconCursorResourceDetails)
   protected
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 const
@@ -180,7 +180,7 @@ resourcestring
 (*----------------------------------------------------------------------*
  | TBitmapResourceDetails.GetBaseType                                   |
  *----------------------------------------------------------------------*)
-class function TBitmapResourceDetails.GetBaseType: string;
+class function TBitmapResourceDetails.GetBaseType: ansistring;
 begin
   result := IntToStr (Integer (RT_BITMAP));
 end;
@@ -367,7 +367,7 @@ end;
 (*----------------------------------------------------------------------*
  | TBitmapResourceDetails.SetImage                                      |
  *----------------------------------------------------------------------*)
-procedure TBitmapResourceDetails.LoadImage(const FileName: string);
+procedure TBitmapResourceDetails.LoadImage(const FileName: ansistring);
 var
   s : TMemoryStream;
 begin
@@ -400,7 +400,7 @@ end;
 (*----------------------------------------------------------------------*
  | TIconGroupResourceDetails.GetBaseType                                |
  *----------------------------------------------------------------------*)
-class function TIconGroupResourceDetails.GetBaseType: string;
+class function TIconGroupResourceDetails.GetBaseType: ansistring;
 begin
   result := IntToStr (Integer (RT_GROUP_ICON));
 end;
@@ -410,7 +410,7 @@ end;
 (*----------------------------------------------------------------------*
  | TCursorGroupResourceDetails.GetBaseType                              |
  *----------------------------------------------------------------------*)
-class function TCursorGroupResourceDetails.GetBaseType: string;
+class function TCursorGroupResourceDetails.GetBaseType: ansistring;
 begin
   result := IntToStr (Integer (RT_GROUP_CURSOR));
 end;
@@ -420,7 +420,7 @@ end;
 (*----------------------------------------------------------------------*
  | TIconResourceDetails.GetBaseType                                     |
  *----------------------------------------------------------------------*)
-class function TIconResourceDetails.GetBaseType: string;
+class function TIconResourceDetails.GetBaseType: ansistring;
 begin
   result := IntToStr (Integer (RT_ICON));
 end;
@@ -430,7 +430,7 @@ end;
 (*----------------------------------------------------------------------*
  | TCursorResourceDetails.GetBaseType                                   |
  *----------------------------------------------------------------------*)
-class function TCursorResourceDetails.GetBaseType: string;
+class function TCursorResourceDetails.GetBaseType: ansistring;
 begin
   result := IntToStr (Integer (RT_CURSOR));
 end;
@@ -730,7 +730,7 @@ var
   i : Integer;
   res : TResourceDetails;
   attributes : PResourceDirectory;
-  iconCursorResourceType : string;
+  iconCursorResourceType : ansistring;
 begin
   result := Nil;
   attributes := PResourceDirectory (PChar (Data.Memory) + sizeof (TIconHeader));
@@ -759,7 +759,7 @@ var
   imageResource : TIconCursorResourceDetails;
   iconHeader : TIconHeader;
   dir : TResourceDirectory;
-  nm : string;
+  nm : ansistring;
 
 begin
   iconHeader.wCount := 1;
@@ -836,7 +836,7 @@ var
   i : Integer;
   dirEntry : TResourceDirectory;
   res : TIconCursorResourceDetails;
-  resTp : string;
+  resTp : ansistring;
 begin
   BeforeDelete;         // Make source there are no existing image resources
 
@@ -1024,7 +1024,7 @@ end;
 
 { TDIBResourceDetails }
 
-class function TDIBResourceDetails.GetBaseType: string;
+class function TDIBResourceDetails.GetBaseType: ansistring;
 begin
   Result := 'DIB';
 end;

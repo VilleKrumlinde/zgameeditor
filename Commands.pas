@@ -241,7 +241,7 @@ begin
   Index := 0;
   while P^[Index]<>0 do
   begin
-    if Platform_IsKeyPressed(char(P^[Index])) then
+    if Platform_IsKeyPressed(AnsiChar(P^[Index])) then
     begin
       Self.KeyIndex := Index;
       OnPressed.ExecuteCommands;
