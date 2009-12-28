@@ -395,7 +395,7 @@ end;
 function TWebOpen.GetDisplayName: string;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + Url;
+  Result := Result + '  ' + String(Url);
 end;
 {$endif}
 

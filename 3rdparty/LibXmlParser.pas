@@ -581,17 +581,17 @@ TYPE
       CONSTRUCTOR Create (AOwner: TComponent); OVERRIDE;
       DESTRUCTOR Destroy;                      OVERRIDE;
 
-      PROCEDURE LoadFromFile   (Filename : TFilename);   // Load XML Document from file
+      PROCEDURE LoadFromFile   (Filename : AnsiString);   // Load XML Document from file
       PROCEDURE LoadFromBuffer (Buffer : PAnsiChar);         // Load XML Document from buffer
       PROCEDURE SetBuffer      (Buffer : PAnsiChar);         // Refer to Buffer
-      FUNCTION  GetFilename : TFilename;
+      FUNCTION  GetFilename : AnsiString;
 
       PROCEDURE Execute;                                 // Perform scanning
 
     PROTECTED
       PROPERTY XmlParser           : TXmlParser        READ FXmlParser;
       PROPERTY StopParser          : BOOLEAN           READ FStopParser          WRITE FStopParser;
-      PROPERTY Filename            : TFilename         READ GetFilename          WRITE LoadFromFile;
+      PROPERTY Filename            : AnsiString         READ GetFilename          WRITE LoadFromFile;
       PROPERTY Normalize           : BOOLEAN           READ GetNormalize         WRITE SetNormalize;
       PROPERTY OnXmlProlog         : TXmlPrologEvent   READ FOnXmlProlog         WRITE FOnXmlProlog;
       PROPERTY OnComment           : TCommentEvent     READ FOnComment           WRITE FOnComment;
@@ -619,7 +619,7 @@ IMPLEMENTATION
 
 IMPLEMENTATION
 
-
+uses AnsiStrings;
 (*
 ===============================================================================================
 Unicode and UTF-8 stuff
@@ -1124,7 +1124,7 @@ BEGIN
   TRY
     SYSTEM.FileMode := FileMode;
     TRY
-      AssignFile (f, Filename);
+      AssignFile (f, String(Filename));
       Reset (f, 1);
     EXCEPT
       EXIT;
@@ -1265,7 +1265,7 @@ BEGIN
   IF CurFinal <> NIL
     THEN INC (CurFinal)
     ELSE CurFinal := StrEnd (CurStart)-1;
-  FCurEncoding := AnsiUpperCase (CurAttr.Value ('encoding'));
+  FCurEncoding := AnsiString( AnsiUpperCase ( String(CurAttr.Value ('encoding')) ) );
   IF FCurEncoding = '' THEN
     FCurEncoding := 'UTF-8';   // Default XML Encoding is UTF-8
   CurPartType  := ptXmlProlog;
@@ -1582,8 +1582,8 @@ PROCEDURE TXmlParser.AnalyzeText (VAR IsDone : BOOLEAN);
       // Is it a Character Entity?
       IF (CurFinal+1)^ = '#' THEN BEGIN
         IF UpCase ((CurFinal+2)^) = 'X'       // !!! Can't use "AnsiChar" for Unicode characters > 255:
-          THEN CurContent := CurContent + AnsiChar (StrToIntDef ('$'+Copy (Name, 3, MaxInt), 32))
-          ELSE CurContent := CurContent + AnsiChar (StrToIntDef (Copy (Name, 2, MaxInt), 32));
+          THEN CurContent := CurContent + AnsiChar ( StrToIntDef ('$'+Copy (String(Name), 3, MaxInt), 32) )
+          ELSE CurContent := CurContent + AnsiChar ( StrToIntDef (Copy (String(Name), 2, MaxInt), 32) );
         CurFinal := P+1;
         EXIT;
         END
@@ -2082,10 +2082,10 @@ BEGIN
     IF PSemi = NIL THEN BREAK;
     PosAmp := PAmp - PAnsiChar (Str) + 1;
     Len    := PSemi-PAmp+1;
-    IF CompareText (Str [PosAmp+2], 'x') = 0          // !!! Can't use "AnsiChar" for Unicode characters > 255
-      THEN Str [PosAmp] := AnsiChar (StrToIntDef ('$'+Copy (Str, PosAmp+3, Len-4), 0))
-      ELSE Str [PosAmp] := AnsiChar (StrToIntDef (Copy (Str, PosAmp+2, Len-3), 32));
-    Delete (Str, PosAmp+1, Len-1);  
+    IF CompareText ( String(Str [PosAmp+2]), 'x') = 0          // !!! Can't use "AnsiChar" for Unicode characters > 255
+      THEN Str [PosAmp] := AnsiChar (StrToIntDef ('$'+Copy (String(Str), PosAmp+3, Len-4), 0))
+      ELSE Str [PosAmp] := AnsiChar (StrToIntDef (Copy (String(Str), PosAmp+2, Len-3), 32));
+    Delete (Str, PosAmp+1, Len-1);
     Start := PosAmp + 1;
   UNTIL FALSE;
 END;
@@ -2194,12 +2194,12 @@ VAR
   Filename : AnsiString;
 BEGIN
   // --- Convert System ID to complete filename
-  Filename := StringReplace (SystemId, '/', '\', [rfReplaceAll]);
+  Filename := AnsiString(StringReplace (String(SystemId), '/', '\', [rfReplaceAll]));
   IF Copy (FSource, 1, 1) <> '<' THEN
     IF (Copy (Filename, 1, 2) = '\\') OR (Copy (Filename, 2, 1) = ':') THEN
       // Already has an absolute Path
     ELSE BEGIN
-      Filename := ExtractFilePath (FSource) + Filename;
+      Filename := AnsiString(ExtractFilePath (String(FSource))) + Filename;
       END;
 
   // --- Load the File
@@ -2560,7 +2560,7 @@ BEGIN
 END;
 
 
-PROCEDURE TCustomXmlScanner.LoadFromFile (Filename : TFilename);
+PROCEDURE TCustomXmlScanner.LoadFromFile (Filename : AnsiString);
           // Load XML Document from file
 BEGIN
   FXmlParser.LoadFromFile (Filename);
@@ -2581,7 +2581,7 @@ BEGIN
 END;
 
 
-FUNCTION  TCustomXmlScanner.GetFilename : TFilename;
+FUNCTION  TCustomXmlScanner.GetFilename : AnsiString;
 BEGIN
   Result := FXmlParser.Source;
 END;
