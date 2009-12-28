@@ -367,7 +367,7 @@ procedure TSoundEditFrame.OnKeyPress(var Key: Char);
 var
   P : TPoint;
 begin
-  if (Key in ['a','s','d','f','g','h','j','k','l','ö','ä']) then
+  if CharInSet(Key,['a','s','d','f','g','h','j','k','l','ö','ä']) then
   begin
     P := Self.ClientToScreen( Point(0,0) );
     if PtInRect( Rect(P.X,P.Y,P.X + Width, P.Y + Height) , Mouse.CursorPos ) then

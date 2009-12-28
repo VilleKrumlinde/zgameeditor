@@ -315,7 +315,7 @@ var
 const
   ZcStackBegin : PInteger = @ZcStack;
 
-function StackGetDepth : integer;
+function StackGetDepth : integer; inline;
 begin
   {$if SizeOf(Integer)<>4}
   'update shift bits to divide with word length below'
@@ -354,7 +354,7 @@ begin
 end;
 
 
-function StackGetPtrToItem(const Index : integer) : PInteger;
+function StackGetPtrToItem(const Index : integer) : PInteger; inline;
 begin
   Result := @ZcStack;
   Inc(Result,Index);

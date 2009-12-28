@@ -9222,34 +9222,34 @@ begin
     // There must be at least one dot to separate major and minor version number.
     Separator := Pos('.', Buffer);
     // At least one number must be before and one after the dot.
-    if (Separator > 1) and (Separator < Length(Buffer)) and (Buffer[Separator - 1] in ['0'..'9']) and
-      (Buffer[Separator + 1] in ['0'..'9']) then
+    if (Separator > 1) and (Separator < Length(Buffer)) and CharInSet(Buffer[Separator - 1],['0'..'9']) and
+      CharInSet(Buffer[Separator + 1],['0'..'9']) then
     begin
       // OK, it's a valid version string. Now remove unnecessary parts.
-      Dec(Separator); 
+      Dec(Separator);
       // Find last non-numeric character before version number.
-      while (Separator > 0) and (Buffer[Separator] in ['0'..'9']) do
-        Dec(Separator); 
+      while (Separator > 0) and CharInSet(Buffer[Separator],['0'..'9']) do
+        Dec(Separator);
       // Delete leading characters which do not belong to the version string.
       Delete(Buffer, 1, Separator);
       Separator := Pos('.', Buffer) + 1;
       // Find first non-numeric character after version number
-      while (Separator <= Length(Buffer)) and (Buffer[Separator] in ['0'..'9']) do
-        Inc(Separator); 
+      while (Separator <= Length(Buffer)) and CharInSet(Buffer[Separator],['0'..'9']) do
+        Inc(Separator);
       // delete trailing characters not belonging to the version string
-      Delete(Buffer, Separator, 255); 
+      Delete(Buffer, Separator, 255);
       // Now translate the numbers.
       Separator := Pos('.', Buffer); // This is necessary because the buffer length might have changed.
-      Max := StrToInt(Copy(Buffer, 1, Separator - 1)); 
-      Min := StrToInt(Copy(Buffer, Separator + 1, 255)); 
+      Max := StrToInt(Copy(Buffer, 1, Separator - 1));
+      Min := StrToInt(Copy(Buffer, Separator + 1, 255));
     end
     else
-      Abort; 
+      Abort;
   except
-    Min := 0; 
-    Max := 0; 
-  end; 
-end; 
+    Min := 0;
+    Max := 0;
+  end;
+end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -9276,7 +9276,7 @@ var
      // Now check that it isn't only a substring of another extension.
      if Result then
        Result := ((ExtPos + Length(Extension) - 1) = Length(Buffer)) or
-         not (Buffer[ExtPos + Length(Extension)] in ['_', 'A'..'Z', 'a'..'z']);
+         not CharInSet(Buffer[ExtPos + Length(Extension)],['_', 'A'..'Z', 'a'..'z']);
    end; 
 
   //--------------- end local function ----------------------------------------

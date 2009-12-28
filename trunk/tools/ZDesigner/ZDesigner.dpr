@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 program ZDesigner;
 
+{$WEAKLINKRTTI ON}
+
 uses
 //  FastMM4 in '..\..\FastMM4.pas',
   Forms,

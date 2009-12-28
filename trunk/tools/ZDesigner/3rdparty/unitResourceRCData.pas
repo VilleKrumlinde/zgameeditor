@@ -75,6 +75,8 @@ end;
 
 implementation
 
+uses AnsiStrings;
+
 type
   TPkgName = packed record
     HashCode : Byte;
@@ -104,14 +106,14 @@ type
 
 class function TRCDataResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_RCDATA));
+  result := AnsiString( IntToStr (Integer (RT_RCDATA)) );
 end;
 
 { TRCDataDescriptionResourceDetails }
 
 function TRCDataDescriptionResourceDetails.GetDescription: ansistring;
 begin
-  Result := PWideChar (data.Memory);
+  Result := AnsiString(PWideChar (data.Memory));
 end;
 
 procedure TRCDataDescriptionResourceDetails.SetDescription(
@@ -120,14 +122,14 @@ var
   ws : WideString;
 begin
   data.Size := (Length (Value) + 1) * SizeOf (WideChar);
-  ws := Value;
+  ws := String(Value);
   Move (ws [1], data.memory^, (Length (Value) + 1) * SizeOf (WideChar))
 end;
 
 class function TRCDataDescriptionResourceDetails.SupportsRCData(
   const AName: ansistring; Size: Integer; data: Pointer): Boolean;
 begin
-  Result := CompareText (AName, 'DESCRIPTION') = 0;
+  Result := CompareText ( String(AName), 'DESCRIPTION') = 0;
 end;
 
 { TRCDataPackagesResourceDetails }
@@ -196,7 +198,7 @@ end;
 function TRCDataPackagesResourceDetails.GetContains(idx: Integer): ansistring;
 begin
   DecodeData;
-  Result := fContainsList [idx]
+  Result := AnsiString(fContainsList [idx]);
 end;
 
 function TRCDataPackagesResourceDetails.GetContainsCount: Integer;
@@ -239,7 +241,7 @@ end;
 function TRCDataPackagesResourceDetails.GetRequires(idx : Integer): ansistring;
 begin
   DecodeData;
-  Result := fRequiresList [idx]
+  Result := AnsiString(fRequiresList [idx]);
 end;
 
 function TRCDataPackagesResourceDetails.GetRequiresCount: Integer;
@@ -257,7 +259,7 @@ end;
 class function TRCDataPackagesResourceDetails.SupportsRCData(
   const AName: ansistring; Size: Integer; data: Pointer): Boolean;
 begin
-  Result := CompareText (AName, 'PACKAGEINFO') = 0;
+  Result := CompareText (String(AName), 'PACKAGEINFO') = 0;
 end;
 
 { TRCDataFormResourceDetails }
@@ -270,7 +272,7 @@ begin
   try
     data.Seek (0, soFromBeginning);
     ObjectBinaryToText (data, s);
-    Result := s.DataString
+    Result := AnsiString( s.DataString );
   finally
     s.Free
   end

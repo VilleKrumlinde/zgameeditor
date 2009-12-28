@@ -2068,7 +2068,7 @@ var
 begin
   M := TPEResourceModule.Create;
   try
-    M.LoadFromFile( ExeFile );
+    M.LoadFromFile( AnsiString(ExeFile) );
 
     R := M.FindResource('10','DATA_FILE',1053);
     Assert(R<>nil);
@@ -2123,7 +2123,7 @@ begin
     if UseCodeRemoval then
       RemoveUnusedCode(M);
 
-    M.SaveToFile( OutFile );
+    M.SaveToFile( AnsiString(OutFile) );
   finally
     M.Free;
   end;
@@ -2136,11 +2136,11 @@ var
   ToolPath : string;
   UsePiggyback,UseCodeRemoval : boolean;
 
-  function InGetSize : integeR;
+  function InGetSize : integer;
   var
     Handle : THandle;
   begin
-    Handle := FileOpen(PChar(OutFile),fmOpenRead);
+    Handle := FileOpen(OutFile,fmOpenRead or fmShareDenyNone);
     Result := GetFileSize(Handle,nil);
     FileClose(Handle);
   end;
@@ -2634,13 +2634,13 @@ begin
   end;
   for I := 1 to Length(NewName) do
   begin
-    if not (NewName[I] in ['a'..'z','A'..'Z','_','0'..'9']) then
+    if not CharInSet(NewName[I],['a'..'z','A'..'Z','_','0'..'9']) then
     begin
       ShowMessage('Name contains invalid characters: ' + NewName);
       Abort;
     end;
   end;
-  if (NewName<>'') and (NewName[1] in ['0'..'9']) then
+  if (NewName<>'') and CharInSet(NewName[1],['0'..'9']) then
   begin
     ShowMessage('Name cannot begin with a digit: ' + NewName);
     Abort;
@@ -2778,7 +2778,7 @@ begin
       begin
         StartName := C.Name;
         S := '';
-        while (Length(StartName)>0) and (StartName[Length(StartName)] in ['0'..'9']) do
+        while (Length(StartName)>0) and CharInSet(StartName[Length(StartName)],['0'..'9']) do
         begin
           S := StartName[Length(StartName)] + S;
           Delete(StartName,Length(StartName),1);
@@ -3322,19 +3322,19 @@ begin
 
   Line := Comp.Editor.LineText;
   I := Min(Comp.Editor.CaretX+1,Length(Line));
-  while (I>0) and (Line[I] in ['a'..'z','A'..'Z','_','0'..'9']) do
+  while (I>0) and CharInSet(Line[I],['a'..'z','A'..'Z','_','0'..'9']) do
     Dec(I);
   if (I>0) and (Line[I]='.') then
   begin
     J := I-1;
-    while (J>0) and (Line[J] in ['a'..'z','A'..'Z','_','0'..'9']) do
+    while (J>0) and CharInSet(Line[J],['a'..'z','A'..'Z','_','0'..'9']) do
       Dec(J);
     Ident := Copy(Line,J+1,I-J-1);
     if (J>0) and (Line[J]='.') then
     begin
       PropName := Ident;
       K := J-1;
-      while (K>0) and (Line[K] in ['a'..'z','A'..'Z','_','0'..'9']) do
+      while (K>0) and CharInSet(Line[K],['a'..'z','A'..'Z','_','0'..'9']) do
         Dec(K);
       Ident := Copy(Line,K+1,J-K-1);
       C := InGetC(Ident);
@@ -3405,7 +3405,7 @@ begin
         if PCount=0 then
         begin
           J := I-1;
-          while (J>0) and (Line[J] in ['a'..'z','A'..'Z','_','0'..'9']) do
+          while (J>0) and CharInSet(Line[J] ,['a'..'z','A'..'Z','_','0'..'9']) do
             Dec(J);
           S := Copy(Line,J+1,I-J-1);
           O := SymTab.Lookup(S);
