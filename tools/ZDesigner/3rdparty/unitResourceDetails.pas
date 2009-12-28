@@ -174,6 +174,8 @@ function CompareDetails (p1, p2 : Pointer) : Integer;
 
 implementation
 
+uses AnsiStrings;
+
 {$region 'Local Declarations and Functions'}
 var
   registeredResourceDetails : array of TResourceDetailsClass;
@@ -291,7 +293,7 @@ begin
     end;
 
   if isNumeric then
-    Result := StrToInt (s)
+    Result := StrToInt (String(s))
   else
     Result := -1
 end;
@@ -328,7 +330,7 @@ begin
       Result := -1              // id2 is int, so it's less than non-int id1
     else
                                 // Compare two ansistring resource ids
-      Result := CompareText (d1.ResourceType, d2.ResourceType);
+      Result := CompareText (String(d1.ResourceType), String(d2.ResourceType));
 
   if Result = 0 then            // If they match, do the same with the names
   begin
@@ -344,7 +346,7 @@ begin
       if i2 >= 0 then
         Result := -1
       else
-        Result := CompareText (d1.ResourceName, d2.ResourceName)
+        Result := CompareText (String(d1.ResourceName), String(d2.ResourceName))
   end
 end;
 
@@ -451,7 +453,7 @@ begin
     for i := 0 to registeredResourceDetailsCount - 1 do
       if registeredResourceDetails [i].GetBaseType = AType then
       begin
-        if (AType <> IntToStr (Integer (RT_RCDATA))) or registeredResourceDetails [i].SupportsRCData (AName, ASize, AData) then
+        if (AType <> AnsiString(IntToStr (Integer (RT_RCDATA)))) or registeredResourceDetails [i].SupportsRCData (AName, ASize, AData) then
         begin
           result := registeredResourceDetails [i].Create (AParent, ALanguage, AName, AType, ASize, AData);
           break
@@ -655,7 +657,7 @@ begin
     end
   end;
 
-  Result := IntToStr (n + 1);
+  Result := AnsiString(IntToStr (n + 1));
 end;
 
 procedure TResourceModule.InsertResource(idx: Integer;
@@ -674,7 +676,7 @@ procedure TResourceModule.LoadFromFile(const FileName: ansistring);
 var
   s : TFileStream;
 begin
-  s := TFileStream.Create (FileName, fmOpenRead or fmShareDenyNone);
+  s := TFileStream.Create (String(FileName), fmOpenRead or fmShareDenyNone);
   try
     LoadFromStream (s);
   finally
@@ -697,43 +699,13 @@ end;
 procedure TResourceModule.SaveToFile(const FileName: ansistring);
 var
   s : TFileStream;
-  oldFileName, ext : ansistring;
-  p : PChar;
 begin
-// Rename old file to .~ext'
-  oldFileName := FileName;
-  UniqueString (oldFileName);
-  p := StrRScan (PChar (oldFileName), '.');
-  if p <> Nil then
-  begin
-    p^ := #0;
-    Inc (p);
-    ext := p;
-    oldFileName := PChar (oldFileName);
-  end
-  else
-    ext := '';
-  ext := '~' + ext;
-  oldFileName := oldFileName + '.' + ext;
-
-  if FileExists (oldFileName) then
-    DeleteFile (oldFileName);
-
-  RenameFile (FileName, oldFileName);
-
+  s := TFileStream.Create (String(FileName), fmCreate);
   try
-    s := TFileStream.Create (FileName, fmCreate);
-    try
-      SaveToStream (s);
-      ClearDirty
-    finally
-      s.Free
-    end
-  except
-// Failed.  Rename old file back.
-    DeleteFile (FileName);
-    RenameFile (oldFileName, FileName);
-    raise
+    SaveToStream (s);
+    ClearDirty
+  finally
+    s.Free
   end
 end;
 
@@ -772,13 +744,13 @@ class function TAnsiResourceDetails.SupportsData(Size: Integer;
   data: Pointer): Boolean;
 var
   i, sample : Integer;
-  pc : PChar;
+  pc : PAnsiChar;
 begin
   result := Size > 0;
   sample := Size;
   if Sample > 1024 then
     Sample := 1024;
-  pc := PChar (data);
+  pc := PAnsiChar (data);
 
   if result then
     for i := 0 to Sample - 1 do
@@ -818,7 +790,7 @@ class function TUnicodeResourceDetails.SupportsData(Size: Integer;
   data: Pointer): Boolean;
 var
   i, sample : Integer;
-  pc : PChar;
+  pc : PAnsiChar;
 begin
   result := Size > 5;
   sample := Size div 2;
@@ -826,7 +798,7 @@ begin
     Sample := 1024
   else
     Dec (Sample);
-  pc := PChar (data);
+  pc := PAnsiChar (data);
 
   if result then
     for i := 0 to Sample - 2 do

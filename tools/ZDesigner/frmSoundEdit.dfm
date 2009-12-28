@@ -15,6 +15,10 @@ inherited SoundEditFrame: TSoundEditFrame
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Sound'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         793
         569)
@@ -178,7 +182,6 @@ inherited SoundEditFrame: TSoundEditFrame
           Top = 16
           Width = 113
           Height = 21
-          ItemHeight = 13
           ItemIndex = 0
           TabOrder = 0
           Text = 'aasaadaafaagaahaajaak'
@@ -219,7 +222,6 @@ inherited SoundEditFrame: TSoundEditFrame
           Width = 82
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
           ItemIndex = 0
           TabOrder = 0
           Text = 'Square'
@@ -333,7 +335,6 @@ inherited SoundEditFrame: TSoundEditFrame
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
           ItemIndex = 0
           TabOrder = 2
           Text = 'Square'

@@ -394,7 +394,7 @@ var
 begin
   IsName := Prop.Name='Name';
   if IsName then
-    (PropEditor.Owner as TEditorForm).ValidateNewName(OldValue.StringValue,Value.StringValue);
+    (PropEditor.Owner as TEditorForm).ValidateNewName(String(OldValue.StringValue),String(Value.StringValue));
   //Skriver nytt värde till prop och notifierar event
   Component.SetProperty(Prop,Value);
   OnPropValueChanged;
@@ -424,7 +424,7 @@ begin
     Edit.Tag:=100;
   end
   else
-    Edit.Text := Value.StringValue;
+    Edit.Text := String( Value.StringValue );
 
   if  (Prop.Name='VertexShaderSource') or
     (Prop.Name='FragmentShaderSource') then
@@ -458,7 +458,7 @@ begin
   if MemoEditForm=nil then
     MemoEditForm := TMemoEditForm.Create(Application);
   MemoEditForm.Caption := 'Editing ' + Self.Prop.Name;
-  MemoEditForm.Memo1.Text := Value.StringValue;
+  MemoEditForm.Memo1.Text := String( Value.StringValue );
   if MemoEditForm.ShowModal=mrOK then
   begin
     Edit.Text := MemoEditForm.Memo1.Text;
@@ -475,8 +475,8 @@ begin
   S := TEdit(Sender).Text;
   if Prop.PropertyType=zptString then
   begin
-    IsChanged := Value.StringValue<>S;
-    Value.StringValue := S
+    IsChanged := Value.StringValue<>AnsiString(S);
+    Value.StringValue := AnsiString(S);
   end
   else if Prop.PropertyType=zptExpression then
   begin

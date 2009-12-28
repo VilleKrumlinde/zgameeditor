@@ -182,7 +182,7 @@ resourcestring
  *----------------------------------------------------------------------*)
 class function TBitmapResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_BITMAP));
+  result := AnsiString( IntToStr (Integer (RT_BITMAP)) );
 end;
 
 (*----------------------------------------------------------------------*
@@ -373,9 +373,9 @@ var
 begin
   s := TMemoryStream.Create;
   try
-    s.LoadFromFile(FileName);
+    s.LoadFromFile(String(FileName));
     data.Clear;
-    data.Write ((PChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
+    data.Write ((PAnsiChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
   finally
     s.Free;
   end
@@ -389,7 +389,7 @@ begin
   try
     InternalSetImage (s, image);
     data.Clear;
-    data.Write ((PChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
+    data.Write ((PAnsiChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
   finally
     s.Free;
   end
@@ -402,7 +402,7 @@ end;
  *----------------------------------------------------------------------*)
 class function TIconGroupResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_GROUP_ICON));
+  result := AnsiString( IntToStr (Integer (RT_GROUP_ICON)) );
 end;
 
 { TCursorGroupResourceDetails }
@@ -412,7 +412,7 @@ end;
  *----------------------------------------------------------------------*)
 class function TCursorGroupResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_GROUP_CURSOR));
+  result := AnsiString( IntToStr (Integer (RT_GROUP_CURSOR)) );
 end;
 
 { TIconResourceDetails }
@@ -422,7 +422,7 @@ end;
  *----------------------------------------------------------------------*)
 class function TIconResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_ICON));
+  result := AnsiString( IntToStr (Integer (RT_ICON)) );
 end;
 
 { TCursorResourceDetails }
@@ -432,7 +432,7 @@ end;
  *----------------------------------------------------------------------*)
 class function TCursorResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_CURSOR));
+  result := AnsiString( IntToStr (Integer (RT_CURSOR)) );
 end;
 
 { TGraphicsResourceDetails }
@@ -574,7 +574,7 @@ begin
 
   Inc (Attributes, PIconHeader (data.Memory)^.wCount);
 
-  attributes^.wNameOrdinal :=  StrToInt (details.ResourceName);
+  attributes^.wNameOrdinal :=  StrToInt (String(details.ResourceName));
   attributes^.lBytesInRes := details.Data.Size;
 
   if details is TIconResourceDetails then
@@ -739,7 +739,7 @@ begin
   // DIFFERENCE (from Windows.pas) is 11.  It's the difference between a 'group
   // resource' and the resource itself.  They called it 'DIFFERENCE' to be annoying.
 
-  iconCursorResourceType := IntToStr (ResourceNameToInt (ResourceType) - DIFFERENCE);
+  iconCursorResourceType := AnsiString( IntToStr (ResourceNameToInt (ResourceType) - DIFFERENCE) );
   for i := 0 to Parent.ResourceCount - 1 do
   begin
     res := Parent.ResourceDetails [i];
@@ -816,7 +816,7 @@ begin
   for i := 0 to Parent.ResourceCount - 1 do
   begin
     details := Parent.ResourceDetails [i];
-    if (details.ResourceType = IntToStr (ResourceNameToInt (ResourceType) + DIFFERENCE)) then
+    if (details.ResourceType = AnsiString(IntToStr (ResourceNameToInt (ResourceType) + DIFFERENCE))) then
     begin
       resGroup := details as TIconCursorGroupResourceDetails;
       if resGroup.Contains (Self) then

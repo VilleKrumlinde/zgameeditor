@@ -424,7 +424,7 @@ var
   S : single;
   Hi,Lo : integer;
 
-  function B2(N,B : integer) : integer;
+  function B2(N,B : integer) : integer; inline;
   begin
     Result := (N shr B) and 1;
   end;

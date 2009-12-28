@@ -34,6 +34,8 @@ uses Windows, Classes, SysUtils, ConTnrs, unitResourceDetails, ImageHlp;
 
 type
 
+{$POINTERMATH ON}
+
 TPEModule = class;
 
 //----------------------------------------------------------------------
@@ -717,7 +719,7 @@ procedure TPEModule.LoadFromFile(const name: ansistring);
 var
   f : TFileStream;
 begin
-  f := TFileStream.Create (name, fmOpenRead or fmShareDenyNone);
+  f := TFileStream.Create (String(name), fmOpenRead or fmShareDenyNone);
   try
     LoadFromStream (f)
   finally
@@ -986,10 +988,10 @@ var
     p : PWideChar;
   begin
     if IdorName then
-      result := IntToStr (n)
+      result := ansistring(IntToStr (n))
     else
     begin
-      p := PWideChar (PAnsiChar (section.fRawData.Memory) + (n and $7fffffff));
+      p := PWideChar (pansichar(section.fRawData.Memory) + (n and $7fffffff));
       result := ResourceWideCharToStr (p, CP_ACP)
     end
   end;
@@ -1163,12 +1165,12 @@ var
     procedure SaveNode (i : Integer);
     begin
       if node.nodes [i].intID then      // id is a simple integer
-        entry.name := StrToInt (node.nodes [i].id)
+        entry.name := StrToInt (String(node.nodes [i].id))
       else
       begin                             // id is an offset to a name in the
                                         // name table.
         entry.name := nameOffset + namePos + $80000000;
-        w := node.nodes [i].id;
+        w := String(node.nodes [i].id);
         wl := Length (node.nodes [i].id);
         Move (wl, nameTable [namePos], sizeof (wl));
         Inc (namePos, sizeof (wl));
@@ -1344,7 +1346,7 @@ var
   i : Integer;
 begin
   for i := 0 to count - 1 do
-    if IntToStr (ALang) = nodes [i].id then
+    if AnsiString( IntToStr (ALang) ) = nodes [i].id then
     begin
       nodes [i].data := aData;
       exit
@@ -1352,7 +1354,7 @@ begin
 
   Inc (count);
   SetLength (nodes, count);
-  nodes [count - 1].id := IntToStr (ALang);
+  nodes [count - 1].id := AnsiString( IntToStr (ALang) );
   nodes [count - 1].intId := True;
   nodes [count - 1].leaf := True;
   nodes [count - 1].data := aData;
@@ -1395,7 +1397,7 @@ constructor TResourceNode.CreateLangNode(ALang: Integer;
 begin
   count := 1;
   SetLength (nodes, 1);
-  nodes [0].id := IntToStr (ALang);
+  nodes [0].id := AnsiString( IntToStr (ALang) );
   nodes [count - 1].intID := True;
   nodes [0].leaf := True;
   nodes [0].data := aData;
@@ -1438,7 +1440,7 @@ begin
     end;
 
   if result then
-    result := IntToStr (StrToInt (nodes [idx].id)) = nodes [idx].id;
+    result := AnsiString( IntToStr (StrToInt (String(nodes [idx].id))) ) = nodes [idx].id;
 end;
 
 function TPEResourceModule.AddResource(details: TResourceDetails): Integer;

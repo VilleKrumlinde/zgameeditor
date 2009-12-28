@@ -22,7 +22,7 @@ type
     Ref : TObject;
     constructor Create(Owner : TObjectList); virtual;
     destructor Destroy; override;
-    function ToString : string; virtual;
+    function ToString : string; reintroduce; virtual;
     function Child(I : integer) : TZcOp;
     function Optimize : TZcOp; virtual;
     function GetDataType : TZcDataType; virtual;
@@ -119,7 +119,7 @@ var
 
 implementation
 
-uses SysUtils,Math,ExprEdit;
+uses SysUtils,Math,ExprEdit,Classes;
 
 var
   BuiltInFunctions : TObjectList=nil;
