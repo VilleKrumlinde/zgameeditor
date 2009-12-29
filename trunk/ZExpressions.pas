@@ -682,6 +682,9 @@ begin
       begin
         HasReturnValue := False;
         ZApp.Terminating := True;
+        {$ifndef minimal}
+        raise EZHalted.Create('Quit called');
+        {$endif}
       end;
     fcJoyGetAxis :
       begin

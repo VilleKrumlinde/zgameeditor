@@ -23,7 +23,6 @@ program ZDesigner;
 {$WEAKLINKRTTI ON}
 
 uses
-//  FastMM4 in '..\..\FastMM4.pas',
   Forms,
   HTMLHelpViewer,
   DesignerGui in 'DesignerGui.pas',
@@ -77,7 +76,8 @@ uses
   frmBitmapEdit in 'frmBitmapEdit.pas' {BitmapEditFrame: TFrame},
   SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
   frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame},
-  frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm};
+  frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
+  ZPlatform in '..\..\ZPlatform.pas';
 
 {$R *.res}
 
