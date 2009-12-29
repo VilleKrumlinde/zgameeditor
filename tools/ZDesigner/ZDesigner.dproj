@@ -212,6 +212,7 @@
 			<DCCReference Include="frmArrayEdit.pas">
 				<Form>ArrayEditForm</Form>
 			</DCCReference>
+			<DCCReference Include="..\..\ZPlatform.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

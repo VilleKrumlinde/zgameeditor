@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 program ZzDC;
 
+{$WEAKLINKRTTI ON}
+
 //Zzap Dynamic Content engine
 
 {
