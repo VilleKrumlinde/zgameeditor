@@ -69,7 +69,7 @@ type
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
     Bitmap : TZBitmap;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TBitmapCombine = class(TContentProducer)
@@ -564,7 +564,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TBitmapLoad.GetDisplayName: String;
+function TBitmapLoad.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Bitmap) then

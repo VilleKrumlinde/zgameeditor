@@ -136,7 +136,7 @@ type
     State : TAppState;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -812,7 +812,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TSetAppState.GetDisplayName: string;
+function TSetAppState.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(State) then

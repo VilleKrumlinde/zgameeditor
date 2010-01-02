@@ -149,7 +149,7 @@ type
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
   public
     Mesh : TMesh;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   //Transforms the vertices of the incoming mesh
@@ -192,7 +192,7 @@ type
     State : TModelState;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -281,7 +281,7 @@ type
     UseSpawnerPosition : boolean;
     SpawnerIsParent : boolean;  //Spawned model becomes child to currentmodel
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRemoveModel = class(TCommand)
@@ -295,7 +295,7 @@ type
   public
     OfType : TModel;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
 
@@ -1261,14 +1261,14 @@ begin
 end;
 
 {$ifndef minimal}
-function TSpawnModel.GetDisplayName: String;
+function TSpawnModel.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Model) then
   begin
     Result := Result + '  ' + Model.Name;
     if Ord(SpawnStyle)<>0 then
-      Result := Result + ' (' + SpawnStyleNames[integer(SpawnStyle)] + ')';
+      Result := Result + ' (' + AnsiString(SpawnStyleNames[integer(SpawnStyle)]) + ')';
   end;
 end;
 {$endif}
@@ -1438,7 +1438,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TRemoveAllModels.GetDisplayName: String;
+function TRemoveAllModels.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(OfType) then
@@ -1468,7 +1468,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TSetModelState.GetDisplayName: string;
+function TSetModelState.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(State) then
@@ -1753,7 +1753,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TMeshLoad.GetDisplayName: String;
+function TMeshLoad.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Mesh) then

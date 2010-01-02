@@ -68,7 +68,7 @@ type
     Param1,Param2 : single;
     Kind : (ikSphere,ikTorus,ikCube);
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -851,10 +851,10 @@ begin
 end;
 
 {$ifndef minimal}
-function TImplicitPrimitive.GetDisplayName: string;
+function TImplicitPrimitive.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + PrimitiveNames[ ord(Kind) ];
+  Result := Result + '  ' + AnsiString(PrimitiveNames[ ord(Kind) ]);
 end;
 {$endif}
 

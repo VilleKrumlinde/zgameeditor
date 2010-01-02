@@ -709,7 +709,7 @@ begin
   for I := 0 to PredefinedConstants.Count - 1 do
   begin
     Con := TDefineConstant(PredefinedConstants[I]);
-    SymTab.Add(Con.Name,Con);
+    SymTab.Add(String(Con.Name),Con);
   end;
 
   BuiltInFunctions := Zc_Ops.GetBuiltInFunctions;
@@ -1949,7 +1949,7 @@ begin
                 raise
               else
               begin
-                ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
+                ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
                 Node.Expand(True);
                 Tree.Selected := Node;
                 Success := False;
@@ -2323,7 +2323,7 @@ begin
       S := Ci.ZClassName + IntToStr(I);
       if not SymTab.Contains(S) then
       begin
-        C.Name := S;
+        C.Name := AnsiString(S);
         SymTab.Add(S,C);
         Break;
       end;
@@ -2404,7 +2404,7 @@ begin
         begin
           CurC := List[I] as TZComponent;
           if CurC.Name<>'' then
-            SymTab.Remove(CurC.Name);
+            SymTab.Remove(String(CurC.Name));
         end;
       finally
         List.Free;
@@ -2705,7 +2705,7 @@ begin
     Stream.Position := 0;
     Stream.Read(S[1],Stream.Size);
     S := 'ZZDC' + S;
-    Clipboard.SetTextBuf( PChar(String(PAnsiChar(S))) );
+    Clipboard.SetTextBuf( PChar(String(S)) );
   finally
     Stream.Free;
     if Assigned(Group) then
@@ -2774,9 +2774,9 @@ begin
       if C.Name='' then
         Continue;
 
-      if SymTab.Contains(C.Name) then
+      if SymTab.Contains(String(C.Name)) then
       begin
-        StartName := C.Name;
+        StartName := String(C.Name);
         S := '';
         while (Length(StartName)>0) and CharInSet(StartName[Length(StartName)],['0'..'9']) do
         begin
@@ -2790,19 +2790,19 @@ begin
           NewName := StartName + IntToStr(J);
           if not SymTab.Contains(NewName) then
           begin
-            C.Name := NewName;
+            C.Name := AnsiString(NewName);
             NewNameFound := True;
             Break;
           end;
         end;
         if not NewNameFound then
         begin
-          ShowMessage('Could not find unique name for component: ' + C.Name);
+          ShowMessage('Could not find unique name for component: ' + String(C.Name));
           Exit;
         end;
       end;
 
-      SymTab.Add(C.Name,C);
+      SymTab.Add(String(C.Name),C);
     end;
   finally
     List.Free;
@@ -3205,7 +3205,7 @@ var
     begin
       C := List.GetComponent(I);
       M := TMenuItem.Create(AddFromLibraryMenuItem);
-      M.Caption := C.Comment;
+      M.Caption := String(C.Comment);
       Parent.Add(M);
       if C is TLogicalGroup then
         InAddItems((C as TLogicalGroup).Children,M)
@@ -3272,7 +3272,7 @@ begin
   C := TSynCompletionProposal(Context);
   Desc := '';
   if (Item is TZComponent) then
-    Desc := (Item as TZComponent).GetDisplayName
+    Desc := String((Item as TZComponent).GetDisplayName)
   else if (Item is TZcOpFunctionBase) then
     Desc := InGetSig(Item as TZcOpFunctionBase)
   else

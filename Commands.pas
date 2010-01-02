@@ -71,7 +71,7 @@ type
     Component : TZComponent;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -114,7 +114,7 @@ type
     procedure StartReading;
     destructor Destroy; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -270,7 +270,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TRefreshContent.GetDisplayName: string;
+function TRefreshContent.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Component) then
@@ -392,10 +392,10 @@ begin
 end;
 
 {$ifndef minimal}
-function TWebOpen.GetDisplayName: string;
+function TWebOpen.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + String(Url);
+  Result := Result + '  ' + Url;
 end;
 {$endif}
 

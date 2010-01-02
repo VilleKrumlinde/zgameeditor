@@ -39,7 +39,7 @@ type
     Kind : (sbkSeekModel,sbkSeparation,sbkNoise,sbkFleeModel,sbkExpression,sbkWallAvoidance);
     Expression : TZExpressionPropValue;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -533,10 +533,10 @@ begin
 end;
 
 {$ifndef minimal}
-function TSteeringBehaviour.GetDisplayName: string;
+function TSteeringBehaviour.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + SteerKindNames[ ord(Kind) ];
+  Result := Result + '  ' + AnsiString(SteerKindNames[ ord(Kind) ]);
 end;
 {$endif}
 
