@@ -45,7 +45,7 @@ type
     ReplayDelay : single;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -243,7 +243,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TPlaySound.GetDisplayName: String;
+function TPlaySound.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Sound) then

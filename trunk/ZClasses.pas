@@ -319,7 +319,9 @@ type
     IsChanged : boolean;
     procedure DefineProperties(List : TZPropertyList); virtual;
   public
-    {$IFNDEF MINIMAL} Name,Comment : string; {$ENDIF}
+    {$ifndef minimal}
+    Name,Comment : TPropString;
+    {$endif}
     OwnerList : TZComponentList;
     constructor Create(OwnerList: TZComponentList); virtual;
     destructor Destroy; override;
@@ -331,7 +333,7 @@ type
     procedure Change;
     function Clone : TZComponent;
     {$ifndef minimal}
-    function GetDisplayName : string; virtual;
+    function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
     function GetOwner : TZComponent;
     {$endif}
@@ -1045,12 +1047,12 @@ begin
 end;
 
 {$ifndef minimal}
-function TZComponent.GetDisplayName: string;
+function TZComponent.GetDisplayName: AnsiString;
 var
-  S,Cn : string;
+  S,Cn : AnsiString;
 begin
   S := Self.Name;
-  Cn := ComponentManager.GetInfo(Self).ZClassName;
+  Cn := AnsiString(ComponentManager.GetInfo(Self).ZClassName);
   if Length(S)=0 then
     S := Cn
   else
@@ -2025,10 +2027,10 @@ begin
         zptRectf : V := InArray(Value.RectfValue.Area);
         zptColorf : V := InArray(Value.ColorfValue.V);
         zptInteger : V := IntToStr(Value.IntegerValue);
-        zptComponentRef : V := Value.ComponentValue.Name;
+        zptComponentRef : V := String(Value.ComponentValue.Name);
         zptPropertyRef :
           begin
-            V := Value.PropertyValue.Component.Name + ' ' + Value.PropertyValue.Prop.Name;
+            V := String(Value.PropertyValue.Component.Name) + ' ' + Value.PropertyValue.Prop.Name;
             if Value.PropertyValue.Index>0 then
               V := V + ' ' + IntToStr(Value.PropertyValue.Index);
           end;
@@ -2088,7 +2090,7 @@ begin
       end;
       S := '</' + Ci.ZClassName + '>';
       if (C is TLogicalGroup) and (C.Name<>'') then
-        S := S + ' <!-- ' + C.Name + ' -->'#13#10;
+        S := S + ' <!-- ' + String(C.Name) + ' -->'#13#10;
       WriteLine(S);
     end;
 
@@ -2863,7 +2865,7 @@ begin
                             InDecodeBinary(String(Xml.CurContent),Value.BinaryValue);
                             C.SetProperty(NestedProp,Value);
                           except
-                            ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + C.Name);
+                            ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + String(C.Name));
                           end;
                         end;
                     end;
@@ -2882,7 +2884,7 @@ begin
   end;
 
   if C.Name<>'' then
-    SymTab.Add(LowerCase(C.Name),C);
+    SymTab.Add(String(LowerCase(C.Name)),C);
 
   Result := C;
 end;
@@ -3102,7 +3104,9 @@ type
 
 var
   GlobalContent : TGlobalContent;
-
+  {$ifndef minimal}
+  RefreshDepth : integer;
+  {$endif}
 
 procedure TContent.RefreshFromProducers;
 var
@@ -3119,6 +3123,7 @@ begin
   Stack := TZArrayList.Create;
   {$ifndef minimal}
   try
+    Inc(RefreshDepth);
   {$endif}
     Stack.ReferenceOnly := True;
 
@@ -3135,6 +3140,7 @@ begin
       Stack.Pop().Free;
   {$ifndef minimal}
   finally
+    Dec(RefreshDepth);
   {$endif}
     IsChanged := False;
     Producers.IsChanged := False;
@@ -3147,8 +3153,8 @@ begin
   GlobalContent := Save;
 
   {$ifndef minimal}
-  if (Producers.Count>0) and (not ZApp.DesignerIsRunning) then
-    ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + GetDisplayName);
+  if (Producers.Count>0) and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
+    ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
   {$endif}
 end;
 
@@ -3264,7 +3270,7 @@ end;
 {$ifndef minimal}
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
 begin
-  Result := PRef.Component.Name + '.' + PRef.Prop.Name;
+  Result := String(PRef.Component.Name) + '.' + PRef.Prop.Name;
   case PRef.Component.GetProperties.GetByName(PRef.Prop.Name).PropertyType of
     zptColorf : Result := Result + '.' + Copy('RGBA',PRef.Index+1,1);
     zptVector3f : Result := Result + '.' + Copy('XYZ',PRef.Index+1,1);

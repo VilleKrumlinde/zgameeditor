@@ -91,7 +91,7 @@ type
     Target : TZPropertyRef;
     procedure Start; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -147,7 +147,7 @@ type
   public
     Animator : TAnimatorBase;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
 implementation
@@ -419,11 +419,11 @@ begin
 end;
 
 {$ifndef minimal}
-function TAnimatorWithTargetBase.GetDisplayName: String;
+function TAnimatorWithTargetBase.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Target.Component) then
-    Result := Result + '  ' + ZClasses.GetPropRefAsString(Target);
+    Result := Result + '  ' + AnsiString(ZClasses.GetPropRefAsString(Target));
 end;
 {$endif}
 
@@ -450,7 +450,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TStartAnimator.GetDisplayName: String;
+function TStartAnimator.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Animator) then

@@ -60,7 +60,7 @@ type
     TextureRotate : single;
     TextureWrapMode : (tmMirror,tmTile,tmClamp);
     TexCoords : TMaterialTexCoords;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TShaderVariable = class(TZComponent)
@@ -72,7 +72,7 @@ type
     VariableName : TPropString;
     Value : single;
     ValuePropRef : TZPropertyRef;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TShader = class(TZComponent)
@@ -101,7 +101,7 @@ type
   public
     Material : TMaterial;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRenderMesh = class(TRenderCommand)
@@ -110,7 +110,7 @@ type
   public
     Mesh : TMesh;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRenderTransform = class(TRenderCommand)
@@ -200,7 +200,7 @@ type
     StretchY : single;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -287,7 +287,7 @@ type
   public
     RenderTarget : TRenderTarget;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
 procedure InitRenderer;
@@ -755,7 +755,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TUseMaterial.GetDisplayName: String;
+function TUseMaterial.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Material) then
@@ -784,7 +784,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TRenderMesh.GetDisplayName: String;
+function TRenderMesh.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Mesh) then
@@ -1226,13 +1226,13 @@ begin
 end;
 
 {$ifndef minimal}
-function TRenderText.GetDisplayName: String;
+function TRenderText.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Text<>'' then
-    Result := Result + '  ' + String(Text);
+    Result := Result + '  ' + Text;
   if TextFloatRef.Component<>nil then
-    Result := Result + '  ' + GetPropRefAsString(TextFloatRef);
+    Result := Result + '  ' + AnsiString(GetPropRefAsString(TextFloatRef));
 end;
 {$endif}
 
@@ -2032,10 +2032,10 @@ begin
 end;
 
 {$ifndef minimal}
-function TShaderVariable.GetDisplayName: String;
+function TShaderVariable.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + String(VariableName);
+  Result := Result + '  ' + VariableName;
 end;
 {$endif}
 
@@ -2080,7 +2080,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TMaterialTexture.GetDisplayName: String;
+function TMaterialTexture.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(RenderTarget) then
@@ -2238,7 +2238,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TSetRenderTarget.GetDisplayName: String;
+function TSetRenderTarget.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(RenderTarget) then

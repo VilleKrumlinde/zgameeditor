@@ -74,7 +74,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Value : single;
-    {$ifndef minimal}function GetDisplayName: string; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
   TDefineArray = class(TDefineVariableBase)
@@ -137,7 +137,7 @@ type
   public
     Constant : single;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: ansistring; override;
     {$endif}
   end;
 
@@ -148,7 +148,7 @@ type
   public
     Constant : integer;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: ansistring; override;
     {$endif}
   end;
 
@@ -449,9 +449,9 @@ begin
 end;
 
 {$ifndef minimal}
-function TExpConstantFloat.GetDisplayName: String;
+function TExpConstantFloat.GetDisplayName: AnsiString;
 begin
-  Result := inherited GetDisplayName + ' ' + FloatToStr(Constant);
+  Result := inherited GetDisplayName + ' ' + AnsiString(FloatToStr(Constant));
 end;
 {$endif}
 
@@ -469,9 +469,9 @@ begin
 end;
 
 {$ifndef minimal}
-function TExpConstantInt.GetDisplayName: String;
+function TExpConstantInt.GetDisplayName: AnsiString;
 begin
-  Result := inherited GetDisplayName + ' ' + IntToStr(Constant);
+  Result := inherited GetDisplayName + ' ' + AnsiString(IntToStr(Constant));
 end;
 {$endif}
 
@@ -680,10 +680,11 @@ begin
       end;
     fcQuit :
       begin
-        HasReturnValue := False;
-        ZApp.Terminating := True;
         {$ifndef minimal}
         raise EZHalted.Create('Quit called');
+        {$else}
+        HasReturnValue := False;
+        ZApp.Terminating := True;
         {$endif}
       end;
     fcJoyGetAxis :
@@ -724,9 +725,9 @@ begin
 end;
 
 {$ifndef minimal}
-function TDefineConstant.GetDisplayName: string;
+function TDefineConstant.GetDisplayName: AnsiString;
 begin
-  Result := inherited GetDisplayName + ' ' + FormatFloat('###0.#',Value);
+  Result := inherited GetDisplayName + ' ' + AnsiString(FormatFloat('###0.#',Value));
 end;
 {$endif}
 
@@ -746,7 +747,7 @@ begin
   P := TheArray.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
-    ZHalt('Array read outside range: ' + TheArray.Name);
+    ZHalt('Array read outside range: ' + String(TheArray.Name));
   {$endif}
   V := P^;
   StackPush( V );
@@ -856,7 +857,7 @@ begin
     then
   begin
     {$ifdef zlog}
-    ZLog.GetLog(Self.ClassName).Warning('Array access outside range: ' + Self.Name + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
+    ZLog.GetLog(Self.ClassName).Warning('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     {$endif}
     Result := nil;
     Exit;
@@ -881,7 +882,7 @@ begin
   P := TheArray.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
-    ZHalt('Array assign outside range: ' + TheArray.Name);
+    ZHalt('Array assign outside range: ' + String(TheArray.Name));
   {$endif}
   StackPush(P);
 end;
@@ -984,10 +985,10 @@ begin
     case Prop.PropertyType of
       zptFloat,zptScalar : S := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
       zptInteger : S := IntToStr(Value.IntegerValue);
-      zptComponentRef : S := Value.ComponentValue.Name;
+      zptComponentRef : S := String(Value.ComponentValue.Name);
       zptPropertyRef :
         begin
-          S := Value.PropertyValue.Component.Name + ' ' + Value.PropertyValue.Prop.Name;
+          S := String(Value.PropertyValue.Component.Name) + ' ' + String(Value.PropertyValue.Prop.Name);
           if Value.PropertyValue.Index>0 then
             S := S + ' ' + IntToStr(Value.PropertyValue.Index);
         end;

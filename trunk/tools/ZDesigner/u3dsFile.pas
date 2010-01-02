@@ -418,8 +418,8 @@ begin
   InMesh := T3dsMesh(M);
 
   OutMesh := TMesh.Create(nil);
-  OutMesh.Comment := InMesh.Name;
-  OutMesh.Name := NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M));
+  OutMesh.Comment := AnsiString(InMesh.Name);
+  OutMesh.Name := AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M)));
 
   MeshImp := TMeshImport.Create(OutMesh.Producers);
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
@@ -571,7 +571,7 @@ begin
     RMesh := TRenderMesh.Create(M.OnRender);
     RMesh.Mesh := Mesh.ZMesh;
   end;
-  M.Name := NamePrefix + 'Model';
+  M.Name := AnsiString(NamePrefix + 'Model');
   Result := M;
 end;
 
@@ -631,7 +631,7 @@ begin
   end;
 
   Group.Children.AddComponent( GenerateModel );
-  Group.Comment := 'Imported from ' + ExtractFileName(Self.FileName);
+  Group.Comment := 'Imported from ' + AnsiString(ExtractFileName(Self.FileName));
 
   Result := Group;
 end;
@@ -748,7 +748,7 @@ constructor T3dsMesh.CreateFromMesh(M: TMesh);
 var
   I,J : integer;
 begin
-  Name := M.Name;
+  Name := String(M.Name);
   if M.VerticesCount>High(Word) then
   begin
     ZLog.GetLog(Self.ClassName).Error('Cannot export: too many vertices');

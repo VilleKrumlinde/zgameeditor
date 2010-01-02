@@ -47,7 +47,7 @@ type
     ZFile : TZFile;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -58,7 +58,7 @@ type
     ZProperty : TZPropertyRef;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -206,11 +206,11 @@ begin
 end;
 
 {$ifndef minimal}
-function TFileAction.GetDisplayName: String;
+function TFileAction.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Self.ZFile) then
-    Result := Result + '  ' + FileActionNames[ Ord(Action) ] + ' ' + ZFile.Name;
+    Result := Result + '  ' + AnsiString(FileActionNames[ Ord(Action) ]) + ' ' + ZFile.Name;
 end;
 {$endif}
 
@@ -277,11 +277,11 @@ begin
 end;
 
 {$ifndef minimal}
-function TFileMoveData.GetDisplayName: String;
+function TFileMoveData.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(ZProperty.Component) then
-    Result := Result + '  ' + ZProperty.Component.Name + '.' + ZProperty.Prop.Name;
+    Result := Result + '  ' + ZProperty.Component.Name + '.' + AnsiString(ZProperty.Prop.Name);
 end;
 {$endif}
 
