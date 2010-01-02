@@ -2121,8 +2121,11 @@ begin
 end;
 
 procedure TZXmlWriter.WriteString(const S: string);
+var
+  A : ansistring;
 begin
-  Write(S[1],Length(S)*2);
+  A := AnsiString(S);
+  Write(A[1],Length(A));
 end;
 
 procedure TZXmlWriter.WriteLine(const S: string);

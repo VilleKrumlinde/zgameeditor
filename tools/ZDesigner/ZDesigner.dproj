@@ -23,6 +23,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_StringChecks>off</DCC_StringChecks>
 			<DCC_DependencyCheckOutputName>ZDesigner.exe</DCC_DependencyCheckOutputName>
 		</PropertyGroup>

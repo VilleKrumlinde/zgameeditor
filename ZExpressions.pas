@@ -186,7 +186,7 @@ type
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
-     fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV);
+     fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -702,6 +702,10 @@ begin
       begin
         StackPopTo(I1);
         V := Platform_GetJoystickPOV(I1);
+      end;
+    fcSystemTime :
+      begin
+        PInteger(@V)^ := Platform_GetSystemTime;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;

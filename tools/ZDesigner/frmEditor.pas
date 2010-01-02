@@ -2672,7 +2672,7 @@ end;
 procedure TEditorForm.CopyComponentActionExecute(Sender: TObject);
 var
   Stream : TMemoryStream;
-  S : string;
+  S : AnsiString;
   C : TZComponent;
   Group : TLogicalGroup;
   I : integer;
@@ -2701,11 +2701,11 @@ begin
 
   Stream := ComponentManager.SaveXmlToStream(C) as TMemoryStream;
   try
-    SetLength(S,Stream.Size div 2);
+    SetLength(S,Stream.Size);
     Stream.Position := 0;
-    Stream.Read(S[1],Stream.Size*2);
+    Stream.Read(S[1],Stream.Size);
     S := 'ZZDC' + S;
-    Clipboard.SetTextBuf(PChar(S));
+    Clipboard.SetTextBuf( PChar(String(PAnsiChar(S))) );
   finally
     Stream.Free;
     if Assigned(Group) then
@@ -3487,7 +3487,7 @@ var
   DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := False;
-  DisplayDetailedReport := True;
+//  DisplayDetailedReport := True;
 
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then

@@ -638,6 +638,7 @@ begin
   MakeOne('joyGetAxis',fcJoyGetAxis,'FII');
   MakeOne('joyGetButton',fcJoyGetButton,'III');
   MakeOne('joyGetPOV',fcJoyGetPOV,'FI');
+  MakeOne('getSystemTime',fcSystemTime,'I');
 end;
 
 

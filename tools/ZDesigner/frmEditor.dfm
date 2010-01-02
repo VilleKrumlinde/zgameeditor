@@ -102,6 +102,10 @@ object EditorForm: TEditorForm
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -129,6 +133,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -187,6 +195,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             525
             146)
@@ -288,6 +300,10 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -567,8 +583,6 @@ object EditorForm: TEditorForm
               ExplicitWidth = 403
               ExplicitHeight = 531
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 395
                 ExplicitHeight = 503
                 inherited Label8: TLabel
@@ -1171,7 +1185,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010D000E0018001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010D000E001C001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1834,7 +1848,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E00180010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E001C0010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6
