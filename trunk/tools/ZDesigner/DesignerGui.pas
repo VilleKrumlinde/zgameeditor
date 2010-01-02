@@ -507,7 +507,7 @@ begin
   Edit.OnChange := OnEditChange;
   Edit.OnEnter := OnFocusControl;
   Edit.OnExit := OnEditExit;
-  if Self.Prop.NeverPersist then
+  if (Self.Prop.NeverPersist and (not Self.Prop.IsReadOnly)) then
   begin
     //Tillåt ändra nevepersist floats: detta gör att man kan ändra
     //DefineVariable.Value i editor vilket är bra vid felsök.

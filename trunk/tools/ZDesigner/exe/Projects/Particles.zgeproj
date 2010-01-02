@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="Particle Toy   0.03   www.emix8.org">
+<ZApplication Name="App" Caption="Particle Toy   0.03   www.emix8.org" ScreenMode="0">
   <OnLoaded>
     <SpawnModel Model="ScreenFadeOutModel" Position="0 -100 0" SpawnStyle="1"/>
     <SpawnModel Model="GuiModel"/>

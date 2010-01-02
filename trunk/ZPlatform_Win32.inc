@@ -83,6 +83,9 @@ const
   WM_QUIT             = $0012;
   WM_INITDIALOG       = $0110;
   WM_COMMAND          = $0111;
+  WM_ACTIVATE         = $0006;
+  WM_ACTIVATEAPP      = $001C;
+  WM_NCACTIVATE       = $0086;
 
   BM_SETCHECK = $00F1;
   CBN_SELCHANGE  = 1;
@@ -822,6 +825,13 @@ begin
 //  Result := GetTickCount;
 end;
 
+function Platform_GetSystemTime : integer;
+var
+  T : TSystemTime;
+begin
+  GetLocalTime(T);
+  Result := T.wHour * 24 + T.wMinute * 60 + T.wSecond;
+end;
 
 procedure Platform_DesignerSetDC(DC : longword; HWnd : longword);
 begin
@@ -1272,7 +1282,7 @@ begin
     I := 1;
     repeat
       S := ParamStr(I);
-      if (Length(S)>0) and (S[1] in ['0'..'9']) then
+      if (Length(S)>0) and (ansichar(S[1]) in ['0'..'9']) then
       begin
         Val(S, PreviewParentHWnd, E);
         Break;

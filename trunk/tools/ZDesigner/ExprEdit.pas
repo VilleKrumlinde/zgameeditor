@@ -418,6 +418,13 @@ begin
     //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
     if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
     begin
+      if (Op.Kind<>zcAssign) then
+        raise ECodeGenError.Create('Assign syntax not supported: ' + LeftOp.Id);
+      if (RightOp.Kind=zcIdentifier) then
+      begin
+        //((C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex))
+      end;
+
       if C.Target.Prop.PropertyType=zptVector3f then
         LastIndex := 2
       else

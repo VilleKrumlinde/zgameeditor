@@ -40,6 +40,7 @@ function Platform_GetExeFileName : PAnsiChar;
 
 //Return time in seonds since program start
 function Platform_GetTime : single;
+function Platform_GetSystemTime : integer;
 
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 
