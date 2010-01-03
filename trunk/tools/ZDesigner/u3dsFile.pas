@@ -373,7 +373,7 @@ end;
 function T3dsFileParser.ReadString: string;
 var
   Len: Integer;
-  Buffer: array[Byte] of Char;
+  Buffer: array[Byte] of AnsiChar;
 begin
   Len := 0;
   repeat

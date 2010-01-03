@@ -144,7 +144,7 @@ end;
 
 procedure TRCDataPackagesResourceDetails.DecodeData;
 var
-  p : PChar;
+  p : PAnsiChar;
   i, Count : Integer;
   pkg : PPkgName;
   unt : PUnitName;
@@ -301,7 +301,7 @@ end;
 class function TRCDataFormResourceDetails.SupportsRCData(
   const AName: ansistring; Size: Integer; data: Pointer): Boolean;
 begin
-  Result := (Size > 0) and (strlcomp (PChar (data), 'TPF0', 4) = 0);
+  Result := (Size > 0) and (strlcomp (PAnsiChar (data), 'TPF0', 4) = 0);
 end;
 
 initialization
