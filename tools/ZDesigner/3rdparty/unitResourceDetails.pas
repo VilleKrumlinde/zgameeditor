@@ -726,7 +726,7 @@ end;
 function TAnsiResourceDetails.GetText: ansistring;
 begin
   data.Seek(0, soFromBeginning);
-  SetString (result, PChar (data.Memory), data.Size);
+  SetString (result, PAnsiChar (data.Memory), data.Size);
 end;
 
 procedure TAnsiResourceDetails.InitNew;
