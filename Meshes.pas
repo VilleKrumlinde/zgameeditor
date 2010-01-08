@@ -1933,6 +1933,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'States';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=19;{$endif}
   ZClasses.Register(TSetModelState,SetModelStateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
 

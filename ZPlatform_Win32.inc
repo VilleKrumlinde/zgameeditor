@@ -830,7 +830,7 @@ var
   T : TSystemTime;
 begin
   GetLocalTime(T);
-  Result := T.wHour * 24 + T.wMinute * 60 + T.wSecond;
+  Result := T.wHour * 3600 + T.wMinute * 60 + T.wSecond;
 end;
 
 procedure Platform_DesignerSetDC(DC : longword; HWnd : longword);

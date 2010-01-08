@@ -829,6 +829,7 @@ initialization
   ZClasses.Register(TAppState,AppStateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoTopLevelCreate:=True;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName:=True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=20;{$endif}
   ZClasses.Register(TSetAppState,SetAppStateClassId);
 
 end.
