@@ -214,6 +214,7 @@
 				<Form>ArrayEditForm</Form>
 			</DCCReference>
 			<DCCReference Include="..\..\ZPlatform.pas"/>
+			<None Include="..\..\ZPlatform_Win32.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

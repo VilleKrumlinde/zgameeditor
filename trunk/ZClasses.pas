@@ -300,7 +300,7 @@ type
   private
     NextId : integer;
   public
-    procedure AddProperty({$IFNDEF MINIMAL}Name : string; {$ENDIF} Offset : integer; PropType : TZPropertyType);
+    procedure AddProperty({$IFNDEF MINIMAL}Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
     function GetByName(Name : string) : TZProperty;
@@ -1557,7 +1557,7 @@ begin
   Result := nil;
 end;
 
-procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}Name: string;{$ENDIF} Offset: integer; PropType : TZPropertyType);
+procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}Name: string;{$ENDIF} const Offset: integer; const PropType : TZPropertyType);
 var
   P : TZProperty;
 begin

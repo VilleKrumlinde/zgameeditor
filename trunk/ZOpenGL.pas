@@ -72,10 +72,6 @@ uses
   system,
   gpc,
 {$ENDIF}
-
-{$IFDEF WIN32}
-  Windows,
-{$ENDIF}
   DLLFuncs;
 
 
@@ -1253,7 +1249,6 @@ procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
 var
   glAccum: procedure(op: GLenum; value: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glAlphaFunc: procedure(func: GLenum; ref: GLclampf); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glAreTexturesResident: function (n: GLsizei; const textures: PGLuint; residences: PGLboolean): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glArrayElement: procedure(i: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glBegin: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glBindTexture: procedure(target: GLenum; texture: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1262,12 +1257,7 @@ var
   glCallList: procedure(list: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCallLists: procedure(n: GLsizei; atype: GLenum; const lists: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glClear: procedure(mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glClearAccum: procedure(red, green, blue, alpha: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glClearColor: procedure(red, green, blue, alpha: GLclampf); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glClearDepth: procedure(depth: GLclampd); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glClearIndex: procedure(c: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glClearStencil: procedure(s: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glClipPlane: procedure(plane: GLenum; const equation: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor3f: procedure(red, green, blue: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor3fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor4f: procedure(red, green, blue, alpha: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1275,9 +1265,7 @@ var
   glColorMaterial: procedure(face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColorPointer: procedure(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCopyPixels: procedure(x, y: GLint; width, height: GLsizei; atype: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glCopyTexImage1D: procedure (target: GLenum; level: GLint; internalFormat: GLenum; x, y: GLint; width: GLsizei; border: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCopyTexImage2D: procedure(target: GLenum; level: GLint; internalFormat: GLenum; x, y: GLint; width, height: GLsizei; border: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glCopyTexSubImage1D: procedure(target: GLenum; level, xoffset, x, y: GLint; width: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCopyTexSubImage2D: procedure(target: GLenum; level, xoffset, yoffset, x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCullFace: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glDeleteLists: procedure(list: GLuint; range: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1291,208 +1279,68 @@ var
   glDrawBuffer: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glDrawElements: procedure(mode: GLenum; count: GLsizei; atype: GLenum; const indices: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glDrawPixels: procedure(width, height: GLsizei; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glEdgeFlag: procedure(flag: GLboolean); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glEdgeFlagPointer: procedure(stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glEdgeFlagv: procedure(const flag: PGLboolean); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEnable: procedure(cap: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEnableClientState: procedure(aarray: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEnd: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEndList: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFeedbackBuffer: procedure(size: GLsizei; atype: GLenum; buffer: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFinish: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFlush: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFogf: procedure(pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFogfv: procedure(pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFogi: procedure(pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFogiv: procedure(pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFrontFace: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFrustum: procedure(left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGenLists: function(range: GLsizei): GLuint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGenTextures: procedure(n: GLsizei; textures: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetBooleanv: procedure(pname: GLenum; params: PGLboolean); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetClipPlane: procedure(plane: GLenum; equation: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetDoublev: procedure(pname: GLenum; params: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetError: function: GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetFloatv: procedure(pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetIntegerv: procedure(pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetLightfv: procedure(light, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetLightiv: procedure(light, pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetMapdv: procedure(target, query: GLenum; v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetMapfv: procedure(target, query: GLenum; v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetMapiv: procedure(target, query: GLenum; v: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetMaterialfv: procedure(face, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetMaterialiv: procedure(face, pname: GLenum; params: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetPixelMapfv: procedure(map: GLenum; values: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetPixelMapuiv: procedure(map: GLenum; values: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetPixelMapusv: procedure(map: GLenum; values: PGLushort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetPointerv: procedure(pname: GLenum; params: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetPolygonStipple: procedure(mask: PGLubyte); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glMateriali: procedure(face, pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexParameteri: procedure(target: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetString: function(name: GLenum): PAnsiChar; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexEnvfv: procedure(target, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexEnviv: procedure(target, pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexGendv: procedure(coord, pname: GLenum; params: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexGenfv: procedure(coord, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexGeniv: procedure(coord, pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetTexImage: procedure(target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexLevelParameterfv: procedure(target: GLenum; level: GLint; pname: GLenum; params: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexLevelParameteriv: procedure(target: GLenum; level: GLint; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexParameterfv: procedure(target, pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetTexParameteriv: procedure(target, pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glHint: procedure(target, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glIndexMask: procedure(mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glIndexPointer: procedure(atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glInitNames: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glInterleavedArrays: procedure(format: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glIsEnabled: function(cap: GLenum): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glIsList: function(list: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glIsTexture: function(texture: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLightModelf: procedure(pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLightModelfv: procedure(pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLightModeli: procedure(pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLightModeliv: procedure(pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLightf: procedure(light, pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLightfv: procedure(light, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLighti: procedure(light, pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLightiv: procedure(light, pname: GLenum; const params: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLineStipple: procedure(factor: GLint; pattern: GLushort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLineWidth: procedure(width: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glListBase: procedure(base: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLoadIdentity: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLoadMatrixd: procedure(const m: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glLoadMatrixf: procedure(const m: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLoadName: procedure(name: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glLogicOp: procedure(opcode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glMaterialf: procedure(face, pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glMaterialfv: procedure(face, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glMateriali: procedure(face, pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glMaterialiv: procedure(face, pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glMatrixMode: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glMultMatrixd: procedure(const m: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glMultMatrixf: procedure(const m: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glNewList: procedure(list: GLuint; mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glNormal3f: procedure(nx, ny, nz: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glNormal3fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glNormalPointer: procedure(atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glOrtho: procedure(left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPassThrough: procedure(token: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelMapfv: procedure(map: GLenum; mapsize: GLsizei; const values: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelMapuiv: procedure(map: GLenum; mapsize: GLsizei; const values: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelMapusv: procedure(map: GLenum; mapsize: GLsizei; const values: PGLushort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelStoref: procedure(pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelStorei: procedure(pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelTransferf: procedure(pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelTransferi: procedure(pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPixelZoom: procedure(xfactor, yfactor: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPointSize: procedure(size: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPolygonMode: procedure(face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPolygonOffset: procedure(factor, units: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPolygonStipple: procedure(const mask: PGLubyte); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPopAttrib: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPopClientAttrib: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPopMatrix: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPopName: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPrioritizeTextures: procedure(n: GLsizei; const textures: PGLuint; const priorities: PGLclampf); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPushAttrib: procedure(mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPushClientAttrib: procedure(mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glPushMatrix: procedure; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glPushName: procedure(name: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2d: procedure(x, y: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glRasterPos2f: procedure(x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2i: procedure(x, y: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2s: procedure(x, y: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos2sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3d: procedure(x, y, z: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3f: procedure(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3i: procedure(x, y, z: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3s: procedure(x, y, z: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos3sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4d: procedure(x, y, z, w: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4f: procedure(x, y, z, w: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4i: procedure(x, y, z, w: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4s: procedure(x, y, z, w: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRasterPos4sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glReadBuffer: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glReadPixels: procedure(x, y: GLint; width, height: GLsizei; format, atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectd: procedure(x1, y1, x2, y2: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectdv: procedure(const v1: PGLdouble; const v2: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectf: procedure(x1, y1, x2, y2: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectfv: procedure(const v1: PGLfloat; const v2: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRecti: procedure(x1, y1, x2, y2: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectiv: procedure(const v1: PGLint; const v2: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRects: procedure(x1, y1, x2, y2: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRectsv: procedure(const v1: PGLshort; const v2: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRenderMode: function(mode: GLint): GLint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRotated: procedure(angle, x, y, z: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glRotatef: procedure(angle, x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glScaled: procedure(x, y, z: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glScalef: procedure(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glScissor: procedure(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glSelectBuffer: procedure(size: GLsizei; buffer: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glShadeModel: procedure(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glStencilFunc: procedure(func: GLenum; ref: GLint; mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glStencilMask: procedure(mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glStencilOp: procedure(fail, zfail, zpass: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1d: procedure(s: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1f: procedure(s: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1i: procedure(s: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1s: procedure(s: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord1sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2d: procedure(s, t: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexCoord2f: procedure(s, t: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2i: procedure(s, t: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2s: procedure(s, t: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord2sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3d: procedure(s, t, r: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3f: procedure(s, t, r: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3i: procedure(s, t, r: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3s: procedure(s, t, r: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord3sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4d: procedure(s, t, r, q: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4dv: procedure(const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4f: procedure(s, t, r, q: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4fv: procedure(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4i: procedure(s, t, r, q: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4iv: procedure(const v: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4s: procedure(s, t, r, q: GLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexCoord4sv: procedure(const v: PGLshort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexCoordPointer: procedure(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexEnvf: procedure(target: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexEnvfv: procedure(target: GLenum; pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexEnvi: procedure(target: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexEnviv: procedure(target: GLenum; pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexGend: procedure(coord: GLenum; pname: GLenum; param: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexGendv: procedure(coord: GLenum; pname: GLenum; const params: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexGenf: procedure(coord: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexGenfv: procedure(coord: GLenum; pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexGeni: procedure(coord: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexGeniv: procedure(coord: GLenum; pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexImage1D: procedure(target: GLenum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexImage2D: procedure(target: GLenum; level, internalformat: GLint; width, height: GLsizei; border: GLint; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexParameterf: procedure(target: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexParameterfv: procedure(target: GLenum; pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexParameteri: procedure(target: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexParameteriv: procedure(target: GLenum; pname: GLenum; const params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexSubImage1D: procedure(target: GLenum; level, xoffset: GLint; width: GLsizei; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexSubImage2D: procedure(target: GLenum; level, xoffset, yoffset: GLint; width, height: GLsizei; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTranslated: procedure(x, y, z: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTranslatef: procedure(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glVertex2f: procedure(x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glVertex3f: procedure(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1664,7 +1512,7 @@ begin
   UnLoadModule(LibGL);
 end;
 
-const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
+const FuncArray : packed array[0..99{$ifdef win32}+1{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1672,7 +1520,6 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 (
 (Name : 'glAccum'; Ptr : @@glAccum),
 (Name : 'glAlphaFunc'; Ptr : @@glAlphaFunc),
-(Name : 'glAreTexturesResident'; Ptr : @@glAreTexturesResident),
 (Name : 'glArrayElement'; Ptr : @@glArrayElement),
 (Name : 'glBegin'; Ptr : @@glBegin),
 (Name : 'glBindTexture'; Ptr : @@glBindTexture),
@@ -1681,12 +1528,7 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 (Name : 'glCallList'; Ptr : @@glCallList),
 (Name : 'glCallLists'; Ptr : @@glCallLists),
 (Name : 'glClear'; Ptr : @@glClear),
-(Name : 'glClearAccum'; Ptr : @@glClearAccum),
 (Name : 'glClearColor'; Ptr : @@glClearColor),
-(Name : 'glClearDepth'; Ptr : @@glClearDepth),
-(Name : 'glClearIndex'; Ptr : @@glClearIndex),
-(Name : 'glClearStencil'; Ptr : @@glClearStencil),
-(Name : 'glClipPlane'; Ptr : @@glClipPlane),
 (Name : 'glColor3f'; Ptr : @@glColor3f),
 (Name : 'glColor3fv'; Ptr : @@glColor3fv),
 (Name : 'glColor4f'; Ptr : @@glColor4f),
@@ -1694,9 +1536,7 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 (Name : 'glColorMaterial'; Ptr : @@glColorMaterial),
 (Name : 'glColorPointer'; Ptr : @@glColorPointer),
 (Name : 'glCopyPixels'; Ptr : @@glCopyPixels),
-(Name : 'glCopyTexImage1D'; Ptr : @@glCopyTexImage1D),
 (Name : 'glCopyTexImage2D'; Ptr : @@glCopyTexImage2D),
-(Name : 'glCopyTexSubImage1D'; Ptr : @@glCopyTexSubImage1D),
 (Name : 'glCopyTexSubImage2D'; Ptr : @@glCopyTexSubImage2D),
 (Name : 'glCullFace'; Ptr : @@glCullFace),
 (Name : 'glDeleteLists'; Ptr : @@glDeleteLists),
@@ -1710,208 +1550,68 @@ const FuncArray : packed array[0..247{$ifdef win32}+1{$endif}] of
 (Name : 'glDrawBuffer'; Ptr : @@glDrawBuffer),
 (Name : 'glDrawElements'; Ptr : @@glDrawElements),
 (Name : 'glDrawPixels'; Ptr : @@glDrawPixels),
-(Name : 'glEdgeFlag'; Ptr : @@glEdgeFlag),
-(Name : 'glEdgeFlagPointer'; Ptr : @@glEdgeFlagPointer),
-(Name : 'glEdgeFlagv'; Ptr : @@glEdgeFlagv),
 (Name : 'glEnable'; Ptr : @@glEnable),
 (Name : 'glEnableClientState'; Ptr : @@glEnableClientState),
 (Name : 'glEnd'; Ptr : @@glEnd),
 (Name : 'glEndList'; Ptr : @@glEndList),
-(Name : 'glFeedbackBuffer'; Ptr : @@glFeedbackBuffer),
 (Name : 'glFinish'; Ptr : @@glFinish),
 (Name : 'glFlush'; Ptr : @@glFlush),
-(Name : 'glFogf'; Ptr : @@glFogf),
-(Name : 'glFogfv'; Ptr : @@glFogfv),
-(Name : 'glFogi'; Ptr : @@glFogi),
-(Name : 'glFogiv'; Ptr : @@glFogiv),
 (Name : 'glFrontFace'; Ptr : @@glFrontFace),
 (Name : 'glFrustum'; Ptr : @@glFrustum),
 (Name : 'glGenLists'; Ptr : @@glGenLists),
 (Name : 'glGenTextures'; Ptr : @@glGenTextures),
-(Name : 'glGetBooleanv'; Ptr : @@glGetBooleanv),
-(Name : 'glGetClipPlane'; Ptr : @@glGetClipPlane),
-(Name : 'glGetDoublev'; Ptr : @@glGetDoublev),
 (Name : 'glGetError'; Ptr : @@glGetError),
 (Name : 'glGetFloatv'; Ptr : @@glGetFloatv),
 (Name : 'glGetIntegerv'; Ptr : @@glGetIntegerv),
-(Name : 'glGetLightfv'; Ptr : @@glGetLightfv),
-(Name : 'glGetLightiv'; Ptr : @@glGetLightiv),
-(Name : 'glGetMapdv'; Ptr : @@glGetMapdv),
-(Name : 'glGetMapfv'; Ptr : @@glGetMapfv),
-(Name : 'glGetMapiv'; Ptr : @@glGetMapiv),
-(Name : 'glGetMaterialfv'; Ptr : @@glGetMaterialfv),
-(Name : 'glGetMaterialiv'; Ptr : @@glGetMaterialiv),
-(Name : 'glGetPixelMapfv'; Ptr : @@glGetPixelMapfv),
-(Name : 'glGetPixelMapuiv'; Ptr : @@glGetPixelMapuiv),
-(Name : 'glGetPixelMapusv'; Ptr : @@glGetPixelMapusv),
-(Name : 'glGetPointerv'; Ptr : @@glGetPointerv),
-(Name : 'glGetPolygonStipple'; Ptr : @@glGetPolygonStipple),
 (Name : 'glGetString'; Ptr : @@glGetString),
-(Name : 'glGetTexEnvfv'; Ptr : @@glGetTexEnvfv),
-(Name : 'glGetTexEnviv'; Ptr : @@glGetTexEnviv),
-(Name : 'glGetTexGendv'; Ptr : @@glGetTexGendv),
-(Name : 'glGetTexGenfv'; Ptr : @@glGetTexGenfv),
-(Name : 'glGetTexGeniv'; Ptr : @@glGetTexGeniv),
 (Name : 'glGetTexImage'; Ptr : @@glGetTexImage),
-(Name : 'glGetTexLevelParameterfv'; Ptr : @@glGetTexLevelParameterfv),
-(Name : 'glGetTexLevelParameteriv'; Ptr : @@glGetTexLevelParameteriv),
-(Name : 'glGetTexParameterfv'; Ptr : @@glGetTexParameterfv),
-(Name : 'glGetTexParameteriv'; Ptr : @@glGetTexParameteriv),
 (Name : 'glHint'; Ptr : @@glHint),
 (Name : 'glIndexMask'; Ptr : @@glIndexMask),
 (Name : 'glIndexPointer'; Ptr : @@glIndexPointer),
-(Name : 'glInitNames'; Ptr : @@glInitNames),
 (Name : 'glInterleavedArrays'; Ptr : @@glInterleavedArrays),
 (Name : 'glIsEnabled'; Ptr : @@glIsEnabled),
-(Name : 'glIsList'; Ptr : @@glIsList),
-(Name : 'glIsTexture'; Ptr : @@glIsTexture),
 (Name : 'glLightModelf'; Ptr : @@glLightModelf),
 (Name : 'glLightModelfv'; Ptr : @@glLightModelfv),
-(Name : 'glLightModeli'; Ptr : @@glLightModeli),
-(Name : 'glLightModeliv'; Ptr : @@glLightModeliv),
-(Name : 'glLightf'; Ptr : @@glLightf),
 (Name : 'glLightfv'; Ptr : @@glLightfv),
-(Name : 'glLighti'; Ptr : @@glLighti),
-(Name : 'glLightiv'; Ptr : @@glLightiv),
-(Name : 'glLineStipple'; Ptr : @@glLineStipple),
 (Name : 'glLineWidth'; Ptr : @@glLineWidth),
 (Name : 'glListBase'; Ptr : @@glListBase),
 (Name : 'glLoadIdentity'; Ptr : @@glLoadIdentity),
-(Name : 'glLoadMatrixd'; Ptr : @@glLoadMatrixd),
 (Name : 'glLoadMatrixf'; Ptr : @@glLoadMatrixf),
-(Name : 'glLoadName'; Ptr : @@glLoadName),
-(Name : 'glLogicOp'; Ptr : @@glLogicOp),
+(Name : 'glMateriali'; Ptr : @@glMateriali),
 (Name : 'glMaterialf'; Ptr : @@glMaterialf),
 (Name : 'glMaterialfv'; Ptr : @@glMaterialfv),
-(Name : 'glMateriali'; Ptr : @@glMateriali),
-(Name : 'glMaterialiv'; Ptr : @@glMaterialiv),
 (Name : 'glMatrixMode'; Ptr : @@glMatrixMode),
-(Name : 'glMultMatrixd'; Ptr : @@glMultMatrixd),
 (Name : 'glMultMatrixf'; Ptr : @@glMultMatrixf),
 (Name : 'glNewList'; Ptr : @@glNewList),
 (Name : 'glNormal3f'; Ptr : @@glNormal3f),
 (Name : 'glNormal3fv'; Ptr : @@glNormal3fv),
 (Name : 'glNormalPointer'; Ptr : @@glNormalPointer),
 (Name : 'glOrtho'; Ptr : @@glOrtho),
-(Name : 'glPassThrough'; Ptr : @@glPassThrough),
-(Name : 'glPixelMapfv'; Ptr : @@glPixelMapfv),
-(Name : 'glPixelMapuiv'; Ptr : @@glPixelMapuiv),
-(Name : 'glPixelMapusv'; Ptr : @@glPixelMapusv),
-(Name : 'glPixelStoref'; Ptr : @@glPixelStoref),
-(Name : 'glPixelStorei'; Ptr : @@glPixelStorei),
-(Name : 'glPixelTransferf'; Ptr : @@glPixelTransferf),
-(Name : 'glPixelTransferi'; Ptr : @@glPixelTransferi),
-(Name : 'glPixelZoom'; Ptr : @@glPixelZoom),
 (Name : 'glPointSize'; Ptr : @@glPointSize),
 (Name : 'glPolygonMode'; Ptr : @@glPolygonMode),
 (Name : 'glPolygonOffset'; Ptr : @@glPolygonOffset),
-(Name : 'glPolygonStipple'; Ptr : @@glPolygonStipple),
 (Name : 'glPopAttrib'; Ptr : @@glPopAttrib),
 (Name : 'glPopClientAttrib'; Ptr : @@glPopClientAttrib),
 (Name : 'glPopMatrix'; Ptr : @@glPopMatrix),
-(Name : 'glPopName'; Ptr : @@glPopName),
-(Name : 'glPrioritizeTextures'; Ptr : @@glPrioritizeTextures),
 (Name : 'glPushAttrib'; Ptr : @@glPushAttrib),
 (Name : 'glPushClientAttrib'; Ptr : @@glPushClientAttrib),
 (Name : 'glPushMatrix'; Ptr : @@glPushMatrix),
-(Name : 'glPushName'; Ptr : @@glPushName),
-(Name : 'glRasterPos2d'; Ptr : @@glRasterPos2d),
-(Name : 'glRasterPos2dv'; Ptr : @@glRasterPos2dv),
 (Name : 'glRasterPos2f'; Ptr : @@glRasterPos2f),
-(Name : 'glRasterPos2fv'; Ptr : @@glRasterPos2fv),
-(Name : 'glRasterPos2i'; Ptr : @@glRasterPos2i),
-(Name : 'glRasterPos2iv'; Ptr : @@glRasterPos2iv),
-(Name : 'glRasterPos2s'; Ptr : @@glRasterPos2s),
-(Name : 'glRasterPos2sv'; Ptr : @@glRasterPos2sv),
-(Name : 'glRasterPos3d'; Ptr : @@glRasterPos3d),
-(Name : 'glRasterPos3dv'; Ptr : @@glRasterPos3dv),
-(Name : 'glRasterPos3f'; Ptr : @@glRasterPos3f),
-(Name : 'glRasterPos3fv'; Ptr : @@glRasterPos3fv),
-(Name : 'glRasterPos3i'; Ptr : @@glRasterPos3i),
-(Name : 'glRasterPos3iv'; Ptr : @@glRasterPos3iv),
-(Name : 'glRasterPos3s'; Ptr : @@glRasterPos3s),
-(Name : 'glRasterPos3sv'; Ptr : @@glRasterPos3sv),
-(Name : 'glRasterPos4d'; Ptr : @@glRasterPos4d),
-(Name : 'glRasterPos4dv'; Ptr : @@glRasterPos4dv),
-(Name : 'glRasterPos4f'; Ptr : @@glRasterPos4f),
-(Name : 'glRasterPos4fv'; Ptr : @@glRasterPos4fv),
-(Name : 'glRasterPos4i'; Ptr : @@glRasterPos4i),
-(Name : 'glRasterPos4iv'; Ptr : @@glRasterPos4iv),
-(Name : 'glRasterPos4s'; Ptr : @@glRasterPos4s),
-(Name : 'glRasterPos4sv'; Ptr : @@glRasterPos4sv),
 (Name : 'glReadBuffer'; Ptr : @@glReadBuffer),
 (Name : 'glReadPixels'; Ptr : @@glReadPixels),
-(Name : 'glRectd'; Ptr : @@glRectd),
-(Name : 'glRectdv'; Ptr : @@glRectdv),
-(Name : 'glRectf'; Ptr : @@glRectf),
-(Name : 'glRectfv'; Ptr : @@glRectfv),
-(Name : 'glRecti'; Ptr : @@glRecti),
-(Name : 'glRectiv'; Ptr : @@glRectiv),
-(Name : 'glRects'; Ptr : @@glRects),
-(Name : 'glRectsv'; Ptr : @@glRectsv),
-(Name : 'glRenderMode'; Ptr : @@glRenderMode),
-(Name : 'glRotated'; Ptr : @@glRotated),
 (Name : 'glRotatef'; Ptr : @@glRotatef),
-(Name : 'glScaled'; Ptr : @@glScaled),
 (Name : 'glScalef'; Ptr : @@glScalef),
 (Name : 'glScissor'; Ptr : @@glScissor),
 (Name : 'glSelectBuffer'; Ptr : @@glSelectBuffer),
 (Name : 'glShadeModel'; Ptr : @@glShadeModel),
-(Name : 'glStencilFunc'; Ptr : @@glStencilFunc),
-(Name : 'glStencilMask'; Ptr : @@glStencilMask),
-(Name : 'glStencilOp'; Ptr : @@glStencilOp),
-(Name : 'glTexCoord1d'; Ptr : @@glTexCoord1d),
-(Name : 'glTexCoord1dv'; Ptr : @@glTexCoord1dv),
-(Name : 'glTexCoord1f'; Ptr : @@glTexCoord1f),
-(Name : 'glTexCoord1fv'; Ptr : @@glTexCoord1fv),
-(Name : 'glTexCoord1i'; Ptr : @@glTexCoord1i),
-(Name : 'glTexCoord1iv'; Ptr : @@glTexCoord1iv),
-(Name : 'glTexCoord1s'; Ptr : @@glTexCoord1s),
-(Name : 'glTexCoord1sv'; Ptr : @@glTexCoord1sv),
-(Name : 'glTexCoord2d'; Ptr : @@glTexCoord2d),
-(Name : 'glTexCoord2dv'; Ptr : @@glTexCoord2dv),
 (Name : 'glTexCoord2f'; Ptr : @@glTexCoord2f),
-(Name : 'glTexCoord2fv'; Ptr : @@glTexCoord2fv),
-(Name : 'glTexCoord2i'; Ptr : @@glTexCoord2i),
-(Name : 'glTexCoord2iv'; Ptr : @@glTexCoord2iv),
-(Name : 'glTexCoord2s'; Ptr : @@glTexCoord2s),
-(Name : 'glTexCoord2sv'; Ptr : @@glTexCoord2sv),
-(Name : 'glTexCoord3d'; Ptr : @@glTexCoord3d),
-(Name : 'glTexCoord3dv'; Ptr : @@glTexCoord3dv),
-(Name : 'glTexCoord3f'; Ptr : @@glTexCoord3f),
-(Name : 'glTexCoord3fv'; Ptr : @@glTexCoord3fv),
-(Name : 'glTexCoord3i'; Ptr : @@glTexCoord3i),
-(Name : 'glTexCoord3iv'; Ptr : @@glTexCoord3iv),
-(Name : 'glTexCoord3s'; Ptr : @@glTexCoord3s),
-(Name : 'glTexCoord3sv'; Ptr : @@glTexCoord3sv),
-(Name : 'glTexCoord4d'; Ptr : @@glTexCoord4d),
-(Name : 'glTexCoord4dv'; Ptr : @@glTexCoord4dv),
-(Name : 'glTexCoord4f'; Ptr : @@glTexCoord4f),
-(Name : 'glTexCoord4fv'; Ptr : @@glTexCoord4fv),
-(Name : 'glTexCoord4i'; Ptr : @@glTexCoord4i),
-(Name : 'glTexCoord4iv'; Ptr : @@glTexCoord4iv),
-(Name : 'glTexCoord4s'; Ptr : @@glTexCoord4s),
-(Name : 'glTexCoord4sv'; Ptr : @@glTexCoord4sv),
 (Name : 'glTexCoordPointer'; Ptr : @@glTexCoordPointer),
-(Name : 'glTexEnvf'; Ptr : @@glTexEnvf),
-(Name : 'glTexEnvfv'; Ptr : @@glTexEnvfv),
-(Name : 'glTexEnvi'; Ptr : @@glTexEnvi),
-(Name : 'glTexEnviv'; Ptr : @@glTexEnviv),
-(Name : 'glTexGend'; Ptr : @@glTexGend),
-(Name : 'glTexGendv'; Ptr : @@glTexGendv),
-(Name : 'glTexGenf'; Ptr : @@glTexGenf),
-(Name : 'glTexGenfv'; Ptr : @@glTexGenfv),
 (Name : 'glTexGeni'; Ptr : @@glTexGeni),
-(Name : 'glTexGeniv'; Ptr : @@glTexGeniv),
-(Name : 'glTexImage1D'; Ptr : @@glTexImage1D),
 (Name : 'glTexImage2D'; Ptr : @@glTexImage2D),
+(Name : 'glTexParameteri'; Ptr : @@glTexParameteri),
 (Name : 'glTexParameterf'; Ptr : @@glTexParameterf),
 (Name : 'glTexParameterfv'; Ptr : @@glTexParameterfv),
-(Name : 'glTexParameteri'; Ptr : @@glTexParameteri),
-(Name : 'glTexParameteriv'; Ptr : @@glTexParameteriv),
-(Name : 'glTexSubImage1D'; Ptr : @@glTexSubImage1D),
 (Name : 'glTexSubImage2D'; Ptr : @@glTexSubImage2D),
-(Name : 'glTranslated'; Ptr : @@glTranslated),
 (Name : 'glTranslatef'; Ptr : @@glTranslatef),
 (Name : 'glVertex2f'; Ptr : @@glVertex2f),
 (Name : 'glVertex3f'; Ptr : @@glVertex3f),
