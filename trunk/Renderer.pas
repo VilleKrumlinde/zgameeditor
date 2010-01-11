@@ -363,9 +363,9 @@ begin
   // loop through all verts
   for I := 0 to Mesh.VerticesCount-1 do
   begin
-    glVertex3fv(@Mesh.Vertices^[I]);                  // from the vertex point...
+    glVertex3f(Mesh.Vertices^[I][0],Mesh.Vertices^[I][1],Mesh.Vertices^[I][2]);                  // from the vertex point...
     EndPoint := VecAdd3(Mesh.Vertices^[I],Mesh.Normals^[I]); // to the vertex plus the normal
-    glVertex3fv(@EndPoint);
+    glVertex3f(EndPoint[0],EndPoint[1],EndPoint[2]);
   end;
   glEnd();
   glEnable(GL_LIGHTING);

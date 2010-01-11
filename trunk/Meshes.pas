@@ -953,30 +953,28 @@ begin
     begin
 //      RadialFraction := R*InvRS;  // in [0,1)
       Radial := Vector3f(afCos^[R],afSin^[R],0.0);
-      Mesh.Vertices^[I] := VecAdd3( SliceCenter, VecScalarMult3(Radial,SliceRadius) );
-
-      Normal := Mesh.Vertices^[I];
+      VecCopy3(VecAdd3( SliceCenter, VecScalarMult3(Radial,SliceRadius)), Mesh.Vertices^[I]);
+      VecCopy3(Mesh.Vertices^[I],Normal);
       VecNormalize3(Normal);
-
-      Mesh.Normals^[I] := Normal;
+      VecCopy3(Normal,Mesh.Normals^[I]);
       I := I +1;
     end;
 
-    Mesh.Vertices^[I] := Mesh.Vertices^[Save];
-    Mesh.Normals^[I] := Mesh.Normals^[Save];
+    VecCopy3(Mesh.Vertices^[Save],Mesh.Vertices^[I]);
+    VecCopy3(Mesh.Normals^[Save],Mesh.Normals^[I]);
 
     I := I + 1;
   end;
 
   // south pole
-  Mesh.Vertices^[I] := VecScalarMult3(UNIT_Z3,-Radius);
-  Mesh.Normals^[I] := VecScalarMult3(UNIT_Z3,-1);
+  VecCopy3(VecScalarMult3(UNIT_Z3,-Radius),Mesh.Vertices^[I]);
+  VecCopy3(VecScalarMult3(UNIT_Z3,-1),Mesh.Normals^[I]);
 
   I := I + 1;
 
   // north pole
-  Mesh.Vertices^[I] := VecScalarMult3(UNIT_Z3,Radius);
-  Mesh.Normals^[I] := UNIT_Z3;
+  VecCopy3(VecScalarMult3(UNIT_Z3,Radius),Mesh.Vertices^[I]);
+  VecCopy3(UNIT_Z3,Mesh.Normals^[I]);
 
 //  Assert( i == VQuantity );
 
