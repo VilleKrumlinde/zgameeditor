@@ -183,9 +183,9 @@ procedure TBitmapRect.DefineProperties(List: TZPropertyList);
 const DefSize = 0.2;
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
     List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.5,0.5,0.5,1.0);
-  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@Size) - integer(Self), zptRectf);
+  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@Size), zptRectf);
     List.GetLast.DefaultValue.RectfValue := TZRectf(MakeColorf(-DefSize,-DefSize,DefSize,DefSize));
 end;
 
@@ -251,11 +251,11 @@ end;
 procedure TBitmapZoomRotate.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Zoom',{$ENDIF}integer(@Zoom) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Zoom',{$ENDIF}integer(@Zoom), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
 end;
 
@@ -264,19 +264,19 @@ end;
 procedure TBitmapExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//X,Y : current coordinate (0..1)'#13#10 +
       '//Pixel : current color (rgb)';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Pixel',{$ENDIF}integer(@Pixel) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Pixel',{$ENDIF}integer(@Pixel), zptColorf);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -343,10 +343,10 @@ end;
 procedure TBitmapFromFile.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'BitmapFile',{$ENDIF}integer(@BitmapFile) - integer(Self), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'Transparency',{$ENDIF}integer(@Transparency) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'BitmapFile',{$ENDIF}integer(@BitmapFile), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'Transparency',{$ENDIF}integer(@Transparency), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','BlackColor','AlphaLayer']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}integer(@HasAlphaLayer) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}integer(@HasAlphaLayer), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
@@ -468,12 +468,12 @@ end;
 procedure TBitmapBlur.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Amplify',{$ENDIF}integer(@Amplify), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Square','Triangle','Gaussian', 'Corners']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'BlurDirection',{$ENDIF}integer(@BlurDirection), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['BothDirections','VerticalOnly','HorizontalOnly']);{$endif}
 end;
 
@@ -559,7 +559,7 @@ end;
 procedure TBitmapLoad.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
 end;
 
@@ -612,9 +612,9 @@ end;
 procedure TBitmapCombine.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Method',{$ENDIF}integer(@Method) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Method',{$ENDIF}integer(@Method), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Add','Subtract','Multiply']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ExcludeAlpha',{$ENDIF}integer(@ExcludeAlpha) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ExcludeAlpha',{$ENDIF}integer(@ExcludeAlpha), zptBoolean);
 end;
 
 procedure TBitmapCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -974,17 +974,17 @@ end;
 procedure TBitmapCells.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'CellStyle',{$ENDIF}integer(@CellStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Standard','Nice1','TG1','TG2','TG3','Werk']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'PointsPlacement',{$ENDIF}integer(@PlacementStyle) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'PointsPlacement',{$ENDIF}integer(@PlacementStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Random','Honeycomb','Squares', 'Cobblestone']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'UsedMetrics',{$ENDIF}integer(@UsedMetrics) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'UsedMetrics',{$ENDIF}integer(@UsedMetrics), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Euclidean','Manhattan','MaxMin','Product', 'Stripes']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 42;
-  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 2;
-  List.AddProperty({$IFNDEF MINIMAL}'PointCount',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'PointCount',{$ENDIF}integer(@NOfPoints), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
@@ -993,7 +993,7 @@ end;
 procedure TBitmapDistort.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Amount',{$ENDIF}integer(@Amount) - integer(Self), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}'Amount',{$ENDIF}integer(@Amount), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.2;
 end;
 
@@ -1107,11 +1107,11 @@ end;
 procedure TBitmapPixels.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'NOfPoints',{$ENDIF}integer(@NOfPoints) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'NOfPoints',{$ENDIF}integer(@NOfPoints), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['White','Red','Green','Blue']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 42;
 end;
 
@@ -1120,12 +1120,12 @@ end;
 procedure TBitmapConvolution.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'SwapDimensions',{$ENDIF}integer(@SwapDim) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'ConvArray',{$ENDIF}integer(@ConvArray) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'SwapDimensions',{$ENDIF}integer(@SwapDim), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ConvArray',{$ENDIF}integer(@ConvArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Divisor',{$ENDIF}integer(@Divisor) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Divisor',{$ENDIF}integer(@Divisor), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'Bias',{$ENDIF}integer(@Bias) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Bias',{$ENDIF}integer(@Bias), zptFloat);
 end;
 
 procedure TBitmapConvolution.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1220,7 +1220,7 @@ procedure TBitmapProducerWithOptionalArgument.DefineProperties(
   List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'UseBlankSource',{$ENDIF}integer(@UseBlankSource) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'UseBlankSource',{$ENDIF}integer(@UseBlankSource), zptBoolean);
 end;
 
 function TBitmapProducerWithOptionalArgument.GetOptionalArgument(Stack : TZArrayList): TZBitmap;

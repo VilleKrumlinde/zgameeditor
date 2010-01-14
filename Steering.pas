@@ -119,15 +119,15 @@ end;
 procedure TSteeringController.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Behaviours',{$ENDIF}integer(@Behaviours) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Behaviours',{$ENDIF}integer(@Behaviours), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSteeringBehaviour]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Mass',{$ENDIF}integer(@Mass) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Mass',{$ENDIF}integer(@Mass), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'MaxSpeed',{$ENDIF}integer(@MaxSpeed) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'MaxForce',{$ENDIF}integer(@MaxForce) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'MaxSpeed',{$ENDIF}integer(@MaxSpeed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'MaxForce',{$ENDIF}integer(@MaxForce), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'AdjustHeading',{$ENDIF}integer(@AdjustHeading) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AdjustHeading',{$ENDIF}integer(@AdjustHeading), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius), zptFloat);
 end;
 
 procedure TSteeringController.Execute;
@@ -514,21 +514,21 @@ const
 procedure TSteeringBehaviour.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(SteerKindNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TargetModel',{$ENDIF}integer(@TargetModel) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TargetModel',{$ENDIF}integer(@TargetModel), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TargetCategory',{$ENDIF}integer(@TargetCategory) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Weight',{$ENDIF}integer(@Weight) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TargetCategory',{$ENDIF}integer(@TargetCategory), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Weight',{$ENDIF}integer(@Weight), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//OutVector : result steer vector';
     {$endif}
   //Outvector for expressions
-  List.AddProperty({$IFNDEF MINIMAL}'OutVector',{$ENDIF}integer(@OutVector) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'OutVector',{$ENDIF}integer(@OutVector), zptVector3f);
     List.GetLast.NeverPersist := True;
 end;
 
