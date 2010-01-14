@@ -249,13 +249,13 @@ begin
   {$ifndef minimal}
 //  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
-  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
-  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
 end;
 

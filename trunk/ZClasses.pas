@@ -299,8 +299,9 @@ type
   TZPropertyList = class(TZArrayList)
   private
     NextId : integer;
+    TheSelf : integer;
   public
-    procedure AddProperty({$IFNDEF MINIMAL}Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
+    procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
     function GetByName(Name : string) : TZProperty;
@@ -731,14 +732,14 @@ end;
 procedure TZComponent.DefineProperties(List: TZPropertyList);
 begin
   {$IFNDEF MINIMAL}
-  List.AddProperty('Name', integer(@Name) - integer(Self), zptString);
+  List.AddProperty('Name', integer(@Name), zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('Comment', integer(@Comment) - integer(Self), zptString);
+  List.AddProperty('Comment', integer(@Comment), zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   {$ENDIF}
-  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}integer(@ObjId) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}integer(@ObjId), zptInteger);
     {$IFNDEF MINIMAL}
     List.GetLast.ExcludeFromXml := True;
     List.GetLast.IsReadOnly := True;
@@ -1483,6 +1484,7 @@ begin
   if Result=nil then
   begin
     Result := TZPropertyList.Create;
+    Result.TheSelf := integer(Component);
     Component.DefineProperties(Result);
     Ci.Properties := Result;
   end
@@ -1491,6 +1493,7 @@ begin
   begin
     //Components that use global variables must be single instance
     //and redefines their properties each time (AudioMixer).
+    Result.TheSelf := integer(Component);
     Result.Clear;
     Result.NextId := 0;
     Component.DefineProperties(Result);
@@ -1557,21 +1560,22 @@ begin
   Result := nil;
 end;
 
-procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}Name: string;{$ENDIF} const Offset: integer; const PropType : TZPropertyType);
+procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Offset: integer; const PropType : TZPropertyType);
 var
   P : TZProperty;
 begin
   P := TZProperty.Create;
   P.PropertyType := PropType;
-  P.Offset := Offset;
+  P.Offset := Offset-Self.TheSelf;
+
   P.PropId := NextId;
   Inc(NextId);
   {$IFNDEF MINIMAL}
   P.Name := Name;
+  Assert( ((P.Offset>=0) and (P.Offset<4096)) or (TObject(Self.TheSelf).ClassName='TAudioMixer') );
   {$ENDIF}
   Self.Add(P);
 end;
-
 
 //No writers are included in minimal runtime binary
 
@@ -3064,7 +3068,7 @@ end;
 procedure TLogicalGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
 end;
 
 {$ifndef minimal}
@@ -3092,7 +3096,7 @@ end;
 procedure TContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers), zptComponentList);
 end;
 
 type
@@ -3207,11 +3211,11 @@ end;
 procedure TStateBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}integer(@OnLeave) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}integer(@OnLeave), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptComponentList);
 end;
 
 

@@ -502,9 +502,9 @@ end;
 procedure TDefineCollision.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}integer(@Cat1) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}integer(@Cat2) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}integer(@Cat1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}integer(@Cat2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Collision','Stop']);{$endif}
 end;
 

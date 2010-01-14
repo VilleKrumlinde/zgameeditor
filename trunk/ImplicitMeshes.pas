@@ -718,13 +718,13 @@ end;
 procedure TMeshImplicit.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Function',{$ENDIF}integer(@Functions) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Function',{$ENDIF}integer(@Functions), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TImplicitFunction]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TriangleSize',{$ENDIF}integer(@Size) - integer(Self), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}'TriangleSize',{$ENDIF}integer(@Size), zptScalar);
     List.GetLast.DefaultValue.FloatValue:=0.05;
-  List.AddProperty({$IFNDEF MINIMAL}'Bounds',{$ENDIF}integer(@Bounds) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Bounds',{$ENDIF}integer(@Bounds), zptInteger);
     List.GetLast.DefaultValue.IntegerValue:=100;
-  List.AddProperty({$IFNDEF MINIMAL}'MultipleSurfaces',{$ENDIF}integer(@MultipleSurfaces) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'MultipleSurfaces',{$ENDIF}integer(@MultipleSurfaces), zptBoolean);
 end;
 
 procedure TMeshImplicit.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -843,11 +843,11 @@ const
 procedure TImplicitPrimitive.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(PrimitiveNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Param1',{$ENDIF}integer(@Param1) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Param2',{$ENDIF}integer(@Param2) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Param1',{$ENDIF}integer(@Param1), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Param2',{$ENDIF}integer(@Param2), zptFloat);
 end;
 
 {$ifndef minimal}
@@ -905,15 +905,15 @@ end;
 procedure TImplicitExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
     {$ifndef minimal}List.GetLast.ReturnType := zctFloat;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Z',{$ENDIF}integer(@Z) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Z',{$ENDIF}integer(@Z), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -932,11 +932,11 @@ end;
 procedure TImplicitCombine.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Union','Intersect','Difference']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Blending',{$ENDIF}integer(@Blending) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Blending',{$ENDIF}integer(@Blending), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TImplicitFunction]);{$endif}
 end;
 
@@ -993,10 +993,10 @@ end;
 procedure TImplicitFunction.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
 end;
 
 function TImplicitFunction.Eval(const X, Y, Z: TImpType): TImpType;
@@ -1024,11 +1024,11 @@ end;
 procedure TImplicitWarp.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Twist','Bend','Taper']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Function',{$ENDIF}integer(@Functions) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Function',{$ENDIF}integer(@Functions), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TImplicitFunction]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'WarpAmount',{$ENDIF}integer(@WarpAmount) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'WarpAmount',{$ENDIF}integer(@WarpAmount), zptFloat);
 end;
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}

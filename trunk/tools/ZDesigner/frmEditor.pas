@@ -202,6 +202,7 @@ type
     Contents1: TMenuItem;
     HelpContentsAction: TAction;
     N13: TMenuItem;
+    DetailedBuildReportMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -521,6 +522,7 @@ begin
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
+  DetailedBuildReportMenuItem.Visible := DebugHook<>0;
 
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
@@ -3486,8 +3488,7 @@ var
   NamesKept,AllObjects : TObjectList;
   DisplayDetailedReport : boolean;
 begin
-  DisplayDetailedReport := False;
-//  DisplayDetailedReport := True;
+  DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
   Section := Module.ImageSection[0];
   if Section.SectionName<>'.text' then

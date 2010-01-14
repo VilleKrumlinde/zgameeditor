@@ -65,19 +65,6 @@ Abstract:
 
 interface
 
-{$I jedi-sdl.inc}
-
-uses
-{$IFDEF __GPC__}
-  system,
-  gpc,
-{$ENDIF}
-  DLLFuncs;
-
-
-var
-  LibGL: TModuleHandle;
-
 type
   GLenum     = Cardinal;      PGLenum     = ^GLenum;
   GLboolean  = Byte;          PGLboolean  = ^GLboolean;
@@ -397,7 +384,7 @@ const
   // GetPointerTarget 
   //      GL_VERTEX_ARRAY_POINTER
   //      GL_NORMAL_ARRAY_POINTER 
-  //      GL_COLOR_ARRAY_POINTER 
+  //      GL_COLOR_ARRAY_POINTER
   //      GL_INDEX_ARRAY_POINTER
   //      GL_TEXTURE_COORD_ARRAY_POINTER 
   //      GL_EDGE_FLAG_ARRAY_POINTER 
@@ -617,7 +604,7 @@ const
   //      GL_VERTEX_ARRAY 
   //      GL_NORMAL_ARRAY 
   //      GL_COLOR_ARRAY 
-  //      GL_INDEX_ARRAY 
+  //      GL_INDEX_ARRAY
   //      GL_TEXTURE_COORD_ARRAY 
   //      GL_EDGE_FLAG_ARRAY
   //      GL_VERTEX_ARRAY_SIZE
@@ -632,7 +619,7 @@ const
   //      GL_INDEX_ARRAY_STRIDE 
   //      GL_TEXTURE_COORD_ARRAY_SIZE 
   //      GL_TEXTURE_COORD_ARRAY_TYPE 
-  //      GL_TEXTURE_COORD_ARRAY_STRIDE 
+  //      GL_TEXTURE_COORD_ARRAY_STRIDE
   //      GL_EDGE_FLAG_ARRAY_STRIDE 
   //      GL_POLYGON_OFFSET_FACTOR 
   //      GL_POLYGON_OFFSET_UNITS 
@@ -1468,8 +1455,6 @@ var
 
 
 
-{procedure LoadOpenGL( const dll: PAnsiChar );
-procedure FreeOpenGL;}
 procedure LoadOpenGLExtensions;
 
 {$ifndef minimal}
