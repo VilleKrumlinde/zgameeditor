@@ -418,8 +418,8 @@ begin
   InMesh := T3dsMesh(M);
 
   OutMesh := TMesh.Create(nil);
-  OutMesh.Comment := AnsiString(InMesh.Name);
-  OutMesh.Name := AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M)));
+  OutMesh.SetString(@OutMesh.Comment,AnsiString(InMesh.Name));
+  OutMesh.SetString(@OutMesh.Name,AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
 
   MeshImp := TMeshImport.Create(OutMesh.Producers);
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
@@ -571,7 +571,7 @@ begin
     RMesh := TRenderMesh.Create(M.OnRender);
     RMesh.Mesh := Mesh.ZMesh;
   end;
-  M.Name := AnsiString(NamePrefix + 'Model');
+  M.SetString( @M.Name,AnsiString(NamePrefix + 'Model') );
   Result := M;
 end;
 
@@ -623,7 +623,7 @@ begin
   Group := TLogicalGroup.Create(nil);
 
   MeshGroup := TLogicalGroup.Create(Group.Children);
-  MeshGroup.Comment := 'Meshes';
+  MeshGroup.SetString(@MeshGroup.Comment,'Meshes');
   for I := 0 to DataFile.MeshList.Count - 1 do
   begin
     Mesh := DataFile.MeshList[I] as T3dsMesh;
@@ -631,7 +631,7 @@ begin
   end;
 
   Group.Children.AddComponent( GenerateModel );
-  Group.Comment := 'Imported from ' + AnsiString(ExtractFileName(Self.FileName));
+  Group.SetString(@Group.Comment,'Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
 
   Result := Group;
 end;

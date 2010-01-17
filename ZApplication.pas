@@ -442,7 +442,7 @@ begin
       vprCustom : ActualViewportRatio := Self.CustomViewportRatio;
       vpr4_3 : ActualViewportRatio := 4/3;
       vpr16_9 : ActualViewportRatio := 16/9;
-    {$ifndef zminimal}
+    {$ifndef minimal}
     else
       ;
     {$endif}
@@ -557,7 +557,7 @@ begin
       Self.OnBeginRenderPass.ExecuteCommands;
 
 
-    if {$ifdef zminimal}(ViewportRatio=vprCustom) and {$endif}
+    if {$ifdef minimal}(ViewportRatio=vprCustom) and {$endif}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
 
@@ -637,7 +637,7 @@ begin
   if not ConstantMap.TryGetValue(Key,Result) then
   begin
     Con := TExpStringConstant.Create(ConstantPool);
-    Con.Value := Key;
+    Con.Value := StrNew( PAnsiChar(Key) );
     ConstantMap.Add(Key,Con);
     Result := Con;
   end;

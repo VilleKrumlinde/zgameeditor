@@ -71,7 +71,7 @@ type
   TZProperty = class;
 
   //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
-  TPropString = {$IFNDEF MINIMAL}AnsiString{$else}PAnsiChar{$ENDIF};
+  TPropString = PAnsiChar;
   PPropString = ^TPropString;
 
   PObjectArray = ^TObjectArray;
@@ -243,8 +243,8 @@ type
   TZPropertyValue = record
     {$IFNDEF MINIMAL}
     //String-props kan ej ligga i case-switch för designer
-    StringValue : TPropString;
     ExpressionValue : TZExpressionPropValue;
+    StringValue : AnsiString;
     {$ENDIF}
     case integer of
       0 : (FloatValue : single);
@@ -252,7 +252,7 @@ type
       3 : (ColorfValue : TZColorf);
       4 : (IntegerValue : integer);
       5 : (ComponentValue : TZComponent); //även inlinecomponent
-      {$IFDEF MINIMAL}6 : (StringValue : PAnsiChar);{$ENDIF}
+      {$ifdef minimal}6 : (StringValue : PAnsiChar);{$endif}
       7 : (PropertyValue : TZPropertyRef);
       8 : (Vector3fValue : TZVector3f);
       9 : (ComponentListValue : TZComponentList);
@@ -337,6 +337,7 @@ type
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
     function GetOwner : TZComponent;
+    procedure SetString(Dest : PPropString; const Value : AnsiString);
     {$endif}
   end;
 
@@ -689,6 +690,7 @@ var
   Prop : TZProperty;
   Value : TZPropertyValue;
   I : integer;
+  P : ppointer;
 begin
   //Remove from ownerlist
   if OwnerList <> nil then
@@ -714,7 +716,13 @@ begin
           GetProperty(Prop,Value);
           Value.ComponentValue.Free;
         end;
-      {$ifndef zminimal}
+      {$ifndef minimal}
+      zptString :
+        begin
+          P := PPointer(GetPropertyPtr(Prop,0));
+          if PAnsiChar(P^)<>nil then
+            StrDispose( PAnsiChar(P^) );
+        end;
       zptBinary :
         begin
           //Frigör binary mem enbart i designer.
@@ -759,7 +767,7 @@ begin
       {$IFDEF MINIMAL}
       Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ELSE}
-      Value.StringValue := PAnsiString(P)^;
+      Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ENDIF}
     zptComponentRef,zptInlineComponent :
       Value.ComponentValue := TZComponent(PPointer(P)^);
@@ -807,7 +815,11 @@ begin
       //todo copy characters? nix, string ska vara immutable.
       PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
-      PAnsiString(P)^ := Value.StringValue;
+      begin
+        if PPAnsiChar(P)^<>nil then
+          StrDispose(PPAnsiChar(P)^);
+        PPAnsiChar(P)^ := StrNew(PAnsiChar(Value.StringValue));
+      end;
       {$ENDIF}
     zptComponentRef :
       PPointer(P)^ := pointer(Value.ComponentValue);
@@ -1030,7 +1042,7 @@ begin
           Result.SetProperty(Prop,Tmp);
           {$endif}
         end;
-      {$ifndef zminimal}
+      {$ifndef minimal}
       zptBinary :
         begin
           //Kopiera binary mem enbart i designer.
@@ -1059,6 +1071,11 @@ begin
   else
     S := S + ' : ' + Cn;
   Result := S;
+end;
+
+procedure TZComponent.SetString(Dest : PPropString; const Value : AnsiString);
+begin
+  Dest^ := StrNew( PAnsiChar(Value) );
 end;
 
 procedure TZComponent.DesignerReset;
