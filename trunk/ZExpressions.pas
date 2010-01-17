@@ -77,6 +77,15 @@ type
     {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
+  //Holds a stringconstant used in expressions
+  //It is automatically inserted in App.ConstantPool
+  TExpStringConstant = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Value : TPropString;
+  end;
+
   TDefineArray = class(TDefineVariableBase)
   strict private
     Data : PFloatArray;
@@ -159,6 +168,9 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpOpBinaryKind;
+    {$ifndef minimal}
+    constructor Create(OwnerList: TZComponentList; Kind : TExpOpBinaryKind); reintroduce;
+    {$endif}
   end;
 
   TExpOpBinaryFloat = class(TExpOpBinaryBase)
@@ -280,6 +292,12 @@ type
 
   //Assign ptr to 1-byte value, both on stack
   TExpAssign1 = class(TExpBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  //Join two strings
+  TExpStringConCat = class(TExpBase)
   protected
     procedure Execute; override;
   end;
@@ -482,6 +500,14 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
 end;
+
+{$ifndef minimal}
+constructor TExpOpBinaryBase.Create(OwnerList: TZComponentList; Kind : TExpOpBinaryKind);
+begin
+  inherited Create(OwnerList);
+  Self.Kind := Kind;
+end;
+{$endif}
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
 procedure TExpOpBinaryFloat.Execute;
@@ -1113,6 +1139,35 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer']);{$endif}
 end;
 
+{ TExpStringConstant }
+
+procedure TExpStringConstant.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$ifndef minimal}'Value',{$endif}integer(@Value), zptString);
+end;
+
+{ TExpStringConCat }
+
+procedure TExpStringConCat.Execute;
+var
+  P1,P2,Dest : PAnsiChar;
+  I : integer;
+begin
+  StackPopTo(P2);
+  StackPopTo(P1);
+
+  I := ZStrLength(P1) + ZStrLength(P2);
+  //todo: add to gc
+  GetMem(Dest,I+1);
+  Dest^ := #0;
+
+  ZStrCat(Dest,P1);
+  ZStrCat(Dest,P2);
+
+  StackPush(Dest);
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -1163,6 +1218,10 @@ initialization
   ZClasses.Register(TExpAssign4,ExpAssign4ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAssign1,ExpAssign1ClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpStringConstant,ExpStringConstantClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpStringConCat,ExpStringConCatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

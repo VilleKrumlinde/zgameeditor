@@ -1928,6 +1928,9 @@ begin
   end;
   ZcGlobalNames.Clear;
 
+  //Remove stringconstants
+  ZApp.ClearConstantPool;
+
   try
     I := 0;
     while I<Tree.Items.Count do
@@ -2005,7 +2008,6 @@ procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
 begin
-//  BuildBinary('player.bin',OutFile);
   OutFile := BuildRelease(bbNormalUncompressed);
   //Kör den skapade filen
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
@@ -3363,7 +3365,7 @@ begin
         for I := 0 to PropList.Count - 1 do
         begin
           Prop := TZProperty(PropList[I]);
-          if (Prop.PropertyType in [zptString,zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
+          if (Prop.PropertyType in [zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
             (Prop.Name='ObjId') then
             Continue;
           InAdd([Prop.Name]);

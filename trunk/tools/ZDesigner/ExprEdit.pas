@@ -52,7 +52,7 @@ var
 
 implementation
 
-uses Zc,Zc_Ops,Dialogs,
+uses Zc,Zc_Ops,Dialogs, ZApplication,
   DesignerGUI,CocoBase;
 
 
@@ -188,6 +188,7 @@ type
     procedure GenFuncCall(Op : TZcOp; NeedReturnValue : boolean);
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
     procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
+    procedure MakeStringLiteralOp(const Value : string);
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -199,20 +200,25 @@ function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : 
 begin
   Result := ParsePropRef(SymTab,Component,VarName,Ref);
   if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes)
-    or (Ref.Prop.PropertyType in [zptInteger,zptByte,zptBoolean]))) then
+    or (Ref.Prop.PropertyType in [zptString,zptInteger,zptByte,zptBoolean]))) then
     raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
 end;
 
 
-function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpOpBinaryBase;
+function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpBase;
 begin
   case Typ of
-    zctFloat : Result := TExpOpBinaryFloat.Create(nil);
-    zctInt : Result := TExpOpBinaryInt.Create(nil);
+    zctFloat : Result := TExpOpBinaryFloat.Create(nil,Kind);
+    zctInt : Result := TExpOpBinaryInt.Create(nil,Kind);
+    zctString :
+      begin
+        if Kind<>vbkPlus then
+          raise ECodeGenError.Create('Cannot use this operator on a string-expression');
+        Result := TExpStringConCat.Create(nil);
+      end;
   else
     raise ECodeGenError.Create('Wrong datatype for binaryop');
   end;
-  Result.Kind := Kind;
 end;
 
 function MakeAssignOp(Size : integer) : TExpBase;
@@ -238,6 +244,17 @@ begin
     else
       raise ECodeGenError.Create('Invalid literal');
   end;
+end;
+
+procedure TZCodeGen.MakeStringLiteralOp(const Value : string);
+var
+  C : TExpPropValueBase;
+  Con : TExpStringConstant;
+begin
+  Con := ZApp.AddToConstantPool(Value) as TExpStringConstant;
+  C := TExpPropValue4.Create(Target);
+  C.Source.Component := Con;
+  C.Source.Prop := Con.GetProperties.GetByName('Value');
 end;
 
 //Genererar en op som skapar ett värde på stacken
@@ -342,7 +359,10 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoLiteral;
   begin
-    MakeLiteralOp((Op as TZcOpLiteral).Value, Op.GetDataType);
+    if Op.GetDataType=zctString then
+      MakeStringLiteralOp((Op as TZcOpLiteral).StringValue)
+    else
+      MakeLiteralOp((Op as TZcOpLiteral).Value, Op.GetDataType);
   end;
 
 begin
