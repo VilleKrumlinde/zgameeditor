@@ -1400,7 +1400,7 @@ begin
       end;
     end;
 
-    Self.Component.Comment := 'Imported from ' + AnsiString(ExtractFileName(FileName));
+    Self.Component.SetString( @Self.Component.Comment,'Imported from ' + AnsiString(ExtractFileName(FileName)) );
 
     (Self.Component as TBitmapFromFile).HasAlphaLayer := UseAlpha;
     if UseAlpha then
@@ -1461,7 +1461,7 @@ var
       Midi := TMidiFile.Create(D.FileName);
       try
         Midi.WriteZzdcResource(Self.Component as TMusic,M);
-        Self.Component.Comment := 'Imported from ' + AnsiString(ExtractFileName(D.FileName));
+        Self.Component.SetString(@Self.Component.Comment,'Imported from ' + AnsiString(ExtractFileName(D.FileName)));
         //Music-instruments har ändrats, refresh treenode
         (PropEditor.Owner as TEditorForm).Tree.RefreshNode((PropEditor.Owner as TEditorForm).Tree.ZSelected,Self.Component);
         (PropEditor.Owner as TEditorForm).Tree.ZSelected.Expand(True);
@@ -1493,7 +1493,7 @@ var
       if ImportRawAudioForm.ShowModal=mrCancel then
         Exit;
 
-      Self.Component.Comment := 'Imported from ' + AnsiString(ExtractFileName(D.FileName));
+      Self.Component.SetString(@Self.Component.Comment,'Imported from ' + AnsiString(ExtractFileName(D.FileName)));
       (Self.Component as TSound).Voice.BaseNoteNr := 60;
       (Self.Component as TSound).Voice.SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
       PByte(@(Self.Component as TSound).Voice.SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
@@ -1516,7 +1516,7 @@ var
       if not D.Execute then
         Exit;
       M.LoadFromFile(D.FileName);
-      Self.Component.Comment := 'Imported from ' + AnsiString(ExtractFileName(D.FileName));
+      Self.Component.SetString(@Self.Component.Comment,'Imported from ' + AnsiString(ExtractFileName(D.FileName)));
       Result := True;
     finally
       D.Free;
