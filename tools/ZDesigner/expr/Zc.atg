@@ -311,7 +311,8 @@ Type<var Typ : TZcDataType>
 SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
 = "float" (. Typ := zctFloat; .) |
-  "int" (. Typ := zctInt; .)
+  "int" (. Typ := zctInt; .) |
+  "string" (. Typ := zctString; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -601,14 +602,19 @@ Primary<var OutOp : TZcOp>
   ( 
     ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
   | Literal<Typ>  (. 
-        try
-          S := LexString;
-          if S[ Length(S) ] in ['F','f'] then
-            S := Copy(S,1,Length(S)-1);
-          V := StrToFloat(S);
-          OutOp := TZcOpLiteral.Create(Typ,V)
-        except on EConvertError do
-          SynError(200);
+        if Typ=zctString then
+          OutOp := TZcOpLiteral.Create(Typ,LexString)
+        else
+        begin
+          try
+            S := LexString;
+            if S[ Length(S) ] in ['F','f'] then
+              S := Copy(S,1,Length(S)-1);
+            V := StrToFloat(S);
+            OutOp := TZcOpLiteral.Create(Typ,V)
+          except on EConvertError do
+            SynError(200);
+          end;
         end;
      .)
   | "(" Expr<OutOp> ")"
@@ -652,8 +658,9 @@ Primary<var OutOp : TZcOp>
 /*------------------------------------------------------------------------*/
 Literal<var Typ : TZcDataType>
 = intCon (. Typ :=zctInt; .) | 
-  realCon (. Typ := zctFloat; .) 
-  (* | stringCon | "true" | "false" | "null" *)
+  realCon (. Typ := zctFloat; .) |
+  stringCon (. Typ := zctString; .)
+  (* | "true" | "false" | "null" *)
 .
 
 END Zc.

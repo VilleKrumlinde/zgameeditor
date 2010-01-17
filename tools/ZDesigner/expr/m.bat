@@ -1,4 +1,4 @@
-c:
-cd "\Program Files\CocoR for Delphi"
-CocoDelphi D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\zc
-d:
+cd "\Program Files (x86)\CocoR for Delphi"
+CocoDelphi C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\zc
+cd \DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr
+

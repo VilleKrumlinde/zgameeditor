@@ -22,7 +22,9 @@ unit ZApplication;
 
 interface
 
-uses ZClasses,Meshes,Collision,Commands,AudioComponents;
+uses ZClasses,Meshes,Collision,Commands,AudioComponents
+  {$ifndef minimal},Generics.Collections{$endif}
+;
 
 type
 
@@ -52,6 +54,10 @@ type
   TZApplication = class(TZComponent)
   strict private
     DepthList : TZArrayList;
+    ConstantPool : TZComponentList;
+    {$ifndef minimal}
+    ConstantMap : TDictionary<AnsiString,TObject>;
+    {$endif}
     procedure RenderModels;
   private
     FpsFrames : integer;
@@ -125,6 +131,8 @@ type
     procedure DesignerStart(const ViewW,ViewH : integer);
     procedure DesignerStop;
     procedure DesignerSetUpView;
+    function AddToConstantPool(const Value : string) : TObject;
+    procedure ClearConstantPool;
     {$endif}
   end;
 
@@ -158,7 +166,7 @@ implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,SysUtils
+  ,ZExpressions,SysUtils
   {$endif}
   ;
 
@@ -173,6 +181,10 @@ begin
 
   Collisions := TCollisionChecks.Create(Models);
   DepthList := TZArrayList.CreateReferenced;
+
+  {$ifndef minimal}
+  ConstantMap := TDictionary<AnsiString,TObject>.Create;
+  {$endif}
 end;
 
 destructor TZApplication.Destroy;
@@ -188,6 +200,10 @@ begin
   DepthList.Free;
   if not HasShutdown then
     Shutdown;
+
+  {$ifndef minimal}
+  ConstantMap.Free;
+  {$endif}
   inherited;
 end;
 
@@ -611,6 +627,28 @@ begin
 
   glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
 end;
+
+function TZApplication.AddToConstantPool(const Value : string) : TObject;
+var
+  Key : AnsiString;
+  Con : TExpStringConstant;
+begin
+  Key := AnsiString(Value);
+  if not ConstantMap.TryGetValue(Key,Result) then
+  begin
+    Con := TExpStringConstant.Create(ConstantPool);
+    Con.Value := Key;
+    ConstantMap.Add(Key,Con);
+    Result := Con;
+  end;
+end;
+
+procedure TZApplication.ClearConstantPool;
+begin
+  ConstantPool.Clear;
+  ConstantMap.Clear;
+end;
+
 {$endif}
 
 procedure TZApplication.AddModel(Model: TModel);
@@ -693,6 +731,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}integer(@EscapeToQuit), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
+
+  List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon), zptBinary);

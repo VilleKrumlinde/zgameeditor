@@ -57,7 +57,7 @@ type
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
- ExpAssign4ClassId,ExpAssign1ClassId,
+ ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -232,7 +232,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt);
+  TZcDataType = (zctVoid,zctFloat,zctInt,zctString);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -487,7 +487,7 @@ type
   end;
 
 
-function GetPropertyRef(const Prop : TZPropertyRef) : PFloat;
+function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
 function MakeColorf(const R,G,B,A : single) : TZColorf;
 
 {.$IFNDEF MINIMAL}
@@ -3164,9 +3164,9 @@ end;
 
 ///////////////////
 
-function GetPropertyRef(const Prop : TZPropertyRef) : PFloat;
+function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
 begin
-  Result := PFloat(Prop.Component.GetPropertyPtr(Prop.Prop,Prop.Index));
+  Result := Prop.Component.GetPropertyPtr(Prop.Prop,Prop.Index);
 end;
 
 { TZOutputStream }

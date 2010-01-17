@@ -1,14 +1,14 @@
 [Frames]
-Parser=C:\Program Files\CocoR for Delphi\Frames\component.frm
-Test Project=C:\Program Files\CocoR for Delphi\Frames\Test.dpr.frm
-Test Form=C:\Program Files\CocoR for Delphi\Frames\Test.pas.frm
-Test DFM=C:\Program Files\CocoR for Delphi\Frames\Test.dfm.frm
-Console=C:\Program Files\CocoR for Delphi\Frames\Console.dpr.frm
-Ancestor=C:\Program Files\CocoR for Delphi\Frames\CocoBase.pas
+Parser=C:\Program Files (x86)\CocoR for Delphi\Frames\component.frm
+Test Project=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.dpr.frm
+Test Form=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.pas.frm
+Test DFM=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.dfm.frm
+Console=C:\Program Files (x86)\CocoR for Delphi\Frames\Console.dpr.frm
+Ancestor=C:\Program Files (x86)\CocoR for Delphi\Frames\CocoBase.pas
 
 [Output]
 ;Kommentera ut directory-raden för att fel-loggen ska genereras
-Directory=D:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr
+Directory=C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr
 
 [Registration]
 Palette=Coco/R

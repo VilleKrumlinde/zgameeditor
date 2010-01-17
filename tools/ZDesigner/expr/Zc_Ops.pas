@@ -48,7 +48,9 @@ type
   public
     Typ : TZcDataType;
     Value : single;
-    constructor Create(Typ : TZcDataType; Value : single); reintroduce;
+    StringValue : string;
+    constructor Create(Typ : TZcDataType; Value : single); reintroduce; overload;
+    constructor Create(Typ : TZcDataType; const StringValue : string); reintroduce; overload;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
   end;
@@ -127,7 +129,7 @@ var
 
 const
   ZcTypeNames : array[TZcDataType] of string =
-(('void'),('float'),('int'));
+(('void'),('float'),('int'),('string'));
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 begin
@@ -160,6 +162,7 @@ function TZcOp.GetDataType: TZcDataType;
       else
         case Ref.Prop.PropertyType of
           zptInteger,zptByte,zptBoolean : Result := zctInt;
+          zptString : Result := zctString;
         end;
     end;
   end;
@@ -178,7 +181,11 @@ begin
     else
       Result := zctFloat
   end else if Kind=zcFuncCall then
-    Result := zctFloat //built in function
+  begin
+    //Result := zctFloat //built in function
+    //should never get here, funcalls have ref set to function
+    Assert(False,'Compile error: ' + Self.Id);
+  end
   else if Kind=zcConstLiteral then
     Result := zctFloat
   else if Children.Count>0 then
@@ -199,8 +206,8 @@ begin
     zcDiv : Result := Child(0).ToString + '/' + Child(1).ToString;
     zcPlus : Result := Child(0).ToString + '+' + Child(1).ToString;
     zcMinus : Result := Child(0).ToString + '-' + Child(1).ToString;
-    zcIdentifier : Result := Id;
     zcAssign,zcPreInc,zcPreDec,zcPostInc,zcPostDec : Result := Child(0).ToString + '=' + Child(1).ToString;
+    zcIdentifier : Result := Id;
     zcIf :
       begin
         Result := 'if(' + Child(0).ToString + ') ' + Child(1).ToString;
@@ -458,6 +465,7 @@ begin
   Result := TZcOp.Create(nil);
   Result.Kind := Kind;
 end;
+
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
@@ -564,6 +572,14 @@ begin
   Self.Value := Value;
 end;
 
+constructor TZcOpLiteral.Create(Typ: TZcDataType; const StringValue: string);
+begin
+  inherited Create(nil);
+  Kind := zcConstLiteral;
+  Self.Typ := Typ;
+  Self.StringValue := AnsiDequotedStr( StringValue, '"' );
+end;
+
 function TZcOpLiteral.GetDataType: TZcDataType;
 begin
   Result := Typ;
@@ -571,7 +587,10 @@ end;
 
 function TZcOpLiteral.ToString: string;
 begin
-  Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
+  if GetDataType=zctString then
+    Result := StringValue
+  else
+    Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
 end;
 
 
@@ -584,6 +603,7 @@ procedure InitBuiltIns;
       'V' : Result := zctVoid;
       'F' : Result := zctFloat;
       'I' : Result := zctInt;
+      'S' : Result := zctString;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
