@@ -198,10 +198,21 @@ type
      fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
-     fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime);
+     fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
+     //String functions
+     fcIntToStr);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : TExpFuncCallKind;
+  end;
+
+  //Built-in string function call
+  TExpStringFuncCall = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -1145,7 +1156,6 @@ procedure TExpStringConstant.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$ifndef minimal}'Value',{$endif}integer(@Value), zptString);
-    List.GetLast.IsReadOnly := True;
 end;
 
 { TExpStringConCat }
@@ -1162,12 +1172,37 @@ begin
 
   //Add to gc
   Dest := ManagedHeap_Alloc(I+1);
-  Dest^ := #0;
 
-  ZStrCat(Dest,P1);
+  ZStrCopy(Dest,P1);
   ZStrCat(Dest,P2);
 
   StackPush(Dest);
+end;
+
+{ TExpStringFuncCall }
+
+procedure TExpStringFuncCall.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+end;
+
+procedure TExpStringFuncCall.Execute;
+var
+  I : integer;
+  Buf : array[0..15] of ansichar;
+  Dest : PAnsiChar;
+begin
+  case Kind of
+    fcIntToStr:
+      begin
+        StackPopTo(I);
+        ZStrConvertInt(I,PAnsiChar(@Buf));
+        Dest := ManagedHeap_Alloc(ZStrLength(@Buf)+1);
+        ZStrCopy(Dest,@Buf);
+        StackPush(Dest);
+      end;
+  end;
 end;
 
 initialization
@@ -1224,6 +1259,8 @@ initialization
   ZClasses.Register(TExpStringConstant,ExpStringConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStringConCat,ExpStringConCatClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpStringFuncCall,ExpStringFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

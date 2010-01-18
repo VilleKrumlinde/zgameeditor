@@ -1017,6 +1017,7 @@ procedure TRenderText.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}integer(@Text), zptString);
+    List.GetLast.IsStringTarget := True;
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
@@ -1098,9 +1099,11 @@ begin
   if TextFloatRef.Component<>nil then
   begin
     //If textref is set then convert float-value to string
-    ZStrConvertFloat(
-      PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
-      * Self.FloatMultiply,
+    ZStrConvertInt(
+      Trunc(
+        PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
+        * Self.FloatMultiply
+      ),
       PAnsiChar(@FloatBuf));
     if pointer(Self.Text)<>nil then
       ZStrCopy(TextBuf,PAnsiChar(Self.Text))
