@@ -113,6 +113,7 @@
 			<DelphiCompile Include="ZDesigner.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="..\..\ZLog.pas"/>
 			<DCCReference Include="DesignerGui.pas"/>
 			<DCCReference Include="..\..\ZClasses.pas"/>
 			<DCCReference Include="..\..\ZBitmap.pas"/>

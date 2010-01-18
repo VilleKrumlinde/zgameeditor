@@ -498,7 +498,7 @@ begin
 
   PredefinedConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
-  Con.SetString(@Con.Name,'PI');
+  Con.SetString('Name','PI');
   Con.Value := PI;
   PredefinedConstants.Add(Con);
 
@@ -2327,7 +2327,7 @@ begin
       S := Ci.ZClassName + IntToStr(I);
       if not SymTab.Contains(S) then
       begin
-        C.Name := StrNew( PAnsiChar(AnsiString(S) ) );
+        C.SetString('Name',AnsiString(S));
         SymTab.Add(S,C);
         Break;
       end;
@@ -2687,7 +2687,7 @@ begin
   begin
     //Copy several: Create group component as root for the copies
     Group := TLogicalGroup.Create(nil);
-    Group.SetString(@Group.Name, AnsiString('#'));
+    Group.SetString('Name', AnsiString('#'));
     Nodes := Tree.SortSelections;
     try
       for I := 0 to Tree.SelectionCount - 1 do
@@ -2794,7 +2794,7 @@ begin
           NewName := StartName + IntToStr(J);
           if not SymTab.Contains(NewName) then
           begin
-            C.SetString(@C.Name,AnsiString(NewName));
+            C.SetString('Name',AnsiString(NewName));
             NewNameFound := True;
             Break;
           end;

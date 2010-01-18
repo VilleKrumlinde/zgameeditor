@@ -173,6 +173,7 @@ type
     function Last : TObject;
     procedure Remove(Item : TObject);
     procedure SwapRemoveAt(Index : integer);
+    procedure SwapRemove(Item: TObject);
     procedure Clear;
     property Items[Index: Integer]: TObject read GetItem write SetItem; default;
     property Count : integer read FCount;
@@ -275,6 +276,7 @@ type
     DefaultValue : TZPropertyValue;
     NeverPersist : boolean;
     DontClone : boolean;
+    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
@@ -288,7 +290,6 @@ type
       array of TZComponentClass; //För componentref: krav på vilka klasser som går att referera till
     Options : array of string;  //För bytes: Valbara alternativ
     HideInGui : boolean;        //Visa inte denna prop i gui
-    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
     ReturnType : TZcDataType;      //For expresssions: return type of expression
     function IsDefaultValue(const Value : TZPropertyValue) : boolean;
     procedure SetChildClasses(const C : array of TZComponentClass);
@@ -337,7 +338,7 @@ type
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
     function GetOwner : TZComponent;
-    procedure SetString(Dest : PPropString; const Value : AnsiString);
+    procedure SetString(const PropName : string; const Value : AnsiString);
     {$endif}
   end;
 
@@ -504,6 +505,11 @@ procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrConvertFloat(const S : single; Dest : PAnsiChar);
 
+//Garbage collected managed heap
+function ManagedHeap_Alloc(const Size : integer) : pointer;
+function ManagedHeap_GetAllocCount : integer;
+procedure ManagedHeap_GarbageCollect(Full : boolean);
+
 {$ifndef minimal}
 const
   FloatTypes : set of TZPropertyType = [zptFloat,zptScalar,zptRectf,zptColorf,zptVector3f];
@@ -623,6 +629,82 @@ type
 const
   TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression,zptInlineComponent];
 
+
+
+//Managed Heap
+var
+  mh_Targets,mh_Allocations,mh_Values : TZArrayList;
+
+procedure ManagedHeap_Create;
+begin
+  mh_Targets := TZArrayList.CreateReferenced;
+  mh_Allocations := TZArrayList.CreateReferenced;
+  mh_Values := TZArrayList.CreateReferenced;
+end;
+
+procedure ManagedHeap_FreeMem(const P : pointer);
+begin
+  mh_Allocations.SwapRemove(P);
+  FreeMem(P);
+end;
+
+procedure ManagedHeap_Destroy;
+begin
+  while mh_Allocations.Count>0 do
+    ManagedHeap_FreeMem( pointer(mh_Allocations[mh_Allocations.Count-1]) );
+  mh_Targets.Free;
+  mh_Allocations.Free;
+  mh_Values.Free;
+end;
+
+function ManagedHeap_Alloc(const Size : integer) : pointer;
+begin
+  GetMem(Result,Size);
+  mh_Allocations.Add(Result);
+end;
+
+procedure ManagedHeap_AddTarget(const P : pointer);
+begin
+  mh_Targets.Add(P);
+end;
+
+procedure ManagedHeap_RemoveTarget(const P : pointer);
+begin
+  mh_Targets.SwapRemove(P);
+end;
+
+function ManagedHeap_GetAllocCount : integer;
+begin
+  Result := mh_Allocations.Count;
+end;
+
+procedure ManagedHeap_GarbageCollect(Full : boolean);
+var
+  I : integer;
+  PP : PPointer;
+  P : pointer;
+begin
+  mh_Values.Clear;
+  for I := 0 to mh_Targets.Count - 1 do
+  begin
+    PP := PPointer(mh_Targets[I]);
+    mh_Values.Add(PP^);
+  end;
+
+  I := mh_Allocations.Count-1;
+  while I>=0 do
+  begin
+    P := Pointer(mh_Allocations[I]);
+    if mh_Values.IndexOf(P)=-1 then
+    begin
+      FreeMem(P);
+      mh_Allocations.SwapRemoveAt(I);
+    end;
+    Dec(I);
+  end;
+end;
+
+
 //Accessfunctions for componentmanager
 var
   _ComponentManager : TZComponentManager = nil;
@@ -665,6 +747,16 @@ begin
           List := TZComponentList.Create;
           PZExpressionPropValue(GetPropertyPtr(Prop,0))^.Code := List;
         end;
+      zptString :
+        begin
+          if {$ifdef minimal}(not Prop.IsReadOnly){$else}(not ComponentManager.GetInfo(Self).NoUserCreate){$endif} then
+          begin
+            {$ifndef minimal}
+            //ZLog.GetLog(Self.ClassName).Write('Add: ' + Prop.Name);
+            {$endif}
+            ManagedHeap_AddTarget(GetPropertyPtr(Prop,0));
+          end;
+        end;
     end;
     //Set defaultvalue for property
     //todo: Robustare sätt att testa ifall defaultvärde finns, generic4 är < sizeof(value)
@@ -690,7 +782,6 @@ var
   Prop : TZProperty;
   Value : TZPropertyValue;
   I : integer;
-  P : ppointer;
 begin
   //Remove from ownerlist
   if OwnerList <> nil then
@@ -716,13 +807,12 @@ begin
           GetProperty(Prop,Value);
           Value.ComponentValue.Free;
         end;
-      {$ifndef minimal}
       zptString :
         begin
-          P := PPointer(GetPropertyPtr(Prop,0));
-          if PAnsiChar(P^)<>nil then
-            StrDispose( PAnsiChar(P^) );
+          if {$ifdef minimal}(not Prop.IsReadOnly){$else}(not ComponentManager.GetInfo(Self).NoUserCreate){$endif} then
+            ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));
         end;
+      {$ifndef minimal}
       zptBinary :
         begin
           //Frigör binary mem enbart i designer.
@@ -816,9 +906,9 @@ begin
       PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
       begin
-        if PPAnsiChar(P)^<>nil then
-          StrDispose(PPAnsiChar(P)^);
-        PPAnsiChar(P)^ := StrNew(PAnsiChar(Value.StringValue));
+        PPointer(P)^ := ManagedHeap_Alloc(Length(Value.StringValue)+1);
+        System.Move(Value.StringValue[1],PPointer(P)^^,Length(Value.StringValue));
+        PByteArray(PPAnsiChar(P)^)^[Length(Value.StringValue)] := 0;
       end;
       {$ENDIF}
     zptComponentRef :
@@ -1073,9 +1163,14 @@ begin
   Result := S;
 end;
 
-procedure TZComponent.SetString(Dest : PPropString; const Value : AnsiString);
+procedure TZComponent.SetString(const PropName : string; const Value : AnsiString);
+var
+  P : TZProperty;
+  Pv : TZPropertyValue;
 begin
-  Dest^ := StrNew( PAnsiChar(Value) );
+  P := Self.GetProperties.GetByName(PropName);
+  Pv.StringValue := Value;
+  Self.SetProperty(P,Pv);
 end;
 
 procedure TZComponent.DesignerReset;
@@ -1232,6 +1327,11 @@ end;
 procedure TZArrayList.Remove(Item: TObject);
 begin
   RemoveAt( IndexOf(Item) );
+end;
+
+procedure TZArrayList.SwapRemove(Item: TObject);
+begin
+  SwapRemoveAt( IndexOf(Item) );
 end;
 
 procedure TZArrayList.SwapRemoveAt(Index: integer);
@@ -3314,7 +3414,10 @@ begin
   Self.ProduceOutput(GlobalContent.Content,GlobalContent.Stack);
 end;
 
+
 initialization
+
+  ManagedHeap_Create;
 
   //todo really need to register TLogicalGroup?
   Register(TLogicalGroup,LogicalGroupClassId);
@@ -3326,7 +3429,9 @@ finalization
 
   if Assigned(_ComponentManager) then
     FreeAndNil(_ComponentManager);
-//    _ComponentManager.Free;
+
+  ManagedHeap_Destroy;
+
 {$endif}
 
 end.

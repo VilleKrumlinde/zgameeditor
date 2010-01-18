@@ -674,6 +674,9 @@ const
 //  I : integer;
 //  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
+  DefaultMaterial := TMaterial.Create(nil);
+  DefaultMaterialTexture := TMaterialTexture.Create(nil);
+
   glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
 
   glEnable(GL_DEPTH_TEST);
@@ -2290,8 +2293,5 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TSetRenderTarget,SetRenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
-
-  DefaultMaterial := TMaterial.Create(nil);
-  DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
 end.
