@@ -23,9 +23,9 @@ program ZDesigner;
 {$WEAKLINKRTTI ON}
 
 uses
-//  FastMM4 in '..\..\FastMM4.pas',
   Forms,
   HTMLHelpViewer,
+  ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
   ZBitmap in '..\..\ZBitmap.pas',

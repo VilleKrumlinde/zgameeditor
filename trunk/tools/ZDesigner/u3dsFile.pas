@@ -311,7 +311,7 @@ begin
           end;
 
           Stream.Read(W,2); //Number of faces to assign this material
-          if IncludeVertexColors then
+          if (MaterialI>-1) and IncludeVertexColors then
           begin
             SetLength(Faces,W);
             Stream.Read(Faces[0],W*2);
@@ -418,8 +418,8 @@ begin
   InMesh := T3dsMesh(M);
 
   OutMesh := TMesh.Create(nil);
-  OutMesh.SetString(@OutMesh.Comment,AnsiString(InMesh.Name));
-  OutMesh.SetString(@OutMesh.Name,AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
+  OutMesh.SetString('Comment',AnsiString(InMesh.Name));
+  OutMesh.SetString('Name',AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
 
   MeshImp := TMeshImport.Create(OutMesh.Producers);
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
@@ -571,7 +571,7 @@ begin
     RMesh := TRenderMesh.Create(M.OnRender);
     RMesh.Mesh := Mesh.ZMesh;
   end;
-  M.SetString( @M.Name,AnsiString(NamePrefix + 'Model') );
+  M.SetString('Name',AnsiString(NamePrefix + 'Model') );
   Result := M;
 end;
 
@@ -623,7 +623,7 @@ begin
   Group := TLogicalGroup.Create(nil);
 
   MeshGroup := TLogicalGroup.Create(Group.Children);
-  MeshGroup.SetString(@MeshGroup.Comment,'Meshes');
+  MeshGroup.SetString('Comment','Meshes');
   for I := 0 to DataFile.MeshList.Count - 1 do
   begin
     Mesh := DataFile.MeshList[I] as T3dsMesh;
@@ -631,7 +631,7 @@ begin
   end;
 
   Group.Children.AddComponent( GenerateModel );
-  Group.SetString(@Group.Comment,'Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
+  Group.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
 
   Result := Group;
 end;

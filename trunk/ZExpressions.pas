@@ -1145,6 +1145,7 @@ procedure TExpStringConstant.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$ifndef minimal}'Value',{$endif}integer(@Value), zptString);
+    List.GetLast.IsReadOnly := True;
 end;
 
 { TExpStringConCat }
@@ -1158,8 +1159,9 @@ begin
   StackPopTo(P1);
 
   I := ZStrLength(P1) + ZStrLength(P2);
-  //todo: add to gc
-  GetMem(Dest,I+1);
+
+  //Add to gc
+  Dest := ManagedHeap_Alloc(I+1);
   Dest^ := #0;
 
   ZStrCat(Dest,P1);

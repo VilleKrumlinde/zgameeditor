@@ -93,6 +93,14 @@ var
   LogLookup : TStringList;
   ReceiverFunc : TLogReceiverFunc;
 
+procedure InitLog;
+begin
+  Logs := TObjectList.Create(True);
+  LogLookup := TStringList.Create;
+  LogLookup.Sorted := True;
+end;
+
+
 procedure SetReceiverFunc(F : TLogReceiverFunc);
 begin
   Assert( not Assigned(ReceiverFunc) );
@@ -104,6 +112,8 @@ var
   I,J,LogId : integer;
   Log : TLog;
 begin
+  if LogLookup=nil then
+    InitLog;
   I := LogLookup.IndexOf(LogName);
   if I=-1 then
   begin
@@ -157,11 +167,7 @@ end;
 
 
 initialization
-  {$ifdef zlog}
-  Logs := TObjectList.Create(True);
-  LogLookup := TStringList.Create;
-  LogLookup.Sorted := True;
-  {$endif}
+
 finalization
   {$ifdef zlog}
   Logs.Free;

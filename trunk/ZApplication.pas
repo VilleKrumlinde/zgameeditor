@@ -321,9 +321,10 @@ var
     J := 0;
     for I := 0 to Models.Cats.Count - 1 do
       Inc(J,Models.Get(I).Count);
-    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) );
+    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + IntToStr(ManagedHeap_GetAllocCount) );
   end;
  {$endif}
+
 begin
 
   {$ifdef xminimal} //**
@@ -356,6 +357,9 @@ begin
       InDumpDebugInfo;
       {$endif}
     end;
+
+    if ManagedHeap_GetAllocCount>0 then
+      ManagedHeap_GarbageCollect(False);
 
     {$ifdef minimal}
     if FrameRateStyle<>frsFree then
@@ -637,7 +641,7 @@ begin
   if not ConstantMap.TryGetValue(Key,Result) then
   begin
     Con := TExpStringConstant.Create(ConstantPool);
-    Con.Value := StrNew( PAnsiChar(Key) );
+    Con.SetString('Value',Key);
     ConstantMap.Add(Key,Con);
     Result := Con;
   end;
@@ -734,6 +738,7 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon), zptBinary);

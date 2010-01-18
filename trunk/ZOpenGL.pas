@@ -1237,7 +1237,8 @@ const
   opengl = 'libGL.so';
   {$ENDIF}
   {$IFDEF DARWIN}
-  opengl = '/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib';
+  ///System/Library/Frameworks/OpenGL.framework/Libraries/
+  opengl = 'libGL.dylib';
   {$ENDIF}
 
 
