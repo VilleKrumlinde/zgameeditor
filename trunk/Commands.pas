@@ -212,6 +212,7 @@ procedure TKeyPress.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}integer(@Keys), zptString);
+    List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}integer(@CharCode), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}integer(@RepeatDelay), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}integer(@OnPressed), zptComponentList);
@@ -325,6 +326,7 @@ procedure TWebOpen.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url), zptString);
+    List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}integer(@ParamArray), zptComponentRef);

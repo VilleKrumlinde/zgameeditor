@@ -1353,10 +1353,9 @@ begin
           ZStrCopy(Str,DesktopStr)
         else
         begin
-          //inttofloat conversion
-          ZStrConvertFloat(ScreenModes[I].W, PAnsiChar(@Str));
+          ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Str));
           ZStrCat(Str,xstr);
-          ZStrConvertFloat(ScreenModes[I].H, PAnsiChar(@Tmp1));
+          ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
           ZStrCat(Str,Tmp1);
         end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));

@@ -659,6 +659,7 @@ begin
   MakeOne('joyGetButton',fcJoyGetButton,'III');
   MakeOne('joyGetPOV',fcJoyGetPOV,'FI');
   MakeOne('getSystemTime',fcSystemTime,'I');
+  MakeOne('intToStr',fcIntToStr,'SI');
 end;
 
 

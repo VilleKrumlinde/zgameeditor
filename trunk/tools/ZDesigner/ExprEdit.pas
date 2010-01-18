@@ -425,6 +425,8 @@ begin
       raise ECodeGenError.Create('Unknown assigment identifier: ' + LeftOp.Id);
     if C.Target.Prop.IsReadOnly then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+    if (C.Target.Prop.PropertyType=zptString) and (not C.Target.Prop.IsStringTarget) then
+      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
 
     if C.Target.Prop.PropertyType in [zptByte,zptBoolean] then
       AssignSize:=1
@@ -792,6 +794,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
   var
     I : integer;
     F : TExpFuncCall;
+    SF : TExpStringFuncCall;
   begin
     if NeedReturnValue and (Func.ReturnType=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -799,8 +802,15 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
       GenValue(Op.Child(I));
-    F := TExpFuncCall.Create(Target);
-    F.Kind := Func.FuncId;
+    if Func.FuncId in [fcIntToStr] then
+    begin
+      SF := TExpStringFuncCall.Create(Target);
+      SF.Kind := Func.FuncId;
+    end else
+    begin
+      F := TExpFuncCall.Create(Target);
+      F.Kind := Func.FuncId;
+    end;
     if (not NeedReturnValue) and (Func.ReturnType<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do

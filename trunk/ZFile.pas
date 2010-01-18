@@ -97,6 +97,7 @@ procedure TZFile.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}integer(@FileName), zptString);
+    List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}integer(@FileNameFloatRef), zptPropertyRef);
   List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}integer(@FileEmbedded), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding), zptByte);
@@ -150,8 +151,8 @@ begin
     if ZFile.FileNameFloatRef.Component<>nil then
     begin
       //If ref is set then convert float-value to string
-      ZStrConvertFloat(
-        PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^,
+      ZStrConvertInt(
+        Trunc(PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^),
         PAnsiChar(@FloatBuf));
       ZStrCopy(NameBuf,PAnsiChar(ZFile.FileName));
       ZStrCat(NameBuf,PAnsiChar(@FloatBuf));

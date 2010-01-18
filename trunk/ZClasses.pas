@@ -58,6 +58,7 @@ type
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
+ ExpStringFuncCallClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -276,7 +277,7 @@ type
     DefaultValue : TZPropertyValue;
     NeverPersist : boolean;
     DontClone : boolean;
-    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
+    IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
@@ -285,6 +286,7 @@ type
     Name : string;              //Namn på property i designer 'Color'
     ExcludeFromBinary : boolean;  //Ta inte med denna prop i binärström (designer only)
     ExcludeFromXml : boolean; //Spara ej i xml-fil
+    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
     NeedRefreshNodeName : boolean;//True för propertys som kräver refresh i nodträd vid ändring av prop
     ChildClasses :               //För componentlists: krav på vilka klasser som kan ligga i listan
       array of TZComponentClass; //För componentref: krav på vilka klasser som går att referera till
@@ -503,7 +505,7 @@ procedure Register(C : TZComponentClass; ClassId : TZClassIds);
 function ZStrLength(P : PAnsiChar) : integer;
 procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
-procedure ZStrConvertFloat(const S : single; Dest : PAnsiChar);
+procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
 
 //Garbage collected managed heap
 function ManagedHeap_Alloc(const Size : integer) : pointer;
@@ -634,6 +636,7 @@ const
 //Managed Heap
 var
   mh_Targets,mh_Allocations,mh_Values : TZArrayList;
+  mh_LastCount : integer;
 
 procedure ManagedHeap_Create;
 begin
@@ -659,17 +662,27 @@ end;
 
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 begin
+//  if mh_Allocations.Count>10000 then
+//    ManagedHeap_GarbageCollect(False);
   GetMem(Result,Size);
   mh_Allocations.Add(Result);
 end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
+  {$ifndef MINIMAL}
+  if mh_Targets.IndexOf(P)>-1 then
+    Exit;
+  {$endif}
   mh_Targets.Add(P);
 end;
 
 procedure ManagedHeap_RemoveTarget(const P : pointer);
 begin
+  {$ifndef MINIMAL}
+  if mh_Targets.IndexOf(P)=-1 then
+    Exit;
+  {$endif}
   mh_Targets.SwapRemove(P);
 end;
 
@@ -684,6 +697,11 @@ var
   PP : PPointer;
   P : pointer;
 begin
+  if mh_Allocations.Count=mh_LastCount then
+    //Heap is stable since last call, no point in collecting
+    Exit;
+  mh_LastCount := mh_Allocations.Count;
+
   mh_Values.Clear;
   for I := 0 to mh_Targets.Count - 1 do
   begin
@@ -749,13 +767,8 @@ begin
         end;
       zptString :
         begin
-          if {$ifdef minimal}(not Prop.IsReadOnly){$else}(not ComponentManager.GetInfo(Self).NoUserCreate){$endif} then
-          begin
-            {$ifndef minimal}
-            //ZLog.GetLog(Self.ClassName).Write('Add: ' + Prop.Name);
-            {$endif}
+          if (Prop.IsStringTarget) then
             ManagedHeap_AddTarget(GetPropertyPtr(Prop,0));
-          end;
         end;
     end;
     //Set defaultvalue for property
@@ -809,7 +822,7 @@ begin
         end;
       zptString :
         begin
-          if {$ifdef minimal}(not Prop.IsReadOnly){$else}(not ComponentManager.GetInfo(Self).NoUserCreate){$endif} then
+          if {$ifdef minimal}(Prop.IsStringTarget){$else}True{$endif} then
             ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));
         end;
       {$ifndef minimal}
@@ -906,9 +919,13 @@ begin
       PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
       begin
-        PPointer(P)^ := ManagedHeap_Alloc(Length(Value.StringValue)+1);
-        System.Move(Value.StringValue[1],PPointer(P)^^,Length(Value.StringValue));
-        PByteArray(PPAnsiChar(P)^)^[Length(Value.StringValue)] := 0;
+        if Value.StringValue<>'' then
+        begin
+          ManagedHeap_AddTarget(P);
+          PPointer(P)^ := ManagedHeap_Alloc(Length(Value.StringValue)+1);
+          System.Move(Value.StringValue[1],PPointer(P)^^,Length(Value.StringValue));
+          PByteArray(PPAnsiChar(P)^)^[Length(Value.StringValue)] := 0;
+        end;
       end;
       {$ENDIF}
     zptComponentRef :
@@ -3363,13 +3380,13 @@ begin
   ZStrCopy(P,Src);
 end;
 
-procedure ZStrConvertFloat(const S : single; Dest : PAnsiChar);
+procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
 var
   Value : integer;
   Tmp : PAnsiChar;
   Buf : array[0..15] of ansichar;
 begin
-  Value := Abs(Trunc(S));
+  Value := Abs(S);
   Tmp := @Buf[High(Buf)];
   Tmp^ := #0;
   Dec(Tmp);
