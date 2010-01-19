@@ -526,7 +526,8 @@ var
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$IFNDEF MINIMAL},Classes,LibXmlParser,AnsiStrings,SysUtils,Contnrs,Math,zlib, ZApplication {$ENDIF}
+  {$IFNDEF MINIMAL},Classes,LibXmlParser,AnsiStrings,SysUtils,Contnrs,Math,zlib, ZApplication,
+  Generics.Collections{$ENDIF}
   ;
 
 
@@ -631,12 +632,20 @@ type
 const
   TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression,zptInlineComponent];
 
+{$ifndef MINIMAL}
+//Manage memory for strings set in designer
+var
+  StringCache : TDictionary<AnsiString,AnsiString>;
+{$endif}
 
 
 //Managed Heap
 var
   mh_Targets,mh_Allocations,mh_Values : TZArrayList;
   mh_LastCount : integer;
+
+const
+  NilString : AnsiChar = #0;
 
 procedure ManagedHeap_Create;
 begin
@@ -662,8 +671,6 @@ end;
 
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 begin
-//  if mh_Allocations.Count>10000 then
-//    ManagedHeap_GarbageCollect(False);
   GetMem(Result,Size);
   mh_Allocations.Add(Result);
 end;
@@ -672,7 +679,10 @@ procedure ManagedHeap_AddTarget(const P : pointer);
 begin
   {$ifndef MINIMAL}
   if mh_Targets.IndexOf(P)>-1 then
+  begin
+    GetLog('MH').Warning('Add target already in list');
     Exit;
+  end;
   {$endif}
   mh_Targets.Add(P);
 end;
@@ -681,7 +691,10 @@ procedure ManagedHeap_RemoveTarget(const P : pointer);
 begin
   {$ifndef MINIMAL}
   if mh_Targets.IndexOf(P)=-1 then
+  begin
+    GetLog('MH').Warning('Remove target not found');
     Exit;
+  end;
   {$endif}
   mh_Targets.SwapRemove(P);
 end;
@@ -706,7 +719,9 @@ begin
   for I := 0 to mh_Targets.Count - 1 do
   begin
     PP := PPointer(mh_Targets[I]);
-    mh_Values.Add(PP^);
+    P := PP^;
+    if P<>@NilString then
+      mh_Values.Add(P);
   end;
 
   I := mh_Allocations.Count-1;
@@ -748,6 +763,7 @@ var
   Prop : TZProperty;
   I : integer;
   List : TZComponentList;
+  P : Pointer;
 begin
   PropList := GetProperties;
   for I := 0 to PropList.Count-1 do
@@ -767,8 +783,10 @@ begin
         end;
       zptString :
         begin
-          if (Prop.IsStringTarget) then
-            ManagedHeap_AddTarget(GetPropertyPtr(Prop,0));
+          P := GetPropertyPtr(Prop,0);
+          if Prop.IsStringTarget then
+            ManagedHeap_AddTarget(P);
+          PPointer(P)^ := @NilString;
         end;
     end;
     //Set defaultvalue for property
@@ -822,7 +840,7 @@ begin
         end;
       zptString :
         begin
-          if {$ifdef minimal}(Prop.IsStringTarget){$else}True{$endif} then
+          if Prop.IsStringTarget then
             ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));
         end;
       {$ifndef minimal}
@@ -908,6 +926,9 @@ end;
 procedure TZComponent.SetProperty(Prop: TZProperty; const Value: TZPropertyValue);
 var
   P : pointer;
+  {$ifndef MINIMAL}
+  S : ansistring;
+  {$endif}
 begin
   P := pointer(integer(Self) + Prop.Offset);
   case Prop.PropertyType of
@@ -915,17 +936,14 @@ begin
       PFloat(P)^ := Value.FloatValue;
     zptString :
       {$IFDEF MINIMAL}
-      //todo copy characters? nix, string ska vara immutable.
+      //string ska vara immutable.
       PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
       begin
-        if Value.StringValue<>'' then
-        begin
-          ManagedHeap_AddTarget(P);
-          PPointer(P)^ := ManagedHeap_Alloc(Length(Value.StringValue)+1);
-          System.Move(Value.StringValue[1],PPointer(P)^^,Length(Value.StringValue));
-          PByteArray(PPAnsiChar(P)^)^[Length(Value.StringValue)] := 0;
-        end;
+        S := Value.StringValue + #0;
+        if not StringCache.ContainsKey(S) then
+          StringCache.Add(S,S);
+        PPointer(P)^ := @StringCache[S][1];
       end;
       {$ENDIF}
     zptComponentRef :
@@ -3442,12 +3460,16 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Group';{$endif}
 
 {$ifndef minimal}
+  StringCache := TDictionary<AnsiString,AnsiString>.Create;
+
 finalization
 
   if Assigned(_ComponentManager) then
     FreeAndNil(_ComponentManager);
 
   ManagedHeap_Destroy;
+
+  StringCache.Free;
 
 {$endif}
 
