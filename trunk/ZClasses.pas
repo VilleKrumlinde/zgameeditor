@@ -506,6 +506,8 @@ function ZStrLength(P : PAnsiChar) : integer;
 procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
+function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
+function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
 
 //Garbage collected managed heap
 function ManagedHeap_Alloc(const Size : integer) : pointer;
@@ -3421,6 +3423,43 @@ begin
     Tmp^ := '-';
   end;
   ZStrCopy(Dest,Tmp);
+end;
+
+function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
+var
+  P,P1,SaveP : PAnsiChar;
+begin
+  Result := -1;
+  {$ifndef minimal}
+  ZAssert(StartPos<ZStrLength(Str),'StrPos called with startpos>length');
+  {$endif}
+  P := Str + StartPos;
+  while P^<>#0 do
+  begin
+    P1 := SubStr;
+    if P^=P1^ then
+    begin
+      SaveP := P;
+      repeat
+        Inc(P); Inc(P1);
+      until (P^<>P1^) or (P^=#0) or (P1^=#0);
+      if P1^=#0 then
+      begin
+        Result := integer(SaveP) - integer(Str);
+        Break;
+      end;
+    end else
+      Inc(P);
+  end;
+end;
+
+function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
+begin
+  while (P1^=P2^) and (P1^<>#0) and (P2^<>#0) do
+  begin
+    Inc(P1); Inc(P2);
+  end;
+  Result := (P1^=#0) and (P2^=#0);
 end;
 
 {$ifndef minimal}
