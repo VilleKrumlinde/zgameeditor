@@ -489,6 +489,8 @@ begin
     Result := Op
   else
   begin
+    if (WantedType=zctString) or (Op.GetDataType=zctString)  then
+      raise ECodeGenError.Create('Cannot convert to/from string: ' + Op.ToString);
     Result := TZcOpConvert.Create(WantedType,Op);
   end;
 end;
@@ -588,7 +590,7 @@ end;
 function TZcOpLiteral.ToString: string;
 begin
   if GetDataType=zctString then
-    Result := StringValue
+    Result := '"' + StringValue + '"'
   else
     Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
 end;
@@ -660,6 +662,8 @@ begin
   MakeOne('joyGetPOV',fcJoyGetPOV,'FI');
   MakeOne('getSystemTime',fcSystemTime,'I');
   MakeOne('intToStr',fcIntToStr,'SI');
+  MakeOne('length',fcStringLength,'IS');
+  MakeOne('indexOf',fcStringIndexOf,'ISSI');
 end;
 
 

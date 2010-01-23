@@ -191,7 +191,7 @@ type
   public
     Kind : TExpOpJumpKind;
     Destination : integer;  //todo could be smallint or byte
-    _Type : (jutFloat,jutInt);
+    _Type : (jutFloat,jutInt,jutString);
   end;
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
@@ -199,7 +199,7 @@ type
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
-     //String functions
+     fcStringLength,fcStringIndexOf,
      fcIntToStr);
 
   //Built-in function call
@@ -211,7 +211,7 @@ type
     Kind : TExpFuncCallKind;
   end;
 
-  //Built-in string function call
+  //Built-in functions that return strings
   TExpStringFuncCall = class(TExpBase)
   protected
     procedure Execute; override;
@@ -590,32 +590,43 @@ begin
     jsJumpAlways : ;
   else
     begin
-      if _Type=jutFloat then
-      begin
-        StackPopTo(R);
-        StackPopTo(L);
-        case Kind of
-          jsJumpLT : Jump := L<R;
-          jsJumpGT : Jump := L>R;
-          jsJumpLE : Jump := L<=R;
-          jsJumpGE : Jump := L>=R;
-          jsJumpNE : Jump := L<>R;
-          jsJumpEQ : Jump := L=R;
-        {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
-        end;
-      end else
-      begin
-        StackPopTo(Ri);
-        StackPopTo(Li);
-        case Kind of
-          jsJumpLT : Jump := Li<Ri;
-          jsJumpGT : Jump := Li>Ri;
-          jsJumpLE : Jump := Li<=Ri;
-          jsJumpGE : Jump := Li>=Ri;
-          jsJumpNE : Jump := Li<>Ri;
-          jsJumpEQ : Jump := Li=Ri;
-        {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
-        end;
+      case _Type of
+        jutFloat:
+          begin
+            StackPopTo(Ri);
+            StackPopTo(Li);
+            case Kind of
+              jsJumpLT : Jump := Li<Ri;
+              jsJumpGT : Jump := Li>Ri;
+              jsJumpLE : Jump := Li<=Ri;
+              jsJumpGE : Jump := Li>=Ri;
+              jsJumpNE : Jump := Li<>Ri;
+              jsJumpEQ : Jump := Li=Ri;
+            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            end;
+          end;
+        jutInt:
+          begin
+            StackPopTo(R);
+            StackPopTo(L);
+            case Kind of
+              jsJumpLT : Jump := L<R;
+              jsJumpGT : Jump := L>R;
+              jsJumpLE : Jump := L<=R;
+              jsJumpGE : Jump := L>=R;
+              jsJumpNE : Jump := L<>R;
+              jsJumpEQ : Jump := L=R;
+            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            end;
+          end;
+        jutString:
+          begin
+            StackPopTo(Ri);
+            StackPopTo(Li);
+            Jump := ZStrCompare(PAnsiChar(Li),PAnsiChar(Ri));
+            if Kind=jsJumpNE then
+               Jump := not Jump;
+          end;
       end;
     end;
   end;
@@ -648,7 +659,7 @@ end;
 procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
-  I1,I2 : integer;
+  I1,I2,I3 : integer;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -744,6 +755,19 @@ begin
     fcSystemTime :
       begin
         PInteger(@V)^ := Platform_GetSystemTime;
+      end;
+    fcStringLength :
+      begin
+        StackPopTo(I1);
+        PInteger(@V)^ := ZStrLength(PAnsiChar(I1));
+      end;
+    fcStringIndexOf :
+      begin
+        //x=indexOf("lo","hello",2)
+        StackPopTo(I1);
+        StackPopTo(I2);
+        StackPopTo(I3);
+        PInteger(@V)^ := ZStrPos(PAnsiChar(I3),PAnsiChar(I2),I1);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;

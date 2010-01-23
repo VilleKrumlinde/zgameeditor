@@ -645,6 +645,12 @@ begin
   case T of
     zctFloat: Op._Type := jutFloat;
     zctInt: Op._Type := jutInt;
+    zctString:
+      begin
+        Op._Type := jutString;
+        if not (Kind in [jsJumpNE,jsJumpEQ]) then
+          raise ECodeGenError.Create('Invalid string comparison');
+      end
   else
     raise ECodeGenError.Create('Invalid datatype for jump');
   end;
