@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="1 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -122,16 +122,16 @@ if(x!=-10)
 <![CDATA[int x;
 float y;
 
-Material1.TextureWrapMode=0;
-if(Material1.TextureWrapMode!=0)
+Material1.Blend=0;
+if(Material1.Blend!=0)
   Error=10;
 
-x=Material1.TextureWrapMode+1;
-Material1.TextureWrapMode=x;
-if(Material1.TextureWrapMode!=1)
+x=Material1.Blend+1;
+Material1.Blend=x;
+if(Material1.Blend!=1)
   Error=11;
 
-x=Material1.TextureWrapMode+1;
+x=Material1.Blend+1;
 if(x!=2)
   Error=12;]]>
       </Expression>
@@ -235,6 +235,45 @@ if(f!=0)
   Error=4;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="String values">
+      <Expression>
+<![CDATA[int i;
+string s;
+
+//length : returns length of string
+i = length("1234"); //4
+if(i!=4)
+  Error=1001;
+
+//indexOf(substr,str,startpos) : returns position of substring in string from a start position
+i = indexOf("lo","hello",0); //3
+if(i!=3)
+  Error=1002;
+
+//convert from/to integer
+s = intToStr(42);
+if(s!="42")
+  Error=1003;
+
+i = strToInt("42");
+if(i!=42)
+  Error=1004;
+
+//subStr(source,startpos,length) : return substring
+s = subStr("hello",0,2);  //"he"
+if(s!="he")
+  Error=1005;
+
+//Assign properties
+s=App.Caption;
+App.Caption = "hello";
+if(App.Caption!="hello")
+  Error=1006;
+App.Caption = s;
+if(App.Caption!=s)
+  Error=1007;]]>
+      </Expression>
+    </ZExpression>
     <SpawnModel Model="Model1"/>
   </OnLoaded>
   <OnUpdate>
@@ -265,7 +304,7 @@ else
         <MeshBox Name="MeshBox1" XCount="50"/>
       </Producers>
     </Mesh>
-    <Material Name="Material1" TextureWrapMode="1"/>
+    <Material Name="Material1" Blend="1"/>
     <DefineVariable Name="Global1" Type="1"/>
     <DefineVariable Name="GlobalFloat"/>
   </Content>
