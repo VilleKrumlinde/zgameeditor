@@ -593,20 +593,6 @@ begin
       case _Type of
         jutFloat:
           begin
-            StackPopTo(Ri);
-            StackPopTo(Li);
-            case Kind of
-              jsJumpLT : Jump := Li<Ri;
-              jsJumpGT : Jump := Li>Ri;
-              jsJumpLE : Jump := Li<=Ri;
-              jsJumpGE : Jump := Li>=Ri;
-              jsJumpNE : Jump := Li<>Ri;
-              jsJumpEQ : Jump := Li=Ri;
-            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
-            end;
-          end;
-        jutInt:
-          begin
             StackPopTo(R);
             StackPopTo(L);
             case Kind of
@@ -616,6 +602,20 @@ begin
               jsJumpGE : Jump := L>=R;
               jsJumpNE : Jump := L<>R;
               jsJumpEQ : Jump := L=R;
+            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            end;
+          end;
+        jutInt:
+          begin
+            StackPopTo(Ri);
+            StackPopTo(Li);
+            case Kind of
+              jsJumpLT : Jump := Li<Ri;
+              jsJumpGT : Jump := Li>Ri;
+              jsJumpLE : Jump := Li<=Ri;
+              jsJumpGE : Jump := Li>=Ri;
+              jsJumpNE : Jump := Li<>Ri;
+              jsJumpEQ : Jump := Li=Ri;
             {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
             end;
           end;
