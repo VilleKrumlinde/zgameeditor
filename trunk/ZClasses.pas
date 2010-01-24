@@ -508,6 +508,8 @@ procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
 procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
 function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
 function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
+procedure ZStrSubString(const Str,Dest : PAnsiChar; const StartPos,NChars : integer);
+function ZStrToInt(const Str : PAnsiChar) : integer;
 
 //Garbage collected managed heap
 function ManagedHeap_Alloc(const Size : integer) : pointer;
@@ -673,13 +675,17 @@ end;
 
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 begin
+  {$ifndef minimal}
+  ZAssert(Size>=0,'Alloc called with size <=0');
+  ZAssert(Size<1024*1024*128,'Alloc called with size > 128mb');
+  {$endif}
   GetMem(Result,Size);
   mh_Allocations.Add(Result);
 end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
-  {$ifndef MINIMAL}
+  {$ifndef minimal}
   if mh_Targets.IndexOf(P)>-1 then
   begin
     GetLog('MH').Warning('Add target already in list');
@@ -691,7 +697,7 @@ end;
 
 procedure ManagedHeap_RemoveTarget(const P : pointer);
 begin
-  {$ifndef MINIMAL}
+  {$ifndef minimal}
   if mh_Targets.IndexOf(P)=-1 then
   begin
     GetLog('MH').Warning('Remove target not found');
@@ -3461,6 +3467,33 @@ begin
   end;
   Result := (P1^=#0) and (P2^=#0);
 end;
+
+procedure ZStrSubString(const Str,Dest : PAnsiChar; const StartPos,NChars : integer);
+var
+  P : PAnsiChar;
+begin
+  {$ifndef minimal}
+  ZAssert(StartPos+NChars<=ZStrLength(Str),'SubString called with startpos+NChars>length');
+  {$endif}
+  P := Str + StartPos;
+  Move(P^,Dest^,NChars);
+  Dest[NChars] := #0;
+end;
+
+function ZStrToInt(const Str : PAnsiChar) : integer;
+var
+  P : PAnsiChar;
+begin
+  Result := 0;
+  P := Str;
+  while P^<>#0 do
+  begin
+    Result := Result * 10 + byte(P^)-48;
+    Inc(P);
+  end;
+end;
+
+
 
 {$ifndef minimal}
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
