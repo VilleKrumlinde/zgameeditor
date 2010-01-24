@@ -199,8 +199,8 @@ type
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
-     fcStringLength,fcStringIndexOf,
-     fcIntToStr);
+     fcStringLength,fcStringIndexOf,fcStrToInt,
+     fcIntToStr,fcSubStr);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -769,6 +769,11 @@ begin
         StackPopTo(I3);
         PInteger(@V)^ := ZStrPos(PAnsiChar(I3),PAnsiChar(I2),I1);
       end;
+    fcStrToInt :
+      begin
+        StackPopTo(I1);
+        PInteger(@V)^ := ZStrToInt(PAnsiChar(I1));
+      end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   if HasReturnValue then
@@ -1213,20 +1218,29 @@ end;
 
 procedure TExpStringFuncCall.Execute;
 var
-  I : integer;
+  I1,I2 : integer;
   Buf : array[0..15] of ansichar;
-  Dest : PAnsiChar;
+  P1,Dest : PAnsiChar;
 begin
   case Kind of
     fcIntToStr:
       begin
-        StackPopTo(I);
-        ZStrConvertInt(I,PAnsiChar(@Buf));
+        StackPopTo(I1);
+        ZStrConvertInt(I1,PAnsiChar(@Buf));
         Dest := ManagedHeap_Alloc(ZStrLength(@Buf)+1);
         ZStrCopy(Dest,@Buf);
-        StackPush(Dest);
+      end;
+    fcSubStr :
+      begin
+        //s=subStr("hello",0,2)
+        StackPopTo(I1);
+        StackPopTo(I2);
+        StackPopTo(P1);
+        Dest := ManagedHeap_Alloc(I1+1);
+        ZStrSubString(P1,Dest,I2,I1);
       end;
   end;
+  StackPush(Dest);
 end;
 
 initialization

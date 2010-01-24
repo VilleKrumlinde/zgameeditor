@@ -105,6 +105,7 @@ type
   public
     Url : TPropString;
     ParamArray,ResultArray : TDefineArray;
+    ResultString : TPropString;
     OnResult : TZComponentList;
     InBrowser : boolean;
     Handle : pointer;
@@ -329,6 +330,9 @@ begin
     List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}integer(@ResultString), zptString);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}integer(@ParamArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}integer(@InBrowser), zptBoolean);
@@ -410,10 +414,15 @@ begin
   if not Self.IsWaiting then
     Exit;
   Self.IsWaiting := False;
+
   if ResultArray<>nil then
-    BufferSize := ResultArray.CalcLimit;
+    BufferSize := ResultArray.CalcLimit
+  else
+    BufferSize := 512 * 1024;
+
   ReAllocMem(Buffer,BufferSize);
   Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
+
   if ResultArray<>nil then
   begin
     {$ifndef minimal}
@@ -430,6 +439,11 @@ begin
       Inc(Ps);
       Dec(I);
     end;
+  end else
+  begin
+    I := ZStrLength( PAnsiChar(Self.Buffer) );
+    Self.ResultString := ManagedHeap_Alloc(I+1);
+    ZStrCopy(Self.ResultString,PAnsiChar(Self.Buffer));
   end;
   AddToResultList;
 end;

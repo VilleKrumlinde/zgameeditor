@@ -661,9 +661,11 @@ begin
   MakeOne('joyGetButton',fcJoyGetButton,'III');
   MakeOne('joyGetPOV',fcJoyGetPOV,'FI');
   MakeOne('getSystemTime',fcSystemTime,'I');
-  MakeOne('intToStr',fcIntToStr,'SI');
   MakeOne('length',fcStringLength,'IS');
   MakeOne('indexOf',fcStringIndexOf,'ISSI');
+  MakeOne('strToInt',fcStrToInt,'IS');
+  MakeOne('intToStr',fcIntToStr,'SI');
+  MakeOne('subStr',fcSubStr,'SSII');
 end;
 
 

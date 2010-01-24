@@ -808,7 +808,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
       GenValue(Op.Child(I));
-    if Func.FuncId in [fcIntToStr] then
+    if Func.FuncId in [fcIntToStr,fcSubStr] then
     begin
       SF := TExpStringFuncCall.Create(Target);
       SF.Kind := Func.FuncId;
