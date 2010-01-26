@@ -70,9 +70,9 @@ CHARACTERS
         hexDigit           = digit + "ABCDEFabcdef".
         notDigit           = ANY - digit.
 
-        char               = ANY - "'" - '\\' - newLine.
+        char               = ANY - "'" - '\' - newLine.
         verbatimStringChar = ANY - '"'.
-        regularStringChar  = ANY - '"' - '\\' - newLine.
+        regularStringChar  = ANY - '"' - '\' - newLine.
         notNewLine         = ANY - newLine .
 
 
@@ -84,7 +84,7 @@ TOKENS
                 (* | ("0x" | "0X") hexDigit {hexDigit} *)
                 )
                 (* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] *)
-                . 
+                .
   /*--------------------------------------------------------------------------------*/
         realCon =
                 "." digit {digit}
@@ -100,7 +100,9 @@ TOKENS
                 ).
   /*--------------------------------------------------------------------------------*/
         stringCon =
-                '"'    { regularStringChar }
+                '"'    { regularStringChar
+					| "\'" | '\"' | "\\" | "\n"
+					}
                 '"'.
 
         ident = ['@'] letter { letter | digit }.
