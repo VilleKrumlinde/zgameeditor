@@ -3437,7 +3437,7 @@ var
 begin
   Result := -1;
   {$ifndef minimal}
-  ZAssert(StartPos<ZStrLength(Str),'StrPos called with startpos>length');
+  ZAssert(StartPos<=ZStrLength(Str),'StrPos called with startpos>length');
   {$endif}
   P := Str + StartPos;
   while P^<>#0 do

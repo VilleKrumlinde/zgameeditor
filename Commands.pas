@@ -227,7 +227,7 @@ var
   P : PBytes;
   Index : integer;
 begin
-  if pointer(Keys)=nil then
+  if Keys^=#0 then
     //Charcode is byte-sized but declared as word so it is zero-terminated
     P := @CharCode
   else

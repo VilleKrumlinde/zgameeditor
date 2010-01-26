@@ -603,6 +603,10 @@ else if (CurrInputCh = '"') then
 begin
 state := 15; 
 end
+else if (CurrInputCh = '\') then
+begin
+state := 50; 
+end
 else
 begin
   sym := _noSym;
@@ -638,7 +642,7 @@ exit;
 end;
   18: if (CurrInputCh = '&') then
 begin
-state := 55; 
+state := 56; 
 end
 else
 begin
@@ -662,7 +666,7 @@ exit;
 end;
   22: if (CurrInputCh = '=') then
 begin
-state := 53; 
+state := 54; 
 end
 else
 begin
@@ -721,7 +725,7 @@ exit;
 end;
   33: if (CurrInputCh = '|') then
 begin
-state := 54; 
+state := 55; 
 end
 else
 begin
@@ -760,7 +764,7 @@ exit;
 end;
   40: if (CurrInputCh = '=') then
 begin
-state := 52; 
+state := 53; 
 end
 else
 begin
@@ -826,7 +830,7 @@ state := 21;
 end
 else if (CurrInputCh = '=') then
 begin
-state := 51; 
+state := 52; 
 end
 else
 begin
@@ -854,7 +858,7 @@ state := 25;
 end
 else if (CurrInputCh = '=') then
 begin
-state := 50; 
+state := 51; 
 end
 else
 begin
@@ -885,31 +889,43 @@ begin
 sym := notSym;
 exit;
 end;
-  50: begin
-sym := _plus_equalSym;
+  50: if ((CurrInputCh = '"') OR
+(CurrInputCh = CHR(39)) OR
+(CurrInputCh = '\') OR
+(CurrInputCh = 'n')) then
+begin
+state := 14; 
+end
+else
+begin
+  sym := _noSym;
 exit;
 end;
   51: begin
-sym := _minus_equalSym;
+sym := _plus_equalSym;
 exit;
 end;
   52: begin
-sym := _star_equalSym;
+sym := _minus_equalSym;
 exit;
 end;
   53: begin
-sym := _slash_equalSym;
+sym := _star_equalSym;
 exit;
 end;
   54: begin
-sym := _bar_barSym;
+sym := _slash_equalSym;
 exit;
 end;
   55: begin
-sym := _and_andSym;
+sym := _bar_barSym;
 exit;
 end;
   56: begin
+sym := _and_andSym;
+exit;
+end;
+  57: begin
 sym := EOFSYMB;
 CurrInputCh := chNull;
 BufferPosition := BufferPosition - 1;
@@ -964,22 +980,22 @@ fHashList.AddString('{', _lbraceSym, _lbraceSym);
 fHashList.AddString('|', _barSym, _barSym);
 fHashList.AddString('}', _rbraceSym, _rbraceSym);
 CurrentCh := CharAt;
-fStartState[  0] := 56; fStartState[  1] := 57; fStartState[  2] := 57; fStartState[  3] := 57; 
-fStartState[  4] := 57; fStartState[  5] := 57; fStartState[  6] := 57; fStartState[  7] := 57; 
-fStartState[  8] := 57; fStartState[  9] := 57; fStartState[ 10] := 57; fStartState[ 11] := 57; 
-fStartState[ 12] := 57; fStartState[ 13] := 57; fStartState[ 14] := 57; fStartState[ 15] := 57; 
-fStartState[ 16] := 57; fStartState[ 17] := 57; fStartState[ 18] := 57; fStartState[ 19] := 57; 
-fStartState[ 20] := 57; fStartState[ 21] := 57; fStartState[ 22] := 57; fStartState[ 23] := 57; 
-fStartState[ 24] := 57; fStartState[ 25] := 57; fStartState[ 26] := 57; fStartState[ 27] := 57; 
-fStartState[ 28] := 57; fStartState[ 29] := 57; fStartState[ 30] := 57; fStartState[ 31] := 57; 
-fStartState[ 32] := 57; fStartState[ 33] := 49; fStartState[ 34] := 14; fStartState[ 35] := 57; 
-fStartState[ 36] := 57; fStartState[ 37] := 31; fStartState[ 38] := 18; fStartState[ 39] := 57; 
+fStartState[  0] := 57; fStartState[  1] := 58; fStartState[  2] := 58; fStartState[  3] := 58; 
+fStartState[  4] := 58; fStartState[  5] := 58; fStartState[  6] := 58; fStartState[  7] := 58; 
+fStartState[  8] := 58; fStartState[  9] := 58; fStartState[ 10] := 58; fStartState[ 11] := 58; 
+fStartState[ 12] := 58; fStartState[ 13] := 58; fStartState[ 14] := 58; fStartState[ 15] := 58; 
+fStartState[ 16] := 58; fStartState[ 17] := 58; fStartState[ 18] := 58; fStartState[ 19] := 58; 
+fStartState[ 20] := 58; fStartState[ 21] := 58; fStartState[ 22] := 58; fStartState[ 23] := 58; 
+fStartState[ 24] := 58; fStartState[ 25] := 58; fStartState[ 26] := 58; fStartState[ 27] := 58; 
+fStartState[ 28] := 58; fStartState[ 29] := 58; fStartState[ 30] := 58; fStartState[ 31] := 58; 
+fStartState[ 32] := 58; fStartState[ 33] := 49; fStartState[ 34] := 14; fStartState[ 35] := 58; 
+fStartState[ 36] := 58; fStartState[ 37] := 31; fStartState[ 38] := 18; fStartState[ 39] := 58; 
 fStartState[ 40] := 28; fStartState[ 41] := 36; fStartState[ 42] := 40; fStartState[ 43] := 47; 
 fStartState[ 44] := 20; fStartState[ 45] := 45; fStartState[ 46] := 43; fStartState[ 47] := 22; 
 fStartState[ 48] := 42; fStartState[ 49] := 42; fStartState[ 50] := 42; fStartState[ 51] := 42; 
 fStartState[ 52] := 42; fStartState[ 53] := 42; fStartState[ 54] := 42; fStartState[ 55] := 42; 
 fStartState[ 56] := 42; fStartState[ 57] := 42; fStartState[ 58] := 19; fStartState[ 59] := 38; 
-fStartState[ 60] := 48; fStartState[ 61] := 44; fStartState[ 62] := 46; fStartState[ 63] := 57; 
+fStartState[ 60] := 48; fStartState[ 61] := 44; fStartState[ 62] := 46; fStartState[ 63] := 58; 
 fStartState[ 64] := 16; fStartState[ 65] := 17; fStartState[ 66] := 17; fStartState[ 67] := 17; 
 fStartState[ 68] := 17; fStartState[ 69] := 17; fStartState[ 70] := 17; fStartState[ 71] := 17; 
 fStartState[ 72] := 17; fStartState[ 73] := 17; fStartState[ 74] := 17; fStartState[ 75] := 17; 
@@ -987,47 +1003,47 @@ fStartState[ 76] := 17; fStartState[ 77] := 17; fStartState[ 78] := 17; fStartSt
 fStartState[ 80] := 17; fStartState[ 81] := 17; fStartState[ 82] := 17; fStartState[ 83] := 17; 
 fStartState[ 84] := 17; fStartState[ 85] := 17; fStartState[ 86] := 17; fStartState[ 87] := 17; 
 fStartState[ 88] := 17; fStartState[ 89] := 17; fStartState[ 90] := 17; fStartState[ 91] := 27; 
-fStartState[ 92] := 57; fStartState[ 93] := 35; fStartState[ 94] := 41; fStartState[ 95] := 17; 
-fStartState[ 96] := 57; fStartState[ 97] := 17; fStartState[ 98] := 17; fStartState[ 99] := 17; 
+fStartState[ 92] := 58; fStartState[ 93] := 35; fStartState[ 94] := 41; fStartState[ 95] := 17; 
+fStartState[ 96] := 58; fStartState[ 97] := 17; fStartState[ 98] := 17; fStartState[ 99] := 17; 
 fStartState[100] := 17; fStartState[101] := 17; fStartState[102] := 17; fStartState[103] := 17; 
 fStartState[104] := 17; fStartState[105] := 17; fStartState[106] := 17; fStartState[107] := 17; 
 fStartState[108] := 17; fStartState[109] := 17; fStartState[110] := 17; fStartState[111] := 17; 
 fStartState[112] := 17; fStartState[113] := 17; fStartState[114] := 17; fStartState[115] := 17; 
 fStartState[116] := 17; fStartState[117] := 17; fStartState[118] := 17; fStartState[119] := 17; 
 fStartState[120] := 17; fStartState[121] := 17; fStartState[122] := 17; fStartState[123] := 26; 
-fStartState[124] := 33; fStartState[125] := 34; fStartState[126] := 39; fStartState[127] := 57; 
-fStartState[128] := 57; fStartState[129] := 57; fStartState[130] := 57; fStartState[131] := 57; 
-fStartState[132] := 57; fStartState[133] := 57; fStartState[134] := 57; fStartState[135] := 57; 
-fStartState[136] := 57; fStartState[137] := 57; fStartState[138] := 57; fStartState[139] := 57; 
-fStartState[140] := 57; fStartState[141] := 57; fStartState[142] := 57; fStartState[143] := 57; 
-fStartState[144] := 57; fStartState[145] := 57; fStartState[146] := 57; fStartState[147] := 57; 
-fStartState[148] := 57; fStartState[149] := 57; fStartState[150] := 57; fStartState[151] := 57; 
-fStartState[152] := 57; fStartState[153] := 57; fStartState[154] := 57; fStartState[155] := 57; 
-fStartState[156] := 57; fStartState[157] := 57; fStartState[158] := 57; fStartState[159] := 57; 
-fStartState[160] := 57; fStartState[161] := 57; fStartState[162] := 57; fStartState[163] := 57; 
-fStartState[164] := 57; fStartState[165] := 57; fStartState[166] := 57; fStartState[167] := 57; 
-fStartState[168] := 57; fStartState[169] := 57; fStartState[170] := 57; fStartState[171] := 57; 
-fStartState[172] := 57; fStartState[173] := 57; fStartState[174] := 57; fStartState[175] := 57; 
-fStartState[176] := 57; fStartState[177] := 57; fStartState[178] := 57; fStartState[179] := 57; 
-fStartState[180] := 57; fStartState[181] := 57; fStartState[182] := 57; fStartState[183] := 57; 
-fStartState[184] := 57; fStartState[185] := 57; fStartState[186] := 57; fStartState[187] := 57; 
-fStartState[188] := 57; fStartState[189] := 57; fStartState[190] := 57; fStartState[191] := 57; 
-fStartState[192] := 57; fStartState[193] := 57; fStartState[194] := 57; fStartState[195] := 57; 
-fStartState[196] := 57; fStartState[197] := 57; fStartState[198] := 57; fStartState[199] := 57; 
-fStartState[200] := 57; fStartState[201] := 57; fStartState[202] := 57; fStartState[203] := 57; 
-fStartState[204] := 57; fStartState[205] := 57; fStartState[206] := 57; fStartState[207] := 57; 
-fStartState[208] := 57; fStartState[209] := 57; fStartState[210] := 57; fStartState[211] := 57; 
-fStartState[212] := 57; fStartState[213] := 57; fStartState[214] := 57; fStartState[215] := 57; 
-fStartState[216] := 57; fStartState[217] := 57; fStartState[218] := 57; fStartState[219] := 57; 
-fStartState[220] := 57; fStartState[221] := 57; fStartState[222] := 57; fStartState[223] := 57; 
-fStartState[224] := 57; fStartState[225] := 57; fStartState[226] := 57; fStartState[227] := 57; 
-fStartState[228] := 57; fStartState[229] := 57; fStartState[230] := 57; fStartState[231] := 57; 
-fStartState[232] := 57; fStartState[233] := 57; fStartState[234] := 57; fStartState[235] := 57; 
-fStartState[236] := 57; fStartState[237] := 57; fStartState[238] := 57; fStartState[239] := 57; 
-fStartState[240] := 57; fStartState[241] := 57; fStartState[242] := 57; fStartState[243] := 57; 
-fStartState[244] := 57; fStartState[245] := 57; fStartState[246] := 57; fStartState[247] := 57; 
-fStartState[248] := 57; fStartState[249] := 57; fStartState[250] := 57; fStartState[251] := 57; 
-fStartState[252] := 57; fStartState[253] := 57; fStartState[254] := 57; fStartState[255] := 57; 
+fStartState[124] := 33; fStartState[125] := 34; fStartState[126] := 39; fStartState[127] := 58; 
+fStartState[128] := 58; fStartState[129] := 58; fStartState[130] := 58; fStartState[131] := 58; 
+fStartState[132] := 58; fStartState[133] := 58; fStartState[134] := 58; fStartState[135] := 58; 
+fStartState[136] := 58; fStartState[137] := 58; fStartState[138] := 58; fStartState[139] := 58; 
+fStartState[140] := 58; fStartState[141] := 58; fStartState[142] := 58; fStartState[143] := 58; 
+fStartState[144] := 58; fStartState[145] := 58; fStartState[146] := 58; fStartState[147] := 58; 
+fStartState[148] := 58; fStartState[149] := 58; fStartState[150] := 58; fStartState[151] := 58; 
+fStartState[152] := 58; fStartState[153] := 58; fStartState[154] := 58; fStartState[155] := 58; 
+fStartState[156] := 58; fStartState[157] := 58; fStartState[158] := 58; fStartState[159] := 58; 
+fStartState[160] := 58; fStartState[161] := 58; fStartState[162] := 58; fStartState[163] := 58; 
+fStartState[164] := 58; fStartState[165] := 58; fStartState[166] := 58; fStartState[167] := 58; 
+fStartState[168] := 58; fStartState[169] := 58; fStartState[170] := 58; fStartState[171] := 58; 
+fStartState[172] := 58; fStartState[173] := 58; fStartState[174] := 58; fStartState[175] := 58; 
+fStartState[176] := 58; fStartState[177] := 58; fStartState[178] := 58; fStartState[179] := 58; 
+fStartState[180] := 58; fStartState[181] := 58; fStartState[182] := 58; fStartState[183] := 58; 
+fStartState[184] := 58; fStartState[185] := 58; fStartState[186] := 58; fStartState[187] := 58; 
+fStartState[188] := 58; fStartState[189] := 58; fStartState[190] := 58; fStartState[191] := 58; 
+fStartState[192] := 58; fStartState[193] := 58; fStartState[194] := 58; fStartState[195] := 58; 
+fStartState[196] := 58; fStartState[197] := 58; fStartState[198] := 58; fStartState[199] := 58; 
+fStartState[200] := 58; fStartState[201] := 58; fStartState[202] := 58; fStartState[203] := 58; 
+fStartState[204] := 58; fStartState[205] := 58; fStartState[206] := 58; fStartState[207] := 58; 
+fStartState[208] := 58; fStartState[209] := 58; fStartState[210] := 58; fStartState[211] := 58; 
+fStartState[212] := 58; fStartState[213] := 58; fStartState[214] := 58; fStartState[215] := 58; 
+fStartState[216] := 58; fStartState[217] := 58; fStartState[218] := 58; fStartState[219] := 58; 
+fStartState[220] := 58; fStartState[221] := 58; fStartState[222] := 58; fStartState[223] := 58; 
+fStartState[224] := 58; fStartState[225] := 58; fStartState[226] := 58; fStartState[227] := 58; 
+fStartState[228] := 58; fStartState[229] := 58; fStartState[230] := 58; fStartState[231] := 58; 
+fStartState[232] := 58; fStartState[233] := 58; fStartState[234] := 58; fStartState[235] := 58; 
+fStartState[236] := 58; fStartState[237] := 58; fStartState[238] := 58; fStartState[239] := 58; 
+fStartState[240] := 58; fStartState[241] := 58; fStartState[242] := 58; fStartState[243] := 58; 
+fStartState[244] := 58; fStartState[245] := 58; fStartState[246] := 58; fStartState[247] := 58; 
+fStartState[248] := 58; fStartState[249] := 58; fStartState[250] := 58; fStartState[251] := 58; 
+fStartState[252] := 58; fStartState[253] := 58; fStartState[254] := 58; fStartState[255] := 58; 
 end; {Create}
 
 destructor TZcScanner.Destroy;
@@ -1251,7 +1267,6 @@ end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) OR
  (fCurrentInputSymbol = stringConSym) then begin
 _Literal(Typ);
-
 
 if  Typ=zctString  then
 OutOp  :=  TZcOpLiteral.Create(Typ,LexString)

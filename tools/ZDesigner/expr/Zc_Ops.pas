@@ -45,6 +45,8 @@ type
   end;
 
   TZcOpLiteral = class(TZcOp)
+  strict private
+    OriginalString : string;
   public
     Typ : TZcDataType;
     Value : single;
@@ -574,12 +576,24 @@ begin
   Self.Value := Value;
 end;
 
+function ZDequoteString(const S : string) : string;
+begin
+  Result := Copy(S,2, Length(S)-2 );
+  if Pos('\',Result)>=0 then
+  begin
+    Result := StringReplace(Result,'\\','\',[rfReplaceAll]);
+    Result := StringReplace(Result,'\n',#13#10,[rfReplaceAll]);
+    Result := StringReplace(Result,'\"','"',[rfReplaceAll]);
+  end;
+end;
+
 constructor TZcOpLiteral.Create(Typ: TZcDataType; const StringValue: string);
 begin
   inherited Create(nil);
   Kind := zcConstLiteral;
   Self.Typ := Typ;
-  Self.StringValue := AnsiDequotedStr( StringValue, '"' );
+  Self.OriginalString := StringValue;
+  Self.StringValue := ZDequoteString(StringValue);
 end;
 
 function TZcOpLiteral.GetDataType: TZcDataType;
@@ -590,7 +604,7 @@ end;
 function TZcOpLiteral.ToString: string;
 begin
   if GetDataType=zctString then
-    Result := '"' + StringValue + '"'
+    Result := Self.OriginalString
   else
     Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
 end;

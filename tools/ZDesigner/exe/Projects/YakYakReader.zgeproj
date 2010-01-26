@@ -5,42 +5,10 @@
       <Expression>
 <![CDATA[Color1.Color=1;
 RefreshTimer.Interval=0.1;
-IsUpdating=0;]]>
+IsUpdating=0;
+Rtext1.Text="";]]>
       </Expression>
     </ZExpression>
-    <ZLibrary>
-      <Source>
-<![CDATA[void writeLink(int link, int i) {
-  int j=0;
-
-  int quotes=0;
-  int start,end;
-  for( ;i>0; i--) {
-    int c=HtmlAr[i];
-    if(c==34) {
-      quotes++;
-      if(quotes==1) {
-        end=i;
-      }
-      if(quotes==2) {
-        start=i+1;
-        i=0;
-      }
-    }
-  }
-  
-  for(i=start; i<end; i++) {
-    int c=HtmlAr[i];
-    //test for escaped "&"-character
-    if((c==38))
-      i+=4;
-    Links[link,j++] = c;
-  }
-
-  Links[link,j]=0;
-}]]>
-      </Source>
-    </ZLibrary>
   </OnLoaded>
   <OnUpdate>
     <AnimatorSimple Duration="10" AutoStart="255" Target="Rt1 Rotate 2" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
@@ -53,7 +21,7 @@ RefreshTimer.Interval=10;
 IsUpdating=1;]]>
           </Expression>
         </ZExpression>
-        <WebOpen Url="http://www.yakyak.org/search.php?search_id=newposts" ResultArray="HtmlAr">
+        <WebOpen Name="Web1" Url="http://www.yakyak.org/search.php?search_id=newposts">
           <OnResult>
             <ZExpression>
               <Expression>
@@ -61,69 +29,43 @@ IsUpdating=1;]]>
 Color1.Color.B=0;
 IsUpdating=0;
 
-int j=0;
-int mode=0;
-int linkCount=0;
-int limit=HtmlAr.SizeDim1-4;
-for(int i=0; i<limit; ++i) {
+string topicmatch="topictitle";
+string data=Web1.ResultString;
+string display="";
 
-  if(mode==0) {
-    //match 'tle"' (topictitle)
-    if( (HtmlAr[i]==116) && (HtmlAr[i+1]==108) && (HtmlAr[i+2]==101) && (HtmlAr[i+3]==34) ) {
-       writeLink(linkCount, i-10);
-       mode=1;
-       i+=5;
-       linkCount++;
-    }
-  }
-  
-  if(mode==1) {
-    int ch = HtmlAr[i];
-    //>
-    if (ch==60) {
-      if(linkCount==Links.SizeDim1)
-        //End
-        i=limit;
-      else {
-        mode=0;
-        DisplayAr[j++]=13;
-        DisplayAr[j++]=10;
-      }
-    } else if (ch==0)
-      //End
-      i=limit;
-    else {
-      if((ch>=97) && (ch<=126))
-        //uppercase
-        ch-=(97-65);
-      DisplayAr[j++]=ch;
-    }
+int linkCount=0;
+int end=0;
+int i=0;
+for( ;end!=1; )  {
+
+  //Sample string that we are trying to parse:
+  //<a href="./viewtopic.php?f=2&amp;t=78879" class="topictitle">Question about English language?</a>
+  //We want to extract the topictitle and the topicID (the number after "t=") so that we can create a url to it
+
+  i=indexOf(topicmatch,data,i);
+  if(i==-1) {
+    end=1;
+  } else {
+    //Extract topic id
+    int k=indexOf(";t=",data,i-25) + 3;
+    int l=indexOf("\"",data,k);
+    Links[linkCount]=strToInt( subStr(data,k,l-k) );
+    linkCount++;
+    if(linkCount==Links.SizeDim1)
+      end=1;
+
+    //Extract topic title
+    k=indexOf("</a>",data,i);
+    i+=length(topicmatch)+2;
+    //Add topic title to displaystring
+    display+=subStr(data,i,k-i) + "\n";
+    i=k;
   }
 
 }
-DisplayAr[j]=0;]]>
+Rtext1.Text=display;]]>
               </Expression>
             </ZExpression>
-            <File Name="File1" FileName="out.txt">
-              <OnWrite>
-                <Repeat>
-                  <OnIteration>
-                    <FileMoveData Property="Temp1 Value"/>
-                  </OnIteration>
-                  <WhileExp>
-<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
-Temp1=HtmlAr[this.Iteration];
-return (this.Iteration<HtmlAr.SizeDim1-1) && (HtmlAr[this.Iteration]!=0);]]>
-                  </WhileExp>
-                </Repeat>
-              </OnWrite>
-            </File>
-            <DefineVariable Name="Temp1"/>
-            <Condition Comment="Debug, return 1 to dump content to file" Expression="return 0;">
-              <OnTrue>
-                <FileAction File="File1" Action="1"/>
-              </OnTrue>
-            </Condition>
           </OnResult>
         </WebOpen>
       </OnTimer>
@@ -133,21 +75,17 @@ return (this.Iteration<HtmlAr.SizeDim1-1) && (HtmlAr[this.Iteration]!=0);]]>
         <ZExpression>
           <Expression>
 <![CDATA[int clicked=round( (1.0 - ((App.MousePosition.Y+1.0)/2.0)) * 9 );
-
-for(int i=0; i<ParamAr.SizeDim1; i++) {
-  ParamAr[i]=Links[clicked,i];
-}]]>
+Web2.Url="http://www.yakyak.org/viewtopic.php?f=2&t=" + intToStr(Links[clicked]);]]>
           </Expression>
         </ZExpression>
-        <DefineArray Name="ParamAr" Type="1" SizeDim1="256"/>
-        <WebOpen Url="http://www.yakyak.org/" ParamArray="ParamAr" InBrowser="255"/>
+        <WebOpen Name="Web2" Url="http://www.yakyak.org/viewtopic.php?f=2&amp;t=78415" InBrowser="255"/>
       </OnPressed>
     </KeyPress>
   </OnUpdate>
   <OnRender>
     <Condition Expression="return IsUpdating==1;">
       <OnTrue>
-        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 -3.98 0" Rotate="0 0 3.6049">
+        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 -3.98 0" Rotate="0 0 1.2653">
           <Children>
             <RenderSetColor Name="Color1" Color="1 0 0 1"/>
             <RenderSprite/>
@@ -156,13 +94,11 @@ for(int i=0; i<ParamAr.SizeDim1; i++) {
       </OnTrue>
     </Condition>
     <UseMaterial Material="Material1"/>
-    <RenderText TextArray="DisplayAr" X="-0.97" Y="0.92" Scale="0.3" Align="1" StretchY="3.11"/>
+    <RenderText Name="Rtext1" X="-0.97" Y="0.92" Scale="0.3" Align="1" StretchY="3.11"/>
   </OnRender>
   <Content>
     <Group/>
-    <DefineArray Name="HtmlAr" Type="1" SizeDim1="200000"/>
-    <DefineArray Name="DisplayAr" Type="1" SizeDim1="200000"/>
-    <DefineArray Name="Links" Type="1" Dimensions="1" SizeDim1="10" SizeDim2="256"/>
+    <DefineArray Name="Links" Type="1" SizeDim1="10"/>
     <Material Name="Material1"/>
     <DefineVariable Name="IsUpdating" Type="1"/>
   </Content>
