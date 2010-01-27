@@ -542,6 +542,27 @@ var
     DefineLabel(LExit);
   end;
 
+  procedure DoWhile;
+  var
+    LExit,LLoop : TZCodeLabel;
+  begin
+    //Children: [WhileCondOp,WhileBodyOp]
+    LExit := NewLabel;
+
+    LLoop := NewLabel;
+    DefineLabel(LLoop);
+
+    if Assigned(Op.Child(0)) then
+      FallTrue(Op.Child(0),LExit);
+
+    if Assigned(Op.Child(1)) then
+      Gen(Op.Child(1));
+
+    GenJump(jsJumpAlways,LLoop);
+
+    DefineLabel(LExit);
+  end;
+
   procedure DoGenReturn;
   var
     L : TExpAccessLocal;
@@ -605,6 +626,7 @@ begin
     zcFuncCall : GenFuncCall(Op,False);
     zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
+    zcWhile : DoWhile;
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;

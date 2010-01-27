@@ -348,6 +348,7 @@ EmbeddedStatement<var OutOp : TZcOp>
   (. var
        Op,IfOp,IfBody,ElseOp : TZcOp;
        ForInitOp,ForCondOp,ForIncOp,ForBodyOp : TZcOp;
+       WhileCondOp,WhileBodyOp : TZcOp;
   .)
 = Block<OutOp>
 | ";"   (. OutOp := MakeOp(zcNop); .)
@@ -356,17 +357,27 @@ EmbeddedStatement<var OutOp : TZcOp>
   "(" Expr<IfOp> ")" EmbeddedStatement<IfBody> ["else" EmbeddedStatement<ElseOp>]
         (. OutOp := MakeOp(zcIf,[IfOp,IfBody,ElseOp]); .)
 /* | "switch" "(" Expr<Op> ")" "{" {SwitchSection} "}" */
-/* | "while" "(" Expr<Op> ")" EmbeddedStatement<Op> */
-/* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
- | "for" 
-    (. try
-       SymTab.PushScope; 
-       ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
-   "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp> 
+ | "while"
+     (. try
+         SymTab.PushScope;
+         WhileCondOp := nil; WhileBodyOp := nil; .)
+   "(" Expr<WhileCondOp> ")" EmbeddedStatement<WhileBodyOp>
    (.
-       OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
+         OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
        finally
-       SymTab.PopScope;
+         SymTab.PopScope;
+       end;
+   .)
+ /* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
+ | "for"
+    (. try
+         SymTab.PushScope;
+         ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
+   "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp>
+   (.
+         OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
+       finally
+         SymTab.PopScope;
        end;
    .)
 /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
