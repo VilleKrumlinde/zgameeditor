@@ -12,7 +12,8 @@ type
           zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
-          zcPreInc,zcPreDec,zcPostInc,zcPostDec);
+          zcPreInc,zcPreDec,zcPostInc,zcPostDec,
+          zcWhile);
 
   TZcOp = class
   public
@@ -293,6 +294,15 @@ begin
         Result := Result + ')';
         if Assigned(Child(3)) then
           Result := Result + Child(3).ToString;
+      end;
+    zcWhile :
+      begin
+        Result := 'while(';
+        if Assigned(Child(0)) then
+          Result := Result + Child(0).ToString;
+        Result := Result + ')';
+        if Assigned(Child(1)) then
+          Result := Result + Child(1).ToString;
       end;
   end;
 end;
