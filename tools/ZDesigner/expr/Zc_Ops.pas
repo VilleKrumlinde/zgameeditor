@@ -179,10 +179,14 @@ begin
     DoIdentifier
   else if Kind=zcArrayAccess then
   begin
-    if (Ref<>nil) and (Ref is TDefineArray) and ((Ref as TDefineArray)._Type=dvbInt) then
-      Result := zctInt
-    else
-      Result := zctFloat
+    if (Ref<>nil) and (Ref is TDefineArray) then
+    begin
+      case (Ref as TDefineArray)._Type of
+        dvbFloat : Result := zctFloat;
+        dvbInt : Result := zctInt;
+        dvbString : Result := zctString;
+      end;
+    end;
   end else if Kind=zcFuncCall then
   begin
     //Result := zctFloat //built in function
@@ -511,6 +515,8 @@ function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 var
   T1,T2 : TZcDataType;
 begin
+  if (Op1=nil) or (Op2=nil) then
+    raise ECodeGenError.Create('Missing op in binary expression');
   T1 := Op1.GetDataType;
   T2 := Op2.GetDataType;
   //Cast to common type that does not lose precision
@@ -690,6 +696,7 @@ begin
   MakeOne('strToInt',fcStrToInt,'IS');
   MakeOne('intToStr',fcIntToStr,'SI');
   MakeOne('subStr',fcSubStr,'SSII');
+  MakeOne('chr',fcChr,'SI');
 end;
 
 

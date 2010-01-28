@@ -50,11 +50,12 @@ type
     Source : TZExpressionPropValue;
   end;
 
+  TVariableType = (dvbFloat,dvbInt,dvbString);
   TDefineVariableBase = class(TZComponent)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    _Type : (dvbFloat,dvbInt);
+    _Type : TVariableType;
   end;
 
 
@@ -65,6 +66,7 @@ type
   public
     Value : single;
     IntValue : integer;
+    StringValue : TPropString;
   end;
 
   //Define a global constant that can be used in expressions
@@ -90,6 +92,12 @@ type
   strict private
     Data : PFloatArray;
     Limit : integer;
+    {$ifndef minimal}
+    AllocItemCount : integer;
+    AllocType : TVariableType;
+    {$endif}
+    AllocPtr : PPointer;
+    procedure CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);
     procedure AllocData;
   private
     function PopAndGetElement : PFloat;
@@ -200,7 +208,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,
-     fcIntToStr,fcSubStr);
+     fcIntToStr,fcSubStr,fcChr);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -326,7 +334,7 @@ implementation
 
 
 uses ZMath,ZPlatform,ZApplication
-{$ifndef minimal},ZLog,SysUtils,Math{$endif};
+{$ifndef minimal},ZLog,SysUtils,Math,Windows{$endif};
 
 var
   //Expression execution context
@@ -644,6 +652,9 @@ begin
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}integer(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@IntValue), zptString);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.IsStringTarget := True;
 end;
 
 { TExpFuncCall }
@@ -838,6 +849,7 @@ end;
 
 destructor TDefineArray.Destroy;
 begin
+  CleanUpStrings(_Type,Limit,AllocPtr);
   if Data<>nil then
     FreeMem(Data);
   inherited;
@@ -849,6 +861,7 @@ begin
   //Array size can only be changed in zdesigner, not runtime
   if Limit<>CalcLimit then
     AllocData;
+  ZAssert(not (Persistent and (_Type=dvbString)),'Persistent String-arrays not supported');
   {$endif}
   if Persistent then
   begin
@@ -873,8 +886,14 @@ procedure TDefineArray.AllocData;
 var
   ByteSize: Integer;
   P : PPointer;
+  {$ifndef minimal}
   WasNil : boolean;
+  I : integer;
+  {$endif}
 begin
+  {$ifndef minimal}
+  CleanUpStrings(AllocType,AllocItemCount,AllocPtr);
+  {$endif}
   Self.Limit := CalcLimit;
   ByteSize := Limit * SizeOf(single);
   if Persistent then
@@ -884,10 +903,46 @@ begin
   end
   else
     P := @Self.Data;
+
+  {$ifndef minimal}
+  //In designer allocation will happen whenever properties are changed
   WasNil := P^ = nil;
   ReallocMem(P^, ByteSize);
   if WasNil then
     FillChar(P^^, ByteSize, 0);
+  {$else}
+  //In minimal allocation will only happen once
+  GetMem(P^,ByteSize);
+  FillChar(P^^, ByteSize, 0);
+  {$endif}
+
+  Self.AllocPtr := P^;
+  {$ifndef minimal}
+  Self.AllocItemCount := Self.Limit;
+  Self.AllocType := Self._Type;
+  if Self.AllocType=dvbString then
+  begin
+    P := P^;
+    for I := 0 to AllocItemCount - 1 do
+    begin
+      ManagedHeap_AddTarget(P);
+      Inc(P);
+    end;
+  end;
+  {$endif}
+end;
+
+procedure TDefineArray.CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);
+var
+  I : integer;
+begin
+  if (TheType<>dvbString) or (Count=0) then
+    Exit;
+  for I := 0 to Count - 1 do
+  begin
+    ManagedHeap_RemoveTarget(P);
+    Inc(P);
+  end;
 end;
 
 function TDefineArray.PopAndGetElement : PFloat;
@@ -1176,7 +1231,7 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String']);{$endif}
 end;
 
 { TExpStringConstant }
@@ -1238,6 +1293,14 @@ begin
         StackPopTo(P1);
         Dest := ManagedHeap_Alloc(I1+1);
         ZStrSubString(P1,Dest,I2,I1);
+      end;
+    fcChr :
+      begin
+        //s=chr(65);
+        StackPopTo(I1);
+        Dest := ManagedHeap_Alloc(2);
+        Dest^ := PAnsiChar(@I1)^;
+        PBytes(Dest)^[1] := 0;
       end;
   end;
   StackPush(Dest);

@@ -515,6 +515,12 @@ function ZStrToInt(const Str : PAnsiChar) : integer;
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 function ManagedHeap_GetAllocCount : integer;
 procedure ManagedHeap_GarbageCollect(Full : boolean);
+procedure ManagedHeap_AddTarget(const P : pointer);
+procedure ManagedHeap_RemoveTarget(const P : pointer);
+{$ifndef minimal}
+function ManagedHeap_GetStatus : string;
+{$endif}
+
 
 {$ifndef minimal}
 const
@@ -712,6 +718,13 @@ begin
   Result := mh_Allocations.Count;
 end;
 
+{$ifndef minimal}
+function ManagedHeap_GetStatus : string;
+begin
+  Result := IntToStr(mh_Allocations.Count) + ' (t: ' + IntToStr(mh_Targets.Count) + ')';
+end;
+{$endif}
+
 procedure ManagedHeap_GarbageCollect(Full : boolean);
 var
   I : integer;
@@ -728,7 +741,7 @@ begin
   begin
     PP := PPointer(mh_Targets[I]);
     P := PP^;
-    if P<>@NilString then
+    if (P<>nil) and (P<>@NilString) then
       mh_Values.Add(P);
   end;
 

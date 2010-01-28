@@ -120,10 +120,14 @@ begin
       C := TZComponent(SymTab.Lookup(PName));
       if (C is TDefineVariable) or (C is TDefineConstant) then
       begin
-        if (C is TDefineVariable) and ((C as TDefineVariable)._Type=dvbInt) then
-          PName := 'IntValue'
-        else
-          PName := 'Value';
+        PName := 'Value';
+        if (C is TDefineVariable) then
+        begin
+          case (C as TDefineVariable)._Type of
+            dvbInt : PName := 'IntValue';
+            dvbString : PName := 'StringValue';
+          end;
+        end;
       end else
         C := nil;
     end
@@ -830,7 +834,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
       GenValue(Op.Child(I));
-    if Func.FuncId in [fcIntToStr,fcSubStr] then
+    if Func.FuncId in [fcIntToStr,fcSubStr,fcChr] then
     begin
       SF := TExpStringFuncCall.Create(Target);
       SF.Kind := Func.FuncId;
