@@ -1548,6 +1548,11 @@ var
       ShowMessage('Set "Persistent" before editing arrays');
       Exit;
     end;
+    if A._Type=dvbString then
+    begin
+      ShowMessage('Persistent String-arrays not supported');
+      Exit;
+    end;
     if ArrayEditForm=nil then
       Application.CreateForm(TArrayEditForm,ArrayEditForm);
     ArrayEditForm.SetArray(A);

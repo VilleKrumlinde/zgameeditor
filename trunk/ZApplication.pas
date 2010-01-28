@@ -321,7 +321,7 @@ var
     J := 0;
     for I := 0 to Models.Cats.Count - 1 do
       Inc(J,Models.Get(I).Count);
-    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + IntToStr(ManagedHeap_GetAllocCount) );
+    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + ManagedHeap_GetStatus );
   end;
  {$endif}
 
