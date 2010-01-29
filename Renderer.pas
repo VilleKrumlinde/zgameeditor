@@ -276,7 +276,7 @@ type
   public
     ClearBeforeUse : boolean;
     ClearColor : TZColorf;
-    Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen);
+    Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
     CustomWidth,CustomHeight : integer;
     destructor Destroy; override;
   end;
@@ -2108,12 +2108,18 @@ begin
   W := Self.CustomWidth;
   if W=0 then
   begin
-    W := ZApp.ViewportWidth shr Ord(Self.Width);
+    if Self.Width>=rts128 then
+      W := 128 shl (Ord(Self.Width)-Ord(rts128))
+    else
+      W := ZApp.ViewportWidth shr Ord(Self.Width);
   end;
   H := Self.CustomHeight;
   if H=0 then
   begin
-    H := ZApp.ViewportHeight  shr Ord(Self.Height);
+    if Self.Height>=rts128 then
+      H := 128 shl (Ord(Self.Height)-Ord(rts128))
+    else
+      H := ZApp.ViewportHeight  shr Ord(Self.Height);
   end;
 
   {$ifndef minimal}
@@ -2176,9 +2182,11 @@ procedure TRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width','128','256','512']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := 4;
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@Height), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height','128','256','512']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := 4;
   List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}integer(@CustomWidth), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse), zptBoolean);

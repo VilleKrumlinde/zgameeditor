@@ -336,6 +336,7 @@ begin
   AddAttribute(fAsmAttri);
   fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment, SYNS_FriendlyAttrComment);
   fCommentAttri.Style:= [fsItalic];
+  fCommentAttri.Foreground := clBlue;
   AddAttribute(fCommentAttri);
   fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier, SYNS_FriendlyAttrIdentifier);
   AddAttribute(fIdentifierAttri);

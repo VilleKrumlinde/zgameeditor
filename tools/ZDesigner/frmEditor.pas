@@ -3376,8 +3376,7 @@ begin
   begin
     //List global identifiers
     SymTab.Iterate(AutoCompAddOne,Comp);
-    InAdd(['CurrentModel']);
-    InAdd(['this']);
+    InAdd(['CurrentModel','this','string','int','float','while','for']);
   end;
   (Comp.ItemList as TStringList).Sort;
   (Comp.InsertList as TStringList).Sort;

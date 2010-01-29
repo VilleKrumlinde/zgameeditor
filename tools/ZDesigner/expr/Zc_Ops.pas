@@ -331,21 +331,30 @@ begin
   begin
     C1 := Child(0) as TZcOpLiteral;
     C2 := Child(1) as TZcOpLiteral;
-    case Kind of
-      //todo: more optimizations
-      zcMul : DoConstant(C1.Value * C2.Value);
-      zcDiv : DoConstant(C1.Value / C2.Value);
-      zcPlus : DoConstant(C1.Value + C2.Value);
-      zcMinus : DoConstant(C1.Value - C2.Value);
+    if C1.Typ=zctString then
+    begin
+      if Kind=zcPlus then
+        Result := TZcOpLiteral.Create(zctString,'"' + C1.StringValue + C2.StringValue + '"');
+    end
+    else
+    begin
+      case Kind of
+        //todo: more optimizations
+        zcMul : DoConstant(C1.Value * C2.Value);
+        zcDiv : DoConstant(C1.Value / C2.Value);
+        zcPlus : DoConstant(C1.Value + C2.Value);
+        zcMinus : DoConstant(C1.Value - C2.Value);
+      end;
     end;
   end;
 
   if (Children.Count=1) and (Child(0).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
-    case Kind of
-      zcNegate : Result := TZcOpLiteral.Create(C1.Typ,C1.Value * -1);
-    end;
+    if C1.Typ<>zctString then
+      case Kind of
+        zcNegate : Result := TZcOpLiteral.Create(C1.Typ,C1.Value * -1);
+      end;
   end;
 end;
 
@@ -697,6 +706,7 @@ begin
   MakeOne('intToStr',fcIntToStr,'SI');
   MakeOne('subStr',fcSubStr,'SSII');
   MakeOne('chr',fcChr,'SI');
+  MakeOne('ord',fcOrd,'IS');
 end;
 
 
