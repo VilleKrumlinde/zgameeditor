@@ -93,7 +93,7 @@ CurrentModel.Position.Z=Temp1;]]>
     </Group>
     <Group Comment="Render target">
       <Children>
-        <RenderTarget Name="RenderTarget1" CustomWidth="512" CustomHeight="512" ClearColor="0.502 0.502 0.502 1"/>
+        <RenderTarget Name="RenderTarget1" ClearColor="0.502 0.502 0.502 1"/>
         <Material Name="RenderTargetSourceMaterial">
           <Textures>
             <MaterialTexture RenderTarget="RenderTarget1" TexCoords="1"/>

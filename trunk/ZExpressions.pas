@@ -207,7 +207,7 @@ type
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
-     fcStringLength,fcStringIndexOf,fcStrToInt,
+     fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
      fcIntToStr,fcSubStr,fcChr);
 
   //Built-in function call
@@ -652,7 +652,7 @@ begin
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}integer(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@IntValue), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@StringValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsStringTarget := True;
 end;
@@ -785,6 +785,12 @@ begin
         StackPopTo(I1);
         PInteger(@V)^ := ZStrToInt(PAnsiChar(I1));
       end;
+    fcOrd :
+      begin
+        //i=ord("A")
+        StackPopTo(I1);
+        PInteger(@V)^ := PByte(I1)^;
+      end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   if HasReturnValue then
@@ -886,9 +892,9 @@ procedure TDefineArray.AllocData;
 var
   ByteSize: Integer;
   P : PPointer;
+  I : integer;
   {$ifndef minimal}
   WasNil : boolean;
-  I : integer;
   {$endif}
 begin
   {$ifndef minimal}
@@ -920,16 +926,17 @@ begin
   {$ifndef minimal}
   Self.AllocItemCount := Self.Limit;
   Self.AllocType := Self._Type;
-  if Self.AllocType=dvbString then
+  {$endif}
+
+  if Self._Type=dvbString then
   begin
     P := P^;
-    for I := 0 to AllocItemCount - 1 do
+    for I := 0 to Self.Limit - 1 do
     begin
       ManagedHeap_AddTarget(P);
       Inc(P);
     end;
   end;
-  {$endif}
 end;
 
 procedure TDefineArray.CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);

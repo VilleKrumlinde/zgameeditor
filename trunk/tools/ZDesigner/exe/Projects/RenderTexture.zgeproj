@@ -11,7 +11,7 @@
 Rt1.Rotate.Y = App.Time*0.1;]]>
           </Expression>
         </ZExpression>
-        <RenderTransformGroup Name="Rt1" Translate="0 -0.6222 0" Rotate="0 0.819 0">
+        <RenderTransformGroup Name="Rt1" Translate="0 0.9667 0" Rotate="0 0.0915 0">
           <Children>
             <RenderMesh Mesh="Mesh1"/>
           </Children>
@@ -28,7 +28,7 @@ Rt1.Rotate.Y = App.Time*0.1;]]>
 Rt2.Rotate.X = 0.05;]]>
           </Expression>
         </ZExpression>
-        <RenderTransformGroup Name="Rt2" Rotate="0.05 1.2285 0">
+        <RenderTransformGroup Name="Rt2" Rotate="0.05 0.1372 0">
           <Children>
             <RenderMesh Mesh="Mesh2"/>
           </Children>
@@ -37,7 +37,7 @@ Rt2.Rotate.X = 0.05;]]>
     </Group>
   </OnRender>
   <Content>
-    <RenderTarget Name="RenderTarget1" CustomWidth="512" CustomHeight="512" ClearColor="0 0.251 0 1"/>
+    <RenderTarget Name="RenderTarget1" ClearColor="0 0.251 0 1"/>
     <Material Name="TexMaterial" Color="1 1 1 1" ZBuffer="0">
       <Textures>
         <MaterialTexture RenderTarget="RenderTarget1" TextureWrapMode="2" TexCoords="1"/>

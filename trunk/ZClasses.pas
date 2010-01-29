@@ -727,7 +727,7 @@ end;
 
 procedure ManagedHeap_GarbageCollect(Full : boolean);
 var
-  I : integer;
+  I,EndI : integer;
   PP : PPointer;
   P : pointer;
 begin
@@ -745,16 +745,19 @@ begin
       mh_Values.Add(P);
   end;
 
-  I := mh_Allocations.Count-1;
-  while I>=0 do
+  I := 0;
+  EndI := mh_Allocations.Count;
+  while I<EndI do
   begin
     P := Pointer(mh_Allocations[I]);
     if mh_Values.IndexOf(P)=-1 then
     begin
       FreeMem(P);
       mh_Allocations.SwapRemoveAt(I);
-    end;
-    Dec(I);
+      Dec(EndI);
+    end
+    else
+      Inc(I);
   end;
 end;
 
