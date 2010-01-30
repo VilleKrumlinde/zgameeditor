@@ -36,7 +36,7 @@ string display="";
 int linkCount=0;
 int finished=0;
 int i=0;
-while(finished!=1)  {
+while(!finished)  {
 
   //Sample string that we are trying to parse:
   //<a href="./viewtopic.php?f=2&amp;t=78879" class="topictitle">Question about English language?</a>

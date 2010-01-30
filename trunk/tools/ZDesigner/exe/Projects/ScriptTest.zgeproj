@@ -271,7 +271,13 @@ if(App.Caption!="hello")
   Error=1006;
 App.Caption = s;
 if(App.Caption!=s)
-  Error=1007;]]>
+  Error=1007;
+
+//NOT syntax
+if(!("hello"=="hello"))
+  Error=1008;
+if(!((1==1) && (2==2)))
+  Error=1009;]]>
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
