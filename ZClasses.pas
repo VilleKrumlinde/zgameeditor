@@ -727,7 +727,7 @@ end;
 
 procedure ManagedHeap_GarbageCollect(Full : boolean);
 var
-  I,EndI : integer;
+  I,J : integer;
   PP : PPointer;
   P : pointer;
 begin
@@ -736,6 +736,7 @@ begin
     Exit;
   mh_LastCount := mh_Allocations.Count;
 
+  //Fill a list with all the current values of all variables that can hold a allocated pointer
   mh_Values.Clear;
   for I := 0 to mh_Targets.Count - 1 do
   begin
@@ -746,18 +747,22 @@ begin
   end;
 
   I := 0;
-  EndI := mh_Allocations.Count;
-  while I<EndI do
+  while I<mh_Allocations.Count do
   begin
     P := Pointer(mh_Allocations[I]);
-    if mh_Values.IndexOf(P)=-1 then
+    J := mh_Values.IndexOf(P);
+    if J=-1 then
     begin
+      //Pointer is no longer used
       FreeMem(P);
       mh_Allocations.SwapRemoveAt(I);
-      Dec(EndI);
     end
     else
+    begin
+      //Pointer is used, remove this value to keep mh_Values as short as possible
+      mh_Values.SwapRemoveAt(J);
       Inc(I);
+    end;
   end;
 end;
 

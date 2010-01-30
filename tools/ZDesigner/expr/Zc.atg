@@ -576,11 +576,12 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
       (* "+" | *)
       "-"   (. Kind := zcNegate; .) |
       "++"  (. Kind := zcPreInc; .) |    
-      "--"  (. Kind := zcPreDec; .)
+      "--"  (. Kind := zcPreDec; .) |
+      "!"   (. Kind := zcNot; .)
       (* | "!" | "~" | "*" |  *)
     )   
     (. 
-       if Kind=zcNegate then
+       if Kind in [zcNegate,zcNot] then
        begin
          Tmp := MakeOp(Kind);
          if LastOp<>nil then
@@ -592,7 +593,7 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
   }
   Primary<Tmp>
     (. 
-       if Kind in [zcNop,zcNegate] then
+       if Kind in [zcNop,zcNegate,zcNot] then
        begin
          if LastOp<>nil then
          begin

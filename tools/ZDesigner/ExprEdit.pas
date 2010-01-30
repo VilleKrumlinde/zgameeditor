@@ -762,6 +762,7 @@ begin
     zcCompGE : DoGenComp(jsJumpGE);
     zcAnd : DoGenAnd;
     zcOr : DoGenOr;
+    zcNot : FallTrue(Op.Child(0),Lbl);
   else
     //zcConst,zcIdentifier,zcFuncCall etc
     DoGenValue;
@@ -814,6 +815,7 @@ begin
     zcCompGE : DoGenComp(jsJumpLT);
     zcAnd : DoGenAnd;
     zcOr : DoGenOr;
+    zcNot : FallFalse(Op.Child(0),Lbl);
   else
     //zcConst,zcIdentifier,zcFuncCall etc
     DoGenValue;

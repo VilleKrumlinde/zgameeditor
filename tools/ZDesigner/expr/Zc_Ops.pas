@@ -13,7 +13,7 @@ type
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
-          zcWhile);
+          zcWhile,zcNot);
 
   TZcOp = class
   public
@@ -254,6 +254,7 @@ begin
         Result := Result + ')';
       end;
     zcNop : Result := '<nop>;';       //Empty statement
+    zcNot : Result := '!' + Child(0).ToString;
     zcReturn :
       begin
         Result := 'return';
