@@ -121,12 +121,9 @@ begin
       if (C is TDefineVariable) or (C is TDefineConstant) then
       begin
         PName := 'Value';
-        if (C is TDefineVariable) then
-        begin
-          case (C as TDefineVariable)._Type of
-            dvbInt : PName := 'IntValue';
-            dvbString : PName := 'StringValue';
-          end;
+        case (C as TDefineVariableBase)._Type of
+          dvbInt : PName := 'IntValue';
+          dvbString : PName := 'StringValue';
         end;
       end else
         C := nil;
@@ -203,8 +200,8 @@ type
 function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
 begin
   Result := ParsePropRef(SymTab,Component,VarName,Ref);
-  if Result and (not ((Ref.Prop.PropertyType in ZClasses.FloatTypes)
-    or (Ref.Prop.PropertyType in [zptString,zptInteger,zptByte,zptBoolean]))) then
+  if Result and ((not (Ref.Prop.PropertyType in ZClasses.FloatTypes + [zptString,zptInteger,zptByte,zptBoolean])) or
+    Ref.Prop.ExcludeFromBinary) then
     raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
 end;
 
@@ -904,8 +901,13 @@ var
         P.Component.GetProperty(P.Prop,Value);
         if P.Component is TDefineConstant then
         begin
-          Assert(P.Prop.PropertyType=zptFloat);
-          Result := TZcOpLiteral.Create(zctFloat,Value.FloatValue);
+          case P.Prop.PropertyType of
+            zptFloat : Result := TZcOpLiteral.Create(zctFloat,Value.FloatValue);
+            zptInteger : Result := TZcOpLiteral.Create(zctInt,Value.IntegerValue);
+            zptString : Result := TZcOpLiteral.Create(zctString,'"' + Value.StringValue + '"');
+          else
+            Assert(False);
+          end;
         end;
       end;
     end else if Op.Kind=Zc_Ops.zcFunction then

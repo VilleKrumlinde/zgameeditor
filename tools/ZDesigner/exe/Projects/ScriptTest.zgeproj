@@ -277,7 +277,15 @@ if(App.Caption!=s)
 if(!("hello"=="hello"))
   Error=1008;
 if(!((1==1) && (2==2)))
-  Error=1009;]]>
+  Error=1009;
+
+//Constants
+if(ConS!="String")
+  Error=1010;
+if(ConI!=1)
+  Error=1011;
+if(ConF!=1.0)
+  Error=1012;]]>
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
@@ -313,5 +321,8 @@ else
     <Material Name="Material1" Blend="1"/>
     <DefineVariable Name="Global1" Type="1"/>
     <DefineVariable Name="GlobalFloat"/>
+    <DefineConstant Name="ConS" Type="2" StringValue="String"/>
+    <DefineConstant Name="ConI" Type="1" IntValue="1"/>
+    <DefineConstant Name="ConF" Value="1"/>
   </Content>
 </ZApplication>

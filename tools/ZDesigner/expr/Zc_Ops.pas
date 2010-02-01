@@ -254,7 +254,7 @@ begin
         Result := Result + ')';
       end;
     zcNop : Result := '<nop>;';       //Empty statement
-    zcNot : Result := '!' + Child(0).ToString;
+    zcNot : Result := '!(' + Child(0).ToString +')';
     zcReturn :
       begin
         Result := 'return';
