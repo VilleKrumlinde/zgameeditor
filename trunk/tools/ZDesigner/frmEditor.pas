@@ -3368,6 +3368,8 @@ begin
           if (Prop.PropertyType in [zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
             (Prop.Name='ObjId') then
             Continue;
+          if Prop.ExcludeFromBinary then
+            Continue;
           InAdd([Prop.Name]);
         end;
       end;

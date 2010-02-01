@@ -71,11 +71,13 @@ type
 
   //Define a global constant that can be used in expressions
   //Value is copied into code, this component is not streamed in final binary
-  TDefineConstant = class(TZComponent)
+  TDefineConstant = class(TDefineVariableBase)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Value : single;
+    IntValue : integer;
+    StringValue : TPropString;
     {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
@@ -803,14 +805,27 @@ end;
 procedure TDefineConstant.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  //Defineconstant class or properties are never stored in binary
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
+   {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+   {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}integer(@IntValue), zptInteger);
+   {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+   {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@StringValue), zptString);
+   {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
 end;
 
 {$ifndef minimal}
 function TDefineConstant.GetDisplayName: AnsiString;
 begin
-  Result := inherited GetDisplayName + ' ' + AnsiString(FormatFloat('###0.#',Value));
+  Result := inherited GetDisplayName + ' ';
+  case _Type of
+    dvbFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
+    dvbInt: Result := Result + IntToStr(IntValue);
+    dvbString: Result := Result + '"' + StringValue + '"';
+  end;
 end;
 {$endif}
 

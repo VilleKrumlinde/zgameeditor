@@ -243,7 +243,7 @@ end;
 
 procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
 var
-  wndClass : TWndClass;         // Window class
+  wndClass : TWndClassA;         // Window class
   dwStyle : DWORD;              // Window styles
   dwExStyle : DWORD;            // Extended window styles
   dmScreenSettings : DEVMODE;   // Screen settings (fullscreen, etc...)
@@ -292,6 +292,7 @@ begin
   FillChar(wndClass, SizeOf(wndClass),0);  // Clear the window class structure
 
   // Set up the window class
+//  wndClass.cbSize := SizeOf(wndClass);
   wndClass.style  := CS_HREDRAW or    // Redraws entire window if length changes
                      CS_VREDRAW or    // Redraws entire window if height changes
                      CS_OWNDC;        // Unique device context for the window
@@ -299,8 +300,15 @@ begin
   wndClass.hInstance     := HInstance;  //Delphi rtl gets the hinstance (SysInit.Unit)
   wndClass.hCursor       := LoadCursor(0, IDC_ARROW);
   wndClass.lpszClassName := 'OpenGL';
+//  wndClass.hIconSm := LoadIcon(0, IDI_APPLICATION);
+  wndClass.hIcon := LoadIcon(0, IDI_APPLICATION);
 
-  if (RegisterClass(wndClass) = 0) then  // Attemp to register the window class
+//if LoadImageA(HInstance, '1', IMAGE_ICON, 32, 32, 0)=0 then
+//  zhalt('crash2');
+//if LoadIconA(hInstance,'HEJ')=0 then
+//  zhalt('crash');
+
+  if (RegisterClassA(wndClass) = 0) then  // Attemp to register the window class
     {$if not defined(zzdc_activex)}
     ZHalt('Failed to register window class')
     {$ifend};
@@ -401,14 +409,6 @@ begin
     h_DC := GetDC(h_Wnd);
     if (h_DC = 0) then
       ZHalt('Unable to get a device context.');
-
-
-//if LoadIcon(MainInstance,'MAINICON' )=0 then
-//  zhalt('crash');
-//    if not Fullscreen then
-//    begin
-//      SendMessage(h_Wnd, WM_SETICON, 1, LoadIcon(MainInstance, '1'));
-//    end;
 
     // Settings for the OpenGL window
     FillChar(pfd, SizeOf(pfd), 0);
