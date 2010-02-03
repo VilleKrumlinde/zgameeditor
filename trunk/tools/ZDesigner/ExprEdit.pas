@@ -904,7 +904,7 @@ var
           case P.Prop.PropertyType of
             zptFloat : Result := TZcOpLiteral.Create(zctFloat,Value.FloatValue);
             zptInteger : Result := TZcOpLiteral.Create(zctInt,Value.IntegerValue);
-            zptString : Result := TZcOpLiteral.Create(zctString,'"' + Value.StringValue + '"');
+            zptString : Result := TZcOpLiteral.Create(zctString,'"' + String(Value.StringValue) + '"');
           else
             Assert(False);
           end;

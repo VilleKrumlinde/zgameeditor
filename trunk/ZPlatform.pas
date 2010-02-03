@@ -32,6 +32,7 @@ procedure Platform_InitGlobals;
 //W and H is desired rez, returns actual rez.
 procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
 function Platform_GetDisplayRefreshRate : integer;
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
 
 procedure Platform_ShutdownScreen;
 procedure Platform_SwapBuffers;

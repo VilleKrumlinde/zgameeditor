@@ -402,7 +402,7 @@ end;
 procedure RunCode(Code : TZComponentList);
 {$ifndef minimal}
 var
-  GuardLimit : integer;
+  GuardLimit,GuardAllocLimit : integer;
 {$endif}
 begin
   //Pc can be modified in jump-code
@@ -417,6 +417,7 @@ begin
 
   {$ifndef minimal}
   GuardLimit := 20 * 1000000;
+  GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000;
   {$endif}
   while True do
   begin
@@ -428,6 +429,8 @@ begin
     Dec(GuardLimit);
     if GuardLimit=0 then
       ZHalt('Twenty million instructions executed. Infinite loop?');
+    if ManagedHeap_GetAllocCount>GuardAllocLimit then
+      ZHalt('One million strings allocated. Infinite loop?');
     {$endif}
   end;
   if StackGetDepth=1 then
@@ -823,7 +826,7 @@ begin
   Result := inherited GetDisplayName + ' ';
   case _Type of
     dvbFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
-    dvbInt: Result := Result + IntToStr(IntValue);
+    dvbInt: Result := Result + AnsiString(IntToStr(IntValue));
     dvbString: Result := Result + '"' + StringValue + '"';
   end;
 end;

@@ -58,6 +58,7 @@ type
     {$ifndef minimal}
     ConstantMap : TDictionary<AnsiString,TObject>;
     {$endif}
+    OldCaption : pointer;
     procedure RenderModels;
   private
     FpsFrames : integer;
@@ -404,6 +405,13 @@ begin
   //Notify that net-data has been read
   if TWebOpen.ResultList.Count>0 then
     TWebOpen.FlushResultList;
+
+  //Update window caption
+  if pointer(Self.Caption)<>Self.OldCaption then
+  begin
+    Self.OldCaption := Self.Caption;
+    Platform_SetWindowCaption(Self.Caption);
+  end;
 end;
 
 procedure TZApplication.Run;
