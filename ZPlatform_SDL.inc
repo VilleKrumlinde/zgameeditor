@@ -59,6 +59,11 @@ begin
   Height := Mode.H;
 end;
 
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
+begin
+  SDL_WM_SetCaption(Title, nil);
+end;
+
 procedure Platform_ShutdownScreen;
 begin
   SDL_Quit;

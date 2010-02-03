@@ -492,6 +492,11 @@ begin
   {$endif}
 end;
 
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
+begin
+  SetWindowTextA(h_Wnd,Title);
+end;
+
 procedure Platform_ShowMouse(Visible : boolean);
 begin
   //Hide mouse, except in preview mode
