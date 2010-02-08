@@ -175,7 +175,7 @@ type
     Labels : TObjectList;
     LReturn : TZCodeLabel;
     CurrentFunction : TZcOpFunctionUserDefined;
-    IsLibrary : boolean;
+    IsLibrary,IsExternalLibrary : boolean;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
@@ -594,6 +594,13 @@ var
       Func.Lib := Component as TZLibrary;
       Func.LibIndex := Target.Count;
     end;
+    if IsExternalLibrary then
+    begin
+      Func.IsExternal := True;
+      if Func.Statements.Count>0 then
+        raise ECodeGenError.Create('External functions definitions can not have a body: ' + Func.Id );
+      Func.ExtLib := Component as TExternalLibrary;
+    end;
     Self.CurrentFunction := Func;
     if Func.NeedFrame then
     begin
@@ -688,6 +695,7 @@ var
   I : integer;
 begin
   IsLibrary := Component is TZLibrary;
+  IsExternalLibrary := Component is TExternalLibrary;
   RemoveConstants(StmtList);
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
@@ -852,6 +860,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
   var
     I : integer;
     F : TExpUserFuncCall;
+    FE : TExpExternalFuncCall;
   begin
     if NeedReturnValue and (UserFunc.ReturnType=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -859,9 +868,22 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to UserFunc.Arguments.Count-1 do
       GenValue(Op.Child(I));
-    F := TExpUserFuncCall.Create(Target);
-    F.Lib := UserFunc.Lib;
-    F.Index := UserFunc.LibIndex;
+
+    if UserFunc.IsExternal then
+    begin
+      FE := TExpExternalFuncCall.Create(Target);
+      FE.Lib := UserFunc.ExtLib;
+      FE.SetString('FuncName',AnsiString(UserFunc.Id));
+      FE.ArgCount := UserFunc.Arguments.Count;
+      FE.HasReturnValue := UserFunc.ReturnType<>zctVoid;
+    end
+    else
+    begin
+      F := TExpUserFuncCall.Create(Target);
+      F.Lib := UserFunc.Lib;
+      F.Index := UserFunc.LibIndex;
+    end;
+
     if (not NeedReturnValue) and (UserFunc.ReturnType<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do
@@ -960,15 +982,10 @@ var
   Target : TZComponentList;
   PError : EParseError;
   Error : TCocoError;
-  Lib : TZLibrary;
   AllowFuncDefs : boolean;
 begin
   //allow function definitions if compiling a library
-  if ThisC is TZLibrary then
-    Lib := ThisC as TZLibrary
-  else
-    Lib := nil;
-  AllowFuncDefs := Assigned(Lib);
+  AllowFuncDefs := (ThisC is TZLibrary) or (ThisC is TExternalLibrary);
 
   S := Ze.Source;
   Target := Ze.Code;

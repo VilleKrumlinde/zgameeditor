@@ -50,6 +50,20 @@ type
     Source : TZExpressionPropValue;
   end;
 
+  //Import of external library (dll)
+  TExternalLibrary = class(TZComponent)
+  strict private
+    ModuleHandle : integer;
+  private
+    function LoadFunction(P : PAnsiChar) : pointer;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    ModuleName : TPropString;
+    Definitions : TZExpressionPropValue;
+  end;
+
+
   TVariableType = (dvbFloat,dvbInt,dvbString);
   TDefineVariableBase = class(TZComponent)
   protected
@@ -296,6 +310,19 @@ type
     Index : integer;
   end;
 
+  TExpExternalFuncCall = class(TExpBase)
+  strict private
+    Proc : pointer;
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Lib : TExternalLibrary;
+    FuncName : TPropString;
+    ArgCount : integer;
+    HasReturnValue : boolean;
+  end;
+
   TExpConvertKind = (eckFloatToInt,eckIntToFloat);
   TExpConvert = class(TExpBase)
   protected
@@ -335,8 +362,8 @@ var
 implementation
 
 
-uses ZMath,ZPlatform,ZApplication
-{$ifndef minimal},ZLog,SysUtils,Math,Windows{$endif};
+uses ZMath,ZPlatform,ZApplication,ZLog
+{$ifndef minimal},SysUtils,Math,Windows{$endif};
 
 var
   //Expression execution context
@@ -1331,6 +1358,73 @@ begin
   StackPush(Dest);
 end;
 
+{ TExternalLibrary }
+
+procedure TExternalLibrary.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}integer(@ModuleName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptExpression);
+end;
+
+function TExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
+begin
+  if ModuleHandle=0 then
+  begin
+    ModuleHandle := Platform_LoadModule(Self.ModuleName);
+    if ModuleHandle=0 then
+      ZHalt(Self.ModuleName);
+  end;
+  Result := Platform_GetModuleProc(ModuleHandle,P);
+  if Result=nil then
+    ZHalt(P);
+end;
+
+{ TExpExternalFuncCall }
+
+procedure TExpExternalFuncCall.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}integer(@Lib), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}integer(@FuncName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}integer(@ArgCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue), zptBoolean);
+end;
+
+procedure TExpExternalFuncCall.Execute;
+type
+  TFunc = procedure();
+  PFunc = ^TFunc;
+var
+  Arg1,I,RetVal : integer;
+  TheFunc : PFunc;
+  Args : array[0..31] of integer;
+begin
+  {$ifndef minimal}
+  Assert(ArgCount<High(Args),'Too many arguments to external function');
+  {$endif}
+  if Self.Proc=nil then
+    Self.Proc := Lib.LoadFunction(Self.FuncName);
+  TheFunc := Self.Proc;
+  {$ifdef Win32}
+  for I := 0 to ArgCount-1 do
+    StackPopTo(Args[I]);
+  for I := 0 to ArgCount-1 do
+  begin
+    Arg1 := Args[I];
+    asm
+      push Arg1
+    end;
+  end;
+  asm
+    call TheFunc
+    mov RetVal,eax
+  end;
+  if Self.HasReturnValue then
+    StackPush(RetVal);
+  {$endif Win32}
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -1343,6 +1437,8 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
+  ZClasses.Register(TExternalLibrary,ExternalLibraryClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
 
   ZClasses.Register(TExpConstantFloat,ExpConstantFloatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -1361,6 +1457,8 @@ initialization
   ZClasses.Register(TExpJump,ExpJumpClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpFuncCall,ExpFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpExternalFuncCall,ExpExternalFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayRead,ExpArrayReadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}

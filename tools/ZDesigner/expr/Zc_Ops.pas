@@ -87,8 +87,12 @@ type
   TZcOpFunctionUserDefined = class(TZcOpFunctionBase)
   public
     //Assigned during codegen
+    //For z-functions
     Lib : TZLibrary;
     LibIndex : integer;
+    //For external functions
+    IsExternal : boolean;
+    ExtLib : TExternalLibrary;
     function NeedFrame : boolean;
   end;
 
