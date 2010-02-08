@@ -480,6 +480,18 @@ begin
   Result := -1;
 end;
 
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+begin
+  //TODO: module support
+  Result := 0;
+end;
+
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+begin
+  //TODO: module support
+  Result := 0;
+end;
+
 initialization
 
   // Initialize SDL

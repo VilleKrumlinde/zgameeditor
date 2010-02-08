@@ -1745,6 +1745,20 @@ begin
 end;
 
 
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+var
+  Buf : array[0..254] of AnsiChar;
+begin
+  //Open file relative to path of exe-file
+  MakeFullPath(Name,Buf);
+  Result := LoadLibraryA(@Buf);
+end;
+
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+begin
+  Result := GetProcAddress(Module,Name);
+end;
+
 {initialization
 
 finalization}

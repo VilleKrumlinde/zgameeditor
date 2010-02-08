@@ -82,6 +82,9 @@ function Platform_GetJoystickPOV(JoyId : integer) : single;
 procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+
 {$ifndef minimal}
 type
   TDesignerAudioCallback = procedure(P : pointer; Count : integer);

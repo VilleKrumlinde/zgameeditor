@@ -1831,7 +1831,7 @@ begin
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
-    if C is TZLibrary then
+    if (C is TZLibrary) or (C is TExternalLibrary) then
       CompileAll(True)
     else
       DoCompile(Tree.ZSelected,PropValue,Prop);
