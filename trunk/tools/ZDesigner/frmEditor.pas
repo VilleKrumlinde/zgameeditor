@@ -1831,7 +1831,7 @@ begin
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
-    if (C is TZLibrary) or (C is TExternalLibrary) then
+    if (C is TZLibrary) or (C is TZExternalLibrary) then
       CompileAll(True)
     else
       DoCompile(Tree.ZSelected,PropValue,Prop);
@@ -2584,6 +2584,7 @@ const
 begin
   CurrentFileName := F;
   Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
+  SetCurrentDir( ExtractFilePath(CurrentFileName) );
   //Add to MRU-list
   if F<>'' then
   begin

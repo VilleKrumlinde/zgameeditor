@@ -51,7 +51,7 @@ type
   end;
 
   //Import of external library (dll)
-  TExternalLibrary = class(TZComponent)
+  TZExternalLibrary = class(TZComponent)
   strict private
     ModuleHandle : integer;
   private
@@ -60,7 +60,8 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     ModuleName : TPropString;
-    Definitions : TZExpressionPropValue;
+    Source : TZExpressionPropValue;
+    {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
 
@@ -317,7 +318,7 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Lib : TExternalLibrary;
+    Lib : TZExternalLibrary;
     FuncName : TPropString;
     ArgCount : integer;
     HasReturnValue : boolean;
@@ -1360,14 +1361,15 @@ end;
 
 { TExternalLibrary }
 
-procedure TExternalLibrary.DefineProperties(List: TZPropertyList);
+procedure TZExternalLibrary.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}integer(@ModuleName), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptExpression);
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptExpression);
 end;
 
-function TExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
+function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
 begin
   if ModuleHandle=0 then
   begin
@@ -1379,6 +1381,13 @@ begin
   if Result=nil then
     ZHalt(P);
 end;
+
+{$ifndef minimal}
+function TZExternalLibrary.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName + ' ' + Self.ModuleName;
+end;
+{$endif}
 
 { TExpExternalFuncCall }
 
@@ -1437,7 +1446,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
-  ZClasses.Register(TExternalLibrary,ExternalLibraryClassId);
+  ZClasses.Register(TZExternalLibrary,ExternalLibraryClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
 
   ZClasses.Register(TExpConstantFloat,ExpConstantFloatClassId);

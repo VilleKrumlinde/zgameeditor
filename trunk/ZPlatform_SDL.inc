@@ -25,7 +25,7 @@ begin
   SDL_ShowCursor(vals[Visible]);
 end;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
@@ -57,6 +57,8 @@ begin
   //Returnera actual res
   Width := Mode.W;
   Height := Mode.H;
+
+  Result := 0;
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);

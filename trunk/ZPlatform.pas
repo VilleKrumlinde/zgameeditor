@@ -29,8 +29,8 @@ type
 
 procedure Platform_InitGlobals;
 
-//W and H is desired rez, returns actual rez.
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
+//W and H is desired rez, returns actual rez + window handle.
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 function Platform_GetDisplayRefreshRate : integer;
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
 

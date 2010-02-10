@@ -599,7 +599,7 @@ var
       Func.IsExternal := True;
       if Func.Statements.Count>0 then
         raise ECodeGenError.Create('External functions definitions can not have a body: ' + Func.Id );
-      Func.ExtLib := Component as TExternalLibrary;
+      Func.ExtLib := Component as TZExternalLibrary;
     end;
     Self.CurrentFunction := Func;
     if Func.NeedFrame then
@@ -695,7 +695,7 @@ var
   I : integer;
 begin
   IsLibrary := Component is TZLibrary;
-  IsExternalLibrary := Component is TExternalLibrary;
+  IsExternalLibrary := Component is TZExternalLibrary;
   RemoveConstants(StmtList);
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
@@ -985,7 +985,7 @@ var
   AllowFuncDefs : boolean;
 begin
   //allow function definitions if compiling a library
-  AllowFuncDefs := (ThisC is TZLibrary) or (ThisC is TExternalLibrary);
+  AllowFuncDefs := (ThisC is TZLibrary) or (ThisC is TZExternalLibrary);
 
   S := Ze.Source;
   Target := Ze.Code;

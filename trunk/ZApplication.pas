@@ -84,6 +84,7 @@ type
     Collisions : TCollisionChecks;
     States : TZComponentList;
     OnLoaded : TZComponentList;
+    OnClose : TZComponentList;
     OnUpdate : TZComponentList;
     OnRender : TZComponentList;
     OnBeginRenderPass : TZComponentList;
@@ -114,6 +115,7 @@ type
     MouseVisible : boolean;
     EscapeToQuit : boolean;
     CurrentRenderPass,RenderPasses : integer;
+    WindowHandle : integer;
     ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
@@ -242,7 +244,7 @@ begin
       ScreenHeight := ScreenModes[ I ].H;
     end;
 
-    Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption) );
+    Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption) );
     Platform_ShowMouse(MouseVisible);
     Renderer.InitRenderer;
     UpdateViewport;
@@ -264,6 +266,7 @@ end;
 procedure TZApplication.Shutdown;
 begin
   {$ifdef minimal}
+  OnClose.ExecuteCommands;
   Platform_ShutdownScreen;
   if not NoSound then
     Platform_ShutdownAudio;
@@ -674,6 +677,7 @@ procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}integer(@OnLoaded), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}integer(@OnClose), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
@@ -706,6 +710,9 @@ begin
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}integer(@RenderPasses), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'WindowHandle',{$ENDIF}integer(@WindowHandle), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
 
@@ -770,7 +777,7 @@ begin
   Self.DeltaTime := 0;
   Self.Clock.LastTime := 0;
   Self.FpsTime := 0;
-   
+
   //Initial tree update
   Content.Update;
   OnLoaded.ExecuteCommands;
@@ -783,6 +790,7 @@ begin
   Models.RemoveAll;
   Models.FlushRemoveList;
   Collisions.ClearAll;
+  OnClose.ExecuteCommands;
   Renderer.DesignerRenderStop;
 end;
 {$endif}
