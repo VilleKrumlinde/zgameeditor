@@ -241,7 +241,7 @@ begin
   KillWnd(FullScreen);
 end;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar);
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 var
   wndClass : TWndClassA;         // Window class
   dwStyle : DWORD;              // Window styles
@@ -490,6 +490,8 @@ begin
   //Must have initial mouseposition in screensaver mode
   GetCursorPos(LastMouse);
   {$endif}
+
+  Result := h_Wnd;
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
@@ -1746,12 +1748,24 @@ end;
 
 
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
+{$ifndef minimal}
 var
-  Buf : array[0..254] of AnsiChar;
+  S : ansistring;
+{$endif}
 begin
   //Open file relative to path of exe-file
-  MakeFullPath(Name,Buf);
-  Result := LoadLibraryA(@Buf);
+  {$ifndef minimal}
+  //Inside designer we must provide full path to zgeproj-file
+  S := DesignerFilePath + Name;
+  if FileExists(String(DesignerFilePath + Name)) then
+    Result := LoadLibraryA(PAnsiChar(S))
+  else
+    //Not found in zgeproj-path, assume system32-dll such as user32 and load without path
+    Result := LoadLibraryA(Name)
+  {$else}
+  //In engine always let the OS find the dll without path
+  Result := LoadLibraryA(Name);
+  {$endif}
 end;
 
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;

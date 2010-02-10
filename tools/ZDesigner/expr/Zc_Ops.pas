@@ -92,7 +92,7 @@ type
     LibIndex : integer;
     //For external functions
     IsExternal : boolean;
-    ExtLib : TExternalLibrary;
+    ExtLib : TZExternalLibrary;
     function NeedFrame : boolean;
   end;
 
