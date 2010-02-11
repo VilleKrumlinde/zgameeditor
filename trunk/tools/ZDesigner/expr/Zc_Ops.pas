@@ -13,7 +13,7 @@ type
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
-          zcWhile,zcNot);
+          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR);
 
   TZcOp = class
   public
@@ -112,6 +112,7 @@ function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 
 function GetZcTypeName(Typ : TZcDataType) : string;
+function ZcStrToFloat(const S : string) : single;
 
 function GetBuiltInFunctions : TObjectList;
 
@@ -245,6 +246,10 @@ begin
       end;
     zcNegate : Result := '-' + Child(0).ToString;
     zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
+    zcBinaryOr : Result := Child(0).ToString + ' | ' + Child(1).ToString;
+    zcBinaryAnd : Result := Child(0).ToString + ' & ' + Child(1).ToString;
+    zcBinaryShiftL : Result := Child(0).ToString + ' << ' + Child(1).ToString;
+    zcBinaryShiftR : Result := Child(0).ToString + ' >> ' + Child(1).ToString;
     zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
     zcFuncCall :
       begin
@@ -728,6 +733,14 @@ end;
 function TZcOpFunctionUserDefined.NeedFrame: boolean;
 begin
   Result := (Arguments.Count>0) or (GetStackSize>0);
+end;
+
+function ZcStrToFloat(const S : string) : single;
+begin
+  if (Length(S)>2) and (LowerCase(Copy(S,1,2))='0x') then
+    Result := StrToInt('$' + Copy(S,3,255))
+  else
+    Result := StrToFloat(S);
 end;
 
 initialization

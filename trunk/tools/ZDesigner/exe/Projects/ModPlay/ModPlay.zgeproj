@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="Music is playing!" CustomScreenWidth="400" CustomScreenHeight="400" MouseVisible="255">
+  <Comment>
+<![CDATA[This application demonstrates calling external DLL-files.
+Music is played using the bass.dll and the main window is made transparent by calling Windows API-functions.]]>
+  </Comment>
   <OnLoaded>
     <ZExternalLibrary ModuleName="bass.dll">
       <Source>
@@ -56,7 +60,7 @@ if(!BASS_ChannelPlay(musicId, 0)) {
 
 
 //Make window transparent
-SetWindowLongA(App.WindowHandle,-20,524288);
+SetWindowLongA(App.WindowHandle,-20,0x80000);
 SetLayeredWindowAttributes(App.WindowHandle, 0, 180, 2);
 
 App.Caption="Music is playing!";]]>
@@ -78,7 +82,10 @@ App.Caption="Music is playing!";]]>
 <![CDATA[string s;
 
 int level=BASS_ChannelGetLevel(MusicHandle);
-int left=level / 65536;
+
+int left=level >> 16;
+int right=level & 0xffff;
+
 s=intToStr( left );
 Rtext1.Text=s;
 

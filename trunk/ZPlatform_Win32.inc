@@ -591,9 +591,6 @@ var
 begin
   for I := 0 to 255 do
     KeyMap[AnsiChar(I)] := I;
-  for I := ord('a') to ord('z') do
-    KeyMap[AnsiChar(I)] := I - (ord('a')-ord('A'));;
-
   KeyMap[UpKey] := VK_UP;
   KeyMap[DownKey] := VK_DOWN;
   KeyMap[LeftKey] := VK_LEFT;

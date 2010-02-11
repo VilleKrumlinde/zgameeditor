@@ -178,6 +178,7 @@ type
   private
     Cb : TComboBox;
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
+    procedure OnCbDropDown(Sender : TObject);
     procedure OnChange(Sender : TObject);
   end;
 
@@ -435,7 +436,7 @@ begin
   Edit.Enabled := not IsReadOnlyProp;
   Edit.Parent := ValuePanel;
 
-  if (Prop.Name='Text') then
+  if (Prop.Name='Text') or (Prop.Name='Comment') then
   begin
     B := TButton.Create(Self);
     B.Align := alRight;
@@ -1223,6 +1224,17 @@ begin
   UpdateProp;
 end;
 
+procedure TZPropertyByteEdit.OnCbDropDown(Sender: TObject);
+var
+  I : integer;
+begin
+  if Cb.Items.Count=0 then
+  begin
+    for I := 0 to 255 do
+      Cb.Items.Add( IntToStr(I) );
+  end;
+end;
+
 procedure TZPropertyByteEdit.SetProp(C: TZComponent; Prop: TZProperty);
 var
   I : integer;
@@ -1246,8 +1258,7 @@ begin
   end
   else
   begin
-    for I := 0 to 32 do
-      Cb.Items.Add( IntToStr(I) );
+    Cb.OnDropDown := Self.OnCbDropDown;
   end;
   Cb.Items.EndUpdate;
 

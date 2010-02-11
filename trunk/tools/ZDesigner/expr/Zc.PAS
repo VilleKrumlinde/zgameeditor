@@ -132,7 +132,7 @@ destructor Destroy; override;
     SymTab : TSymbolTable;
     ReturnType : TZcDataType;
     AllowFunctions : boolean;
-    GlobalNames : TObjectList;    
+    GlobalNames : TObjectList;
 
   published
     { Published Declarations }
@@ -409,53 +409,29 @@ begin
       exit
     end;
     case state of
-   1: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
-begin
- 
-end
-else if ((CurrInputCh = 'D') OR
-(CurrInputCh = 'F') OR
-(CurrInputCh = 'M') OR
-(CurrInputCh = 'd') OR
-(CurrInputCh = 'f') OR
-(CurrInputCh = 'm')) then
-begin
-state := 13; 
-end
-else if ((CurrInputCh = 'E') OR
-(CurrInputCh = 'e')) then
+   1: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9') OR
+(CurrInputCh >= 'A') AND (CurrInputCh <= 'F') OR
+(CurrInputCh >= 'a') AND (CurrInputCh <= 'f')) then
 begin
 state := 2; 
 end
 else
 begin
-sym := realConSym;
+  sym := _noSym;
 exit;
 end;
-   2: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+   2: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9') OR
+(CurrInputCh >= 'A') AND (CurrInputCh <= 'F') OR
+(CurrInputCh >= 'a') AND (CurrInputCh <= 'f')) then
 begin
-state := 4; 
-end
-else if ((CurrInputCh = '+') OR
-(CurrInputCh = '-')) then
-begin
-state := 3; 
+ 
 end
 else
 begin
-  sym := _noSym;
+sym := intConSym;
 exit;
 end;
    3: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
-begin
-state := 4; 
-end
-else
-begin
-  sym := _noSym;
-exit;
-end;
-   4: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
  
 end
@@ -466,11 +442,30 @@ else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'f') OR
 (CurrInputCh = 'm')) then
 begin
-state := 13; 
+state := 15; 
+end
+else if ((CurrInputCh = 'E') OR
+(CurrInputCh = 'e')) then
+begin
+state := 4; 
 end
 else
 begin
 sym := realConSym;
+exit;
+end;
+   4: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+begin
+state := 6; 
+end
+else if ((CurrInputCh = '+') OR
+(CurrInputCh = '-')) then
+begin
+state := 5; 
+end
+else
+begin
+  sym := _noSym;
 exit;
 end;
    5: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
@@ -493,12 +488,7 @@ else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'f') OR
 (CurrInputCh = 'm')) then
 begin
-state := 13; 
-end
-else if ((CurrInputCh = 'E') OR
-(CurrInputCh = 'e')) then
-begin
-state := 7; 
+state := 15; 
 end
 else
 begin
@@ -506,11 +496,6 @@ sym := realConSym;
 exit;
 end;
    7: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
-begin
-state := 9; 
-end
-else if ((CurrInputCh = '+') OR
-(CurrInputCh = '-')) then
 begin
 state := 8; 
 end
@@ -521,15 +506,6 @@ exit;
 end;
    8: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
-state := 9; 
-end
-else
-begin
-  sym := _noSym;
-exit;
-end;
-   9: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
-begin
  
 end
 else if ((CurrInputCh = 'D') OR
@@ -539,19 +515,33 @@ else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'f') OR
 (CurrInputCh = 'm')) then
 begin
-state := 13; 
+state := 15; 
+end
+else if ((CurrInputCh = 'E') OR
+(CurrInputCh = 'e')) then
+begin
+state := 9; 
 end
 else
 begin
 sym := realConSym;
 exit;
 end;
-  10: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+   9: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
-state := 12; 
+state := 11; 
 end
 else if ((CurrInputCh = '+') OR
 (CurrInputCh = '-')) then
+begin
+state := 10; 
+end
+else
+begin
+  sym := _noSym;
+exit;
+end;
+  10: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
 state := 11; 
 end
@@ -562,14 +552,46 @@ exit;
 end;
   11: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
-state := 12; 
+ 
+end
+else if ((CurrInputCh = 'D') OR
+(CurrInputCh = 'F') OR
+(CurrInputCh = 'M') OR
+(CurrInputCh = 'd') OR
+(CurrInputCh = 'f') OR
+(CurrInputCh = 'm')) then
+begin
+state := 15; 
+end
+else
+begin
+sym := realConSym;
+exit;
+end;
+  12: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+begin
+state := 14; 
+end
+else if ((CurrInputCh = '+') OR
+(CurrInputCh = '-')) then
+begin
+state := 13; 
 end
 else
 begin
   sym := _noSym;
 exit;
 end;
-  12: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+  13: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+begin
+state := 14; 
+end
+else
+begin
+  sym := _noSym;
+exit;
+end;
+  14: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
  
 end
@@ -580,18 +602,18 @@ else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'f') OR
 (CurrInputCh = 'm')) then
 begin
-state := 13; 
+state := 15; 
 end
 else
 begin
 sym := realConSym;
 exit;
 end;
-  13: begin
+  15: begin
 sym := realConSym;
 exit;
 end;
-  14: if ((CurrInputCh <= CHR(9)) OR
+  16: if ((CurrInputCh <= CHR(9)) OR
 (CurrInputCh >= CHR(11)) AND (CurrInputCh <= CHR(12)) OR
 (CurrInputCh >= CHR(14)) AND (CurrInputCh <= '!') OR
 (CurrInputCh >= '#') AND (CurrInputCh <= '[') OR
@@ -601,33 +623,33 @@ begin
 end
 else if (CurrInputCh = '"') then
 begin
-state := 15; 
+state := 17; 
 end
 else if (CurrInputCh = '\') then
 begin
-state := 50; 
+state := 53; 
 end
 else
 begin
   sym := _noSym;
 exit;
 end;
-  15: begin
+  17: begin
 sym := stringConSym;
 exit;
 end;
-  16: if ((CurrInputCh >= 'A') AND (CurrInputCh <= 'Z') OR
+  18: if ((CurrInputCh >= 'A') AND (CurrInputCh <= 'Z') OR
 (CurrInputCh = '_') OR
 (CurrInputCh >= 'a') AND (CurrInputCh <= 'z')) then
 begin
-state := 17; 
+state := 19; 
 end
 else
 begin
   sym := _noSym;
 exit;
 end;
-  17: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9') OR
+  19: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9') OR
 (CurrInputCh >= 'A') AND (CurrInputCh <= 'Z') OR
 (CurrInputCh = '_') OR
 (CurrInputCh >= 'a') AND (CurrInputCh <= 'z')) then
@@ -640,9 +662,9 @@ sym := identSym;
 CheckLiteral(sym);
 exit;
 end;
-  18: if (CurrInputCh = '&') then
+  20: if (CurrInputCh = '&') then
 begin
-state := 56; 
+state := 59; 
 end
 else
 begin
@@ -650,23 +672,23 @@ sym := andSym;
 CheckLiteral(sym);
 exit;
 end;
-  19: begin
+  21: begin
 sym := colonSym;
 exit;
 end;
-  20: begin
+  22: begin
 sym := commaSym;
 CheckLiteral(sym);
 exit;
 end;
-  21: begin
+  23: begin
 sym := decSym;
 CheckLiteral(sym);
 exit;
 end;
-  22: if (CurrInputCh = '=') then
+  24: if (CurrInputCh = '=') then
 begin
-state := 54; 
+state := 57; 
 end
 else
 begin
@@ -674,58 +696,58 @@ sym := divSym;
 CheckLiteral(sym);
 exit;
 end;
-  23: begin
+  25: begin
 sym := eqSym;
 CheckLiteral(sym);
 exit;
 end;
-  24: begin
+  26: begin
 sym := gteSym;
 CheckLiteral(sym);
 exit;
 end;
-  25: begin
+  27: begin
 sym := incSym;
 CheckLiteral(sym);
 exit;
 end;
-  26: begin
+  28: begin
 sym := lbraceSym;
 CheckLiteral(sym);
 exit;
 end;
-  27: begin
+  29: begin
 sym := lbrackSym;
 CheckLiteral(sym);
 exit;
 end;
-  28: begin
+  30: begin
 sym := lparSym;
 CheckLiteral(sym);
 exit;
 end;
-  29: begin
+  31: begin
 sym := lshiftSym;
 CheckLiteral(sym);
 exit;
 end;
-  30: begin
+  32: begin
 sym := lteSym;
 CheckLiteral(sym);
 exit;
 end;
-  31: begin
+  33: begin
 sym := modSym;
 exit;
 end;
-  32: begin
+  34: begin
 sym := neqSym;
 CheckLiteral(sym);
 exit;
 end;
-  33: if (CurrInputCh = '|') then
+  35: if (CurrInputCh = '|') then
 begin
-state := 55; 
+state := 58; 
 end
 else
 begin
@@ -733,38 +755,38 @@ sym := orSym;
 CheckLiteral(sym);
 exit;
 end;
-  34: begin
+  36: begin
 sym := rbraceSym;
 CheckLiteral(sym);
 exit;
 end;
-  35: begin
+  37: begin
 sym := rbrackSym;
 CheckLiteral(sym);
 exit;
 end;
-  36: begin
+  38: begin
 sym := rparSym;
 CheckLiteral(sym);
 exit;
 end;
-  37: begin
+  39: begin
 sym := rshiftSym;
 CheckLiteral(sym);
 exit;
 end;
-  38: begin
+  40: begin
 sym := scolonSym;
 CheckLiteral(sym);
 exit;
 end;
-  39: begin
+  41: begin
 sym := tildeSym;
 exit;
 end;
-  40: if (CurrInputCh = '=') then
+  42: if (CurrInputCh = '=') then
 begin
-state := 53; 
+state := 56; 
 end
 else
 begin
@@ -772,23 +794,23 @@ sym := timesSym;
 CheckLiteral(sym);
 exit;
 end;
-  41: begin
+  43: begin
 sym := xorSym;
 CheckLiteral(sym);
 exit;
 end;
-  42: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+  44: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
 begin
  
 end
 else if (CurrInputCh = '.') then
 begin
-state := 5; 
+state := 7; 
 end
 else if ((CurrInputCh = 'E') OR
 (CurrInputCh = 'e')) then
 begin
-state := 10; 
+state := 12; 
 end
 else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'F') OR
@@ -797,16 +819,48 @@ else if ((CurrInputCh = 'D') OR
 (CurrInputCh = 'f') OR
 (CurrInputCh = 'm')) then
 begin
-state := 13; 
+state := 15; 
 end
 else
 begin
 sym := intConSym;
 exit;
 end;
-  43: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+  45: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+begin
+state := 44; 
+end
+else if ((CurrInputCh = 'X') OR
+(CurrInputCh = 'x')) then
 begin
 state := 1; 
+end
+else if (CurrInputCh = '.') then
+begin
+state := 7; 
+end
+else if ((CurrInputCh = 'E') OR
+(CurrInputCh = 'e')) then
+begin
+state := 12; 
+end
+else if ((CurrInputCh = 'D') OR
+(CurrInputCh = 'F') OR
+(CurrInputCh = 'M') OR
+(CurrInputCh = 'd') OR
+(CurrInputCh = 'f') OR
+(CurrInputCh = 'm')) then
+begin
+state := 15; 
+end
+else
+begin
+sym := intConSym;
+exit;
+end;
+  46: if ((CurrInputCh >= '0') AND (CurrInputCh <= '9')) then
+begin
+state := 3; 
 end
 else
 begin
@@ -814,9 +868,9 @@ sym := dotSym;
 CheckLiteral(sym);
 exit;
 end;
-  44: if (CurrInputCh = '=') then
+  47: if (CurrInputCh = '=') then
 begin
-state := 23; 
+state := 25; 
 end
 else
 begin
@@ -824,13 +878,13 @@ sym := assgnSym;
 CheckLiteral(sym);
 exit;
 end;
-  45: if (CurrInputCh = '-') then
+  48: if (CurrInputCh = '-') then
 begin
-state := 21; 
+state := 23; 
 end
 else if (CurrInputCh = '=') then
 begin
-state := 52; 
+state := 55; 
 end
 else
 begin
@@ -838,13 +892,13 @@ sym := minusSym;
 CheckLiteral(sym);
 exit;
 end;
-  46: if (CurrInputCh = '=') then
+  49: if (CurrInputCh = '=') then
 begin
-state := 24; 
+state := 26; 
 end
 else if (CurrInputCh = '>') then
 begin
-state := 37; 
+state := 39; 
 end
 else
 begin
@@ -852,13 +906,13 @@ sym := gtSym;
 CheckLiteral(sym);
 exit;
 end;
-  47: if (CurrInputCh = '+') then
+  50: if (CurrInputCh = '+') then
 begin
-state := 25; 
+state := 27; 
 end
 else if (CurrInputCh = '=') then
 begin
-state := 51; 
+state := 54; 
 end
 else
 begin
@@ -866,13 +920,13 @@ sym := plusSym;
 CheckLiteral(sym);
 exit;
 end;
-  48: if (CurrInputCh = '<') then
+  51: if (CurrInputCh = '<') then
 begin
-state := 29; 
+state := 31; 
 end
 else if (CurrInputCh = '=') then
 begin
-state := 30; 
+state := 32; 
 end
 else
 begin
@@ -880,9 +934,9 @@ sym := ltSym;
 CheckLiteral(sym);
 exit;
 end;
-  49: if (CurrInputCh = '=') then
+  52: if (CurrInputCh = '=') then
 begin
-state := 32; 
+state := 34; 
 end
 else
 begin
@@ -890,43 +944,43 @@ sym := notSym;
 CheckLiteral(sym);
 exit;
 end;
-  50: if ((CurrInputCh = '"') OR
+  53: if ((CurrInputCh = '"') OR
 (CurrInputCh = CHR(39)) OR
 (CurrInputCh = '\') OR
 (CurrInputCh = 'n')) then
 begin
-state := 14; 
+state := 16; 
 end
 else
 begin
   sym := _noSym;
 exit;
 end;
-  51: begin
+  54: begin
 sym := _plus_equalSym;
 exit;
 end;
-  52: begin
+  55: begin
 sym := _minus_equalSym;
 exit;
 end;
-  53: begin
+  56: begin
 sym := _star_equalSym;
 exit;
 end;
-  54: begin
+  57: begin
 sym := _slash_equalSym;
 exit;
 end;
-  55: begin
+  58: begin
 sym := _bar_barSym;
 exit;
 end;
-  56: begin
+  59: begin
 sym := _and_andSym;
 exit;
 end;
-  57: begin
+  60: begin
 sym := EOFSYMB;
 CurrInputCh := chNull;
 BufferPosition := BufferPosition - 1;
@@ -983,70 +1037,70 @@ fHashList.AddString('{', _lbraceSym, _lbraceSym);
 fHashList.AddString('|', _barSym, _barSym);
 fHashList.AddString('}', _rbraceSym, _rbraceSym);
 CurrentCh := CharAt;
-fStartState[  0] := 57; fStartState[  1] := 58; fStartState[  2] := 58; fStartState[  3] := 58; 
-fStartState[  4] := 58; fStartState[  5] := 58; fStartState[  6] := 58; fStartState[  7] := 58; 
-fStartState[  8] := 58; fStartState[  9] := 58; fStartState[ 10] := 58; fStartState[ 11] := 58; 
-fStartState[ 12] := 58; fStartState[ 13] := 58; fStartState[ 14] := 58; fStartState[ 15] := 58; 
-fStartState[ 16] := 58; fStartState[ 17] := 58; fStartState[ 18] := 58; fStartState[ 19] := 58; 
-fStartState[ 20] := 58; fStartState[ 21] := 58; fStartState[ 22] := 58; fStartState[ 23] := 58; 
-fStartState[ 24] := 58; fStartState[ 25] := 58; fStartState[ 26] := 58; fStartState[ 27] := 58; 
-fStartState[ 28] := 58; fStartState[ 29] := 58; fStartState[ 30] := 58; fStartState[ 31] := 58; 
-fStartState[ 32] := 58; fStartState[ 33] := 49; fStartState[ 34] := 14; fStartState[ 35] := 58; 
-fStartState[ 36] := 58; fStartState[ 37] := 31; fStartState[ 38] := 18; fStartState[ 39] := 58; 
-fStartState[ 40] := 28; fStartState[ 41] := 36; fStartState[ 42] := 40; fStartState[ 43] := 47; 
-fStartState[ 44] := 20; fStartState[ 45] := 45; fStartState[ 46] := 43; fStartState[ 47] := 22; 
-fStartState[ 48] := 42; fStartState[ 49] := 42; fStartState[ 50] := 42; fStartState[ 51] := 42; 
-fStartState[ 52] := 42; fStartState[ 53] := 42; fStartState[ 54] := 42; fStartState[ 55] := 42; 
-fStartState[ 56] := 42; fStartState[ 57] := 42; fStartState[ 58] := 19; fStartState[ 59] := 38; 
-fStartState[ 60] := 48; fStartState[ 61] := 44; fStartState[ 62] := 46; fStartState[ 63] := 58; 
-fStartState[ 64] := 16; fStartState[ 65] := 17; fStartState[ 66] := 17; fStartState[ 67] := 17; 
-fStartState[ 68] := 17; fStartState[ 69] := 17; fStartState[ 70] := 17; fStartState[ 71] := 17; 
-fStartState[ 72] := 17; fStartState[ 73] := 17; fStartState[ 74] := 17; fStartState[ 75] := 17; 
-fStartState[ 76] := 17; fStartState[ 77] := 17; fStartState[ 78] := 17; fStartState[ 79] := 17; 
-fStartState[ 80] := 17; fStartState[ 81] := 17; fStartState[ 82] := 17; fStartState[ 83] := 17; 
-fStartState[ 84] := 17; fStartState[ 85] := 17; fStartState[ 86] := 17; fStartState[ 87] := 17; 
-fStartState[ 88] := 17; fStartState[ 89] := 17; fStartState[ 90] := 17; fStartState[ 91] := 27; 
-fStartState[ 92] := 58; fStartState[ 93] := 35; fStartState[ 94] := 41; fStartState[ 95] := 17; 
-fStartState[ 96] := 58; fStartState[ 97] := 17; fStartState[ 98] := 17; fStartState[ 99] := 17; 
-fStartState[100] := 17; fStartState[101] := 17; fStartState[102] := 17; fStartState[103] := 17; 
-fStartState[104] := 17; fStartState[105] := 17; fStartState[106] := 17; fStartState[107] := 17; 
-fStartState[108] := 17; fStartState[109] := 17; fStartState[110] := 17; fStartState[111] := 17; 
-fStartState[112] := 17; fStartState[113] := 17; fStartState[114] := 17; fStartState[115] := 17; 
-fStartState[116] := 17; fStartState[117] := 17; fStartState[118] := 17; fStartState[119] := 17; 
-fStartState[120] := 17; fStartState[121] := 17; fStartState[122] := 17; fStartState[123] := 26; 
-fStartState[124] := 33; fStartState[125] := 34; fStartState[126] := 39; fStartState[127] := 58; 
-fStartState[128] := 58; fStartState[129] := 58; fStartState[130] := 58; fStartState[131] := 58; 
-fStartState[132] := 58; fStartState[133] := 58; fStartState[134] := 58; fStartState[135] := 58; 
-fStartState[136] := 58; fStartState[137] := 58; fStartState[138] := 58; fStartState[139] := 58; 
-fStartState[140] := 58; fStartState[141] := 58; fStartState[142] := 58; fStartState[143] := 58; 
-fStartState[144] := 58; fStartState[145] := 58; fStartState[146] := 58; fStartState[147] := 58; 
-fStartState[148] := 58; fStartState[149] := 58; fStartState[150] := 58; fStartState[151] := 58; 
-fStartState[152] := 58; fStartState[153] := 58; fStartState[154] := 58; fStartState[155] := 58; 
-fStartState[156] := 58; fStartState[157] := 58; fStartState[158] := 58; fStartState[159] := 58; 
-fStartState[160] := 58; fStartState[161] := 58; fStartState[162] := 58; fStartState[163] := 58; 
-fStartState[164] := 58; fStartState[165] := 58; fStartState[166] := 58; fStartState[167] := 58; 
-fStartState[168] := 58; fStartState[169] := 58; fStartState[170] := 58; fStartState[171] := 58; 
-fStartState[172] := 58; fStartState[173] := 58; fStartState[174] := 58; fStartState[175] := 58; 
-fStartState[176] := 58; fStartState[177] := 58; fStartState[178] := 58; fStartState[179] := 58; 
-fStartState[180] := 58; fStartState[181] := 58; fStartState[182] := 58; fStartState[183] := 58; 
-fStartState[184] := 58; fStartState[185] := 58; fStartState[186] := 58; fStartState[187] := 58; 
-fStartState[188] := 58; fStartState[189] := 58; fStartState[190] := 58; fStartState[191] := 58; 
-fStartState[192] := 58; fStartState[193] := 58; fStartState[194] := 58; fStartState[195] := 58; 
-fStartState[196] := 58; fStartState[197] := 58; fStartState[198] := 58; fStartState[199] := 58; 
-fStartState[200] := 58; fStartState[201] := 58; fStartState[202] := 58; fStartState[203] := 58; 
-fStartState[204] := 58; fStartState[205] := 58; fStartState[206] := 58; fStartState[207] := 58; 
-fStartState[208] := 58; fStartState[209] := 58; fStartState[210] := 58; fStartState[211] := 58; 
-fStartState[212] := 58; fStartState[213] := 58; fStartState[214] := 58; fStartState[215] := 58; 
-fStartState[216] := 58; fStartState[217] := 58; fStartState[218] := 58; fStartState[219] := 58; 
-fStartState[220] := 58; fStartState[221] := 58; fStartState[222] := 58; fStartState[223] := 58; 
-fStartState[224] := 58; fStartState[225] := 58; fStartState[226] := 58; fStartState[227] := 58; 
-fStartState[228] := 58; fStartState[229] := 58; fStartState[230] := 58; fStartState[231] := 58; 
-fStartState[232] := 58; fStartState[233] := 58; fStartState[234] := 58; fStartState[235] := 58; 
-fStartState[236] := 58; fStartState[237] := 58; fStartState[238] := 58; fStartState[239] := 58; 
-fStartState[240] := 58; fStartState[241] := 58; fStartState[242] := 58; fStartState[243] := 58; 
-fStartState[244] := 58; fStartState[245] := 58; fStartState[246] := 58; fStartState[247] := 58; 
-fStartState[248] := 58; fStartState[249] := 58; fStartState[250] := 58; fStartState[251] := 58; 
-fStartState[252] := 58; fStartState[253] := 58; fStartState[254] := 58; fStartState[255] := 58; 
+fStartState[  0] := 60; fStartState[  1] := 61; fStartState[  2] := 61; fStartState[  3] := 61; 
+fStartState[  4] := 61; fStartState[  5] := 61; fStartState[  6] := 61; fStartState[  7] := 61; 
+fStartState[  8] := 61; fStartState[  9] := 61; fStartState[ 10] := 61; fStartState[ 11] := 61; 
+fStartState[ 12] := 61; fStartState[ 13] := 61; fStartState[ 14] := 61; fStartState[ 15] := 61; 
+fStartState[ 16] := 61; fStartState[ 17] := 61; fStartState[ 18] := 61; fStartState[ 19] := 61; 
+fStartState[ 20] := 61; fStartState[ 21] := 61; fStartState[ 22] := 61; fStartState[ 23] := 61; 
+fStartState[ 24] := 61; fStartState[ 25] := 61; fStartState[ 26] := 61; fStartState[ 27] := 61; 
+fStartState[ 28] := 61; fStartState[ 29] := 61; fStartState[ 30] := 61; fStartState[ 31] := 61; 
+fStartState[ 32] := 61; fStartState[ 33] := 52; fStartState[ 34] := 16; fStartState[ 35] := 61; 
+fStartState[ 36] := 61; fStartState[ 37] := 33; fStartState[ 38] := 20; fStartState[ 39] := 61; 
+fStartState[ 40] := 30; fStartState[ 41] := 38; fStartState[ 42] := 42; fStartState[ 43] := 50; 
+fStartState[ 44] := 22; fStartState[ 45] := 48; fStartState[ 46] := 46; fStartState[ 47] := 24; 
+fStartState[ 48] := 45; fStartState[ 49] := 44; fStartState[ 50] := 44; fStartState[ 51] := 44; 
+fStartState[ 52] := 44; fStartState[ 53] := 44; fStartState[ 54] := 44; fStartState[ 55] := 44; 
+fStartState[ 56] := 44; fStartState[ 57] := 44; fStartState[ 58] := 21; fStartState[ 59] := 40; 
+fStartState[ 60] := 51; fStartState[ 61] := 47; fStartState[ 62] := 49; fStartState[ 63] := 61; 
+fStartState[ 64] := 18; fStartState[ 65] := 19; fStartState[ 66] := 19; fStartState[ 67] := 19; 
+fStartState[ 68] := 19; fStartState[ 69] := 19; fStartState[ 70] := 19; fStartState[ 71] := 19; 
+fStartState[ 72] := 19; fStartState[ 73] := 19; fStartState[ 74] := 19; fStartState[ 75] := 19; 
+fStartState[ 76] := 19; fStartState[ 77] := 19; fStartState[ 78] := 19; fStartState[ 79] := 19; 
+fStartState[ 80] := 19; fStartState[ 81] := 19; fStartState[ 82] := 19; fStartState[ 83] := 19; 
+fStartState[ 84] := 19; fStartState[ 85] := 19; fStartState[ 86] := 19; fStartState[ 87] := 19; 
+fStartState[ 88] := 19; fStartState[ 89] := 19; fStartState[ 90] := 19; fStartState[ 91] := 29; 
+fStartState[ 92] := 61; fStartState[ 93] := 37; fStartState[ 94] := 43; fStartState[ 95] := 19; 
+fStartState[ 96] := 61; fStartState[ 97] := 19; fStartState[ 98] := 19; fStartState[ 99] := 19; 
+fStartState[100] := 19; fStartState[101] := 19; fStartState[102] := 19; fStartState[103] := 19; 
+fStartState[104] := 19; fStartState[105] := 19; fStartState[106] := 19; fStartState[107] := 19; 
+fStartState[108] := 19; fStartState[109] := 19; fStartState[110] := 19; fStartState[111] := 19; 
+fStartState[112] := 19; fStartState[113] := 19; fStartState[114] := 19; fStartState[115] := 19; 
+fStartState[116] := 19; fStartState[117] := 19; fStartState[118] := 19; fStartState[119] := 19; 
+fStartState[120] := 19; fStartState[121] := 19; fStartState[122] := 19; fStartState[123] := 28; 
+fStartState[124] := 35; fStartState[125] := 36; fStartState[126] := 41; fStartState[127] := 61; 
+fStartState[128] := 61; fStartState[129] := 61; fStartState[130] := 61; fStartState[131] := 61; 
+fStartState[132] := 61; fStartState[133] := 61; fStartState[134] := 61; fStartState[135] := 61; 
+fStartState[136] := 61; fStartState[137] := 61; fStartState[138] := 61; fStartState[139] := 61; 
+fStartState[140] := 61; fStartState[141] := 61; fStartState[142] := 61; fStartState[143] := 61; 
+fStartState[144] := 61; fStartState[145] := 61; fStartState[146] := 61; fStartState[147] := 61; 
+fStartState[148] := 61; fStartState[149] := 61; fStartState[150] := 61; fStartState[151] := 61; 
+fStartState[152] := 61; fStartState[153] := 61; fStartState[154] := 61; fStartState[155] := 61; 
+fStartState[156] := 61; fStartState[157] := 61; fStartState[158] := 61; fStartState[159] := 61; 
+fStartState[160] := 61; fStartState[161] := 61; fStartState[162] := 61; fStartState[163] := 61; 
+fStartState[164] := 61; fStartState[165] := 61; fStartState[166] := 61; fStartState[167] := 61; 
+fStartState[168] := 61; fStartState[169] := 61; fStartState[170] := 61; fStartState[171] := 61; 
+fStartState[172] := 61; fStartState[173] := 61; fStartState[174] := 61; fStartState[175] := 61; 
+fStartState[176] := 61; fStartState[177] := 61; fStartState[178] := 61; fStartState[179] := 61; 
+fStartState[180] := 61; fStartState[181] := 61; fStartState[182] := 61; fStartState[183] := 61; 
+fStartState[184] := 61; fStartState[185] := 61; fStartState[186] := 61; fStartState[187] := 61; 
+fStartState[188] := 61; fStartState[189] := 61; fStartState[190] := 61; fStartState[191] := 61; 
+fStartState[192] := 61; fStartState[193] := 61; fStartState[194] := 61; fStartState[195] := 61; 
+fStartState[196] := 61; fStartState[197] := 61; fStartState[198] := 61; fStartState[199] := 61; 
+fStartState[200] := 61; fStartState[201] := 61; fStartState[202] := 61; fStartState[203] := 61; 
+fStartState[204] := 61; fStartState[205] := 61; fStartState[206] := 61; fStartState[207] := 61; 
+fStartState[208] := 61; fStartState[209] := 61; fStartState[210] := 61; fStartState[211] := 61; 
+fStartState[212] := 61; fStartState[213] := 61; fStartState[214] := 61; fStartState[215] := 61; 
+fStartState[216] := 61; fStartState[217] := 61; fStartState[218] := 61; fStartState[219] := 61; 
+fStartState[220] := 61; fStartState[221] := 61; fStartState[222] := 61; fStartState[223] := 61; 
+fStartState[224] := 61; fStartState[225] := 61; fStartState[226] := 61; fStartState[227] := 61; 
+fStartState[228] := 61; fStartState[229] := 61; fStartState[230] := 61; fStartState[231] := 61; 
+fStartState[232] := 61; fStartState[233] := 61; fStartState[234] := 61; fStartState[235] := 61; 
+fStartState[236] := 61; fStartState[237] := 61; fStartState[238] := 61; fStartState[239] := 61; 
+fStartState[240] := 61; fStartState[241] := 61; fStartState[242] := 61; fStartState[243] := 61; 
+fStartState[244] := 61; fStartState[245] := 61; fStartState[246] := 61; fStartState[247] := 61; 
+fStartState[248] := 61; fStartState[249] := 61; fStartState[250] := 61; fStartState[251] := 61; 
+fStartState[252] := 61; fStartState[253] := 61; fStartState[254] := 61; fStartState[255] := 61; 
 end; {Create}
 
 destructor TZcScanner.Destroy;
@@ -1175,6 +1229,7 @@ begin
     202 : Result := 'Return value expected';
     203 : Result := 'Function should not return a value';
     204 : Result := 'Only function definitions are allowed here';
+    205 : Result := 'Syntax not supported';
   else
     if Assigned(OnCustomError) then
       Result := OnCustomError(Self, ErrorCode, Data)
@@ -1281,7 +1336,7 @@ try
 S  :=  LexString;
 if  S[  Length(S)  ]  in  ['F','f']  then
 S  :=  Copy(S,1,Length(S)-1);
-V  :=  StrToFloat(S);
+V  :=  ZcStrToFloat(S);
 OutOp  :=  TZcOpLiteral.Create(Typ,V)
 except  on  EConvertError  do
 SynError(200);
@@ -1391,18 +1446,23 @@ L  :=  OutOp;
 end;
 end;
 
-procedure TZc._ShiftExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+procedure TZc._ShiftExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op,L,R  :  TZcOp;  Kind  :  TZcOpKind;
 begin
 _AddExpr(InOp,OutOp);
+L  :=  OutOp;
 while (fCurrentInputSymbol = _less_lessSym) OR
  (fCurrentInputSymbol = _greater_greaterSym) do begin
 if (fCurrentInputSymbol = _less_lessSym) then begin
 Get;
+Kind  :=  zcBinaryShiftL;
 end else begin
 Get;
+Kind  :=  zcBinaryShiftR;
 end;
 _Unary(Op);
-_AddExpr(InOp,OutOp);
+_AddExpr(Op,R);
+OutOp  :=  MakeOp(Kind,[L,R]);
+L  :=  OutOp;
 end;
 end;
 
@@ -1456,13 +1516,16 @@ L  :=  OutOp;
 end;
 end;
 
-procedure TZc._BitAndExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+procedure TZc._BitAndExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op,L,R  :  TZcOp;
 begin
 _EqlExpr(InOp,OutOp);
+L  :=  OutOp;
 while (fCurrentInputSymbol = _andSym) do begin
 Get;
 _Unary(Op);
-_EqlExpr(InOp,OutOp);
+_EqlExpr(Op,R);
+OutOp  :=  MakeOp(zcBinaryAnd,[L,R]);
+L  :=  OutOp;
 end;
 end;
 
@@ -1471,18 +1534,22 @@ begin
 _BitAndExpr(InOp,OutOp);
 while (fCurrentInputSymbol = _uparrowSym) do begin
 Get;
+SynError(205);
 _Unary(Op);
 _BitAndExpr(InOp,OutOp);
 end;
 end;
 
-procedure TZc._BitOrExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op  :  TZcOp;
+procedure TZc._BitOrExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Op,L,R  :  TZcOp;
 begin
 _BitXorExpr(InOp,OutOp);
+L  :=  OutOp;
 while (fCurrentInputSymbol = _barSym) do begin
 Get;
 _Unary(Op);
-_BitXorExpr(InOp,OutOp);
+_BitXorExpr(Op,R);
+OutOp  :=  MakeOp(zcBinaryOr,[L,R]);
+L  :=  OutOp;
 end;
 end;
 
