@@ -552,7 +552,7 @@ begin
   else
   begin
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + S);
-    Edit.Undo;
+    //Edit.Undo;
   end;
   Edit.Color := clWhite;
 end;
@@ -991,7 +991,7 @@ begin
   else
   begin
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + Edit.Text);
-    Edit.Undo;
+    //Edit.Undo;
   end;
   Edit.Color := clWhite;
 end;
@@ -1230,8 +1230,10 @@ var
 begin
   if Cb.Items.Count=0 then
   begin
+    Cb.Items.BeginUpdate;
     for I := 0 to 255 do
       Cb.Items.Add( IntToStr(I) );
+    Cb.Items.EndUpdate;
   end;
 end;
 
@@ -1243,26 +1245,27 @@ begin
   Cb := TComboBox.Create(Self);
 
   Cb.Align := alClient;
-  Cb.Style := csDropDownList;
 //  Cb.Sorted := True;
   Cb.OnChange := Self.OnChange;
   Cb.OnEnter := OnFocusControl;
   Cb.Enabled := not IsReadOnlyProp;
   Cb.Parent := ValuePanel;
 
-  Cb.Items.BeginUpdate;
   if Length(Prop.Options)>0 then
   begin
+    Cb.Style := csDropDownList;
+    Cb.Items.BeginUpdate;
     for I := 0 to High(Prop.Options) do
-      Cb.Items.Add( Prop.Options[I] )
+      Cb.Items.Add( Prop.Options[I] );
+    Cb.Items.EndUpdate;
+    Cb.ItemIndex := Value.ByteValue;
   end
   else
   begin
     Cb.OnDropDown := Self.OnCbDropDown;
+    Cb.Style := csDropDown;
+    Cb.Text := IntToStr(Value.ByteValue);
   end;
-  Cb.Items.EndUpdate;
-
-  Cb.ItemIndex := Value.ByteValue;
 end;
 
 { TZPropertyPropRefEdit }
