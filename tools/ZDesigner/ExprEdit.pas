@@ -209,7 +209,12 @@ end;
 function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpBase;
 begin
   case Typ of
-    zctFloat : Result := TExpOpBinaryFloat.Create(nil,Kind);
+    zctFloat :
+      begin
+        if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryShiftLeft,vbkBinaryShiftRight] then
+          raise ECodeGenError.Create('Cannot use this operator on a float-expression');
+        Result := TExpOpBinaryFloat.Create(nil,Kind);
+      end;
     zctInt : Result := TExpOpBinaryInt.Create(nil,Kind);
     zctString :
       begin
@@ -372,6 +377,10 @@ begin
     zcDiv : DoGenBinary(vbkDiv);
     zcPlus : DoGenBinary(vbkPlus);
     zcMinus : DoGenBinary(vbkMinus);
+    zcBinaryOr : DoGenBinary(vbkBinaryOr);
+    zcBinaryAnd : DoGenBinary(vbkBinaryAnd);
+    zcBinaryShiftL : DoGenBinary(vbkBinaryShiftLeft);
+    zcBinaryShiftR : DoGenBinary(vbkBinaryShiftRight);
     zcConstLiteral : DoLiteral;
     zcIdentifier : DoGenVariableValue;
     zcFuncCall : GenFuncCall(Op,True);

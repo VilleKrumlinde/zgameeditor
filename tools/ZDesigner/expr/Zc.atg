@@ -12,7 +12,7 @@ DELPHI
     SymTab : TSymbolTable;
     ReturnType : TZcDataType;
     AllowFunctions : boolean;
-    GlobalNames : TObjectList;    
+    GlobalNames : TObjectList;
   PRIVATE
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
@@ -28,6 +28,7 @@ DELPHI
     202 : Result := 'Return value expected';
     203 : Result := 'Function should not return a value';
     204 : Result := 'Only function definitions are allowed here';
+    205 : Result := 'Syntax not supported';
 END_DELPHI
 
 (* Arbitrary Code *)
@@ -81,7 +82,7 @@ TOKENS
   /*--------------------------------------------------------------------------------*/
         intCon =
                 ( digit {digit}
-                (* | ("0x" | "0X") hexDigit {hexDigit} *)
+                | ("0x" | "0X") hexDigit {hexDigit}
                 )
                 (* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] *)
                 .
@@ -501,17 +502,28 @@ AndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
     }
 .
 /*------------------------------------------------------------------------*/
-BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
-= BitXorExpr<InOp,OutOp> {"|" Unary<Op> BitXorExpr<InOp,OutOp>}
+BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+= BitXorExpr<InOp,OutOp> (. L := OutOp; .)
+  {"|" Unary<Op> BitXorExpr<Op,R>
+    (. OutOp := MakeOp(zcBinaryOr,[L,R]);
+       L := OutOp; .)
+  }
 .
+
 /*------------------------------------------------------------------------*/
 BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
-= BitAndExpr<InOp,OutOp> {"^" Unary<Op> BitAndExpr<InOp,OutOp>}
+= BitAndExpr<InOp,OutOp> {"^" (. SynError(205); .) Unary<Op> BitAndExpr<InOp,OutOp>}
 .
+
 /*------------------------------------------------------------------------*/
-BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
-= EqlExpr<InOp,OutOp> {"&" Unary<Op> EqlExpr<InOp,OutOp>}
+BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+= EqlExpr<InOp,OutOp> (. L := OutOp; .)
+  {"&" Unary<Op> EqlExpr<Op,R>
+    (. OutOp := MakeOp(zcBinaryAnd,[L,R]);
+       L := OutOp; .)
+  }
 .
+
 /*------------------------------------------------------------------------*/
 EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
 = RelExpr<InOp,OutOp>   (. L := OutOp; .)
@@ -539,8 +551,15 @@ RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
   }
 .
 /*------------------------------------------------------------------------*/
-ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
-= AddExpr<InOp,OutOp> {("<<" | ">>") Unary<Op> AddExpr<InOp,OutOp>}
+ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
+= AddExpr<InOp,OutOp> (. L := OutOp; .)
+  { ("<<"  (. Kind := zcBinaryShiftL; .)
+    | ">>" (. Kind := zcBinaryShiftR; .)
+    )
+    Unary<Op> AddExpr<Op,R>
+    (. OutOp := MakeOp(Kind,[L,R]);
+       L := OutOp; .)
+  }
 .
 /*------------------------------------------------------------------------*/
 AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
@@ -624,7 +643,7 @@ Primary<var OutOp : TZcOp>
             S := LexString;
             if S[ Length(S) ] in ['F','f'] then
               S := Copy(S,1,Length(S)-1);
-            V := StrToFloat(S);
+            V := ZcStrToFloat(S);
             OutOp := TZcOpLiteral.Create(Typ,V)
           except on EConvertError do
             SynError(200);
