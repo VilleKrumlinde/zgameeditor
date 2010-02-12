@@ -1372,6 +1372,14 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}integer(@ModuleName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptExpression);
+    {$ifndef minimal}
+    List.GetLast.DefaultValue.ExpressionValue.Source :=
+'//Import a DLL-library by setting ModuleName to name of the DLL'#13#10 +
+'//and then declaring the function headers here. For example:'#13#10 +
+'//'#13#10 +
+'//  int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { } '#13#10 +
+'//  int SetWindowTextA(int hWnd,string lpString) { }';
+    {$endif}
 end;
 
 function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;

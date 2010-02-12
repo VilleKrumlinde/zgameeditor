@@ -46,7 +46,7 @@ void assignGlobal(float x) {
 
 float x,y,z;
 
-x=0.9;
+x=0.9f;
 y=0.5;
 z=0.1;
 
@@ -114,7 +114,21 @@ if(x>0)
 if(x<-11)
   Error=7;
 if(x!=-10)
-  Error=8;]]>
+  Error=8;
+
+//binary operators
+if( (1 | 2) != 3)
+  Error=9;
+if((3 & 1) != 1)
+  Error=10;
+if( (0x0f | 0xf0) != 0xff)
+  Error=11;
+if( (0x0f | 0xf0 | 0xf00) != 0xfff)
+  Error=12;
+if( (1<<2) != 4)
+  Error=13;
+if( (4>>2) != 1)
+  Error=14;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="byte tests">

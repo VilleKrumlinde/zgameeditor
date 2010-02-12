@@ -94,7 +94,7 @@ Rbeams1.Length = (left/32768.0) * 20;]]>
     </ZExpression>
   </OnUpdate>
   <OnRender>
-    <RenderText Name="RText1" Text="825"/>
+    <RenderText Name="RText1"/>
     <UseMaterial Material="Material1"/>
     <RenderBeams Name="Rbeams1" Count="10" Length="0.5035" Width="0.1"/>
   </OnRender>

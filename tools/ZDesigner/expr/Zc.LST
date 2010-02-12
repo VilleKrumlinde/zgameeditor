@@ -1,6 +1,6 @@
 
 
-Compiled: den 11 februari 2010 - 14:39:41
+Compiled: den 12 februari 2010 - 15:20:44
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 11 februari 2010 @ 14:39:41
+Time Compiled: den 12 februari 2010 @ 15:20:44
 
 Statistics:
   number of terminals:        80 (limit  2561)
@@ -703,62 +703,60 @@ Listing
   641          begin
   642            try
   643              S := LexString;
-  644              if S[ Length(S) ] in ['F','f'] then
-  645                S := Copy(S,1,Length(S)-1);
-  646              V := ZcStrToFloat(S);
-  647              OutOp := TZcOpLiteral.Create(Typ,V)
-  648            except on EConvertError do
-  649              SynError(200);
-  650            end;
-  651          end;
-  652       .)
-  653    | "(" Expr<OutOp> ")"
-  654  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
-  655      | "float"  | "int"    | "long" | "object"  | "sbyte"
-  656      | "short"  | "string" | "uint" | "ulong"   | "ushort"
-  657      ) "." ident *)
-  658    )
-  659  
-  660    {
-  661    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
-  662    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
-  663  /*  | "->" ident
-  664    | */
-  665    "." ident (.
-  666        Assert(OutOp.Kind=zcIdentifier);
-  667        OutOp.Id := OutOp.Id + '.' + LexString;
-  668      .)
-  669    | "(" (. Assert(OutOp.Kind=zcIdentifier);
-  670             OutOp.Kind:=zcFuncCall;
-  671           .)
-  672          [Argument<Op> (. OutOp.Children.Add(Op); .)
-  673            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
-  674            }
-  675          ]
-  676          (. 
-  677             if not VerifyFunctionCall(OutOp,S) then
-  678               ZError(S);
-  679          .)
-  680      ")"
-  681  
-  682    | "[" (. Assert(OutOp.Kind=zcIdentifier);
-  683             OutOp.Kind:=zcArrayAccess;
-  684           .)
-  685      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
-  686        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
-  687      "]" 
-  688  
-  689    }
-  690  .
-  691  /*------------------------------------------------------------------------*/
-  692  Literal<var Typ : TZcDataType>
-  693  = intCon (. Typ :=zctInt; .) | 
-  694    realCon (. Typ := zctFloat; .) |
-  695    stringCon (. Typ := zctString; .)
-  696    (* | "true" | "false" | "null" *)
-  697  .
-  698  
-  699  END Zc.
+  644              V := ZcStrToFloat(S);
+  645              OutOp := TZcOpLiteral.Create(Typ,V)
+  646            except on EConvertError do
+  647              SynError(200);
+  648            end;
+  649          end;
+  650       .)
+  651    | "(" Expr<OutOp> ")"
+  652  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
+  653      | "float"  | "int"    | "long" | "object"  | "sbyte"
+  654      | "short"  | "string" | "uint" | "ulong"   | "ushort"
+  655      ) "." ident *)
+  656    )
+  657  
+  658    {
+  659    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
+  660    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
+  661  /*  | "->" ident
+  662    | */
+  663    "." ident (.
+  664        Assert(OutOp.Kind=zcIdentifier);
+  665        OutOp.Id := OutOp.Id + '.' + LexString;
+  666      .)
+  667    | "(" (. Assert(OutOp.Kind=zcIdentifier);
+  668             OutOp.Kind:=zcFuncCall;
+  669           .)
+  670          [Argument<Op> (. OutOp.Children.Add(Op); .)
+  671            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+  672            }
+  673          ]
+  674          (. 
+  675             if not VerifyFunctionCall(OutOp,S) then
+  676               ZError(S);
+  677          .)
+  678      ")"
+  679  
+  680    | "[" (. Assert(OutOp.Kind=zcIdentifier);
+  681             OutOp.Kind:=zcArrayAccess;
+  682           .)
+  683      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
+  684        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
+  685      "]" 
+  686  
+  687    }
+  688  .
+  689  /*------------------------------------------------------------------------*/
+  690  Literal<var Typ : TZcDataType>
+  691  = intCon (. Typ :=zctInt; .) | 
+  692    realCon (. Typ := zctFloat; .) |
+  693    stringCon (. Typ := zctString; .)
+  694    (* | "true" | "false" | "null" *)
+  695  .
+  696  
+  697  END Zc.
 
     1 LL(1) error
    11 warnings
