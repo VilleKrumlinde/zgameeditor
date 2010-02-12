@@ -1334,8 +1334,6 @@ else
 begin
 try
 S  :=  LexString;
-if  S[  Length(S)  ]  in  ['F','f']  then
-S  :=  Copy(S,1,Length(S)-1);
 V  :=  ZcStrToFloat(S);
 OutOp  :=  TZcOpLiteral.Create(Typ,V)
 except  on  EConvertError  do

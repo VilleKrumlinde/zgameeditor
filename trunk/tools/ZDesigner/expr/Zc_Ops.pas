@@ -738,9 +738,11 @@ end;
 function ZcStrToFloat(const S : string) : single;
 begin
   if (Length(S)>2) and (LowerCase(Copy(S,1,2))='0x') then
-    Result := StrToInt('$' + Copy(S,3,255))
+    Exit( StrToInt('$' + Copy(S,3,255)) )
+  else if S[ Length(S) ] in ['F','f'] then
+    Exit( StrToFloat(Copy(S,1,Length(S)-1)) )
   else
-    Result := StrToFloat(S);
+    Exit( StrToFloat(S) );
 end;
 
 initialization
