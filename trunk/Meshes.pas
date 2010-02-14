@@ -1381,6 +1381,10 @@ begin
   for I := 0 to RemoveList.Count-1 do
   begin
     M := TModel(RemoveList[I]);
+    {$ifndef minimal}
+    //The user may have changed category in designer, guard against this
+    if Get(M.Category).IndexOf(M)>-1 then
+    {$endif}
     Get(M.Category).Remove(M);
     if M.IsSpawnedAsReference then
       //If referenced, remove from list to keep it from being freed below

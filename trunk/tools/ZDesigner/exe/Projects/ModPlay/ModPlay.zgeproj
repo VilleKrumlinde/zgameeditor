@@ -33,7 +33,7 @@ int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { }
 int SetLayeredWindowAttributes(int hWnd, int crKey, int bAlpha, int dwFlags) { }]]>
       </Source>
     </ZExternalLibrary>
-    <ZExpression>
+    <ZExpression Comment="Init music">
       <Expression>
 <![CDATA[int ok;
 
@@ -58,12 +58,14 @@ if(!BASS_ChannelPlay(musicId, 0)) {
   return;
 }
 
-
-//Make window transparent
-SetWindowLongA(App.WindowHandle,-20,0x80000);
-SetLayeredWindowAttributes(App.WindowHandle, 0, 180, 2);
-
 App.Caption="Music is playing!";]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Make window transparent">
+      <Expression>
+<![CDATA[//Uncomment lines below to make window transparent (does not work on all graphics cards)
+//SetWindowLongA(App.WindowHandle,-20,0x80000);
+//SetLayeredWindowAttributes(App.WindowHandle, 0, 180, 2);]]>
       </Expression>
     </ZExpression>
     <DefineVariable Name="MusicHandle" Type="1"/>
@@ -72,7 +74,7 @@ App.Caption="Music is playing!";]]>
     <ZExpression>
       <Expression>
 <![CDATA[//BASS_Stop();
-//BASS_Free();]]>
+BASS_Free();]]>
       </Expression>
     </ZExpression>
   </OnClose>
@@ -96,7 +98,7 @@ Rbeams1.Length = (left/32768.0) * 20;]]>
   <OnRender>
     <RenderText Name="RText1"/>
     <UseMaterial Material="Material1"/>
-    <RenderBeams Name="Rbeams1" Count="10" Length="0.5035" Width="0.1"/>
+    <RenderBeams Name="Rbeams1" Count="10" Length="0.2856" Width="0.1"/>
   </OnRender>
   <Content>
     <Material Name="Material1"/>
