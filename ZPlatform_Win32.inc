@@ -1132,8 +1132,9 @@ begin
   if DSPrimary<>nil then
     DSPrimary.Vtbl._Release(DSPrimary);
 
-  if DS<>nil then
-    DS.Vtbl._Release(DS);
+//This code crashes when used with bass.dll
+//  if DS<>nil then
+//    DS.Vtbl._Release(DS);
 
   if DirectSoundLib<>0 then
     FreeLibrary(DirectSoundLib);

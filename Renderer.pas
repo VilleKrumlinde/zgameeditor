@@ -1873,7 +1873,7 @@ var
 
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
-        ZLog.GetLog(Self.ClassName).Write( PChar(@GlMess) );
+        ZLog.GetLog(Self.ClassName).Write( PAnsiChar(@GlMess) );
 
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);

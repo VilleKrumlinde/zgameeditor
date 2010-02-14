@@ -7,7 +7,7 @@
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<DCC_DependencyCheckOutputName>ZzDC.exe</DCC_DependencyCheckOutputName>
 			<ProjectVersion>12.0</ProjectVersion>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -23,6 +23,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_StringChecks>off</DCC_StringChecks>
 			<DCC_Define>MINIMAL;$(DCC_Define)</DCC_Define>
 			<DCC_DependencyCheckOutputName>ZzDC.exe</DCC_DependencyCheckOutputName>
 		</PropertyGroup>
@@ -35,19 +36,18 @@
 			<DCC_DcuOutput>build\obj</DCC_DcuOutput>
 			<DCC_ObjOutput>build\obj</DCC_ObjOutput>
 			<DCC_HppOutput>build\obj</DCC_HppOutput>
-			<DCC_UnitSearchPath>.\3rdparty;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ResourcePath>.\3rdparty;$(DCC_ResourcePath)</DCC_ResourcePath>
 			<DCC_ObjPath>.\3rdparty;$(DCC_ObjPath)</DCC_ObjPath>
 			<DCC_IncludePath>.\3rdparty;$(DCC_IncludePath)</DCC_IncludePath>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<Version>7.0</Version>
 			<DCC_WriteableConstants>True</DCC_WriteableConstants>
 			<DCC_DcuOutput>build\obj</DCC_DcuOutput>
 			<DCC_ObjOutput>build\obj</DCC_ObjOutput>
 			<DCC_HppOutput>build\obj</DCC_HppOutput>
-			<DCC_UnitSearchPath>.\rtl\D2007\lib;.\3rdparty;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ResourcePath>.\rtl\D2007\lib;.\3rdparty;$(DCC_ResourcePath)</DCC_ResourcePath>
 			<DCC_ObjPath>.\rtl\D2007\lib;.\3rdparty;$(DCC_ObjPath)</DCC_ObjPath>
 			<DCC_IncludePath>.\rtl\D2007\lib;.\3rdparty;$(DCC_IncludePath)</DCC_IncludePath>
