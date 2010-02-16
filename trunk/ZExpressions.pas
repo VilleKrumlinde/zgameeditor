@@ -61,7 +61,10 @@ type
   public
     ModuleName : TPropString;
     Source : TZExpressionPropValue;
-    {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
+    {$ifndef minimal}
+    function GetDisplayName: ansistring; override;
+    procedure DesignerReset; override;
+    {$endif}
   end;
 
 
@@ -323,6 +326,9 @@ type
     FuncName : TPropString;
     ArgCount : integer;
     HasReturnValue : boolean;
+    {$ifndef minimal}
+    procedure DesignerReset; override;
+    {$endif}
   end;
 
   TExpConvertKind = (eckFloatToInt,eckIntToFloat);
@@ -1388,14 +1394,32 @@ begin
   begin
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
+      {$ifndef minimal}
+      ZHalt(Self.ModuleName + ' not found');
+      {$else}
       ZHalt(Self.ModuleName);
+      {$endif}
   end;
   Result := Platform_GetModuleProc(ModuleHandle,P);
   if Result=nil then
+    {$ifndef minimal}
+    ZHalt(P + ' not found');
+    {$else}
     ZHalt(P);
+    {$endif}
 end;
 
 {$ifndef minimal}
+procedure TZExternalLibrary.DesignerReset;
+begin
+  inherited;
+  if Self.ModuleHandle<>0 then
+  begin
+    Windows.FreeLibrary(Self.ModuleHandle);
+    Self.ModuleHandle := 0;
+  end;
+end;
+
 function TZExternalLibrary.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName + ' ' + Self.ModuleName;
@@ -1413,6 +1437,14 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue), zptBoolean);
 end;
 
+{$ifndef minimal}
+procedure TExpExternalFuncCall.DesignerReset;
+begin
+  inherited;
+  Self.Proc := nil;
+end;
+{$endif}
+
 procedure TExpExternalFuncCall.Execute;
 type
   TFunc = procedure();
@@ -1421,16 +1453,29 @@ var
   Arg1,I,RetVal : integer;
   TheFunc : PFunc;
   Args : array[0..31] of integer;
+  {$ifndef minimal}
+  BeforeSP,AfterSP : integer;
+  {$endif}
 begin
   {$ifndef minimal}
   Assert(ArgCount<High(Args),'Too many arguments to external function');
   {$endif}
+
   if Self.Proc=nil then
     Self.Proc := Lib.LoadFunction(Self.FuncName);
   TheFunc := Self.Proc;
+
   {$ifdef Win32}
+  //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
     StackPopTo(Args[I]);
+
+  {$ifndef minimal}
+  asm
+    mov BeforeSP,esp
+  end;
+  {$endif}
+
   for I := 0 to ArgCount-1 do
   begin
     Arg1 := Args[I];
@@ -1442,6 +1487,21 @@ begin
     call TheFunc
     mov RetVal,eax
   end;
+
+  {$ifndef minimal}
+  //Check hw-stack consistency
+  asm
+    mov AfterSP,esp
+  end;
+  if AfterSP<>BeforeSP then
+  begin
+    asm
+      mov esp,BeforeSP
+    end;
+    ZHalt('Hardware stack error after call to ' + Self.FuncName + '. Check argument count and sizes, and calling convention (stdcall).');
+  end;
+  {$endif}
+
   if Self.HasReturnValue then
     StackPush(RetVal);
   {$endif Win32}
