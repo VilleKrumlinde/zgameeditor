@@ -325,7 +325,7 @@ type
     Lib : TZExternalLibrary;
     FuncName : TPropString;
     ArgCount : integer;
-    HasReturnValue : boolean;
+    ReturnType : TZcDataType;
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
@@ -1434,7 +1434,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}integer(@Lib), zptComponentRef);
   List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}integer(@FuncName), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}integer(@ArgCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ReturnType',{$ENDIF}integer(@ReturnType), zptByte);
 end;
 
 {$ifndef minimal}
@@ -1453,6 +1453,7 @@ var
   Arg1,I,RetVal : integer;
   TheFunc : PFunc;
   Args : array[0..31] of integer;
+  RetValFloat : single;
   {$ifndef minimal}
   BeforeSP,AfterSP : integer;
   {$endif}
@@ -1484,8 +1485,19 @@ begin
     end;
   end;
   asm
+    //Make the call
     call TheFunc
+    //Non-float results are returned in eax
     mov RetVal,eax
+  end;
+  if Self.ReturnType=zctFloat then
+  begin
+    //Float-values results returned on float-stack
+    asm
+      fstp RetValFloat
+      wait
+    end;
+    RetVal := PInteger(@RetValFloat)^;
   end;
 
   {$ifndef minimal}
@@ -1502,7 +1514,7 @@ begin
   end;
   {$endif}
 
-  if Self.HasReturnValue then
+  if Self.ReturnType<>zctVoid then
     StackPush(RetVal);
   {$endif Win32}
 end;

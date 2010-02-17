@@ -884,7 +884,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       FE.Lib := UserFunc.ExtLib;
       FE.SetString('FuncName',AnsiString(UserFunc.Id));
       FE.ArgCount := UserFunc.Arguments.Count;
-      FE.HasReturnValue := UserFunc.ReturnType<>zctVoid;
+      FE.ReturnType := UserFunc.ReturnType;
     end
     else
     begin
