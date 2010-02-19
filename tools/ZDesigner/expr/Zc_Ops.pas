@@ -331,6 +331,11 @@ var
     Result := TZcOpLiteral.Create(C1.Typ,NewValue);
   end;
 
+  procedure DoIntConstant(NewValue : integer);
+  begin
+    Result := TZcOpLiteral.Create(C1.Typ,NewValue);
+  end;
+
 begin
   for I := 0 to Children.Count-1 do
     if Assigned(Child(I)) then Children[I] := Child(I).Optimize;
@@ -354,6 +359,10 @@ begin
         zcDiv : DoConstant(C1.Value / C2.Value);
         zcPlus : DoConstant(C1.Value + C2.Value);
         zcMinus : DoConstant(C1.Value - C2.Value);
+        zcBinaryOr : DoIntConstant(Trunc(C1.Value) or Trunc(C2.Value));
+        zcBinaryAnd : DoIntConstant(Trunc(C1.Value) and Trunc(C2.Value));
+        zcBinaryShiftL : DoIntConstant(Trunc(C1.Value) shl Trunc(C2.Value));
+        zcBinaryShiftR : DoIntConstant(Trunc(C1.Value) shr Trunc(C2.Value));
       end;
     end;
   end;
@@ -739,7 +748,7 @@ function ZcStrToFloat(const S : string) : single;
 begin
   if (Length(S)>2) and (LowerCase(Copy(S,1,2))='0x') then
     Exit( StrToInt('$' + Copy(S,3,255)) )
-  else if S[ Length(S) ] in ['F','f'] then
+  else if CharInSet(S[ Length(S) ], ['F','f']) then
     Exit( StrToFloat(Copy(S,1,Length(S)-1)) )
   else
     Exit( StrToFloat(S) );

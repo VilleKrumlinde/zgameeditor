@@ -1859,7 +1859,7 @@ begin
   begin
     CompileErrorLabel.Caption := '';
     CompileErrorLabel.BevelKind := bkNone;
-    if ShowCompilerDetailsAction.Checked then
+    if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
       ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');

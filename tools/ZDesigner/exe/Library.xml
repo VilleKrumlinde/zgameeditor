@@ -286,5 +286,91 @@ this.V.Y = ((2)*(1 + VarM)*sin(VarM*VarP)-(2 + 0.1*cos(VarQ))*(VarM)*sin(VarP + 
         </Mesh>
       </Children>
     </Group>
+    <Group Comment="External libraries">
+      <Children>
+        <ZExternalLibrary Comment="Bass music player" ModuleName="bass.dll">
+          <Source>
+<![CDATA[//BASS-dll from http://www.un4seen.com/
+int BASS_GetVersion() { }
+
+int BASS_ErrorGetCode() { }
+
+int BASS_Free() { }
+int BASS_Stop() { }
+
+int BASS_Init(int device, int freq, int flags, int win, int clsid) { }
+
+int BASS_MusicLoad(int mem, string filename, int of1, int of2, int length, int flags, int freq) { }
+
+int BASS_ChannelPlay(int handle, int restart) { }
+int BASS_ChannelGetLevel(int handle) { }]]>
+          </Source>
+        </ZExternalLibrary>
+        <ZExternalLibrary Comment="Box2D physics" ModuleName="Box2DZGE.dll">
+          <Source>
+<![CDATA[//Box2D physics integration
+//Get the DLL from here:
+//
+//   http://www.emix8.org/forum/viewtopic.php?t=586
+
+// ================== WORLD
+// init the world
+void b2dll_InitWorld( float aabbxl, float aabbxh, // bounding box x limits
+                      float aabbyl, float aabbyh, // bounding box y limits
+                      float gx, float gy, // gravity vector (default [ 0, -10 ])
+                      int doSleep ){ } // turn off simulation of resting bodies (default on)
+// advance the simulation
+void b2dll_Step( float timestep, int iterations ){ }
+// count bodies
+int b2dll_GetBodyCount( ){ }
+
+// ================== BODIES
+// create a static box (e.g. ground)
+int b2dll_CreateStaticBox( float x, float y,
+                           float width, float height ){ }
+// create a dynamic box
+int b2dll_CreateDynamicBox( float x, float y, // position
+                            float width, float height ){ } // dimension
+// getters
+float b2dll_GetPositionX( int body ){ }
+float b2dll_GetPositionY( int body ){ }
+float b2dll_GetAngle( int body ){ }]]>
+          </Source>
+        </ZExternalLibrary>
+        <ZExternalLibrary Comment="OpenGL graphics" ModuleName="opengl32">
+          <Source>
+<![CDATA[//OpenGL definitions
+
+void glColor3f(float r,float g,float b) { }
+void glColor4f(float r,float g,float b,float a) { }
+void glColorMaterial(int face,int mode) { }
+void glCullFace(int mode) { }
+void glClear(int mask) { }
+void glDisable(int cap) { }
+void glDepthFunc(int func) { }
+void glBegin(int mode) { }
+void glEnable(int cap) { }
+void glEnd() { }
+void glFrontFace(int mode) { }
+void glLineWidth(float width) { }
+void glLoadIdentity() { }
+void glMaterialf(int face, int pname, float param) { }
+void glNormal3f(float nx,float ny,float nz) { }
+void glPopAttrib() { }
+void glPopMatrix() { }
+void glPushAttrib(int mask) { }
+void glPushMatrix() { }
+void glRotatef(float angle, float x, float y, float z) { }
+void glScalef(float x, float y, float z) { }
+void glShadeModel(int mode) { }
+void glTexCoord2f(float s, float t) { }
+void glTranslatef(float x,float y,float z) { }
+void glViewport(int x,int y,int width,int height) { }
+void glVertex2f(float x,float y) { }
+void glVertex3f(float x,float y,float z) { }]]>
+          </Source>
+        </ZExternalLibrary>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>

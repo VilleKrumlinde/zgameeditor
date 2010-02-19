@@ -1385,6 +1385,7 @@ begin
 '//'#13#10 +
 '//  int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { } '#13#10 +
 '//  int SetWindowTextA(int hWnd,string lpString) { }';
+    List.GetLast.ExcludeFromBinary := True;
     {$endif}
 end;
 
