@@ -83,6 +83,7 @@ if(GlobalFloat!=x)
       <Expression>
 <![CDATA[int x=42;
 float y;
+int i,j;
 
 if(1==1) {
   float xx=22+22;
@@ -117,17 +118,30 @@ if(x!=-10)
   Error=8;
 
 //binary operators
-if( (1 | 2) != 3)
+i=1; j=2;
+if( ((1 | 2) != 3) && ((i | j) !=3 ) )
   Error=9;
 if((3 & 1) != 1)
   Error=10;
+i=3; j=1;
+if((i & j) != 1)
+  Error=10;
 if( (0x0f | 0xf0) != 0xff)
+  Error=11;
+i=0x0f; j=0xf0;
+if( (i | j) != 0xff)
   Error=11;
 if( (0x0f | 0xf0 | 0xf00) != 0xfff)
   Error=12;
 if( (1<<2) != 4)
   Error=13;
+i=1; j=2;
+if( (i<<j) != 4)
+  Error=13;
 if( (4>>2) != 1)
+  Error=14;
+i=4; j=2;
+if( (i>>j) != 1)
   Error=14;]]>
       </Expression>
     </ZExpression>

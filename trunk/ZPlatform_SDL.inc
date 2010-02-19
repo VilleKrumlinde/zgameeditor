@@ -428,10 +428,10 @@ begin
   for I := 0 to High(ScreenModes) do
   begin
     //inttofloat conversion
-    ZStrConvertFloat(ScreenModes[I].W, PAnsiChar(@Tmp1));
+    ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     ZStrCat(Str,xstr);
-    ZStrConvertFloat(ScreenModes[I].H, PAnsiChar(@Tmp1));
+    ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     if I<High(ScreenModes) then
       ZStrCat(Str,xcom);
@@ -492,6 +492,22 @@ function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : poin
 begin
   //TODO: module support
   Result := 0;
+end;
+
+function Platform_GetSystemTime : integer;
+begin
+  //TODO: System time support
+  Result := 0;
+end;
+
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+begin
+  //TODO: Net support
+end;
+
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+begin
+  //TODO: Net support
 end;
 
 initialization
