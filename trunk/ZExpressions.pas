@@ -60,6 +60,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     ModuleName : TPropString;
+    CallingConvention : (ccStdCall,ccCdecl);
     Source : TZExpressionPropValue;
     {$ifndef minimal}
     function GetDisplayName: ansistring; override;
@@ -1377,6 +1378,9 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}integer(@ModuleName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'CallingConvention',{$ENDIF}integer(@CallingConvention), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Stdcall','Cdecl']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
@@ -1467,7 +1471,6 @@ begin
     Self.Proc := Lib.LoadFunction(Self.FuncName);
   TheFunc := Self.Proc;
 
-  {$ifdef Win32}
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
     StackPopTo(Args[I]);
@@ -1491,6 +1494,16 @@ begin
     //Non-float results are returned in eax
     mov RetVal,eax
   end;
+
+  //Cdecl requires caller to clean up stack
+  if Lib.CallingConvention=ccCdecl then
+  begin
+    I := ArgCount * 4;
+    asm
+      add esp,I
+    end;
+  end;
+
   if Self.ReturnType=zctFloat then
   begin
     //Float-values results returned on float-stack
@@ -1511,13 +1524,12 @@ begin
     asm
       mov esp,BeforeSP
     end;
-    ZHalt('Hardware stack error after call to ' + Self.FuncName + '. Check argument count and sizes, and calling convention (stdcall).');
+    ZHalt('Hardware stack error after call to ' + Self.FuncName + '. Check argument count and sizes, and calling convention.');
   end;
   {$endif}
 
   if Self.ReturnType<>zctVoid then
     StackPush(RetVal);
-  {$endif Win32}
 end;
 
 initialization

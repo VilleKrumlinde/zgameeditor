@@ -275,6 +275,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     ClearBeforeUse : boolean;
+    AutoPowerOfTwo : boolean;
     ClearColor : TZColorf;
     Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
     CustomWidth,CustomHeight : integer;
@@ -1873,7 +1874,7 @@ var
 
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
-        ZLog.GetLog(Self.ClassName).Write( PAnsiChar(@GlMess) );
+        ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
 
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
@@ -2098,9 +2099,17 @@ end;
 
 { TRenderTarget }
 
+function NextPowerOfTwo(const I : integer) : integer;
+begin
+  Result := 1;
+  while I>Result do
+    Result := Result shl 1;
+end;
+
 procedure TRenderTarget.Activate;
 var
   W,H : integer;
+  ActualW,ActualH : integer;
 begin
   if not FbosSupported then
     Exit;
@@ -2119,7 +2128,18 @@ begin
     if Self.Height>=rts128 then
       H := 128 shl (Ord(Self.Height)-Ord(rts128))
     else
-      H := ZApp.ViewportHeight  shr Ord(Self.Height);
+      H := ZApp.ViewportHeight shr Ord(Self.Height);
+  end;
+
+  if Self.AutoPowerOfTwo then
+  begin
+    ActualW := NextPowerOfTwo(W);
+    ActualH := NextPowerOfTwo(H);
+  end
+  else
+  begin
+    ActualW := W;
+    ActualH := H;
   end;
 
   {$ifndef minimal}
@@ -2138,13 +2158,13 @@ begin
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // create a renderbuffer object to store depth info
     glGenRenderbuffersEXT(1, @RboId);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, RboId);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,W, H);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,ActualW, ActualH);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
@@ -2167,9 +2187,10 @@ begin
   end else
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
 
+  //Cannot call updataviewport here because it updates app.viewportwidth which is used above
 //  ZApp.UpdateViewport(W, H);
   glViewport(0,0,W,H);
-  Zapp.ActualViewportRatio := W/H;
+  ZApp.ActualViewportRatio := W/H;
 
   if Self.ClearBeforeUse then
   begin
@@ -2191,6 +2212,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'AutoPowerOfTwo',{$ENDIF}integer(@AutoPowerOfTwo), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
 end;
 

@@ -98,7 +98,6 @@ type
     BufferSize : integer;
     IsWaiting : boolean;
   private
-    class var NetMutex : pointer;
     procedure AddToResultList;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -109,7 +108,6 @@ type
     OnResult : TZComponentList;
     InBrowser : boolean;
     Handle : pointer;
-    class var ResultList : TZArrayList;
     class procedure FlushResultList;
     procedure Execute; override;
     procedure StartReading;
@@ -118,6 +116,11 @@ type
     function GetDisplayName: AnsiString; override;
     {$endif}
   end;
+
+var
+  //Should be class-vars in TWebOpen but fpc does not support class-vars yet
+  NetMutex : pointer;
+  NetResultList : TZArrayList;
 
 implementation
 
@@ -389,11 +392,11 @@ var
   I : integer;
 begin
   Platform_EnterMutex(NetMutex);
-    for I := 0 to ResultList.Count - 1 do
+    for I := 0 to NetResultList.Count - 1 do
     begin
-      TWebOpen(ResultList[I]).OnResult.ExecuteCommands;
+      TWebOpen(NetResultList[I]).OnResult.ExecuteCommands;
     end;
-    ResultList.Clear;
+    NetResultList.Clear;
   Platform_LeaveMutex(NetMutex);
 end;
 
@@ -450,9 +453,9 @@ end;
 
 procedure TWebOpen.AddToResultList;
 begin
-  Platform_EnterMutex(TWebOpen.NetMutex);
-    TWebOpen.ResultList.Add(Self);
-  Platform_LeaveMutex(TWebOpen.NetMutex);
+  Platform_EnterMutex(NetMutex);
+    NetResultList.Add(Self);
+  Platform_LeaveMutex(NetMutex);
 end;
 
 initialization
@@ -469,12 +472,12 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
   ZClasses.Register(TWebOpen,WebOpenClassId);
 
-  TWebOpen.ResultList := TZArrayList.CreateReferenced;
-  TWebOpen.NetMutex := Platform_CreateMutex;
+  NetResultList := TZArrayList.CreateReferenced;
+  NetMutex := Platform_CreateMutex;
 {$ifndef minimal}
 finalization
-  TWebOpen.ResultList.Free;
-  Platform_FreeMutex( TWebOpen.NetMutex );
+  NetResultList.Free;
+  Platform_FreeMutex( NetMutex );
 {$endif}
 
 end.
