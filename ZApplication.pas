@@ -59,14 +59,14 @@ type
     ConstantMap : TDictionary<AnsiString,TObject>;
     {$endif}
     OldCaption : pointer;
-    procedure RenderModels;
-  private
     FpsFrames : integer;
     FpsCounter,FpsTime : single;
-    CurrentState : TAppState;
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
+    procedure RenderModels;
+  private
+    CurrentState : TAppState;
     procedure Init;
     procedure Shutdown;
     procedure MainSlice;
@@ -249,13 +249,7 @@ begin
     Renderer.InitRenderer;
     UpdateViewport;
 
-    case FrameRateStyle of
-      frsSyncedWithMonitor: TargetFrameRate := Platform_GetDisplayRefreshRate;
-      frsFree: ;
-      frsFixed: TargetFrameRate := Self.FixedFrameRate;
-    end;
-    if (TargetFrameRate<10) or (TargetFrameRate>200) then
-      TargetFrameRate := 60;
+    TargetFrameRate := Platform_GetDisplayRefreshRate;
 
     NoSound := Platform_CommandLine('s');
     if not NoSound then
@@ -337,7 +331,13 @@ begin
   {$endif}
   begin
     if FrameRateStyle<>frsFree then
+    begin
+      if FrameRateStyle=frsFixed then
+        TargetFrameRate := Self.FixedFrameRate;
+      if (TargetFrameRate<1) or (TargetFrameRate>200) then
+        TargetFrameRate := 60;
       NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
+    end;
 
     UpdateTime;
 
@@ -406,7 +406,7 @@ begin
     AudioPlayer.EmitSoundsInEmitList;
 
   //Notify that net-data has been read
-  if TWebOpen.ResultList.Count>0 then
+  if Commands.NetResultList.Count>0 then
     TWebOpen.FlushResultList;
 
   //Update window caption
@@ -751,6 +751,19 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}integer(@EscapeToQuit), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
+
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}integer(@ViewportX), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}integer(@ViewportX), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportWidth',{$ENDIF}integer(@ViewportWidth), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportHeight',{$ENDIF}integer(@ViewportHeight), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}

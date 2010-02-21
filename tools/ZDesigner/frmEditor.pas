@@ -3241,7 +3241,7 @@ var
 begin
   M := Sender as TMenuItem;
   C := TZComponent(M.Tag).Clone;
-  AddNewComponentToTree(C);
+  InsertAndRenameComponent(C,Tree.ZSelected);
   CompileAll;
   C.Change;
 end;

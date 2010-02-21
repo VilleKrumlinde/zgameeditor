@@ -10,7 +10,8 @@ implementation
 {$i-}  //No io-test on files, code tests ioresult
 
 uses SDL, ZLog, AudioPlayer,ZApplication
-  {$IFDEF LINUX},libc{$ENDIF}
+  {$ifdef linux},libc{$endif}
+  {$ifdef darwin},dl{$endif}
   ;
 
 var
@@ -485,13 +486,21 @@ end;
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
 begin
   //TODO: module support
+  {$ifdef Linux}
+  Result := Integer(dlopen( Name, RTLD_NOW));
+  {$else}
   Result := 0;
+  {$endif}
 end;
 
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 begin
   //TODO: module support
+  {$ifdef Linux}
+  Result := dlsym(Pointer(Module), Name );
+  {$else}
   Result := 0;
+  {$endif}
 end;
 
 function Platform_GetSystemTime : integer;
