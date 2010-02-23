@@ -1451,6 +1451,7 @@ end;
 {$endif}
 
 procedure TExpExternalFuncCall.Execute;
+{.$define darwin}
 type
   TFunc = procedure();
   PFunc = ^TFunc;
@@ -1461,6 +1462,9 @@ var
   RetValFloat : single;
   {$ifndef minimal}
   BeforeSP,AfterSP : integer;
+  {$endif}
+  {$ifdef darwin}
+  OsxExtra : integer;
   {$endif}
 begin
   {$ifndef minimal}
@@ -1481,6 +1485,18 @@ begin
   end;
   {$endif}
 
+  {$ifdef darwin}
+  //http://blogs.embarcadero.com/eboling/2009/05/20/5607
+  //http://blogs.embarcadero.com/abauer/2010/01/14/38904
+  I := ArgCount * 4 + 4;
+  while (I and 15)<>0 do Inc(I,4);
+  OsxExtra := (I-4) - (ArgCount*4);
+  if OsxExtra>0 then
+    asm
+      sub esp,OsxExtra
+    end;
+  {$endif}
+
   for I := 0 to ArgCount-1 do
   begin
     Arg1 := Args[I];
@@ -1488,6 +1504,17 @@ begin
       push Arg1
     end;
   end;
+
+  {$ifdef darwin}
+  asm
+    mov eax,esp
+    and eax,8
+    mov I,eax
+  end;
+  if I<>0 then
+    ZHalt('Zzdc Stack error');
+  {$endif}
+
   asm
     //Make the call
     call TheFunc
@@ -1503,6 +1530,13 @@ begin
       add esp,I
     end;
   end;
+
+  {$ifdef darwin}
+  if OsxExtra>0 then
+    asm
+      add esp,OsxExtra
+    end;
+  {$endif}
 
   if Self.ReturnType=zctFloat then
   begin
