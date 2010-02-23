@@ -1871,7 +1871,8 @@ end;
 
 procedure TEditorForm.ExprHelpButtonClick(Sender: TObject);
 begin
-  uHelp.ShowHelp('Main/WritingExpressions');
+  HtmlHelp(0,Application.HelpFile + '::writingexpressions.html', HH_DISPLAY_TOPIC, 0);
+//  uHelp.ShowHelp('Main/WritingExpressions');
 end;
 
 procedure TEditorForm.ExprPanelClick(Sender: TObject);
@@ -2133,6 +2134,38 @@ begin
   end;
 end;
 
+procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
+begin
+  GoUrl( (Sender as TTaskDialog).URL );
+end;
+
+procedure ShowMessageWithLink(const S1,S2 : string);
+var
+  D: TTaskDialog;
+  M : TMethod;
+begin
+  if (Win32MajorVersion >= 6) then
+  begin
+    //Display dialog with hyperlinks on Vista or higher
+    D := TTaskDialog.Create(nil);
+    try
+      D.Flags := [tfEnableHyperlinks,tfUseHiconMain];
+      D.Text := S1 + #13#13 + S2;
+      D.CommonButtons := [tcbOk];
+      D.Title := AppName;
+      D.Caption := AppName;
+      D.CustomMainIcon := Application.Icon;
+      M.Data := D;
+      M.Code := @OnTaskdialogHyperlinkClick;
+      D.OnHyperlinkClicked := TNotifyEvent(M);
+      D.Execute;
+    finally
+      D.Free;
+    end;
+  end else
+    //Display without hyperlinks
+    ShowMessage(S1);
+end;
 
 function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
@@ -2213,8 +2246,20 @@ begin
     ExecToolAndWait(Tool,ToolParams);
   end;
 
-  if Kind<>bbNormalUncompressed then
-    ShowMessage('Created file: '#13#13'  ' + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
+  case Kind of
+    bbNormalUncompressed: ;
+    bbNormal,bbScreenSaver,bbScreenSaverUncompressed :
+      ShowMessageWithLink('Created file: '#13#13 + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb',
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' );
+    bbNormalLinux:
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+    bbNormalOsx86:
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+  end;
 
   //Return created filename
   Result := OutFile;
