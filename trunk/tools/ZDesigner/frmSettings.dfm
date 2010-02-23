@@ -30,8 +30,6 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
-    ExplicitLeft = 195
-    ExplicitTop = 290
   end
   object Button2: TButton
     Left = 262
@@ -42,8 +40,6 @@ object SettingsForm: TSettingsForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
-    ExplicitLeft = 277
-    ExplicitTop = 290
   end
   object GroupBox1: TGroupBox
     Left = 8
@@ -53,7 +49,6 @@ object SettingsForm: TSettingsForm
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Packer settings'
     TabOrder = 2
-    ExplicitWidth = 339
     object Label1: TLabel
       Left = 14
       Top = 32
@@ -111,7 +106,6 @@ object SettingsForm: TSettingsForm
       Width = 145
       Height = 21
       Style = csDropDownList
-      ItemHeight = 13
       TabOrder = 2
       OnChange = PackerPresetComboChange
       Items.Strings = (
@@ -128,9 +122,8 @@ object SettingsForm: TSettingsForm
     Width = 327
     Height = 49
     Anchors = [akLeft, akTop, akRight]
-    Caption = 'Explorer'
+    Caption = 'File association (note: requires admin rights)'
     TabOrder = 3
-    ExplicitWidth = 339
     object ShellCheck: TCheckBox
       Left = 10
       Top = 16
@@ -149,7 +142,6 @@ object SettingsForm: TSettingsForm
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Designer layout'
     TabOrder = 4
-    ExplicitWidth = 339
     object Label6: TLabel
       Left = 14
       Top = 19
@@ -163,7 +155,6 @@ object SettingsForm: TSettingsForm
       Width = 89
       Height = 21
       Style = csDropDownList
-      ItemHeight = 13
       TabOrder = 0
       Items.Strings = (
         'Left'
@@ -189,7 +180,7 @@ object SettingsForm: TSettingsForm
       Caption = 'Delay for code completion (milliseconds)'
     end
     object UpDown1: TUpDown
-      Left = 263
+      Left = 265
       Top = 22
       Width = 24
       Height = 21
@@ -210,7 +201,7 @@ object SettingsForm: TSettingsForm
       Anchors = [akLeft, akBottom]
       ReadOnly = True
       TabOrder = 1
-      Text = '0'
+      Text = '100'
     end
   end
 end
