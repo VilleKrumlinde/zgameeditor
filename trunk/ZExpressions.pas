@@ -452,7 +452,7 @@ begin
   StackPushValue(nil); //Push return adress nil
 
   {$ifndef minimal}
-  GuardLimit := 20 * 1000000;
+  GuardLimit := 50 * 1000000;
   GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000;
   {$endif}
   while True do
@@ -464,7 +464,7 @@ begin
     {$ifndef minimal}
     Dec(GuardLimit);
     if GuardLimit=0 then
-      ZHalt('Twenty million instructions executed. Infinite loop?');
+      ZHalt('Fifty million instructions executed. Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
       ZHalt('One million strings allocated. Infinite loop?');
     {$endif}

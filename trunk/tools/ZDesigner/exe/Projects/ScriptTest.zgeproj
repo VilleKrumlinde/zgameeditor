@@ -179,7 +179,25 @@ for(int i=0, k=0; i<10; i++,k++) {
   sum+=10;
   if(i!=k)
     Error=101;
-}]]>
+}
+
+//break
+for(int i=0; i<10; i++) {
+  sum=i;
+  if(i==5)
+    break;
+}
+if(sum!=5)
+  Error=102;
+
+//continue
+for(int i=0; i<10; i++) {
+  if(i>6)
+    continue;
+  sum=i;
+}
+if(sum!=6)
+  Error=102;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Assignment as value">

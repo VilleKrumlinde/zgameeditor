@@ -382,10 +382,10 @@ EmbeddedStatement<var OutOp : TZcOp>
        end;
    .)
 /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
-/* | "break" ";" */
-/* | "continue" ";" */
- | (. Op := nil; .) "return" [ Expr<Op> ] ";"   
-    (. 
+ | "break" ";"    (. OutOp := MakeOp(zcBreak); .)
+ | "continue" ";" (. OutOp := MakeOp(zcContinue); .)
+ | (. Op := nil; .) "return" [ Expr<Op> ] ";"
+    (.
         if (Op=nil) then
         begin
           if CurrentFunction.ReturnType<>zctVoid then
