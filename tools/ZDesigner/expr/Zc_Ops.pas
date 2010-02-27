@@ -13,7 +13,8 @@ type
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
-          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR);
+          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
+          zcBreak,zcContinue);
 
   TZcOp = class
   public
@@ -318,6 +319,8 @@ begin
         if Assigned(Child(1)) then
           Result := Result + Child(1).ToString;
       end;
+    zcBreak : Result := 'break';
+    zcContinue : Result := 'continue';
   end;
 end;
 

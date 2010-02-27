@@ -1,6 +1,6 @@
 
 
-Compiled: den 12 februari 2010 - 15:20:44
+Compiled: den 27 februari 2010 - 13:49:18
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,14 +33,14 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 12 februari 2010 @ 15:20:44
+Time Compiled: den 27 februari 2010 @ 13:49:18
 
 Statistics:
-  number of terminals:        80 (limit  2561)
+  number of terminals:        82 (limit  2561)
   number of non-terminals:    31 (limit  1281)
-  number of pragmas:           0 (limit  2481)
-  number of symbolnodes:     111 (limit  2561)
-  number of graphnodes:      342 (limit 15001)
+  number of pragmas:           0 (limit  2479)
+  number of symbolnodes:     113 (limit  2561)
+  number of graphnodes:      350 (limit 15001)
   number of conditionsets:     1 (limit   101)
   number of charactersets:    25 (limit  4001)
 
@@ -434,10 +434,10 @@ Listing
   382         end;
   383     .)
   384  /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
-  385  /* | "break" ";" */
-  386  /* | "continue" ";" */
-  387   | (. Op := nil; .) "return" [ Expr<Op> ] ";"   
-  388      (. 
+  385   | "break" ";"    (. OutOp := MakeOp(zcBreak); .)
+  386   | "continue" ";" (. OutOp := MakeOp(zcContinue); .)
+  387   | (. Op := nil; .) "return" [ Expr<Op> ] ";"
+  388      (.
   389          if (Op=nil) then
   390          begin
   391            if CurrentFunction.ReturnType<>zctVoid then

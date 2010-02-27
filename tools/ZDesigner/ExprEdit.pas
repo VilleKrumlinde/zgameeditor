@@ -176,6 +176,7 @@ type
     LReturn : TZCodeLabel;
     CurrentFunction : TZcOpFunctionUserDefined;
     IsLibrary,IsExternalLibrary : boolean;
+    BreakLabel,ContinueLabel : TZCodeLabel;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
@@ -190,6 +191,7 @@ type
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
     procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
     procedure MakeStringLiteralOp(const Value : string);
+    procedure SetBreakAndContinue(L1,L2 : TZCodeLabel);
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -527,29 +529,31 @@ var
 
   procedure DoGenForLoop;
   var
-    LExit,LLoop : TZCodeLabel;
+    LExit,LLoop,LContinue : TZCodeLabel;
   begin
     //Children: [ForInitOp,ForCondOp,ForIncOp,ForBodyOp]
     if Assigned(Op.Child(0)) then
       Gen(Op.Child(0));
 
     LExit := NewLabel;
-
     LLoop := NewLabel;
+    LContinue := NewLabel;
     DefineLabel(LLoop);
 
+    SetBreakAndContinue(LExit,LContinue);
     if Assigned(Op.Child(1)) then
       FallTrue(Op.Child(1),LExit);
 
     if Assigned(Op.Child(3)) then
       Gen(Op.Child(3));
 
+    DefineLabel(LContinue);
     if Assigned(Op.Child(2)) then
       Gen(Op.Child(2));
-
     GenJump(jsJumpAlways,LLoop);
 
     DefineLabel(LExit);
+    SetBreakAndContinue(nil,nil);
   end;
 
   procedure DoWhile;
@@ -562,15 +566,16 @@ var
     LLoop := NewLabel;
     DefineLabel(LLoop);
 
+    SetBreakAndContinue(LExit,LLoop);
     if Assigned(Op.Child(0)) then
       FallTrue(Op.Child(0),LExit);
 
     if Assigned(Op.Child(1)) then
       Gen(Op.Child(1));
-
     GenJump(jsJumpAlways,LLoop);
 
     DefineLabel(LExit);
+    SetBreakAndContinue(nil,nil);
   end;
 
   procedure DoGenReturn;
@@ -644,6 +649,16 @@ begin
     zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
     zcWhile : DoWhile;
+    zcBreak :
+      if Assigned(Self.BreakLabel) then
+        GenJump(jsJumpAlways,Self.BreakLabel)
+      else
+        raise ECodeGenError.Create('Break can only be used in loops');
+    zcContinue :
+      if Assigned(Self.ContinueLabel) then
+        GenJump(jsJumpAlways,Self.ContinueLabel)
+      else
+        raise ECodeGenError.Create('Continue can only be used in loops');
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -729,6 +744,12 @@ begin
       U.AdrPtr^ := Adr;
     end;
   end;
+end;
+
+procedure TZCodeGen.SetBreakAndContinue(L1, L2: TZCodeLabel);
+begin
+  Self.BreakLabel := L1;
+  Self.ContinueLabel := L2;
 end;
 
 //Fall igenom om false, annars hoppa till Lbl
