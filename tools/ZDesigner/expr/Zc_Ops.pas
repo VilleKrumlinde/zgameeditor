@@ -14,7 +14,7 @@ type
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
-          zcBreak,zcContinue);
+          zcBreak,zcContinue,zcConditional);
 
   TZcOp = class
   public
@@ -201,6 +201,8 @@ begin
   end
   else if Kind=zcConstLiteral then
     Result := zctFloat
+  else if Kind=zcConditional then
+    Result := Child(1).GetDataType
   else if Children.Count>0 then
     Result := Child(0).GetDataType;
 end;
@@ -321,6 +323,10 @@ begin
       end;
     zcBreak : Result := 'break';
     zcContinue : Result := 'continue';
+    zcConditional :
+      begin
+        Result := '(' + Child(0).ToString + ') ? ' + Child(1).ToString + ' : ' + Child(2).ToString;
+      end;
   end;
 end;
 

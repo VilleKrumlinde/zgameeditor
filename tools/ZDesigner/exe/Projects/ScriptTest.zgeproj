@@ -210,7 +210,25 @@ if((x!=1) || (y!=1) || (z!=1))
   Error=201;
   
 if( (x=2) != 2 )
-  Error=201;]]>
+  Error=201;
+
+//Conditional
+x= (1==1) ? 10 : 20;
+if(x!=10)
+  Error=202;
+
+x=0 ? 11 : 21;
+if(x!=21)
+  Error=203;
+
+x=1;
+if( (x==0) ? 1 : 0)
+  Error=204;
+
+float w=10;
+x=(1.42) ? (w+2) : (w+1);
+if(x!=12)
+  Error=205;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Pre/post inc/dec">

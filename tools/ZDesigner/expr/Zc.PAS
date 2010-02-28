@@ -22,7 +22,7 @@ uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,ZClasses,mwStringHashList
 
 
 const
-maxT = 81;
+maxT = 83;
 type
 
   SymbolSet = array[0..maxT div setsize] of TBitSet;
@@ -173,13 +173,13 @@ const
   _semicolonSym = 46;  ifSym = 47;  elseSym = 48;  whileSym = 49;  forSym = 50;
   breakSym = 51;  continueSym = 52;  returnSym = 53;  _plus_equalSym = 54;
   _minus_equalSym = 55;  _star_equalSym = 56;  _slash_equalSym = 57;
-  _bar_barSym = 58;  _and_andSym = 59;  _barSym = 60;  _uparrowSym = 61;
-  _andSym = 62;  _bang_equalSym = 63;  _equal_equalSym = 64;  _lessSym = 65;
-  _greaterSym = 66;  _less_equalSym = 67;  _greater_equalSym = 68;
-  _less_lessSym = 69;  _greater_greaterSym = 70;  _plusSym = 71;
-  _minusSym = 72;  _starSym = 73;  _slashSym = 74;  _plus_plusSym = 75;
-  _minus_minusSym = 76;  _bangSym = 77;  _pointSym = 78;  _lbrackSym = 79;
-  _rbrackSym = 80;  NOSYMB = 81;  _noSym = NOSYMB;   {error token code}
+  _querySym = 58;  _colonSym = 59;  _bar_barSym = 60;  _and_andSym = 61;
+  _barSym = 62;  _uparrowSym = 63;  _andSym = 64;  _bang_equalSym = 65;
+  _equal_equalSym = 66;  _lessSym = 67;  _greaterSym = 68;  _less_equalSym = 69;
+  _greater_equalSym = 70;  _less_lessSym = 71;  _greater_greaterSym = 72;
+  _plusSym = 73;  _minusSym = 74;  _starSym = 75;  _slashSym = 76;
+  _plus_plusSym = 77;  _minus_minusSym = 78;  _bangSym = 79;  _pointSym = 80;
+  _lbrackSym = 81;  _rbrackSym = 82;  NOSYMB = 83;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
@@ -665,7 +665,7 @@ exit;
 end;
   20: if (CurrInputCh = '&') then
 begin
-state := 59; 
+state := 60; 
 end
 else
 begin
@@ -675,6 +675,7 @@ exit;
 end;
   21: begin
 sym := colonSym;
+CheckLiteral(sym);
 exit;
 end;
   22: begin
@@ -748,7 +749,7 @@ exit;
 end;
   35: if (CurrInputCh = '|') then
 begin
-state := 58; 
+state := 59; 
 end
 else
 begin
@@ -974,14 +975,18 @@ sym := _slash_equalSym;
 exit;
 end;
   58: begin
-sym := _bar_barSym;
+sym := _querySym;
 exit;
 end;
   59: begin
-sym := _and_andSym;
+sym := _bar_barSym;
 exit;
 end;
   60: begin
+sym := _and_andSym;
+exit;
+end;
+  61: begin
 sym := EOFSYMB;
 CurrInputCh := chNull;
 BufferPosition := BufferPosition - 1;
@@ -1013,6 +1018,7 @@ fHashList.AddString('-', _minusSym, _minusSym);
 fHashList.AddString('--', _minus_minusSym, _minus_minusSym);
 fHashList.AddString('.', _pointSym, _pointSym);
 fHashList.AddString('/', _slashSym, _slashSym);
+fHashList.AddString(':', _colonSym, _colonSym);
 fHashList.AddString(';', _semicolonSym, _semicolonSym);
 fHashList.AddString('<', _lessSym, _lessSym);
 fHashList.AddString('<<', _less_lessSym, _less_lessSym);
@@ -1040,22 +1046,22 @@ fHashList.AddString('{', _lbraceSym, _lbraceSym);
 fHashList.AddString('|', _barSym, _barSym);
 fHashList.AddString('}', _rbraceSym, _rbraceSym);
 CurrentCh := CharAt;
-fStartState[  0] := 60; fStartState[  1] := 61; fStartState[  2] := 61; fStartState[  3] := 61; 
-fStartState[  4] := 61; fStartState[  5] := 61; fStartState[  6] := 61; fStartState[  7] := 61; 
-fStartState[  8] := 61; fStartState[  9] := 61; fStartState[ 10] := 61; fStartState[ 11] := 61; 
-fStartState[ 12] := 61; fStartState[ 13] := 61; fStartState[ 14] := 61; fStartState[ 15] := 61; 
-fStartState[ 16] := 61; fStartState[ 17] := 61; fStartState[ 18] := 61; fStartState[ 19] := 61; 
-fStartState[ 20] := 61; fStartState[ 21] := 61; fStartState[ 22] := 61; fStartState[ 23] := 61; 
-fStartState[ 24] := 61; fStartState[ 25] := 61; fStartState[ 26] := 61; fStartState[ 27] := 61; 
-fStartState[ 28] := 61; fStartState[ 29] := 61; fStartState[ 30] := 61; fStartState[ 31] := 61; 
-fStartState[ 32] := 61; fStartState[ 33] := 52; fStartState[ 34] := 16; fStartState[ 35] := 61; 
-fStartState[ 36] := 61; fStartState[ 37] := 33; fStartState[ 38] := 20; fStartState[ 39] := 61; 
+fStartState[  0] := 61; fStartState[  1] := 62; fStartState[  2] := 62; fStartState[  3] := 62; 
+fStartState[  4] := 62; fStartState[  5] := 62; fStartState[  6] := 62; fStartState[  7] := 62; 
+fStartState[  8] := 62; fStartState[  9] := 62; fStartState[ 10] := 62; fStartState[ 11] := 62; 
+fStartState[ 12] := 62; fStartState[ 13] := 62; fStartState[ 14] := 62; fStartState[ 15] := 62; 
+fStartState[ 16] := 62; fStartState[ 17] := 62; fStartState[ 18] := 62; fStartState[ 19] := 62; 
+fStartState[ 20] := 62; fStartState[ 21] := 62; fStartState[ 22] := 62; fStartState[ 23] := 62; 
+fStartState[ 24] := 62; fStartState[ 25] := 62; fStartState[ 26] := 62; fStartState[ 27] := 62; 
+fStartState[ 28] := 62; fStartState[ 29] := 62; fStartState[ 30] := 62; fStartState[ 31] := 62; 
+fStartState[ 32] := 62; fStartState[ 33] := 52; fStartState[ 34] := 16; fStartState[ 35] := 62; 
+fStartState[ 36] := 62; fStartState[ 37] := 33; fStartState[ 38] := 20; fStartState[ 39] := 62; 
 fStartState[ 40] := 30; fStartState[ 41] := 38; fStartState[ 42] := 42; fStartState[ 43] := 50; 
 fStartState[ 44] := 22; fStartState[ 45] := 48; fStartState[ 46] := 46; fStartState[ 47] := 24; 
 fStartState[ 48] := 45; fStartState[ 49] := 44; fStartState[ 50] := 44; fStartState[ 51] := 44; 
 fStartState[ 52] := 44; fStartState[ 53] := 44; fStartState[ 54] := 44; fStartState[ 55] := 44; 
 fStartState[ 56] := 44; fStartState[ 57] := 44; fStartState[ 58] := 21; fStartState[ 59] := 40; 
-fStartState[ 60] := 51; fStartState[ 61] := 47; fStartState[ 62] := 49; fStartState[ 63] := 61; 
+fStartState[ 60] := 51; fStartState[ 61] := 47; fStartState[ 62] := 49; fStartState[ 63] := 58; 
 fStartState[ 64] := 18; fStartState[ 65] := 19; fStartState[ 66] := 19; fStartState[ 67] := 19; 
 fStartState[ 68] := 19; fStartState[ 69] := 19; fStartState[ 70] := 19; fStartState[ 71] := 19; 
 fStartState[ 72] := 19; fStartState[ 73] := 19; fStartState[ 74] := 19; fStartState[ 75] := 19; 
@@ -1063,47 +1069,47 @@ fStartState[ 76] := 19; fStartState[ 77] := 19; fStartState[ 78] := 19; fStartSt
 fStartState[ 80] := 19; fStartState[ 81] := 19; fStartState[ 82] := 19; fStartState[ 83] := 19; 
 fStartState[ 84] := 19; fStartState[ 85] := 19; fStartState[ 86] := 19; fStartState[ 87] := 19; 
 fStartState[ 88] := 19; fStartState[ 89] := 19; fStartState[ 90] := 19; fStartState[ 91] := 29; 
-fStartState[ 92] := 61; fStartState[ 93] := 37; fStartState[ 94] := 43; fStartState[ 95] := 19; 
-fStartState[ 96] := 61; fStartState[ 97] := 19; fStartState[ 98] := 19; fStartState[ 99] := 19; 
+fStartState[ 92] := 62; fStartState[ 93] := 37; fStartState[ 94] := 43; fStartState[ 95] := 19; 
+fStartState[ 96] := 62; fStartState[ 97] := 19; fStartState[ 98] := 19; fStartState[ 99] := 19; 
 fStartState[100] := 19; fStartState[101] := 19; fStartState[102] := 19; fStartState[103] := 19; 
 fStartState[104] := 19; fStartState[105] := 19; fStartState[106] := 19; fStartState[107] := 19; 
 fStartState[108] := 19; fStartState[109] := 19; fStartState[110] := 19; fStartState[111] := 19; 
 fStartState[112] := 19; fStartState[113] := 19; fStartState[114] := 19; fStartState[115] := 19; 
 fStartState[116] := 19; fStartState[117] := 19; fStartState[118] := 19; fStartState[119] := 19; 
 fStartState[120] := 19; fStartState[121] := 19; fStartState[122] := 19; fStartState[123] := 28; 
-fStartState[124] := 35; fStartState[125] := 36; fStartState[126] := 41; fStartState[127] := 61; 
-fStartState[128] := 61; fStartState[129] := 61; fStartState[130] := 61; fStartState[131] := 61; 
-fStartState[132] := 61; fStartState[133] := 61; fStartState[134] := 61; fStartState[135] := 61; 
-fStartState[136] := 61; fStartState[137] := 61; fStartState[138] := 61; fStartState[139] := 61; 
-fStartState[140] := 61; fStartState[141] := 61; fStartState[142] := 61; fStartState[143] := 61; 
-fStartState[144] := 61; fStartState[145] := 61; fStartState[146] := 61; fStartState[147] := 61; 
-fStartState[148] := 61; fStartState[149] := 61; fStartState[150] := 61; fStartState[151] := 61; 
-fStartState[152] := 61; fStartState[153] := 61; fStartState[154] := 61; fStartState[155] := 61; 
-fStartState[156] := 61; fStartState[157] := 61; fStartState[158] := 61; fStartState[159] := 61; 
-fStartState[160] := 61; fStartState[161] := 61; fStartState[162] := 61; fStartState[163] := 61; 
-fStartState[164] := 61; fStartState[165] := 61; fStartState[166] := 61; fStartState[167] := 61; 
-fStartState[168] := 61; fStartState[169] := 61; fStartState[170] := 61; fStartState[171] := 61; 
-fStartState[172] := 61; fStartState[173] := 61; fStartState[174] := 61; fStartState[175] := 61; 
-fStartState[176] := 61; fStartState[177] := 61; fStartState[178] := 61; fStartState[179] := 61; 
-fStartState[180] := 61; fStartState[181] := 61; fStartState[182] := 61; fStartState[183] := 61; 
-fStartState[184] := 61; fStartState[185] := 61; fStartState[186] := 61; fStartState[187] := 61; 
-fStartState[188] := 61; fStartState[189] := 61; fStartState[190] := 61; fStartState[191] := 61; 
-fStartState[192] := 61; fStartState[193] := 61; fStartState[194] := 61; fStartState[195] := 61; 
-fStartState[196] := 61; fStartState[197] := 61; fStartState[198] := 61; fStartState[199] := 61; 
-fStartState[200] := 61; fStartState[201] := 61; fStartState[202] := 61; fStartState[203] := 61; 
-fStartState[204] := 61; fStartState[205] := 61; fStartState[206] := 61; fStartState[207] := 61; 
-fStartState[208] := 61; fStartState[209] := 61; fStartState[210] := 61; fStartState[211] := 61; 
-fStartState[212] := 61; fStartState[213] := 61; fStartState[214] := 61; fStartState[215] := 61; 
-fStartState[216] := 61; fStartState[217] := 61; fStartState[218] := 61; fStartState[219] := 61; 
-fStartState[220] := 61; fStartState[221] := 61; fStartState[222] := 61; fStartState[223] := 61; 
-fStartState[224] := 61; fStartState[225] := 61; fStartState[226] := 61; fStartState[227] := 61; 
-fStartState[228] := 61; fStartState[229] := 61; fStartState[230] := 61; fStartState[231] := 61; 
-fStartState[232] := 61; fStartState[233] := 61; fStartState[234] := 61; fStartState[235] := 61; 
-fStartState[236] := 61; fStartState[237] := 61; fStartState[238] := 61; fStartState[239] := 61; 
-fStartState[240] := 61; fStartState[241] := 61; fStartState[242] := 61; fStartState[243] := 61; 
-fStartState[244] := 61; fStartState[245] := 61; fStartState[246] := 61; fStartState[247] := 61; 
-fStartState[248] := 61; fStartState[249] := 61; fStartState[250] := 61; fStartState[251] := 61; 
-fStartState[252] := 61; fStartState[253] := 61; fStartState[254] := 61; fStartState[255] := 61; 
+fStartState[124] := 35; fStartState[125] := 36; fStartState[126] := 41; fStartState[127] := 62; 
+fStartState[128] := 62; fStartState[129] := 62; fStartState[130] := 62; fStartState[131] := 62; 
+fStartState[132] := 62; fStartState[133] := 62; fStartState[134] := 62; fStartState[135] := 62; 
+fStartState[136] := 62; fStartState[137] := 62; fStartState[138] := 62; fStartState[139] := 62; 
+fStartState[140] := 62; fStartState[141] := 62; fStartState[142] := 62; fStartState[143] := 62; 
+fStartState[144] := 62; fStartState[145] := 62; fStartState[146] := 62; fStartState[147] := 62; 
+fStartState[148] := 62; fStartState[149] := 62; fStartState[150] := 62; fStartState[151] := 62; 
+fStartState[152] := 62; fStartState[153] := 62; fStartState[154] := 62; fStartState[155] := 62; 
+fStartState[156] := 62; fStartState[157] := 62; fStartState[158] := 62; fStartState[159] := 62; 
+fStartState[160] := 62; fStartState[161] := 62; fStartState[162] := 62; fStartState[163] := 62; 
+fStartState[164] := 62; fStartState[165] := 62; fStartState[166] := 62; fStartState[167] := 62; 
+fStartState[168] := 62; fStartState[169] := 62; fStartState[170] := 62; fStartState[171] := 62; 
+fStartState[172] := 62; fStartState[173] := 62; fStartState[174] := 62; fStartState[175] := 62; 
+fStartState[176] := 62; fStartState[177] := 62; fStartState[178] := 62; fStartState[179] := 62; 
+fStartState[180] := 62; fStartState[181] := 62; fStartState[182] := 62; fStartState[183] := 62; 
+fStartState[184] := 62; fStartState[185] := 62; fStartState[186] := 62; fStartState[187] := 62; 
+fStartState[188] := 62; fStartState[189] := 62; fStartState[190] := 62; fStartState[191] := 62; 
+fStartState[192] := 62; fStartState[193] := 62; fStartState[194] := 62; fStartState[195] := 62; 
+fStartState[196] := 62; fStartState[197] := 62; fStartState[198] := 62; fStartState[199] := 62; 
+fStartState[200] := 62; fStartState[201] := 62; fStartState[202] := 62; fStartState[203] := 62; 
+fStartState[204] := 62; fStartState[205] := 62; fStartState[206] := 62; fStartState[207] := 62; 
+fStartState[208] := 62; fStartState[209] := 62; fStartState[210] := 62; fStartState[211] := 62; 
+fStartState[212] := 62; fStartState[213] := 62; fStartState[214] := 62; fStartState[215] := 62; 
+fStartState[216] := 62; fStartState[217] := 62; fStartState[218] := 62; fStartState[219] := 62; 
+fStartState[220] := 62; fStartState[221] := 62; fStartState[222] := 62; fStartState[223] := 62; 
+fStartState[224] := 62; fStartState[225] := 62; fStartState[226] := 62; fStartState[227] := 62; 
+fStartState[228] := 62; fStartState[229] := 62; fStartState[230] := 62; fStartState[231] := 62; 
+fStartState[232] := 62; fStartState[233] := 62; fStartState[234] := 62; fStartState[235] := 62; 
+fStartState[236] := 62; fStartState[237] := 62; fStartState[238] := 62; fStartState[239] := 62; 
+fStartState[240] := 62; fStartState[241] := 62; fStartState[242] := 62; fStartState[243] := 62; 
+fStartState[244] := 62; fStartState[245] := 62; fStartState[246] := 62; fStartState[247] := 62; 
+fStartState[248] := 62; fStartState[249] := 62; fStartState[250] := 62; fStartState[251] := 62; 
+fStartState[252] := 62; fStartState[253] := 62; fStartState[254] := 62; fStartState[255] := 62; 
 end; {Create}
 
 destructor TZcScanner.Destroy;
@@ -1195,39 +1201,41 @@ begin
   55 : Result := '"-=" expected';
   56 : Result := '"*=" expected';
   57 : Result := '"/=" expected';
-  58 : Result := '"||" expected';
-  59 : Result := '"&&" expected';
-  60 : Result := '"|" expected';
-  61 : Result := '"^" expected';
-  62 : Result := '"&" expected';
-  63 : Result := '"!=" expected';
-  64 : Result := '"==" expected';
-  65 : Result := '"<" expected';
-  66 : Result := '">" expected';
-  67 : Result := '"<=" expected';
-  68 : Result := '">=" expected';
-  69 : Result := '"<<" expected';
-  70 : Result := '">>" expected';
-  71 : Result := '"+" expected';
-  72 : Result := '"-" expected';
-  73 : Result := '"*" expected';
-  74 : Result := '"/" expected';
-  75 : Result := '"++" expected';
-  76 : Result := '"--" expected';
-  77 : Result := '"!" expected';
-  78 : Result := '"." expected';
-  79 : Result := '"[" expected';
-  80 : Result := '"]" expected';
-  81 : Result := 'not expected';
-  82 : Result := 'invalid Literal';
-  83 : Result := 'invalid Primary';
-  84 : Result := 'invalid AssignOp';
-  85 : Result := 'invalid ForInit';
-  86 : Result := 'invalid StatementExpr';
-  87 : Result := 'invalid EmbeddedStatement';
-  88 : Result := 'invalid SimpleType';
-  89 : Result := 'invalid Expr';
-  90 : Result := 'invalid Statement';
+  58 : Result := '"?" expected';
+  59 : Result := '":" expected';
+  60 : Result := '"||" expected';
+  61 : Result := '"&&" expected';
+  62 : Result := '"|" expected';
+  63 : Result := '"^" expected';
+  64 : Result := '"&" expected';
+  65 : Result := '"!=" expected';
+  66 : Result := '"==" expected';
+  67 : Result := '"<" expected';
+  68 : Result := '">" expected';
+  69 : Result := '"<=" expected';
+  70 : Result := '">=" expected';
+  71 : Result := '"<<" expected';
+  72 : Result := '">>" expected';
+  73 : Result := '"+" expected';
+  74 : Result := '"-" expected';
+  75 : Result := '"*" expected';
+  76 : Result := '"/" expected';
+  77 : Result := '"++" expected';
+  78 : Result := '"--" expected';
+  79 : Result := '"!" expected';
+  80 : Result := '"." expected';
+  81 : Result := '"[" expected';
+  82 : Result := '"]" expected';
+  83 : Result := 'not expected';
+  84 : Result := 'invalid Literal';
+  85 : Result := 'invalid Primary';
+  86 : Result := 'invalid AssignOp';
+  87 : Result := 'invalid ForInit';
+  88 : Result := 'invalid StatementExpr';
+  89 : Result := 'invalid EmbeddedStatement';
+  90 : Result := 'invalid SimpleType';
+  91 : Result := 'invalid Expr';
+  92 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
     201 : Result := 'Name already defined in this scope';
@@ -1316,7 +1324,7 @@ Typ  :=  zctFloat;
 end else if (fCurrentInputSymbol = stringConSym) then begin
 Get;
 Typ  :=  zctString;
-end else begin SynError(82);
+end else begin SynError(84);
 end;
 end;
 
@@ -1350,7 +1358,7 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(83);
+end else begin SynError(85);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _plus_plusSym) OR
@@ -1598,7 +1606,7 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(84);
+end else begin SynError(86);
 end;
 end;
 
@@ -1683,7 +1691,7 @@ Get;
 _StatementExpr(Op);
 if  Assigned(Op)  then  OutOp.Children.Add(Op);
 end;
-end else begin SynError(85);
+end else begin SynError(87);
 end;
 end;
 
@@ -1706,7 +1714,7 @@ end else if (fCurrentInputSymbol = _rparenSym) OR
  (fCurrentInputSymbol = _commaSym) OR
  (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(86);
+end else begin SynError(88);
 end;
 end;
 
@@ -1832,7 +1840,7 @@ Expect(_semicolonSym);
    end;
 
     end;
-else begin SynError(87);
+else begin SynError(89);
     end;
 end;
 end;
@@ -1847,7 +1855,7 @@ Typ  :=  zctInt;
 end else if (fCurrentInputSymbol = stringSym) then begin
 Get;
 Typ  :=  zctString;
-end else begin SynError(88);
+end else begin SynError(90);
 end;
 end;
 
@@ -1857,9 +1865,21 @@ end;
 
 procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
 begin
+Op1  :=nil;  Op2  :=  nil;
 _Unary(Op1);
 if _In(symSet[4], fCurrentInputSymbol) then begin
 _OrExpr(Op1,OutOp);
+if (fCurrentInputSymbol = _querySym) then begin
+Get;
+_Expr(Op1);
+Expect(_colonSym);
+_Expr(Op2);
+if  (OutOp=nil)  or  (Op1=nil)  or  (Op2=nil)  then
+   SynError(205)
+else
+   OutOp  :=  MakeOp(zcConditional,[OutOp,Op1,Op2]);
+
+end;
 end else if (fCurrentInputSymbol = _equalSym) OR
  (fCurrentInputSymbol = _plus_equalSym) OR
  (fCurrentInputSymbol = _minus_equalSym) OR
@@ -1867,8 +1887,8 @@ end else if (fCurrentInputSymbol = _equalSym) OR
  (fCurrentInputSymbol = _slash_equalSym) then begin
 _AssignOp(Kind);
 _Expr(Op2);
-OutOp  :=  MakeAssign(Kind,Op1,Op2);
-end else begin SynError(89);
+OutOp  :=  MakeAssign(Kind,Op1,  MakeCompatible(Op2,Op1.GetDataType)  );
+end else begin SynError(91);
 end;
 end;
 
@@ -1945,7 +1965,7 @@ _LocalVarDecl(OutOp);
 Expect(_semicolonSym);
 end else if _In(symSet[5], fCurrentInputSymbol) then begin
 _EmbeddedStatement(OutOp);
-end else begin SynError(90);
+end else begin SynError(92);
 end;
 end;
 
@@ -2120,10 +2140,11 @@ symSet[ 3, 5] := [];
 symSet[ 4, 0] := [];
 symSet[ 4, 1] := [];
 symSet[ 4, 2] := [_rparenSym-32, _commaSym-32, _semicolonSym-32];
-symSet[ 4, 3] := [_bar_barSym-48, _and_andSym-48, _barSym-48, _uparrowSym-48, 
-                    _andSym-48, _bang_equalSym-48];
-symSet[ 4, 4] := [_equal_equalSym-64, _lessSym-64, _greaterSym-64, 
-                    _less_equalSym-64, _greater_equalSym-64, _less_lessSym-64, 
+symSet[ 4, 3] := [_querySym-48, _colonSym-48, _bar_barSym-48, _and_andSym-48, 
+                    _barSym-48, _uparrowSym-48];
+symSet[ 4, 4] := [_andSym-64, _bang_equalSym-64, _equal_equalSym-64, 
+                    _lessSym-64, _greaterSym-64, _less_equalSym-64, 
+                    _greater_equalSym-64, _less_lessSym-64, 
                     _greater_greaterSym-64, _plusSym-64, _minusSym-64, 
                     _starSym-64, _slashSym-64];
 symSet[ 4, 5] := [_rbrackSym-80];

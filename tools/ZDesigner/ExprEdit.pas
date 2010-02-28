@@ -373,6 +373,24 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       MakeLiteralOp((Op as TZcOpLiteral).Value, Op.GetDataType);
   end;
 
+  procedure DoGenConditional;
+  //expr ? value1 : value2;
+  var
+    LExit,LFalse : TZCodeLabel;
+  begin
+    LFalse := NewLabel;
+    LExit := NewLabel;
+
+    FallTrue(Op.Child(0),LFalse);
+
+    GenValue(Op.Child(1));
+    GenJump(jsJumpAlways,LExit);
+
+    DefineLabel(LFalse);
+    GenValue(Op.Child(2));
+    DefineLabel(LExit);
+  end;
+
 begin
   case Op.Kind of
     zcMul : DoGenBinary(vbkMul);
@@ -393,6 +411,7 @@ begin
     zcConvert : DoGenConvert;
     zcAssign,zcPreInc,zcPreDec : GenAssign(Op,alvPost);
     zcPostInc,zcPostDec : GenAssign(Op,alvPre);
+    zcConditional : DoGenConditional;
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
