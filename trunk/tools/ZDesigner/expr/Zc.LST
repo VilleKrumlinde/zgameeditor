@@ -1,6 +1,6 @@
 
 
-Compiled: den 27 februari 2010 - 13:49:18
+Compiled: den 28 februari 2010 - 14:35:16
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,14 +33,14 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 27 februari 2010 @ 13:49:18
+Time Compiled: den 28 februari 2010 @ 14:35:16
 
 Statistics:
-  number of terminals:        82 (limit  2561)
+  number of terminals:        84 (limit  2561)
   number of non-terminals:    31 (limit  1281)
-  number of pragmas:           0 (limit  2479)
-  number of symbolnodes:     113 (limit  2561)
-  number of graphnodes:      350 (limit 15001)
+  number of pragmas:           0 (limit  2477)
+  number of symbolnodes:     115 (limit  2561)
+  number of graphnodes:      357 (limit 15001)
   number of conditionsets:     1 (limit   101)
   number of charactersets:    25 (limit  4001)
 
@@ -530,233 +530,241 @@ Listing
   478  
   479  
   480  Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
-  481  = Unary<Op1>
-  482    ( OrExpr<Op1,OutOp> /* ["?" Expr<Op1> ":" Expr<Op1> ] */
-  483    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1,Op2); .)
-  484    )
-  485  .
-  486  /*------------------------------------------------------------------------*/
-  487  OrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
-*****  ^ OrExpr is a deletable symbol
-  488  = AndExpr<InOp,OutOp>   (. L := OutOp; .)
-  489      {"||" Unary<Op> AndExpr<Op,R>
-  490        (. OutOp := MakeOp(zcOr,[L,R]);
-  491           L := OutOp; .)
-  492      }
+  481  = (. Op1 :=nil; Op2 := nil; .)
+  482    Unary<Op1>
+  483    ( OrExpr<Op1,OutOp>
+  484        ["?" Expr<Op1> ":" Expr<Op2>
+  485           (. if (OutOp=nil) or (Op1=nil) or (Op2=nil) then
+  486                SynError(205)
+  487              else
+  488                OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
+  489           .)
+  490        ]
+  491    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, MakeCompatible(Op2,Op1.GetDataType) ); .)
+  492    )
   493  .
-  494  
-  495  
-  496  /*------------------------------------------------------------------------*/
-  497  AndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
-*****  ^ AndExpr is a deletable symbol
-  498  = BitOrExpr<InOp,OutOp>  (. L := OutOp; .)
-  499      {"&&" Unary<Op> BitOrExpr<Op,R>
-  500        (. OutOp := MakeOp(zcAnd,[L,R]);
-  501           L := OutOp; .)
-  502      }
-  503  .
+  494  /*------------------------------------------------------------------------*/
+  495  OrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+*****  ^ OrExpr is a deletable symbol
+  496  = AndExpr<InOp,OutOp>   (. L := OutOp; .)
+  497      {"||" Unary<Op> AndExpr<Op,R>
+  498        (. OutOp := MakeOp(zcOr,[L,R]);
+  499           L := OutOp; .)
+  500      }
+  501  .
+  502  
+  503  
   504  /*------------------------------------------------------------------------*/
-  505  BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
-*****  ^ BitOrExpr is a deletable symbol
-  506  = BitXorExpr<InOp,OutOp> (. L := OutOp; .)
-  507    {"|" Unary<Op> BitXorExpr<Op,R>
-  508      (. OutOp := MakeOp(zcBinaryOr,[L,R]);
-  509         L := OutOp; .)
-  510    }
+  505  AndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+*****  ^ AndExpr is a deletable symbol
+  506  = BitOrExpr<InOp,OutOp>  (. L := OutOp; .)
+  507      {"&&" Unary<Op> BitOrExpr<Op,R>
+  508        (. OutOp := MakeOp(zcAnd,[L,R]);
+  509           L := OutOp; .)
+  510      }
   511  .
-  512  
-  513  /*------------------------------------------------------------------------*/
-  514  BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
+  512  /*------------------------------------------------------------------------*/
+  513  BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+*****  ^ BitOrExpr is a deletable symbol
+  514  = BitXorExpr<InOp,OutOp> (. L := OutOp; .)
+  515    {"|" Unary<Op> BitXorExpr<Op,R>
+  516      (. OutOp := MakeOp(zcBinaryOr,[L,R]);
+  517         L := OutOp; .)
+  518    }
+  519  .
+  520  
+  521  /*------------------------------------------------------------------------*/
+  522  BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
 *****  ^ BitXorExpr is a deletable symbol
-  515  = BitAndExpr<InOp,OutOp> {"^" (. SynError(205); .) Unary<Op> BitAndExpr<InOp,OutOp>}
-  516  .
-  517  
-  518  /*------------------------------------------------------------------------*/
-  519  BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+  523  = BitAndExpr<InOp,OutOp> {"^" (. SynError(205); .) Unary<Op> BitAndExpr<InOp,OutOp>}
+  524  .
+  525  
+  526  /*------------------------------------------------------------------------*/
+  527  BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
 *****  ^ BitAndExpr is a deletable symbol
-  520  = EqlExpr<InOp,OutOp> (. L := OutOp; .)
-  521    {"&" Unary<Op> EqlExpr<Op,R>
-  522      (. OutOp := MakeOp(zcBinaryAnd,[L,R]);
-  523         L := OutOp; .)
-  524    }
-  525  .
-  526  
-  527  /*------------------------------------------------------------------------*/
-  528  EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
+  528  = EqlExpr<InOp,OutOp> (. L := OutOp; .)
+  529    {"&" Unary<Op> EqlExpr<Op,R>
+  530      (. OutOp := MakeOp(zcBinaryAnd,[L,R]);
+  531         L := OutOp; .)
+  532    }
+  533  .
+  534  
+  535  /*------------------------------------------------------------------------*/
+  536  EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
 *****  ^ EqlExpr is a deletable symbol
-  529  = RelExpr<InOp,OutOp>   (. L := OutOp; .)
-  530    {( "!="   (. Kind := zcCompNE; .)
-  531     | "=="   (. Kind := zcCompEQ; .)
-  532     )
-  533     Unary<Op> RelExpr<Op,R>
-  534           (. OutOp := MakeBinary(Kind, L,R);
-  535              L := OutOp;
-  536           .)
-  537    }
-  538  .
-  539  /*------------------------------------------------------------------------*/
-  540  RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind; .)
+  537  = RelExpr<InOp,OutOp>   (. L := OutOp; .)
+  538    {( "!="   (. Kind := zcCompNE; .)
+  539     | "=="   (. Kind := zcCompEQ; .)
+  540     )
+  541     Unary<Op> RelExpr<Op,R>
+  542           (. OutOp := MakeBinary(Kind, L,R);
+  543              L := OutOp;
+  544           .)
+  545    }
+  546  .
+  547  /*------------------------------------------------------------------------*/
+  548  RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind; .)
 *****  ^ RelExpr is a deletable symbol
-  541  = ShiftExpr<InOp,OutOp>         (. L := OutOp; .)
-  542    { ( "<"       (. Kind := zcCompLT; .)
-  543      | ">"       (. Kind := zcCompGT; .)
-  544      | "<="      (. Kind := zcCompLE; .)
-  545      | ">="      (. Kind := zcCompGE; .)
-  546       )
-  547      Unary<Op> ShiftExpr<Op,R>
-  548           (. OutOp := MakeBinary(Kind, L,R );
-  549              L := OutOp;
-  550           .)
-  551    }
-  552  .
-  553  /*------------------------------------------------------------------------*/
-  554  ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
+  549  = ShiftExpr<InOp,OutOp>         (. L := OutOp; .)
+  550    { ( "<"       (. Kind := zcCompLT; .)
+  551      | ">"       (. Kind := zcCompGT; .)
+  552      | "<="      (. Kind := zcCompLE; .)
+  553      | ">="      (. Kind := zcCompGE; .)
+  554       )
+  555      Unary<Op> ShiftExpr<Op,R>
+  556           (. OutOp := MakeBinary(Kind, L,R );
+  557              L := OutOp;
+  558           .)
+  559    }
+  560  .
+  561  /*------------------------------------------------------------------------*/
+  562  ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
 *****  ^ ShiftExpr is a deletable symbol
-  555  = AddExpr<InOp,OutOp> (. L := OutOp; .)
-  556    { ("<<"  (. Kind := zcBinaryShiftL; .)
-  557      | ">>" (. Kind := zcBinaryShiftR; .)
-  558      )
-  559      Unary<Op> AddExpr<Op,R>
-  560      (. OutOp := MakeOp(Kind,[L,R]);
-  561         L := OutOp; .)
-  562    }
-  563  .
-  564  /*------------------------------------------------------------------------*/
-  565  AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
+  563  = AddExpr<InOp,OutOp> (. L := OutOp; .)
+  564    { ("<<"  (. Kind := zcBinaryShiftL; .)
+  565      | ">>" (. Kind := zcBinaryShiftR; .)
+  566      )
+  567      Unary<Op> AddExpr<Op,R>
+  568      (. OutOp := MakeOp(Kind,[L,R]);
+  569         L := OutOp; .)
+  570    }
+  571  .
+  572  /*------------------------------------------------------------------------*/
+  573  AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
 *****  ^ AddExpr is a deletable symbol
-  566  = MulExpr<InOp,OutOp>   (. L := OutOp; .)
-  567      {( "+"    (. Kind := zcPlus; .)
-  568       | "-"    (. Kind := zcMinus; .)
-  569       ) Unary<Op> MulExpr<Op,R>
-  570           (. 
-  571              if (L=nil) or (R=nil) then
-  572                ZError('Invalid syntax');
-  573              OutOp := MakeBinary(Kind,L,R);
-  574              L := OutOp;
-  575           .)
-  576      }
-  577  .
-  578  /*------------------------------------------------------------------------*/
-  579  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
+  574  = MulExpr<InOp,OutOp>   (. L := OutOp; .)
+  575      {( "+"    (. Kind := zcPlus; .)
+  576       | "-"    (. Kind := zcMinus; .)
+  577       ) Unary<Op> MulExpr<Op,R>
+  578           (. 
+  579              if (L=nil) or (R=nil) then
+  580                ZError('Invalid syntax');
+  581              OutOp := MakeBinary(Kind,L,R);
+  582              L := OutOp;
+  583           .)
+  584      }
+  585  .
+  586  /*------------------------------------------------------------------------*/
+  587  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
 *****  ^ MulExpr is a deletable symbol
-  580  =       (. OutOp := InOp; .)
-  581    { ("*"      (. Kind := zcMul; .)
-  582      | "/"     (. Kind := zcDiv; .)
-  583    (*  | "%" *)
-  584      ) Unary<Tmp>
-  585           (. OutOp := MakeBinary(Kind,InOp,Tmp);
-  586              InOp := OutOp;
-  587           .)
-  588      }
-  589  .
-  590  /*------------------------------------------------------------------------*/
-  591  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
-  592  =       (. LastOp := nil; Kind := zcNop; .)
-  593    {
-  594      (
-  595        (* "+" | *)
-  596        "-"   (. Kind := zcNegate; .) |
-  597        "++"  (. Kind := zcPreInc; .) |    
-  598        "--"  (. Kind := zcPreDec; .) |
-  599        "!"   (. Kind := zcNot; .)
-  600        (* | "!" | "~" | "*" |  *)
-  601      )   
-  602      (. 
-  603         if Kind in [zcNegate,zcNot] then
-  604         begin
-  605           Tmp := MakeOp(Kind);
-  606           if LastOp<>nil then
-  607             LastOp.Children.Add(Tmp);
-  608           LastOp := Tmp;
-  609         end else if Assigned(LastOp) then 
-  610           ZError('-- and ++ cannot be combined with other unary ops');
-  611      .)
-  612    }
-  613    Primary<Tmp>
-  614      (. 
-  615         if Kind in [zcNop,zcNegate,zcNot] then
-  616         begin
-  617           if LastOp<>nil then
-  618           begin
-  619             LastOp.Children.Add(Tmp);
-  620             OutOp := LastOp;
-  621           end else
-  622             OutOp := Tmp;
-  623         end else 
+  588  =       (. OutOp := InOp; .)
+  589    { ("*"      (. Kind := zcMul; .)
+  590      | "/"     (. Kind := zcDiv; .)
+  591    (*  | "%" *)
+  592      ) Unary<Tmp>
+  593           (. OutOp := MakeBinary(Kind,InOp,Tmp);
+  594              InOp := OutOp;
+  595           .)
+  596      }
+  597  .
+  598  /*------------------------------------------------------------------------*/
+  599  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
+  600  =       (. LastOp := nil; Kind := zcNop; .)
+  601    {
+  602      (
+  603        (* "+" | *)
+  604        "-"   (. Kind := zcNegate; .) |
+  605        "++"  (. Kind := zcPreInc; .) |    
+  606        "--"  (. Kind := zcPreDec; .) |
+  607        "!"   (. Kind := zcNot; .)
+  608        (* | "!" | "~" | "*" |  *)
+  609      )   
+  610      (. 
+  611         if Kind in [zcNegate,zcNot] then
+  612         begin
+  613           Tmp := MakeOp(Kind);
+  614           if LastOp<>nil then
+  615             LastOp.Children.Add(Tmp);
+  616           LastOp := Tmp;
+  617         end else if Assigned(LastOp) then 
+  618           ZError('-- and ++ cannot be combined with other unary ops');
+  619      .)
+  620    }
+  621    Primary<Tmp>
+  622      (. 
+  623         if Kind in [zcNop,zcNegate,zcNot] then
   624         begin
-  625           OutOp := MakePrePostIncDec(Kind,Tmp);
-  626         end;
-  627      .)
-  628  .
-  629  /*------------------------------------------------------------------------*/
-  630  Primary<var OutOp : TZcOp>         
-  631  (. var Op : TZcOp; S : string; V : single; 
-  632       Typ : TZcDataType;
-  633  .)
-  634  =            (. OutOp := nil; .)
-  635    ( 
-  636      ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
-  637    | Literal<Typ>  (. 
-  638          if Typ=zctString then
-  639            OutOp := TZcOpLiteral.Create(Typ,LexString)
-  640          else
-  641          begin
-  642            try
-  643              S := LexString;
-  644              V := ZcStrToFloat(S);
-  645              OutOp := TZcOpLiteral.Create(Typ,V)
-  646            except on EConvertError do
-  647              SynError(200);
-  648            end;
-  649          end;
-  650       .)
-  651    | "(" Expr<OutOp> ")"
-  652  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
-  653      | "float"  | "int"    | "long" | "object"  | "sbyte"
-  654      | "short"  | "string" | "uint" | "ulong"   | "ushort"
-  655      ) "." ident *)
-  656    )
-  657  
-  658    {
-  659    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
-  660    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
-  661  /*  | "->" ident
-  662    | */
-  663    "." ident (.
-  664        Assert(OutOp.Kind=zcIdentifier);
-  665        OutOp.Id := OutOp.Id + '.' + LexString;
-  666      .)
-  667    | "(" (. Assert(OutOp.Kind=zcIdentifier);
-  668             OutOp.Kind:=zcFuncCall;
-  669           .)
-  670          [Argument<Op> (. OutOp.Children.Add(Op); .)
-  671            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
-  672            }
-  673          ]
-  674          (. 
-  675             if not VerifyFunctionCall(OutOp,S) then
-  676               ZError(S);
-  677          .)
-  678      ")"
-  679  
-  680    | "[" (. Assert(OutOp.Kind=zcIdentifier);
-  681             OutOp.Kind:=zcArrayAccess;
-  682           .)
-  683      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
-  684        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
-  685      "]" 
-  686  
-  687    }
-  688  .
-  689  /*------------------------------------------------------------------------*/
-  690  Literal<var Typ : TZcDataType>
-  691  = intCon (. Typ :=zctInt; .) | 
-  692    realCon (. Typ := zctFloat; .) |
-  693    stringCon (. Typ := zctString; .)
-  694    (* | "true" | "false" | "null" *)
-  695  .
-  696  
-  697  END Zc.
+  625           if LastOp<>nil then
+  626           begin
+  627             LastOp.Children.Add(Tmp);
+  628             OutOp := LastOp;
+  629           end else
+  630             OutOp := Tmp;
+  631         end else 
+  632         begin
+  633           OutOp := MakePrePostIncDec(Kind,Tmp);
+  634         end;
+  635      .)
+  636  .
+  637  /*------------------------------------------------------------------------*/
+  638  Primary<var OutOp : TZcOp>         
+  639  (. var Op : TZcOp; S : string; V : single; 
+  640       Typ : TZcDataType;
+  641  .)
+  642  =            (. OutOp := nil; .)
+  643    ( 
+  644      ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
+  645    | Literal<Typ>  (. 
+  646          if Typ=zctString then
+  647            OutOp := TZcOpLiteral.Create(Typ,LexString)
+  648          else
+  649          begin
+  650            try
+  651              S := LexString;
+  652              V := ZcStrToFloat(S);
+  653              OutOp := TZcOpLiteral.Create(Typ,V)
+  654            except on EConvertError do
+  655              SynError(200);
+  656            end;
+  657          end;
+  658       .)
+  659    | "(" Expr<OutOp> ")"
+  660  (*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
+  661      | "float"  | "int"    | "long" | "object"  | "sbyte"
+  662      | "short"  | "string" | "uint" | "ulong"   | "ushort"
+  663      ) "." ident *)
+  664    )
+  665  
+  666    {
+  667    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
+  668    "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
+  669  /*  | "->" ident
+  670    | */
+  671    "." ident (.
+  672        Assert(OutOp.Kind=zcIdentifier);
+  673        OutOp.Id := OutOp.Id + '.' + LexString;
+  674      .)
+  675    | "(" (. Assert(OutOp.Kind=zcIdentifier);
+  676             OutOp.Kind:=zcFuncCall;
+  677           .)
+  678          [Argument<Op> (. OutOp.Children.Add(Op); .)
+  679            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+  680            }
+  681          ]
+  682          (. 
+  683             if not VerifyFunctionCall(OutOp,S) then
+  684               ZError(S);
+  685          .)
+  686      ")"
+  687  
+  688    | "[" (. Assert(OutOp.Kind=zcIdentifier);
+  689             OutOp.Kind:=zcArrayAccess;
+  690           .)
+  691      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
+  692        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
+  693      "]" 
+  694  
+  695    }
+  696  .
+  697  /*------------------------------------------------------------------------*/
+  698  Literal<var Typ : TZcDataType>
+  699  = intCon (. Typ :=zctInt; .) | 
+  700    realCon (. Typ := zctFloat; .) |
+  701    stringCon (. Typ := zctString; .)
+  702    (* | "true" | "false" | "null" *)
+  703  .
+  704  
+  705  END Zc.
 
     1 LL(1) error
    11 warnings

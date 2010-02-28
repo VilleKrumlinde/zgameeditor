@@ -538,16 +538,16 @@ begin
     end;
   end;
 
-
   TexCount := NewM.Textures.Count;
   if (not NilOld) and (OldM.Textures.Count>TexCount) then
     TexCount := OldM.Textures.Count;
-  for I := 0 to TexCount-1 do
+  //Count backwards so that activetexture is zero on loop exit
+  for I := TexCount-1 downto 0 do
   begin
     if MultiTextureSupported then
       glActiveTexture($84C0 + I)
     else if I>0 then
-      Break;
+      Continue;
 
     if I<NewM.Textures.Count then
       Tex := TMaterialTexture(NewM.Textures[I])
@@ -593,7 +593,6 @@ begin
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
   end;
-
 
   if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
   begin
