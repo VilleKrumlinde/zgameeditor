@@ -4,7 +4,7 @@ unit Zc_Ops;
 
 interface
 
-uses Contnrs, ZClasses, ZExpressions, uSymTab;
+uses Contnrs, ZClasses, ZExpressions, uSymTab, Generics.Collections;
 
 type
   TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
@@ -14,13 +14,17 @@ type
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
-          zcBreak,zcContinue,zcConditional);
+          zcBreak,zcContinue,zcConditional,zcSwitch);
+
+
+  TZcOp = class;
+  TZcOpList = TObjectList<TZcOp>;
 
   TZcOp = class
   public
     Kind : TZcOpKind;
     Id : string;
-    Children : TObjectList;
+    Children : TZcOpList;
     Ref : TObject;
     constructor Create(Owner : TObjectList); virtual;
     destructor Destroy; override;
@@ -102,6 +106,18 @@ type
     FuncId : TExpFuncCallKind;
   end;
 
+  TZcOpSwitch = class(TZcOp)
+  public
+    HasDefault : boolean;
+    ValueOp : TZcOp;
+    CaseOps : TZcOpList;
+    StatementsOps : TZcOpList;
+    constructor Create(Owner : TObjectList); override;
+    destructor Destroy; override;
+    function ToString : string; override;
+    function Optimize : TZcOp; override;
+  end;
+
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
@@ -150,7 +166,7 @@ begin
   if Owner=nil then
     Owner := FunctionCleanUps;
   Owner.Add(Self);
-  Children := TObjectList.Create(False);
+  Children := TZcOpList.Create(False);
 end;
 
 destructor TZcOp.Destroy;
@@ -209,7 +225,7 @@ end;
 
 function TZcOp.Child(I : integer) : TZcOp;
 begin
-  Result := TZcOp(Children[I]);
+  Result := Children[I];
 end;
 
 function TZcOp.ToString : string;
@@ -376,7 +392,7 @@ begin
     end;
   end;
 
-  if (Children.Count=1) and (Child(0).Kind=zcConstLiteral) then
+  if (Children.Count=1) and (Child(0)<>nil) and (Child(0).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
     if C1.Typ<>zctString then
@@ -761,6 +777,58 @@ begin
     Exit( StrToFloat(Copy(S,1,Length(S)-1)) )
   else
     Exit( StrToFloat(S) );
+end;
+
+{ TZcOpSwitch }
+
+constructor TZcOpSwitch.Create(Owner: TObjectList);
+begin
+  inherited;
+  CaseOps := TZcOpList.Create(False);
+  StatementsOps := TZcOpList.Create(False);
+  Kind := zcSwitch;
+end;
+
+destructor TZcOpSwitch.Destroy;
+begin
+  CaseOps.Free;
+  StatementsOps.Free;
+  inherited;
+end;
+
+function TZcOpSwitch.Optimize: TZcOp;
+var
+  Op : TZcOp;
+begin
+  for Op in CaseOps do
+    Op.Optimize;
+  for Op in StatementsOps do
+    Op.Optimize;
+  ValueOp.Optimize;
+  Result := Self;
+end;
+
+function TZcOpSwitch.ToString: string;
+var
+  CaseOp,StatementsOp,Op : TZcOp;
+  I : integer;
+begin
+  Result := 'switch(' + ValueOp.ToString + ') {'#13#10;
+  for I := 0 to CaseOps.Count - 1 do
+  begin
+    CaseOp := CaseOps[I];
+    for Op in CaseOp.Children do
+    begin
+      if Op=nil then
+        Result := Result + '  default : '#13#10
+      else
+        Result := Result + '  case ' + Op.ToString + ' :'#13#10;
+    end;
+    StatementsOp := StatementsOps[I];
+    for Op in StatementsOp.Children do
+      Result := Result + '    ' + Op.ToString + ';'#13#10;
+  end;
+
 end;
 
 initialization

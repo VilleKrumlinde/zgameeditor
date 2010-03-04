@@ -76,7 +76,29 @@ int i=42;
 GlobalFloat=i*i+42f+20;
 x=round(i*i+42f+20);
 if(GlobalFloat!=x)
-  Error=8;]]>
+  Error=8;
+
+i=2;
+switch(i) {
+  case 0 :
+    break;
+  case 1 :
+  case 2 :
+    i=42;
+    break;
+  case 3 :
+    break;
+}
+if(i!=42)
+  Error=9;
+
+i=3;
+switch(i) {
+  case 0 : break;
+  default : i=42;
+}
+if(i!=42)
+  Error=10;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Int tests">
@@ -197,7 +219,24 @@ for(int i=0; i<10; i++) {
   sum=i;
 }
 if(sum!=6)
-  Error=102;]]>
+  Error=102;
+
+sum=0;
+for(int i=0; i<10; i++) {
+  for(int j=0; j<10; j++) {
+    sum++;
+    if(j==5)
+      break;
+    else
+      continue;
+  }
+  if(i==5)
+    break;
+  else
+    continue;
+}
+if(sum!=36)
+  Error=103;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Assignment as value">
