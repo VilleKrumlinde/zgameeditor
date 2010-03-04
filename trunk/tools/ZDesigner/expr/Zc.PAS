@@ -22,7 +22,7 @@ uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,ZClasses,mwStringHashList
 
 
 const
-maxT = 83;
+maxT = 86;
 type
 
   SymbolSet = array[0..maxT div setsize] of TBitSet;
@@ -80,10 +80,12 @@ destructor Destroy; override;
     procedure _BitOrExpr (InOp : TZcOp; var OutOp : TZcOp);
     procedure _AndExpr (InOp : TZcOp; var OutOp : TZcOp);
     procedure _OrExpr (InOp : TZcOp; var OutOp : TZcOp);
+    procedure _SwitchLabel (var OutOp : TZcOp);
     procedure _AssignOp (var Kind : TZcAssignType);
     procedure _Unary (var OutOp : TZcOp);
     procedure _ForInc (var OutOp : TZcOp);
     procedure _ForInit (var OutOp : TZcOp);
+    procedure _SwitchSection (SwitchOp : TZcOpSwitch);
     procedure _StatementExpr (var OutOp : TZcOp);
     procedure _Block (var OutOp : TZcOp);
     procedure _EmbeddedStatement (var OutOp : TZcOp);
@@ -103,8 +105,8 @@ destructor Destroy; override;
   private
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
-    function NoFunctionsAllowed : boolean;
     procedure ZError(const S : string);
+    procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
 
   protected
     { Protected Declarations }
@@ -170,28 +172,37 @@ const
   tildeSym = 33;  timesSym = 34;  xorSym = 35;  voidSym = 36;  _lparenSym = 37;
   _rparenSym = 38;  _lbraceSym = 39;  _rbraceSym = 40;  _commaSym = 41;
   _equalSym = 42;  floatSym = 43;  intSym = 44;  stringSym = 45;
-  _semicolonSym = 46;  ifSym = 47;  elseSym = 48;  whileSym = 49;  forSym = 50;
-  breakSym = 51;  continueSym = 52;  returnSym = 53;  _plus_equalSym = 54;
-  _minus_equalSym = 55;  _star_equalSym = 56;  _slash_equalSym = 57;
-  _querySym = 58;  _colonSym = 59;  _bar_barSym = 60;  _and_andSym = 61;
-  _barSym = 62;  _uparrowSym = 63;  _andSym = 64;  _bang_equalSym = 65;
-  _equal_equalSym = 66;  _lessSym = 67;  _greaterSym = 68;  _less_equalSym = 69;
-  _greater_equalSym = 70;  _less_lessSym = 71;  _greater_greaterSym = 72;
-  _plusSym = 73;  _minusSym = 74;  _starSym = 75;  _slashSym = 76;
-  _plus_plusSym = 77;  _minus_minusSym = 78;  _bangSym = 79;  _pointSym = 80;
-  _lbrackSym = 81;  _rbrackSym = 82;  NOSYMB = 83;  _noSym = NOSYMB;   {error token code}
+  _semicolonSym = 46;  ifSym = 47;  elseSym = 48;  switchSym = 49;
+  whileSym = 50;  forSym = 51;  breakSym = 52;  continueSym = 53;
+  returnSym = 54;  _plus_equalSym = 55;  _minus_equalSym = 56;
+  _star_equalSym = 57;  _slash_equalSym = 58;  caseSym = 59;  _colonSym = 60;
+  defaultSym = 61;  _querySym = 62;  _bar_barSym = 63;  _and_andSym = 64;
+  _barSym = 65;  _uparrowSym = 66;  _andSym = 67;  _bang_equalSym = 68;
+  _equal_equalSym = 69;  _lessSym = 70;  _greaterSym = 71;  _less_equalSym = 72;
+  _greater_equalSym = 73;  _less_lessSym = 74;  _greater_greaterSym = 75;
+  _plusSym = 76;  _minusSym = 77;  _starSym = 78;  _slashSym = 79;
+  _plus_plusSym = 80;  _minus_minusSym = 81;  _bangSym = 82;  _pointSym = 83;
+  _lbrackSym = 84;  _rbrackSym = 85;  NOSYMB = 86;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
+procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
+begin
+  if Op=nil then
+  begin
+    if SwitchOp.HasDefault then
+      ZError('Only one default statement is allowed.');
+    SwitchOp.HasDefault := True;
+  end else
+    Op := MakeCompatible(Op,SwitchOp.ValueOp.GetDataType);
+  SwitchOp.CaseOps.Last.Children.Add( Op );
+  Op := nil;
+end;
+
 procedure TZc.CleanUp;
 begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
-end;
-
-function TZc.NoFunctionsAllowed : boolean;
-begin
-  Result := not AllowFunctions;
 end;
 
 procedure TZc.ZError(const S : string);
@@ -1032,7 +1043,9 @@ fHashList.AddString('[', _lbrackSym, _lbrackSym);
 fHashList.AddString(']', _rbrackSym, _rbrackSym);
 fHashList.AddString('^', _uparrowSym, _uparrowSym);
 fHashList.AddString('break', breakSym, breakSym);
+fHashList.AddString('case', caseSym, caseSym);
 fHashList.AddString('continue', continueSym, continueSym);
+fHashList.AddString('default', defaultSym, defaultSym);
 fHashList.AddString('else', elseSym, elseSym);
 fHashList.AddString('float', floatSym, floatSym);
 fHashList.AddString('for', forSym, forSym);
@@ -1040,6 +1053,7 @@ fHashList.AddString('if', ifSym, ifSym);
 fHashList.AddString('int', intSym, intSym);
 fHashList.AddString('return', returnSym, returnSym);
 fHashList.AddString('string', stringSym, stringSym);
+fHashList.AddString('switch', switchSym, switchSym);
 fHashList.AddString('void', voidSym, voidSym);
 fHashList.AddString('while', whileSym, whileSym);
 fHashList.AddString('{', _lbraceSym, _lbraceSym);
@@ -1192,50 +1206,54 @@ begin
   46 : Result := '";" expected';
   47 : Result := '"if" expected';
   48 : Result := '"else" expected';
-  49 : Result := '"while" expected';
-  50 : Result := '"for" expected';
-  51 : Result := '"break" expected';
-  52 : Result := '"continue" expected';
-  53 : Result := '"return" expected';
-  54 : Result := '"+=" expected';
-  55 : Result := '"-=" expected';
-  56 : Result := '"*=" expected';
-  57 : Result := '"/=" expected';
-  58 : Result := '"?" expected';
-  59 : Result := '":" expected';
-  60 : Result := '"||" expected';
-  61 : Result := '"&&" expected';
-  62 : Result := '"|" expected';
-  63 : Result := '"^" expected';
-  64 : Result := '"&" expected';
-  65 : Result := '"!=" expected';
-  66 : Result := '"==" expected';
-  67 : Result := '"<" expected';
-  68 : Result := '">" expected';
-  69 : Result := '"<=" expected';
-  70 : Result := '">=" expected';
-  71 : Result := '"<<" expected';
-  72 : Result := '">>" expected';
-  73 : Result := '"+" expected';
-  74 : Result := '"-" expected';
-  75 : Result := '"*" expected';
-  76 : Result := '"/" expected';
-  77 : Result := '"++" expected';
-  78 : Result := '"--" expected';
-  79 : Result := '"!" expected';
-  80 : Result := '"." expected';
-  81 : Result := '"[" expected';
-  82 : Result := '"]" expected';
-  83 : Result := 'not expected';
-  84 : Result := 'invalid Literal';
-  85 : Result := 'invalid Primary';
-  86 : Result := 'invalid AssignOp';
-  87 : Result := 'invalid ForInit';
-  88 : Result := 'invalid StatementExpr';
-  89 : Result := 'invalid EmbeddedStatement';
-  90 : Result := 'invalid SimpleType';
-  91 : Result := 'invalid Expr';
-  92 : Result := 'invalid Statement';
+  49 : Result := '"switch" expected';
+  50 : Result := '"while" expected';
+  51 : Result := '"for" expected';
+  52 : Result := '"break" expected';
+  53 : Result := '"continue" expected';
+  54 : Result := '"return" expected';
+  55 : Result := '"+=" expected';
+  56 : Result := '"-=" expected';
+  57 : Result := '"*=" expected';
+  58 : Result := '"/=" expected';
+  59 : Result := '"case" expected';
+  60 : Result := '":" expected';
+  61 : Result := '"default" expected';
+  62 : Result := '"?" expected';
+  63 : Result := '"||" expected';
+  64 : Result := '"&&" expected';
+  65 : Result := '"|" expected';
+  66 : Result := '"^" expected';
+  67 : Result := '"&" expected';
+  68 : Result := '"!=" expected';
+  69 : Result := '"==" expected';
+  70 : Result := '"<" expected';
+  71 : Result := '">" expected';
+  72 : Result := '"<=" expected';
+  73 : Result := '">=" expected';
+  74 : Result := '"<<" expected';
+  75 : Result := '">>" expected';
+  76 : Result := '"+" expected';
+  77 : Result := '"-" expected';
+  78 : Result := '"*" expected';
+  79 : Result := '"/" expected';
+  80 : Result := '"++" expected';
+  81 : Result := '"--" expected';
+  82 : Result := '"!" expected';
+  83 : Result := '"." expected';
+  84 : Result := '"[" expected';
+  85 : Result := '"]" expected';
+  86 : Result := 'not expected';
+  87 : Result := 'invalid Literal';
+  88 : Result := 'invalid Primary';
+  89 : Result := 'invalid SwitchLabel';
+  90 : Result := 'invalid AssignOp';
+  91 : Result := 'invalid ForInit';
+  92 : Result := 'invalid StatementExpr';
+  93 : Result := 'invalid EmbeddedStatement';
+  94 : Result := 'invalid SimpleType';
+  95 : Result := 'invalid Expr';
+  96 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
     201 : Result := 'Name already defined in this scope';
@@ -1324,7 +1342,7 @@ Typ  :=  zctFloat;
 end else if (fCurrentInputSymbol = stringConSym) then begin
 Get;
 Typ  :=  zctString;
-end else begin SynError(84);
+end else begin SynError(87);
 end;
 end;
 
@@ -1358,7 +1376,7 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(85);
+end else begin SynError(88);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _plus_plusSym) OR
@@ -1590,6 +1608,18 @@ L  :=  OutOp;
 end;
 end;
 
+procedure TZc._SwitchLabel (var  OutOp  :  TZcOp);begin
+if (fCurrentInputSymbol = caseSym) then begin
+Get;
+_Expr(OutOp);
+Expect(_colonSym);
+end else if (fCurrentInputSymbol = defaultSym) then begin
+Get;
+Expect(_colonSym);
+end else begin SynError(89);
+end;
+end;
+
 procedure TZc._AssignOp (var  Kind  :  TZcAssignType);begin
 if (fCurrentInputSymbol = _equalSym) then begin
 Get;
@@ -1606,7 +1636,7 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(86);
+end else begin SynError(90);
 end;
 end;
 
@@ -1631,30 +1661,30 @@ Get;
 Kind  :=  zcNot;
 end;
 
-if  Kind  in  [zcNegate,zcNot]  then
-begin
-   Tmp  :=  MakeOp(Kind);
-   if  LastOp<>nil  then
-     LastOp.Children.Add(Tmp);
-   LastOp  :=  Tmp;
-end  else  if  Assigned(LastOp)  then
-   ZError('--  and  ++  cannot  be  combined  with  other  unary  ops');
+  if  Kind  in  [zcNegate,zcNot]  then
+  begin
+    Tmp  :=  MakeOp(Kind);
+    if  LastOp<>nil  then
+      LastOp.Children.Add(Tmp);
+    LastOp  :=  Tmp;
+  end  else  if  Assigned(LastOp)  then
+    ZError('--  and  ++  cannot  be  combined  with  other  unary  ops');
 
 end;
 _Primary(Tmp);
 
-if  Kind  in  [zcNop,zcNegate,zcNot]  then
-begin
-   if  LastOp<>nil  then
-   begin
-     LastOp.Children.Add(Tmp);
-     OutOp  :=  LastOp;
-   end  else
-     OutOp  :=  Tmp;
-end  else
-begin
-   OutOp  :=  MakePrePostIncDec(Kind,Tmp);
-end;
+  if  Kind  in  [zcNop,zcNegate,zcNot]  then
+  begin
+    if  LastOp<>nil  then
+    begin
+      LastOp.Children.Add(Tmp);
+      OutOp  :=  LastOp;
+    end  else
+      OutOp  :=  Tmp;
+  end  else
+  begin
+    OutOp  :=  MakePrePostIncDec(Kind,Tmp);
+  end;
 
 end;
 
@@ -1691,7 +1721,25 @@ Get;
 _StatementExpr(Op);
 if  Assigned(Op)  then  OutOp.Children.Add(Op);
 end;
-end else begin SynError(87);
+end else begin SynError(91);
+end;
+end;
+
+procedure TZc._SwitchSection (SwitchOp  :  TZcOpSwitch);var  Op  :  TZcOp;
+begin
+Op  :=  nil;
+_SwitchLabel(Op);
+AddSwitchLabel(SwitchOp,Op);
+while (fCurrentInputSymbol = caseSym) OR
+ (fCurrentInputSymbol = defaultSym) do begin
+_SwitchLabel(Op);
+AddSwitchLabel(SwitchOp,Op);
+end;
+_Statement(Op);
+SwitchOp.StatementsOps.Last.Children.Add(Op);
+while _In(symSet[2], fCurrentInputSymbol) do begin
+_Statement(Op);
+SwitchOp.StatementsOps.Last.Children.Add(Op);
 end;
 end;
 
@@ -1714,7 +1762,7 @@ end else if (fCurrentInputSymbol = _rparenSym) OR
  (fCurrentInputSymbol = _commaSym) OR
  (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(88);
+end else begin SynError(92);
 end;
 end;
 
@@ -1737,6 +1785,7 @@ procedure TZc._EmbeddedStatement (var  OutOp  :  TZcOp);var
    Op,IfOp,IfBody,ElseOp  :  TZcOp;
    ForInitOp,ForCondOp,ForIncOp,ForBodyOp  :  TZcOp;
    WhileCondOp,WhileBodyOp  :  TZcOp;
+   SwitchOp  :  TZcOpSwitch;
 
 begin
 case fCurrentInputSymbol of
@@ -1764,6 +1813,24 @@ Get;
 _EmbeddedStatement(ElseOp);
 end;
 OutOp  :=  MakeOp(zcIf,[IfOp,IfBody,ElseOp]);
+    end;
+  switchSym : begin
+Get;
+Expect(_lparenSym);
+_Expr(Op);
+Expect(_rparenSym);
+
+  SwitchOp  :=  TZcOpSwitch.Create(nil);
+  SwitchOp.ValueOp  :=  Op;
+  OutOp  :=  SwitchOp;
+
+Expect(_lbraceSym);
+while (fCurrentInputSymbol = caseSym) OR
+ (fCurrentInputSymbol = defaultSym) do begin
+SwitchOp.CaseOps.Add(  MakeOp(zcNop)  );  SwitchOp.StatementsOps.Add(  MakeOp(zcNop)  );
+_SwitchSection(SwitchOp);
+end;
+Expect(_rbraceSym);
     end;
   whileSym : begin
 Get;
@@ -1840,7 +1907,7 @@ Expect(_semicolonSym);
    end;
 
     end;
-else begin SynError(89);
+else begin SynError(93);
     end;
 end;
 end;
@@ -1855,12 +1922,14 @@ Typ  :=  zctInt;
 end else if (fCurrentInputSymbol = stringSym) then begin
 Get;
 Typ  :=  zctString;
-end else begin SynError(90);
+end else begin SynError(94);
 end;
 end;
 
 procedure TZc._Argument (var  OutOp  :  TZcOp);begin
+OutOp  :=  nil;
 _Expr(OutOp);
+if  OutOp=nil  then  ZError('Missing  argument');
 end;
 
 procedure TZc._Expr (var  OutOp  :  TZcOp);var  Op1,Op2  :  TZcOp;  Kind  :  TZcAssignType;
@@ -1888,7 +1957,7 @@ end else if (fCurrentInputSymbol = _equalSym) OR
 _AssignOp(Kind);
 _Expr(Op2);
 OutOp  :=  MakeAssign(Kind,Op1,  MakeCompatible(Op2,Op1.GetDataType)  );
-end else begin SynError(91);
+end else begin SynError(95);
 end;
 end;
 
@@ -1965,7 +2034,7 @@ _LocalVarDecl(OutOp);
 Expect(_semicolonSym);
 end else if _In(symSet[5], fCurrentInputSymbol) then begin
 _EmbeddedStatement(OutOp);
-end else begin SynError(92);
+end else begin SynError(96);
 end;
 end;
 
@@ -2118,44 +2187,39 @@ symSet[ 1, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 1, 1] := [];
 symSet[ 1, 2] := [_lparenSym-32];
 symSet[ 1, 3] := [];
-symSet[ 1, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64, 
-                    _bangSym-64];
-symSet[ 1, 5] := [];
+symSet[ 1, 4] := [_minusSym-64];
+symSet[ 1, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
 symSet[ 2, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 2, 1] := [];
 symSet[ 2, 2] := [_lparenSym-32, _lbraceSym-32, floatSym-32, intSym-32, 
                     stringSym-32, _semicolonSym-32, ifSym-32];
-symSet[ 2, 3] := [whileSym-48, forSym-48, breakSym-48, continueSym-48, 
-                    returnSym-48];
-symSet[ 2, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64, 
-                    _bangSym-64];
-symSet[ 2, 5] := [];
+symSet[ 2, 3] := [switchSym-48, whileSym-48, forSym-48, breakSym-48, 
+                    continueSym-48, returnSym-48];
+symSet[ 2, 4] := [_minusSym-64];
+symSet[ 2, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
 symSet[ 3, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 3, 1] := [];
 symSet[ 3, 2] := [_lparenSym-32, floatSym-32, intSym-32, stringSym-32];
 symSet[ 3, 3] := [];
-symSet[ 3, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64, 
-                    _bangSym-64];
-symSet[ 3, 5] := [];
+symSet[ 3, 4] := [_minusSym-64];
+symSet[ 3, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
 symSet[ 4, 0] := [];
 symSet[ 4, 1] := [];
 symSet[ 4, 2] := [_rparenSym-32, _commaSym-32, _semicolonSym-32];
-symSet[ 4, 3] := [_querySym-48, _colonSym-48, _bar_barSym-48, _and_andSym-48, 
-                    _barSym-48, _uparrowSym-48];
-symSet[ 4, 4] := [_andSym-64, _bang_equalSym-64, _equal_equalSym-64, 
-                    _lessSym-64, _greaterSym-64, _less_equalSym-64, 
-                    _greater_equalSym-64, _less_lessSym-64, 
-                    _greater_greaterSym-64, _plusSym-64, _minusSym-64, 
-                    _starSym-64, _slashSym-64];
+symSet[ 4, 3] := [_colonSym-48, _querySym-48, _bar_barSym-48];
+symSet[ 4, 4] := [_and_andSym-64, _barSym-64, _uparrowSym-64, _andSym-64, 
+                    _bang_equalSym-64, _equal_equalSym-64, _lessSym-64, 
+                    _greaterSym-64, _less_equalSym-64, _greater_equalSym-64, 
+                    _less_lessSym-64, _greater_greaterSym-64, _plusSym-64, 
+                    _minusSym-64, _starSym-64, _slashSym-64];
 symSet[ 4, 5] := [_rbrackSym-80];
 symSet[ 5, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 5, 1] := [];
 symSet[ 5, 2] := [_lparenSym-32, _lbraceSym-32, _semicolonSym-32, ifSym-32];
-symSet[ 5, 3] := [whileSym-48, forSym-48, breakSym-48, continueSym-48, 
-                    returnSym-48];
-symSet[ 5, 4] := [_minusSym-64, _plus_plusSym-64, _minus_minusSym-64, 
-                    _bangSym-64];
-symSet[ 5, 5] := [];
+symSet[ 5, 3] := [switchSym-48, whileSym-48, forSym-48, breakSym-48, 
+                    continueSym-48, returnSym-48];
+symSet[ 5, 4] := [_minusSym-64];
+symSet[ 5, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
 end; {InitSymSet}
 
 end { Zc }.    

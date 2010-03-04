@@ -53,7 +53,7 @@ var
 implementation
 
 uses Zc,Zc_Ops,Dialogs, ZApplication,
-  DesignerGUI,CocoBase;
+  DesignerGUI,CocoBase, Generics.Collections;
 
 
 //ThisC = object som är 'this'
@@ -163,6 +163,7 @@ type
     Definition : integer;
     constructor Create;
     destructor Destroy; override;
+    function IsDefined : boolean;
   end;
 
   TAssignLeaveValueStyle = (alvNone,alvPre,alvPost);
@@ -177,6 +178,7 @@ type
     CurrentFunction : TZcOpFunctionUserDefined;
     IsLibrary,IsExternalLibrary : boolean;
     BreakLabel,ContinueLabel : TZCodeLabel;
+    BreakStack,ContinueStack : TStack<TZCodeLabel>;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
     function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
@@ -191,7 +193,10 @@ type
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
     procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
     procedure MakeStringLiteralOp(const Value : string);
-    procedure SetBreakAndContinue(L1,L2 : TZCodeLabel);
+    procedure SetBreak(L : TZCodeLabel);
+    procedure SetContinue(L : TZCodeLabel);
+    procedure RestoreBreak;
+    procedure RestoreContinue;
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -559,7 +564,9 @@ var
     LContinue := NewLabel;
     DefineLabel(LLoop);
 
-    SetBreakAndContinue(LExit,LContinue);
+    SetBreak(LExit);
+    SetContinue(LContinue);
+
     if Assigned(Op.Child(1)) then
       FallTrue(Op.Child(1),LExit);
 
@@ -572,7 +579,8 @@ var
     GenJump(jsJumpAlways,LLoop);
 
     DefineLabel(LExit);
-    SetBreakAndContinue(nil,nil);
+    RestoreBreak;
+    RestoreContinue;
   end;
 
   procedure DoWhile;
@@ -585,7 +593,9 @@ var
     LLoop := NewLabel;
     DefineLabel(LLoop);
 
-    SetBreakAndContinue(LExit,LLoop);
+    SetBreak(LExit);
+    SetContinue(LLoop);
+
     if Assigned(Op.Child(0)) then
       FallTrue(Op.Child(0),LExit);
 
@@ -594,7 +604,8 @@ var
     GenJump(jsJumpAlways,LLoop);
 
     DefineLabel(LExit);
-    SetBreakAndContinue(nil,nil);
+    RestoreBreak;
+    RestoreContinue;
   end;
 
   procedure DoGenReturn;
@@ -655,6 +666,55 @@ var
     Ret.Arguments := Func.Arguments.Count;
   end;
 
+  procedure DoGenSwitch(Op : TZcOpSwitch);
+  var
+    I,J,CaseCount : integer;
+    CaseLabels : array of TZCodeLabel;
+    CaseType : TZcDataType;
+    LExit,LDefault : TZCodeLabel;
+    CaseOp,StatOp : TZcOp;
+  begin
+    //todo: verify no duplicate values
+    CaseCount := Op.CaseOps.Count;
+    CaseType := Op.ValueOp.GetDataType;
+    SetLength(CaseLabels,CaseCount);
+    LExit := NewLabel;
+    SetBreak(LExit);
+    LDefault := nil;
+    //Generate jumps
+    for I := 0 to CaseCount-1 do
+    begin
+      CaseLabels[I] := NewLabel;
+      CaseOp := Op.CaseOps[I];
+      for J := 0 to CaseOp.Children.Count - 1 do
+      begin
+        if CaseOp.Child(J)=nil then
+        begin
+          LDefault := CaseLabels[I];
+        end else
+        begin
+          GenValue(Op.ValueOp);
+          GenValue(CaseOp.Child(J));
+          GenJump(jsJumpEQ,CaseLabels[I],CaseType);
+        end;
+      end;
+    end;
+    if LDefault<>nil then
+      GenJump(jsJumpAlways,LDefault,CaseType)
+    else
+      GenJump(jsJumpAlways,LExit,CaseType);
+    //Generate statements
+    for I := 0 to CaseCount-1 do
+    begin
+      DefineLabel(CaseLabels[I]);
+      StatOp := Op.StatementsOps[I];
+      for J := 0 to StatOp.Children.Count - 1 do
+        Gen( StatOp.Child(J) );
+    end;
+    DefineLabel(LExit);
+    RestoreBreak;
+  end;
+
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -678,6 +738,7 @@ begin
         GenJump(jsJumpAlways,Self.ContinueLabel)
       else
         raise ECodeGenError.Create('Continue can only be used in loops');
+    zcSwitch : DoGenSwitch(Op as TZcOpSwitch);
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -686,17 +747,21 @@ end;
 destructor TZCodeGen.Destroy;
 begin
   Labels.Free;
+  BreakStack.Free;
+  ContinueStack.Free;
   inherited;
 end;
 
 constructor TZCodeGen.Create;
 begin
   Labels := TObjectList.Create;
+  BreakStack := TStack<TZCodeLabel>.Create;
+  ContinueStack := TStack<TZCodeLabel>.Create;
 end;
 
 procedure TZCodeGen.DefineLabel(Lbl: TZCodeLabel);
 begin
-  if Lbl.Definition<>-1 then
+  if Lbl.IsDefined then
     raise ECodeGenError.Create('Label already defined');
   Lbl.Definition := Target.Count;
 end;
@@ -704,7 +769,6 @@ end;
 function TZCodeGen.NewLabel: TZCodeLabel;
 begin
   Result := TZCodeLabel.Create;
-  Result.Definition := -1;
   Labels.Add(Result);
 end;
 
@@ -721,7 +785,7 @@ begin
     zctString:
       begin
         Op._Type := jutString;
-        if not (Kind in [jsJumpNE,jsJumpEQ]) then
+        if not (Kind in [jsJumpNE,jsJumpEQ,jsJumpAlways]) then
           raise ECodeGenError.Create('Invalid string comparison');
       end
   else
@@ -765,10 +829,26 @@ begin
   end;
 end;
 
-procedure TZCodeGen.SetBreakAndContinue(L1, L2: TZCodeLabel);
+procedure TZCodeGen.RestoreBreak;
 begin
-  Self.BreakLabel := L1;
-  Self.ContinueLabel := L2;
+  BreakLabel := BreakStack.Pop;
+end;
+
+procedure TZCodeGen.RestoreContinue;
+begin
+  ContinueLabel := ContinueStack.Pop;
+end;
+
+procedure TZCodeGen.SetBreak(L: TZCodeLabel);
+begin
+  BreakStack.Push(Self.BreakLabel);
+  Self.BreakLabel := L;
+end;
+
+procedure TZCodeGen.SetContinue(L: TZCodeLabel);
+begin
+  ContinueStack.Push(Self.ContinueLabel);
+  Self.ContinueLabel := L;
 end;
 
 //Fall igenom om false, annars hoppa till Lbl
@@ -1008,12 +1088,18 @@ end;
 constructor TZCodeLabel.Create;
 begin
   Usage := TObjectList.Create;
+  Self.Definition := -1;
 end;
 
 destructor TZCodeLabel.Destroy;
 begin
   Usage.Free;
   inherited;
+end;
+
+function TZCodeLabel.IsDefined: boolean;
+begin
+  Result := Definition<>-1;
 end;
 
 //////////////////////////
