@@ -1197,7 +1197,9 @@ begin
     begin
       CharX := StartX;
       CharY := CharY - 1.0;
-      Inc(P,2); //skip LF
+      Inc(P,1);
+      if P^=10 then
+        Inc(P);
     end;
 
     CurChar := P^;
