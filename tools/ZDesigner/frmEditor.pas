@@ -382,7 +382,7 @@ implementation
 {$R *.dfm}
 
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
-  ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
+  ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch;
@@ -450,7 +450,7 @@ begin
   ExprSynEdit.Gutter.Visible := False;
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
-  ExprSynEdit.Highlighter := TSynCppSyn.Create(Self);
+  ExprSynEdit.Highlighter := TSynZcSyn.Create(Self);
   ExprSynEdit.WantTabs := True;
   ExprSynEdit.TabWidth := 2;
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
@@ -3257,7 +3257,7 @@ var
       M := TMenuItem.Create(AddFromLibraryMenuItem);
       M.Caption := String(C.Comment);
       Parent.Add(M);
-      if C is TLogicalGroup then
+      if (C is TLogicalGroup) and (string(C.Name)='') then
         InAddItems((C as TLogicalGroup).Children,M)
       else
       begin
