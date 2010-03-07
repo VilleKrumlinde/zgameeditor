@@ -1220,7 +1220,10 @@ end;
 
 procedure TZPropertyByteEdit.OnChange(Sender: TObject);
 begin
-  Value.ByteValue := Cb.ItemIndex;
+  if Cb.Style=csDropDownList then
+    Value.ByteValue := Cb.ItemIndex
+  else
+    Value.ByteValue := StrToIntDef(Cb.Text,Value.ByteValue);
   UpdateProp;
 end;
 
@@ -1245,7 +1248,6 @@ begin
   Cb := TComboBox.Create(Self);
 
   Cb.Align := alClient;
-//  Cb.Sorted := True;
   Cb.OnChange := Self.OnChange;
   Cb.OnEnter := OnFocusControl;
   Cb.Enabled := not IsReadOnlyProp;
