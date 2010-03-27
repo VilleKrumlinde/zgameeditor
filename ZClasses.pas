@@ -36,7 +36,7 @@ type
  LogicalGroupClassId,ZBitmapClassId,
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
  BitmapLoadClassId,BitmapCombineClassId,BitmapCellsClassId,BitmapDistortClassId,BitmapPixelsClassId,
- BitmapConvolutionClassId,
+ BitmapConvolutionClassId,BitmapNoiseClassId,
  MeshClassId,ModelClassId,MaterialClassId,MaterialTextureClassId,SpawnModelClassId,RemoveModelClassId,
  MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
  MeshCombineClassId,MeshLoadClassId,MeshTransformClassId,MeshLoopClassId,

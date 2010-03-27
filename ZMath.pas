@@ -69,9 +69,8 @@ function ArcTan2(const Y, X: single): single;
 function ArcSin(const X : Single) : Single;
 function ArcCos(const X : Single) : Single;
 
-function PerlinNoise2(X,Y : single) : single;
-function PerlinNoise3(X,Y,Z : single) : single;
-//function PerlinNoise1D(const X,Persistence : single; Octaves : integer) : single;
+function PerlinNoise2(const X,Y : single) : single;
+function PerlinNoise3(const X,Y,Z : single) : single;
 
 
 function CycleToRad(const Cycles: single): single; { Radians := Cycles * 2PI }
@@ -413,7 +412,7 @@ end;
 
 //Perlin new noise for hardware
 //Approx range: -0.3 .. 0.3
-function PerlinNoiseHW(X,Y,Z : single) : single;
+function PerlinNoise3(const X,Y,Z : single) : single;
 const
   T : array[0..7] of integer = ($15,$38,$32,$2c,$0d,$13,$07,$2a);
 var
@@ -429,18 +428,18 @@ var
     Result := (N shr B) and 1;
   end;
 
-  function B(I,J,K,B : integer) : integer;
+  function B(I,J,K,B : integer) : integer; inline; //this inline increases performance of about 10%
   begin
     Result := T[ (B2(I,B) shl 2) or (B2(J,B) shl 1) or B2(K,B) ];
   end;
 
   function Shuffle(I,J,K : integer) : integer; inline;
   begin
-    Result := B(i,j,k,0) + B(j,k,i,1) + b(k,i,j,2) + b(i,j,k,3) +
-      B(j,k,i,4) + b(k,i,j,5) + B(i,j,k,6) + B(J,K,I,7);
+    Result := B(i,j,k,0) + B(j,k,i,1) + B(k,i,j,2) + B(i,j,k,3) +
+      B(j,k,i,4) + B(k,i,j,5) + B(i,j,k,6) + B(J,K,I,7);
   end;
 
-  function K(aa : integer) : single;
+  function K(AA : integer) : single;
   var
     S,P,Q,R : single;
     X,Y,Z,T,Tmp1 : single;
@@ -450,9 +449,9 @@ var
     X:= U - A[0]+S;
     Y := V-A[1] + S;
     Z:= W - A[2] +  S;
-    T := 0.6 - X*x-Y*y-Z*Z;
+    T := 0.6 - X*X-Y*Y-Z*Z;
     H := Shuffle(I+A[0],J+A[1],KK+A[2]);
-    Inc(A[aa]);
+    Inc(A[AA]);
     if T<0 then
     begin
       Result := 0;
@@ -460,9 +459,9 @@ var
     end;
     B5 := (H shr 5) and 1;
     B4 := (H shr 4) and 1;
-    b3 := (H shr 3) and 1;
+    B3 := (H shr 3) and 1;
     B2 := (H shr 2) and 1;
-    BB := h and 3;
+    BB := H and 3;
     if BB=1 then
     begin
       P := X;
@@ -543,16 +542,9 @@ begin
 end;
 
 
-function PerlinNoise2(X,Y : single) : single;
+function PerlinNoise2(const X,Y : single) : single;
 begin
-  //todo: noise tar 1.5 kb exesize
-  Result := PerlinNoiseHW(X,Y,0);
-//  Result := 0;
-end;
-
-function PerlinNoise3(X,Y,Z : single) : single;
-begin
-  Result := PerlinNoiseHW(X,Y,Z);
+  Result := PerlinNoise3(X,Y,0);
 end;
 
 
@@ -593,6 +585,7 @@ begin
     Result := Exp(Exponent * Ln(Base))
 end;
 
+//Used by Animator-component for smooth transitions
 function SmoothStep(const A,B,X : single) : single;
 var
   Xx : single;
@@ -632,6 +625,8 @@ const
   Z = 2;
   W = 3;
 
+//this function takes a matrix and "removes" a line and a column by shifting the values
+//one place
 function SubMatrix(const M : TZMatrix4f; LineSkip, ColumnSkip : integer) : TZMatrix4f;
 var I,J,K,L : integer;
 begin
@@ -655,6 +650,7 @@ begin
 
 end;
 
+//recursive function to calculate the determinant of a matrix
 function NMatrixDet(const M : TZMatrix4f; const Dimension : integer): single;
 var L : integer;
 begin
@@ -877,85 +873,5 @@ begin
   CreateScaleAndTranslationMatrix(UNIT_XYZ3 ,Position,Tmp);
   Result := MatrixMultiply(Result,Tmp);
 end;
-
-
-//http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-
-(*
-//Todo: använd olika primtal för varje oktav
-function Noise1(const X : integer) : single;
-//Returns a random value in range -1.0 .. 1.0
-var
-  N : integer;
-begin
-  //X = X + Y * 59 + Z * 137
-  //N := X * 125313;
-  N := (X shl 13) xor X;
-  Result := (1.0 - ((N * (N * N * 15731 + 789221) +
-    1376312589) and $7FFFFFFF) / 1073741824.0);
-end;
-
-function SmoothedNoise1(const X : integer) : single;
-begin
-  Result := Noise1(x)/2  +  Noise1(x-1)/4  +  Noise1(x+1)/4;
-end;
-
-function InterpolatedNoise1(const X : single) : single;
-var
-  IntX : integer;
-  FracX : single;
-  V1,V2 : single;
-begin
-  IntX := Trunc(x);
-  FracX := Frac(X);
-
-  V1 := SmoothedNoise1(IntX);
-  V2 := SmoothedNoise1(IntX + 1);
-
-  Result := SmoothStep(V1 , V2 , FracX);
-end;
-
-function PerlinNoise1D(const X,Persistence : single; Octaves : integer) : single;
-var
-  Total,Amp,Freq : single;
-  I : integer;
-begin
-  Total := 0;
-
-  for I := 0 to Octaves-1 do
-  begin
-    Amp := ZMath.Power(Persistence,I);
-    Freq := ZMath.Power(2,I);
-    Total := Total + InterpolatedNoise1(X * Freq) * Amp;
-  end;
-
-  Result := Total;
-end;
-*)
-
-(*
-var store : single;
-procedure perlintest;
-var
-  v,X,min,max,sum,avg : single;
-  i : integer;
-begin
-  x:=42; min:=10; max:=-10; sum:=0;
-  for I:=0 to 10000 do
-  begin
-    v:=perlinnoise3(x,x*3,x*17);
-    if v<min then
-      min:=v;
-    if v>max then
-      max:=v;
-    sum:=sum+v;
-    x:=x + 0.27;
-  end;
-  avg:=sum/1000;
-  store := avg+min+max;
-end;
-
-initialization
-  perlintest;*)
 
 end.

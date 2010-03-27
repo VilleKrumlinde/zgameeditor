@@ -582,13 +582,13 @@ begin
 
     gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
+
     //Måste ta negativt på cameraposition för att dess axlar ska bete sig
     //likadant som modell-koordinater (positiv y = uppåt t.ex.)
     ApplyRotation(CameraRotation);
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity;
 
     if (EventState.ClearScreenMode=0) and (CurrentRenderTarget=nil) then
     begin
