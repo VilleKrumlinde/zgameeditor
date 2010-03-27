@@ -88,7 +88,7 @@ function Min(const A,B : Integer) : Integer; overload;
 function Max(const A, B: Integer): Integer; overload;
 
 function Ceil(const X: single): single;
-function Floor(const X: single): single;
+function Floor(const X: single): integer;
 
 
 function ColorFtoB(const C : TZColorf) : integer;
@@ -515,16 +515,11 @@ var
   end;
 
 begin
-  //todo: Obs, rutinen buggar på negativa koordinater, då är den ej smooth
-{  X := Abs(X);
-  Y := Abs(Y);
-  Z := Abs(Z);}
-
   S := (X+Y+Z) * (1/3.0);
 
-  I:= Trunc(X+S);
-  J:= Trunc(Y+S);
-  KK:= Trunc(Z+S);
+  I:= Floor(X+S);
+  J:= Floor(Y+S);
+  KK:= Floor(Z+S);
 
   S := (I+J+KK) * (1/6.0);
   U := X-I+S;
@@ -812,15 +807,31 @@ begin
     Result := Result + 1.0;
 end;
 
-function Floor(const X: single): single;
-var
-  F : single;
+{function Floor(const X: single): Integer;
 begin
-  F := Frac(X);
-  Result := X-F;
-  if F<0 then
-    Result := Result - 1.0;
+  Result := Integer(Trunc(X));
+  if Frac(X) < 0 then
+    Dec(Result);
+end;}
+
+//Fastcode project: Floor32_PLR_IA32_1
+function Floor(const X: Single): integer;
+var
+  LOldCW, LNewCW: Word;
+  LResult: Integer;
+asm
+  fnstcw LOldCW
+  mov ax, 1111001111111111B
+  and ax, LOldCW
+  or ax, 0000010000000000B
+  mov LNewCW, ax
+  fldcw LNewCW
+  fld X
+  fistp LResult
+  mov eax, LResult
+  fldcw LOldCW
 end;
+
 
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa

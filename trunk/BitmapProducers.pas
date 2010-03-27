@@ -125,7 +125,7 @@ type
   public
     Octaves, StartingOctave : integer;
     MustTile, MustTileY : boolean;
-    RandomSeed : single; //RandomSeed is single so it can be used to create time-variable textures
+    ZHeight : single; //Use to create time-variable textures
     Persistence, BaseIntensity: single;
     Color : integer;
   end;
@@ -1019,7 +1019,7 @@ begin
   H := B.PixelHeight;
   PixelCount := W*H;
 
-  FloatRandSeed := Abs(Self.RandomSeed); //I want a positive seed
+  FloatRandSeed := Self.ZHeight;
 
   GetMem(Pixels,PixelCount * Sizeof(TZColorf) );
   FillChar(Pixels^,PixelCount * Sizeof(TZColorf),0);
@@ -1065,20 +1065,17 @@ begin
                          here we are making this tileable between 0 and 1,so both H and W are 1
                          I know this is looking... strange but trust me code is correct}
 
-           //The "+4096" is just a hack to be sure that the X and Y are
-           //always > 1. I don't think we are ever gonna get textures
-           //bigger than 4096 so this should do fine
            //persistance*1.2 is just to make the texture look similar
            //between tileable and not tileable noise
            //(tileable noise looked more "gray" than the non tileable one)
             TempVal := TempVal + ZMath.Power(Persistence*1.2,K-StartingOctave)*
-                ( PerlinNoise3(X*Multiplier+4096,    Y*Multiplier+4096,    Z)*
+                ( PerlinNoise3(X*Multiplier,    Y*Multiplier,    Z)*
                   (1 - X)*(1 - Y)
-                + PerlinNoise3((X-1)*Multiplier+4096,Y*Multiplier+4096,    Z)*
+                + PerlinNoise3((X-1)*Multiplier,Y*Multiplier,    Z)*
                   X*(1 - Y)
-                + PerlinNoise3((X-1)*Multiplier+4096,(Y-1)*Multiplier+4096,Z)*
+                + PerlinNoise3((X-1)*Multiplier,(Y-1)*Multiplier,Z)*
                   X*Y
-                + PerlinNoise3(X*Multiplier+4096,    (Y-1)*Multiplier+4096,Z)*
+                + PerlinNoise3(X*Multiplier,    (Y-1)*Multiplier,Z)*
                   (1 - X)*Y
                  );
 
@@ -1122,7 +1119,7 @@ begin
     List.GetLast.DefaultValue.FloatValue := 0.5;
   List.AddProperty({$IFNDEF MINIMAL}'Persistence',{$ENDIF}integer(@Persistence), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.7;
-  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ZHeight',{$ENDIF}integer(@ZHeight), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 42;
   List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['White','Red','Green','Blue']);{$endif}
