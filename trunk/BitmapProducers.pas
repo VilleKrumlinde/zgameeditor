@@ -118,6 +118,18 @@ type
     Divisor, Bias : single;
   end;
 
+  TBitmapNoise = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Octaves, StartingOctave : integer;
+    MustTile, MustTileY : boolean;
+    RandomSeed : single; //RandomSeed is single so it can be used to create time-variable textures
+    Persistence, BaseIntensity: single;
+    Color : integer;
+  end;
+
 
 implementation
 
@@ -988,6 +1000,135 @@ begin
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
+{ TBitmapNoise }
+
+procedure TBitmapNoise.ProduceOutput(Content : TContent; Stack : TZArrayList);
+var
+  B : TZBitmap;
+  H,W,I,J,K,PixelCount : integer;
+  X,Y,Z : single;
+  FloatRandSeed : single;
+  Pixels : PColorf;
+  Pixel : PColorf;
+  TempVal : single;
+  Multiplier,ValueScale,XStep,YStep : single;
+begin
+  B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
+
+  W := B.PixelWidth;
+  H := B.PixelHeight;
+  PixelCount := W*H;
+
+  FloatRandSeed := Abs(Self.RandomSeed); //I want a positive seed
+
+  GetMem(Pixels,PixelCount * Sizeof(TZColorf) );
+  FillChar(Pixels^,PixelCount * Sizeof(TZColorf),0);
+  B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
+
+  {$ifndef MINIMAL}
+  //Could this 3 checks be put in "Ifnotdef minimal"?
+  if Octaves > 12 then Octaves := 12;    //Max octaves = 12 More is overkill even at really high res.
+  If Octaves < 1 then Octaves := 1;     //Octaves and StartingOctaves must be > 0
+  if StartingOctave < 0 then StartingOctave := 0;
+  {$endif}
+
+  Pixel := Pixels;
+
+  ValueScale := (2 - 2.75*BaseIntensity + 1.5*BaseIntensity*BaseIntensity);
+  XStep := 1.0 / (W-1);
+  YStep := 1.0 / (H-1);
+  Y := 0;
+  for J := 0 to H - 1 do
+  begin
+    X := 0;
+    for I := 0 to W - 1 do
+    begin
+      TempVal:= BaseIntensity;
+
+      for K := StartingOctave to StartingOctave + Octaves - 1 do
+      begin
+        Multiplier := ZMath.Power(2,K);
+
+        //RandSeed + 3*K is for spacing a little more the noise in every K
+        Z := FloatRandSeed+3*K;
+        if MustTile then
+        begin
+
+       {http://web.archive.org/web/20070706003038/http:/www.cs.cmu.edu/~mzucker/code/perlin-noise-math-faq.html#tile
+       Ftileable(x, y) = (
+                             F(x, y) * (w - x) * (h - y) +
+                             F(x - w, y) * (x) * (h - y) +
+                             F(x - w, y - h) * (x) * (y) +
+                             F(x, y - h) * (w - x) * (y)
+                         ) / (wh)
+
+                         here we are making this tileable between 0 and 1,so both H and W are 1
+                         I know this is looking... strange but trust me code is correct}
+
+           //The "+4096" is just a hack to be sure that the X and Y are
+           //always > 1. I don't think we are ever gonna get textures
+           //bigger than 4096 so this should do fine
+           //persistance*1.2 is just to make the texture look similar
+           //between tileable and not tileable noise
+           //(tileable noise looked more "gray" than the non tileable one)
+            TempVal := TempVal + ZMath.Power(Persistence*1.2,K-StartingOctave)*
+                ( PerlinNoise3(X*Multiplier+4096,    Y*Multiplier+4096,    Z)*
+                  (1 - X)*(1 - Y)
+                + PerlinNoise3((X-1)*Multiplier+4096,Y*Multiplier+4096,    Z)*
+                  X*(1 - Y)
+                + PerlinNoise3((X-1)*Multiplier+4096,(Y-1)*Multiplier+4096,Z)*
+                  X*Y
+                + PerlinNoise3(X*Multiplier+4096,    (Y-1)*Multiplier+4096,Z)*
+                  (1 - X)*Y
+                 );
+
+        end
+        else
+        begin
+          TempVal := TempVal + ZMath.Power(Persistence,K-StartingOctave)*
+            PerlinNoise3(X*Multiplier, Y*Multiplier, Z);
+        end;
+
+      end; //Octaves
+
+      TempVal := TempVal * ValueScale;
+      if (Color = 0) or (Color = 1) then Pixel.R := TempVal;
+      if (Color = 0) or (Color = 2) then Pixel.G := TempVal;
+      if (Color = 0) or (Color = 3) then Pixel.B := TempVal;
+      Inc(Pixel);
+
+      X := X + XStep;
+    end; //X
+
+    Y := Y + YStep;
+  end; //Y
+
+  //Needed to send the bitmap to opengl
+  B.UseTextureBegin;
+
+  FreeMem(Pixels);
+
+  Stack.Push(B);
+end;
+
+procedure TBitmapNoise.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'StartingOctaves',{$ENDIF}integer(@StartingOctave), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'Octaves',{$ENDIF}integer(@Octaves), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 3;
+  List.AddProperty({$IFNDEF MINIMAL}'Offset',{$ENDIF}integer(@BaseIntensity), zptScalar);
+    List.GetLast.DefaultValue.FloatValue := 0.5;
+  List.AddProperty({$IFNDEF MINIMAL}'Persistence',{$ENDIF}integer(@Persistence), zptScalar);
+    List.GetLast.DefaultValue.FloatValue := 0.7;
+  List.AddProperty({$IFNDEF MINIMAL}'RandomSeed',{$ENDIF}integer(@RandomSeed), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 42;
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['White','Red','Green','Blue']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Tile',{$ENDIF}integer(@MustTile), zptBoolean);
+end;
+
 { TBitmapDistort }
 
 procedure TBitmapDistort.DefineProperties(List: TZPropertyList);
@@ -1263,6 +1404,8 @@ initialization
   ZClasses.Register(TBitmapConvolution,BitmapConvolutionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
+  ZClasses.Register(TBitmapNoise,BitmapNoiseClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
 
 
 
