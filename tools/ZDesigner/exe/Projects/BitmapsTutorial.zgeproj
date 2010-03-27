@@ -288,7 +288,7 @@ this.V.X*=2;
         </Model>
         <Model Name="Model2" RotationVelocity="0 0.1 0">
           <OnRender>
-            <UseMaterial Material="CellMaterial"/>
+            <UseMaterial Material="NoiseMaterial"/>
             <RenderMesh Mesh="CubeMesh1"/>
           </OnRender>
         </Model>
@@ -330,10 +330,19 @@ this.V.X*=2;
         </Bitmap>
       </Children>
     </Group>
-    <Bitmap Name="NoiseBitmap" Width="4" Height="4">
-      <Producers>
-        <BitmapNoise Offset="0.43" Persistence="0.93" RandomSeed="44.95" Color="3" Tile="255"/>
-      </Producers>
-    </Bitmap>
+    <Group>
+      <Children>
+        <Material Name="NoiseMaterial">
+          <Textures>
+            <MaterialTexture Texture="NoiseBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
+          </Textures>
+        </Material>
+        <Bitmap Name="NoiseBitmap" Width="4" Height="4" Filter="2">
+          <Producers>
+            <BitmapNoise Octaves="5" Offset="0.13" Persistence="0.85" ZHeight="51.53" Color="2" Tile="255"/>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>
