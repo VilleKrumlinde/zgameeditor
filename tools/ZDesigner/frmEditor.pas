@@ -374,7 +374,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.9';
+  AppVersion = '2.0.0b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -2513,6 +2513,8 @@ end;
 procedure TEditorForm.AppPreviewStopActionExecute(Sender: TObject);
 begin
   ZApp.DesignerStop;
+  //Call reset here to unload dll's loaded with ExternalLibrary
+  ZApp.DesignerReset;
   AppPreviewStartAction.ShortCut := 32781;
   AppPreviewStopAction.ShortCut := 0;
   AppPreviewStartAction.Enabled := True;

@@ -362,9 +362,6 @@ type
     Children : TZComponentList;
     procedure Update; override;
     procedure Execute; override;
-    {$ifndef minimal}
-    procedure DesignerReset; override;
-    {$endif}
   end;
 
 
@@ -3251,14 +3248,6 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
 end;
-
-{$ifndef minimal}
-procedure TLogicalGroup.DesignerReset;
-begin
-  inherited;
-  Children.DesignerReset;
-end;
-{$endif}
 
 procedure TLogicalGroup.Execute;
 begin
