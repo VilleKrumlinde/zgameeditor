@@ -1193,13 +1193,14 @@ begin
   P := pointer(TheText);
   while (P^<>0) do
   begin
-    while P^=13 do
+    if P^=13 then
     begin
       CharX := StartX;
       CharY := CharY - 1.0;
       Inc(P,1);
       if P^=10 then
         Inc(P);
+      Continue;
     end;
 
     CurChar := P^;

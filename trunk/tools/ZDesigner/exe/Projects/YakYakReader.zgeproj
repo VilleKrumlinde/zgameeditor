@@ -34,9 +34,8 @@ string data=Web1.ResultString;
 string display="";
 
 int linkCount=0;
-int finished=0;
 int i=0;
-while(!finished)  {
+while(1)  {
 
   //Sample string that we are trying to parse:
   //<a href="./viewtopic.php?f=2&amp;t=78879" class="topictitle">Question about English language?</a>
@@ -44,7 +43,7 @@ while(!finished)  {
 
   i=indexOf(topicmatch,data,i);
   if(i==-1) {
-    finished=1;
+    break;
   } else {
     //Extract topic id
     int k=indexOf(";t=",data,i-25) + 3;
@@ -52,7 +51,7 @@ while(!finished)  {
     Links[linkCount]=strToInt( subStr(data,k,l-k) );
     linkCount++;
     if(linkCount==Links.SizeDim1)
-      finished=1;
+      break;
 
     //Extract topic title
     k=indexOf("</a>",data,i);
@@ -78,14 +77,14 @@ Rtext1.Text=display;]]>
 Web2.Url="http://www.yakyak.org/viewtopic.php?f=2&t=" + intToStr(Links[clicked]);]]>
           </Expression>
         </ZExpression>
-        <WebOpen Name="Web2" Url="http://www.yakyak.org/viewtopic.php?f=2&amp;t=78415" InBrowser="255"/>
+        <WebOpen Name="Web2" Url="http://www.yakyak.org/viewtopic.php?f=2&amp;t=1808514482" InBrowser="255"/>
       </OnPressed>
     </KeyPress>
   </OnUpdate>
   <OnRender>
     <Condition Expression="return IsUpdating==1;">
       <OnTrue>
-        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 3.97 0" Rotate="0 0 2.2171">
+        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 3.97 0" Rotate="0 0 -3.9669">
           <Children>
             <RenderSetColor Name="Color1" Color="1 1 1 1"/>
             <RenderSprite/>

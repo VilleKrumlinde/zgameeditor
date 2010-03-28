@@ -243,7 +243,6 @@ type
     procedure Collision(Hit : TModel);
     {$ifndef minimal}
     procedure DesignerUpdate;
-    procedure DesignerReset; override;
     {$endif}
     procedure RunRenderCommands;
     constructor Create(OwnerList: TZComponentList); override;
@@ -852,12 +851,6 @@ procedure TModel.DesignerUpdate;
 begin
   //Update renderers: particlesystems, beams etc
   OnRender.Update;
-end;
-
-procedure TModel.DesignerReset;
-begin
-  inherited;
-//  OnRender.DesignerReset;
 end;
 {$endif}
 
