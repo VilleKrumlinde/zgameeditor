@@ -1035,8 +1035,8 @@ begin
   Pixel := Pixels;
 
   ValueScale := (2 - 2.75*BaseIntensity + 1.5*BaseIntensity*BaseIntensity);
-  XStep := 1.0 / (W-1);
-  YStep := 1.0 / (H-1);
+  XStep := 1.0 / W;
+  YStep := 1.0 / H;
   Y := 0;
   for J := 0 to H - 1 do
   begin

@@ -203,6 +203,10 @@ type
     HelpContentsAction: TAction;
     N13: TMenuItem;
     DetailedBuildReportMenuItem: TMenuItem;
+    EditXmlAction: TAction;
+    EditasXML1: TMenuItem;
+    ToolButton14: TToolButton;
+    ToolButton17: TToolButton;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -266,6 +270,7 @@ type
     procedure ForceRefreshActionExecute(Sender: TObject);
     procedure ExprPanelClick(Sender: TObject);
     procedure HelpContentsActionExecute(Sender: TObject);
+    procedure EditXmlActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -351,6 +356,8 @@ type
     procedure OnAppException(Sender: TObject; E: Exception);
     procedure RemoveUnusedCode(Module: TPEModule);
     procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
+    procedure ClearRoot;
+    procedure SetRoot(C: TZComponent);
   public
     Glp : TCustomGLPanel;
     Tree : TZComponentTreeView;
@@ -385,7 +392,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpre
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch;
+  SynEditTypes, SynEditSearch, frmXmlEdit;
 
 { TEditorForm }
 
@@ -566,6 +573,8 @@ begin
 end;
 
 procedure TEditorForm.OpenProject(const FileName : string);
+var
+  C : TZComponent;
 
   function InNewProject : TZApplication;
   begin
@@ -581,13 +590,13 @@ begin
 
   if (FileName='') or (not FileExists(FileName)) then
   begin //New project
-    Root := InNewProject;
+    C := InNewProject;
     SetCurrentFileName('');
   end
   else
   begin
     try
-      Self.Root := ComponentManager.LoadXmlFromFile( FileName );
+      C := ComponentManager.LoadXmlFromFile( FileName );
     except
       on E : Exception do
         begin
@@ -601,8 +610,18 @@ begin
   end;
 
   //Assign ZApp-global to current application
-  ZApp := Root as TZApplication;
+  SetRoot(C);
 
+  //Read settings last. Must be after compileall because it selects nodes which
+  //will call RefreshContent that requires to have expressions already compiled.
+  ReadProjectSettingsFromIni;
+end;
+
+procedure TEditorForm.SetRoot(C : TZComponent);
+begin
+  Self.Root := C;
+
+  ZApp := Root as TZApplication;
   Ed.RootComponent := Self.Root;
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
@@ -622,10 +641,6 @@ begin
   //Slows down opening project but without this call the walls in FpsDemo
   //become black when WallModel is selected.
   Root.Update;
-
-  //Read settings last. Must be after compileall because it selects nodes which
-  //will call RefreshContent that requires to have expressions already compiled.
-  ReadProjectSettingsFromIni;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -2036,6 +2051,58 @@ begin
     Result := True;
 end;
 
+procedure TEditorForm.EditXmlActionExecute(Sender: TObject);
+var
+  F : TXmlEditForm;
+  Sa : AnsiString;
+  Su : string;
+  Stream : TMemoryStream;
+  SymTemp : TSymbolTable;
+  C : TZComponent;
+begin
+  Stream := ComponentManager.SaveXmlToStream(Self.Root) as TMemoryStream;
+  try
+    SetLength(Sa,Stream.Size);
+    Stream.Position := 0;
+    Stream.Read(Sa[1],Stream.Size);
+  finally
+    Stream.Free;
+  end;
+  F := TXmlEditForm.Create(Self);
+  SymTemp := TSymbolTable.Create;
+  try
+    F.Memo1.Text := String(Sa);
+    repeat
+      if F.ShowModal=mrOk then
+      begin
+        Su := F.Memo1.Text;
+        SymTemp.ClearAll;
+        C := nil;
+        try
+          C := ComponentManager.LoadXmlFromString(Su,SymTemp);
+          if not (C is TZApplication) then
+            raise Exception.Create('Root component must be ZApplication');
+        except
+          on E : Exception do
+          begin
+            ShowMessage(E.ToString);
+            C.Free;
+            Continue;
+          end;
+        end;
+
+        ClearRoot;
+        SetRoot(C);
+      end;
+
+      Break;
+    until False;
+  finally
+    F.Free;
+    SymTemp.Free;
+  end;
+end;
+
 procedure TEditorForm.ExecToolAndWait(const ExeFile,ParamString : string);
 var
   SEInfo: TShellExecuteInfo;
@@ -2996,12 +3063,18 @@ begin
     end;
   end;
 
+  ClearRoot;
+end;
+
+procedure TEditorForm.ClearRoot;
+begin
+  AudioPlayer.DesignerResetMixer;
+
   SetShowNode(nil);
 
   WipeUndoHistory;
 
   LockShow := False;
-//  Selected := nil;
   SelectComponent(nil);
 
   if IsAppRunning then

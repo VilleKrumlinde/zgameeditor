@@ -334,12 +334,12 @@ this.V.X*=2;
       <Children>
         <Material Name="NoiseMaterial">
           <Textures>
-            <MaterialTexture Texture="NoiseBitmap" TextureScale="2 1 1" TextureWrapMode="1" TexCoords="1"/>
+            <MaterialTexture Texture="NoiseBitmap" TextureWrapMode="1"/>
           </Textures>
         </Material>
         <Bitmap Name="NoiseBitmap" Width="4" Height="4" Filter="2">
           <Producers>
-            <BitmapNoise Octaves="5" Offset="0.13" Persistence="0.85" ZHeight="51.53" Color="2" Tile="255"/>
+            <BitmapNoise Offset="0.13" Persistence="0.85" ZHeight="51.53" Tile="255"/>
           </Producers>
         </Bitmap>
       </Children>
