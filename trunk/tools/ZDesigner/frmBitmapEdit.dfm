@@ -9,15 +9,15 @@ inherited BitmapEditFrame: TBitmapEditFrame
     Top = 0
     Width = 4
     Height = 354
-    Align = alRight
-    ExplicitLeft = 233
+    ExplicitLeft = 253
+    ExplicitTop = 3
   end
   object LeftPanel: TGroupBox
     Left = 0
     Top = 0
     Width = 249
     Height = 354
-    Align = alClient
+    Align = alLeft
     Caption = 'Graph'
     TabOrder = 0
     object ScrollBox1: TScrollBox
@@ -48,7 +48,7 @@ inherited BitmapEditFrame: TBitmapEditFrame
     Top = 0
     Width = 185
     Height = 354
-    Align = alRight
+    Align = alClient
     Caption = 'Preview'
     TabOrder = 1
     object PreviewPanel: TPanel
@@ -59,7 +59,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitHeight = 319
       object Panel1: TPanel
         Left = 0
         Top = 315

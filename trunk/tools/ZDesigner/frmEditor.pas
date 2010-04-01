@@ -2068,7 +2068,9 @@ begin
   finally
     Stream.Free;
   end;
-  F := TXmlEditForm.Create(Self);
+  if not Assigned(XmlEditForm) then
+    XmlEditForm := TXmlEditForm.Create(Self);
+  F := XmlEditForm;
   SymTemp := TSymbolTable.Create;
   try
     F.Memo1.Text := String(Sa);
@@ -2098,7 +2100,6 @@ begin
       Break;
     until False;
   finally
-    F.Free;
     SymTemp.Free;
   end;
 end;
