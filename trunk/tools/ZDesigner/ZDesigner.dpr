@@ -78,7 +78,8 @@ uses
   SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
   frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame},
   frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
-  ZPlatform in '..\..\ZPlatform.pas';
+  ZPlatform in '..\..\ZPlatform.pas',
+  frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm};
 
 {$R *.res}
 
