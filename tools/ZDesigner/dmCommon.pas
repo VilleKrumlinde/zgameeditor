@@ -77,9 +77,20 @@ var
 begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
-    Syn := Application.MainForm.ActiveControl as TSynEdit;
+    Syn := Screen.ActiveControl as TSynEdit;
   FindDialog1.Tag := Integer(Syn);
   FindDialog1.Execute(Syn.Handle);
+end;
+
+procedure TCommonModule.ReplaceActionExecute(Sender: TObject);
+var
+  Syn : TSynEdit;
+begin
+  Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
+  if Syn=nil then
+    Syn := Screen.ActiveControl as TSynEdit;
+  ReplaceDialog1.Tag := Integer(Syn);
+  ReplaceDialog1.Execute(Syn.Handle);
 end;
 
 procedure TCommonModule.FindDialog1Find(Sender: TObject);
@@ -88,7 +99,7 @@ var
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(FindDialog1.Tag);
-  if Application.MainForm.ActiveControl<>Syn then
+  if Screen.ActiveControl<>Syn then
   begin
     FindDialog1.CloseDialog;
     Exit;
@@ -105,24 +116,13 @@ begin
   Syn.SearchReplace(FindDialog1.FindText,'',Opt);
 end;
 
-procedure TCommonModule.ReplaceActionExecute(Sender: TObject);
-var
-  Syn : TSynEdit;
-begin
-  Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
-  if Syn=nil then
-    Syn := Application.MainForm.ActiveControl as TSynEdit;
-  ReplaceDialog1.Tag := Integer(Syn);
-  ReplaceDialog1.Execute(Syn.Handle);
-end;
-
 procedure TCommonModule.ReplaceDialog1Replace(Sender: TObject);
 var
   Syn : TSynEdit;
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(ReplaceDialog1.Tag);
-  if Application.MainForm.ActiveControl<>Syn then
+  if Screen.ActiveControl<>Syn then
   begin
     ReplaceDialog1.CloseDialog;
     Exit;

@@ -207,6 +207,12 @@ type
     EditasXML1: TMenuItem;
     ToolButton14: TToolButton;
     ToolButton17: TToolButton;
+    Edit1: TMenuItem;
+    Undodelete2: TMenuItem;
+    N14: TMenuItem;
+    N15: TMenuItem;
+    Copy2: TMenuItem;
+    Pastecomponent1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -2073,11 +2079,11 @@ begin
   F := XmlEditForm;
   SymTemp := TSymbolTable.Create;
   try
-    F.Memo1.Text := String(Sa);
+    F.SynEdit.Text := String(Sa);
     repeat
       if F.ShowModal=mrOk then
       begin
-        Su := F.Memo1.Text;
+        Su := F.SynEdit.Text;
         SymTemp.ClearAll;
         C := nil;
         try

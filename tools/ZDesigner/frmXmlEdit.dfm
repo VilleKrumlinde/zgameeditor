@@ -1,7 +1,7 @@
 object XmlEditForm: TXmlEditForm
   Left = 0
   Top = 0
-  Caption = 'XmlEditForm'
+  Caption = 'Edit the project in XML-format'
   ClientHeight = 487
   ClientWidth = 642
   Color = clBtnFace
@@ -11,23 +11,19 @@ object XmlEditForm: TXmlEditForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
   DesignSize = (
     642
     487)
   PixelsPerInch = 96
   TextHeight = 13
-  object Memo1: TMemo
+  object Panel1: TPanel
     Left = 8
     Top = 8
     Width = 626
     Height = 436
     Anchors = [akLeft, akTop, akRight, akBottom]
-    Lines.Strings = (
-      'Memo1')
     TabOrder = 0
-    WordWrap = False
-    ExplicitWidth = 624
-    ExplicitHeight = 441
   end
   object OkButton: TButton
     Left = 477
@@ -35,12 +31,10 @@ object XmlEditForm: TXmlEditForm
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
-    Caption = 'OK'
+    Caption = '&OK'
     Default = True
     ModalResult = 1
     TabOrder = 1
-    ExplicitLeft = 475
-    ExplicitTop = 459
   end
   object Button2: TButton
     Left = 559
@@ -49,10 +43,8 @@ object XmlEditForm: TXmlEditForm
     Height = 25
     Anchors = [akRight, akBottom]
     Cancel = True
-    Caption = 'Cancel'
+    Caption = '&Cancel'
     ModalResult = 2
     TabOrder = 2
-    ExplicitLeft = 557
-    ExplicitTop = 459
   end
 end
