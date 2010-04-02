@@ -1114,7 +1114,7 @@ object EditorForm: TEditorForm
     end
     object EditXmlAction: TAction
       Category = 'Edit'
-      Caption = 'Edit as XML'
+      Caption = 'Edit project as XML'
       Hint = 'Edit as XML'
       ImageIndex = 13
       ShortCut = 16461
@@ -1183,7 +1183,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010E0008018C001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00080190001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1732,17 +1732,12 @@ object EditorForm: TEditorForm
       end
       object ReopenMenuItem: TMenuItem
         Caption = 'Reopen'
-        object TMenuItem
-        end
       end
       object NewWindow1: TMenuItem
         Action = FileNewWindowAction
       end
       object N8: TMenuItem
         Caption = '-'
-      end
-      object EditasXML1: TMenuItem
-        Action = EditXmlAction
       end
       object Import3dsAction1: TMenuItem
         Action = Import3dsAction
@@ -1766,6 +1761,27 @@ object EditorForm: TEditorForm
       end
       object Exit1: TMenuItem
         Action = FileExitAction
+      end
+    end
+    object Edit1: TMenuItem
+      Caption = 'Edit'
+      object Undodelete2: TMenuItem
+        Action = UndoDeleteAction
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object Copy2: TMenuItem
+        Action = CopyComponentAction
+      end
+      object Pastecomponent1: TMenuItem
+        Action = PasteComponentAction
+      end
+      object N15: TMenuItem
+        Caption = '-'
+      end
+      object EditasXML1: TMenuItem
+        Action = EditXmlAction
       end
     end
     object Run1: TMenuItem
@@ -1853,7 +1869,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E00780010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E007C0010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6
