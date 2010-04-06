@@ -518,14 +518,14 @@ var
   I,J : integer;
   Model : TModel;
   List : TZArrayList;
-  Matrix{,TmpM} : TZMatrix4f;
+  Matrix,TmpM : TZMatrix4f;
   V : TZVector3f;
 begin
   DepthList.Clear;
 
   glGetFloatv(GL_PROJECTION_MATRIX, @Matrix);
-//  glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
-//  Matrix := MatrixMultiply(TmpM,Matrix);
+  glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
+  Matrix := MatrixMultiply(TmpM,Matrix);
 
   for I := 0 to Models.Cats.Count-1 do
   begin

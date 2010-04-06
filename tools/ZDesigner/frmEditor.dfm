@@ -2,7 +2,7 @@ object EditorForm: TEditorForm
   Left = 0
   Top = 0
   Caption = 'ZDesigner'
-  ClientHeight = 765
+  ClientHeight = 825
   ClientWidth = 1092
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -24,7 +24,7 @@ object EditorForm: TEditorForm
     Left = 280
     Top = 22
     Width = 4
-    Height = 743
+    Height = 803
     ExplicitLeft = 433
     ExplicitTop = 30
     ExplicitHeight = 537
@@ -33,32 +33,35 @@ object EditorForm: TEditorForm
     Left = 0
     Top = 22
     Width = 280
-    Height = 743
+    Height = 803
     Align = alLeft
     BevelOuter = bvNone
     Constraints.MinWidth = 100
     TabOrder = 0
+    ExplicitHeight = 743
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
       Width = 280
-      Height = 743
+      Height = 803
       Align = alClient
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
+      ExplicitHeight = 743
     end
   end
   object ViewerPanel: TPanel
     Left = 284
     Top = 22
     Width = 808
-    Height = 743
+    Height = 803
     Align = alClient
     TabOrder = 1
+    ExplicitHeight = 743
     object Splitter1: TSplitter
       Left = 1
-      Top = 582
+      Top = 642
       Width = 806
       Height = 4
       Cursor = crVSplit
@@ -68,12 +71,13 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 1
-      Top = 586
+      Top = 646
       Width = 806
       Height = 156
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitTop = 586
       object Splitter4: TSplitter
         Left = 632
         Top = 0
@@ -254,15 +258,16 @@ object EditorForm: TEditorForm
       Left = 1
       Top = 1
       Width = 806
-      Height = 581
+      Height = 641
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
+      ExplicitHeight = 581
       object Splitter3: TSplitter
         Left = 291
         Top = 0
         Width = 4
-        Height = 581
+        Height = 641
         ExplicitLeft = 100
         ExplicitHeight = 574
       end
@@ -270,22 +275,25 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 291
-        Height = 581
+        Height = 641
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
+        ExplicitHeight = 581
       end
       object ViewerPageControl: TPageControl
         Left = 295
         Top = 0
         Width = 511
-        Height = 581
+        Height = 641
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
+        ExplicitHeight = 581
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitHeight = 571
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -547,11 +555,12 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
+          ExplicitHeight = 571
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
             Width = 503
-            Height = 571
+            Height = 631
             Align = alClient
             ParentShowHint = False
             ShowHint = True
@@ -561,7 +570,7 @@ object EditorForm: TEditorForm
             ExplicitHeight = 571
             inherited PageControl1: TPageControl
               Width = 503
-              Height = 571
+              Height = 631
               ExplicitWidth = 503
               ExplicitHeight = 571
               inherited TabSheet1: TTabSheet
@@ -645,11 +654,12 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
+          ExplicitHeight = 571
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
             Width = 503
-            Height = 571
+            Height = 631
             Align = alClient
             TabOrder = 0
             TabStop = True
@@ -661,47 +671,49 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitHeight = 571
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
           TabVisible = False
+          ExplicitHeight = 571
           inline BitmapEditFrame1: TBitmapEditFrame
             Left = 0
             Top = 0
             Width = 503
-            Height = 571
+            Height = 631
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 503
             ExplicitHeight = 571
             inherited Splitter1: TSplitter
               Left = 314
-              Height = 571
+              Height = 631
               ExplicitLeft = 223
               ExplicitHeight = 463
             end
             inherited LeftPanel: TGroupBox
               Width = 314
-              Height = 571
+              Height = 631
               ExplicitWidth = 314
               ExplicitHeight = 571
               inherited ScrollBox1: TScrollBox
                 Width = 310
-                Height = 554
+                Height = 614
                 ExplicitWidth = 310
                 ExplicitHeight = 554
               end
             end
             inherited RightPanel: TGroupBox
               Left = 318
-              Height = 571
+              Height = 631
               ExplicitLeft = 318
               ExplicitHeight = 571
               inherited PreviewPanel: TPanel
-                Height = 554
+                Height = 614
                 ExplicitHeight = 554
                 inherited Panel1: TPanel
-                  Top = 532
+                  Top = 592
                   ExplicitTop = 532
                 end
               end
@@ -711,29 +723,30 @@ object EditorForm: TEditorForm
         object ViewerMeshTabSheet: TTabSheet
           ImageIndex = 5
           TabVisible = False
+          ExplicitHeight = 571
           inline MeshEditFrame1: TMeshEditFrame
             Left = 0
             Top = 0
             Width = 503
-            Height = 571
+            Height = 631
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 503
             ExplicitHeight = 571
             inherited Splitter1: TSplitter
               Left = 214
-              Height = 571
+              Height = 631
               ExplicitLeft = 223
               ExplicitHeight = 483
             end
             inherited LeftPanel: TGroupBox
               Width = 214
-              Height = 571
+              Height = 631
               ExplicitWidth = 214
               ExplicitHeight = 571
               inherited ScrollBox1: TScrollBox
                 Width = 210
-                Height = 554
+                Height = 614
                 ExplicitWidth = 210
                 ExplicitHeight = 554
               end
@@ -741,7 +754,7 @@ object EditorForm: TEditorForm
             inherited RightPanel: TGroupBox
               Left = 218
               Width = 285
-              Height = 571
+              Height = 631
               ExplicitLeft = 218
               ExplicitWidth = 285
               ExplicitHeight = 571
@@ -754,7 +767,7 @@ object EditorForm: TEditorForm
                 ExplicitWidth = 281
               end
               inherited Panel1: TPanel
-                Top = 547
+                Top = 607
                 Width = 281
                 ExplicitLeft = 2
                 ExplicitTop = 547
@@ -762,7 +775,7 @@ object EditorForm: TEditorForm
               end
               inherited PreviewPanel: TPanel
                 Width = 281
-                Height = 498
+                Height = 558
                 ExplicitLeft = 2
                 ExplicitTop = 49
                 ExplicitWidth = 281
@@ -995,7 +1008,7 @@ object EditorForm: TEditorForm
     end
     object EditCopyAction: TEditCopy
       Category = 'Edit'
-      Caption = '&Copy'
+      Caption = '&Copy component'
       Enabled = False
       Hint = 'Copy|Copies the selection and puts it on the Clipboard'
       ImageIndex = 6
@@ -1122,6 +1135,7 @@ object EditorForm: TEditorForm
     end
   end
   object TreePopupMenu: TPopupMenu
+    Images = ActionImageList
     Left = 168
     Top = 40
     object Addcomponent2: TMenuItem
@@ -1153,9 +1167,11 @@ object EditorForm: TEditorForm
     end
     object Copy1: TMenuItem
       Action = CopyComponentAction
+      ImageIndex = 6
     end
     object Paste1: TMenuItem
       Action = PasteComponentAction
+      ImageIndex = 7
     end
     object Moveup1: TMenuItem
       Action = MoveUpComponentAction
@@ -1772,10 +1788,10 @@ object EditorForm: TEditorForm
         Caption = '-'
       end
       object Copy2: TMenuItem
-        Action = CopyComponentAction
+        Action = EditCopyAction
       end
       object Pastecomponent1: TMenuItem
-        Action = PasteComponentAction
+        Action = EditPasteAction
       end
       object N15: TMenuItem
         Caption = '-'

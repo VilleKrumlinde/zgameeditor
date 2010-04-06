@@ -635,6 +635,7 @@ begin
   Glp.Visible := True;
   Glp.Parent:= OldGlParent;
   Glp.ParentChanged;
+  Glp.ForceInitGL;
   if DesignerPreviewProducer<>nil then
   begin
     DesignerPreviewProducer := nil;
