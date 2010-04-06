@@ -57,6 +57,7 @@ uses
     procedure ResetLayerType (Value: TPFDLayerTypes);
     function SetDCPixelFormat(DC: HDC):Boolean;
     procedure NewPaint;
+    procedure CreateRenderContext;
   protected
    procedure CreateParams(var Params: TCreateParams); override;
    procedure WMEraseBackground( var msg:TWMEraseBkgnd ); message WM_ERASEBKGND;
@@ -384,6 +385,19 @@ procedure TCustomGLPanel.NewGLPrep;
 //   if Assigned(OnResize) then OnResize(self);
    end;
 
+
+procedure TCustomGLPanel.CreateRenderContext;
+begin
+  // Create a rendering context.
+  SetDCPixelFormat(Canvas.Handle);
+  if hrc=0 then
+    hrc := wglCreateContext(Canvas.Handle);
+  if hrc = 0 then
+    FFirstTimeInFlag := True
+  else
+    ActivateRenderingContext(Canvas.Handle,hrc);
+end;
+
 procedure TCustomGLPanel.NewPaint;
 //   var
 //      ps : TPaintStruct;
@@ -401,14 +415,7 @@ procedure TCustomGLPanel.NewPaint;
       if FFirstTimeInFlag then
       begin
         FFirstTimeInFlag := False;
-        // Create a rendering context.
-        SetDCPixelFormat(Canvas.Handle);
-        if hrc=0 then
-          hrc := wglCreateContext(Canvas.Handle);
-        if hrc = 0 then
-          FFirstTimeInFlag := True
-        else
-          ActivateRenderingContext(Canvas.Handle,hrc);
+        CreateRenderContext;
       end;
 
       if not InitCalled then

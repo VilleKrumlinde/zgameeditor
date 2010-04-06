@@ -2101,6 +2101,7 @@ begin
 
         ClearRoot;
         SetRoot(C);
+        SetFileChanged(True);
       end;
 
       Break;
