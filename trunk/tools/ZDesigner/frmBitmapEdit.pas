@@ -46,7 +46,6 @@ type
     GraphSize : TPoint;
     Glp : TCustomGLPanel;
     OldGlParent : TWinControl;
-    //PreviewThread : TThread;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -108,15 +107,6 @@ type
     procedure ExtractNodes; override;
     procedure ApplyNodes; override;
   end;
-
-{  TPreviewThread = class(TThread)
-  private
-    CurMsg : string;
-    procedure DoMsg;
-    procedure Status(const Msg : string);
-  protected
-    procedure Execute; override;
-  end;}
 
 { TBitmapNode }
 
@@ -372,16 +362,12 @@ begin
   InitPopupMenu;
 
 //  PreviewPanel.DoubleBuffered := True;
-{  PreviewThread := TPreviewThread.Create(True);
-  PreviewThread.FreeOnTerminate := True;
-  PreviewThread.Resume;}
 end;
 
 
 destructor TBitmapEditFrame.Destroy;
 begin
   Nodes.Free;
-//  PreviewThread.Terminate;
   inherited;
 end;
 
@@ -481,6 +467,7 @@ begin
     //Clicking a already selected node makes it the preview-node
     DesignerPreviewProducer := TBitmapNode(SelectedNode).Producer;
     Bitmap.Change;
+    Glp.Invalidate;
   end;
 
   SelectedNode := Node;
@@ -624,6 +611,7 @@ begin
   Glp.Visible := not DisablePreviewCheckBox.Checked;
   OldGlParent := Glp.Parent;
   Glp.Parent := PreviewPanel;
+  Glp.Tag := 1;
   Glp.ParentChanged;
 
   RepaintPage;
@@ -635,6 +623,7 @@ begin
   Glp.Visible := True;
   Glp.Parent:= OldGlParent;
   Glp.ParentChanged;
+  Glp.Tag := 0;
   Glp.ForceInitGL;
   if DesignerPreviewProducer<>nil then
   begin
@@ -918,27 +907,6 @@ begin
   RepaintPage;
   Glp.Invalidate;
 end;
-
-{ TPreviewThread }
-
-(*procedure TPreviewThread.Execute;
-begin
-  while not Terminated do
-  begin
-    Sleep(100);
-  end;
-end;
-
-procedure TPreviewThread.Status(const Msg: string);
-begin
-  CurMsg := Msg;
-  Synchronize(Self,DoMsg);
-end;
-
-procedure TPreviewThread.DoMsg;
-begin
-  GetLog(Self.ClassName).Write(CurMsg);
-end;*)
 
 function ZColorToColor(C : TZColorf) : TColor;
 var
