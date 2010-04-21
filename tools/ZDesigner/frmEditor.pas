@@ -210,9 +210,6 @@ type
     Edit1: TMenuItem;
     Undodelete2: TMenuItem;
     N14: TMenuItem;
-    N15: TMenuItem;
-    Copy2: TMenuItem;
-    Pastecomponent1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -646,6 +643,7 @@ begin
   //Initial tree update. Must be after compileall.
   //Slows down opening project but without this call the walls in FpsDemo
   //become black when WallModel is selected.
+  ZApp.DesignerSetUpView;
   Root.Update;
 end;
 
@@ -1210,6 +1208,7 @@ begin
     Tree.ZSelected.ComponentList.Change
   else if Assigned(Tree.ZSelected.Component) then
     Tree.ZSelected.Component.Change;
+  Glp.Invalidate;
 end;
 
 procedure TEditorForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -1627,7 +1626,7 @@ end;
 procedure TEditorForm.Timer1Timer(Sender: TObject);
 begin
   //Only draw when topmost
-  if GetActiveWindow=Handle then
+  if (GetActiveWindow=Handle) and (Glp.Tag=0) then
     Glp.Invalidate;
 end;
 
