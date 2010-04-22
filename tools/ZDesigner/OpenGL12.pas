@@ -5090,7 +5090,7 @@ var
   {$EXTERNALSYM glGetPointerv}
   glGetPolygonStipple: procedure(mask: PGLubyte); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetPolygonStipple}
-  glGetString: function(name: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
+  glGetString: function(name: TGLEnum): PAnsiChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetString}
   glGetTexEnvfv: procedure(target, pname: TGLEnum; params: PGLfloat); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetTexEnvfv}
@@ -5620,7 +5620,7 @@ var
   // GL utility functions and procedures
   gluErrorString: function(errCode: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluErrorString}
-  gluGetString: function(name: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
+  gluGetString: function(name: TGLEnum): PAnsiChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluGetString}
   gluOrtho2D: procedure(left, right, bottom, top: TGLdouble); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluOrtho2D}
@@ -5774,7 +5774,7 @@ var
   {$EXTERNALSYM wglUseFontOutlines}
 
   // ARB wgl extensions
-  wglGetExtensionsStringARB: function(DC: HDC): PChar; stdcall;
+  wglGetExtensionsStringARB: function(DC: HDC): PAnsiChar; stdcall;
   {$EXTERNALSYM wglGetExtensionsStringARB}
   wglGetPixelFormatAttribivARB: function(DC: HDC; iPixelFormat, iLayerPlane: Integer; nAttributes: UINT;
     const piAttributes: PInteger; piValues : PInteger) : BOOL; stdcall;
@@ -7985,7 +7985,7 @@ begin
     gluEndTrim := GetProcAddress(Handle, 'gluEndTrim'); 
     gluErrorString := GetProcAddress(Handle, 'gluErrorString');
     gluGetNurbsProperty := GetProcAddress(Handle, 'gluGetNurbsProperty'); 
-    gluGetString := GetProcAddress(Handle, 'gluGetString'); 
+    gluGetString := GetProcAddress(Handle, 'gluGetString');
     gluGetTessProperty := GetProcAddress(Handle, 'gluGetTessProperty'); 
     gluLoadSamplingMatrices := GetProcAddress(Handle, 'gluLoadSamplingMatrices'); 
     gluLookAt := GetProcAddress(Handle, 'gluLookAt'); 
@@ -9256,19 +9256,16 @@ end;
 procedure ReadImplementationProperties;
  
 var
-  Buffer: string; 
+  Buffer: string;
   MajorVersion,
   MinorVersion: Integer;
 
   //--------------- local function --------------------------------------------
 
    function CheckExtension(const Extension: string): Boolean;
-
    // Checks if the given Extension string is in Buffer.
-
    var
      ExtPos: Integer;
-
    begin
      // First find the position of the extension string as substring in Buffer.
      ExtPos := Pos(Extension, Buffer);
@@ -9277,49 +9274,49 @@ var
      if Result then
        Result := ((ExtPos + Length(Extension) - 1) = Length(Buffer)) or
          not CharInSet(Buffer[ExtPos + Length(Extension)],['_', 'A'..'Z', 'a'..'z']);
-   end; 
+   end;
 
   //--------------- end local function ----------------------------------------
 
 begin
   // determine version of implementation
   // GL
-  Buffer := glGetString(GL_VERSION); 
-  TrimAndSplitVersionString(Buffer, Majorversion, MinorVersion); 
-  GL_VERSION_1_0 := True; 
-  GL_VERSION_1_1 := False; 
-  GL_VERSION_1_2 := False; 
+  Buffer := string(glGetString(GL_VERSION));
+  TrimAndSplitVersionString(String(Buffer), Majorversion, MinorVersion);
+  GL_VERSION_1_0 := True;
+  GL_VERSION_1_1 := False;
+  GL_VERSION_1_2 := False;
   if MajorVersion > 0 then
   begin
     if MinorVersion > 0 then
     begin
-      GL_VERSION_1_1 := True; 
+      GL_VERSION_1_1 := True;
       if MinorVersion > 1 then
         GL_VERSION_1_2 := True;
-    end; 
-  end; 
+    end;
+  end;
 
   // GLU
-  GLU_VERSION_1_1 := False; 
-  GLU_VERSION_1_2 := False; 
+  GLU_VERSION_1_1 := False;
+  GLU_VERSION_1_2 := False;
   GLU_VERSION_1_3 := False; 
   // gluGetString is valid for version 1.1 or later
   if Assigned(gluGetString) then
   begin
-    Buffer := gluGetString(GLU_VERSION); 
-    TrimAndSplitVersionString(Buffer, Majorversion, MinorVersion); 
+    Buffer := string(gluGetString(GLU_VERSION));
+    TrimAndSplitVersionString(String(Buffer), Majorversion, MinorVersion);
     GLU_VERSION_1_1 := True; 
     if MinorVersion > 1 then
     begin
       GLU_VERSION_1_2 := True; 
       if MinorVersion > 2 then
         GLU_VERSION_1_3 := True; 
-    end; 
-  end; 
+    end;
+  end;
 
   // check supported extensions
   // GL
-  Buffer := glGetString(GL_EXTENSIONS); 
+  Buffer := string(glGetString(GL_EXTENSIONS));
   GL_3DFX_multisample :=CheckExtension('GL_3DFX_multisample');
   GL_3DFX_tbuffer := CheckExtension('GL_3DFX_tbuffer'); 
   GL_3DFX_texture_compression_FXT1 := CheckExtension('GL_3DFX_texture_compression_FXT1'); 
@@ -9333,7 +9330,7 @@ begin
   GL_ARB_texture_compression := CheckExtension('GL_ARB_texture_compression'); 
   GL_ARB_texture_cube_map := CheckExtension('GL_ARB_texture_cube_map'); 
   GL_ARB_transpose_matrix := CheckExtension('GL_ARB_transpose_matrix'); 
-  GL_ARB_vertex_blend := CheckExtension('GL_ARB_vertex_blend'); 
+  GL_ARB_vertex_blend := CheckExtension('GL_ARB_vertex_blend');
 
   GL_EXT_422_pixels := CheckExtension('GL_EXT_422_pixels'); 
   GL_EXT_abgr := CheckExtension('GL_EXT_abgr'); 
@@ -9342,13 +9339,13 @@ begin
   GL_EXT_blend_func_separate := CheckExtension('GL_EXT_blend_func_separate'); 
   GL_EXT_blend_logic_op := CheckExtension('GL_EXT_blend_logic_op'); 
   GL_EXT_blend_minmax := CheckExtension('GL_EXT_blend_minmax'); 
-  GL_EXT_blend_subtract := CheckExtension('GL_EXT_blend_subtract'); 
+  GL_EXT_blend_subtract := CheckExtension('GL_EXT_blend_subtract');
   GL_EXT_clip_volume_hint := CheckExtension('GL_EXT_clip_volume_hint'); 
   GL_EXT_cmyka := CheckExtension('GL_EXT_cmyka'); 
   GL_EXT_color_subtable := CheckExtension('GL_EXT_color_subtable');
   GL_EXT_compiled_vertex_array := CheckExtension('GL_EXT_compiled_vertex_array'); 
   GL_EXT_convolution := CheckExtension('GL_EXT_convolution'); 
-  GL_EXT_coordinate_frame := CheckExtension('GL_EXT_coordinate_frame'); 
+  GL_EXT_coordinate_frame := CheckExtension('GL_EXT_coordinate_frame');
   GL_EXT_copy_texture := CheckExtension('GL_EXT_copy_texture'); 
   GL_EXT_cull_vertex := CheckExtension('GL_EXT_cull_vertex'); 
   GL_EXT_draw_range_elements := CheckExtension('GL_EXT_draw_range_elements'); 
@@ -9374,7 +9371,7 @@ begin
   GL_EXT_separate_specular_color := CheckExtension('GL_EXT_separate_specular_color'); 
   GL_EXT_shared_texture_palette := CheckExtension('GL_EXT_shared_texture_palette'); 
   GL_EXT_stencil_wrap := CheckExtension('GL_EXT_stencil_wrap'); 
-  GL_EXT_subtexture := CheckExtension('GL_EXT_subtexture'); 
+  GL_EXT_subtexture := CheckExtension('GL_EXT_subtexture');
   GL_EXT_texture_color_table := CheckExtension('GL_EXT_texture_color_table'); 
   GL_EXT_texture_compression_s3tc := CheckExtension('GL_EXT_texture_compression_s3tc'); 
   GL_EXT_texture_cube_map := CheckExtension('GL_EXT_texture_cube_map'); 
@@ -9383,13 +9380,13 @@ begin
   GL_EXT_texture_env_combine := CheckExtension('GL_EXT_texture_env_combine'); 
   GL_EXT_texture_filter_anisotropic := CheckExtension('GL_EXT_texture_filter_anisotropic'); 
   GL_EXT_texture_lod_bias := CheckExtension('GL_EXT_texture_lod_bias'); 
-  GL_EXT_texture_object := CheckExtension('GL_EXT_texture_object'); 
+  GL_EXT_texture_object := CheckExtension('GL_EXT_texture_object');
   GL_EXT_texture_perturb_normal := CheckExtension('GL_EXT_texture_perturb_normal'); 
   GL_EXT_texture3D := CheckExtension('GL_EXT_texture3D'); 
   GL_EXT_vertex_array := CheckExtension('GL_EXT_vertex_array'); 
   GL_EXT_vertex_weighting := CheckExtension('GL_EXT_vertex_weighting'); 
 
-  GL_FfdMaskSGIX := CheckExtension('GL_FfdMaskSGIX'); 
+  GL_FfdMaskSGIX := CheckExtension('GL_FfdMaskSGIX');
   GL_HP_convolution_border_modes := CheckExtension('GL_HP_convolution_border_modes'); 
   GL_HP_image_transform := CheckExtension('GL_HP_image_transform'); 
   GL_HP_occlusion_test := CheckExtension('GL_HP_occlusion_test'); 
@@ -9415,7 +9412,7 @@ begin
   GL_NV_light_max_exponent := CheckExtension('GL_NV_light_max_exponent'); 
   GL_NV_register_combiners := CheckExtension('GL_NV_register_combiners'); 
   GL_NV_texgen_emboss := CheckExtension('GL_NV_texgen_emboss'); 
-  GL_NV_texgen_reflection := CheckExtension('GL_NV_texgen_reflection'); 
+  GL_NV_texgen_reflection := CheckExtension('GL_NV_texgen_reflection');
   GL_NV_texture_env_combine4 := CheckExtension('GL_NV_texture_env_combine4'); 
   GL_NV_vertex_array_range := CheckExtension('GL_NV_vertex_array_range'); 
   GL_NV_vertex_program := CheckExtension('GL_NV_vertex_program'); 
@@ -9430,7 +9427,7 @@ begin
   GL_SGI_depth_pass_instrument := CheckExtension('GL_SGI_depth_pass_instrument'); 
 
   GL_SGIS_detail_texture := CheckExtension('GL_SGIS_detail_texture'); 
-  GL_SGIS_fog_function := CheckExtension('GL_SGIS_fog_function'); 
+  GL_SGIS_fog_function := CheckExtension('GL_SGIS_fog_function');
   GL_SGIS_generate_mipmap := CheckExtension('GL_SGIS_generate_mipmap'); 
   GL_SGIS_multisample := CheckExtension('GL_SGIS_multisample'); 
   GL_SGIS_multitexture := CheckExtension('GL_SGIS_multitexture'); 
@@ -9465,13 +9462,13 @@ begin
   GL_SGIX_ir_instrument1 := CheckExtension('GL_SGIX_ir_instrument1'); 
   GL_SGIX_list_priority := CheckExtension('GL_SGIX_list_priority'); 
   GL_SGIX_pixel_texture := CheckExtension('GL_SGIX_pixel_texture'); 
-  GL_SGIX_pixel_tiles := CheckExtension('GL_SGIX_pixel_tiles'); 
+  GL_SGIX_pixel_tiles := CheckExtension('GL_SGIX_pixel_tiles');
   GL_SGIX_polynomial_ffd := CheckExtension('GL_SGIX_polynomial_ffd'); 
   GL_SGIX_reference_plane := CheckExtension('GL_SGIX_reference_plane'); 
   GL_SGIX_resample := CheckExtension('GL_SGIX_resample'); 
   GL_SGIX_shadow := CheckExtension('GL_SGIX_shadow'); 
   GL_SGIX_shadow_ambient := CheckExtension('GL_SGIX_shadow_ambient');
-  GL_SGIX_sprite := CheckExtension('GL_SGIX_sprite'); 
+  GL_SGIX_sprite := CheckExtension('GL_SGIX_sprite');
   GL_SGIX_subsample := CheckExtension('GL_SGIX_subsample'); 
   GL_SGIX_tag_sample_buffer := CheckExtension('GL_SGIX_tag_sample_buffer'); 
   GL_SGIX_texture_add_env := CheckExtension('GL_SGIX_texture_add_env'); 
@@ -9498,7 +9495,7 @@ begin
   WGL_ARB_pixel_format := CheckExtension('WGL_ARB_pixel_format');
 
   // GLU
-  Buffer := gluGetString(GLU_EXTENSIONS); 
+  Buffer := string(gluGetString(GLU_EXTENSIONS));
   GLU_EXT_TEXTURE := CheckExtension('GLU_EXT_TEXTURE'); 
   GLU_EXT_object_space_tess := CheckExtension('GLU_EXT_object_space_tess'); 
   GLU_EXT_nurbs_tessellator := CheckExtension('GLU_EXT_nurbs_tessellator');
@@ -9506,7 +9503,7 @@ begin
   // ARB wgl extensions
   if Assigned(wglGetExtensionsStringARB) then
   begin
-    Buffer := wglGetExtensionsStringARB(wglGetCurrentDC);
+    Buffer := string(wglGetExtensionsStringARB(wglGetCurrentDC));
     WGL_ARB_extensions_string := CheckExtension('WGL_ARB_extensions_string');
     WGL_ARB_pixel_format := CheckExtension('WGL_ARB_pixel_format');
   end

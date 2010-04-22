@@ -613,7 +613,6 @@ begin
   Glp.Visible := not DisablePreviewCheckBox.Checked;
   OldGlParent := Glp.Parent;
   Glp.Parent := PreviewPanel;
-  Glp.ParentChanged;
 
   RepaintPage;
   Glp.Invalidate;
@@ -623,7 +622,6 @@ procedure TMeshEditFrame.OnEditorClose;
 begin
   Glp.Visible := True;
   Glp.Parent:= OldGlParent;
-  Glp.ParentChanged;
   if DesignerPreviewProducer<>nil then
   begin
     DesignerPreviewProducer := nil;

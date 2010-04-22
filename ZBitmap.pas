@@ -197,8 +197,10 @@ begin
     glDisable(GL_LIGHTING);
     glDisable(GL_CULL_FACE);
     //Clear
-    //glClearColor(1,0,0,0);
-    //glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    {$ifndef minimal}
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    {$endif}
     glViewport(0, 0, PixelWidth, PixelHeight);
 end;
 
