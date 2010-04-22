@@ -77,9 +77,6 @@ inherited MeshEditFrame: TMeshEditFrame
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 2
-      ExplicitLeft = 0
-      ExplicitTop = 315
-      ExplicitWidth = 181
       object SaveMeshToFileButton: TButton
         Left = 104
         Top = 1
@@ -107,9 +104,6 @@ inherited MeshEditFrame: TMeshEditFrame
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitHeight = 22
     end
   end
   object PopupMenu1: TPopupMenu

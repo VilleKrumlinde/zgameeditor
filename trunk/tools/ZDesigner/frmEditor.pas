@@ -435,7 +435,6 @@ begin
   Glp := TCustomGLPanel.Create(Self);
   Glp.Align := alClient;
   Glp.Parent := ViewerGlTabSheet;
-  Glp.ParentChanged;
   Glp.OnGLDraw := Self.OnGlDraw;
   //Byt ut windowproc mot vår platform_windowproc
   OldGlWindowProc := Glp.WindowProc;
@@ -643,7 +642,7 @@ begin
   //Initial tree update. Must be after compileall.
   //Slows down opening project but without this call the walls in FpsDemo
   //become black when WallModel is selected.
-  ZApp.DesignerSetUpView;
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   Root.Update;
 end;
 

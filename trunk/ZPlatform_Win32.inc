@@ -1058,7 +1058,11 @@ begin
 
   if DirectSoundCreate(nil, @DS ,nil)<>0 then
     ZHalt('dsound failed');
+  {$ifdef minimal}
   Err:=DS.Vtbl.SetCooperativeLevel(DS,H_Wnd,DSSCL_PRIORITY);
+  {$else} //H_Wnd is not constant in designer
+  Err:=DS.Vtbl.SetCooperativeLevel(DS,GetForegroundWindow,DSSCL_PRIORITY);
+  {$endif}
   if Err<>0 then
     ZHalt('dsound.setcooplevel failed');
 

@@ -612,7 +612,6 @@ begin
   OldGlParent := Glp.Parent;
   Glp.Parent := PreviewPanel;
   Glp.Tag := 1;
-  Glp.ParentChanged;
 
   RepaintPage;
   Glp.Invalidate;
@@ -622,9 +621,8 @@ procedure TBitmapEditFrame.OnEditorClose;
 begin
   Glp.Visible := True;
   Glp.Parent:= OldGlParent;
-  Glp.ParentChanged;
   Glp.Tag := 0;
-  Glp.ForceInitGL;
+//  Glp.ForceInitGL;
   if DesignerPreviewProducer<>nil then
   begin
     DesignerPreviewProducer := nil;
