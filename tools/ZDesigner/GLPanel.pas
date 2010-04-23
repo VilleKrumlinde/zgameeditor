@@ -1,17 +1,4 @@
 unit GLPanel;
-/////////////////////////////////////////////////////////////////////////
-// Industrial Software Solutions
-// 4205 Hideaway
-// Arlington, Texas 76017
-// Mitchell E. James
-// May 18, 1996
-// mjames@cyberhighway.net
-// http://www.cyberhighway.net/~mjames/
-
-// note: When running under the Delphi 2.0 debugger the Windows GL subsystem errors out randomly.
-// note: The Windows GL subsystem seems to work fine running Delphi GL executables.
-// note: I haven't been running with a palette. Not sure if that works.
-
 
 interface
 
@@ -20,13 +7,13 @@ uses
   OpenGL12, ExtCtrls;
 
 type
-  TCustomGLPanel = class(TCustomPanel)
+  TGLPanel = class(TCustomPanel)
   private
-    hrc: HGLRC;
+    Hrc: HGLRC;
     InitCalled: Boolean;
     FOnGLDraw: TNotifyEvent;
     FOnGLInit: TNotifyEvent;
-    function SetDCPixelFormat(DC: HDC):Boolean;
+    procedure SetDCPixelFormat(const DC: HDC);
     procedure CreateRenderContext;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
@@ -49,71 +36,30 @@ type
     property OnMouseMove;
     property OnMouseWheel;
     procedure ForceInitGL;
-  published
   end;
 
-  TGLPanel = class(TCustomGLPanel)
-  private
-  protected
-  public
-  published
-    property Align;
-//    property Alignment;
-//    property BevelInner;
-//    property BevelOuter;
-//    property BevelWidth;
-//    property BorderWidth;
-//    property BorderStyle;
-    property DragCursor;
-    property DragMode;
-    property Enabled;
-//    property Caption;
-//    property Color;
-//    property Ctl3D;
-//    property Font;
-//    property ParentColor;
-//    property ParentCtl3D;
-//    property ParentFont;
-    property ParentShowHint;
-    property PopupMenu;
-    property ShowHint;
-    property TabOrder;
-    property TabStop;
-    property Visible;
-    property OnClick;
-    property OnDblClick;
-    property OnDragDrop;
-    property OnDragOver;
-    property OnEndDrag;
-    property OnEnter;
-    property OnExit;
-    property OnMouseDown;
-    property OnMouseMove;
-    property OnMouseUp;
-    property OnResize;
-    property OnStartDrag;
-    property OnGLDraw;
-    property OnGLInit;
-  end;
 
 implementation
 
 uses ZLog, ZPlatform;
 
-procedure TCustomGLPanel.CreateParams(var Params: TCreateParams);
+procedure TGLPanel.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   Params.WindowClass.style := Params.WindowClass.style or CS_OWNDC;
 end;
 
-function TCustomGLPanel.SetDCPixelFormat( DC: HDC):Boolean;
+procedure TGLPanel.SetDCPixelFormat(const DC: HDC);
 var
   i: Integer;
   nPixelFormat: Integer;
   pfd: TPixelFormatDescriptor;
   TmpDC : HDC;
 begin
-  Result := True;
+  nPixelFormat := GetPixelFormat(DC);
+  if nPixelFormat<>0 then
+    Exit;
+
   FillChar(pfd, SizeOf(pfd), 0);
   with pfd do
   begin
@@ -128,28 +74,22 @@ begin
     iLayerType:= PFD_MAIN_PLANE;    // Layer type
     cAlphaBits := 8;
   end;
-  nPixelFormat := GetPixelFormat(DC);
-  if nPixelFormat = 0 then
-  begin
-    //Ville: Kopiera pixeldepth från skrivbord
-    TmpDC := GetDC(0);
-    I := GetDeviceCaps(TmpDC, BITSPIXEL);
-    ReleaseDC(0, TmpDC);
-    if I in [16,24,32] then
-      pfd.cColorBits := I;
-    if pfd.cColorBits<>32 then
-      pfd.cAlphaBits := 0;
-    nPixelFormat := ChoosePixelFormat(DC, @pfd);
-    if not SetPixelFormat(DC, nPixelFormat, @pfd) then
-    begin
-      Result := False;
-      ZLog.GetLog(Self.ClassName).Write('Error SetPixelFormat Nr:'+IntToStr(GetLastError)+' nPFrmt:'+IntToStr(nPixelFormat));
-    end;
-  end;
+
+  //Use the same pixeldepth as the desktop
+  TmpDC := GetDC(0);
+  I := GetDeviceCaps(TmpDC, BITSPIXEL);
+  ReleaseDC(0, TmpDC);
+  if I in [16,24,32] then
+    pfd.cColorBits := I;
+  if pfd.cColorBits<>32 then
+    pfd.cAlphaBits := 0;
+  nPixelFormat := ChoosePixelFormat(DC, @pfd);
+  if not SetPixelFormat(DC, nPixelFormat, @pfd) then
+    raise Exception.Create('Error SetPixelFormat Nr:'+IntToStr(GetLastError)+' nPFrmt:'+IntToStr(nPixelFormat));
 end;
 
 
-procedure TCustomGLPanel.CreateRenderContext;
+procedure TGLPanel.CreateRenderContext;
 begin
   // Create a rendering context.
   SetDCPixelFormat(Canvas.Handle);
@@ -157,14 +97,14 @@ begin
     hrc := wglCreateContext(Canvas.Handle);
   if hrc <> 0 then
   begin
-    ActivateRenderingContext(Canvas.Handle,hrc);
+    wglMakeCurrent(Canvas.Handle,hrc);
     glViewport(0,0,ClientWidth,ClientHeight);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   end;
 end;
 
 
-procedure TCustomGLPanel.Paint;
+procedure TGLPanel.Paint;
 begin
   // Draw the scene.
   if (not InitCalled) and (Self.Handle<>0) then
@@ -175,8 +115,9 @@ begin
   end;
 
 //      BeginPaint(Handle, ps);
-  if (wglGetCurrentContext <> hrc) and (hrc<>0) then
-    ActivateRenderingContext(Canvas.Handle,hrc);
+//  if (wglGetCurrentContext <> hrc) and (hrc<>0) then
+//    wglMakeCurrent(Canvas.Handle,hrc);
+    //ActivateRenderingContext(Canvas.Handle,hrc);
 
   if Assigned(OnGLDraw) then
     OnGLDraw(Self);
@@ -186,52 +127,55 @@ begin
 end;
 
 
-constructor TCustomGLPanel.Create(AOwner: TComponent);
+constructor TGLPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   Locked := True;
   Color := clBlack;
 end;
 
-destructor TCustomGLPanel.Destroy;
+destructor TGLPanel.Destroy;
 begin
   // Clean up and terminate.
+  wglMakeCurrent(0,0);
   inherited;
-  if HasActiveContext then
-    DeactivateRenderingContext;
   if hrc <> 0 then
-    DestroyRenderingContext(hrc);
+    wglDeleteContext(HRC)
 end;
 
-procedure TCustomGLPanel.ForceInitGL;
+procedure TGLPanel.ForceInitGL;
 begin
+  HandleNeeded;
   Paint;
 end;
 
-procedure TCustomGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);
+procedure TGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);
 begin
   Msg.Result := 0
 end;
 
-procedure TCustomGLPanel.WMGETDLGCODE(var Msg: TMessage);
+procedure TGLPanel.WMGETDLGCODE(var Msg: TMessage);
 begin
   //Needed to detect arrow keys in zzdc-runtime
   Msg.Result := DLGC_WANTARROWS;
 end;
 
-procedure TCustomGLPanel.SetParent(AParent: TWinControl);
+procedure TGLPanel.SetParent(AParent: TWinControl);
 begin
   inherited SetParent(AParent);
+  if AParent<>nil then
+    ForceInitGL;
 end;
 
-procedure TCustomGLPanel.DestroyHandle;
+procedure TGLPanel.DestroyHandle;
 begin
-  if HasActiveContext then
-    DeactivateRenderingContext;
+//  if HasActiveContext then
+//    DeactivateRenderingContext;
+  wglMakeCurrent(0,0);
   inherited;
 end;
 
-procedure TCustomGLPanel.CreateHandle;
+procedure TGLPanel.CreateHandle;
 begin
   inherited;
   if Self.Parent<>nil then

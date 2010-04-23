@@ -164,7 +164,7 @@ begin
       //Must be set to something, otherwise copy from framebuffer won't work
       Size := H*W*4;
       GetMem(P, Size);
-      FillChar(P^,Size,0);
+      FillChar(P^,Size,$ff);
       glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
       FreeMem(P);
     end;
