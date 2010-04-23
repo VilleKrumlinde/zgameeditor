@@ -47,7 +47,7 @@ type
     DragPos,DragDst : TPoint;
     DragLinkIndex : integer;
     GraphSize : TPoint;
-    Glp : TCustomGLPanel;
+    Glp : TGLPanel;
     OldGlParent : TWinControl;
     procedure RepaintPage;
     procedure ReadFromComponent;

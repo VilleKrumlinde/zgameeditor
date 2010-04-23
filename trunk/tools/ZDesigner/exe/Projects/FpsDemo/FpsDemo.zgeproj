@@ -35,7 +35,7 @@ CurrentModel.Position.Z=TileCurZ;]]>
             <MeshBox/>
           </Producers>
         </Mesh>
-        <Material Name="WallMaterial" Color="0.4 0.82 0.34 1">
+        <Material Name="WallMaterial">
           <Textures>
             <MaterialTexture Texture="WallTexture" TextureWrapMode="1" TexCoords="1"/>
           </Textures>

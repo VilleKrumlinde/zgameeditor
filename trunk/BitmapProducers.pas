@@ -161,7 +161,7 @@ begin
   begin
     //Clear if no source
     glClearColor(0.0,0,0,0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   end else
   begin
     //Fill screen with argument first

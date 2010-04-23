@@ -362,7 +362,7 @@ type
     procedure ClearRoot;
     procedure SetRoot(C: TZComponent);
   public
-    Glp : TCustomGLPanel;
+    Glp : TGLPanel;
     Tree : TZComponentTreeView;
     SymTab : TSymbolTable;
     procedure SetFileChanged(Value : Boolean);
@@ -432,9 +432,8 @@ begin
   Tree.MultiSelect := True;
   Tree.MultiSelectStyle := [msControlSelect, msShiftSelect, msSiblingOnly];
 
-  Glp := TCustomGLPanel.Create(Self);
+  Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
-  Glp.Parent := ViewerGlTabSheet;
   Glp.OnGLDraw := Self.OnGlDraw;
   //Byt ut windowproc mot vår platform_windowproc
   OldGlWindowProc := Glp.WindowProc;
@@ -444,6 +443,7 @@ begin
   Glp.OnMouseMove := OnGLPanelMouseMove;
   Glp.TabStop := True;
   Glp.OnGlInit := Self.OnGlInit;
+  Glp.Parent := ViewerGlTabSheet;
   Glp.ForceInitGL;
   //Mousewheel måste sättas på formuläret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
