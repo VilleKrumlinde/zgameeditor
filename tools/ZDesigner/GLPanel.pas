@@ -114,16 +114,13 @@ begin
       OnGlInit(Self);
   end;
 
-//      BeginPaint(Handle, ps);
-//  if (wglGetCurrentContext <> hrc) and (hrc<>0) then
-//    wglMakeCurrent(Canvas.Handle,hrc);
-    //ActivateRenderingContext(Canvas.Handle,hrc);
+  if (wglGetCurrentContext <> hrc) and (hrc<>0) then
+    wglMakeCurrent(Canvas.Handle,hrc);
 
   if Assigned(OnGLDraw) then
     OnGLDraw(Self);
 
   SwapBuffers(Canvas.Handle);
-//      EndPaint(Handle, ps);
 end;
 
 
@@ -169,8 +166,7 @@ end;
 
 procedure TGLPanel.DestroyHandle;
 begin
-//  if HasActiveContext then
-//    DeactivateRenderingContext;
+  glFinish();
   wglMakeCurrent(0,0);
   inherited;
 end;
