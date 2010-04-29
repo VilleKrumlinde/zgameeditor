@@ -15,10 +15,6 @@ inherited SoundEditFrame: TSoundEditFrame
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Sound'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         793
         569)
@@ -184,9 +180,10 @@ inherited SoundEditFrame: TSoundEditFrame
           Height = 21
           ItemIndex = 0
           TabOrder = 0
-          Text = 'aasaadaafaagaahaajaak'
+          Text = 'k dfh fda afk hfd  fh k f a a   '
           OnKeyPress = NotesEditKeyPress
           Items.Strings = (
+            'k dfh fda afk hfd  fh k f a a   '
             'aasaadaafaagaahaajaak')
         end
         object AutoPlayCheckBox: TCheckBox
@@ -222,13 +219,12 @@ inherited SoundEditFrame: TSoundEditFrame
           Width = 82
           Height = 21
           Style = csDropDownList
-          ItemIndex = 0
           TabOrder = 0
-          Text = 'Square'
           Items.Strings = (
             'Square'
             'Saw'
-            'Noise')
+            'Noise'
+            'Sine')
         end
         object Osc1PWTrackBar: TTrackBar
           Left = 95
@@ -380,9 +376,9 @@ inherited SoundEditFrame: TSoundEditFrame
       object DumpButton: TButton
         Left = 544
         Top = 256
-        Width = 177
+        Width = 104
         Height = 25
-        Caption = 'Dump to raw c:\temp\dump.dat'
+        Caption = 'Save as raw-file'
         TabOrder = 10
         OnClick = DumpButtonClick
       end

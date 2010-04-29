@@ -49,7 +49,7 @@ type
   TSoundOutputUnit = smallint;
   PSoundOutputUnit = ^TSoundOutputUnit;
 
-  TWaveform = (wfSquare,wfSaw,wfNoise);
+  TWaveform = (wfSquare,wfSaw,wfNoise,wfSine);
 
   //All calculations of frequency is based on midi notenumbers
   //This way relative frequency is constant over all octaves
@@ -541,6 +541,10 @@ begin
             //Value1 := IntRandom div (1 shl (MixToOutputBits));
             Value1 := VoiceLowestValue + Round(System.Random*(VoiceFullRange-1));
             Dec(W1, High(TSoundMixUnit) div 2 );
+          end;
+        wfSine :
+          begin
+            Value1 := VoiceLowestValue + Trunc( (1.0 + Sin(W1 * (1/High(integer)* PI*2) )) * (VoiceFullRange div 2-1));
           end;
       end;
     end

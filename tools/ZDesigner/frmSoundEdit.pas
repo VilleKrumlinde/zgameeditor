@@ -464,18 +464,6 @@ begin
   SoundGraphPaintBox.Canvas.Draw(0,0,SoundGraphBitmap);
 end;
 
-procedure TSoundEditFrame.DumpButtonClick(Sender: TObject);
-var
-  F : file;
-  FileName : string;
-begin
-  FileName := 'c:\temp\dump.dat';
-  AssignFile(F,FileName);
-  Rewrite(F,1);
-  BlockWrite(F,SoundGraphBuffer,SoundGraphMaxLength*SizeOf(TSoundOutputUnit) );
-  CloseFile(F);
-end;
-
 procedure TSoundEditFrame.VolumeTrackBarChange(Sender: TObject);
 begin
   Sound.Voice.Volume := (Sender as TTrackBar).Position * 1 / (Sender as TTrackBar).Max;
@@ -484,6 +472,30 @@ end;
 procedure TSoundEditFrame.PanTrackBarChange(Sender: TObject);
 begin
   Sound.Voice.Pan := (Sender as TTrackBar).Position * 1 / (Sender as TTrackBar).Max;
+end;
+
+var
+  SaveDialog : TSaveDialog;
+
+procedure TSoundEditFrame.DumpButtonClick(Sender: TObject);
+var
+  F : file;
+begin
+  if SaveDialog=nil then
+  begin
+    SaveDialog := TSaveDialog.Create(Self);
+    SaveDialog.Filter := 'RAW audio file (*.raw)|*.raw';
+    SaveDialog.DefaultExt := '*.raw';
+  end;
+  if not SaveDialog.Execute then
+    Exit;
+  AssignFile(F,SaveDialog.FileName);
+  try
+    Rewrite(F,1);
+    BlockWrite(F,SoundGraphBuffer,SoundGraphMaxLength*SizeOf(TSoundOutputUnit) );
+  finally
+    CloseFile(F);
+  end;
 end;
 
 initialization
