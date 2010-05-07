@@ -5,6 +5,15 @@
     <DefineVariable Name="Temp2"/>
     <SpawnModel Model="Model2"/>
   </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[int tmp=App.MouseWheelDelta;
+App.CameraPosition.Y +=tmp*0.1;
+centerMouse();]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
   <OnRender>
     <UseMaterial Material="Mat1"/>
     <RenderTransform Scale="2 2 1"/>

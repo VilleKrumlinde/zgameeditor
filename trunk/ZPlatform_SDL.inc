@@ -113,10 +113,13 @@ begin
             //Button 1: Left mouse button
             //Button 2: Middle mouse button
             //Button 3: Right mouse button
+            //4=wheel up, 5=wheel down
             case E.Button.button of
               1 : Keys[ Ord('{') ] := E.type_=SDL_MOUSEBUTTONDOWN;
               2 : Keys[ Ord('|') ] := E.type_=SDL_MOUSEBUTTONDOWN;
               3 : Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+              4 : ZApp.MouseWheelDelta := 1;
+              5 : ZApp.MouseWheelDelta := -1;
             end;
           end;
       end;

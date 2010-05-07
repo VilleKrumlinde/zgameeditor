@@ -117,6 +117,7 @@ type
     CurrentRenderPass,RenderPasses : integer;
     WindowHandle : integer;
     ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
+    MouseWheelDelta : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
@@ -415,6 +416,8 @@ begin
     Self.OldCaption := Self.Caption;
     Platform_SetWindowCaption(Self.Caption);
   end;
+  //Reset wheel delta (it is set from platform)
+  MouseWheelDelta := 0;
 end;
 
 procedure TZApplication.Run;
@@ -704,6 +707,9 @@ begin
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@EventState.MousePosition), zptVector3f);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}integer(@MouseWheelDelta), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@EventState.ClearScreenMode), zptInteger);

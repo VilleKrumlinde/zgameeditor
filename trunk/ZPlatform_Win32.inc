@@ -86,6 +86,7 @@ const
   WM_ACTIVATE         = $0006;
   WM_ACTIVATEAPP      = $001C;
   WM_NCACTIVATE       = $0086;
+  WM_MOUSEWHEEL       = $020A;
 
   BM_SETCHECK = $00F1;
   CBN_SELCHANGE  = 1;
@@ -152,6 +153,10 @@ begin
     WM_MBUTTONDOWN,WM_MBUTTONUP :
       //Use '|' as key for middle mouse button
       Keys[ Ord('|') ] := Msg=WM_MBUTTONDOWN;
+    WM_MOUSEWHEEL :
+      begin
+        ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
+      end;
 {$ifdef minimal}
     else
       Result := DefWindowProc(hWnd, Msg, wParam, lParam);    // Default result if nothing happens
