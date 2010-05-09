@@ -1454,12 +1454,14 @@ procedure TSetModelState.Execute;
 var
   OldState : TModelState;
 begin
-  {$ifndef minimal}if (State=nil) or (CurrentModel=nil) then Exit;{$endif}
+  if CurrentModel=nil then
+    Exit;
   OldState := CurrentModel.CurrentState;
   CurrentModel.CurrentState := State;
   if OldState<>nil then
     OldState.OnLeave.ExecuteCommands;
-  State.OnStart.ExecuteCommands;
+  if State<>nil then
+    State.OnStart.ExecuteCommands;
 end;
 
 {$ifndef minimal}
