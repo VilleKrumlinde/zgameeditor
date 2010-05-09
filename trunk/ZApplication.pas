@@ -885,12 +885,12 @@ procedure TSetAppState.Execute;
 var
   OldState : TStateBase;
 begin
-  {$ifndef minimal}if state=nil then exit;{$endif}
   OldState := ZApp.CurrentState;
   ZApp.CurrentState := State;
   if OldState<>nil then
     OldState.OnLeave.ExecuteCommands;
-  State.OnStart.ExecuteCommands;
+  if State<>nil then
+    State.OnStart.ExecuteCommands;
 end;
 
 {$ifndef minimal}

@@ -91,7 +91,7 @@ implementation
 uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,ExprEdit,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions;
+  frmArrayEdit, ZExpressions, pngimage;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
