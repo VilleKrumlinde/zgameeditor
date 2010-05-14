@@ -906,6 +906,8 @@ procedure TZComponentTreeView.MyCustomDrawItem(Sender: TCustomTreeView;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
+  else if Assigned((Node as TZComponentTreeNode).Component) and (Node as TZComponentTreeNode).Component.DesignDisable then
+    Canvas.Font.Style := [fsStrikeOut]
   else
     Canvas.Font.Style := [];
   DefaultDraw:=True;
@@ -1324,6 +1326,8 @@ begin
   Text := String(Component.GetDisplayName);
   if Component.Comment<>'' then
     Text := Text + ' "' + String(Component.Comment) + '"';
+  if Component.DesignDisable then
+    Text := Text + ' (disabled)';
 end;
 
 { TZBinaryPropEdit }

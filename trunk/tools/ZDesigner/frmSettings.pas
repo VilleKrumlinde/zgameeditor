@@ -116,8 +116,9 @@ type
       P,A : string;
     end;
 const
-  Presets : array[0..4] of TPreset = (
+  Presets : array[0..5] of TPreset = (
 (P:'{$toolpath}upx.exe'; A:'{$exename}'),
+(P:'{$toolpath}upx.exe'; A:'--lzma {$exename}'),
 (P:'{$toolpath}upx.exe'; A:'--best {$exename}'),
 (P:'{$toolpath}upx.exe'; A:'--brute {$exename}'),
 (P:'{$toolpath}kkrunchy.exe'; A:'{$exename}'),
@@ -132,6 +133,7 @@ end;
 procedure TSettingsForm.ReadSettings;
 begin
   ShellCheck.Checked := IsRegZgeExt;
+  ShellChanged := False;
 end;
 
 procedure TSettingsForm.SaveSettings;

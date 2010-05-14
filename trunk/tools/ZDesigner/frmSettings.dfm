@@ -110,6 +110,7 @@ object SettingsForm: TSettingsForm
       OnChange = PackerPresetComboChange
       Items.Strings = (
         'Upx default'
+        'Upx lzma'
         'Upx best'
         'Upx brute'
         'kkrunchy default'
