@@ -325,6 +325,7 @@ type
   public
     {$ifndef minimal}
     Name,Comment : TPropString;
+    DesignDisable : boolean;
     {$endif}
     OwnerList : TZComponentList;
     constructor Create(OwnerList: TZComponentList); virtual;
@@ -891,6 +892,9 @@ begin
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   List.AddProperty('Comment', integer(@Comment), zptString);
+    List.SetDesignerProperty;
+    List.GetLast.NeedRefreshNodeName := True;
+  List.AddProperty('DesignDisable', integer(@DesignDisable), zptBoolean);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   {$ENDIF}
@@ -3160,6 +3164,10 @@ begin
   for I := 0 to Count-1 do
   begin
     C := TZComponent(Self[I]);
+    {$ifndef minimal}
+    if C.DesignDisable then
+      Continue;
+    {$endif}
     if C is TCommand then
       TCommand(C).Execute
     else
@@ -3194,9 +3202,17 @@ end;
 procedure TZComponentList.Update;
 var
   I : integer;
+  C : TZComponent;
 begin
   for I := 0 to Count-1 do
-    TZComponent(Self[I]).Update;
+  begin
+    C := TZComponent(Self[I]);
+    {$ifndef minimal}
+    if C.DesignDisable then
+      Continue;
+    {$endif}
+    C.Update;
+  end;
 end;
 
 procedure TZComponentList.Clear;
