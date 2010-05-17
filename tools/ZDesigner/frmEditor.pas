@@ -210,6 +210,8 @@ type
     Edit1: TMenuItem;
     Undodelete2: TMenuItem;
     N14: TMenuItem;
+    DisableComponentAction: TAction;
+    Disablecomponent1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -274,6 +276,8 @@ type
     procedure ExprPanelClick(Sender: TObject);
     procedure HelpContentsActionExecute(Sender: TObject);
     procedure EditXmlActionExecute(Sender: TObject);
+    procedure DisableComponentActionExecute(Sender: TObject);
+    procedure DisableComponentActionUpdate(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -1956,7 +1960,7 @@ begin
     while I<Tree.Items.Count do
     begin
       Node := Tree.Items[I] as TZComponentTreeNode;
-      if Assigned(Node.Component) then
+      if Assigned(Node.Component) and (not Node.Component.DesignDisable) then
       begin
         C := Node.Component;
         PropList := C.GetProperties;
@@ -3780,5 +3784,22 @@ begin
 
 end;
 
+procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);
+begin
+  Tree.ZSelected.Component.DesignDisable := not Tree.ZSelected.Component.DesignDisable;
+  Tree.ZSelected.RefreshNodeName;
+end;
+
+procedure TEditorForm.DisableComponentActionUpdate(Sender: TObject);
+begin
+  (Sender as TAction).Enabled :=
+    (ActiveControl = Tree) and
+    Assigned(Tree.Selected) and
+    Assigned(Tree.ZSelected.Component) and
+    (Tree.ZSelected.Component<>Root) and
+    (not (Tree.ZSelected.Component is TZApplication));
+  if (Sender as TAction).Enabled then
+    (Sender as TAction).Checked := Tree.ZSelected.Component.DesignDisable;
+end;
 
 end.

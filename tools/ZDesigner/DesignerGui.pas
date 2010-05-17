@@ -1093,6 +1093,8 @@ begin
     for I := 0 to All.Count-1 do
     begin
       C := TZComponent(All[I]);
+      if C.DesignDisable then
+        Continue;
       PropList := C.GetProperties;
       for J := 0 to PropList.Count-1 do
       begin
@@ -1332,22 +1334,28 @@ end;
 
 { TZBinaryPropEdit }
 
-procedure GraphicToBitmap(Pic :TPicture);
+function GraphicToBitmap(Pic :TPicture) : Graphics.TBitmap;
 var
   Bmp: Graphics.TBitmap;
 begin
   Bmp := Graphics.TBitmap.Create;
-  Bmp.PixelFormat := pf24bit;
-  Bmp.Width := Pic.Graphic.Width;
-  Bmp.Height := Pic.Graphic.Height;
-  Bmp.Canvas.Draw(0,0,Pic.Graphic);
-  Pic.Assign(Bmp);
-  Bmp.Free;
+  if Pic.Graphic is TPngImage then
+    (Pic.Graphic as TPngImage).AssignTo(Bmp)
+  else
+  begin
+    Bmp.PixelFormat := pf24bit;
+    Bmp.Width := Pic.Graphic.Width;
+    Bmp.Height := Pic.Graphic.Height;
+    Bmp.Canvas.Draw(0,0,Pic.Graphic);
+  end;
+  //Pic.Assign(Bmp);
+  Result := Bmp;
 end;
 
 procedure TZBinaryPropEdit.GetPictureStream(const Filename : string; Stream : TMemoryStream);
 var
   Pic : TPicture;
+  OwnBm : boolean;
   Bm : Graphics.TBitmap;
   X,Y : integer;
   R,G,B,A : byte;
@@ -1363,9 +1371,15 @@ begin
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
 //    if Pic.Graphic is TOleGraphic then
     if not (Pic.Graphic is Graphics.TBitmap) then
-      GraphicToBitmap(Pic);
-
-    Bm := Pic.Bitmap;
+    begin
+      Bm := GraphicToBitmap(Pic);
+      OwnBm := True;
+    end
+    else
+    begin
+      Bm := Pic.Bitmap;
+      OwnBm := False;
+    end;
 
     if (Self.Component.GetOwner is TZBitmap) then
     begin
@@ -1382,10 +1396,10 @@ begin
       end;
     end;
 
+    UseAlpha := Bm.PixelFormat=pf32bit;
+
     if not (Bm.PixelFormat in [pf24Bit,pf32Bit]) then
       Bm.PixelFormat := pf24Bit;
-
-    UseAlpha := Bm.PixelFormat=pf32bit;
 
     if UseAlpha then
       ZLog.GetLog(Self.ClassName).Write('Alpha-channel present');
@@ -1403,7 +1417,7 @@ begin
         G := PPixel.rgbGreen;
         R := PPixel.rgbRed;
 
-        if UseAlpha then
+        if Bm.PixelFormat=pf32bit then
           Inc(PPixel)
         else
           Inc(integer(PPixel),3);
@@ -1425,7 +1439,8 @@ begin
       (Self.Component as TBitmapFromFile).Transparency := btNone;
 
   finally
-//    Bm.Free;
+    if OwnBm then
+      Bm.Free;
     Pic.Free;
   end;
 end;
