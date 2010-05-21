@@ -1364,7 +1364,8 @@ var
   UseAlpha : boolean;
 begin
   Pic:=TPicture.Create;
-//  Bm := TBitmap.Create;
+  OwnBm := False;
+  Bm := nil;
   try
     Pic.LoadFromFile(FileName);
 
@@ -1378,7 +1379,6 @@ begin
     else
     begin
       Bm := Pic.Bitmap;
-      OwnBm := False;
     end;
 
     if (Self.Component.GetOwner is TZBitmap) then

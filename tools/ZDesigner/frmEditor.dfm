@@ -38,7 +38,6 @@ object EditorForm: TEditorForm
     BevelOuter = bvNone
     Constraints.MinWidth = 100
     TabOrder = 0
-    ExplicitHeight = 803
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
@@ -48,7 +47,6 @@ object EditorForm: TEditorForm
       Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
-      ExplicitHeight = 803
     end
   end
   object ViewerPanel: TPanel
@@ -58,7 +56,6 @@ object EditorForm: TEditorForm
     Height = 823
     Align = alClient
     TabOrder = 1
-    ExplicitHeight = 803
     object Splitter1: TSplitter
       Left = 1
       Top = 662
@@ -77,7 +74,6 @@ object EditorForm: TEditorForm
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 646
       object Splitter4: TSplitter
         Left = 632
         Top = 0
@@ -262,7 +258,6 @@ object EditorForm: TEditorForm
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitHeight = 641
       object Splitter3: TSplitter
         Left = 291
         Top = 0
@@ -279,7 +274,6 @@ object EditorForm: TEditorForm
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
-        ExplicitHeight = 641
       end
       object ViewerPageControl: TPageControl
         Left = 295
@@ -289,11 +283,9 @@ object EditorForm: TEditorForm
         ActivePage = ViewerGlTabSheet
         Align = alClient
         TabOrder = 0
-        ExplicitHeight = 641
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitHeight = 631
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -448,6 +440,17 @@ object EditorForm: TEditorForm
                 Caption = 'Wireframe'
                 TabOrder = 4
               end
+              object BoundsCheckBox: TCheckBox
+                Left = 9
+                Top = 26
+                Width = 61
+                Height = 17
+                Hint = 'Click to display collision bounds'
+                Anchors = [akTop, akRight]
+                Caption = 'Bounds'
+                TabOrder = 5
+                OnClick = BoundsCheckBoxClick
+              end
             end
           end
           object AppControlPanel: TPanel
@@ -555,7 +558,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerSoundTabSheet'
           ImageIndex = 1
           TabVisible = False
-          ExplicitHeight = 631
           inline SoundEditFrame1: TSoundEditFrame
             Left = 0
             Top = 0
@@ -567,15 +569,17 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 503
-            ExplicitHeight = 631
+            ExplicitHeight = 651
             inherited PageControl1: TPageControl
               Width = 503
               Height = 651
               ExplicitWidth = 503
-              ExplicitHeight = 631
+              ExplicitHeight = 651
               inherited TabSheet1: TTabSheet
+                ExplicitLeft = 4
+                ExplicitTop = 24
                 ExplicitWidth = 495
-                ExplicitHeight = 603
+                ExplicitHeight = 623
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -652,7 +656,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitHeight = 631
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -662,19 +665,17 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 503
-            ExplicitHeight = 631
+            ExplicitHeight = 651
           end
         end
         object ViewerBlankTabSheet: TTabSheet
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitHeight = 631
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
           TabVisible = False
-          ExplicitHeight = 631
           inline BitmapEditFrame1: TBitmapEditFrame
             Left = 0
             Top = 0
@@ -683,7 +684,7 @@ object EditorForm: TEditorForm
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 503
-            ExplicitHeight = 631
+            ExplicitHeight = 651
             inherited Splitter1: TSplitter
               Left = 314
               Height = 651
@@ -694,25 +695,25 @@ object EditorForm: TEditorForm
               Width = 314
               Height = 651
               ExplicitWidth = 314
-              ExplicitHeight = 631
+              ExplicitHeight = 651
               inherited ScrollBox1: TScrollBox
                 Width = 310
                 Height = 634
                 ExplicitWidth = 310
-                ExplicitHeight = 614
+                ExplicitHeight = 634
               end
             end
             inherited RightPanel: TGroupBox
               Left = 318
               Height = 651
               ExplicitLeft = 318
-              ExplicitHeight = 631
+              ExplicitHeight = 651
               inherited PreviewPanel: TPanel
                 Height = 634
-                ExplicitHeight = 614
+                ExplicitHeight = 634
                 inherited Panel1: TPanel
                   Top = 612
-                  ExplicitTop = 592
+                  ExplicitTop = 612
                 end
               end
             end
@@ -721,7 +722,6 @@ object EditorForm: TEditorForm
         object ViewerMeshTabSheet: TTabSheet
           ImageIndex = 5
           TabVisible = False
-          ExplicitHeight = 631
           inline MeshEditFrame1: TMeshEditFrame
             Left = 0
             Top = 0
@@ -730,7 +730,7 @@ object EditorForm: TEditorForm
             Align = alClient
             TabOrder = 0
             ExplicitWidth = 503
-            ExplicitHeight = 631
+            ExplicitHeight = 651
             inherited Splitter1: TSplitter
               Left = 214
               Height = 651
@@ -741,12 +741,12 @@ object EditorForm: TEditorForm
               Width = 214
               Height = 651
               ExplicitWidth = 214
-              ExplicitHeight = 631
+              ExplicitHeight = 651
               inherited ScrollBox1: TScrollBox
                 Width = 210
                 Height = 634
                 ExplicitWidth = 210
-                ExplicitHeight = 614
+                ExplicitHeight = 634
               end
             end
             inherited RightPanel: TGroupBox
@@ -755,7 +755,7 @@ object EditorForm: TEditorForm
               Height = 651
               ExplicitLeft = 218
               ExplicitWidth = 285
-              ExplicitHeight = 631
+              ExplicitHeight = 651
               inherited WireframeCheckBox: TCheckBox
                 Width = 281
                 ExplicitWidth = 281
@@ -767,14 +767,14 @@ object EditorForm: TEditorForm
               inherited Panel1: TPanel
                 Top = 627
                 Width = 281
-                ExplicitTop = 607
+                ExplicitTop = 627
                 ExplicitWidth = 281
               end
               inherited PreviewPanel: TPanel
                 Width = 281
                 Height = 578
                 ExplicitWidth = 281
-                ExplicitHeight = 558
+                ExplicitHeight = 578
               end
             end
           end
@@ -1203,7 +1203,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010E000801B0001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E000801BC001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1880,7 +1880,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E009C0010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E00A80010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6
