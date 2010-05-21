@@ -212,6 +212,7 @@ type
     N14: TMenuItem;
     DisableComponentAction: TAction;
     Disablecomponent1: TMenuItem;
+    BoundsCheckBox: TCheckBox;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -278,6 +279,7 @@ type
     procedure EditXmlActionExecute(Sender: TObject);
     procedure DisableComponentActionExecute(Sender: TObject);
     procedure DisableComponentActionUpdate(Sender: TObject);
+    procedure BoundsCheckBoxClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -2001,6 +2003,11 @@ begin
   Result := Success;
 end;
 
+procedure TEditorForm.BoundsCheckBoxClick(Sender: TObject);
+begin
+  Renderer.CollisionBoundsVisible := (Sender as TCheckBox).Checked;
+end;
+
 procedure TEditorForm.BuildBinary(const PlayerName,OutputName : string);
 const
   Magic : integer = $01020304;
@@ -2082,8 +2089,9 @@ begin
   SymTemp := TSymbolTable.Create;
   try
     F.SynEdit.Text := String(Sa);
+    F.SynEdit.Modified := False;
     repeat
-      if F.ShowModal=mrOk then
+      if (F.ShowModal=mrOk) and F.SynEdit.Modified then
       begin
         Su := F.SynEdit.Text;
         SymTemp.ClearAll;
@@ -3785,9 +3793,22 @@ begin
 end;
 
 procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);
+var
+  Nodes : TObjectList;
+  I : integer;
+  Node : TZComponentTreeNode;
 begin
-  Tree.ZSelected.Component.DesignDisable := not Tree.ZSelected.Component.DesignDisable;
-  Tree.ZSelected.RefreshNodeName;
+  Nodes := Tree.SortSelections;
+  try
+    for I := 0 to Nodes.Count-1 do
+    begin
+      Node := (Nodes[I] as TZComponentTreeNode);
+      Node.Component.DesignDisable := not Node.Component.DesignDisable;
+      Node.RefreshNodeName;
+    end;
+  finally
+    Nodes.Free;
+  end;
 end;
 
 procedure TEditorForm.DisableComponentActionUpdate(Sender: TObject);

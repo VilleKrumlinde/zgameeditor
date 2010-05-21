@@ -309,6 +309,7 @@ procedure DesignerRenderStop;
 var
   IsRendering : boolean;
   NormalsVisible : boolean;
+  CollisionBoundsVisible : boolean;
 {$endif}
 
 var
@@ -370,6 +371,103 @@ begin
   end;
   glEnd();
   glEnable(GL_LIGHTING);
+end;
+
+//Draw area around collision bounds
+//Code originally in Z-script by Kjell
+procedure RenderCollisionBounds(const Style : integer;
+   const Rx,Ry,Rz : single;
+   const Sx,Sy,Sz : single;
+   const Bx,By,Bz : single;
+   const Ox,Oy,Oz : single);
+
+  procedure renderRect(const W,H : single);
+  begin
+    glBegin(2);
+    glVertex2f(W   ,H   );
+    glVertex2f(W*-1,H   );
+    glVertex2f(W*-1,H*-1);
+    glVertex2f(W   ,H*-1);
+    glEnd();
+  end;
+
+  procedure renderCircle(const S : single);
+  var
+    X,R : single;
+    I : integer;
+  begin
+    glBegin(2);
+    X := 0;
+    for I := 0 to 31 do
+    begin
+      R := X*PI*2;
+      glVertex2f(sin(R)*S,cos(R)*S);
+      X := X + 1/32;
+    end;
+    glEnd();
+  end;
+
+
+begin
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  glColor3f(1,0,0);
+  glLineWidth(1);
+
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glPushMatrix();
+
+  glScalef(1/SX,1/SY,1/SZ);
+  glRotatef(RZ*360,0,0,-1);
+  glRotatef(RY*360,0,-1,0);
+  glRotatef(RX*360,-1,0,0);
+  glTranslatef(OX,OY,OZ);
+
+  case Style of
+    0: // Rect2D
+      renderRect(BX*0.5,BY*0.5);
+
+    1: // Sphere3D
+      begin
+        renderCircle(BX);
+        glRotatef(90,1,0,0);
+        renderCircle(BX);
+        glRotatef(90,0,1,0);
+        renderCircle(BX);
+      end;
+
+    2: // Box3D
+      begin
+        glTranslatef(0,0,BZ);
+        renderRect(BX,BY);
+        glTranslatef(0,0,BZ*-2);
+        renderRect(BX,BY);
+        glBegin(1);
+        glVertex3f(BX   ,BY   ,0   );
+        glVertex3f(BX   ,BY   ,BZ*2);
+        glVertex3f(BX*-1,BY   ,0   );
+        glVertex3f(BX*-1,BY   ,BZ*2);
+        glVertex3f(BX*-1,BY*-1,0   );
+        glVertex3f(BX*-1,BY*-1,BZ*2);
+        glVertex3f(BX   ,BY*-1,0   );
+        glVertex3f(BX   ,BY*-1,BZ*2);
+        glEnd();
+      end;
+
+    3: // Rect2D_OBB
+      begin
+        glRotatef(RZ*360,0,0,1);
+        glScalef(SX,SY,0);
+        renderRect(BX*0.5,BY*0.5);
+      end;
+
+    4: // Circle2D
+      renderCircle(BX);
+  end;
+
+  glPopMatrix();
+  glPopAttrib;
 end;
 {$endif}
 
@@ -632,6 +730,22 @@ begin
   if not VecIsIdentity3(Model.Scale) then
     glScalef(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
   Model.RunRenderCommands;
+  {$ifndef minimal}
+  if CollisionBoundsVisible then
+    RenderCollisionBounds( Ord(Model.CollisionStyle),
+             Model.Rotation[0],
+             Model.Rotation[1],
+             Model.Rotation[2],
+             Model.Scale[0],
+             Model.Scale[1],
+             Model.Scale[2],
+             Model.CollisionBounds.Area[0],
+             Model.CollisionBounds.Area[1],
+             Model.CollisionBounds.Area[2],
+             Model.CollisionOffset[0],
+             Model.CollisionOffset[1],
+             Model.CollisionOffset[2]);
+  {$endif}
   glPopMatrix();
 end;
 
