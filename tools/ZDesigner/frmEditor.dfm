@@ -392,7 +392,7 @@ object EditorForm: TEditorForm
                 48)
               object NormalsCheckBox: TCheckBox
                 Left = 9
-                Top = 7
+                Top = 5
                 Width = 61
                 Height = 17
                 Anchors = [akTop, akRight]
@@ -442,7 +442,7 @@ object EditorForm: TEditorForm
               end
               object BoundsCheckBox: TCheckBox
                 Left = 9
-                Top = 26
+                Top = 22
                 Width = 61
                 Height = 17
                 Hint = 'Click to display collision bounds'

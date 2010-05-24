@@ -84,7 +84,7 @@ this.V.Y*=1+Temp1;]]>
             </MeshExpression>
           </Producers>
         </Mesh>
-        <Model Name="PlayerModel" Position="-2.6207 3.9916 0" Rotation="0 0 -0.0043" Velocity="-0.0021 0.0842 0" Category="4" CollisionBounds="0.1 0.4 0 0">
+        <Model Name="PlayerModel" Position="-3.9142 3.9932 0" Velocity="0.0183 0.0685 0" Category="4" CollisionBounds="0.1 0.4 0 0">
           <Definitions>
             <DefineVariable Name="PlayerAngle"/>
             <DefineVariable Name="PlayerShieldTime"/>
@@ -471,7 +471,7 @@ LevelNo+=1;]]>
             </RenderTransformGroup>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
-            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.8984"/>
+            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.9059"/>
             <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
             <RenderText TextFloatRef="PlayerLives Value" X="-0.51" Y="0.92" Scale="0.66"/>
             <RenderText Text="FPS " TextFloatRef="App FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
@@ -514,7 +514,7 @@ this.Pixel.B=Temp1*0.98;]]>
         </Bitmap>
         <Material Name="PaperMaterial" Light="0" ZBuffer="0">
           <Textures>
-            <MaterialTexture Name="PaperMaterialTexture" Texture="PaperBitmap" TextureX="43.5953"/>
+            <MaterialTexture Name="PaperMaterialTexture" Texture="PaperBitmap" TextureX="52.0247"/>
           </Textures>
         </Material>
         <Bitmap Name="SunBitmap">
@@ -1565,7 +1565,7 @@ this.Pixel.A=Temp1;]]>
 
 Temp1=cos(App.Time*(6+CurrentModel.Personality*8))*(0.06-CurrentModel.Personality*0.03);
 EyeTg1.Rotate.Z=-0.21 + Temp1;
-EyeTg2.Rotate.Z=-0.21 + Temp1;]]>
+EyeTg2.Rotate.Z=0.21 - Temp1;]]>
                       </Expression>
                     </ZExpression>
                     <Condition Expression="return (CurrentModel.Position.X&lt;LeftEdge);">
@@ -1631,7 +1631,7 @@ if(CurrentModel.Velocity.Y>0) {
   //Vifta med vingar när den flyger uppåt
   Temp1=cos(App.Time*(6+CurrentModel.Personality*8))*(0.06-CurrentModel.Personality*0.03);
   EyeTg1.Rotate.Z=-0.21 + Temp1;
-  EyeTg2.Rotate.Z=-0.21 + Temp1;
+  EyeTg2.Rotate.Z=0.21 - Temp1;
 }
 
 EyeStrafeTimeout-=App.DeltaTime;
@@ -1671,7 +1671,7 @@ EyeStrafeShootTimeout-=App.DeltaTime;]]>
                     <RenderMesh Mesh="EyeWingMesh"/>
                   </Children>
                 </RenderTransformGroup>
-                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 -0.21">
+                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 0.21">
                   <Children>
                     <RenderMesh Mesh="EyeWingMesh"/>
                   </Children>
@@ -2740,7 +2740,7 @@ return
             <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
           </OnSpawn>
         </Model>
-        <Model Name="TitleMouseCursor" Position="-3.3303 4 0" Velocity="-0.005 0.0002 0">
+        <Model Name="TitleMouseCursor" Position="-2.6302 -1.3677 0" Velocity="0.0036 -0.0003 0">
           <Definitions>
             <Mesh Name="TitleMouseMesh1">
               <Producers>

@@ -341,12 +341,13 @@ procedure EnableMaterial(OldM,NewM : TMaterial); forward;
 procedure ApplyRotation(const Rotate : TZVector3f);
 begin
   //*180/PI
-  if Rotate[0]<>0 then
-    glRotatef( (Rotate[0]*360) , 1, 0, 0);
-  if Rotate[1]<>0 then
-    glRotatef( (Rotate[1]*360) , 0, 1, 0);
+  //Reverse order to make XYZ-rotation
   if Rotate[2]<>0 then
     glRotatef( (Rotate[2]*360) , 0, 0, 1);
+  if Rotate[1]<>0 then
+    glRotatef( (Rotate[1]*360) , 0, 1, 0);
+  if Rotate[0]<>0 then
+    glRotatef( (Rotate[0]*360) , 1, 0, 0);
 end;
 
 { TRenderer }
