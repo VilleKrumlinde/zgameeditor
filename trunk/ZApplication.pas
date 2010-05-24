@@ -633,7 +633,11 @@ begin
 
   gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 
-  ApplyRotation(CameraRotation);
+//  ApplyRotation(CameraRotation);
+  //Reverse order to make XYZ-rotation
+  glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
+  glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
+  glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
   glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 
   glMatrixMode(GL_MODELVIEW);
