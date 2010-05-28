@@ -588,9 +588,12 @@ begin
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity;
 
+    //Reverse order to make XYZ-rotation
+    glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
+    glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
+    glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
     //Måste ta negativt på cameraposition för att dess axlar ska bete sig
     //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-    ApplyRotation(CameraRotation);
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 
     if (EventState.ClearScreenMode=0) and (CurrentRenderTarget=nil) then
@@ -633,7 +636,6 @@ begin
 
   gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 
-//  ApplyRotation(CameraRotation);
   //Reverse order to make XYZ-rotation
   glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
   glRotatef( (CameraRotation[1]*360) , 0, 1, 0);

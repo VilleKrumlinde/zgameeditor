@@ -148,7 +148,7 @@ end;
 
 procedure TGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);
 begin
-  Msg.Result := 0
+  Msg.Result := 1;
 end;
 
 procedure TGLPanel.WMGETDLGCODE(var Msg: TMessage);

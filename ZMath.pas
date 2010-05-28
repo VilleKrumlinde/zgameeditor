@@ -68,6 +68,7 @@ function ArcTan2(const Y, X: single): single;
 
 function ArcSin(const X : Single) : Single;
 function ArcCos(const X : Single) : Single;
+function Log2(const X : Single) : Single;
 
 function PerlinNoise2(const X,Y : single) : single;
 function PerlinNoise3(const X,Y,Z : single) : single;
@@ -857,6 +858,14 @@ asm
   fsqrt
   fxch
   fpatan
+end;
+
+function Log2(const X : Single) : Single;
+asm
+  FLD1
+  FLD     X
+  FYL2X
+  FWAIT
 end;
 
 function CreateTransform(const Rotation,Scale,Position : TZVector3f) : TZMatrix4f;

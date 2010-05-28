@@ -225,7 +225,7 @@ type
   end;
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
-     fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcRound,
+     fcTan,fcCeil,fcFloor,fcAcos,fcAsin,fcLog2,fcRound,
      fcRandom,fcAtan2,fcNoise2,fcNoise3,fcClamp,fcPow,fcCenterMouse,
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
@@ -732,6 +732,7 @@ begin
     fcFloor : V := Floor(StackPopFloat);
     fcAcos : V := ArcCos(StackPopFloat);
     fcAsin : V := ArcSin(StackPopFloat);
+    fcLog2 : V := Log2(StackPopFloat);
     fcRound : PInteger(@V)^ := Round(StackPopFloat);
 
     fcRandom :
