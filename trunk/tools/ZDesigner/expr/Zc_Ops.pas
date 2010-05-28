@@ -738,6 +738,7 @@ begin
   MakeOne('floor',fcFloor,'FF');
   MakeOne('acos',fcAcos,'FF');
   MakeOne('asin',fcAsin,'FF');
+  MakeOne('log2',fcLog2,'FF');
   MakeOne('round',fcRound,'IF');
   MakeOne('quit',fcQuit,'V');
   MakeOne('joyGetAxis',fcJoyGetAxis,'FII');
