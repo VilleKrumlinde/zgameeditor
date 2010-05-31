@@ -633,6 +633,8 @@ var
     Frame : TExpStackFrame;
     Ret : TExpReturn;
   begin
+    if (Func.Id='') and (Func.Statements.Count=0) then
+      Exit; //Don't generate code for empty nameless function (such as Repeat.WhileExp)
     if IsLibrary then
     begin
       Func.Lib := Component as TZLibrary;
