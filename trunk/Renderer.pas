@@ -789,8 +789,10 @@ const
 //  I : integer;
 //  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
-  DefaultMaterial := TMaterial.Create(nil);
-  DefaultMaterialTexture := TMaterialTexture.Create(nil);
+  {$ifndef minimal}if DefaultMaterial=nil then{$endif}
+    DefaultMaterial := TMaterial.Create(nil);
+  {$ifndef minimal}if DefaultMaterialTexture=nil then{$endif}
+    DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
   glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
 

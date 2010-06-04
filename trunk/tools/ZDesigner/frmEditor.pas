@@ -300,9 +300,7 @@ type
     ExePath : string;
     RenderAborted : boolean;
     MruList : TStringList;
-    PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
-    ZcGlobalNames : TObjectList;
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
@@ -325,7 +323,6 @@ type
     procedure OnTreeDragOver(Sender, Source: TObject; X, Y: Integer;
       State: TDragState; var Accept: Boolean);
     procedure OnTreeDragDrop(Sender, Source: TObject; X, Y: Integer);
-    procedure RefreshSymbolTable;
     procedure DoCompile(Node: TZComponentTreeNode;  const Expr: TZPropertyValue; Prop : TZProperty);
     procedure OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure OnGLPanelMouseDown(Sender: TObject; Button: TMouseButton;
@@ -370,7 +367,6 @@ type
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
-    SymTab : TSymbolTable;
     procedure SetFileChanged(Value : Boolean);
     //Custom editors
     procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
@@ -406,8 +402,6 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpre
 { TEditorForm }
 
 constructor TEditorForm.Create(AOwner: TComponent);
-var
-  Con : TDefineConstant;
 begin
   inherited Create(AOwner);
 
@@ -509,14 +503,6 @@ begin
   ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 
-  SymTab := TSymbolTable.Create;
-
-  PredefinedConstants := TObjectList.Create(True);
-  Con := TDefineConstant.Create(nil);
-  Con.SetString('Name','PI');
-  Con.Value := PI;
-  PredefinedConstants.Add(Con);
-
   Application.HelpFile := ExePath + 'ZGameEditor.chm';
 
   ResetCamera;
@@ -526,8 +512,6 @@ begin
   MruList := TStringList.Create;
   MruList.StrictDelimiter := True;
   MruList.Duplicates := dupIgnore;
-
-  ZcGlobalNames := TObjectList.Create(True);
 
   Platform_InitGlobals;  //Nollställ timer etc
 
@@ -634,7 +618,7 @@ begin
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
 
-  RefreshSymbolTable;
+  ZApp.RefreshSymbolTable;
 
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
@@ -718,44 +702,6 @@ begin
   end;
   LogListBox.ItemIndex := LogListBox.Items.Count-1;
   LogListBox.Invalidate;
-end;
-
-procedure TEditorForm.RefreshSymbolTable;
-var
-  List : TStringList;
-  I : integer;
-  Con : TDefineConstant;
-  BuiltInFunctions : TObjectList;
-  Func : TZcOpFunctionBuiltIn;
-begin
-  ZcGlobalNames.Clear;
-  SymTab.ClearAll;
-
-  //Scope 0: global constants and built-in functions
-  for I := 0 to PredefinedConstants.Count - 1 do
-  begin
-    Con := TDefineConstant(PredefinedConstants[I]);
-    SymTab.Add(String(Con.Name),Con);
-  end;
-
-  BuiltInFunctions := Zc_Ops.GetBuiltInFunctions;
-  for I := 0 to BuiltInFunctions.Count - 1 do
-  begin
-    Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
-    SymTab.Add(Func.Id,Func);
-  end;
-  SymTab.PushScope;
-
-  //Scope 1: object names
-  List := TStringList.Create;
-  try
-    //todo: skippa getobjectnames, den här rutinen ska själv loopa root
-    GetObjectNames(Root,List);
-    for I := 0 to List.Count-1 do
-      SymTab.Add( List[I], List.Objects[I] );
-  finally
-    List.Free;
-  end;
 end;
 
 procedure TEditorForm.ReadAppSettingsFromIni;
@@ -1180,7 +1126,7 @@ procedure TEditorForm.FindComponentAndFocusInTree(const CName : string);
 var
   C : TZComponent;
 begin
-  C := SymTab.Lookup(CName) as TZComponent;
+  C := Zapp.SymTab.Lookup(CName) as TZComponent;
   if C<>nil then
     FindComponentAndFocusInTree(C);
 end;
@@ -1672,10 +1618,7 @@ end;
 destructor TEditorForm.Destroy;
 begin
   inherited;
-  SymTab.Free;
   MruList.Free;
-  PredefinedConstants.Free;
-  ZcGlobalNames.Free;
   Renderer.CleanUp;
   UndoNodes.Free;
   UndoIndices.Free;
@@ -1910,97 +1853,32 @@ begin
 end;
 
 procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZPropertyValue; Prop : TZProperty);
-var
-  C,Model : TZComponent;
 begin
-  if Prop.IsDefaultValue(Expr) then
-  begin
-    //Generate no code for an empty expression
-    Expr.ExpressionValue.Code.Clear;
-    Exit;
-  end;
-
-  C := Node.Component;
-  FindCurrentModel(Node, Model);
-  if Assigned(Model) then
-    SymTab.Add('CurrentModel',Model);
-  try
-    Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
-  finally
-    if Assigned(Model) then
-      SymTab.Remove('CurrentModel');
-  end;
+  ZApp.CompileProperty(Node.Component,Expr,Prop);
 end;
 
 function TEditorForm.CompileAll(ThrowOnFail : boolean = False) : boolean;
 var
-  I,J,CompiledCount : integer;
   Node : TZComponentTreeNode;
-  C : TZComponent;
-  Prop : TZProperty;
-  PropValue : TZPropertyValue;
-  PropList : TZPropertyList;
-  Success : boolean;
 begin
-  CompiledCount := 0;
-  Tree.Items.BeginUpdate;
-  Success := True;
-
-  for I := 0 to ZcGlobalNames.Count - 1 do
-  begin
-    //Remove user function names from symtab
-    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
-      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id);
-  end;
-  ZcGlobalNames.Clear;
-
-  //Remove stringconstants
-  ZApp.ClearConstantPool;
-
+  Result := True;
   try
-    I := 0;
-    while I<Tree.Items.Count do
+    ZApp.Compile;
+  except
+    on E : EZcErrorBase do
     begin
-      Node := Tree.Items[I] as TZComponentTreeNode;
-      if Assigned(Node.Component) and (not Node.Component.DesignDisable) then
+      if ThrowOnFail then
+        raise
+      else
       begin
-        C := Node.Component;
-        PropList := C.GetProperties;
-        for J := 0 to PropList.Count-1 do
-        begin
-          Prop := TZProperty(PropList[J]);
-          if Prop.PropertyType=zptExpression then
-          begin
-            C.GetProperty(Prop,PropValue);
-            //Compile(C,PropValue.ExpressionValue,Root,SymTab);
-            try
-              DoCompile(Node,PropValue,Prop);
-            except on E : Exception do
-              if ThrowOnFail then
-                raise
-              else
-              begin
-                ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
-                Node.Expand(True);
-                Tree.Selected := Node;
-                Success := False;
-              end;
-            end;
-            //Ifall expressioninstruktioner visas så måste träd refreshas
-            //Men då tar omkompilering 5 sekunder
-  //          Tree.RefreshNode(Node,C);
-            Inc(CompiledCount);
-          end;
-        end;
+        Node := Tree.FindNodeForComponent(E.Component);
+        ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
+        Node.Expand(True);
+        Tree.Selected := Node;
+        Result := False;
       end;
-      Inc(I);
     end;
-  finally
-    Tree.Items.EndUpdate;
   end;
-  if CompiledCount>0 then
-    Log.Write('Compiled expressions: ' + IntToStr(CompiledCount));
-  Result := Success;
 end;
 
 procedure TEditorForm.BoundsCheckBoxClick(Sender: TObject);
@@ -2455,10 +2333,10 @@ begin
     for I := 1 to 100 do
     begin
       S := Ci.ZClassName + IntToStr(I);
-      if not SymTab.Contains(S) then
+      if not ZApp.SymTab.Contains(S) then
       begin
         C.SetString('Name',AnsiString(S));
-        SymTab.Add(S,C);
+        ZApp.SymTab.Add(S,C);
         Break;
       end;
     end;
@@ -2538,7 +2416,7 @@ begin
         begin
           CurC := List[I] as TZComponent;
           if CurC.Name<>'' then
-            SymTab.Remove(String(CurC.Name));
+            ZApp.SymTab.Remove(String(CurC.Name));
         end;
       finally
         List.Free;
@@ -2782,7 +2660,7 @@ begin
     ShowMessage('Name cannot begin with a digit: ' + NewName);
     Abort;
   end;
-  if (NewName<>'') and SymTab.Contains(NewName) and (SymTab.Lookup(NewName)<>C) then
+  if (NewName<>'') and ZApp.SymTab.Contains(NewName) and (ZApp.SymTab.Lookup(NewName)<>C) then
   begin
     ShowMessage('An component with this name already exists: ' + NewName);
     Abort;
@@ -2793,9 +2671,9 @@ begin
     Abort;
   end;
   if Trim(OldName)<>'' then
-    SymTab.Remove(OldName);
+    ZApp.SymTab.Remove(OldName);
   if NewName<>'' then
-    SymTab.Add(NewName,C);
+    ZApp.SymTab.Add(NewName,C);
 end;
 
 procedure TEditorForm.CopyComponentActionUpdate(Sender: TObject);
@@ -2911,7 +2789,7 @@ begin
       if C.Name='' then
         Continue;
 
-      if SymTab.Contains(String(C.Name)) then
+      if ZApp.SymTab.Contains(String(C.Name)) then
       begin
         StartName := String(C.Name);
         S := '';
@@ -2925,7 +2803,7 @@ begin
         for J := FirstCopyNr + 1 to FirstCopyNr + 1000 do
         begin
           NewName := StartName + IntToStr(J);
-          if not SymTab.Contains(NewName) then
+          if not ZApp.SymTab.Contains(NewName) then
           begin
             C.SetString('Name',AnsiString(NewName));
             NewNameFound := True;
@@ -2939,7 +2817,7 @@ begin
         end;
       end;
 
-      SymTab.Add(String(C.Name),C);
+      ZApp.SymTab.Add(String(C.Name),C);
     end;
   finally
     List.Free;
@@ -2970,7 +2848,7 @@ begin
     if Copy(S,1,4)='ZZDC' then
     begin
       Delete(S,1,4);
-      C := ComponentManager.LoadXmlFromString(S,SymTab);
+      C := ComponentManager.LoadXmlFromString(S,ZApp.SymTab);
       if (C is TLogicalGroup) and ((C as TLogicalGroup).Name='#') then
       begin //Paste several components
         Group := (C as TLogicalGroup);
@@ -3455,7 +3333,7 @@ var
       FindCurrentModel(Tree.ZSelected,Result);
     end
     else
-      Result := SymTab.Lookup(S) as TZComponent;
+      Result := ZApp.SymTab.Lookup(S) as TZComponent;
   end;
 
 begin
@@ -3516,7 +3394,7 @@ begin
   end else
   begin
     //List global identifiers
-    SymTab.Iterate(AutoCompAddOne,Comp);
+    ZApp.SymTab.Iterate(AutoCompAddOne,Comp);
     InAdd(['CurrentModel','this','string','int','float','while','for']);
   end;
   (Comp.ItemList as TStringList).Sort;
@@ -3552,7 +3430,7 @@ begin
           while (J>0) and CharInSet(Line[J] ,['a'..'z','A'..'Z','_','0'..'9']) do
             Dec(J);
           S := Copy(Line,J+1,I-J-1);
-          O := SymTab.Lookup(S);
+          O := ZApp.SymTab.Lookup(S);
           if (O<>nil) and (O is TZcOpFunctionBase) then
           begin
             Func := O as TZcOpFunctionBase;

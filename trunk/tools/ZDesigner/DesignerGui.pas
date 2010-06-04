@@ -66,6 +66,7 @@ type
     function AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
     procedure SetRootComponent(C : TZComponent);
     function FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;
+    function FindNodeForComponent(C: TZComponent): TZComponentTreeNode;
     procedure RefreshNode(Node : TTreeNode; C : TZComponent);
     function ZSelected : TZComponentTreeNode;
     function SortSelections : TObjectList;
@@ -91,7 +92,7 @@ implementation
 uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,ExprEdit,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions, pngimage;
+  frmArrayEdit, ZExpressions, pngimage, ZApplication;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -935,6 +936,23 @@ begin
   end;
 end;
 
+function TZComponentTreeView.FindNodeForComponent(C: TZComponent): TZComponentTreeNode;
+var
+  I : integer;
+  Item : TZComponentTreeNode;
+begin
+  Result := nil;
+  for I := 0 to Items.Count - 1 do
+  begin
+    Item := Items[I] as TZComponentTreeNode;
+    if Item.Component=C then
+    begin
+      Result := Item;
+      Break;
+    end;
+  end;
+end;
+
 function TZComponentTreeView.GetPopupMenu: TPopupMenu;
 begin
    Result := nil;
@@ -1044,37 +1062,8 @@ end;
 
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 //Returns all objects
-var
-  PropList : TZPropertyList;
-  Prop : TZProperty;
-  Value : TZPropertyValue;
-  I,J : integer;
 begin
-  List.Add(C);
-  PropList := C.GetProperties;
-  for I := 0 to PropList.Count-1 do
-  begin
-    Prop := TZProperty(PropList[I]);
-    case Prop.PropertyType of
-      zptComponentList :
-        begin
-          C.GetProperty(Prop,Value);
-          for J := 0 to Value.ComponentListValue.ComponentCount-1 do
-            GetAllObjects(TZComponent(Value.ComponentListValue[J]),List);
-        end;
-      zptExpression :
-        begin
-          C.GetProperty(Prop,Value);
-          for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
-            GetAllObjects(TZComponent(Value.ExpressionValue.Code[J]),List);
-        end;
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          GetAllObjects(Value.ComponentValue,List);
-        end;
-    end;
-  end;
+  C.GetAllChildren(List,True);
 end;
 
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
@@ -1306,7 +1295,7 @@ begin
     Value.PropertyValue.Component := nil
   else
   begin
-    if not ParsePropRef((PropEditor.Owner as TEditorForm).SymTab,nil,S,Value.PropertyValue) then
+    if not ParsePropRef(ZApp.SymTab,nil,S,Value.PropertyValue) then
     begin
       ShowMessage('Invalid propname: ' + S);
       Exit;
