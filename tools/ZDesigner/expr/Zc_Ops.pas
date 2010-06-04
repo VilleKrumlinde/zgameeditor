@@ -132,6 +132,9 @@ function GetZcTypeName(Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : single;
 
 function GetBuiltInFunctions : TObjectList;
+function GetBuiltInConstants : TObjectList;
+
+procedure CleanUp;
 
 var
   //Nodes owned by the current compiled function/expression
@@ -150,6 +153,7 @@ uses SysUtils,Math,ExprEdit,Classes;
 
 var
   BuiltInFunctions : TObjectList=nil;
+  BuiltInConstants : TObjectList=nil;
   BuiltInCleanUps : TObjectList;
 
 const
@@ -681,6 +685,8 @@ end;
 
 
 procedure InitBuiltIns;
+var
+  Con : TDefineConstant;
 
   function CharToType(C : char) : TZcDataType;
   begin
@@ -752,6 +758,12 @@ begin
   MakeOne('subStr',fcSubStr,'SSII');
   MakeOne('chr',fcChr,'SI');
   MakeOne('ord',fcOrd,'IS');
+
+  BuiltInConstants := TObjectList.Create(True);
+  Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','PI');
+  Con.Value := PI;
+  BuiltInConstants.Add(Con);
 end;
 
 
@@ -762,6 +774,12 @@ begin
   Result := BuiltInFunctions;
 end;
 
+function GetBuiltInConstants : TObjectList;
+begin
+  if BuiltInConstants=nil then
+    InitBuiltIns;
+  Result := BuiltInConstants;
+end;
 
 { TZcOpFunctionUserDefined }
 
@@ -832,14 +850,16 @@ begin
 
 end;
 
+procedure CleanUp;
+begin
+  FreeAndNil(FunctionCleanUps);
+  FreeAndNil(BuiltInFunctions);
+  FreeAndNil(BuiltInConstants);
+  FreeAndNil(BuiltInCleanUps);
+end;
+
 initialization
 
   FunctionCleanUps := TObjectList.Create(True);
-
-finalization
-
-  FreeAndNil(FunctionCleanUps);
-  FreeAndNil(BuiltInFunctions);
-  FreeAndNil(BuiltInCleanUps);
 
 end.

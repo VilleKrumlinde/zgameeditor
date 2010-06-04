@@ -23,7 +23,7 @@ unit ZApplication;
 interface
 
 uses ZClasses,Meshes,Collision,Commands,AudioComponents
-  {$ifndef minimal},Generics.Collections{$endif}
+  {$ifndef minimal},Generics.Collections,uSymTab,Contnrs{$endif}
 ;
 
 type
@@ -122,6 +122,9 @@ type
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
+    //Zc-parsing
+    SymTab : TSymbolTable;
+    ZcGlobalNames : TObjectList;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -137,6 +140,9 @@ type
     procedure DesignerSetUpView;
     function AddToConstantPool(const Value : string) : TObject;
     procedure ClearConstantPool;
+    procedure RefreshSymbolTable;
+    procedure Compile;
+    procedure CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
     {$endif}
   end;
 
@@ -170,7 +176,7 @@ implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,ZExpressions,SysUtils
+  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,ExprEdit
   {$endif}
   ;
 
@@ -188,6 +194,8 @@ begin
 
   {$ifndef minimal}
   ConstantMap := TDictionary<AnsiString,TObject>.Create;
+  SymTab := TSymbolTable.Create;
+  ZcGlobalNames := TObjectList.Create(True);
   {$endif}
 end;
 
@@ -207,6 +215,8 @@ begin
 
   {$ifndef minimal}
   ConstantMap.Free;
+  SymTab.Free;
+  ZcGlobalNames.Free;
   {$endif}
   inherited;
 end;
@@ -673,6 +683,123 @@ begin
   ConstantMap.Clear;
 end;
 
+procedure TZApplication.RefreshSymbolTable;
+var
+  List : TStringList;
+  I : integer;
+  Con : TDefineConstant;
+  BuiltInFunctions,BuiltInConstants : TObjectList;
+  Func : TZcOpFunctionBuiltIn;
+begin
+  ZcGlobalNames.Clear;
+  SymTab.ClearAll;
+
+  //Scope 0: global constants and built-in functions
+  BuiltInConstants := Zc_Ops.GetBuiltInConstants;
+  for I := 0 to BuiltInConstants.Count - 1 do
+  begin
+    Con := TDefineConstant(BuiltInConstants[I]);
+    SymTab.Add(String(Con.Name),Con);
+  end;
+
+  BuiltInFunctions := Zc_Ops.GetBuiltInFunctions;
+  for I := 0 to BuiltInFunctions.Count - 1 do
+  begin
+    Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
+    SymTab.Add(Func.Id,Func);
+  end;
+  SymTab.PushScope;
+
+  //Scope 1: object names
+  List := TStringList.Create;
+  try
+    GetObjectNames(Self,List);
+    for I := 0 to List.Count-1 do
+      SymTab.Add( List[I], List.Objects[I] );
+  finally
+    List.Free;
+  end;
+end;
+
+procedure TZApplication.Compile;
+var
+  I,J: integer;
+  C : TZComponent;
+  Prop : TZProperty;
+  PropValue : TZPropertyValue;
+  PropList : TZPropertyList;
+  List : TObjectList;
+begin
+
+  for I := 0 to ZcGlobalNames.Count - 1 do
+  begin
+    //Remove user function names from symtab
+    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
+      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id);
+  end;
+  ZcGlobalNames.Clear;
+
+  //Remove stringconstants
+  ClearConstantPool;
+
+  List := TObjectList.Create(False);
+  try
+    Self.GetAllChildren(List,False);
+
+    for I := 0 to List.Count - 1 do
+    begin
+      C := List[I] as TZComponent;
+      PropList := C.GetProperties;
+      for J := 0 to PropList.Count-1 do
+      begin
+        Prop := TZProperty(PropList[J]);
+        if Prop.PropertyType=zptExpression then
+        begin
+          C.GetProperty(Prop,PropValue);
+          CompileProperty(C,PropValue,Prop);
+        end;
+      end;
+    end;
+  finally
+    List.Free;
+  end;
+end;
+
+procedure TZApplication.CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+var
+  CurParent: TZComponent;
+  Model : TZComponent;
+begin
+  if Prop.IsDefaultValue(Expr) then
+  begin
+    //Generate no code for an empty expression
+    Expr.ExpressionValue.Code.Clear;
+    Exit;
+  end;
+
+  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
+  //så att den kan användas i uttryck.
+  CurParent := C.GetOwner;
+  Model := nil;
+  while CurParent <> nil do
+  begin
+    if CurParent is TModel then
+    begin
+      Model := CurParent as TModel;
+      Break;
+    end;
+    CurParent := CurParent.GetOwner;
+  end;
+  if Assigned(Model) then
+    SymTab.Add('CurrentModel',Model);
+
+  try
+    ExprEdit.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
+  finally
+    if Assigned(Model) then
+      SymTab.Remove('CurrentModel');
+  end;
+end;
 {$endif}
 
 procedure TZApplication.AddModel(Model: TModel);

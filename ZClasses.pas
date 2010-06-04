@@ -25,7 +25,7 @@ unit ZClasses;
 interface
 
 {$ifndef minimal}
-uses uSymTab;
+uses uSymTab,Contnrs;
 {$endif}
 
 type
@@ -342,6 +342,7 @@ type
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
     function GetOwner : TZComponent;
     procedure SetString(const PropName : string; const Value : AnsiString);
+    procedure GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
     {$endif}
   end;
 
@@ -534,8 +535,9 @@ var
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$IFNDEF MINIMAL},Classes,LibXmlParser,AnsiStrings,SysUtils,Contnrs,Math,zlib, ZApplication,
-  Generics.Collections{$ENDIF}
+  {$ifndef minimal},Classes,LibXmlParser,AnsiStrings,SysUtils,Math,zlib, ZApplication,
+  Generics.Collections,Zc_Ops
+  {$endif}
   ;
 
 
@@ -1269,6 +1271,43 @@ begin
     Result := nil;
 end;
 
+procedure TZComponent.GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
+//Returns all objects
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+begin
+  List.Add(Self);
+  PropList := Self.GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    case Prop.PropertyType of
+      zptComponentList :
+        begin
+          Self.GetProperty(Prop,Value);
+          for J := 0 to Value.ComponentListValue.ComponentCount-1 do
+            TZComponent(Value.ComponentListValue[J]).GetAllChildren(List,IncludeExpressions);
+        end;
+      zptExpression :
+        begin
+          if IncludeExpressions then
+          begin
+            Self.GetProperty(Prop,Value);
+            for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
+              TZComponent(Value.ExpressionValue.Code[J]).GetAllChildren(List,IncludeExpressions);
+          end;
+        end;
+      zptInlineComponent :
+        begin
+          Self.GetProperty(Prop,Value);
+          Value.ComponentValue.GetAllChildren(List,IncludeExpressions);
+        end;
+    end;
+  end;
+end;
 {$endif}
 
 function MakeColorf(const R,G,B,A : single) : TZColorf;
@@ -3562,6 +3601,7 @@ initialization
 
 finalization
 
+  Zc_Ops.CleanUp;
   if Assigned(_ComponentManager) then
     FreeAndNil(_ComponentManager);
 

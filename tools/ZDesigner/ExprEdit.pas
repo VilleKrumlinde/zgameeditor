@@ -27,7 +27,12 @@ interface
 uses ZClasses,ZExpressions,Classes,uSymTab,SysUtils,Contnrs;
 
 type
-  EZcErrorBase = class(Exception);
+  EZcErrorBase = class(Exception)
+  public
+    Component : TZComponent;
+    constructor Create(const M : string); reintroduce;
+  end;
+
   ECodeGenError = class(EZcErrorBase);
   EParseError = class(EZcErrorBase)
   public
@@ -1182,6 +1187,14 @@ begin
     Compiler.Free;
   end;
 
+end;
+
+{ EZcErrorBase }
+
+constructor EZcErrorBase.Create(const M: string);
+begin
+  Self.Message := M;
+  Self.Component := CompilerContext.ThisC;
 end;
 
 end.
