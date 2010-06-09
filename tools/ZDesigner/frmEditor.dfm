@@ -124,18 +124,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             624
             146)
@@ -163,10 +155,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             624
             146)
@@ -225,10 +213,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             624
             146)
@@ -302,10 +286,6 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -572,6 +552,26 @@ object EditorForm: TEditorForm
               ParentDoubleBuffered = False
               TabOrder = 1
             end
+            object DisableShadersCheckBox: TCheckBox
+              Left = 192
+              Top = 2
+              Width = 97
+              Height = 17
+              Hint = 'Click to disable OpenGL shaders'
+              Caption = 'Disable shaders'
+              TabOrder = 2
+              OnClick = DisableShadersCheckBoxClick
+            end
+            object DisableFBOCheckBox: TCheckBox
+              Left = 192
+              Top = 18
+              Width = 97
+              Height = 17
+              Hint = 'Click to disable OpenGL FBO (render to texture)'
+              Caption = 'Disable FBO'
+              TabOrder = 3
+              OnClick = DisableFBOCheckBoxClick
+            end
           end
         end
         object ViewerSoundTabSheet: TTabSheet
@@ -596,8 +596,6 @@ object EditorForm: TEditorForm
               ExplicitWidth = 503
               ExplicitHeight = 651
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 495
                 ExplicitHeight = 623
                 inherited Label8: TLabel
@@ -660,10 +658,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -696,10 +690,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -822,10 +812,9 @@ object EditorForm: TEditorForm
     DrawingStyle = dsGradient
     Images = ActionImageList
     List = True
-    ShowCaptions = True
     AllowTextButtons = True
     TabOrder = 2
-    Transparent = True
+    Transparent = False
     object ToolButton8: TToolButton
       Left = 0
       Top = 0
@@ -1231,7 +1220,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010E000801C4001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E000801CC001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1908,7 +1897,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E00B00010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E00B80010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6

@@ -710,7 +710,7 @@ end;
 
 procedure TModel.Collision(Hit: TModel);
 begin
-  ZApp.EventState.CollidedCategory := Hit.Category;
+  ZApp.CollidedCategory := Hit.Category;
   Meshes.CurrentModel := Self;
   OnCollision.ExecuteCommands;
   if (CurrentState<>nil) then
@@ -1773,8 +1773,17 @@ begin
   end;
   {$endif}
 
-  M := TMesh(Mesh.Clone);
-  M.RefreshFromProducers;
+  M := TMesh.Create(nil);
+  Mesh.BeforeRender;
+  M.CreateData(Mesh.VerticesCount,Mesh.IndicesCount div 3,Mesh.TexCoords<>nil,Mesh.Colors<>nil);
+
+  Move(Mesh.Vertices^,M.Vertices^,Mesh.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh.Normals^,M.Normals^,Mesh.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh.Indices^,M.Indices^,Mesh.IndicesCount * SizeOf(TMeshVertexIndex));
+  if Mesh.TexCoords<>nil then
+    Move(Mesh.TexCoords^,M.TexCoords^,Mesh.VerticesCount * SizeOf(TZVector2f));
+  if Mesh.Colors<>nil then
+    Move(Mesh.Colors^,M.Colors^,Mesh.VerticesCount * SizeOf(TMeshVertexColor));
 
   Stack.Push(M);
 end;
