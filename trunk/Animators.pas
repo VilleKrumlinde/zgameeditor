@@ -249,14 +249,14 @@ begin
   {$ifndef minimal}if (CurrentModel=nil) then Exit;{$endif}
 
   //-1 .. 1, 0 is center
-  Value := ZApp.EventState.MousePosition[0] * ScaleX;
+  Value := ZApp.MousePosition[0] * ScaleX;
   Diff := (Value - CurrentModel.Position[0]);
   //Velocity is how far to move per second
   //Multiply by constant to reach target faster
   CurrentModel.Velocity[0] := Diff * Speed;
 
   //Y-axis is reversed compared to OpenGL
-  Value := ZApp.EventState.MousePosition[1] * ScaleY;
+  Value := ZApp.MousePosition[1] * ScaleY;
   Diff := (Value - CurrentModel.Position[1]);
   CurrentModel.Velocity[1] := Diff * Speed;
 end;

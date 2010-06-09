@@ -35,6 +35,11 @@ type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
     bbNormalLinux,bbNormalOsx86);
 
+  TPageControl = class(ComCtrls.TPageControl)
+  protected
+    procedure CreateWnd; override;
+  end;
+
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
     Timer1: TTimer;
@@ -213,6 +218,8 @@ type
     DisableComponentAction: TAction;
     Disablecomponent1: TMenuItem;
     BoundsCheckBox: TCheckBox;
+    DisableShadersCheckBox: TCheckBox;
+    DisableFBOCheckBox: TCheckBox;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -280,6 +287,10 @@ type
     procedure DisableComponentActionExecute(Sender: TObject);
     procedure DisableComponentActionUpdate(Sender: TObject);
     procedure BoundsCheckBoxClick(Sender: TObject);
+    procedure DisableShadersCheckBoxClick(Sender: TObject);
+    procedure DisableFBOCheckBoxClick(Sender: TObject);
+  protected
+    procedure Paint; override;
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -904,6 +915,10 @@ var
   I : integer;
 begin
   Renderer.InitRenderer;
+
+  DisableShadersCheckBox.Enabled := ShadersSupported;
+  DisableFBOCheckBox.Enabled := FbosSupported;
+
   if not ShadersSupported then
     Log.Write('GL shaders not supported')
   else
@@ -3699,6 +3714,54 @@ begin
     (not (Tree.ZSelected.Component is TZApplication));
   if (Sender as TAction).Enabled then
     (Sender as TAction).Checked := Tree.ZSelected.Component.DesignDisable;
+end;
+
+procedure TEditorForm.DisableFBOCheckBoxClick(Sender: TObject);
+begin
+  FbosSupported := not (Sender as TCheckBox).Checked;
+end;
+
+procedure TEditorForm.DisableShadersCheckBoxClick(Sender: TObject);
+begin
+  ShadersSupported := not (Sender as TCheckBox).Checked;
+end;
+
+procedure TEditorForm.Paint;
+begin
+  inherited;
+end;
+{var
+  vert : array[0..1] of TRIVERTEX;
+  gRect : GRADIENT_RECT;
+  FromColor, ToColor:TColor;
+begin
+  FromColor := clSkyBlue;
+  ToColor := clBlue;
+  vert [0] .x      := 0;
+  vert [0] .y      := 0;
+  vert [0] .Red    := GetRValue(FromColor) shl 8;
+  vert [0] .Green  := GetGValue(FromColor) shl 8;
+  vert [0] .Blue   := GetBValue(FromColor) shl 8;
+  vert [0] .Alpha  := $0000;
+
+  vert [1] .x      := Self.Width;
+  vert [1] .y      := Self.Height;
+  vert [1] .Red    := GetRValue(ToColor) shl 8;
+  vert [1] .Green  := GetGValue(ToColor) shl 8;
+  vert [1] .Blue   := GetBValue(ToColor) shl 8;
+  vert [1] .Alpha  := $0000;
+
+  gRect.UpperLeft  := 0;
+  gRect.LowerRight := 1;
+  GradientFill(Self.Canvas.Handle, @vert,2,@gRect,1,GRADIENT_FILL_RECT_V);
+end;}
+
+{ TPageControl }
+
+procedure TPageControl.CreateWnd;
+begin
+  inherited;
+//  SetWindowLong(Self.Handle, GWL_EXSTYLE, WS_EX_TRANSPARENT);
 end;
 
 end.

@@ -92,12 +92,9 @@ type
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
     Caption : TPropString;
-    EventState : //Global variables reachable from zc event-code
-      record
-        CollidedCategory : integer;
-        MousePosition : TZVector3f;
-        ClearScreenMode : integer;
-      end;
+    CollidedCategory : integer;
+    MousePosition : TZVector3f;
+    ClearScreenMode : integer;
     ClearColor : TZColorf;
     Fullscreen : boolean;
     ScreenMode : (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
@@ -311,9 +308,9 @@ begin
     P.Y := ViewportHeight-1;
 
   //-1 .. 1, 0 är center
-  EventState.MousePosition[0] := (P.X / ViewportWidth) * 2 - 1;
+  MousePosition[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
-  EventState.MousePosition[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
+  MousePosition[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
 end;
 
 function TZApplication.Main : boolean;
@@ -606,7 +603,7 @@ begin
     //likadant som modell-koordinater (positiv y = uppåt t.ex.)
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 
-    if (EventState.ClearScreenMode=0) and (CurrentRenderTarget=nil) then
+    if (ClearScreenMode=0) and (CurrentRenderTarget=nil) then
     begin
       glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -836,16 +833,16 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@EventState.CollidedCategory), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@CollidedCategory), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@EventState.MousePosition), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@MousePosition), zptVector3f);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}integer(@MouseWheelDelta), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@EventState.ClearScreenMode), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@ClearScreenMode), zptInteger);
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}integer(@RenderPasses), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;

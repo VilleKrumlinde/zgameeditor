@@ -488,7 +488,6 @@ end;
 
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
 begin
-  //TODO: module support
   {$if Defined(Linux) or Defined(Darwin)}
   Result := Integer(dlopen( Name, RTLD_NOW));
   {$else}
@@ -498,7 +497,6 @@ end;
 
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 begin
-  //TODO: module support
   {$if Defined(Linux) or Defined(Darwin)}
   Result := dlsym(Pointer(Module), Name );
   {$else}

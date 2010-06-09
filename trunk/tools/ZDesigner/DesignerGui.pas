@@ -238,6 +238,7 @@ constructor TZPropertyEditor.Create(Owner: TComponent);
 begin
   inherited Create(Owner);
   Self.OnResize := MyOnResize;
+  ParentBackground := True;
 end;
 
 procedure TZPropertyEditor.MyOnResize(Sender : TObject);
