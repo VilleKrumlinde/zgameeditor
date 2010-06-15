@@ -74,6 +74,9 @@ type
       WithColors : boolean = False);
     procedure ComputeNormals;
     destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
   TMeshProducer = class(TContentProducer)
@@ -487,6 +490,18 @@ begin
     VboHandles[0]:=0;
   end;
 end;
+
+{$ifndef minimal}
+procedure TMesh.DesignerFreeResources;
+begin
+  if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
+  begin
+    glDeleteBuffersARB(2, @VboHandles);
+    VboHandles[0]:=0;
+  end;
+  inherited;
+end;
+{$endif}
 
 destructor TMesh.Destroy;
 begin

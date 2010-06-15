@@ -280,6 +280,9 @@ type
     Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
     CustomWidth,CustomHeight : integer;
     destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -2176,6 +2179,7 @@ end;
 
 procedure DesignerRenderStop;
 begin
+  //Make sure primary render buffer is restored
   if FbosSupported then
   begin
     if CurrentRenderTarget<>nil then
@@ -2358,6 +2362,14 @@ procedure TRenderTarget.UseTextureBegin;
 begin
   glBindTexture(GL_TEXTURE_2D, TexId);
 end;
+
+{$ifndef minimal}
+procedure TRenderTarget.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
 
 { TSetRenderTarget }
 

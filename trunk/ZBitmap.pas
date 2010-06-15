@@ -55,6 +55,9 @@ type
     function PixelHeight : integer;
     function GetCopyAsFloats : pointer;
     function GetCopyAs3f: pointer;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
 implementation
@@ -244,6 +247,13 @@ begin
   Result := 16 shl ord(PropWidth);
 end;
 
+{$ifndef minimal}
+procedure TZBitmap.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
 
 procedure TZBitmap.DefineProperties(List: TZPropertyList);
 begin
