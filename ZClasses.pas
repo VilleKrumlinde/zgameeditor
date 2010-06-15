@@ -340,6 +340,7 @@ type
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
+    procedure DesignerFreeResources; virtual; //Free resources such as GL-handles
     function GetOwner : TZComponent;
     procedure SetString(const PropName : string; const Value : AnsiString);
     procedure GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
@@ -1262,6 +1263,29 @@ begin
     end;
   end;
 end;
+
+procedure TZComponent.DesignerFreeResources;
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+begin
+  PropList := GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    case Prop.PropertyType of
+      zptComponentList :
+        begin
+          GetProperty(Prop,Value);
+          for J := 0 to Value.ComponentListValue.Count - 1 do
+            (Value.ComponentListValue[J] as TZComponent).DesignerFreeResources;
+        end;
+    end;
+  end;
+end;
+
 
 function TZComponent.GetOwner : TZComponent;
 begin
