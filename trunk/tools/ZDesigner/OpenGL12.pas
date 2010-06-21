@@ -9590,7 +9590,7 @@ begin
       dwFlags := dwFlags or PFD_STEREO; 
     iPixelType := PFD_TYPE_RGBA; 
     cColorBits := ColorBits; 
-    cDepthBits := 32; 
+    cDepthBits := 16;
     cStencilBits := StencilBits; 
     cAccumBits := AccumBits; 
     cAuxBuffers := AuxBuffers; 
