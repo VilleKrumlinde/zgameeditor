@@ -123,6 +123,10 @@ type
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
     {$endif}
+    {$ifdef zgeviz}
+    ZgeVizCameraTranslate : TZVector3f;
+    ZgeVizTime : single;
+    {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
@@ -581,7 +585,6 @@ begin
     if Self.OnBeginRenderPass.Count>0 then
       Self.OnBeginRenderPass.ExecuteCommands;
 
-
     if {$ifdef minimal}(ViewportRatio=vprCustom) and {$endif}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
@@ -590,6 +593,9 @@ begin
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity;
 
+    {$ifdef zgeviz}
+    glTranslatef(ZgeVizCameraTranslate[0],ZgeVizCameraTranslate[1],ZgeVizCameraTranslate[2]);
+    {$endif}
     gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 
     glMatrixMode(GL_MODELVIEW);
@@ -957,7 +963,11 @@ const
   //Maximum time step for update and collision=1/10 second
   MaxUpdateStep = 1.0 / 10;
 begin
+  {$ifdef zgeviz}
+  Time := ZApp.ZgeVizTime;
+  {$else}
   Time := Platform_GetTime;
+  {$endif}
   DeltaTime := Time - LastTime;
 
   //Avoid too high steps, for instance when grabbing win-caption with mouse
