@@ -816,14 +816,15 @@ begin
 end;
 
 function TZcOpSwitch.Optimize: TZcOp;
+//also remember to check ExprEdit removeconstants
 var
-  Op : TZcOp;
+  I : integer;
 begin
-  for Op in CaseOps do
-    Op.Optimize;
-  for Op in StatementsOps do
-    Op.Optimize;
-  ValueOp.Optimize;
+  for I := 0 to CaseOps.Count-1 do
+    CaseOps[I] := TZcOp(CaseOps[I]).Optimize;
+  for I := 0 to StatementsOps.Count-1 do
+    StatementsOps[I] := TZcOp(StatementsOps[I]).Optimize;
+  ValueOp := ValueOp.Optimize;
   Result := Self;
 end;
 

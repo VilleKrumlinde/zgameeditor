@@ -5730,7 +5730,7 @@ var
 
   // window support functions
   {$ifdef Win32}
-  wglGetProcAddress: function(ProcName: PChar): Pointer; stdcall;
+  wglGetProcAddress: function(ProcName: PAnsiChar): Pointer; stdcall;
   {$EXTERNALSYM wglGetProcAddress}
   wglCopyContext: function(p1: HGLRC; p2: HGLRC; p3: Cardinal): BOOL; stdcall;
   {$EXTERNALSYM wglCopyContext}

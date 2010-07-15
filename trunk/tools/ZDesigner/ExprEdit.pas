@@ -1046,6 +1046,7 @@ var
   Op : TZcOp;
 
   function DoRemoveConstants(Op: TZcOp) : TZcOp;
+  //todo: solve this differently
   var
     P : TZPropertyRef;
     Value : TZPropertyValue;
@@ -1072,6 +1073,13 @@ var
     begin
       for I := 0 to (Op as TZcOpFunctionBase).Statements.Count-1 do
         TZcOpFunctionBase(Op).Statements[I] := DoRemoveConstants(TZcOpFunctionBase(Op).Statements[I] as TZcOp);
+    end else if Op.Kind=Zc_Ops.zcSwitch then
+    begin
+      for I := 0 to (Op as TZcOpSwitch).CaseOps.Count-1 do
+        TZcOpSwitch(Op).CaseOps[I] := DoRemoveConstants(TZcOpSwitch(Op).CaseOps[I]);
+      for I := 0 to (Op as TZcOpSwitch).StatementsOps.Count-1 do
+        TZcOpSwitch(Op).StatementsOps[I] := DoRemoveConstants(TZcOpSwitch(Op).StatementsOps[I]);
+      TZcOpSwitch(Op).ValueOp := DoRemoveConstants(TZcOpSwitch(Op).ValueOp);
     end else
     begin
       for I := 0 to Op.Children.Count-1 do
