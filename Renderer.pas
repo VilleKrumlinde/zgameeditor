@@ -92,6 +92,9 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
   //Render-commands
@@ -420,6 +423,7 @@ begin
 
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
+  glDisable(GL_BLEND);
   glPushMatrix();
 
   glScalef(1/SX,1/SY,1/SZ);
@@ -2148,6 +2152,14 @@ begin
   glDeleteProgram(ProgHandle);
   ProgHandle := 0;
 end;
+
+{$ifndef minimal}
+procedure TShader.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
 
 { TShaderVariable }
 
