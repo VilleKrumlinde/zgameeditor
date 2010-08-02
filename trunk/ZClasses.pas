@@ -51,7 +51,7 @@ type
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
  RenderTargetClassId,SetRenderTargetClassId,
  RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,WebOpenClassId,
- ApplicationClassId,AppStateClassId,SetAppStateClassId,
+ ApplicationClassId,AppStateClassId,SetAppStateClassId,CallComponentClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
  ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,ExpPropValue4ClassId,ExpPropValue1ClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,

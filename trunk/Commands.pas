@@ -117,6 +117,17 @@ type
     {$endif}
   end;
 
+  TCallComponent = class(TCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Component : TCommand;
+    procedure Execute; override;
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    {$endif}
+  end;
+
 var
   //Should be class-vars in TWebOpen but fpc does not support class-vars yet
   NetMutex : pointer;
@@ -458,6 +469,30 @@ begin
   Platform_LeaveMutex(NetMutex);
 end;
 
+{ TCallComponent }
+
+procedure TCallComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand]);{$endif}
+end;
+
+procedure TCallComponent.Execute;
+begin
+  if Component<>nil then
+    Component.Execute;
+end;
+
+{$ifndef minimal}
+function TCallComponent.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Component<>nil then
+    Result := Result + '  ' + Component.Name;
+end;
+{$endif}
+
 initialization
 
   ZClasses.Register(TRepeat,RepeatClassId);
@@ -471,6 +506,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
   ZClasses.Register(TWebOpen,WebOpenClassId);
+  ZClasses.Register(TCallComponent,CallComponentClassId);
 
   NetResultList := TZArrayList.CreateReferenced;
   NetMutex := Platform_CreateMutex;
