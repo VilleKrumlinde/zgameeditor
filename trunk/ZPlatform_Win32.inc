@@ -87,6 +87,7 @@ const
   WM_ACTIVATEAPP      = $001C;
   WM_NCACTIVATE       = $0086;
   WM_MOUSEWHEEL       = $020A;
+  WM_LBUTTONDBLCLK    = $0203;
 
   BM_SETCHECK = $00F1;
   CBN_SELCHANGE  = 1;
@@ -153,6 +154,8 @@ begin
     WM_MBUTTONDOWN,WM_MBUTTONUP :
       //Use '|' as key for middle mouse button
       Keys[ Ord('|') ] := Msg=WM_MBUTTONDOWN;
+    WM_LBUTTONDBLCLK :
+      Keys[ Ord('[') ] := True;
     WM_MOUSEWHEEL :
       begin
         ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
@@ -300,7 +303,8 @@ begin
 //  wndClass.cbSize := SizeOf(wndClass);
   wndClass.style  := CS_HREDRAW or    // Redraws entire window if length changes
                      CS_VREDRAW or    // Redraws entire window if height changes
-                     CS_OWNDC;        // Unique device context for the window
+                     CS_OWNDC or      // Unique device context for the window
+                     CS_DBLCLKS;      // Receive doubleclick messages
   wndClass.lpfnWndProc   := @WndProc;        // Set the window procedure to our func WndProc
   wndClass.hInstance     := HInstance;  //Delphi rtl gets the hinstance (SysInit.Unit)
   wndClass.hCursor       := LoadCursor(0, IDC_ARROW);
@@ -605,12 +609,10 @@ end;
 
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
-//  {$ifndef minimal}
-//  Result := GetAsyncKeyState( MapVirtualKey(ord(C),1) )<0;
-//  Result := GetAsyncKeyState( ord(C) )<0;
-//  {$else}
   Result := Keys[ KeyMap[C] ];
-//  {$endif}
+  if Result and (C='[') then
+    //Buffer doubleclick event until read
+    Keys[ Ord('[') ] := False;
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;

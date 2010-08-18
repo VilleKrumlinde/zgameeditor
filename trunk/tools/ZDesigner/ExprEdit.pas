@@ -431,7 +431,7 @@ procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
 //LeaveValue : Optionally leave a value of the assignement on stack.
 var
   C,C2 : TExpPropPtr;
-  I,LastIndex,AssignSize : integer;
+  SaveCount,I,J,LastIndex,AssignSize : integer;
 
   A : TZComponent;
   Aw : TExpArrayWrite;
@@ -478,16 +478,10 @@ begin
     Target.AddComponent( MakeAssignOp(AssignSize) );
 
     //Allow "x.Scale" be shorthand for assign x,y,z individually
-    //Note: "x.Scale=0.5" is ok, but "x.Scale+=1" is the same as "x.Scale=x.Scale.X+1"
     if (C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex) then
     begin
       if (Op.Kind<>zcAssign) then
         raise ECodeGenError.Create('Assign syntax not supported: ' + LeftOp.Id);
-      if (RightOp.Kind=zcIdentifier) then
-      begin
-        //((C.Target.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and (not C.Target.HasPropIndex))
-      end;
-
       if C.Target.Prop.PropertyType=zptVector3f then
         LastIndex := 2
       else
@@ -497,7 +491,15 @@ begin
         C2 := TExpPropPtr.Create(Target);
         C2.Target := C.Target;
         C2.Target.Index := I;
-        GenValue(LeftOp);
+        SaveCount := Target.Count;
+        GenValue(RightOp);
+        //Any accesses to properties withouth index-specifier needs to be updated with the right index (a.scale=b.scale+c.scale)
+        for J := SaveCount to Target.Count - 1 do
+          if (Target[J] is TExpPropValue4) and
+            ((Target[J] as TExpPropValue4).Source.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf]) and
+            (not (Target[J] as TExpPropValue4).Source.HasPropIndex)
+          then
+            (Target[J] as TExpPropValue4).Source.Index := I;
         Target.AddComponent( MakeAssignOp(AssignSize) );
       end;
     end;
