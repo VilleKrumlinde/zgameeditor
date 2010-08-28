@@ -190,7 +190,6 @@ type
     function NewLabel : TZCodeLabel;
     procedure DefineLabel(Lbl : TZCodeLabel);
     procedure ResolveLabels;
-    procedure RemoveConstants(StmtList : TList);
     procedure FallTrue(Op : TZcOp; Lbl : TZCodeLabel);
     procedure FallFalse(Op : TZcOp; Lbl : TZCodeLabel);
     procedure GenValue(Op : TZcOp);
@@ -812,7 +811,6 @@ var
 begin
   IsLibrary := Component is TZLibrary;
   IsExternalLibrary := Component is TZExternalLibrary;
-  RemoveConstants(StmtList);
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
   ResolveLabels;
@@ -1037,67 +1035,6 @@ begin
   begin
     DoGenBuiltInFunc(SymTab.Lookup(Op.Id) as TZcOpFunctionBuiltIn);
   end else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
-end;
-
-
-//Replace references to DefineConstant.Value with the actual constant value.
-//Then reoptimze nodes to fold constants.
-procedure TZCodeGen.RemoveConstants(StmtList : TList);
-var
-  I : integer;
-  Op : TZcOp;
-
-  function DoRemoveConstants(Op: TZcOp) : TZcOp;
-  //todo: solve this differently
-  var
-    P : TZPropertyRef;
-    Value : TZPropertyValue;
-    I : integer;
-  begin
-    Result := Op;
-    if Op.Kind=Zc_Ops.zcIdentifier then
-    begin
-      if GetPropRef(Op.Id,P) then
-      begin
-        P.Component.GetProperty(P.Prop,Value);
-        if P.Component is TDefineConstant then
-        begin
-          case P.Prop.PropertyType of
-            zptFloat : Result := TZcOpLiteral.Create(zctFloat,Value.FloatValue);
-            zptInteger : Result := TZcOpLiteral.Create(zctInt,Value.IntegerValue);
-            zptString : Result := TZcOpLiteral.Create(zctString,'"' + String(Value.StringValue) + '"');
-          else
-            Assert(False);
-          end;
-        end;
-      end;
-    end else if Op.Kind=Zc_Ops.zcFunction then
-    begin
-      for I := 0 to (Op as TZcOpFunctionBase).Statements.Count-1 do
-        TZcOpFunctionBase(Op).Statements[I] := DoRemoveConstants(TZcOpFunctionBase(Op).Statements[I] as TZcOp);
-    end else if Op.Kind=Zc_Ops.zcSwitch then
-    begin
-      for I := 0 to (Op as TZcOpSwitch).CaseOps.Count-1 do
-        TZcOpSwitch(Op).CaseOps[I] := DoRemoveConstants(TZcOpSwitch(Op).CaseOps[I]);
-      for I := 0 to (Op as TZcOpSwitch).StatementsOps.Count-1 do
-        TZcOpSwitch(Op).StatementsOps[I] := DoRemoveConstants(TZcOpSwitch(Op).StatementsOps[I]);
-      TZcOpSwitch(Op).ValueOp := DoRemoveConstants(TZcOpSwitch(Op).ValueOp);
-    end else
-    begin
-      for I := 0 to Op.Children.Count-1 do
-        if Assigned(Op.Child(I)) then
-          Op.Children[I] := DoRemoveConstants(Op.Child(I));
-    end;
-  end;
-
-begin
-  for I := 0 to StmtList.Count-1 do
-  begin
-    Op := StmtList[I];
-    Op := DoRemoveConstants(Op);
-    Op := Op.Optimize;
-    StmtList[I] := Op;
-  end;
 end;
 
 { TZCodeLabel }
