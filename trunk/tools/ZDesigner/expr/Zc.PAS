@@ -1353,7 +1353,7 @@ begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
 Get;
-OutOp  :=  MakeOp(zcIdentifier,LexString);
+OutOp  :=  MakeIdentifier(LexString);
 end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) OR
  (fCurrentInputSymbol = stringConSym) then begin

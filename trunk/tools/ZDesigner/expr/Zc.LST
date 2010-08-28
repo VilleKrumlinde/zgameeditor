@@ -1,6 +1,6 @@
 
 
-Compiled: den 4 mars 2010 - 13:30:19
+Compiled: den 28 augusti 2010 - 18:32:24
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 4 mars 2010 @ 13:30:19
+Time Compiled: den 28 augusti 2010 @ 18:32:24
 
 Statistics:
   number of terminals:        87 (limit  2561)
@@ -160,8 +160,8 @@ Listing
   110    /*--------------------------------------------------------------------------------*/
   111          stringCon =
   112                  '"'    { regularStringChar
-  113  					| "\'" | '\"' | "\\" | "\n"
-  114  					}
+  113            | "\'" | '\"' | "\\" | "\n"
+  114            }
   115                  '"'.
   116  
   117          ident = ['@'] letter { letter | digit }.
@@ -731,7 +731,7 @@ Listing
   669  .)
   670  =            (. OutOp := nil; .)
   671    ( 
-  672      ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
+  672      ident    (. OutOp := MakeIdentifier(LexString);  .)
   673    | Literal<Typ>  (. 
   674          if Typ=zctString then
   675            OutOp := TZcOpLiteral.Create(Typ,LexString)

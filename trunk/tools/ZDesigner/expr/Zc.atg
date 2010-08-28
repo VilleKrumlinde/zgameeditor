@@ -110,8 +110,8 @@ TOKENS
   /*--------------------------------------------------------------------------------*/
         stringCon =
                 '"'    { regularStringChar
-					| "\'" | '\"' | "\\" | "\n"
-					}
+          | "\'" | '\"' | "\\" | "\n"
+          }
                 '"'.
 
         ident = ['@'] letter { letter | digit }.
@@ -669,7 +669,7 @@ Primary<var OutOp : TZcOp>
 .)
 =            (. OutOp := nil; .)
   ( 
-    ident    (. OutOp := MakeOp(zcIdentifier,LexString);  .)
+    ident    (. OutOp := MakeIdentifier(LexString);  .)
   | Literal<Typ>  (. 
         if Typ=zctString then
           OutOp := TZcOpLiteral.Create(Typ,LexString)

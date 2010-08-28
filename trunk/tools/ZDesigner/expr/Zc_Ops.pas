@@ -121,6 +121,7 @@ type
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
+function MakeIdentifier(const Id : string) : TZcOp;
 
 function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
@@ -545,6 +546,25 @@ begin
   Result.Id := Id;
   if (Kind=zcIdentifier) and CompilerContext.SymTab.Contains(Id) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
+end;
+
+function MakeIdentifier(const Id : string) : TZcOp;
+var
+  C : TDefineConstant;
+begin
+  Result := MakeOp(zcIdentifier,Id);
+  if Result.Ref is TDefineConstant then
+  begin
+    //If identifier is a constant then replace with the constant value
+    C := Result.Ref as TDefineConstant;
+    case C._Type of
+      dvbFloat : Result := TZcOpLiteral.Create(zctFloat,C.Value);
+      dvbInt : Result := TZcOpLiteral.Create(zctInt,C.IntValue);
+      dvbString : Result := TZcOpLiteral.Create(zctString,'"' + String(C.StringValue) + '"');
+    else
+      Assert(False);
+    end;
+  end;
 end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
