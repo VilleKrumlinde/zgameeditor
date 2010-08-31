@@ -1800,6 +1800,8 @@ begin
   if Mesh.Colors<>nil then
     Move(Mesh.Colors^,M.Colors^,Mesh.VerticesCount * SizeOf(TMeshVertexColor));
 
+  M.Scale( Self.Scale );
+
   Stack.Push(M);
 end;
 

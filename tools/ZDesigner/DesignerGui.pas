@@ -815,11 +815,6 @@ begin
     if Prop.HideInGui then
       Continue;
     case Prop.PropertyType of
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          AddNode(Value.ComponentValue,Node).Text := Prop.Name;
-        end;
       zptExpression :
         begin
           //Expression-nodes visas ska bara visas för debug, tillåt ej ändringar
