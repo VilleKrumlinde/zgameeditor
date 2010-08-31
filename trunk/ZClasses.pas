@@ -253,7 +253,7 @@ type
       2 : (RectfValue : TZRectf);
       3 : (ColorfValue : TZColorf);
       4 : (IntegerValue : integer);
-      5 : (ComponentValue : TZComponent); //även inlinecomponent
+      5 : (ComponentValue : TZComponent);
       {$ifdef minimal}6 : (StringValue : PAnsiChar);{$endif}
       7 : (PropertyValue : TZPropertyRef);
       8 : (Vector3fValue : TZVector3f);
@@ -269,7 +269,7 @@ type
 
   //zptScalar = float with 0..1 range
   TZPropertyType = (zptFloat,zptScalar,zptRectf,zptColorf,zptString,zptComponentRef,zptInteger,
-    zptPropertyRef,zptVector3f,zptComponentList,zptByte,zptInlineComponent,zptBoolean,
+    zptPropertyRef,zptVector3f,zptComponentList,zptByte,zptBoolean,
     zptExpression,zptBinary);
 
   TZProperty = class
@@ -641,7 +641,7 @@ type
 {$ENDIF}
 
 const
-  TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression,zptInlineComponent];
+  TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression];
 
 {$ifndef MINIMAL}
 //Manage memory for strings set in designer
@@ -863,11 +863,6 @@ begin
           GetProperty(Prop,Value);
           Value.ExpressionValue.Code.Free;
         end;
-      zptInlineComponent :
-        begin
-          GetProperty(Prop,Value);
-          Value.ComponentValue.Free;
-        end;
       zptString :
         begin
           if Prop.IsStringTarget then
@@ -923,7 +918,7 @@ begin
       {$ELSE}
       Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ENDIF}
-    zptComponentRef,zptInlineComponent :
+    zptComponentRef :
       Value.ComponentValue := TZComponent(PPointer(P)^);
     zptInteger :
       Value.IntegerValue := PInteger(P)^;
@@ -993,12 +988,6 @@ begin
       PZPropertyRef(P)^ := Value.PropertyValue;
     zptVector3f :
       PZVector3f(P)^ := Value.Vector3fValue;
-    zptInlineComponent :
-      begin
-        if (PPointer(P)^<>nil) and (PPointer(P)^<>Value.ComponentValue) then
-          TZComponent(PPointer(P)^).Free;
-        PPointer(P)^ := pointer(Value.ComponentValue);
-      end;
     zptComponentList :
       begin
         {$IFNDEF MINIMAL}
@@ -1090,11 +1079,6 @@ begin
           for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
             CloneAssignObjectIds(TZComponent(Value.ExpressionValue.Code[J]),ObjIds,CleanUps);
         end;
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          CloneAssignObjectIds(Value.ComponentValue,ObjIds,CleanUps);
-        end;
     end;
   end;
 end;
@@ -1168,11 +1152,6 @@ begin
       Continue; //Skip properties like: objid, model.personality
     GetProperty(Prop,Value);
     case Prop.PropertyType of
-      zptInlineComponent :
-        begin
-          Value.ComponentValue := Value.ComponentValue.DoClone(ObjIds,FixUps);
-          Result.SetProperty(Prop,Value);
-        end;
       zptComponentRef :
         begin
           Result.SetProperty(Prop,Value);
@@ -1323,11 +1302,6 @@ begin
             for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
               TZComponent(Value.ExpressionValue.Code[J]).GetAllChildren(List,IncludeExpressions);
           end;
-        end;
-      zptInlineComponent :
-        begin
-          Self.GetProperty(Prop,Value);
-          Value.ComponentValue.GetAllChildren(List,IncludeExpressions);
         end;
     end;
   end;
@@ -2010,7 +1984,7 @@ begin
         PStream.Write(Value.ByteValue,SizeOf(byte));
       zptBoolean :
         PStream.Write(Value.BooleanValue,SizeOf(ByteBool));
-      zptInlineComponent,zptComponentList,zptExpression :
+      zptComponentList,zptExpression :
         AfterList.Add(Prop);
       zptBinary :
         begin
@@ -2030,8 +2004,6 @@ begin
     Prop := TZProperty(AfterList[I]);
     C.GetProperty(Prop,Value);
     case Prop.PropertyType of
-      zptInlineComponent :
-        DoWriteComponent(Value.ComponentValue);
       zptComponentList :
         InWriteList(Value.ComponentListValue);
       zptExpression :
@@ -2109,11 +2081,6 @@ var
           begin
             C.GetProperty(Prop,Value);
             InGiveOne(Value.ComponentValue);
-          end;
-        zptInlineComponent :
-          begin
-            C.GetProperty(Prop,Value);
-            InGiveObjIds(Value.ComponentValue);
           end;
         zptPropertyRef :
           begin
@@ -2249,7 +2216,7 @@ begin
             NormalProps.Add(Prop)
           else
             NestedProps.Add(Prop);
-        zptInlineComponent,zptComponentList :
+        zptComponentList :
           NestedProps.Add(Prop);
         zptBinary :
           if Value.BinaryValue.Size>0 then
@@ -2313,12 +2280,6 @@ begin
             WriteString('<![CDATA[' + SafeCdata(Value.StringValue) + ']]>'#13#10);
           zptExpression :
             WriteString('<![CDATA[' + SafeCdata( AnsiString(Value.ExpressionValue.Source) ) + ']]>'#13#10);
-          zptInlineComponent :
-            begin
-              LevelDown;
-              DoWriteComponent(Value.ComponentValue);
-              LevelUp;
-            end;
           zptComponentList :
             begin
               LevelDown;
@@ -2680,7 +2641,7 @@ begin
         end;
       zptVector3f :
         PStream.Read(Value.Vector3fValue,SizeOf(TZVector3f));
-      zptInlineComponent,zptComponentList,zptExpression :
+      zptComponentList,zptExpression :
         begin
           AfterList.Add(Prop);
           Continue;
@@ -2708,8 +2669,6 @@ begin
   begin
     Prop := TZProperty(AfterList[I]);
     case Prop.PropertyType of
-      zptInlineComponent :
-        Value.ComponentValue := DoReadComponent(nil);
       zptComponentList :
         begin
           //läs först så att vi får samma pekare (listan ägs av komponenten)
@@ -3072,14 +3031,14 @@ begin
           ptStartTag :
             begin
               //Hantera nästlade komponnenter
-              //Det gäller componentlists och inlinecomponent
+              //Det gäller componentlists
               S := Xml.CurName;
               NestedProp:=nil;
               for I := 0 to PropList.Count-1 do
               begin
                 Prop := TZProperty(PropList[I]);
                 if SameText(Prop.Name,String(Xml.CurName)) and
-                  (Prop.PropertyType in [zptComponentList,zptInlineComponent,zptString,zptExpression,zptBinary]) then
+                  (Prop.PropertyType in [zptComponentList,zptString,zptExpression,zptBinary]) then
                 begin
                   NestedProp := Prop;
                   Break;
@@ -3093,11 +3052,6 @@ begin
                   ptStartTag,ptEmptyTag,ptCData  :
                     case NestedProp.PropertyType of
                       zptComponentList : DoReadComponent(Value.ComponentListValue);
-                      zptInlineComponent :
-                        begin
-                          Value.ComponentValue := DoReadComponent(nil);
-                          C.SetProperty(NestedProp,Value);
-                        end;
                       zptString :
                         begin
                           Value.StringValue := Trim(Xml.CurContent);
