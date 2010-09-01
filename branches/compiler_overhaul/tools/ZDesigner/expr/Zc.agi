@@ -1,0 +1,59 @@
+[Frames]
+Parser=C:\Program Files (x86)\CocoR for Delphi\Frames\component.frm
+Test Project=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.dpr.frm
+Test Form=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.pas.frm
+Test DFM=C:\Program Files (x86)\CocoR for Delphi\Frames\Test.dfm.frm
+Console=C:\Program Files (x86)\CocoR for Delphi\Frames\Console.dpr.frm
+Ancestor=C:\Program Files (x86)\CocoR for Delphi\Frames\CocoBase.pas
+
+[Output]
+;Kommentera ut directory-raden för att fel-loggen ska genereras
+Directory=C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr
+
+[Registration]
+Palette=Coco/R
+
+[Messages]
+Show Warnings=1
+Show LL(1) Start Succ=1
+
+[Hash]
+Primary=TinyHash
+Secondary=HashSecondaryOne
+
+[Error Msg]
+Expected=%D% expected
+Invalid=invalid %D%
+Not Expected=this symbol not expected in %D%
+
+[Strings]
+Last Build Format=
+Version Format=
+
+
+[Options]
+C=0
+M=0
+R=0
+E=0
+Z=0
+V=1
+B=0
+O=0
+H=1
+Y=1
+D=0
+L=0
+A=0
+F=0
+G=0
+I=0
+S=0
+T=0
+X=0
+[Version Info]
+Version Number=1.0.0.116
+Last Build=2006-05-09 16:41:30
+Comment=Zc
+Author=Ville Krumlinde
+Copyright=

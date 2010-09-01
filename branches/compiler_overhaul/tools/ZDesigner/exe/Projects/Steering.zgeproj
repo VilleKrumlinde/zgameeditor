@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZzDC Steering 0.001  www.emix8.org">
+  <OnLoaded>
+    <SpawnModel Model="ScreenModel" SpawnStyle="1"/>
+    <SpawnModel Model="CursorModel" SpawnStyle="1"/>
+    <Repeat Count="2">
+      <OnIteration>
+        <SpawnModel Model="BoidModel"/>
+      </OnIteration>
+    </Repeat>
+    <DefineCollision Comment="CursorVsBoids" Cat1="1" Cat2="2"/>
+    <DefineVariable Name="FleeWhenClose"/>
+    <ZExpression Expression="FleeWhenClose=0;"/>
+    <Repeat>
+      <OnIteration>
+        <SpawnModel Model="WallModel"/>
+      </OnIteration>
+    </Repeat>
+    <DefineVariable Name="Temp1"/>
+    <DefineConstant Name="BoidCategory" Value="2"/>
+    <DefineConstant Name="CursorCategory" Value="1"/>
+  </OnLoaded>
+  <OnUpdate>
+    <KeyPress Keys="F" RepeatDelay="0.5">
+      <OnPressed>
+        <ZExpression Expression="FleeWhenClose=1-FleeWhenClose;"/>
+      </OnPressed>
+    </KeyPress>
+    <KeyPress Keys="A" RepeatDelay="0.25">
+      <OnPressed>
+        <SpawnModel Model="BoidModel"/>
+        <PlaySound Sound="BoidAppearSound" NoteNr="48"/>
+      </OnPressed>
+    </KeyPress>
+    <KeyPress Keys="W" RepeatDelay="0.5">
+      <OnPressed>
+        <SpawnModel Model="WallModel"/>
+      </OnPressed>
+    </KeyPress>
+  </OnUpdate>
+  <Content>
+    <Group Name="CursorGroup">
+      <Children>
+        <Mesh Name="CursorMesh">
+          <Producers>
+            <MeshImplicit>
+              <Function>
+                <ImplicitPrimitive Scale="0.5 0.5 0.5" Kind="1" Param1="0.5" Param2="0.1"/>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Model Name="CursorModel" Position="-3.62 4.06 0" Rotation="-0.42 -0.7 0" Velocity="0.63 0.71 0" Category="1" CollisionBounds="0.2 0.2 0 0">
+          <OnRender>
+            <UseMaterial Material="SpriteMaterial"/>
+            <RenderSetColor Color="0.73 0.12 0.12 1"/>
+            <RenderMesh Mesh="CursorMesh"/>
+            <RenderTransformGroup Name="CursorTg1" Scale="0.4 0.4 1" Rotate="60.96 87.09 0">
+              <Children>
+                <RenderSetColor Color="0.19 0.51 0.18 1"/>
+                <RenderMesh Mesh="CursorMesh"/>
+              </Children>
+            </RenderTransformGroup>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Rotate model
+CurrentModel.Rotation.Y-=App.DeltaTime*0.25;
+CurrentModel.Rotation.X-=App.DeltaTime*0.15;
+CursorTg1.Rotate.X+=App.DeltaTime*0.35;
+CursorTg1.Rotate.Y+=App.DeltaTime*0.5;
+
+//Dampen speed
+Temp1=1-App.DeltaTime*8;
+CurrentModel.Velocity.X*=Temp1;
+CurrentModel.Velocity.Y*=Temp1;]]>
+              </Expression>
+            </ZExpression>
+            <SteeringController Mass="0.03" MaxSpeed="10" MaxForce="200">
+              <Behaviours>
+                <SteeringBehaviour Kind="5" TargetCategory="3" Weight="10"/>
+                <SteeringBehaviour Kind="4">
+                  <Expression>
+<![CDATA[//OutVector : result steer vector
+this.OutVector.X=(App.MousePosition.X*5) - CurrentModel.Position.X;
+this.OutVector.Y=(App.MousePosition.Y*4) - CurrentModel.Position.Y;
+//this.OutVector.Y=0;]]>
+                  </Expression>
+                </SteeringBehaviour>
+              </Behaviours>
+            </SteeringController>
+          </OnUpdate>
+        </Model>
+      </Children>
+    </Group> <!-- CursorGroup -->
+
+    <Group Name="BoidGroup">
+      <Children>
+        <Model Name="BoidModel" Category="2" CollisionBounds="0.2 0.2 0 0">
+          <Definitions>
+            <DefineVariable Name="BoidIsSeeking"/>
+            <Mesh Name="BoidMesh">
+              <Producers>
+                <MeshSphere Scale="0.2 0.2 0.2" RadialSamples="50"/>
+                <MeshExpression>
+                  <Expression>
+<![CDATA[//V : current vertex
+if(this.V.Y> (0+CurrentModel.Personality*0.1) ) {
+  this.V.X*=0.7 - CurrentModel.Personality*0.3;
+  this.V.Y*=1 + CurrentModel.Personality;
+  this.V.Z*=0.4;
+}
+
+if(CurrentModel.Personality>0.1) {
+  this.V.X*= 1+noise3(abs(this.V.X)*432,abs(this.V.Y)*38,abs(this.V.Z)*38)*2.2;
+  this.V.Y*= 1+noise3(abs(this.V.X)*432,abs(this.V.Y)*38,abs(this.V.Z)*38)*1.5;
+  this.V.Z*= 1+noise3(abs(this.V.X)*432,abs(this.V.Y)*38,abs(this.V.Z)*38)*1.5;
+}]]>
+                  </Expression>
+                </MeshExpression>
+              </Producers>
+            </Mesh>
+          </Definitions>
+          <States>
+            <ModelState Name="BoidSeekState">
+              <OnStart>
+                <ZExpression Expression="BoidIsSeeking=1;"/>
+              </OnStart>
+              <OnUpdate>
+                <SteeringController Name="BoidSteerController" Mass="0.4" MaxSpeed="4" MaxForce="8" AdjustHeading="255" Radius="0.15">
+                  <Behaviours>
+                    <SteeringBehaviour Kind="5" TargetCategory="3" Weight="10"/>
+                    <SteeringBehaviour Name="SeekB" TargetModel="CursorModel" TargetCategory="1"/>
+                    <SteeringBehaviour Kind="1" TargetCategory="2" Weight="2"/>
+                    <SteeringBehaviour Name="NoiseB" Kind="2"/>
+                  </Behaviours>
+                </SteeringController>
+              </OnUpdate>
+              <OnLeave>
+                <ZExpression Expression="BoidIsSeeking=0;"/>
+              </OnLeave>
+            </ModelState>
+            <ModelState Name="BoidFleeState">
+              <OnStart>
+                <ZExpression Expression="BoidColor.Color.R=1-BoidColor.Color.R;"/>
+                <PlaySound Sound="BoidFleeSound" NoteNr="62"/>
+              </OnStart>
+              <OnUpdate>
+                <SteeringController Mass="0.4" MaxSpeed="4" MaxForce="2" AdjustHeading="255" Radius="0.15">
+                  <Behaviours>
+                    <SteeringBehaviour Kind="5" TargetCategory="3" Weight="10"/>
+                    <SteeringBehaviour Kind="3" TargetModel="CursorModel"/>
+                  </Behaviours>
+                </SteeringController>
+                <Condition>
+                  <Expression>
+<![CDATA[return
+  (BoidModel.Position.X<-5) || (BoidModel.Position.X>5) ||
+  (BoidModel.Position.Y<-5) || (BoidModel.Position.Y>5);]]>
+                  </Expression>
+                  <OnTrue>
+                    <SetModelState State="BoidSeekState"/>
+                  </OnTrue>
+                </Condition>
+              </OnUpdate>
+              <OnLeave>
+                <ZExpression Expression="BoidColor.Color.R=1-BoidColor.Color.R;"/>
+              </OnLeave>
+            </ModelState>
+            <ModelState Name="BoidStateAppear">
+              <OnStart>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Scale.X=0.1;
+CurrentModel.Scale.Y=0.1;]]>
+                  </Expression>
+                </ZExpression>
+              </OnStart>
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Scale.X=clamp(CurrentModel.Scale.X+2*App.DeltaTime,0,1);
+CurrentModel.Scale.Y=clamp(CurrentModel.Scale.Y+2*App.DeltaTime,0,1);
+CurrentModel.Rotation.Z+=App.DeltaTime*4;]]>
+                  </Expression>
+                </ZExpression>
+                <Condition Expression="return CurrentModel.Scale.X==1;">
+                  <OnTrue>
+                    <SetModelState State="BoidSeekState"/>
+                  </OnTrue>
+                </Condition>
+              </OnUpdate>
+            </ModelState>
+          </States>
+          <OnRender>
+            <UseMaterial Material="SpriteMaterial"/>
+            <RenderSetColor Name="BoidColor" Color="0.15 0.44 0.75 1"/>
+            <RenderMesh Mesh="BoidMesh"/>
+          </OnRender>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[BoidModel.Position.X = random(0,3);
+BoidModel.Position.Y = random(0,3);
+
+//Lite olika maxspeed, annars formar de en boll
+BoidSteerController.MaxSpeed+=random(0,0.4);
+//Svängkraft
+BoidSteerController.MaxForce+=random(0,0.8);
+//Tröghet i acceleration
+BoidSteerController.Mass+=random(0,0.15);
+
+SeekB.Weight=1 + (rnd()*0.15);
+//NoiseB.Weight=1-SeekB.Weight;
+//BoidSteerController.Radius=random(2,0.5);
+
+BoidColor.Color.B = random(0.7,0.25);
+
+PlayBoidCollide.ReplayDelay = random(2,1.5);]]>
+              </Expression>
+            </ZExpression>
+            <SetModelState State="BoidStateAppear"/>
+          </OnSpawn>
+          <OnCollision>
+            <Condition Expression="return App.CollidedCategory==CursorCategory;">
+              <OnTrue>
+                <Condition Expression="return FleeWhenClose &amp;&amp; BoidIsSeeking;">
+                  <OnTrue>
+                    <SetModelState State="BoidFleeState"/>
+                  </OnTrue>
+                  <OnFalse>
+                    <ZExpression Expression="PlayBoidCollide.NoteNr=80 - CurrentModel.Personality*50;"/>
+                    <PlaySound Name="PlayBoidCollide" Sound="BoidCollisionSound" NoteNr="60" ReplayDelay="1.5"/>
+                  </OnFalse>
+                </Condition>
+              </OnTrue>
+            </Condition>
+          </OnCollision>
+        </Model>
+        <Sound Name="BoidCollisionSound" Length="0.1" Volume="0.22" Osc1Waveform="1" UseOsc2="1" Osc2NoteModifier="-1.4" UseFilter="1" FilterCutoff="0.15" FilterQ="0.7" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Destination="12" Mod2Amount="0.46" Mod3Active="1" Mod3Source="4" Mod3Destination="1" Mod3Amount="0.06" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.34"/>
+        <Sound Name="BoidAppearSound" Length="0.5" UseFilter="1" FilterCutoff="0.82" FilterQ="0.35" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="0.3" Mod2Active="1" Mod2Source="4" Mod2Destination="9" Mod2Amount="0.98" Env0Active="1" Env0ReleaseTime="0.15" Env1Active="1" Env1AttackTime="0.6"/>
+        <Sound Name="BoidFleeSound" Length="0.2" Volume="0.22" Osc1Waveform="1" UseOsc2="1" Osc2NoteModifier="-1.4" UseFilter="1" FilterCutoff="0.31" FilterQ="0.81" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="1" Mod1Amount="1" Mod2Active="1" Mod2Source="2" Mod2Destination="2" Mod2Amount="1" Mod3Source="4" Mod3Destination="1" Mod3Amount="0.06" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Active="1" Lfo0Speed="0.03"/>
+      </Children>
+    </Group> <!-- BoidGroup -->
+
+    <Material Name="TextMaterial" Color="0.73 0.95 0.61 1" Light="0" Blend="1" ZBuffer="0"/>
+    <Material Name="SpriteMaterial" Color="1 1 1 1"/>
+    <Model Name="ScreenModel">
+      <OnRender>
+        <UseMaterial Material="TextMaterial"/>
+        <RenderText Text="F=Flee when close" X="-0.95" Y="0.94" Scale="0.45" Align="1"/>
+        <RenderText TextFloatRef="FleeWhenClose Value" X="-0.1" Y="0.94" Scale="0.45"/>
+        <RenderText Text="A=Add boid" X="-0.95" Y="0.86" Scale="0.45" Align="1"/>
+        <RenderText Text="FPS" X="-0.95" Y="-0.88" Scale="0.45" Align="1"/>
+        <RenderText TextFloatRef="App FpsCounter" X="-0.7" Y="-0.88" Scale="0.45"/>
+        <RenderText Text="W=Add wall" X="-0.95" Y="0.78" Scale="0.45" Align="1"/>
+      </OnRender>
+    </Model>
+    <Group Name="WallGroup">
+      <Children>
+        <Mesh Name="WallMesh">
+          <Producers>
+            <MeshImplicit TriangleSize="0.2">
+              <Function>
+                <ImplicitPrimitive Scale="0.5 0.5 0.5" Kind="2"/>
+              </Function>
+            </MeshImplicit>
+          </Producers>
+        </Mesh>
+        <Model Name="WallModel" Scale="3 1 1" Category="3" CollisionBounds="3 1 0 0">
+          <OnRender>
+            <UseMaterial Material="SpriteMaterial"/>
+            <RenderSetColor Name="WallColor" Color="1 0.5 0.25 1"/>
+            <RenderMesh Mesh="WallMesh"/>
+          </OnRender>
+          <OnUpdate>
+            <SteeringController Mass="0.4" MaxSpeed="0.25" MaxForce="2" Radius="1">
+              <Behaviours>
+                <SteeringBehaviour Kind="1" TargetCategory="3"/>
+              </Behaviours>
+            </SteeringController>
+            <ZExpression>
+              <Expression>
+<![CDATA[//DAmpen velocity set by steeringcontroller
+CurrentModel.Velocity.X *= (1.0 - App.DeltaTime);
+CurrentModel.Velocity.Y *= (1.0 - App.DeltaTime);]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Position.X = random(0,3);
+CurrentModel.Position.Y = random(0,3);
+
+Temp1=random(1,0.3);
+CurrentModel.Scale.X *= Temp1;
+CurrentModel.CollisionBounds.X *= Temp1;
+Temp1=random(1,0.3);
+CurrentModel.Scale.Y *= Temp1;
+CurrentModel.CollisionBounds.Y *= Temp1;
+
+WallColor.Color.R *= random(1.0,0.25);
+WallColor.Color.B *= random(1.0,0.25);
+WallColor.Color.G *= random(1.0,0.25);]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+      </Children>
+    </Group> <!-- WallGroup -->
+
+    <AudioMixer Ch0Active="1" Ch0Volume="0.39" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
+  </Content>
+</ZApplication>
