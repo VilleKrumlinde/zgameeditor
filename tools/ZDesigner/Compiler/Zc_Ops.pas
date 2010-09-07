@@ -204,8 +204,6 @@ end;
 function TZcOp.GetDataType: TZcDataType;
 
   procedure DoIdentifier;
-  var
-    PRef : TZPropertyRef;
   begin
     if Ref is TZComponent then
       Result := zctReference;
@@ -239,19 +237,16 @@ begin
   else if Children.Count>0 then
   begin
     Result := Children.First.GetDataType;
-    if Result=zctReference then
-    begin
-      Etyp := Children.First.GetExtendedDataType;
-      case Etyp.Kind of
-        edtComponent:
-          begin
-            Etyp := Self.GetExtendedDataType;
-            Assert(Etyp.Kind=edtProperty);
-            Result := PropTypeToZType(Etyp.Prop.PropertyType);
-          end;
-        edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
-        edtPropIndex: Result := zctFloat;
-      end;
+    Etyp := Children.First.GetExtendedDataType;
+    case Etyp.Kind of
+      edtComponent:
+        begin
+          Etyp := Self.GetExtendedDataType;
+          Assert(Etyp.Kind=edtProperty);
+          Result := PropTypeToZType(Etyp.Prop.PropertyType);
+        end;
+      edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
+      edtPropIndex: Result := zctFloat;
     end;
   end;
 end;
@@ -279,19 +274,29 @@ begin
     end;
     if ETyp.Kind=edtProperty then
     begin
-      Result.Kind := edtPropIndex;
-      I := -1;
-      if Length(Id)>0 then
-        case Upcase(Id[1]) of
-          'X','R' : I := 0;
-          'Y','G' : I := 1;
-          'Z','B' : I := 2;
-          'W','A' : I := 3;
-        end;
-      if I<>-1 then
+      if Etyp.Prop.PropertyType=zptComponentRef then
       begin
-        Result.PropIndex := I;
+        Result.Kind := edtProperty;
+        Result.Prop := ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).Properties.GetByName(Self.Id);
+        if Result.Prop=nil then
+          raise ECodeGenError.Create('Unknown property: ' + Self.Id);
         Exit;
+      end else
+      begin
+        Result.Kind := edtPropIndex;
+        I := -1;
+        if Length(Id)=1 then
+          case Upcase(Id[1]) of
+            'X','R' : I := 0;
+            'Y','G' : I := 1;
+            'Z','B' : I := 2;
+            'W','A' : I := 3;
+          end;
+        if I<>-1 then
+        begin
+          Result.PropIndex := I;
+          Exit;
+        end;
       end;
     end;
   end;
