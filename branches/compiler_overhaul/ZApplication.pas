@@ -177,7 +177,7 @@ implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,ExprEdit
+  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,Compiler
   {$endif}
   ;
 
@@ -797,7 +797,7 @@ begin
     SymTab.Add('CurrentModel',Model);
 
   try
-    ExprEdit.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
+    Compiler.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');

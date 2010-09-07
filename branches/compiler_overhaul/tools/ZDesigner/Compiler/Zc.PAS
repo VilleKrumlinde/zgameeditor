@@ -156,7 +156,7 @@ property Version : string read GetVersion write SetVersion;
   end; { TZc }
 
 implementation
-uses  ExprEdit;
+uses  Compiler;
 
 
 
@@ -1393,8 +1393,15 @@ end else if (fCurrentInputSymbol = _pointSym) then begin
 Get;
 Expect(identSym);
 
-Assert(OutOp.Kind=zcIdentifier);
-OutOp.Id  :=  OutOp.Id  +  '.'  +  LexString;
+
+if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect])  then
+ZError('Invalid  use  of  "."');
+
+Op  :=  MakeOp(zcSelect,[OutOp]);
+Op.Id  :=  LexString;
+
+OutOp  :=  Op;
+
 
 end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
@@ -1411,8 +1418,8 @@ OutOp.Children.Add(Op);
 end;
 end;
 
-if  not  VerifyFunctionCall(OutOp,S)  then
-   ZError(S);
+  if  not  VerifyFunctionCall(OutOp,S)  then
+    ZError(S);
 
 Expect(_rparenSym);
 end else begin

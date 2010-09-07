@@ -14,7 +14,15 @@ type
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
-          zcBreak,zcContinue,zcConditional,zcSwitch);
+          zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect);
+
+  TZcExtendedDataType = record
+    Kind : (edtComponent,edtProperty,edtPropIndex);
+    case Integer of
+      0 : (Component : TZComponent);
+      1 : (Prop : TZProperty);
+      2 : (PropIndex : integer);
+  end;
 
 
   TZcOp = class;
@@ -32,6 +40,7 @@ type
     function Child(I : integer) : TZcOp;
     function Optimize : TZcOp; virtual;
     function GetDataType : TZcDataType; virtual;
+    function GetExtendedDataType : TZcExtendedDataType; virtual;
   end;
 
   TZcOpVariableBase = class(TZcOp)
@@ -142,7 +151,7 @@ var
   //Used for memory management
   FunctionCleanUps : TObjectList;
 
-  //State shared between this unit and Zc-commpiler
+  //State shared between this unit and Zc-compiler
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
@@ -150,7 +159,7 @@ var
 
 implementation
 
-uses SysUtils,Math,ExprEdit,Classes;
+uses SysUtils,Math,Compiler,Classes;
 
 var
   BuiltInFunctions : TObjectList=nil;
@@ -159,11 +168,23 @@ var
 
 const
   ZcTypeNames : array[TZcDataType] of string =
-(('void'),('float'),('int'),('string'));
+(('void'),('float'),('int'),('string'),('#reference'));
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 begin
   Result := ZcTypeNames[Typ];
+end;
+
+function PropTypeToZType(PTyp : TZPropertyType) : TZcDataType;
+begin
+  Result := zctVoid;
+  if PTyp in ZClasses.FloatTypes then
+    Result := zctFloat
+  else
+    case PTyp of
+      zptInteger,zptByte,zptBoolean : Result := zctInt;
+      zptString : Result := zctString;
+    end;
 end;
 
 constructor TZcOp.Create(Owner : TObjectList);
@@ -179,34 +200,30 @@ begin
   FreeAndNil(Children);
 end;
 
+
 function TZcOp.GetDataType: TZcDataType;
 
   procedure DoIdentifier;
   var
-    Ref : TZPropertyRef;
+    PRef : TZPropertyRef;
   begin
-    if ParsePropRef(CompilerContext.SymTab,CompilerContext.ThisC,Self.Id,Ref) then
-    begin
-      if Ref.Prop.PropertyType in ZClasses.FloatTypes then
-        Result := zctFloat
-      else
-        case Ref.Prop.PropertyType of
-          zptInteger,zptByte,zptBoolean : Result := zctInt;
-          zptString : Result := zctString;
-        end;
-    end;
+    if Ref is TZComponent then
+      Result := zctReference;
   end;
 
+var
+  Etyp : TZcExtendedDataType;
 begin
   Result := zctVoid;
-  if (Ref<>nil) and (Ref is TZcOp) then
+  if (Ref is TZcOp) then
   begin
+    //Local vars, func calls
     Result := (Ref as TZcOp).GetDataType;
   end else if Kind=zcIdentifier then
     DoIdentifier
   else if Kind=zcArrayAccess then
   begin
-    if (Ref<>nil) and (Ref is TDefineArray) then
+    if (Ref is TDefineArray) then
     begin
       case (Ref as TDefineArray)._Type of
         dvbFloat : Result := zctFloat;
@@ -214,18 +231,71 @@ begin
         dvbString : Result := zctString;
       end;
     end;
-  end else if Kind=zcFuncCall then
-  begin
-    //Result := zctFloat //built in function
-    //should never get here, funcalls have ref set to function
-    Assert(False,'Compile error: ' + Self.Id);
   end
   else if Kind=zcConstLiteral then
     Result := zctFloat
   else if Kind=zcConditional then
-    Result := Child(1).GetDataType
+    Result := Children[1].GetDataType
   else if Children.Count>0 then
-    Result := Child(0).GetDataType;
+  begin
+    Result := Children.First.GetDataType;
+    if Result=zctReference then
+    begin
+      Etyp := Children.First.GetExtendedDataType;
+      case Etyp.Kind of
+        edtComponent:
+          begin
+            Etyp := Self.GetExtendedDataType;
+            Assert(Etyp.Kind=edtProperty);
+            Result := PropTypeToZType(Etyp.Prop.PropertyType);
+          end;
+        edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
+        edtPropIndex: Result := zctFloat;
+      end;
+    end;
+  end;
+end;
+
+function TZcOp.GetExtendedDataType: TZcExtendedDataType;
+var
+  Etyp : TZcExtendedDataType;
+  I : integer;
+begin
+  if Ref is TZComponent then
+  begin
+    Result.Kind := edtComponent;
+    Result.Component := Ref as TZComponent;
+    Exit;
+  end else if (Ref=nil) and (Children.Count>0) then
+  begin
+    ETyp := Children.First.GetExtendedDataType;
+    if ETyp.Kind=edtComponent then
+    begin
+      Result.Kind := edtProperty;
+      Result.Prop := ETyp.Component.GetProperties.GetByName(Self.Id);
+      if Result.Prop=nil then
+        raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+      Exit;
+    end;
+    if ETyp.Kind=edtProperty then
+    begin
+      Result.Kind := edtPropIndex;
+      I := -1;
+      if Length(Id)>0 then
+        case Upcase(Id[1]) of
+          'X','R' : I := 0;
+          'Y','G' : I := 1;
+          'Z','B' : I := 2;
+          'W','A' : I := 3;
+        end;
+      if I<>-1 then
+      begin
+        Result.PropIndex := I;
+        Exit;
+      end;
+    end;
+  end;
+  raise ECodeGenError.Create('Could not determine type: ' + Self.Id);
 end;
 
 function TZcOp.Child(I : integer) : TZcOp;
@@ -348,6 +418,7 @@ begin
       begin
         Result := '(' + Child(0).ToString + ') ? ' + Child(1).ToString + ' : ' + Child(2).ToString;
       end;
+    zcSelect : Result := Child(0).ToString + '.' + Self.Id;
   end;
 end;
 

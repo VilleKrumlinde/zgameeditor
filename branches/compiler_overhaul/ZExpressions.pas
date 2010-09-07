@@ -304,7 +304,7 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (emPop,emDup);
+    Kind : (emPop,emDup,emLoadCurrentModel,emPtrDeref4);
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -359,6 +359,14 @@ type
     procedure Execute; override;
   end;
 
+  TExpLoadComponent = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Component : TZComponent;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -371,7 +379,7 @@ var
 implementation
 
 
-uses ZMath,ZPlatform,ZApplication,ZLog
+uses ZMath,ZPlatform,ZApplication,ZLog, Meshes
 {$ifndef minimal},SysUtils,Math,Windows{$endif};
 
 var
@@ -1209,6 +1217,13 @@ begin
         StackPush(V);
         StackPush(V);
       end;
+    emLoadCurrentModel :
+      StackPush( Meshes.CurrentModel );
+    emPtrDeref4 :
+      begin
+        StackPopTo(V);
+        StackPush(pointer(V)^);
+      end;
   end;
 end;
 
@@ -1567,6 +1582,19 @@ begin
     StackPush(RetVal);
 end;
 
+{ TExpLoadComponent }
+
+procedure TExpLoadComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+end;
+
+procedure TExpLoadComponent.Execute;
+begin
+  StackPushValue(Self.Component);
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -1627,6 +1655,8 @@ initialization
   ZClasses.Register(TExpStringConCat,ExpStringConCatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStringFuncCall,ExpStringFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpLoadComponent,ExpLoadComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

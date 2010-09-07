@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
 <CocoRDelphi>
   <Files>
-    <File Type="Source" Display="Source File" FileName="C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\zc.ATG" />
-    <File Type="Info" Display="Trace Listing" FileName="C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\zc.LST" />
-    <File Type="Info" Display="Generated Component File" FileName="C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc.PAS" />
+    <File Type="Source" Display="Source File" FileName="C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\zc.ATG" />
+    <File Type="Info" Display="Trace Listing" FileName="C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\zc.LST" />
+    <File Type="Info" Display="Generated Component File" FileName="C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\Zc.PAS" />
   </Files>
   <Errors>
     <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="MulExpr is a deletable symbol" Line="615" Col="0" Data="MulExpr" />
