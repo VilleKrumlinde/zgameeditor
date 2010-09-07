@@ -404,7 +404,7 @@ implementation
 
 {$R *.dfm}
 
-uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
+uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
@@ -1844,7 +1844,7 @@ begin
     CompileErrorLabel.BevelKind := bkNone;
     if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
-      ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
+      ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
         Log.Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );

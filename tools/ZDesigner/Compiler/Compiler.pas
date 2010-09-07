@@ -20,7 +20,7 @@ THE SOFTWARE.}
 
 //This unit is the glue between ZExpressions and Zc
 //VM code generation
-unit ExprEdit;
+unit Compiler;
 
 interface
 
@@ -195,6 +195,8 @@ type
     procedure GenValue(Op : TZcOp);
     procedure GenFuncCall(Op : TZcOp; NeedReturnValue : boolean);
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
+    procedure GenAddress(Op : TZcOp);
+    procedure GenAddInteger(const Value : integer);
     procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
     procedure MakeStringLiteralOp(const Value : string);
     procedure SetBreak(L : TZCodeLabel);
@@ -285,30 +287,49 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Target.AddComponent( MakeBinaryOp(Kind,Op.GetDataType) );
   end;
 
-  procedure DoGenVariableValue;
+  procedure DoGenIdentifier;
   var
-    C : TExpPropValueBase;
+    //C : TExpPropValueBase;
     L : TExpAccessLocal;
-    Source : TZPropertyRef;
+    //Source : TZPropertyRef;
   begin
-    if (Op.Ref<>nil) and
-      ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar))then
+    if (Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar) then
     begin
       //Local variable or argument
       L := TExpAccessLocal.Create(Target);
       L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loLoad;
+    end else if LowerCase(Op.Id)='currentmodel' then
+    begin
+      with TExpMisc.Create(Target) do
+        Kind := emLoadCurrentModel;
+    end else if Op.Ref is TZComponent then
+    begin
+      with TExpLoadComponent.Create(Target) do
+        Component := Op.Ref as TZComponent;
     end else
     begin
       //Property reference
-      if not GetPropRef(Op.Id,Source) then
+      GenAddress(Op);
+      //todo: gen deref1
+      with TExpMisc.Create(Target) do
+        Kind := emPtrDeref4;
+      {if not GetPropRef(Op.Id,Source) then
         raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
       if Source.Prop.PropertyType in [zptByte,zptBoolean] then
         C := TExpPropValue1.Create(Target)
       else
         C := TExpPropValue4.Create(Target);
-      C.Source := Source;
+      C.Source := Source;}
     end;
+  end;
+
+  procedure DoGenSelect;
+  begin
+    GenAddress(Op);
+    //todo: gen deref1
+    with TExpMisc.Create(Target) do
+      Kind := emPtrDeref4;
   end;
 
   procedure DoGenBoolean;
@@ -411,7 +432,7 @@ begin
     zcBinaryShiftL : DoGenBinary(vbkBinaryShiftLeft);
     zcBinaryShiftR : DoGenBinary(vbkBinaryShiftRight);
     zcConstLiteral : DoLiteral;
-    zcIdentifier : DoGenVariableValue;
+    zcIdentifier : DoGenIdentifier;
     zcFuncCall : GenFuncCall(Op,True);
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
@@ -421,8 +442,72 @@ begin
     zcAssign,zcPreInc,zcPreDec : GenAssign(Op,alvPost);
     zcPostInc,zcPostDec : GenAssign(Op,alvPre);
     zcConditional : DoGenConditional;
+    zcSelect : DoGenSelect;
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
+  end;
+end;
+
+procedure TZCodeGen.GenAddInteger(const Value: integer);
+var
+  Add : TExpOpBinaryInt;
+  Cnt : TExpConstantInt;
+begin
+  if Value=0 then
+    Exit;
+
+  if (Target.Last is TExpOpBinaryInt) then
+  begin
+    //Accumulate to previous add
+    Add := Target.Last as TExpOpBinaryInt;
+    if (Add.Kind=vbkPlus) and (Target[ Target.Count-2 ] is TExpConstantInt) then
+    begin
+      Cnt := Target[ Target.Count-2 ] as TExpConstantInt;
+      Inc(Cnt.Constant,Value);
+      Exit;
+    end;
+  end;
+
+  //Create new add
+  Cnt := TExpConstantInt.Create(Target);
+  Cnt.Constant := Value;
+  TExpOpBinaryInt.Create(Target,vbkPlus);
+end;
+
+procedure TZCodeGen.GenAddress(Op: TZcOp);
+
+{  procedure DoGenIdent;
+  begin
+
+  end;}
+
+  procedure DoGenSelect;
+  var
+    ETyp : TZcExtendedDataType;
+  begin
+    ETyp := Op.GetExtendedDataType;
+    case ETyp.Kind of
+      edtProperty :
+        begin
+          GenValue(Op.Children.First);
+          GenAddInteger(ETyp.Prop.Offset);
+        end;
+      edtPropIndex :
+        begin
+          GenAddress(Op.Children.First);
+          GenAddInteger(ETyp.PropIndex * 4);
+        end;
+      else
+        raise ECodeGenError.Create('Invalid datatype for select: ' + Op.Id);
+    end;
+  end;
+
+begin
+  case Op.Kind of
+//    zcIdentifier : DoGenIdent;
+    zcSelect : DoGenSelect;
+  else
+    raise ECodeGenError.Create('Unsupported operator for address expression: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 
@@ -436,6 +521,8 @@ var
   Aw : TExpArrayWrite;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
+  Etyp : TZcExtendedDataType;
+  Ptyp : TZPropertyType;
 begin
   //Left-hand side of the assignment
   LeftOp := Op.Child(0);
@@ -455,6 +542,28 @@ begin
     L := TExpAccessLocal.Create(Target);
     L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
     L.Kind := loStore;
+  end
+  else if LeftOp.Kind=zcSelect then
+  begin
+    GenAddress(LeftOp);
+    GenValue(RightOp);
+    Etyp := LeftOp.GetExtendedDataType;
+    case Etyp.Kind of
+      edtProperty : Ptyp := Etyp.Prop.PropertyType;
+      edtPropIndex :
+        begin
+          Etyp := LeftOp.Children.First.GetExtendedDataType;
+          Assert(Etyp.Kind=edtProperty);
+          Ptyp := Etyp.Prop.PropertyType;
+        end
+    else
+      raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
+    end;
+    if Ptyp in [zptByte,zptBoolean] then
+      AssignSize:=1
+    else
+      AssignSize:=4;
+    Target.AddComponent( MakeAssignOp(AssignSize) );
   end
   else if LeftOp.Kind=zcIdentifier then
   begin

@@ -58,7 +58,7 @@ type
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
- ExpStringFuncCallClassId,
+ ExpStringFuncCallClassId,ExpLoadComponentClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -234,7 +234,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt,zctString);
+  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctReference);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
