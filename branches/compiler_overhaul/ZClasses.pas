@@ -58,7 +58,7 @@ type
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
- ExpStringFuncCallClassId,ExpLoadComponentClassId,
+ ExpStringFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -278,10 +278,10 @@ type
     NeverPersist : boolean;
     DontClone : boolean;
     IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
+    Offset : integer;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
-    Offset : integer;
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
     ExcludeFromBinary : boolean;  //Ta inte med denna prop i binärström (designer only)
@@ -416,6 +416,7 @@ type
     LastAdded : TZComponentInfo;
     {$ifend}
   {$IFNDEF MINIMAL}
+    function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
     function SaveBinaryToStream(Component : TZComponent) : TObject;
     function LoadXmlFromFile(FileName : string) : TZComponent;
     function LoadXmlFromString(const XmlData : string; SymTab : TSymbolTable) : TZComponent;
@@ -1524,6 +1525,25 @@ begin
     end;
   end;
   raise Exception.Create('Class not found: ' + ZClassName);
+end;
+
+function TZComponentManager.GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
+var
+  I : TZClassIds;
+  Ci : TZComponentInfo;
+begin
+  for I := Low(ComponentInfos) to High(ComponentInfos) do
+  begin
+    Ci := ComponentInfos[I];
+    if Ci=nil then
+      Continue;
+    if Ci.ZClass=C then
+    begin
+      Result := Ci;
+      Exit;
+    end;
+  end;
+  raise Exception.Create('Class not found: ' + C.ClassName);
 end;
 {$ENDIF}
 

@@ -490,7 +490,10 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
       edtProperty :
         begin
           GenValue(Op.Children.First);
-          GenAddInteger(ETyp.Prop.Offset);
+          //GenAddInteger(ETyp.Prop.Offset);
+          with TExpLoadPropOffset.Create(Target) do
+            PropId := ETyp.Prop.PropId;
+          TExpOpBinaryInt.Create(Target,vbkPlus);
         end;
       edtPropIndex :
         begin

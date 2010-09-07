@@ -367,6 +367,17 @@ type
     Component : TZComponent;
   end;
 
+  TExpLoadPropOffset  = class(TExpBase)
+  strict private
+    IsInit : boolean;
+    Offset : integer;
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    PropId : integer;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -1595,6 +1606,28 @@ begin
   StackPushValue(Self.Component);
 end;
 
+{ TExpLoadPropOffset }
+
+procedure TExpLoadPropOffset.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'PropId',{$ENDIF}integer(@PropId), zptInteger);
+end;
+
+procedure TExpLoadPropOffset.Execute;
+var
+  C : TZComponent;
+begin
+  if not IsInit then
+  begin
+    StackPopTo(C);
+    Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
+    StackPushValue(C);
+    IsInit := True;
+  end;
+  StackPush(Self.Offset);
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -1657,6 +1690,8 @@ initialization
   ZClasses.Register(TExpStringFuncCall,ExpStringFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpLoadComponent,ExpLoadComponentClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpLoadPropOffset,ExpLoadPropOffsetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.
