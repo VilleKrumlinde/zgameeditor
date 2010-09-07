@@ -234,20 +234,18 @@ begin
     Result := zctFloat
   else if Kind=zcConditional then
     Result := Children[1].GetDataType
-  else if Children.Count>0 then
+  else if Kind=zcSelect then
   begin
-    Result := Children.First.GetDataType;
-    Etyp := Children.First.GetExtendedDataType;
+    Etyp := Self.GetExtendedDataType;
     case Etyp.Kind of
-      edtComponent:
-        begin
-          Etyp := Self.GetExtendedDataType;
-          Assert(Etyp.Kind=edtProperty);
-          Result := PropTypeToZType(Etyp.Prop.PropertyType);
-        end;
+      edtComponent: Result := zctReference;
       edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
       edtPropIndex: Result := zctFloat;
     end;
+  end
+  else if Children.Count>0 then
+  begin
+    Result := Children.First.GetDataType;
   end;
 end;
 
