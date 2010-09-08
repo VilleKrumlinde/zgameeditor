@@ -304,7 +304,7 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (emPop,emDup,emLoadCurrentModel,emPtrDeref4);
+    Kind : (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1);
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -1234,6 +1234,12 @@ begin
       begin
         StackPopTo(V);
         StackPush(pointer(V)^);
+      end;
+    emPtrDeref1 :
+      begin
+        StackPopTo(V);
+        V := PByte(V)^;
+        StackPush(V);
       end;
   end;
 end;

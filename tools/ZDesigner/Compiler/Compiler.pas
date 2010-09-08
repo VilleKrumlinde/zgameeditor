@@ -287,6 +287,29 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Target.AddComponent( MakeBinaryOp(Kind,Op.GetDataType) );
   end;
 
+  procedure DoDeref(Op : TZcOp);
+  var
+    Etyp : TZcExtendedDataType;
+    PTyp : TZPropertyType;
+  begin
+    Etyp := Op.GetExtendedDataType;
+    if ETyp.Kind=edtPropIndex then
+      Etyp := Op.Children.First.GetExtendedDataType;
+    if Etyp.Kind<>edtProperty then
+      raise ECodeGenError.Create('Failed to deref ' + Op.Id);
+    PTyp := Etyp.Prop.PropertyType;
+    if PTyp in [zptByte,zptBoolean] then
+    begin
+      with TExpMisc.Create(Target) do
+        Kind := emPtrDeref1;
+    end
+    else
+    begin
+      with TExpMisc.Create(Target) do
+        Kind := emPtrDeref4;
+    end;
+  end;
+
   procedure DoGenIdentifier;
   var
     //C : TExpPropValueBase;
@@ -311,25 +334,14 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     begin
       //Property reference
       GenAddress(Op);
-      //todo: gen deref1
-      with TExpMisc.Create(Target) do
-        Kind := emPtrDeref4;
-      {if not GetPropRef(Op.Id,Source) then
-        raise ECodeGenError.Create('Unknown identifier ' + Op.Id);
-      if Source.Prop.PropertyType in [zptByte,zptBoolean] then
-        C := TExpPropValue1.Create(Target)
-      else
-        C := TExpPropValue4.Create(Target);
-      C.Source := Source;}
+      DoDeref(Op);
     end;
   end;
 
   procedure DoGenSelect;
   begin
     GenAddress(Op);
-    //todo: gen deref1
-    with TExpMisc.Create(Target) do
-      Kind := emPtrDeref4;
+    DoDeref(Op);
   end;
 
   procedure DoGenBoolean;

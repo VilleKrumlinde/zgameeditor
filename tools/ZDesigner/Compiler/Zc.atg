@@ -692,8 +692,8 @@ Primary<var OutOp : TZcOp>
   )
 
   {
-  "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
-  | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+  "++" (. OutOp := MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp)); .)
+  | "--" (. OutOp := MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp)); .)
 
 /*  | "->" ident */
 
@@ -730,6 +730,11 @@ Primary<var OutOp : TZcOp>
     "]"
 
   }
+
+  (.
+    if OutOp.Kind=zcIdentifier then
+      OutOp := CheckIdentifier(OutOp);
+  .)
 .
 /*------------------------------------------------------------------------*/
 Literal<var Typ : TZcDataType>

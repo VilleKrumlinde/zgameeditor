@@ -1385,10 +1385,10 @@ while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _lbrackSym) do begin
 if (fCurrentInputSymbol = _plus_plusSym) then begin
 Get;
-OutOp  :=  MakePrePostIncDec(zcPostInc,OutOp);
+OutOp  :=  MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp));
 end else if (fCurrentInputSymbol = _minus_minusSym) then begin
 Get;
-OutOp  :=  MakePrePostIncDec(zcPostDec,OutOp);
+OutOp  :=  MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp));
 end else if (fCurrentInputSymbol = _pointSym) then begin
 Get;
 Expect(identSym);
@@ -1437,6 +1437,10 @@ end;
 Expect(_rbrackSym);
 end;
 end;
+
+if  OutOp.Kind=zcIdentifier  then
+   OutOp  :=  CheckIdentifier(OutOp);
+
 end;
 
 procedure TZc._MulExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Tmp  :  TZcOp;  Kind  :  TZcOpKind;

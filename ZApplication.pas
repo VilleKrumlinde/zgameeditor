@@ -796,11 +796,13 @@ begin
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
 
+  SymTab.Add('this',C);
   try
     Compiler.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
+    SymTab.Remove('this');
   end;
 end;
 {$endif}
