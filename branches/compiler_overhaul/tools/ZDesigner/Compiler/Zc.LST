@@ -1,6 +1,6 @@
 
 
-Compiled: den 3 september 2010 - 15:56:45
+Compiled: den 8 september 2010 - 11:47:55
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,14 +33,14 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 3 september 2010 @ 15:56:45
+Time Compiled: den 8 september 2010 @ 11:47:55
 
 Statistics:
   number of terminals:        87 (limit  2561)
   number of non-terminals:    33 (limit  1281)
   number of pragmas:           0 (limit  2474)
   number of symbolnodes:     120 (limit  2561)
-  number of graphnodes:      388 (limit 15001)
+  number of graphnodes:      389 (limit 15001)
   number of conditionsets:     1 (limit   101)
   number of charactersets:    25 (limit  4001)
 
@@ -754,8 +754,8 @@ Listing
   692    )
   693  
   694    {
-  695    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
-  696    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+  695    "++" (. OutOp := MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp)); .)
+  696    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp)); .)
   697  
   698  /*  | "->" ident */
   699  
@@ -792,16 +792,21 @@ Listing
   730      "]"
   731  
   732    }
-  733  .
-  734  /*------------------------------------------------------------------------*/
-  735  Literal<var Typ : TZcDataType>
-  736  = intCon (. Typ :=zctInt; .) |
-  737    realCon (. Typ := zctFloat; .) |
-  738    stringCon (. Typ := zctString; .)
-  739    (* | "true" | "false" | "null" *)
-  740  .
-  741  
-  742  END Zc.
+  733  
+  734    (.
+  735      if OutOp.Kind=zcIdentifier then
+  736        OutOp := CheckIdentifier(OutOp);
+  737    .)
+  738  .
+  739  /*------------------------------------------------------------------------*/
+  740  Literal<var Typ : TZcDataType>
+  741  = intCon (. Typ :=zctInt; .) |
+  742    realCon (. Typ := zctFloat; .) |
+  743    stringCon (. Typ := zctString; .)
+  744    (* | "true" | "false" | "null" *)
+  745  .
+  746  
+  747  END Zc.
 
     1 LL(1) error
    11 warnings

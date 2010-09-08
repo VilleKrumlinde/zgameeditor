@@ -280,7 +280,8 @@ begin
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//X,Y : current coordinate (0..1)'#13#10 +
-      '//Pixel : current color (rgb)';
+      '//Pixel : current color (rgb)'#13#10 +
+      '//Sample expression: this.Pixel.R=abs(sin(this.X*16));';
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
     List.GetLast.NeverPersist := True;

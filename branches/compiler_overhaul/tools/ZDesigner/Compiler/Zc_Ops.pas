@@ -137,6 +137,7 @@ function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
+function CheckIdentifier(Op : TZcOp) : TZcOp;
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : single;
@@ -659,6 +660,23 @@ begin
     if (WantedType=zctString) or (Op.GetDataType=zctString)  then
       raise ECodeGenError.Create('Cannot convert to/from string: ' + Op.ToString);
     Result := TZcOpConvert.Create(WantedType,Op);
+  end;
+end;
+
+function CheckIdentifier(Op : TZcOp) : TZcOp;
+var
+  PName : string;
+begin
+  Result := Op;
+  if (Op.Kind=zcIdentifier) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
+  begin
+    PName := 'Value';
+    case (Op.Ref as TDefineVariableBase)._Type of
+      dvbInt : PName := 'IntValue';
+      dvbString : PName := 'StringValue';
+    end;
+    Result := MakeOp(zcSelect,[Op]);
+    Result.Id := PName;
   end;
 end;
 
