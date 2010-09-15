@@ -169,7 +169,7 @@ var
 
 const
   ZcTypeNames : array[TZcDataType] of string =
-(('void'),('float'),('int'),('string'),('#reference'));
+(('void'),('float'),('int'),('string'),('model'),('#reference'));
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 begin
@@ -205,9 +205,16 @@ end;
 function TZcOp.GetDataType: TZcDataType;
 
   procedure DoIdentifier;
+  var
+    C : TZComponent;
   begin
     if Ref is TZComponent then
+    begin
       Result := zctReference;
+      C := Ref as TZComponent;
+      if ComponentManager.GetInfo(C).ClassId=ModelClassId then
+        Result := zctModel;
+    end;
   end;
 
 var
@@ -254,6 +261,15 @@ function TZcOp.GetExtendedDataType: TZcExtendedDataType;
 var
   Etyp : TZcExtendedDataType;
   I : integer;
+
+  procedure DoProp(Props : TZPropertyList);
+  begin
+    Result.Kind := edtProperty;
+    Result.Prop := Props.GetByName(Self.Id);
+    if Result.Prop=nil then
+      raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+  end;
+
 begin
   if Ref is TZComponent then
   begin
@@ -262,23 +278,22 @@ begin
     Exit;
   end else if (Ref=nil) and (Children.Count>0) then
   begin
+    if Children.First.GetDataType=zctModel then
+    begin
+      DoProp(ComponentManager.GetInfoFromId(ModelClassId).GetProperties);
+      Exit;
+    end;
     ETyp := Children.First.GetExtendedDataType;
     if ETyp.Kind=edtComponent then
     begin
-      Result.Kind := edtProperty;
-      Result.Prop := ETyp.Component.GetProperties.GetByName(Self.Id);
-      if Result.Prop=nil then
-        raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+      DoProp(ETyp.Component.GetProperties);
       Exit;
     end;
     if ETyp.Kind=edtProperty then
     begin
       if Etyp.Prop.PropertyType=zptComponentRef then
       begin
-        Result.Kind := edtProperty;
-        Result.Prop := ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).Properties.GetByName(Self.Id);
-        if Result.Prop=nil then
-          raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+        DoProp(ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).GetProperties);
         Exit;
       end else
       begin
@@ -668,6 +683,7 @@ var
   PName : string;
 begin
   Result := Op;
+  //Qualifies identifier referencing Variable-component with appropriate value-property
   if (Op.Kind=zcIdentifier) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
   begin
     PName := 'Value';
@@ -807,6 +823,7 @@ var
       'F' : Result := zctFloat;
       'I' : Result := zctInt;
       'S' : Result := zctString;
+      'M' : Result := zctModel;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
@@ -870,6 +887,7 @@ begin
   MakeOne('subStr',fcSubStr,'SSII');
   MakeOne('chr',fcChr,'SI');
   MakeOne('ord',fcOrd,'IS');
+  MakeOne('createModel',fcCreateModel,'MM');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
