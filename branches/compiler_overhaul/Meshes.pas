@@ -244,6 +244,7 @@ type
     procedure Update; override;        //anropas ej ifall active=false
     procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
+    procedure AddToScene;
     {$ifndef minimal}
     procedure DesignerUpdate;
     {$endif}
@@ -722,6 +723,12 @@ begin
 end;
 
 { TModel }
+
+procedure TModel.AddToScene;
+begin
+  Self.Active:=True;
+  ZApp.AddModel( Self );
+end;
 
 procedure TModel.Collision(Hit: TModel);
 begin
@@ -1252,8 +1259,8 @@ begin
       //same model instance to model-list
     else
     begin
-      Spawned.Active:=True;
-      ZApp.AddModel( Spawned );
+      Spawned.AddToScene;
+      ExecuteWithCurrentModel(Spawned,Spawned.OnSpawn);
       if SpawnerIsParent then
       begin
         CurrentModel.ChildModelRefs.Add(Spawned);
@@ -1261,8 +1268,6 @@ begin
       end;
     end;
 
-    //CurrentModel must be spawned
-    ExecuteWithCurrentModel(Spawned,Spawned.OnSpawn);
   end;
 end;
 

@@ -234,7 +234,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctReference);
+  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -371,10 +371,11 @@ type
 
   //Info about one componentclass
   TZComponentInfo = class
+  private
+    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     ZClass : TZComponentClass;
     ClassId : TZClassIds;
-    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}
     ZClassName : string;  //Klassnamn utan 'T'
     NoUserCreate : boolean;
@@ -387,10 +388,11 @@ type
     AutoName : boolean;  //Give name automatically when inserted in designer
     ParamCount : integer; //Parameter count for contentproducers
     {$ENDIF}
-    {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
-    public
+    {$ifndef MINIMAL}
+  public
     HasGlobalData : boolean; //See audiomixer. Do not cache property-list.
-    {$ifend}
+    function GetProperties : TZPropertyList;
+    {$endif}
   end;
 
 
@@ -402,7 +404,6 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
-    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
   {$ENDIF}
@@ -411,6 +412,7 @@ type
     {$ifndef minimal}public
     destructor Destroy; override;{$else}private{$endif}
     function GetInfo(Component : TZComponent) : TZComponentInfo;
+    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
@@ -3584,6 +3586,26 @@ begin
   Self.ProduceOutput(GlobalContent.Content,GlobalContent.Stack);
 end;
 
+
+{ TZComponentInfo }
+
+{$ifndef minimal}
+function TZComponentInfo.GetProperties: TZPropertyList;
+var
+  C : TZComponent;
+begin
+  Result := Self.Properties;
+  if Result=nil then
+  begin
+    C := Self.ZClass.Create(nil);
+    Result := TZPropertyList.Create;
+    Result.TheSelf := integer(C);
+    C.DefineProperties(Result);
+    Self.Properties := Result;
+    C.Free;
+  end;
+end;
+{$endif}
 
 initialization
 

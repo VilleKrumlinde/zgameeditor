@@ -230,7 +230,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -735,6 +735,7 @@ procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
   I1,I2,I3 : integer;
+  M : TModel;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -855,6 +856,13 @@ begin
         //i=ord("A")
         StackPopTo(I1);
         PInteger(@V)^ := PByte(I1)^;
+      end;
+    fcCreateModel :
+      begin
+        StackPopTo(I1);
+        M := TModel(TModel(I1).Clone);
+        M.AddToScene;
+        V := single(M);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
