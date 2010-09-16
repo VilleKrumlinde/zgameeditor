@@ -38,7 +38,6 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Expression : TZExpressionPropValue;
-    Value : single;
     procedure Execute; override;
   end;
 
@@ -382,6 +381,10 @@ type
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
 
+{$ifndef minimal}
+procedure ResetScriptState;
+{$endif}
+
 var
   //Return value of last executed expression
   gReturnValue : single;
@@ -447,18 +450,39 @@ begin
   StackPopTo(Result);
 end;
 
-
 function StackGetPtrToItem(const Index : integer) : PInteger; inline;
 begin
   Result := @ZcStack;
   Inc(Result,Index);
 end;
 
-procedure RunCode(Code : TZComponentList);
+procedure SaveExecutionState;
+begin
+  StackPush(gCurrentPc);
+  StackPush(gCurrentBp);
+end;
+
+procedure RestoreExecutionState;
+begin
+  StackPopTo(gCurrentBp);
+  StackPopTo(gCurrentPc);
+end;
+
 {$ifndef minimal}
+procedure ResetScriptState;
+begin
+  //Reset stack
+  ZcStackPtr := ZcStackBegin;
+  gCurrentBP := 0;
+end;
+{$endif}
+
+procedure RunCode(Code : TZComponentList);
 var
+{$ifndef minimal}
   GuardLimit,GuardAllocLimit : integer;
 {$endif}
+  SaveDepth : integer;
 begin
   //Pc can be modified in jump-code
   if Code.Count=0 then
@@ -466,8 +490,8 @@ begin
   gCurrentPc := Code.GetPtrToItem(0);
   gCurrentBP := 0;
 
-  //Reset stack
-  ZcStackPtr := ZcStackBegin;
+  SaveDepth := StackGetDepth;
+
   StackPushValue(nil); //Push return adress nil
 
   {$ifndef minimal}
@@ -488,10 +512,10 @@ begin
       ZHalt('One million strings allocated. Infinite loop?');
     {$endif}
   end;
-  if StackGetDepth=1 then
+  if StackGetDepth-SaveDepth=1 then
     StackPopTo(gReturnValue);
   {$ifndef minimal}
-  if StackGetDepth>0 then
+  if StackGetDepth-SaveDepth>0 then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
@@ -514,7 +538,6 @@ end;
 procedure TZExpression.Execute;
 begin
   ZExpressions.RunCode(Expression.Code);
-  Value := ZExpressions.gReturnValue;
 end;
 
 { TExpPropValueBase }
@@ -867,8 +890,11 @@ begin
     fcCreateModel :
       begin
         StackPopTo(I1);
-        M := TModel(TModel(I1).Clone);
-        M.AddToScene;
+        SaveExecutionState;
+          //AddToScene will call m.OnSpawn which in turn can run expressions
+          M := TModel(TModel(I1).Clone);
+          M.AddToScene;
+        RestoreExecutionState;
         V := single(M);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
@@ -1662,6 +1688,8 @@ begin
 end;
 
 initialization
+
+  ZcStackPtr := ZcStackBegin;
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
