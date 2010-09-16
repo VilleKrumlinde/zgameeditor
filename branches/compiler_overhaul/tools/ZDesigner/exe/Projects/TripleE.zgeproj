@@ -84,7 +84,7 @@ this.V.Y*=1+Temp1;]]>
             </MeshExpression>
           </Producers>
         </Mesh>
-        <Model Name="PlayerModel" Position="-3.9142 3.9932 0" Velocity="0.0183 0.0685 0" Category="4" CollisionBounds="0.1 0.4 0 0">
+        <Model Name="PlayerModel" Position="-3.7609 3.9948 0" Rotation="0 0 0" Velocity="-0.135 0.0521 0" Category="4" CollisionBounds="0.1 0.4 0 0">
           <Definitions>
             <DefineVariable Name="PlayerAngle"/>
             <DefineVariable Name="PlayerShieldTime"/>
@@ -471,7 +471,7 @@ LevelNo+=1;]]>
             </RenderTransformGroup>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
-            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.9059"/>
+            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.8927"/>
             <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
             <RenderText TextFloatRef="PlayerLives Value" X="-0.51" Y="0.92" Scale="0.66"/>
             <RenderText Text="FPS " TextFloatRef="App FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
@@ -504,7 +504,7 @@ LevelScoreVibrate*=0.9;
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=1-(abs(noise2(X*8,Y*10))*0.2);
+Temp1=1-(abs(noise2(this.X*8,this.Y*10))*0.2);
 this.Pixel.R=Temp1*0.98;
 this.Pixel.G=Temp1*0.98;
 this.Pixel.B=Temp1*0.98;]]>
@@ -514,7 +514,7 @@ this.Pixel.B=Temp1*0.98;]]>
         </Bitmap>
         <Material Name="PaperMaterial" Light="0" ZBuffer="0">
           <Textures>
-            <MaterialTexture Name="PaperMaterialTexture" Texture="PaperBitmap" TextureX="52.0247"/>
+            <MaterialTexture Name="PaperMaterialTexture" Texture="PaperBitmap" TextureX="54.3592"/>
           </Textures>
         </Material>
         <Bitmap Name="SunBitmap">
@@ -1430,8 +1430,8 @@ this.PColor.R=0.5;]]>
                 <BitmapExpression>
                   <Expression>
 <![CDATA[this.Pixel.R=
-  (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
-  (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
+  (0.5-abs(this.X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
+  (0.5-abs(this.Y-0.5)*1.8 + random(0,0.08) );
 this.Pixel.G=this.Pixel.R;
 this.Pixel.B=this.Pixel.R;
 this.Pixel.A=this.Pixel.R;
@@ -1512,8 +1512,8 @@ this.V.Y-=1;]]>
                   <Expression>
 <![CDATA[this.Pixel.R=1;
 
-Temp2=X-0.5;
-Temp3=Y-0.5;
+Temp2=this.X-0.5;
+Temp3=this.Y-0.5;
 //Distance from center 1..0
 Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
 
@@ -2740,7 +2740,7 @@ return
             <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
           </OnSpawn>
         </Model>
-        <Model Name="TitleMouseCursor" Position="-2.6302 -1.3677 0" Velocity="0.0036 -0.0003 0">
+        <Model Name="TitleMouseCursor" Position="-2.988 -2.0365 0" Velocity="3.5814 0.5968 0">
           <Definitions>
             <Mesh Name="TitleMouseMesh1">
               <Producers>

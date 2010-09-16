@@ -728,6 +728,7 @@ procedure TModel.AddToScene;
 begin
   Self.Active:=True;
   ZApp.AddModel( Self );
+  ExecuteWithCurrentModel(Self,Self.OnSpawn);
 end;
 
 procedure TModel.Collision(Hit: TModel);
@@ -1260,7 +1261,6 @@ begin
     else
     begin
       Spawned.AddToScene;
-      ExecuteWithCurrentModel(Spawned,Spawned.OnSpawn);
       if SpawnerIsParent then
       begin
         CurrentModel.ChildModelRefs.Add(Spawned);

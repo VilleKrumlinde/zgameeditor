@@ -545,7 +545,10 @@ end;
 procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
 begin
   if E is EZHalted then
-    Log.Error(E.Message)
+  begin
+    Log.Error(E.Message);
+    ZExpressions.ResetScriptState;
+  end
   else
     Application.ShowException(E);
 end;
@@ -2471,6 +2474,7 @@ begin
   if not CompileAll then
     Exit;
   try
+    ZExpressions.ResetScriptState;
     ZApp.DesignerReset;  //Reset timer-components etc
     ZApp.DesignerStart(Glp.Width,Glp.Height);
   except
