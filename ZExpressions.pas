@@ -496,6 +496,13 @@ begin
   {$endif}
 end;
 
+{$ifndef minimal}
+procedure CheckNilDeref(P : integer);
+begin
+  ZAssert(P>1024,'Null pointer referenced in expression');
+end;
+{$endif}
+
 { TZExpression }
 
 procedure TZExpression.DefineProperties(List: TZPropertyList);
@@ -1114,6 +1121,9 @@ procedure TExpStackFrame.Execute;
 begin
   StackPush(gCurrentBP);
   gCurrentBP := StackGetDepth;
+  {$ifndef MINIMAL}
+  FillChar(ZcStackPtr^,Self.Size * SizeOf(ZcStackPtr^),0);
+  {$endif}
   //Add frame to stack
   Inc(ZcStackPtr,Self.Size);
 end;
@@ -1241,11 +1251,17 @@ begin
     emPtrDeref4 :
       begin
         StackPopTo(V);
+        {$ifndef MINIMAL}
+        CheckNilDeref(integer(V));
+        {$endif}
         StackPush(pointer(V)^);
       end;
     emPtrDeref1 :
       begin
         StackPopTo(V);
+        {$ifndef MINIMAL}
+        CheckNilDeref(integer(V));
+        {$endif}
         V := PByte(V)^;
         StackPush(V);
       end;
@@ -1635,6 +1651,9 @@ begin
   if not IsInit then
   begin
     StackPopTo(C);
+    {$ifndef minimal}
+    CheckNilDeref(integer(C));
+    {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
     StackPushValue(C);
     IsInit := True;
