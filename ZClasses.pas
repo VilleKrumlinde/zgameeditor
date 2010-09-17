@@ -53,7 +53,7 @@ type
  RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,WebOpenClassId,
  ApplicationClassId,AppStateClassId,SetAppStateClassId,CallComponentClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
- ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,ExpPropValue4ClassId,ExpPropValue1ClassId,
+ ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,

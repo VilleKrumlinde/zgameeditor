@@ -60,7 +60,8 @@ type
     fRange: TRangeState;
     FTokenID: TtkTokenKind;
     FExtTokenID: TxtkTokenKind;
-    fIdentFuncTable: array[0..12] of TIdentFuncTableFunc;
+    //VK: update to upper limit in KeyIndices
+    fIdentFuncTable: array[0..16] of TIdentFuncTableFunc;
     fAsmAttri: TSynHighlighterAttributes;
     fCommentAttri: TSynHighlighterAttributes;
     fDirecAttri: TSynHighlighterAttributes;
@@ -77,7 +78,6 @@ type
     fSymbolAttri: TSynHighlighterAttributes;
     function AltFunc(Index: Integer): TtkTokenKind;
     function KeyWordFunc(Index: Integer): TtkTokenKind;
-    function FuncAsm(Index: Integer): TtkTokenKind;
     function HashKey(Str: PWideChar): Cardinal;
     function IdentKind(MayBe: PWideChar): TtkTokenKind;
     procedure InitIdent;
@@ -181,29 +181,35 @@ uses
   SynEditStrConst;
 {$ENDIF}
 
+//----
+//**** VK: Merge begin
+
 const
-  KeyWords: array[0..12] of UnicodeString = (
-    'break', 'case', 'continue', 'else', 'float', 'for', 'if', 'int', 'return', 
-    'string', 'switch', 'while', 'void' 
+  KeyWords: array[0..13] of UnicodeString = (
+    'break', 'case', 'continue', 'else', 'float', 'for', 'if', 'int', 'model',
+    'return', 'string', 'switch', 'while', 'void'
   );
 
-  KeyIndices: array[0..12] of Integer = (
-    12, 11, 2, 10, 0, 9, 8, 7, 1, 6, 5, 4, 3 
+  KeyIndices: array[0..16] of Integer = (
+    -1, 11, 13, -1, 8, 1, 9, 3, 6, 7, 0, 2, 12, -1, 5, 4, 10
   );
-  
+
 {$Q-}
 function TSynZcSyn.HashKey(Str: PWideChar): Cardinal;
 begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 425 + Ord(Str^) * 161;
+    Result := Result * 806 + Ord(Str^) * 2;
     inc(Str);
   end;
-  Result := Result mod 13;
+  Result := Result mod 17;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
+
+//**** VK: Merge end
+//----
 
 function TSynZcSyn.IdentKind(MayBe: PWideChar): TtkTokenKind;
 var
@@ -238,19 +244,7 @@ begin
   if IsCurrentToken(KeyWords[Index]) then
     Result := tkKey
   else
-    Result := tkIdentifier
-end;
-
-function TSynZcSyn.FuncAsm(Index: Integer): TtkTokenKind;
-begin
-  if IsCurrentToken(KeyWords[Index]) then
-  begin
-    Result := tkKey;
-    fRange := rsAsm;
-    fAsmStart := True;
-  end
-  else
-    Result := tkIdentifier
+    Result := tkIdentifier;
 end;
 
 constructor TSynZcSyn.Create(AOwner: TComponent);
