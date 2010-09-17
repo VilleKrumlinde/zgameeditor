@@ -186,7 +186,6 @@ type
     BreakStack,ContinueStack : TStack<TZCodeLabel>;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
-    function GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
     function NewLabel : TZCodeLabel;
     procedure DefineLabel(Lbl : TZCodeLabel);
     procedure ResolveLabels;
@@ -208,16 +207,6 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
-
-
-function TZCodeGen.GetPropRef(const VarName: string; var Ref : TZPropertyRef) : boolean;
-begin
-  Result := ParsePropRef(SymTab,Component,VarName,Ref);
-  if Result and ((not (Ref.Prop.PropertyType in ZClasses.FloatTypes + [zptString,zptInteger,zptByte,zptBoolean])) or
-    Ref.Prop.ExcludeFromBinary) then
-    raise ECodeGenError.Create('This type of property can not be used in expressions: ' + VarName);
-end;
-
 
 function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpBase;
 begin
@@ -267,13 +256,15 @@ end;
 
 procedure TZCodeGen.MakeStringLiteralOp(const Value : string);
 var
-  C : TExpPropValueBase;
   Con : TExpStringConstant;
+  Op : TZcop;
 begin
   Con := ZApp.AddToConstantPool(Value) as TExpStringConstant;
-  C := TExpPropValue4.Create(Target);
-  C.Source.Component := Con;
-  C.Source.Prop := Con.GetProperties.GetByName('Value');
+  Op := MakeOp(zcIdentifier);
+  Op.Ref := Con;
+  Op := MakeOp(zcSelect,[Op]);
+  Op.Id := 'Value';
+  GenValue(Op);
 end;
 
 //Genererar en op som skapar ett värde på stacken
@@ -529,8 +520,7 @@ end;
 procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
 //LeaveValue : Optionally leave a value of the assignement on stack.
 var
-  C,C2 : TExpPropPtr;
-  SaveCount,I,J,LastIndex,AssignSize : integer;
+  I,AssignSize : integer;
 
   A : TZComponent;
   Aw : TExpArrayWrite;
@@ -580,7 +570,7 @@ begin
       AssignSize:=4;
     Target.AddComponent( MakeAssignOp(AssignSize) );
   end
-  else if LeftOp.Kind=zcIdentifier then
+(*  else if LeftOp.Kind=zcIdentifier then
   begin
     if LeaveValue=alvPost then
       raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
@@ -626,7 +616,7 @@ begin
         Target.AddComponent( MakeAssignOp(AssignSize) );
       end;
     end;
-  end else if LeftOp.Kind=zcArrayAccess then
+  end *) else if LeftOp.Kind=zcArrayAccess then
   begin
     if LeaveValue=alvPost then
       raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');

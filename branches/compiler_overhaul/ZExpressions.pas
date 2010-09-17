@@ -140,24 +140,6 @@ type
     {$ifndef minimal}public function ExpAsText : string;{$endif}
   end;
 
-  //Load value of prop to stack
-  TExpPropValueBase = class(TExpBase)
-  protected
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    Source : TZPropertyRef;
-  end;
-
-  TExpPropValue4 = class(TExpPropValueBase)
-  protected
-    procedure Execute; override;
-  end;
-
-  TExpPropValue1 = class(TExpPropValueBase)
-  protected
-    procedure Execute; override;
-  end;
-
   //Load pointer to prop on stack, used with assign
   TExpPropPtr = class(TExpBase)
   protected
@@ -538,28 +520,6 @@ end;
 procedure TZExpression.Execute;
 begin
   ZExpressions.RunCode(Expression.Code);
-end;
-
-{ TExpPropValueBase }
-
-procedure TExpPropValueBase.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptPropertyRef);
-end;
-
-procedure TExpPropValue4.Execute;
-begin
-  StackPush(ZClasses.GetPropertyRef(Source)^);
-end;
-
-//Load byte value and cast to integer
-procedure TExpPropValue1.Execute;
-var
-  I : integer;
-begin
-  I := PByte(ZClasses.GetPropertyRef(Source))^;
-  StackPush(I);
 end;
 
 { TExpConstantFloat }
@@ -1711,10 +1671,6 @@ initialization
   ZClasses.Register(TExpOpBinaryFloat,ExpOpBinaryFloatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpOpBinaryInt,ExpOpBinaryIntClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropValue4,ExpPropValue4ClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropValue1,ExpPropValue1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpPropPtr,ExpPropPtrClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
