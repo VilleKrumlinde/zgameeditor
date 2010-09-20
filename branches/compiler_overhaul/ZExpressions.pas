@@ -137,7 +137,7 @@ type
   TExpBase = class(TZComponent)
   protected
     procedure Execute; virtual; abstract;
-    {$ifndef minimal}public function ExpAsText : string;{$endif}
+    {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
   end;
 
   //Load pointer to prop on stack, used with assign
@@ -280,12 +280,14 @@ type
     Arguments : integer;
   end;
 
+  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1);
+    Kind : TExpMiscKind;
+    {$ifndef minimal}public function ExpAsText : string; override;{$endif}
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -376,7 +378,7 @@ implementation
 
 
 uses ZMath,ZPlatform,ZApplication,ZLog, Meshes
-{$ifndef minimal},SysUtils,Math,Windows{$endif};
+{$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
 
 var
   //Expression execution context
@@ -1188,7 +1190,7 @@ var
 begin
   Result := Copy(ComponentManager.GetInfo(Self).ZClassName,4,255);
   PropList := Self.GetProperties;
-  for I := 3 to PropList.Count-1 do
+  for I := 4 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
     Self.GetProperty(Prop,Value);
@@ -1253,6 +1255,13 @@ begin
       end;
   end;
 end;
+
+{$ifndef minimal}
+function TExpMisc.ExpAsText : string;
+begin
+  Result := 'Misc ' + Copy(GetEnumName(TypeInfo(TExpMiscKind),Ord(Kind)),3,100);
+end;
+{$endif}
 
 { TZLibrary }
 
