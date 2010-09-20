@@ -527,7 +527,7 @@ var
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
   Etyp : TZcExtendedDataType;
-  Ptyp : TZPropertyType;
+  Prop : TZProperty;
 begin
   //Left-hand side of the assignment
   LeftOp := Op.Child(0);
@@ -552,19 +552,26 @@ begin
   begin
     GenAddress(LeftOp);
     GenValue(RightOp);
+    if LeaveValue=alvPost then
+      with TExpMisc.Create(Target) do
+        Kind := emDup;
     Etyp := LeftOp.GetExtendedDataType;
     case Etyp.Kind of
-      edtProperty : Ptyp := Etyp.Prop.PropertyType;
+      edtProperty : Prop := Etyp.Prop;
       edtPropIndex :
         begin
           Etyp := LeftOp.Children.First.GetExtendedDataType;
           Assert(Etyp.Kind=edtProperty);
-          Ptyp := Etyp.Prop.PropertyType;
+          Prop := Etyp.Prop;
         end
     else
       raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
     end;
-    if Ptyp in [zptByte,zptBoolean] then
+    if Prop.IsReadOnly then
+      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+    if (Prop.PropertyType=zptString) and (not Prop.IsStringTarget) then
+      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+    if Prop.PropertyType in [zptByte,zptBoolean] then
       AssignSize:=1
     else
       AssignSize:=4;

@@ -683,9 +683,9 @@ var
   PName : string;
 begin
   Result := Op;
-  //Qualifies identifier referencing Variable-component with appropriate value-property
   if (Op.Kind=zcIdentifier) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
   begin
+    //Qualifies identifier referencing Variable-component with appropriate value-property
     PName := 'Value';
     case (Op.Ref as TDefineVariableBase)._Type of
       dvbInt : PName := 'IntValue';
@@ -693,6 +693,14 @@ begin
     end;
     Result := MakeOp(zcSelect,[Op]);
     Result.Id := PName;
+  end else if (Op.Kind=zcIdentifier) and (Op.Ref=nil) then
+  begin
+    //Qualifies identifier referencing property of current component with "this"-prefix
+    if CompilerContext.ThisC.GetProperties.GetByName(Op.Id)<>nil then
+    begin
+      Op.Children.Add(MakeIdentifier('this'));
+      Op.Kind := zcSelect;
+    end;
   end;
 end;
 
