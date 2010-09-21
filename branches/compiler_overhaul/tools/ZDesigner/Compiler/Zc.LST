@@ -1,6 +1,6 @@
 
 
-Compiled: den 15 september 2010 - 14:59:33
+Compiled: den 21 september 2010 - 13:42:53
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 15 september 2010 @ 14:59:33
+Time Compiled: den 21 september 2010 @ 13:42:53
 
 Statistics:
   number of terminals:        88 (limit  2561)
@@ -762,7 +762,7 @@ Listing
   700  
   701    | "." ident (.
   702  
-  703        if not (OutOp.Kind in [zcIdentifier,zcSelect]) then
+  703        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall]) then
   704          ZError('Invalid use of "."');
   705  
   706        Op := MakeOp(zcSelect,[OutOp]);

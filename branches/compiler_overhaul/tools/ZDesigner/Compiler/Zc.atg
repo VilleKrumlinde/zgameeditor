@@ -517,7 +517,7 @@ Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
               OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
          .)
       ]
-  | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, MakeCompatible(Op2,Op1.GetDataType) ); .)
+  | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
   )
 .
 /*------------------------------------------------------------------------*/
@@ -700,7 +700,7 @@ Primary<var OutOp : TZcOp>
 
   | "." ident (.
 
-      if not (OutOp.Kind in [zcIdentifier,zcSelect]) then
+      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall]) then
         ZError('Invalid use of "."');
 
       Op := MakeOp(zcSelect,[OutOp]);

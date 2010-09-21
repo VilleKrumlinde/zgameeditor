@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="1 2 3" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -391,6 +391,25 @@ if(ConF!=1.0)
   Error=1012;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Model values">
+      <Expression>
+<![CDATA[model m;
+
+m=Model1;
+m.Position=0;
+
+App.CameraPosition.X=1;
+App.CameraPosition.Y=2;
+App.CameraPosition.Z=3;
+
+m.Position=App.CameraPosition;
+
+if( (abs(m.Position.X-1)>0.1) &&
+  (abs(m.Position.Y-2)>0.1) &&
+  (abs(m.Position.Z-3)>0.1))
+  Error=1001;]]>
+      </Expression>
+    </ZExpression>
     <SpawnModel Model="Model1"/>
   </OnLoaded>
   <OnUpdate>
@@ -407,7 +426,7 @@ else
     <RenderText TextFloatRef="Error Value"/>
   </OnRender>
   <Content>
-    <Model Name="Model1">
+    <Model Name="Model1" Position="1 2 3">
       <OnRender>
         <RenderSprite/>
       </OnRender>

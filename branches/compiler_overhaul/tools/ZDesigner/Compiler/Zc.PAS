@@ -1396,7 +1396,7 @@ Get;
 Expect(identSym);
 
 
-if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect])  then
+if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect,zcFuncCall])  then
 ZError('Invalid  use  of  "."');
 
 Op  :=  MakeOp(zcSelect,[OutOp]);
