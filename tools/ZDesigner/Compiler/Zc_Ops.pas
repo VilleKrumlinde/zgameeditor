@@ -134,7 +134,7 @@ function MakeIdentifier(const Id : string) : TZcOp;
 
 function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
-function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
+function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckIdentifier(Op : TZcOp) : TZcOp;
@@ -735,20 +735,75 @@ begin
   end;
 end;
 
-function MakeAssign(Kind : TZcAssignType; Op1,Op2 : TZcOp) : TZcOp;
+function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 const
   AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
+var
+  Etyp : TZcExtendedDataType;
+
+  function InMultiAssign : TZcOp;
+  const
+    Names = 'RGBA';
+  var
+    I,LastIndex : integer;
+    BlockOp,Op : TZcOp;
+
+    function InSelect(Op : TZcOp; const S : string) : TZcOp;
+    var
+      Etyp : TZcExtendedDataType;
+      I : integer;
+    begin
+      if Op.Kind=zcSelect then
+      begin
+        ETyp := Op.GetExtendedDataType;
+        if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
+        begin
+          Op := MakeOp(zcSelect,Op);
+          Op.Id := S;
+        end;
+      end;{ else
+      begin
+        for I := 0 to Op.Children.Count - 1 do
+          Op.Children[I] := InSelect(Op.Children[I],S);
+      end; }
+      Result := Op;
+    end;
+
+  begin
+    if Etyp.Prop.PropertyType=zptVector3f then
+      LastIndex := 2
+    else
+      LastIndex := 3;
+    BlockOp := MakeOp(zcBlock);
+    for I := 0 to LastIndex do
+    begin
+      Op := MakeOp(zcSelect,Names[I+1]);
+      Op.Children.Add(LeftOp);
+      BlockOp.Children.Add( MakeAssign(Kind,Op, InSelect(RightOp,Op.Id) ) );
+    end;
+    Result := BlockOp;
+  end;
+
 begin
-  Op2 := MakeCompatible(Op2,Op1.GetDataType);
+  if (LeftOp.Kind=zcSelect) then
+  begin
+    //Detect multiassigns such as Model1.Position=Model2.Position;
+    //This is converted into a block of individual assignment (position.x=position.x etc)
+    ETyp := LeftOp.GetExtendedDataType;
+    if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
+      Exit( InMultiAssign );
+  end;
+
+  RightOp := MakeCompatible(RightOp,LeftOp.GetDataType);
   case Kind of
     atMulAssign,atDivAssign,atPlusAssign,atMinusAssign :  //Convert x*=2 to x=x*2
       begin
         //Note: op1 becomes inserted at a second position in the tree
         //This works because nodes do not own each other
-        Op2 := MakeOp(AssignMap[Kind],[Op1,Op2]);
+        RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
       end;
   end;
-  Result := MakeOp(zcAssign,[Op1,Op2]);
+  Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
 
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
