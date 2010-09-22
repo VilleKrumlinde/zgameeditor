@@ -210,6 +210,8 @@ type
     end;
 
   TModel = class(TZComponent)
+  strict private
+    class var NextModelClassId : integer;
   private
     CurrentState : TModelState;
   protected
@@ -241,6 +243,8 @@ type
     CollisionCoordinatesUpdatedTime : single;
     RenderOrder : (roNormal,roDepthsorted);
     SortKey : single; //Used when depthsorting models
+    ModelClassId : integer;
+    CollidedWith : TModel;
     procedure Update; override;        //anropas ej ifall active=false
     procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
@@ -733,11 +737,10 @@ end;
 
 procedure TModel.Collision(Hit: TModel);
 begin
-  ZApp.CollidedCategory := Hit.Category;
-  Meshes.CurrentModel := Self;
-  OnCollision.ExecuteCommands;
-  if (CurrentState<>nil) then
-    CurrentState.OnCollision.ExecuteCommands;
+  Self.CollidedWith := Hit;
+  ExecuteWithCurrentModel(Self,Self.OnCollision);
+  if CurrentState<>nil then
+    ExecuteWithCurrentModel(Self,CurrentState.OnCollision);
 end;
 
 procedure TModel.DefineProperties(List: TZPropertyList);
@@ -765,6 +768,16 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(CollisionStyleNames);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RenderOrder',{$ENDIF}integer(@RenderOrder), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Normal','Depthsorted']);{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'ClassId',{$ENDIF}integer(@ModelClassId), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CollidedWith',{$ENDIF}integer(@CollidedWith), zptComponentRef);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.DontClone := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
+
   List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}integer(@Personality), zptFloat);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
@@ -882,6 +895,8 @@ begin
   inherited Create(OwnerList);
   ChildModelRefs := TZArrayList.CreateReferenced;
   Personality := System.Random;
+  ModelClassId := TModel.NextModelClassId;
+  Inc(TModel.NextModelClassId);
 end;
 
 destructor TModel.Destroy;

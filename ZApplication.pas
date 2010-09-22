@@ -92,7 +92,6 @@ type
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
     Caption : TPropString;
-    CollidedCategory : integer;
     MousePosition : TZVector3f;
     ClearScreenMode : integer;
     ClearColor : TZColorf;
@@ -839,9 +838,6 @@ begin
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass), zptInteger);
-    List.GetLast.NeverPersist := True;
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@CollidedCategory), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@MousePosition), zptVector3f);

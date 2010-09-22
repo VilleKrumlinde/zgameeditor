@@ -41,6 +41,7 @@ type
     function Optimize : TZcOp; virtual;
     function GetDataType : TZcDataType; virtual;
     function GetExtendedDataType : TZcExtendedDataType; virtual;
+    function Clone : TZcOp; virtual;
   end;
 
   TZcOpVariableBase = class(TZcOp)
@@ -188,6 +189,19 @@ begin
     end;
 end;
 
+function TZcOp.Clone: TZcOp;
+var
+  Op : TZcOp;
+begin
+  Assert(Self.ClassType = TZcOp);
+  Result := TZcop.Create(nil);
+  Result.Kind := Self.Kind;
+  Result.Id := Self.Id;
+  Result.Ref := Self.Ref;
+  for Op in Children do
+    Result.Children.Add(Op.Clone);
+end;
+
 constructor TZcOp.Create(Owner : TObjectList);
 begin
   if Owner=nil then
@@ -214,7 +228,8 @@ function TZcOp.GetDataType: TZcDataType;
       C := Ref as TZComponent;
       if ComponentManager.GetInfo(C).ClassId=ModelClassId then
         Result := zctModel;
-    end;
+    end else if SameText(Id,'currentmodel') then
+      Result := zctModel;
   end;
 
 var
@@ -751,7 +766,7 @@ var
     function InSelect(Op : TZcOp; const S : string) : TZcOp;
     var
       Etyp : TZcExtendedDataType;
-      I : integer;
+      //I : integer;
     begin
       if Op.Kind=zcSelect then
       begin
@@ -763,8 +778,12 @@ var
         end;
       end;{ else
       begin
-        for I := 0 to Op.Children.Count - 1 do
-          Op.Children[I] := InSelect(Op.Children[I],S);
+        if Op.Children.Count>0 then
+        begin
+          Op := Op.Clone;
+          for I := 0 to Op.Children.Count - 1 do
+            Op.Children[I] := InSelect(Op.Children[I],S);
+        end;
       end; }
       Result := Op;
     end;
