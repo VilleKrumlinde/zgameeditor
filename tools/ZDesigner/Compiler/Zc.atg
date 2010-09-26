@@ -2,7 +2,7 @@ COMPILER Zc
 
 DELPHI
   USES (INTERFACE) Zc_Ops,contnrs,uSymTab,ZClasses
-  USES (IMPLEMENTATION) ExprEdit
+  USES (IMPLEMENTATION) Compiler
 
   TYPE
 
@@ -323,9 +323,10 @@ Type<var Typ : TZcDataType>
 
 SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
-= "float" (. Typ := zctFloat; .) |
-  "int" (. Typ := zctInt; .) |
-  "string" (. Typ := zctString; .)
+= "float" (. Typ := zctFloat; .)
+  | "int" (. Typ := zctInt; .)
+  | "string" (. Typ := zctString; .)
+  | "model" (. Typ := zctModel; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -516,7 +517,7 @@ Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
               OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
          .)
       ]
-  | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, MakeCompatible(Op2,Op1.GetDataType) ); .)
+  | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
   )
 .
 /*------------------------------------------------------------------------*/
@@ -664,7 +665,7 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
 .
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>         
-(. var Op : TZcOp; S : string; V : single; 
+(. var Op : TZcOp; S : string; V : single;
      Typ : TZcDataType;
 .)
 =            (. OutOp := nil; .)
@@ -692,14 +693,23 @@ Primary<var OutOp : TZcOp>
   )
 
   {
-  "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .) |
-  "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .) |
-/*  | "->" ident
-  | */
-  "." ident (.
-      Assert(OutOp.Kind=zcIdentifier);
-      OutOp.Id := OutOp.Id + '.' + LexString;
+  "++" (. OutOp := MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp)); .)
+  | "--" (. OutOp := MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp)); .)
+
+/*  | "->" ident */
+
+  | "." ident (.
+
+      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall]) then
+        ZError('Invalid use of "."');
+
+      Op := MakeOp(zcSelect,[OutOp]);
+      Op.Id := LexString;
+
+      OutOp := Op;
+
     .)
+
   | "(" (. Assert(OutOp.Kind=zcIdentifier);
            OutOp.Kind:=zcFuncCall;
          .)
@@ -707,7 +717,7 @@ Primary<var OutOp : TZcOp>
           {"," Argument<Op> (. OutOp.Children.Add(Op); .)
           }
         ]
-        (. 
+        (.
            if not VerifyFunctionCall(OutOp,S) then
              ZError(S);
         .)
@@ -716,15 +726,20 @@ Primary<var OutOp : TZcOp>
   | "[" (. Assert(OutOp.Kind=zcIdentifier);
            OutOp.Kind:=zcArrayAccess;
          .)
-    Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) 
-      {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) } 
-    "]" 
+    Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
+      {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
+    "]"
 
   }
+
+  (.
+    if OutOp.Kind=zcIdentifier then
+      OutOp := CheckIdentifier(OutOp);
+  .)
 .
 /*------------------------------------------------------------------------*/
 Literal<var Typ : TZcDataType>
-= intCon (. Typ :=zctInt; .) | 
+= intCon (. Typ :=zctInt; .) |
   realCon (. Typ := zctFloat; .) |
   stringCon (. Typ := zctString; .)
   (* | "true" | "false" | "null" *)

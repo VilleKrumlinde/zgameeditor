@@ -92,7 +92,6 @@ type
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
     Caption : TPropString;
-    CollidedCategory : integer;
     MousePosition : TZVector3f;
     ClearScreenMode : integer;
     ClearColor : TZColorf;
@@ -177,7 +176,7 @@ implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,ExprEdit
+  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,Compiler
   {$endif}
   ;
 
@@ -796,11 +795,13 @@ begin
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
 
+  SymTab.Add('this',C);
   try
-    ExprEdit.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
+    Compiler.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
+    SymTab.Remove('this');
   end;
 end;
 {$endif}
@@ -837,9 +838,6 @@ begin
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass), zptInteger);
-    List.GetLast.NeverPersist := True;
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@CollidedCategory), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@MousePosition), zptVector3f);

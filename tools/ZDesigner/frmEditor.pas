@@ -404,7 +404,7 @@ implementation
 
 {$R *.dfm}
 
-uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
+uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
@@ -545,7 +545,10 @@ end;
 procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
 begin
   if E is EZHalted then
-    Log.Error(E.Message)
+  begin
+    Log.Error(E.Message);
+    ZExpressions.ResetScriptState;
+  end
   else
     Application.ShowException(E);
 end;
@@ -1844,7 +1847,7 @@ begin
     CompileErrorLabel.BevelKind := bkNone;
     if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
-      ZLog.GetLog(Self.ClassName).Write(ExprEdit.CompileDebugString);
+      ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
         Log.Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
@@ -2471,6 +2474,7 @@ begin
   if not CompileAll then
     Exit;
   try
+    ZExpressions.ResetScriptState;
     ZApp.DesignerReset;  //Reset timer-components etc
     ZApp.DesignerStart(Glp.Width,Glp.Height);
   except

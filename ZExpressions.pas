@@ -38,7 +38,6 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Expression : TZExpressionPropValue;
-    Value : single;
     procedure Execute; override;
   end;
 
@@ -138,25 +137,7 @@ type
   TExpBase = class(TZComponent)
   protected
     procedure Execute; virtual; abstract;
-    {$ifndef minimal}public function ExpAsText : string;{$endif}
-  end;
-
-  //Load value of prop to stack
-  TExpPropValueBase = class(TExpBase)
-  protected
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    Source : TZPropertyRef;
-  end;
-
-  TExpPropValue4 = class(TExpPropValueBase)
-  protected
-    procedure Execute; override;
-  end;
-
-  TExpPropValue1 = class(TExpPropValueBase)
-  protected
-    procedure Execute; override;
+    {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
   end;
 
   //Load pointer to prop on stack, used with assign
@@ -230,7 +211,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -299,12 +280,14 @@ type
     Arguments : integer;
   end;
 
+  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (emPop,emDup);
+    Kind : TExpMiscKind;
+    {$ifndef minimal}public function ExpAsText : string; override;{$endif}
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -359,9 +342,32 @@ type
     procedure Execute; override;
   end;
 
+  TExpLoadComponent = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Component : TZComponent;
+  end;
+
+  TExpLoadPropOffset  = class(TExpBase)
+  strict private
+    IsInit : boolean;
+    Offset : integer;
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    PropId : integer;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
+
+{$ifndef minimal}
+procedure ResetScriptState;
+{$endif}
 
 var
   //Return value of last executed expression
@@ -371,8 +377,8 @@ var
 implementation
 
 
-uses ZMath,ZPlatform,ZApplication,ZLog
-{$ifndef minimal},SysUtils,Math,Windows{$endif};
+uses ZMath,ZPlatform,ZApplication,ZLog, Meshes
+{$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
 
 var
   //Expression execution context
@@ -428,18 +434,39 @@ begin
   StackPopTo(Result);
 end;
 
-
 function StackGetPtrToItem(const Index : integer) : PInteger; inline;
 begin
   Result := @ZcStack;
   Inc(Result,Index);
 end;
 
-procedure RunCode(Code : TZComponentList);
+procedure SaveExecutionState;
+begin
+  StackPush(gCurrentPc);
+  StackPush(gCurrentBp);
+end;
+
+procedure RestoreExecutionState;
+begin
+  StackPopTo(gCurrentBp);
+  StackPopTo(gCurrentPc);
+end;
+
 {$ifndef minimal}
+procedure ResetScriptState;
+begin
+  //Reset stack
+  ZcStackPtr := ZcStackBegin;
+  gCurrentBP := 0;
+end;
+{$endif}
+
+procedure RunCode(Code : TZComponentList);
 var
+{$ifndef minimal}
   GuardLimit,GuardAllocLimit : integer;
 {$endif}
+  SaveDepth : integer;
 begin
   //Pc can be modified in jump-code
   if Code.Count=0 then
@@ -447,8 +474,8 @@ begin
   gCurrentPc := Code.GetPtrToItem(0);
   gCurrentBP := 0;
 
-  //Reset stack
-  ZcStackPtr := ZcStackBegin;
+  SaveDepth := StackGetDepth;
+
   StackPushValue(nil); //Push return adress nil
 
   {$ifndef minimal}
@@ -469,13 +496,20 @@ begin
       ZHalt('One million strings allocated. Infinite loop?');
     {$endif}
   end;
-  if StackGetDepth=1 then
+  if StackGetDepth-SaveDepth=1 then
     StackPopTo(gReturnValue);
   {$ifndef minimal}
-  if StackGetDepth>0 then
+  if StackGetDepth-SaveDepth>0 then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
+
+{$ifndef minimal}
+procedure CheckNilDeref(P : integer);
+begin
+  ZAssert(P>1024,'Null pointer referenced in expression');
+end;
+{$endif}
 
 { TZExpression }
 
@@ -488,29 +522,6 @@ end;
 procedure TZExpression.Execute;
 begin
   ZExpressions.RunCode(Expression.Code);
-  Value := ZExpressions.gReturnValue;
-end;
-
-{ TExpPropValueBase }
-
-procedure TExpPropValueBase.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptPropertyRef);
-end;
-
-procedure TExpPropValue4.Execute;
-begin
-  StackPush(ZClasses.GetPropertyRef(Source)^);
-end;
-
-//Load byte value and cast to integer
-procedure TExpPropValue1.Execute;
-var
-  I : integer;
-begin
-  I := PByte(ZClasses.GetPropertyRef(Source))^;
-  StackPush(I);
 end;
 
 { TExpConstantFloat }
@@ -716,6 +727,7 @@ procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
   I1,I2,I3 : integer;
+  M : TModel;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -836,6 +848,16 @@ begin
         //i=ord("A")
         StackPopTo(I1);
         PInteger(@V)^ := PByte(I1)^;
+      end;
+    fcCreateModel :
+      begin
+        StackPopTo(I1);
+        SaveExecutionState;
+          //AddToScene will call m.OnSpawn which in turn can run expressions
+          M := TModel(TModel(I1).Clone);
+          M.AddToScene;
+        RestoreExecutionState;
+        V := single(M);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
@@ -1087,6 +1109,9 @@ procedure TExpStackFrame.Execute;
 begin
   StackPush(gCurrentBP);
   gCurrentBP := StackGetDepth;
+  {$ifndef MINIMAL}
+  FillChar(ZcStackPtr^,Self.Size * SizeOf(ZcStackPtr^),0);
+  {$endif}
   //Add frame to stack
   Inc(ZcStackPtr,Self.Size);
 end;
@@ -1165,7 +1190,7 @@ var
 begin
   Result := Copy(ComponentManager.GetInfo(Self).ZClassName,4,255);
   PropList := Self.GetProperties;
-  for I := 3 to PropList.Count-1 do
+  for I := 4 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
     Self.GetProperty(Prop,Value);
@@ -1209,8 +1234,34 @@ begin
         StackPush(V);
         StackPush(V);
       end;
+    emLoadCurrentModel :
+      StackPush( Meshes.CurrentModel );
+    emPtrDeref4 :
+      begin
+        StackPopTo(V);
+        {$ifndef MINIMAL}
+        CheckNilDeref(integer(V));
+        {$endif}
+        StackPush(pointer(V)^);
+      end;
+    emPtrDeref1 :
+      begin
+        StackPopTo(V);
+        {$ifndef MINIMAL}
+        CheckNilDeref(integer(V));
+        {$endif}
+        V := PByte(V)^;
+        StackPush(V);
+      end;
   end;
 end;
+
+{$ifndef minimal}
+function TExpMisc.ExpAsText : string;
+begin
+  Result := 'Misc ' + Copy(GetEnumName(TypeInfo(TExpMiscKind),Ord(Kind)),3,100);
+end;
+{$endif}
 
 { TZLibrary }
 
@@ -1567,7 +1618,47 @@ begin
     StackPush(RetVal);
 end;
 
+{ TExpLoadComponent }
+
+procedure TExpLoadComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+end;
+
+procedure TExpLoadComponent.Execute;
+begin
+  StackPushValue(Self.Component);
+end;
+
+{ TExpLoadPropOffset }
+
+procedure TExpLoadPropOffset.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'PropId',{$ENDIF}integer(@PropId), zptInteger);
+end;
+
+procedure TExpLoadPropOffset.Execute;
+var
+  C : TZComponent;
+begin
+  if not IsInit then
+  begin
+    StackPopTo(C);
+    {$ifndef minimal}
+    CheckNilDeref(integer(C));
+    {$endif}
+    Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
+    StackPushValue(C);
+    IsInit := True;
+  end;
+  StackPush(Self.Offset);
+end;
+
 initialization
+
+  ZcStackPtr := ZcStackBegin;
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
@@ -1589,10 +1680,6 @@ initialization
   ZClasses.Register(TExpOpBinaryFloat,ExpOpBinaryFloatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpOpBinaryInt,ExpOpBinaryIntClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropValue4,ExpPropValue4ClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropValue1,ExpPropValue1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpPropPtr,ExpPropPtrClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -1627,6 +1714,10 @@ initialization
   ZClasses.Register(TExpStringConCat,ExpStringConCatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStringFuncCall,ExpStringFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpLoadComponent,ExpLoadComponentClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpLoadPropOffset,ExpLoadPropOffsetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

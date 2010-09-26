@@ -223,7 +223,7 @@ PlayBoidCollide.ReplayDelay = random(2,1.5);]]>
             <SetModelState State="BoidStateAppear"/>
           </OnSpawn>
           <OnCollision>
-            <Condition Expression="return App.CollidedCategory==CursorCategory;">
+            <Condition Expression="return CurrentModel.CollidedWith.Category==CursorCategory;">
               <OnTrue>
                 <Condition Expression="return FleeWhenClose &amp;&amp; BoidIsSeeking;">
                   <OnTrue>
