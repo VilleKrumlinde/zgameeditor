@@ -1,6 +1,6 @@
 
 
-Compiled: den 21 september 2010 - 13:42:53
+Compiled: den 26 september 2010 - 18:20:12
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,14 +33,14 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 21 september 2010 @ 13:42:53
+Time Compiled: den 26 september 2010 @ 18:20:12
 
 Statistics:
   number of terminals:        88 (limit  2561)
   number of non-terminals:    33 (limit  1281)
   number of pragmas:           0 (limit  2473)
   number of symbolnodes:     121 (limit  2561)
-  number of graphnodes:      392 (limit 15001)
+  number of graphnodes:      391 (limit 15001)
   number of conditionsets:     1 (limit   101)
   number of charactersets:    25 (limit  4001)
 
@@ -569,7 +569,7 @@ Listing
   517                OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
   518           .)
   519        ]
-  520    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, MakeCompatible(Op2,Op1.GetDataType) ); .)
+  520    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
   521    )
   522  .
   523  /*------------------------------------------------------------------------*/
@@ -719,21 +719,21 @@ Listing
   657             OutOp := LastOp;
   658           end else
   659             OutOp := Tmp;
-  660         end else 
+  660         end else
   661         begin
   662           OutOp := MakePrePostIncDec(Kind,Tmp);
   663         end;
   664      .)
   665  .
   666  /*------------------------------------------------------------------------*/
-  667  Primary<var OutOp : TZcOp>         
+  667  Primary<var OutOp : TZcOp>
   668  (. var Op : TZcOp; S : string; V : single;
   669       Typ : TZcDataType;
   670  .)
   671  =            (. OutOp := nil; .)
-  672    ( 
-  673      ident    (. OutOp := MakeIdentifier(LexString);  .)
-  674    | Literal<Typ>  (. 
+  672    (
+  673      ident    (. OutOp := CheckIdentifier( MakeIdentifier(LexString) );  .)
+  674    | Literal<Typ>  (.
   675          if Typ=zctString then
   676            OutOp := TZcOpLiteral.Create(Typ,LexString)
   677          else
@@ -755,14 +755,14 @@ Listing
   693    )
   694  
   695    {
-  696    "++" (. OutOp := MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp)); .)
-  697    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp)); .)
+  696    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
+  697    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
   698  
   699  /*  | "->" ident */
   700  
   701    | "." ident (.
   702  
-  703        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall]) then
+  703        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
   704          ZError('Invalid use of "."');
   705  
   706        Op := MakeOp(zcSelect,[OutOp]);
@@ -793,21 +793,16 @@ Listing
   731      "]"
   732  
   733    }
-  734  
-  735    (.
-  736      if OutOp.Kind=zcIdentifier then
-  737        OutOp := CheckIdentifier(OutOp);
-  738    .)
-  739  .
-  740  /*------------------------------------------------------------------------*/
-  741  Literal<var Typ : TZcDataType>
-  742  = intCon (. Typ :=zctInt; .) |
-  743    realCon (. Typ := zctFloat; .) |
-  744    stringCon (. Typ := zctString; .)
-  745    (* | "true" | "false" | "null" *)
-  746  .
-  747  
-  748  END Zc.
+  734  .
+  735  /*------------------------------------------------------------------------*/
+  736  Literal<var Typ : TZcDataType>
+  737  = intCon (. Typ :=zctInt; .) |
+  738    realCon (. Typ := zctFloat; .) |
+  739    stringCon (. Typ := zctString; .)
+  740    (* | "true" | "false" | "null" *)
+  741  .
+  742  
+  743  END Zc.
 
     1 LL(1) error
    11 warnings

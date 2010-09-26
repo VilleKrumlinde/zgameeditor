@@ -308,8 +308,8 @@ Global1=10;
 Global1++;
 if( (Global1++ !=11) )
   Error=306;
-//if( (++Global1 !=13) )
-//  Error=307;]]>
+if( (++Global1 !=13) )
+  Error=307;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Boolean values">
@@ -407,7 +407,20 @@ m.Position=App.CameraPosition;
 if( (abs(m.Position.X-1)>0.1) &&
   (abs(m.Position.Y-2)>0.1) &&
   (abs(m.Position.Z-3)>0.1))
-  Error=1101;]]>
+  Error=1101;
+
+//Model DefineVariable
+m=Model1;
+VarM=m;
+m.Category=4;
+if(m.Category!=VarM.Category)
+  Error=1102;
+
+//Model DefineArray
+m.Category=5;
+ModelArray[0]=m;
+if(m.Category!=ModelArray[0].Category)
+  Error=1103;]]>
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
@@ -426,7 +439,7 @@ else
     <RenderText TextFloatRef="Error Value"/>
   </OnRender>
   <Content>
-    <Model Name="Model1" Position="1 2 3">
+    <Model Name="Model1" Position="1 2 3" Category="5">
       <OnRender>
         <RenderSprite/>
       </OnRender>
@@ -446,5 +459,7 @@ else
     <DefineConstant Name="ConS" Type="2" StringValue="String"/>
     <DefineConstant Name="ConI" Type="1" IntValue="1"/>
     <DefineConstant Name="ConF" Value="1"/>
+    <DefineVariable Name="VarM" Type="3"/>
+    <DefineArray Name="ModelArray" Type="3" SizeDim1="4"/>
   </Content>
 </ZApplication>
