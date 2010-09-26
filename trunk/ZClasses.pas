@@ -53,12 +53,12 @@ type
  RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,WebOpenClassId,
  ApplicationClassId,AppStateClassId,SetAppStateClassId,CallComponentClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
- ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,ExpPropValue4ClassId,ExpPropValue1ClassId,
+ ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
- ExpStringFuncCallClassId,
+ ExpStringFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -234,7 +234,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt,zctString);
+  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -278,10 +278,10 @@ type
     NeverPersist : boolean;
     DontClone : boolean;
     IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
+    Offset : integer;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
-    Offset : integer;
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
     ExcludeFromBinary : boolean;  //Ta inte med denna prop i binärström (designer only)
@@ -371,10 +371,11 @@ type
 
   //Info about one componentclass
   TZComponentInfo = class
+  private
+    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     ZClass : TZComponentClass;
     ClassId : TZClassIds;
-    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}
     ZClassName : string;  //Klassnamn utan 'T'
     NoUserCreate : boolean;
@@ -387,10 +388,11 @@ type
     AutoName : boolean;  //Give name automatically when inserted in designer
     ParamCount : integer; //Parameter count for contentproducers
     {$ENDIF}
-    {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
-    public
+    {$ifndef MINIMAL}
+  public
     HasGlobalData : boolean; //See audiomixer. Do not cache property-list.
-    {$ifend}
+    function GetProperties : TZPropertyList;
+    {$endif}
   end;
 
 
@@ -402,7 +404,6 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
-    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
   {$ENDIF}
@@ -411,11 +412,13 @@ type
     {$ifndef minimal}public
     destructor Destroy; override;{$else}private{$endif}
     function GetInfo(Component : TZComponent) : TZComponentInfo;
+    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
     {$ifend}
   {$IFNDEF MINIMAL}
+    function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
     function SaveBinaryToStream(Component : TZComponent) : TObject;
     function LoadXmlFromFile(FileName : string) : TZComponent;
     function LoadXmlFromString(const XmlData : string; SymTab : TSymbolTable) : TZComponent;
@@ -1524,6 +1527,25 @@ begin
     end;
   end;
   raise Exception.Create('Class not found: ' + ZClassName);
+end;
+
+function TZComponentManager.GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
+var
+  I : TZClassIds;
+  Ci : TZComponentInfo;
+begin
+  for I := Low(ComponentInfos) to High(ComponentInfos) do
+  begin
+    Ci := ComponentInfos[I];
+    if Ci=nil then
+      Continue;
+    if Ci.ZClass=C then
+    begin
+      Result := Ci;
+      Exit;
+    end;
+  end;
+  raise Exception.Create('Class not found: ' + C.ClassName);
 end;
 {$ENDIF}
 
@@ -3564,6 +3586,26 @@ begin
   Self.ProduceOutput(GlobalContent.Content,GlobalContent.Stack);
 end;
 
+
+{ TZComponentInfo }
+
+{$ifndef minimal}
+function TZComponentInfo.GetProperties: TZPropertyList;
+var
+  C : TZComponent;
+begin
+  Result := Self.Properties;
+  if Result=nil then
+  begin
+    C := Self.ZClass.Create(nil);
+    Result := TZPropertyList.Create;
+    Result.TheSelf := integer(C);
+    C.DefineProperties(Result);
+    Self.Properties := Result;
+    C.Free;
+  end;
+end;
+{$endif}
 
 initialization
 

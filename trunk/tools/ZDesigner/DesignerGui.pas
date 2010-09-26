@@ -89,7 +89,7 @@ function ColorToZColor(C : TColor) : TZColorf;
 
 implementation
 
-uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,ExprEdit,ZLog,ZBitmap,
+uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
   frmArrayEdit, ZExpressions, pngimage, ZApplication;
