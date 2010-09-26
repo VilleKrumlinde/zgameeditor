@@ -250,6 +250,7 @@ begin
         dvbFloat : Result := zctFloat;
         dvbInt : Result := zctInt;
         dvbString : Result := zctString;
+        dvbModel : Result := zctModel;
       end;
     end;
   end
@@ -705,6 +706,7 @@ begin
     case (Op.Ref as TDefineVariableBase)._Type of
       dvbInt : PName := 'IntValue';
       dvbString : PName := 'StringValue';
+      dvbModel : PName := 'ModelValue';
     end;
     Result := MakeOp(zcSelect,[Op]);
     Result.Id := PName;
@@ -713,8 +715,8 @@ begin
     //Qualifies identifier referencing property of current component with "this"-prefix
     if CompilerContext.ThisC.GetProperties.GetByName(Op.Id)<>nil then
     begin
-      Op.Children.Add(MakeIdentifier('this'));
-      Op.Kind := zcSelect;
+      Result := MakeOp(zcSelect,[ MakeIdentifier('this') ]);
+      Result.Id := Op.Id;
     end;
   end;
 end;

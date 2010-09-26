@@ -68,7 +68,7 @@ type
   end;
 
 
-  TVariableType = (dvbFloat,dvbInt,dvbString);
+  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel);
   TDefineVariableBase = class(TZComponent)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -85,6 +85,7 @@ type
     Value : single;
     IntValue : integer;
     StringValue : TPropString;
+    ModelValue : TZComponent;
   end;
 
   //Define a global constant that can be used in expressions
@@ -711,6 +712,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@StringValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}integer(@ModelValue), zptComponentRef);
+    List.GetLast.NeverPersist := True;
+   {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
 end;
 
 { TExpFuncCall }
@@ -948,7 +952,7 @@ begin
   //Array size can only be changed in zdesigner, not runtime
   if Limit<>CalcLimit then
     AllocData;
-  ZAssert(not (Persistent and (_Type=dvbString)),'Persistent String-arrays not supported');
+  ZAssert(not (Persistent and (_Type in [dvbString,dvbModel])),'Persistent String/Model-arrays not supported');
   {$endif}
   if Persistent then
   begin
@@ -1348,7 +1352,7 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model']);{$endif}
 end;
 
 { TExpStringConstant }

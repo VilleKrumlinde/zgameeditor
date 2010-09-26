@@ -518,7 +518,9 @@ begin
 end;
 
 procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
-//LeaveValue : Optionally leave a value of the assignement on stack.
+//LeaveValue : Optionally leave a value of the assignment on stack.
+//  alvPre: Leave the value prior to the assignment (i++)
+//  alvPost: Leave the value after the assignment (++i)
 var
   I,AssignSize : integer;
 
@@ -552,9 +554,6 @@ begin
   begin
     GenAddress(LeftOp);
     GenValue(RightOp);
-    if LeaveValue=alvPost then
-      with TExpMisc.Create(Target) do
-        Kind := emDup;
     Etyp := LeftOp.GetExtendedDataType;
     case Etyp.Kind of
       edtProperty : Prop := Etyp.Prop;
@@ -576,6 +575,8 @@ begin
     else
       AssignSize:=4;
     Target.AddComponent( MakeAssignOp(AssignSize) );
+    if LeaveValue=alvPost then
+      GenValue(LeftOp);
   end else if LeftOp.Kind=zcArrayAccess then
   begin
     if LeaveValue=alvPost then

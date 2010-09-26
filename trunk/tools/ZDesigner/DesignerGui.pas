@@ -1568,9 +1568,9 @@ var
       ShowMessage('Set "Persistent" before editing arrays');
       Exit;
     end;
-    if A._Type=dvbString then
+    if A._Type in [dvbString,dvbModel] then
     begin
-      ShowMessage('Persistent String-arrays not supported');
+      ShowMessage('Persistent arrays only supported for numeric data types');
       Exit;
     end;
     if ArrayEditForm=nil then

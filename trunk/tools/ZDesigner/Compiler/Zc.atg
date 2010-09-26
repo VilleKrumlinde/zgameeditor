@@ -657,21 +657,21 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
            OutOp := LastOp;
          end else
            OutOp := Tmp;
-       end else 
+       end else
        begin
          OutOp := MakePrePostIncDec(Kind,Tmp);
        end;
     .)
 .
 /*------------------------------------------------------------------------*/
-Primary<var OutOp : TZcOp>         
+Primary<var OutOp : TZcOp>
 (. var Op : TZcOp; S : string; V : single;
      Typ : TZcDataType;
 .)
 =            (. OutOp := nil; .)
-  ( 
-    ident    (. OutOp := MakeIdentifier(LexString);  .)
-  | Literal<Typ>  (. 
+  (
+    ident    (. OutOp := CheckIdentifier( MakeIdentifier(LexString) );  .)
+  | Literal<Typ>  (.
         if Typ=zctString then
           OutOp := TZcOpLiteral.Create(Typ,LexString)
         else
@@ -693,14 +693,14 @@ Primary<var OutOp : TZcOp>
   )
 
   {
-  "++" (. OutOp := MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp)); .)
-  | "--" (. OutOp := MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp)); .)
+  "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
+  | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
 
 /*  | "->" ident */
 
   | "." ident (.
 
-      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall]) then
+      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
         ZError('Invalid use of "."');
 
       Op := MakeOp(zcSelect,[OutOp]);
@@ -731,11 +731,6 @@ Primary<var OutOp : TZcOp>
     "]"
 
   }
-
-  (.
-    if OutOp.Kind=zcIdentifier then
-      OutOp := CheckIdentifier(OutOp);
-  .)
 .
 /*------------------------------------------------------------------------*/
 Literal<var Typ : TZcDataType>

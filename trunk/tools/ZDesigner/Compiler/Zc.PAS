@@ -1355,7 +1355,7 @@ begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
 Get;
-OutOp  :=  MakeIdentifier(LexString);
+OutOp  :=  CheckIdentifier(  MakeIdentifier(LexString)  );
 end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) OR
  (fCurrentInputSymbol = stringConSym) then begin
@@ -1387,16 +1387,16 @@ while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _lbrackSym) do begin
 if (fCurrentInputSymbol = _plus_plusSym) then begin
 Get;
-OutOp  :=  MakePrePostIncDec(zcPostInc,CheckIdentifier(OutOp));
+OutOp  :=  MakePrePostIncDec(zcPostInc,OutOp);
 end else if (fCurrentInputSymbol = _minus_minusSym) then begin
 Get;
-OutOp  :=  MakePrePostIncDec(zcPostDec,CheckIdentifier(OutOp));
+OutOp  :=  MakePrePostIncDec(zcPostDec,OutOp);
 end else if (fCurrentInputSymbol = _pointSym) then begin
 Get;
 Expect(identSym);
 
 
-if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect,zcFuncCall])  then
+if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess])  then
 ZError('Invalid  use  of  "."');
 
 Op  :=  MakeOp(zcSelect,[OutOp]);
@@ -1439,10 +1439,6 @@ end;
 Expect(_rbrackSym);
 end;
 end;
-
-if  OutOp.Kind=zcIdentifier  then
-   OutOp  :=  CheckIdentifier(OutOp);
-
 end;
 
 procedure TZc._MulExpr (InOp  :  TZcOp;  var  OutOp  :  TZcOp);var  Tmp  :  TZcOp;  Kind  :  TZcOpKind;
@@ -1973,7 +1969,7 @@ end else if (fCurrentInputSymbol = _equalSym) OR
  (fCurrentInputSymbol = _slash_equalSym) then begin
 _AssignOp(Kind);
 _Expr(Op2);
-OutOp  :=  MakeAssign(Kind,Op1,  MakeCompatible(Op2,Op1.GetDataType)  );
+OutOp  :=  MakeAssign(Kind,Op1,  Op2);
 end else begin SynError(96);
 end;
 end;
