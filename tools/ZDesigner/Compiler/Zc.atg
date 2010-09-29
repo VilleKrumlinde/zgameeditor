@@ -670,7 +670,7 @@ Primary<var OutOp : TZcOp>
 .)
 =            (. OutOp := nil; .)
   (
-    ident    (. OutOp := CheckIdentifier( MakeIdentifier(LexString) );  .)
+    ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
   | Literal<Typ>  (.
         if Typ=zctString then
           OutOp := TZcOpLiteral.Create(Typ,LexString)
@@ -703,10 +703,10 @@ Primary<var OutOp : TZcOp>
       if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
         ZError('Invalid use of "."');
 
-      Op := MakeOp(zcSelect,[OutOp]);
-      Op.Id := LexString;
+      Op := MakeOp(zcSelect,LexString);
+      Op.Children.Add(OutOp);
 
-      OutOp := Op;
+      OutOp := CheckPrimary(Op);
 
     .)
 

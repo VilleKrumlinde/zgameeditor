@@ -182,6 +182,7 @@ type
     Kind : TExpOpBinaryKind;
     {$ifndef minimal}
     constructor Create(OwnerList: TZComponentList; Kind : TExpOpBinaryKind); reintroduce;
+    function ExpAsText : string; override;
     {$endif}
   end;
 
@@ -212,7 +213,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr,fcCreateModel);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -267,6 +268,9 @@ type
   public
     Kind : (loLoad,loStore);
     Index : integer;
+    {$ifndef minimal}
+    function ExpAsText : string; override;
+    {$endif}
   end;
 
   //Return from function
@@ -351,7 +355,7 @@ type
     Component : TZComponent;
   end;
 
-  TExpLoadPropOffset  = class(TExpBase)
+  TExpLoadPropOffset = class(TExpBase)
   strict private
     IsInit : boolean;
     Offset : integer;
@@ -360,6 +364,18 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     PropId : integer;
+  end;
+
+  TExpLoadModelDefined = class(TExpBase)
+  strict private
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    DefinedIndex : integer;
+    {$ifndef minimal}
+    DefinedName : TPropString;
+    {$endif}
   end;
 
 //Run a compiled expression
@@ -578,6 +594,13 @@ constructor TExpOpBinaryBase.Create(OwnerList: TZComponentList; Kind : TExpOpBin
 begin
   inherited Create(OwnerList);
   Self.Kind := Kind;
+end;
+{$endif}
+
+{$ifndef minimal}
+function TExpOpBinaryBase.ExpAsText : string;
+begin
+  Result := Copy(GetEnumName(TypeInfo(TExpOpBinaryKind),Ord(Self.Kind)),4,100) + ' (' + Copy(ComponentManager.GetInfo(Self).ZClassName,4,255) + ')';
 end;
 {$endif}
 
@@ -863,6 +886,14 @@ begin
         RestoreExecutionState;
         V := single(M);
       end;
+    fcTrace :
+      begin
+        HasReturnValue := False;
+        StackPopTo(I1);
+        {$ifndef minimal}
+        ZLog.GetLog('Zc').Write(String(PAnsiChar(I1)));
+        {$endif}
+      end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   if HasReturnValue then
@@ -1140,6 +1171,17 @@ begin
   end;
 end;
 
+{$ifndef minimal}
+function TExpAccessLocal.ExpAsText : string;
+begin
+  if Kind=loLoad then
+    Result := 'Load'
+  else
+    Result := 'Store';
+  Result :=  Result + ' ' + IntToStr(Self.Index) +  ' (local)';
+end;
+{$endif}
+
 { TExpReturn }
 
 procedure TExpReturn.DefineProperties(List: TZPropertyList);
@@ -1263,7 +1305,7 @@ end;
 {$ifndef minimal}
 function TExpMisc.ExpAsText : string;
 begin
-  Result := 'Misc ' + Copy(GetEnumName(TypeInfo(TExpMiscKind),Ord(Kind)),3,100);
+  Result := Copy(GetEnumName(TypeInfo(TExpMiscKind),Ord(Kind)),3,100) + ' (misc)';
 end;
 {$endif}
 
@@ -1660,6 +1702,34 @@ begin
   StackPush(Self.Offset);
 end;
 
+{ TExpLoadModelDefined }
+
+procedure TExpLoadModelDefined.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'DefinedIndex',{$ENDIF}integer(@DefinedIndex), zptInteger);
+  {$ifndef minimal}
+  List.AddProperty({$IFNDEF MINIMAL}'DefinedName',{$ENDIF}integer(@DefinedName), zptString);
+    List.SetDesignerProperty;
+  {$endif}
+end;
+
+procedure TExpLoadModelDefined.Execute;
+var
+  C : TModel;
+begin
+  StackPopTo(C);
+  {$ifndef minimal}
+  CheckNilDeref(integer(C));
+  if (Self.DefinedIndex>=C.Definitions.Count) or
+    (not SameText(String(TZComponent(C.Definitions[Self.DefinedIndex]).Name),String(DefinedName))) then
+  begin
+    ZHalt('Defined var mismatch "' + DefinedName + '" in model "' + String(C.Name) + '" must be at position ' + IntToStr(Self.DefinedIndex) + ' in Definitions-list.');
+  end;
+  {$endif}
+  StackPushValue( C.Definitions[Self.DefinedIndex] );
+end;
+
 initialization
 
   ZcStackPtr := ZcStackBegin;
@@ -1722,6 +1792,8 @@ initialization
   ZClasses.Register(TExpLoadComponent,ExpLoadComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpLoadPropOffset,ExpLoadPropOffsetClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpLoadModelDefined,ExpLoadModelDefinedClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

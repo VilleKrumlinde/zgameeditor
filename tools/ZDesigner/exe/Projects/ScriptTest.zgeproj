@@ -423,6 +423,31 @@ if(m.Category!=ModelArray[0].Category)
   Error=1103;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Model defines">
+      <Expression>
+<![CDATA[model m=createModel(Model1);
+
+m.Defined1=10;
+if(m.Defined1!=10)
+  Error=1201;
+
+m.Defined2=20;
+if(m.Defined2!=20)
+  Error=1202;
+
+Defined1=10;
+if(Defined1!=10)
+  Error=1203;
+
+Model1.Defined2=42;
+if(Defined2!=42)
+  Error=1204;
+
+m.Defined3="Hej";
+if(m.Defined3!="Hej")
+  Error=1205;]]>
+      </Expression>
+    </ZExpression>
     <SpawnModel Model="Model1"/>
   </OnLoaded>
   <OnUpdate>
@@ -440,6 +465,11 @@ else
   </OnRender>
   <Content>
     <Model Name="Model1" Position="1 2 3" Category="5">
+      <Definitions>
+        <DefineVariable Name="Defined1"/>
+        <DefineVariable Name="Defined2"/>
+        <DefineVariable Name="Defined3" Type="2"/>
+      </Definitions>
       <OnRender>
         <RenderSprite/>
       </OnRender>

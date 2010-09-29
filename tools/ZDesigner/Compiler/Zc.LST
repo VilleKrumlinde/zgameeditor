@@ -1,6 +1,6 @@
 
 
-Compiled: den 26 september 2010 - 18:20:12
+Compiled: den 29 september 2010 - 14:14:09
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 26 september 2010 @ 18:20:12
+Time Compiled: den 29 september 2010 @ 14:14:09
 
 Statistics:
   number of terminals:        88 (limit  2561)
@@ -732,7 +732,7 @@ Listing
   670  .)
   671  =            (. OutOp := nil; .)
   672    (
-  673      ident    (. OutOp := CheckIdentifier( MakeIdentifier(LexString) );  .)
+  673      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
   674    | Literal<Typ>  (.
   675          if Typ=zctString then
   676            OutOp := TZcOpLiteral.Create(Typ,LexString)
@@ -765,10 +765,10 @@ Listing
   703        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
   704          ZError('Invalid use of "."');
   705  
-  706        Op := MakeOp(zcSelect,[OutOp]);
-  707        Op.Id := LexString;
+  706        Op := MakeOp(zcSelect,LexString);
+  707        Op.Children.Add(OutOp);
   708  
-  709        OutOp := Op;
+  709        OutOp := CheckPrimary(Op);
   710  
   711      .)
   712  

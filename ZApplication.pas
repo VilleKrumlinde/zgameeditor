@@ -710,9 +710,9 @@ begin
     Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
     SymTab.Add(Func.Id,Func);
   end;
-  SymTab.PushScope;
 
   //Scope 1: object names
+  SymTab.PushScope;
   List := TStringList.Create;
   try
     GetObjectNames(Self,List);

@@ -58,7 +58,7 @@ type
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
- ExpStringFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,
+ ExpStringFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -189,7 +189,7 @@ type
   //Obs, äger sina componenter trots att TZArrayList ReferenceOnly=true
   TZComponentList = class(TZArrayList)
   private
-    Owner : TZComponent;
+    {$ifndef minimal}public{$endif} Owner : TZComponent;
   public
     IsChanged : boolean;
     constructor Create; overload;

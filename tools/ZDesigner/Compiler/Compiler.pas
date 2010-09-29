@@ -286,9 +286,14 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Etyp := Op.GetExtendedDataType;
     if ETyp.Kind=edtPropIndex then
       Etyp := Op.Children.First.GetExtendedDataType;
-    if Etyp.Kind<>edtProperty then
+
+    if Etyp.Kind=edtProperty then
+      PTyp := Etyp.Prop.PropertyType
+    else if Etyp.Kind=edtModelDefined then
+      PTyp := zptComponentRef
+    else
       raise ECodeGenError.Create('Failed to deref ' + Op.Id);
-    PTyp := Etyp.Prop.PropertyType;
+
     if PTyp in [zptByte,zptBoolean] then
     begin
       with TExpMisc.Create(Target) do
@@ -330,9 +335,26 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   end;
 
   procedure DoGenSelect;
+  var
+    ETyp : TZcExtendedDataType;
   begin
-    GenAddress(Op);
-    DoDeref(Op);
+    ETyp := Op.GetExtendedDataType;
+    case ETyp.Kind of
+      edtModelDefined :
+        begin
+          GenValue(Op.Children.First);
+          with TExpLoadModelDefined.Create(Target) do
+          begin
+            DefinedIndex := ETyp.DefinedIndex;
+            DefinedName := ETyp.Component.Name;
+          end;
+        end
+      else
+      begin
+        GenAddress(Op);
+        DoDeref(Op);
+      end;
+    end;
   end;
 
   procedure DoGenBoolean;
@@ -493,7 +515,6 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
       edtProperty :
         begin
           GenValue(Op.Children.First);
-          //GenAddInteger(ETyp.Prop.Offset);
           with TExpLoadPropOffset.Create(Target) do
             PropId := ETyp.Prop.PropId;
           TExpOpBinaryInt.Create(Target,vbkPlus);
