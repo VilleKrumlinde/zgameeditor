@@ -1355,7 +1355,7 @@ begin
 OutOp  :=  nil;
 if (fCurrentInputSymbol = identSym) then begin
 Get;
-OutOp  :=  CheckIdentifier(  MakeIdentifier(LexString)  );
+OutOp  :=  CheckPrimary(  MakeIdentifier(LexString)  );
 end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) OR
  (fCurrentInputSymbol = stringConSym) then begin
@@ -1399,10 +1399,10 @@ Expect(identSym);
 if  not  (OutOp.Kind  in  [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess])  then
 ZError('Invalid  use  of  "."');
 
-Op  :=  MakeOp(zcSelect,[OutOp]);
-Op.Id  :=  LexString;
+Op  :=  MakeOp(zcSelect,LexString);
+Op.Children.Add(OutOp);
 
-OutOp  :=  Op;
+OutOp  :=  CheckPrimary(Op);
 
 
 end else if (fCurrentInputSymbol = _lparenSym) then begin

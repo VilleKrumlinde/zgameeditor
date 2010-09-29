@@ -17,7 +17,8 @@ type
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect);
 
   TZcExtendedDataType = record
-    Kind : (edtComponent,edtProperty,edtPropIndex);
+    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
+    DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
     case Integer of
       0 : (Component : TZComponent);
       1 : (Prop : TZProperty);
@@ -138,7 +139,7 @@ function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
-function CheckIdentifier(Op : TZcOp) : TZcOp;
+function CheckPrimary(Op : TZcOp) : TZcOp;
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : single;
@@ -265,6 +266,9 @@ begin
       edtComponent: Result := zctReference;
       edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
       edtPropIndex: Result := zctFloat;
+      edtModelDefined : Result := zctReference;
+    else
+      Assert(False);
     end;
   end
   else if Children.Count>0 then
@@ -278,29 +282,60 @@ var
   Etyp : TZcExtendedDataType;
   I : integer;
 
-  procedure DoProp(Props : TZPropertyList);
+  function DoModelDefined(var Edt : TZcExtendedDataType) : boolean;
+  var
+    O : TObject;
+    OwnerC,C : TZComponent;
+    I : integer;
+    PropValue : TZPropertyValue;
+  begin
+    Result := False;
+    O := CompilerContext.SymTab.Lookup(Self.Id);
+    if not (O is TZComponent) then
+      Exit;
+    C := O as TZComponent;
+    OwnerC := C.OwnerList.Owner;
+    if ComponentManager.GetInfo(OwnerC).ClassId<>ModelClassId then
+      Exit;
+    //Var must be in Definitions-list
+    OwnerC.GetProperty( OwnerC.GetProperties.GetByName('Definitions'), PropValue );
+    if PropValue.ComponentListValue<>C.OwnerList then
+      Exit;
+    Edt.Kind := edtModelDefined;
+    Edt.Component := C;
+    I := C.OwnerList.IndexOf(C);
+    Edt.DefinedIndex := I;
+    Result := True;
+  end;
+
+  procedure DoProp(Props : TZPropertyList; IsModel : boolean = False);
   begin
     Result.Kind := edtProperty;
     Result.Prop := Props.GetByName(Self.Id);
     if Result.Prop=nil then
-      raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+    begin
+      if IsModel and DoModelDefined(Result) then
+        Exit
+      else
+        raise ECodeGenError.Create('Unknown property: ' + Self.Id);
+    end;
   end;
 
 begin
-  if Ref is TZComponent then
+  if (Ref is TZComponent) and (Kind=zcIdentifier) then
   begin
     Result.Kind := edtComponent;
     Result.Component := Ref as TZComponent;
     Exit;
-  end else if (Ref=nil) and (Children.Count>0) then
+  end else if (Children.Count>0) then
   begin
     if Children.First.GetDataType=zctModel then
     begin
-      DoProp(ComponentManager.GetInfoFromId(ModelClassId).GetProperties);
+      DoProp(ComponentManager.GetInfoFromId(ModelClassId).GetProperties,True);
       Exit;
     end;
     ETyp := Children.First.GetExtendedDataType;
-    if ETyp.Kind=edtComponent then
+    if ETyp.Kind in [edtComponent,edtModelDefined] then
     begin
       DoProp(ETyp.Component.GetProperties);
       Exit;
@@ -650,7 +685,7 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
-  if (Kind=zcIdentifier) and CompilerContext.SymTab.Contains(Id) then
+  if (Kind in [zcIdentifier,zcSelect]) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
 
@@ -694,12 +729,12 @@ begin
   end;
 end;
 
-function CheckIdentifier(Op : TZcOp) : TZcOp;
+function CheckPrimary(Op : TZcOp) : TZcOp;
 var
   PName : string;
 begin
   Result := Op;
-  if (Op.Kind=zcIdentifier) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
+  if (Op.Kind in [zcIdentifier,zcSelect]) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
     PName := 'Value';
@@ -972,6 +1007,7 @@ begin
   MakeOne('chr',fcChr,'SI');
   MakeOne('ord',fcOrd,'IS');
   MakeOne('createModel',fcCreateModel,'MM');
+  MakeOne('trace',fcTrace,'VS');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
