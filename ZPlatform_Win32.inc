@@ -96,6 +96,12 @@ const
   CB_SETCURSEL             = $014E;
   CB_GETCURSEL             = $0147;
 
+  {$ifdef fpc}
+  ID_OK = 1;
+  ID_CANCEL = 2;
+  {$endif}
+
+
 type
   PMessage = ^TMessage;
   TMessage = packed record
@@ -1342,7 +1348,11 @@ end;
 /////////////////////////////
 //Option dialog code
 
-{$R OptionsDialog.res OptionsDialog.rc}
+{$ifdef fpc}
+  {$R OptionsDialog.res}
+{$else}
+  {$R OptionsDialog.res OptionsDialog.rc}
+{$endif}
 
 const
   // OptionDialog ID numbers
