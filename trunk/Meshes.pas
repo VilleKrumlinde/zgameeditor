@@ -210,8 +210,6 @@ type
     end;
 
   TModel = class(TZComponent)
-  strict private
-    class var NextModelClassId : integer;
   private
     CurrentState : TModelState;
   protected
@@ -310,7 +308,6 @@ var
   CurrentModel : TModel;  //Set to the model that is currently updated
 
 
-
 {$ifndef minimal}
 const
   CollisionStyleNames : array[0..4] of string =
@@ -323,6 +320,10 @@ uses ZMath, ZApplication
 {$ifndef minimal}, Animators, Renderer{$endif}
 {$ifdef zdebug}, ZLog, Sysutils{$endif}
 ;
+
+var
+  //Declare as "class var" in TModel when fpc supports static class variables
+  _NextModelClassId : integer;
 
 procedure ExecuteWithCurrentModel(M : TModel; CommandList : TZComponentList);
 var
@@ -895,8 +896,8 @@ begin
   inherited Create(OwnerList);
   ChildModelRefs := TZArrayList.CreateReferenced;
   Personality := System.Random;
-  ModelClassId := TModel.NextModelClassId;
-  Inc(TModel.NextModelClassId);
+  ModelClassId := _NextModelClassId;
+  Inc(_NextModelClassId);
 end;
 
 destructor TModel.Destroy;
