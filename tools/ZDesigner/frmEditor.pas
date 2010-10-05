@@ -3401,7 +3401,7 @@ begin
         for I := 0 to PropList.Count - 1 do
         begin
           Prop := TZProperty(PropList[I]);
-          if (Prop.PropertyType in [zptComponentRef,zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
+          if (Prop.PropertyType in [zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
             (Prop.Name='ObjId') then
             Continue;
           if Prop.ExcludeFromBinary then
@@ -3485,30 +3485,6 @@ type
     Size : integer;
   end;
 
-function MapNameSortProc(Item1, Item2: Pointer): Integer;
-var
-  I1,I2 : integer;
-  N1,N2 : TMapName;
-begin
-  N1 := TMapName(Item1);
-  N2 := TMapName(Item2);
-  I1 := N1.Start;
-  I2 := N2.Start;
-  Result := I1-I2;
-end;
-
-function MapNameSortProcSize(Item1, Item2: Pointer): Integer;
-var
-  I1,I2 : integer;
-  N1,N2 : TMapName;
-begin
-  N1 := TMapName(Item1);
-  N2 := TMapName(Item2);
-  I1 := N1.Size;
-  I2 := N2.Size;
-  Result := I2-I1;
-end;
-
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
   TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine : integer;
@@ -3578,7 +3554,21 @@ begin
       end;
       MapNames.Add(Item);
     end;
-    MapNames.Sort(MapNameSortProc);
+    MapNames.SortList(
+      //Sort on start address
+      function (Item1, Item2: Pointer): Integer
+      var
+        I1,I2 : integer;
+        N1,N2 : TMapName;
+      begin
+        N1 := TMapName(Item1);
+        N2 := TMapName(Item2);
+        I1 := N1.Start;
+        I2 := N2.Start;
+        Result := I1-I2;
+      end
+    );
+
     for I := 0 to MapNames.Count - 2 do
     begin
       Item := MapNames[I] as TMapName;
@@ -3666,7 +3656,21 @@ begin
 
     if DisplayDetailedReport then
     begin
-      NamesKept.Sort( MapNameSortProcSize );
+      NamesKept.SortList(
+        //Sort on size
+        function (Item1, Item2: Pointer): Integer
+        var
+          I1,I2 : integer;
+          N1,N2 : TMapName;
+        begin
+          N1 := TMapName(Item1);
+          N2 := TMapName(Item2);
+          I1 := N1.Size;
+          I2 := N2.Size;
+          Result := I2-I1;
+        end
+      );
+
       TotalKeptBytes := 0;
       for I := 0 to NamesKept.Count - 1 do
       begin
