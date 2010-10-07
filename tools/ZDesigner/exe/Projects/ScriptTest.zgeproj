@@ -420,7 +420,22 @@ if(m.Category!=VarM.Category)
 m.Category=5;
 ModelArray[0]=m;
 if(m.Category!=ModelArray[0].Category)
-  Error=1103;]]>
+  Error=1103;
+
+//Equality
+model m2=m;
+if( (m2!=m) || (ModelArray[0]!=m) || (m!=VarM) || (VarM!=m))
+  Error=1104;
+
+//Null
+if(m==null)
+  Error=1105;
+m=null;
+if(m!=null)
+  Error=1106;
+ModelArray[0]=m;
+if(ModelArray[0]!=null)
+  Error=1107;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Model defines">

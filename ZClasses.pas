@@ -234,7 +234,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference);
+  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record

@@ -249,6 +249,8 @@ begin
     zctInt :
       with TExpConstantInt.Create(Target) do
         Constant := Round(Value);
+    zctNull :
+      TExpConstantInt.Create(Target);
     else
       raise ECodeGenError.Create('Invalid literal');
   end;
@@ -885,7 +887,7 @@ begin
   Op.Kind := Kind;
   case T of
     zctFloat: Op._Type := jutFloat;
-    zctInt: Op._Type := jutInt;
+    zctInt,zctModel,zctNull,zctReference: Op._Type := jutInt;
     zctString:
       begin
         Op._Type := jutString;

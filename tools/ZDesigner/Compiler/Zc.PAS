@@ -22,7 +22,7 @@ uses  SysUtils,Classes,CocoBase,Zc_Ops,contnrs,uSymTab,ZClasses,mwStringHashList
 
 
 const
-maxT = 87;
+maxT = 88;
 type
 
   SymbolSet = array[0..maxT div setsize] of TBitSet;
@@ -182,7 +182,7 @@ const
   _greater_equalSym = 74;  _less_lessSym = 75;  _greater_greaterSym = 76;
   _plusSym = 77;  _minusSym = 78;  _starSym = 79;  _slashSym = 80;
   _plus_plusSym = 81;  _minus_minusSym = 82;  _bangSym = 83;  _pointSym = 84;
-  _lbrackSym = 85;  _rbrackSym = 86;  NOSYMB = 87;  _noSym = NOSYMB;   {error token code}
+  _lbrackSym = 85;  _rbrackSym = 86;  nullSym = 87;  NOSYMB = 88;  _noSym = NOSYMB;   {error token code}
 
 { --------------------------------------------------------------------------- }
 { Arbitrary Code from ATG file }
@@ -1052,6 +1052,7 @@ fHashList.AddString('for', forSym, forSym);
 fHashList.AddString('if', ifSym, ifSym);
 fHashList.AddString('int', intSym, intSym);
 fHashList.AddString('model', modelSym, modelSym);
+fHashList.AddString('null', nullSym, nullSym);
 fHashList.AddString('return', returnSym, returnSym);
 fHashList.AddString('string', stringSym, stringSym);
 fHashList.AddString('switch', switchSym, switchSym);
@@ -1245,17 +1246,18 @@ begin
   84 : Result := '"." expected';
   85 : Result := '"[" expected';
   86 : Result := '"]" expected';
-  87 : Result := 'not expected';
-  88 : Result := 'invalid Literal';
-  89 : Result := 'invalid Primary';
-  90 : Result := 'invalid SwitchLabel';
-  91 : Result := 'invalid AssignOp';
-  92 : Result := 'invalid ForInit';
-  93 : Result := 'invalid StatementExpr';
-  94 : Result := 'invalid EmbeddedStatement';
-  95 : Result := 'invalid SimpleType';
-  96 : Result := 'invalid Expr';
-  97 : Result := 'invalid Statement';
+  87 : Result := '"null" expected';
+  88 : Result := 'not expected';
+  89 : Result := 'invalid Literal';
+  90 : Result := 'invalid Primary';
+  91 : Result := 'invalid SwitchLabel';
+  92 : Result := 'invalid AssignOp';
+  93 : Result := 'invalid ForInit';
+  94 : Result := 'invalid StatementExpr';
+  95 : Result := 'invalid EmbeddedStatement';
+  96 : Result := 'invalid SimpleType';
+  97 : Result := 'invalid Expr';
+  98 : Result := 'invalid Statement';
 
 200 : Result := 'Not a floating point value';
     201 : Result := 'Name already defined in this scope';
@@ -1344,7 +1346,10 @@ Typ  :=  zctFloat;
 end else if (fCurrentInputSymbol = stringConSym) then begin
 Get;
 Typ  :=  zctString;
-end else begin SynError(88);
+end else if (fCurrentInputSymbol = nullSym) then begin
+Get;
+Typ  :=  zctNull;
+end else begin SynError(89);
 end;
 end;
 
@@ -1358,10 +1363,11 @@ Get;
 OutOp  :=  CheckPrimary(  MakeIdentifier(LexString)  );
 end else if (fCurrentInputSymbol = intConSym) OR
  (fCurrentInputSymbol = realConSym) OR
- (fCurrentInputSymbol = stringConSym) then begin
+ (fCurrentInputSymbol = stringConSym) OR
+ (fCurrentInputSymbol = nullSym) then begin
 _Literal(Typ);
 
-if  Typ=zctString  then
+if  Typ  in  [zctString,zctNull]  then
 OutOp  :=  TZcOpLiteral.Create(Typ,LexString)
 else
 begin
@@ -1378,7 +1384,7 @@ end else if (fCurrentInputSymbol = _lparenSym) then begin
 Get;
 _Expr(OutOp);
 Expect(_rparenSym);
-end else begin SynError(89);
+end else begin SynError(90);
 end;
 while (fCurrentInputSymbol = _lparenSym) OR
  (fCurrentInputSymbol = _plus_plusSym) OR
@@ -1625,7 +1631,7 @@ Expect(_colonSym);
 end else if (fCurrentInputSymbol = defaultSym) then begin
 Get;
 Expect(_colonSym);
-end else begin SynError(90);
+end else begin SynError(91);
 end;
 end;
 
@@ -1645,7 +1651,7 @@ Kind  :=  atMulAssign;
 end else if (fCurrentInputSymbol = _slash_equalSym) then begin
 Get;
 Kind  :=  atDivAssign;
-end else begin SynError(91);
+end else begin SynError(92);
 end;
 end;
 
@@ -1731,7 +1737,7 @@ Get;
 _StatementExpr(Op);
 if  Assigned(Op)  then  OutOp.Children.Add(Op);
 end;
-end else begin SynError(92);
+end else begin SynError(93);
 end;
 end;
 
@@ -1772,7 +1778,7 @@ end else if (fCurrentInputSymbol = _rparenSym) OR
  (fCurrentInputSymbol = _commaSym) OR
  (fCurrentInputSymbol = _semicolonSym) then begin
 OutOp  :=  Op1;
-end else begin SynError(93);
+end else begin SynError(94);
 end;
 end;
 
@@ -1807,7 +1813,7 @@ Get;
 OutOp  :=  MakeOp(zcNop);
     end;
   intConSym, realConSym, stringConSym, identSym, _lparenSym, _minusSym, _plus_plusSym, 
-      _minus_minusSym, _bangSym : begin
+      _minus_minusSym, _bangSym, nullSym : begin
 _StatementExpr(OutOp);
 Expect(_semicolonSym);
     end;
@@ -1917,7 +1923,7 @@ Expect(_semicolonSym);
    end;
 
     end;
-else begin SynError(94);
+else begin SynError(95);
     end;
 end;
 end;
@@ -1935,7 +1941,7 @@ Typ  :=  zctString;
 end else if (fCurrentInputSymbol = modelSym) then begin
 Get;
 Typ  :=  zctModel;
-end else begin SynError(95);
+end else begin SynError(96);
 end;
 end;
 
@@ -1970,7 +1976,7 @@ end else if (fCurrentInputSymbol = _equalSym) OR
 _AssignOp(Kind);
 _Expr(Op2);
 OutOp  :=  MakeAssign(Kind,Op1,  Op2);
-end else begin SynError(96);
+end else begin SynError(97);
 end;
 end;
 
@@ -2048,7 +2054,7 @@ _LocalVarDecl(OutOp);
 Expect(_semicolonSym);
 end else if _In(symSet[5], fCurrentInputSymbol) then begin
 _EmbeddedStatement(OutOp);
-end else begin SynError(97);
+end else begin SynError(98);
 end;
 end;
 
@@ -2204,7 +2210,8 @@ symSet[ 1, 1] := [];
 symSet[ 1, 2] := [_lparenSym-32];
 symSet[ 1, 3] := [];
 symSet[ 1, 4] := [_minusSym-64];
-symSet[ 1, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
+symSet[ 1, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80, 
+                    nullSym-80];
 symSet[ 2, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 2, 1] := [];
 symSet[ 2, 2] := [_lparenSym-32, _lbraceSym-32, floatSym-32, intSym-32, 
@@ -2212,14 +2219,16 @@ symSet[ 2, 2] := [_lparenSym-32, _lbraceSym-32, floatSym-32, intSym-32,
 symSet[ 2, 3] := [ifSym-48, switchSym-48, whileSym-48, forSym-48, breakSym-48, 
                     continueSym-48, returnSym-48];
 symSet[ 2, 4] := [_minusSym-64];
-symSet[ 2, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
+symSet[ 2, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80, 
+                    nullSym-80];
 symSet[ 3, 0] := [intConSym, realConSym, stringConSym, identSym];
 symSet[ 3, 1] := [];
 symSet[ 3, 2] := [_lparenSym-32, floatSym-32, intSym-32, stringSym-32, 
                     modelSym-32];
 symSet[ 3, 3] := [];
 symSet[ 3, 4] := [_minusSym-64];
-symSet[ 3, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
+symSet[ 3, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80, 
+                    nullSym-80];
 symSet[ 4, 0] := [];
 symSet[ 4, 1] := [];
 symSet[ 4, 2] := [_rparenSym-32, _commaSym-32, _semicolonSym-32];
@@ -2237,7 +2246,8 @@ symSet[ 5, 2] := [_lparenSym-32, _lbraceSym-32, _semicolonSym-32];
 symSet[ 5, 3] := [ifSym-48, switchSym-48, whileSym-48, forSym-48, breakSym-48, 
                     continueSym-48, returnSym-48];
 symSet[ 5, 4] := [_minusSym-64];
-symSet[ 5, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80];
+symSet[ 5, 5] := [_plus_plusSym-80, _minus_minusSym-80, _bangSym-80, 
+                    nullSym-80];
 end; {InitSymSet}
 
 end { Zc }.    
