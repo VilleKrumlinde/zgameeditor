@@ -672,7 +672,7 @@ Primary<var OutOp : TZcOp>
   (
     ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
   | Literal<Typ>  (.
-        if Typ=zctString then
+        if Typ in [zctString,zctNull] then
           OutOp := TZcOpLiteral.Create(Typ,LexString)
         else
         begin
@@ -737,7 +737,8 @@ Literal<var Typ : TZcDataType>
 = intCon (. Typ :=zctInt; .) |
   realCon (. Typ := zctFloat; .) |
   stringCon (. Typ := zctString; .)
-  (* | "true" | "false" | "null" *)
+  | "null" (. Typ := zctNull; .)
+  (* | "true" | "false"  *)
 .
 
 END Zc.

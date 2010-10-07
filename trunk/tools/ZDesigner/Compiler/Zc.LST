@@ -1,6 +1,6 @@
 
 
-Compiled: den 29 september 2010 - 14:14:09
+Compiled: den 7 oktober 2010 - 16:59:02
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,14 +33,14 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 29 september 2010 @ 14:14:09
+Time Compiled: den 7 oktober 2010 @ 16:59:02
 
 Statistics:
-  number of terminals:        88 (limit  2561)
+  number of terminals:        89 (limit  2561)
   number of non-terminals:    33 (limit  1281)
-  number of pragmas:           0 (limit  2473)
-  number of symbolnodes:     121 (limit  2561)
-  number of graphnodes:      391 (limit 15001)
+  number of pragmas:           0 (limit  2472)
+  number of symbolnodes:     122 (limit  2561)
+  number of graphnodes:      394 (limit 15001)
   number of conditionsets:     1 (limit   101)
   number of charactersets:    25 (limit  4001)
 
@@ -734,7 +734,7 @@ Listing
   672    (
   673      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
   674    | Literal<Typ>  (.
-  675          if Typ=zctString then
+  675          if Typ in [zctString,zctNull] then
   676            OutOp := TZcOpLiteral.Create(Typ,LexString)
   677          else
   678          begin
@@ -799,10 +799,11 @@ Listing
   737  = intCon (. Typ :=zctInt; .) |
   738    realCon (. Typ := zctFloat; .) |
   739    stringCon (. Typ := zctString; .)
-  740    (* | "true" | "false" | "null" *)
-  741  .
-  742  
-  743  END Zc.
+  740    | "null" (. Typ := zctNull; .)
+  741    (* | "true" | "false"  *)
+  742  .
+  743  
+  744  END Zc.
 
     1 LL(1) error
    11 warnings

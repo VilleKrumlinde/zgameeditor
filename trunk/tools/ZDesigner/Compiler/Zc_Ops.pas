@@ -171,7 +171,7 @@ var
 
 const
   ZcTypeNames : array[TZcDataType] of string =
-(('void'),('float'),('int'),('string'),('model'),('#reference'));
+(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'));
 
 function GetZcTypeName(Typ : TZcDataType) : string;
 begin
@@ -218,6 +218,8 @@ end;
 
 
 function TZcOp.GetDataType: TZcDataType;
+var
+  Etyp : TZcExtendedDataType;
 
   procedure DoIdentifier;
   var
@@ -233,8 +235,18 @@ function TZcOp.GetDataType: TZcDataType;
       Result := zctModel;
   end;
 
-var
-  Etyp : TZcExtendedDataType;
+  procedure DoProp;
+  begin
+    if Etyp.Prop.PropertyType=zptComponentRef then
+    begin
+      if ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).ClassId=ModelClassId then
+        Result := zctModel
+      else
+        Result := zctReference;
+    end else
+      Result := PropTypeToZType(Etyp.Prop.PropertyType);
+  end;
+
 begin
   Result := zctVoid;
   if (Ref is TZcOp) then
@@ -264,7 +276,7 @@ begin
     Etyp := Self.GetExtendedDataType;
     case Etyp.Kind of
       edtComponent: Result := zctReference;
-      edtProperty: Result := PropTypeToZType(Etyp.Prop.PropertyType);
+      edtProperty: DoProp;
       edtPropIndex: Result := zctFloat;
       edtModelDefined : Result := zctReference;
     else
@@ -718,15 +730,27 @@ begin
 end;
 
 function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
+const
+  NullCompatible : set of TZcDataType = [zctModel,zctReference];
+var
+  ExistingType : TZcDataType;
 begin
-  if (Op.GetDataType=WantedType) or (WantedType=zctVoid) or (Op.GetDataType=zctVoid) then
-    Result := Op
-  else
-  begin
-    if (WantedType=zctString) or (Op.GetDataType=zctString)  then
-      raise ECodeGenError.Create('Cannot convert to/from string: ' + Op.ToString);
-    Result := TZcOpConvert.Create(WantedType,Op);
-  end;
+  ExistingType := Op.GetDataType;
+
+  if (ExistingType=WantedType) or (WantedType=zctVoid) or (ExistingType=zctVoid) then
+    Exit(Op);
+
+  if ((WantedType=zctNull) and (ExistingType in NullCompatible)) or
+    ((ExistingType=zctNull) and (WantedType in NullCompatible)) then
+    Exit(Op);
+
+  if (WantedType=zctNull) or (ExistingType=zctNull)  then
+    raise ECodeGenError.Create('Cannot convert to/from null: ' + Op.ToString);
+
+  if (WantedType=zctString) or (ExistingType=zctString)  then
+    raise ECodeGenError.Create('Cannot convert to/from string: ' + Op.ToString);
+
+  Result := TZcOpConvert.Create(WantedType,Op);
 end;
 
 function CheckPrimary(Op : TZcOp) : TZcOp;
