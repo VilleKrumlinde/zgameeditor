@@ -1144,9 +1144,8 @@ procedure TExpStackFrame.Execute;
 begin
   StackPush(gCurrentBP);
   gCurrentBP := StackGetDepth;
-  {$ifndef MINIMAL}
+  //Null-initialize stack frame
   FillChar(ZcStackPtr^,Self.Size * SizeOf(ZcStackPtr^),0);
-  {$endif}
   //Add frame to stack
   Inc(ZcStackPtr,Self.Size);
 end;
