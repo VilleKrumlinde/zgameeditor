@@ -249,7 +249,7 @@ var
 
 begin
   Result := zctVoid;
-  if (Ref is TZcOp) then
+  if (Ref is TZcOp) and (Kind<>zcSelect) then
   begin
     //Local vars, func calls
     Result := (Ref as TZcOp).GetDataType;
