@@ -734,6 +734,11 @@ begin
   Self.Active:=True;
   ZApp.AddModel( Self );
   ExecuteWithCurrentModel(Self,Self.OnSpawn);
+  {$ifndef minimal}
+  //Clones should not increase classid
+  if not IsSpawnedAsReference then
+    Dec(_NextModelClassId);
+  {$endif}
 end;
 
 procedure TModel.Collision(Hit: TModel);
@@ -877,6 +882,7 @@ end;
 procedure TModel.RunRenderCommands;
 //Called from render.rendermodel
 begin
+  Meshes.CurrentModel := Self;
   OnRender.ExecuteCommands;
   if CurrentState<>nil then
     CurrentState.OnRender.ExecuteCommands;

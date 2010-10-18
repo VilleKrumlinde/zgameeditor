@@ -310,9 +310,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoGenIdentifier;
   var
-    //C : TExpPropValueBase;
     L : TExpAccessLocal;
-    //Source : TZPropertyRef;
   begin
     if (Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar) then
     begin
