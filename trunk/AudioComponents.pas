@@ -240,6 +240,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}integer(@Voice.SampleRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSample]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SampleRepeatPosition',{$ENDIF}integer(@Voice.SampleRepeatPosition), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'UseSampleHz',{$ENDIF}integer(@Voice.UseSampleHz), zptBoolean);
 end;
 
 { TPlaySound }

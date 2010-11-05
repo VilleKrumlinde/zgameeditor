@@ -2948,7 +2948,6 @@ var
     S,SampleDataString : ansistring;
     OtherXml : TXmlParser;
     SampleFormat,SampleName : string;
-    I : integer;
   begin
     Xml.Scan;
     Assert(Xml.CurName='SampleData');
@@ -2958,11 +2957,7 @@ var
     Assert(Xml.CurName='SampleData');
     Xml.Scan;
 
-    I := 0;
-    repeat
-      Inc(I);
-      SampleName := 'Sample' + IntToStr(I);
-    until not Self.SymTab.Contains(SampleName);
+    SampleName := Self.SymTab.MakeUnique('Sample');
 
     SampleFormat := NotFounds.Values['SampleFormat'];
     if SampleFormat='' then
