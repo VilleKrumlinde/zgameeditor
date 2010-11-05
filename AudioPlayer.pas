@@ -990,8 +990,11 @@ begin
           V.SampleData := TSample(V.SampleRef).GetMemory;
           V.SampleCount := TSample(V.SampleRef).SampleCount;
           if V.UseSampleHz then
+          begin
             //Set playback speed to 44100hz so sample will use original pitch
             V.NoteNr := 148.76557922;//FrequencyToNote(44100);
+            V.BaseNoteNr := 0;
+          end;
         end;
 
         //Initialize modulations

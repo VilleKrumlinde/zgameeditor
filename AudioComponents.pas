@@ -623,9 +623,20 @@ end;
 procedure TSampleImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   S : TSample;
-  SourceStep,SourcePosFloat,Value : single;
+  SourceStep,SourcePosFloat,SampleFraction : single;
   SourceCount,SourcePos,OutputPos : integer;
   P : PSampleUnit;
+
+  function GetSample(const I : integer) : single;
+  begin
+    case Self.SampleFormat of
+      sfoSigned8bit :
+        Result := ShortInt(PBytes(Self.SampleData.Data)^[ I ]) / High(ShortInt);
+      else //sfoSigned16bit :
+        Result := SmallInt(PWords(Self.SampleData.Data)^[ I ]) / High(SmallInt);
+    end;
+  end;
+
 begin
   S := TSample.Create(nil);
   S.Length := TSample(Content).Length;
@@ -637,25 +648,21 @@ begin
   P := S.GetMemory;
 
   SourcePosFloat := 0.0;
+  SampleFraction := 0.0;
   SourcePos := 0;
   OutputPos := 0;
 
   SourceStep := Self.SampleRate/AudioRate;
 
-  while (OutputPos<S.SampleCount) and (SourcePos<SourceCount) do
+  while (OutputPos<S.SampleCount) and (SourcePos<SourceCount-1) do
   begin
-    case Self.SampleFormat of
-      sfoSigned8bit :
-        Value := ShortInt(PBytes(Self.SampleData.Data)^[ SourcePos ]) / High(ShortInt);
-      else //sfoSigned16bit :
-        Value := SmallInt(PWords(Self.SampleData.Data)^[ SourcePos ]) / High(SmallInt);
-    end;
-    P^ := Value;
+    P^ := GetSample(SourcePos) * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
     Inc(P);
     Inc(OutputPos);
 
     SourcePosFloat := SourcePosFloat + SourceStep;
-    SourcePos := Round(SourcePosFloat);
+    SampleFraction := Frac(SourcePosFloat);
+    SourcePos := Trunc(SourcePosFloat);
   end;
 
   Stack.Push(S);
