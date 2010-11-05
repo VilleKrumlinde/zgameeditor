@@ -137,15 +137,10 @@ type
     Buf0,Buf1 : integer;
 
     //Sampled waveform
-    //Must be compatible with TZBinaryPropValue
-    SampleData : record
-      Size : integer;
-      Data : pointer;
-    end;
-    SampleRate : single;
+    SampleRef : pointer;  //Pointer to TSample-component
+    SampleData : pointer;
     SampleRepeatPosition,SampleStep,SamplePosition : integer;
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
-    SampleFormat : (sfoSigned8bit,sfoSigned16bit);
 
     Next : PVoiceEntry;
   end;
@@ -211,7 +206,7 @@ procedure DesignerResetMixer;
 
 implementation
 
-uses ZPlatform,ZMath,ZClasses;
+uses ZPlatform,ZMath,ZClasses,AudioComponents;
 
 
 const
@@ -441,12 +436,12 @@ begin
   //double MIDItoFreq( char keynum ) { return 440.0 * pow( 2.0, ((double)keynum - 69.0) / 12.0 ); }
   V.Osc1.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc1.NoteModifier))/12);
 
-  if V.SampleData.Size>0 then
+  if V.SampleData<>nil then
   begin
     //440 / (22050 * (22050/8363))
 //    V.SampleStep := Round(V.Osc1.Frequency / (AudioRate * (AudioRate/8363)) * (1 shl SamplePosPBits));
     //11025 /  (11025 * (AudioRate/11025) ))
-    V.SampleStep := Round(V.Osc1.Frequency / (V.SampleRate * (AudioRate/V.SampleRate)) * (1 shl SamplePosPBits));
+    V.SampleStep := Round((V.Osc1.Frequency / AudioRate) * (1 shl SamplePosPBits));
   end;
 
   //Måste ta freq*2 pga MixFullRange ej kan representeras som en integer-konstant
@@ -472,14 +467,7 @@ end;
 //Read a sample value. Only called from RenderVoice.
 function GetSample(V : PVoiceEntry; SamplePos : integer) : TSoundMixUnit;
 begin
-  case V.SampleFormat of
-    sfoSigned8bit :
-      Result := shortint(PBytes(V.SampleData.Data)^[ SamplePos ]) *
-        (1 shl (VoicePBits-8));
-    else //sfoSigned16bit :
-      Result := smallint(PWords(V.SampleData.Data)^[ SamplePos ]) *
-        (1 shl (VoicePBits-16));
-  end;
+  Result := Round(PSampleUnits(V.SampleData)^[SamplePos] * (1 shl (VoicePBits-1)) );
 end;
 
 procedure RenderVoice(V : PVoiceEntry; Count : integer);
@@ -515,7 +503,7 @@ begin
 
   Value1 := 0;  //Get rid of warning
 
-  HasSample := V.SampleData.Size>0;
+  HasSample := V.SampleData<>nil;
 
   Buf := @VoiceBuffer[0];
   W1 := V.Osc1.CurValue;
@@ -544,7 +532,7 @@ begin
           end;
         wfSine :
           begin
-            Value1 := VoiceLowestValue + Trunc( (1.0 + Sin(W1 * (1/High(integer)* PI*2) )) * (VoiceFullRange div 2-1));
+            Value1 := VoiceLowestValue + Round( (1.0 + Sin(W1 * (1/High(integer)* PI*2) )) * (VoiceFullRange div 2-1));
           end;
       end;
     end
@@ -997,8 +985,11 @@ begin
         V.Volume := V.Volume * Note.Velocity;
 
         //Determine the nr of samples in sampledata (size in bytes / sampleformat)
-        if V.SampleData.Size>0 then
-          V.SampleCount := V.SampleData.Size shr (ord(V.SampleFormat));
+        if V.SampleRef<>nil then
+        begin
+          V.SampleData := TSample(V.SampleRef).GetMemory;
+          V.SampleCount := TSample(V.SampleRef).SampleCount;
+        end;
 
         //Initialize modulations
         for I := 0 to High(V.Modulations) do

@@ -554,10 +554,7 @@ begin
         DepthList.Add(Model)
       end
       else
-      begin
-        Meshes.CurrentModel := Model;
         Renderer.RenderModel(Model);
-      end;
     end;
   end;
 
@@ -566,7 +563,6 @@ begin
   for I := DepthList.Count-1 downto 0 do
   begin
     Model := TModel(DepthList[I]);
-    Meshes.CurrentModel := Model;
     Renderer.RenderModel(Model);
   end;
 
@@ -593,7 +589,7 @@ begin
     glLoadIdentity;
 
     {$ifdef zgeviz}
-    glTranslatef(ZgeVizCameraTranslate[0],ZgeVizCameraTranslate[1],ZgeVizCameraTranslate[2]);
+    glTranslatef(ZgeVizCameraTranslate[0],ZgeVizCameraTranslate[1],0);
     {$endif}
     gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
 

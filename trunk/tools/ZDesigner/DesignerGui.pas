@@ -1510,9 +1510,8 @@ var
         Exit;
 
       Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
-      (Self.Component as TSound).Voice.BaseNoteNr := 60;
-      (Self.Component as TSound).Voice.SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
-      PByte(@(Self.Component as TSound).Voice.SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
+      (Self.Component as TSampleImport).SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
+      PByte(@(Self.Component as TSampleImport).SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
       M.LoadFromFile(D.FileName);
       Result := True;
     finally
@@ -1589,7 +1588,7 @@ begin
       MusicClassId :
         if not InGetMusic then
           Exit;
-      SoundClassId :
+      SampleImportClassId :
         if not InGetSound then
           Exit;
       ZFileClassId :

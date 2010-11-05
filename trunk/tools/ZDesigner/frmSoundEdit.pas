@@ -442,8 +442,12 @@ begin
           FSample := ISample/Abs(Low(TSoundOutputUnit));
         Y := (YSize + J*(YSize*2)) -
           Round(FSample * YSize);
+
         SoundGraphBitmap.Canvas.PenPos := SoundGraphSavePenPos[J];
-        SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
+        if SoundGraphPixelPos=0 then
+          SoundGraphBitmap.Canvas.PenPos := Point(0,Y)
+        else
+          SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
         SoundGraphSavePenPos[J] := SoundGraphBitmap.Canvas.PenPos;
       end;
 
