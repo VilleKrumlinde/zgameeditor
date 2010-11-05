@@ -123,7 +123,7 @@ type
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
 begin
   Result := 0;
-  case (Msg) of
+  case Msg of
     WM_CREATE:
       begin
         // Insert stuff you want executed when the program starts
@@ -132,7 +132,9 @@ begin
       begin
         //In screensaver mode with ParentWindow: parent window sends destroy to
         //all child windows, important to quit otherwise process will keep on living.
+        {$ifdef minimal}
         PostQuitMessage(0);
+        {$endif}
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
@@ -171,6 +173,12 @@ begin
       Result := DefWindowProc(hWnd, Msg, wParam, lParam);    // Default result if nothing happens
 {$endif}
   end;
+
+  {$ifdef zgeviz}
+  //Always pass on the message to avoid zgeviz stealing keypresses from FL-studio
+  if (Msg=WM_KEYDOWN) or (Msg=WM_KEYUP) then
+    Result := DefWindowProc(hWnd, Msg, wParam, lParam);
+  {$endif}
 end;
 
 {$if (not defined(minimal))}

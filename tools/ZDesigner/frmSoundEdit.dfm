@@ -427,6 +427,10 @@ inherited SoundEditFrame: TSoundEditFrame
     object TabSheet2: TTabSheet
       Caption = 'Global mixer'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         793
         569)

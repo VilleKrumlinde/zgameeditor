@@ -92,10 +92,46 @@ type
     procedure Execute; override;
   end;
 
+  TSampleUnit = single;
+  PSampleUnit = ^TSampleUnit;
+  PSampleUnits = PFloatArray;
+  TSample = class(TContent)
+  private
+    Memory : PSampleUnit;
+    procedure CleanUp;
+    procedure ReInit;
+  protected
+    procedure CopyAndDestroy(Source : TContent); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    SampleCount : integer;
+    Length : single;
+    destructor Destroy; override;
+    function GetMemory : PSampleUnit;
+  end;
+
+  TSampleExpression = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    Expression : TZExpressionPropValue;
+    Time,Sample : single;
+  end;
+
+  TSampleImport = class(TContentProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
+  public
+    SampleData : TZBinaryPropValue;
+    SampleRate : single;
+    SampleFormat : (sfoSigned8bit,sfoSigned16bit);
+  end;
 
 implementation
 
-uses ZApplication
+uses ZApplication,ZExpressions,ZMath
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -201,16 +237,9 @@ begin
     TZProperty(List[I]).HideInGui := True;
   {$endif}
 
-  {$ifndef minimal}
-  Assert(SizeOf(Voice.SampleData)=SizeOf(TZBinaryPropValue));
-  {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SampleData',{$ENDIF}integer(@Voice.SampleData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}integer(@Voice.SampleRef), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TSample]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SampleRepeatPosition',{$ENDIF}integer(@Voice.SampleRepeatPosition), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'SampleRate',{$ENDIF}integer(@Voice.SampleRate), zptFloat);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SampleFormat',{$ENDIF}integer(@Voice.SampleFormat), zptByte);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-    {$ifndef minimal}List.GetLast.SetOptions(['8 bit signed','16 bit signed']);{$endif}
 end;
 
 { TPlaySound }
@@ -468,6 +497,169 @@ begin
   end;
 end;
 
+{ TSample }
+
+procedure TSample.CleanUp;
+begin
+  FreeMem(Memory);
+  Memory := nil;
+end;
+
+procedure TSample.CopyAndDestroy(Source: TContent);
+var
+  S : TSample;
+begin
+  CleanUp;
+  S := TSample(Source);
+  Self.Length := S.Length;
+  Self.Memory := S.Memory;
+  Self.SampleCount := S.SampleCount;
+  S.Memory := nil;
+  S.Free;
+end;
+
+procedure TSample.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}integer(@Length),zptFloat);
+end;
+
+destructor TSample.Destroy;
+begin
+  CleanUp;
+  inherited;
+end;
+
+function TSample.GetMemory: PSampleUnit;
+begin
+  if (Memory=nil) or (Producers.IsChanged) or (IsChanged) then
+  begin
+    ReInit;
+  end;
+  Result := Memory;
+end;
+
+procedure TSample.ReInit;
+begin
+  CleanUp;
+  if Producers.Count>0 then
+    RefreshFromProducers
+  else
+  begin
+    Self.SampleCount := Round(Self.Length * AudioRate);
+    GetMem(Self.Memory, SampleCount * SizeOf(TSampleUnit) );
+  end;
+  IsChanged := False;
+  Producers.IsChanged := False;
+end;
+
+{ TSampleExpression }
+
+procedure TSampleExpression.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
+    {$ifndef minimal}
+    List.GetLast.DefaultValue.ExpressionValue.Source :=
+      '//Sample : current sample (-1..1)'#13#10 +
+      '//Time : current time'#13#10 +
+      '//Example: Sample=sin(Time*((PI*2)*777));'#13#10;
+    {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}integer(@Sample), zptFloat);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}integer(@Time), zptFloat);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+end;
+
+procedure TSampleExpression.ProduceOutput(Content: TContent;
+  Stack: TZArrayList);
+var
+  S : TSample;
+  TimeStep : single;
+  I : integer;
+  P : PSampleUnit;
+begin
+  if Stack.Count>0 then
+    S := TSample( Stack.Pop )
+  else
+  begin
+    S := TSample.Create(nil);
+    S.Length := TSample(Content).Length;
+  end;
+
+  P := S.GetMemory;
+  if S.SampleCount>0 then
+  begin
+    Self.Time := 0;
+    TimeStep := S.Length/S.SampleCount;
+    for I := 0 to S.SampleCount-1 do
+    begin
+      Self.Sample :=  P^;
+      ZExpressions.RunCode(Expression.Code);
+      P^ := Clamp(Self.Sample,-1,1);
+      Inc(P);
+      Self.Time := Self.Time + TimeStep;
+    end;
+  end;
+
+  Stack.Push(S);
+end;
+
+{ TSampleImport }
+
+procedure TSampleImport.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SampleData',{$ENDIF}integer(@Self.SampleData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'SampleRate',{$ENDIF}integer(@Self.SampleRate), zptFloat);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'SampleFormat',{$ENDIF}integer(@Self.SampleFormat), zptByte);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['8 bit signed','16 bit signed']);{$endif}
+end;
+
+procedure TSampleImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  S : TSample;
+  SourceStep,SourcePosFloat,Value : single;
+  SourceCount,SourcePos,OutputPos : integer;
+  P : PSampleUnit;
+begin
+  S := TSample.Create(nil);
+  S.Length := TSample(Content).Length;
+
+  SourceCount := Self.SampleData.Size shr (ord(Self.SampleFormat));
+  if S.Length=0 then
+    S.Length := SourceCount / Self.SampleRate;
+
+  P := S.GetMemory;
+
+  SourcePosFloat := 0.0;
+  SourcePos := 0;
+  OutputPos := 0;
+
+  SourceStep := Self.SampleRate/AudioRate;
+
+  while (OutputPos<S.SampleCount) and (SourcePos<SourceCount) do
+  begin
+    case Self.SampleFormat of
+      sfoSigned8bit :
+        Value := ShortInt(PBytes(Self.SampleData.Data)^[ SourcePos ]) / High(ShortInt);
+      else //sfoSigned16bit :
+        Value := SmallInt(PWords(Self.SampleData.Data)^[ SourcePos ]) / High(SmallInt);
+    end;
+    P^ := Value;
+    Inc(P);
+    Inc(OutputPos);
+
+    SourcePosFloat := SourcePosFloat + SourceStep;
+    SourcePos := Round(SourcePosFloat);
+  end;
+
+  Stack.Push(S);
+end;
+
 initialization
 
   ZClasses.Register(TSound,SoundClassId);
@@ -481,6 +673,14 @@ initialization
     ComponentManager.LastAdded.HasGlobalData := True;
     {$ifend}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=17;{$endif}
+
+  ZClasses.Register(TSample,SampleClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TSampleExpression,SampleExpressionClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
+  ZClasses.Register(TSampleImport,SampleImportClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
 
   ZClasses.Register(TMusic,MusicClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=16;{$endif}

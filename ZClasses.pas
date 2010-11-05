@@ -63,6 +63,7 @@ type
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
  MusicClassId,MusicControlClassId,
+ SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId
 );
@@ -2855,6 +2856,7 @@ var
   L,NotFounds : TStringList;
   Fix : TZXmlFixUp;
   Found : boolean;
+  SaveMainXml : TXmlParser;
 
   procedure InDecodeBinary(const HexS : string; var BinaryValue : TZBinaryPropValue);
   var
@@ -2941,8 +2943,60 @@ var
     OtherXml.Free;
   end;
 
+  procedure PatchSoundSample;
+  var
+    S,SampleDataString : ansistring;
+    OtherXml : TXmlParser;
+    SampleFormat,SampleName : string;
+    I : integer;
+  begin
+    Xml.Scan;
+    Assert(Xml.CurName='SampleData');
+    Xml.Scan;
+    SampleDataString := Xml.CurContent;
+    Xml.Scan;
+    Assert(Xml.CurName='SampleData');
+    Xml.Scan;
+
+    I := 0;
+    repeat
+      Inc(I);
+      SampleName := 'Sample' + IntToStr(I);
+    until not Self.SymTab.Contains(SampleName);
+
+    SampleFormat := NotFounds.Values['SampleFormat'];
+    if SampleFormat='' then
+      SampleFormat := '0';
+
+    S := '<Sample Name="' + AnsiString(SampleName) + '">' +
+      '<Producers>' +
+      '<SampleImport SampleRate="' + AnsiString(NotFounds.Values['SampleRate']) + '" ' +
+         'SampleFormat="' + AnsiString(SampleFormat) + '">' +
+      '<SampleData>' +
+      '<![CDATA[' + SampleDataString + ']]>' +
+      '</SampleData>' +
+      '</SampleImport>' +
+      '</Producers>' +
+      '</Sample>';
+
+    Prop := PropList.GetByName('Sample');
+    C.GetProperty(Prop,Value);
+
+    OtherXml := TXmlParser.Create;
+    OtherXml.LoadFromBuffer(PAnsiChar(S));
+    OtherXml.Scan;
+    Value.ComponentValue := XmlDoReadComponent(OtherXml,OwnerList);
+
+    C.SetProperty(Prop,Value);
+
+    OtherXml.Free;
+  end;
+
 begin
   ZClassName := string(Xml.CurName);
+
+  SaveMainXml := Self.MainXml;
+  Self.MainXml := Xml;
 
   Ci := ComponentManager.GetInfoFromName(ZClassName);
   C := Ci.ZClass.Create(OwnerList);
@@ -3046,6 +3100,9 @@ begin
     if (NotFounds.Count>0) and (ZClassName='Material') then
       PatchMaterialTextures;
 
+    if (NotFounds.Count>0) and (ZClassName='Sound') and (Xml.CurPartType=ptStartTag) then
+      PatchSoundSample;
+
     if Xml.CurPartType=ptStartTag then
     begin
       while Xml.Scan do
@@ -3110,6 +3167,8 @@ begin
 
   if C.Name<>'' then
     SymTab.Add(String(LowerCase(C.Name)),C);
+
+  Self.MainXml := SaveMainXml;
 
   Result := C;
 end;
