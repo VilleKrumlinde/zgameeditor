@@ -40,6 +40,7 @@ type
     function ScopeContains(const Name: string): boolean;
     function Contains(const Name : string) : boolean;
     function Lookup(const Name : string) : TObject;
+    function MakeUnique(const Prefix : string) : string;
     procedure Remove(const Name : string);
     procedure ClearAll;
     procedure PushScope;
@@ -151,6 +152,17 @@ begin
       Break;
     end;
   end;
+end;
+
+function TSymbolTable.MakeUnique(const Prefix: string): string;
+var
+  I : integer;
+begin
+  I := 0;
+  repeat
+    Inc(I);
+    Result := Prefix + IntToStr(I);
+  until not Contains(Result);
 end;
 
 procedure TSymbolTable.Remove(const Name: string);

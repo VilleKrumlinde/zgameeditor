@@ -141,6 +141,7 @@ type
     SampleData : pointer;
     SampleRepeatPosition,SampleStep,SamplePosition : integer;
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
+    UseSampleHz : boolean;
 
     Next : PVoiceEntry;
   end;
@@ -414,7 +415,6 @@ begin
     end;
   end;
 end;
-
 
 procedure SetVoiceFrameConstants(V : PVoiceEntry);
 //Uppdatera värden i Voice som gäller tills nästa gång update anropas
@@ -989,6 +989,9 @@ begin
         begin
           V.SampleData := TSample(V.SampleRef).GetMemory;
           V.SampleCount := TSample(V.SampleRef).SampleCount;
+          if V.UseSampleHz then
+            //Set playback speed to 44100hz so sample will use original pitch
+            V.NoteNr := 148.76557922;//FrequencyToNote(44100);
         end;
 
         //Initialize modulations

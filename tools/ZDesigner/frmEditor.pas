@@ -2341,23 +2341,15 @@ end;
 procedure TEditorForm.AddNewComponentToTree(C : TZComponent);
 var
   Ci : TZComponentInfo;
-  I : integer;
   S : string;
 begin
   Ci := ComponentManager.GetInfo(C);
 
   if Ci.AutoName then
   begin  //Give unique name
-    for I := 1 to 100 do
-    begin
-      S := Ci.ZClassName + IntToStr(I);
-      if not ZApp.SymTab.Contains(S) then
-      begin
-        C.SetString('Name',AnsiString(S));
-        ZApp.SymTab.Add(S,C);
-        Break;
-      end;
-    end;
+    S := ZApp.SymTab.MakeUnique(Ci.ZClassName);
+    C.SetString('Name',AnsiString(S));
+    ZApp.SymTab.Add(S,C);
   end;
 
   Tree.AddNode(C,Tree.Selected).Selected := True;
