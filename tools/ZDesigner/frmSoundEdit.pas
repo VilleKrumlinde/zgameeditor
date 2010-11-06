@@ -419,6 +419,23 @@ begin
   Platform_EnterMutex(SoundGraphMutex);
   try
 
+    //Draw bounds
+    YSize := SoundGraphBitmap.Height div (2 * StereoChannels);
+    SoundGraphBitmap.Canvas.Pen.Color := clGreen;
+    for J := 0 to StereoChannels-1 do
+    begin
+      FSample := 1;
+      Y := (YSize + J*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := Point(0,Y);
+      SoundGraphBitmap.Canvas.LineTo(SoundGraphBitmap.Width,Y);
+
+      FSample := -1;
+      Y := (YSize + J*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := Point(0,Y);
+      SoundGraphBitmap.Canvas.LineTo(SoundGraphBitmap.Width,Y);
+    end;
+
+
     //Antal samples att stega i buffer för varje pixel
     D := Round( (SoundGraphMaxLength/StereoChannels)/SoundGraphBitmap.Width );
     //Max antal pixels att rita under en timeranrop
@@ -435,7 +452,6 @@ begin
       begin
         ISample := SoundGraphBuffer[SoundGraphReadIndex+J];
 
-        YSize := SoundGraphBitmap.Height div (2 * StereoChannels);
         if ISample>=0 then
           FSample := ISample/High(TSoundOutputUnit)
         else
