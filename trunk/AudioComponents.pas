@@ -623,7 +623,7 @@ end;
 procedure TSampleImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   S : TSample;
-  SourceStep,SourcePosFloat,SampleFraction : single;
+  SourceStep,SourcePosFloat{,SampleFraction} : single;
   SourceCount,SourcePos,OutputPos : integer;
   P : PSampleUnit;
 
@@ -643,25 +643,26 @@ begin
 
   SourceCount := Self.SampleData.Size shr (ord(Self.SampleFormat));
   if S.Length=0 then
-    S.Length := SourceCount / Self.SampleRate;
+    S.Length := SourceCount / AudioRate;
 
   P := S.GetMemory;
 
   SourcePosFloat := 0.0;
-  SampleFraction := 0.0;
+//  SampleFraction := 0.0;
   SourcePos := 0;
   OutputPos := 0;
 
-  SourceStep := Self.SampleRate/AudioRate;
+  SourceStep := Self.SampleRate / AudioRate;
 
+  //Upsample to target rate
   while (OutputPos<S.SampleCount) and (SourcePos<SourceCount-1) do
   begin
-    P^ := GetSample(SourcePos) * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
+    P^ := GetSample(SourcePos);// * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
     Inc(P);
     Inc(OutputPos);
 
     SourcePosFloat := SourcePosFloat + SourceStep;
-    SampleFraction := Frac(SourcePosFloat);
+//    SampleFraction := Frac(SourcePosFloat);
     SourcePos := Trunc(SourcePosFloat);
   end;
 

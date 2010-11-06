@@ -219,7 +219,7 @@ const
   VoiceFullRange = (1 shl VoicePBits);
   VoiceVolBits = 6;
 
-  SamplePosPBits = 12;
+  SamplePosPBits = 8;
 
   //Antal bits för hur många steg channel volume går i
   ChannelVolBits = 6;
@@ -427,14 +427,18 @@ begin
   if StereoChannels=2 then
   begin
     //EQP panning. kebby.org.
-    V.IPanL := Trunc( Sqrt(1.0 - V.Pan) * (1 shl VoiceVolBits) );
-    V.IPanR := Trunc( Sqrt(V.Pan) * (1 shl VoiceVolBits) );
+    V.IPanL := Round( Sqrt(1.0 - V.Pan) * (1 shl VoiceVolBits) );
+    V.IPanR := Round( Sqrt(V.Pan) * (1 shl VoiceVolBits) );
   end;
 
   NoteNr := (V.NoteNr-69.0) + V.BaseNoteNr;
 
-  //double MIDItoFreq( char keynum ) { return 440.0 * pow( 2.0, ((double)keynum - 69.0) / 12.0 ); }
-  V.Osc1.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc1.NoteModifier))/12);
+  if V.UseSampleHz then
+    //Set playback speed to 44100hz so sample will use original pitch
+    V.Osc1.Frequency := AudioRate
+  else
+    //double MIDItoFreq( char keynum ) { return 440.0 * pow( 2.0, ((double)keynum - 69.0) / 12.0 ); }
+    V.Osc1.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc1.NoteModifier))/12);
 
   if V.SampleData<>nil then
   begin
@@ -989,12 +993,6 @@ begin
         begin
           V.SampleData := TSample(V.SampleRef).GetMemory;
           V.SampleCount := TSample(V.SampleRef).SampleCount;
-          if V.UseSampleHz then
-          begin
-            //Set playback speed to 44100hz so sample will use original pitch
-            V.NoteNr := 148.76557922;//FrequencyToNote(44100);
-            V.BaseNoteNr := 0;
-          end;
         end;
 
         //Initialize modulations
