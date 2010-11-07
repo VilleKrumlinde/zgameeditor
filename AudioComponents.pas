@@ -655,6 +655,7 @@ begin
   SourceStep := Self.SampleRate / AudioRate;
 
   //Upsample to target rate
+  //(quality improves when not using fractions strangely enough)
   while (OutputPos<S.SampleCount) and (SourcePos<SourceCount-1) do
   begin
     P^ := GetSample(SourcePos);// * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
