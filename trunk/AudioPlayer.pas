@@ -219,7 +219,7 @@ const
   VoiceFullRange = (1 shl VoicePBits);
   VoiceVolBits = 6;
 
-  SamplePosPBits = 8;
+  SamplePosPBits = 12;
 
   //Antal bits för hur många steg channel volume går i
   ChannelVolBits = 6;
