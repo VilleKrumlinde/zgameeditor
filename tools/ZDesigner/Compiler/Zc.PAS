@@ -1752,10 +1752,10 @@ _SwitchLabel(Op);
 AddSwitchLabel(SwitchOp,Op);
 end;
 _Statement(Op);
-SwitchOp.StatementsOps.Last.Children.Add(Op);
+if  Assigned(Op)  then  SwitchOp.StatementsOps.Last.Children.Add(Op);
 while _In(symSet[2], fCurrentInputSymbol) do begin
 _Statement(Op);
-SwitchOp.StatementsOps.Last.Children.Add(Op);
+if  Assigned(Op)  then  SwitchOp.StatementsOps.Last.Children.Add(Op);
 end;
 end;
 

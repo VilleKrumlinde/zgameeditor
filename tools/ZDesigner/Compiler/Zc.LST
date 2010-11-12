@@ -1,6 +1,6 @@
 
 
-Compiled: den 7 oktober 2010 - 16:59:02
+Compiled: den 12 november 2010 - 09:10:37
 Output sent to: C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\
 
 ================================================================================
@@ -33,7 +33,7 @@ Grammar Tests:
      LL(1) error in EmbeddedStatement: "else" is the start & successor of a deletable structure
 
 ================================================================================
-Time Compiled: den 7 oktober 2010 @ 16:59:02
+Time Compiled: den 12 november 2010 @ 09:10:37
 
 Statistics:
   number of terminals:        89 (limit  2561)
@@ -516,9 +516,9 @@ Listing
   464    {
   465      SwitchLabel<Op> (. AddSwitchLabel(SwitchOp,Op); .)
   466    }
-  467    Statement<Op>    (. SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+  467    Statement<Op>    (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
   468    {
-  469       Statement<Op> (. SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+  469       Statement<Op> (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
   470    }
   471  .
   472  

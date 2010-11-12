@@ -54,7 +54,8 @@ procedure RegZgeExt;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       WriteString(ZgeProjExtension, '', ZgeRegName);
       WriteString(ZgeRegName, '', 'ZGameEditor Project');
       WriteString(ZgeRegName + '\DefaultIcon', '', Application.ExeName + ',0');
@@ -70,7 +71,8 @@ procedure UnRegZgeExt;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       EraseSection(ZgeProjExtension);
       EraseSection(ZgeRegName);
    finally
@@ -82,7 +84,8 @@ function IsRegZgeExt : boolean;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       Result := KeyExists(ZgeProjExtension);
    finally
       Free;

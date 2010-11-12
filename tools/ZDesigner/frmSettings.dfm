@@ -123,7 +123,7 @@ object SettingsForm: TSettingsForm
     Width = 327
     Height = 49
     Anchors = [akLeft, akTop, akRight]
-    Caption = 'File association (note: requires admin rights)'
+    Caption = 'File association'
     TabOrder = 3
     object ShellCheck: TCheckBox
       Left = 10

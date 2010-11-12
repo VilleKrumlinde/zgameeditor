@@ -125,6 +125,7 @@ type
     {$ifdef zgeviz}
     ZgeVizCameraTranslate : TZVector3f;
     ZgeVizTime : single;
+    ZgeVizRenderPassOverride : integer;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -577,6 +578,11 @@ begin
   for I := 0 to Self.RenderPasses-1 do
   begin
     Self.CurrentRenderPass := I;
+    {$ifdef zgeviz}
+    if ZgeVizRenderPassOverride<>0 then
+      Self.CurrentRenderPass := ZgeVizRenderPassOverride-1;
+    {$endif}
+
     if Self.OnBeginRenderPass.Count>0 then
       Self.OnBeginRenderPass.ExecuteCommands;
 

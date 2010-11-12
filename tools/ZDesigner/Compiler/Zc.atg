@@ -464,9 +464,9 @@ SwitchSection<SwitchOp : TZcOpSwitch> (. var Op : TZcOp; .)
   {
     SwitchLabel<Op> (. AddSwitchLabel(SwitchOp,Op); .)
   }
-  Statement<Op>    (. SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+  Statement<Op>    (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
   {
-     Statement<Op> (. SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+     Statement<Op> (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
   }
 .
 

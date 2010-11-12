@@ -98,7 +98,9 @@ switch(i) {
   default : i=42;
 }
 if(i!=42)
-  Error=10;]]>
+  Error=10;
+
+switch(0){case 0:float bug1;}]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Int tests">
