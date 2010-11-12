@@ -25,7 +25,7 @@ interface
 uses Classes,Contnrs,ZLog;
 
 type
-  TSymTabFunc = procedure(const S : string; Item : TObject; Context : pointer);
+  TSymTabFunc = reference to procedure(const S : string; Item : TObject; Context : pointer);
 
   TSymbolTable = class
   private
@@ -45,7 +45,7 @@ type
     procedure ClearAll;
     procedure PushScope;
     procedure PopScope;
-    procedure Iterate(F : TSymTabFunc; Context : pointer);
+    procedure Iterate(F : TSymTabFunc; Context : pointer = nil);
   end;
 
 implementation
