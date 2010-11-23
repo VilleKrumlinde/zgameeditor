@@ -57,9 +57,13 @@ uses
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas';
 
-{$ifndef fpc}
-  {$R Data.res Data.rc}
-  {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+{$ifdef Win32}
+  {$ifdef fpc}
+    {$R Data.res}
+  {$else}
+    {$R Data.res Data.rc}
+    {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+  {$endif}
 {$endif}
 
 begin

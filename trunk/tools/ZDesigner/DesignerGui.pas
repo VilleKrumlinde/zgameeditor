@@ -438,7 +438,7 @@ begin
   Edit.Enabled := not IsReadOnlyProp;
   Edit.Parent := ValuePanel;
 
-  if (Prop.Name='Text') or (Prop.Name='Comment') then
+  if (Prop.Name='Text') or (Prop.Name='Comment') or (Prop.Name='StringValue') then
   begin
     B := TButton.Create(Self);
     B.Align := alRight;
@@ -448,6 +448,7 @@ begin
     B.Hint := 'Edit multi-line text';
     B.OnClick := OnMemoEdit;
     B.Parent := ValuePanel;
+    B.Enabled := not IsReadOnlyProp;
   end;
 
 //  NamePanel.FocusControl := Edit;

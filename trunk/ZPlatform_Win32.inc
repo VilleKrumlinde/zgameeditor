@@ -871,7 +871,6 @@ var
   Size : integer;
 begin
   Result := nil;
-  {$ifdef fpc}exit;{$endif}
   HResInfo := FindResource(HInstance,'data_file', RT_RCDATA);
   //if HResInfo = 0 then Error;
   HGlobal := LoadResource(HInstance, HResInfo);
