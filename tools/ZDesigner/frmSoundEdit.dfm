@@ -10,7 +10,7 @@ inherited SoundEditFrame: TSoundEditFrame
     Top = 0
     Width = 801
     Height = 597
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     Align = alClient
     TabOrder = 0
     object TabSheet1: TTabSheet
@@ -127,6 +127,9 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 113
         VertScrollBar.Visible = False
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
         TabOrder = 0
       end
       object OctaveEdit: TEdit
@@ -150,6 +153,9 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 61
         VertScrollBar.Visible = False
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
         TabOrder = 3
       end
       object GroupBox4: TGroupBox
@@ -363,6 +369,11 @@ inherited SoundEditFrame: TSoundEditFrame
         Top = 468
         Width = 640
         Height = 69
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Ctl3D = True
+        ParentCtl3D = False
         TabOrder = 8
       end
       object ChannelEdit: TEdit
@@ -427,10 +438,6 @@ inherited SoundEditFrame: TSoundEditFrame
     object TabSheet2: TTabSheet
       Caption = 'Global mixer'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         793
         569)
@@ -476,6 +483,7 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 777
         Height = 265
         Anchors = [akLeft, akTop, akRight]
+        BorderStyle = bsNone
         TabOrder = 0
       end
       object GlobalLfosParent: TScrollBox
@@ -484,6 +492,7 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 61
         VertScrollBar.Visible = False
+        BorderStyle = bsNone
         TabOrder = 1
       end
       object HelpMixerButton: TButton
