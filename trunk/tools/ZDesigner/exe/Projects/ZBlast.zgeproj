@@ -371,7 +371,7 @@ if( frac(AsteroidLargeLife/4)==0 )
   AsteroidLargeHurt=0.6;]]>
               </Expression>
             </ZExpression>
-            <Condition Expression="return AsteroidLargeLife.Value==0;">
+            <Condition Expression="return AsteroidLargeLife==0;">
               <OnTrue>
                 <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
                 <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
@@ -747,7 +747,7 @@ this.Pixel.A=0.2-Temp1*0.2;
             <MouseModelController ScaleX="5.5" ScaleY="4"/>
             <KeyPress Name="ShootKeys" Keys="AWDS" RepeatDelay="0.07">
               <OnPressed>
-                <ZExpression Expression="ShipShotDir.Value=ShootKeys.KeyIndex+1;"/>
+                <ZExpression Expression="ShipShotDir=ShootKeys.KeyIndex+1;"/>
                 <SpawnModel Model="ShipShotModel" UseSpawnerPosition="255"/>
                 <PlaySound Sound="ShipShotSound" NoteNr="60"/>
               </OnPressed>
@@ -812,24 +812,24 @@ ShipShotModel.Rotation.Z+=0.001*60 * ZBlastApp.DeltaTime;
 <![CDATA[Temp1=random(0,0.1);
 //ShipShotModel.Scale.X=random(1,0.5);
 //ShipShotModel.Scale.Y=random(1,0.5);
-if(ShipShotDir.Value==1) {
+if(ShipShotDir==1) {
   //Left
   ShipShotModel.Velocity.X=-ShipShotSpeed;
   ShipShotModel.Rotation.Z=-0.25;
 //  ShipShotModel.Position.Y+=Temp1;
-} else if(ShipShotDir.Value==2) {
+} else if(ShipShotDir==2) {
   //Up
   ShipShotModel.Velocity.Y=ShipShotSpeed;
-} else if(ShipShotDir.Value==3) {
+} else if(ShipShotDir==3) {
   //Right
   ShipShotModel.Velocity.X=ShipShotSpeed;
   ShipShotModel.Rotation.Z=0.25;
-} else if(ShipShotDir.Value==4) {
+} else if(ShipShotDir==4) {
   //Down
   ShipShotModel.Velocity.Y=-ShipShotSpeed;
 }
 
-ShipShotDir.Value=0;]]>
+ShipShotDir=0;]]>
               </Expression>
             </ZExpression>
           </OnSpawn>

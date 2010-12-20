@@ -123,7 +123,7 @@ type
     ZcGlobalNames : TObjectList;
     {$endif}
     {$ifdef zgeviz}
-    ZgeVizCameraTranslate : TZVector3f;
+    ZgeVizCameraTranslate,ZgeVizCameraRotation : TZVector3f;
     ZgeVizTime : single;
     ZgeVizRenderPassOverride : integer;
     {$endif}
@@ -144,6 +144,7 @@ type
     procedure RefreshSymbolTable;
     procedure Compile;
     procedure CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -598,9 +599,12 @@ begin
     glTranslatef(ZgeVizCameraTranslate[0],ZgeVizCameraTranslate[1],0);
     {$endif}
     gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
-
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity;
+
+    {$ifdef zgeviz}
+    glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
+    {$endif}
 
     //Reverse order to make XYZ-rotation
     glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
@@ -640,6 +644,27 @@ begin
 end;
 
 {$ifndef minimal}
+procedure TZApplication.DesignerFreeResources;
+var
+  I,J : integer;
+  Model : TModel;
+  List : TZArrayList;
+begin
+  inherited;
+
+  //Instanced models are not part of the project tree if they have been spawned
+  //using clone so they need to be handled separately.
+  for I := 0 to Models.Cats.Count-1 do
+  begin
+    List := Models.Get(I);
+    for J := 0 to List.Count-1 do
+    begin
+      Model := TModel(List[J]);
+      Model.DesignerFreeResources;
+    end;
+  end;
+end;
+
 procedure TZApplication.DesignerSetUpView;
 begin
   //Used for previewing app-state in designer

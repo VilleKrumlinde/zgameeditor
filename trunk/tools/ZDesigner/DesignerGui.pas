@@ -239,6 +239,7 @@ begin
   inherited Create(Owner);
   Self.OnResize := MyOnResize;
   ParentBackground := True;
+  Self.BorderStyle := bsNone;
 end;
 
 procedure TZPropertyEditor.MyOnResize(Sender : TObject);
@@ -323,6 +324,8 @@ constructor TZPropertyEditBase.Create(AOwner: TComponent);
 begin
   inherited;
   Self.PropEditor := AOwner as TZPropertyEditor;
+  Self.BorderStyle := bsNone;
+  Self.BevelOuter := bvNone;
 end;
 
 destructor TZPropertyEditBase.Destroy;

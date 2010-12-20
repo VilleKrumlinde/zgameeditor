@@ -322,7 +322,10 @@ begin
     begin
       //Lägg i en panel för att få en ram
       P :=  TPanel.Create(ChannelsParent);
-      P.Width := 40;
+      P.BorderStyle := bsNone;
+      P.BevelOuter := bvNone;
+      P.BevelInner := bvNone;
+      P.Width := 26;
 
       ChannelFrame := TChannelFrame.Create(ChannelsParent);
       ChannelFrame.NrLabel.Caption := IntToStr(I);
