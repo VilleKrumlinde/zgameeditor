@@ -58,7 +58,7 @@ var
 implementation
 
 uses Zc,Zc_Ops,Dialogs, ZApplication,
-  DesignerGUI,CocoBase, Generics.Collections;
+  CocoBase, Generics.Collections;
 
 
 //ThisC = object som är 'this'

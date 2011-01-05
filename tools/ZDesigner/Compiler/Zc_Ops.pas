@@ -758,7 +758,10 @@ var
   PName : string;
 begin
   Result := Op;
-  if (Op.Kind in [zcIdentifier,zcSelect]) and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant)) then
+  if (Op.Kind in [zcIdentifier,zcSelect])
+    and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant))
+    and (CompilerContext.ThisC.GetProperties.GetByName(Op.Id)=nil)
+  then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
     PName := 'Value';

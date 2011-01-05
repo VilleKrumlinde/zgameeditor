@@ -178,7 +178,7 @@ implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,ZExpressions,SysUtils,Zc_Ops,DesignerGUI,Classes,Compiler
+  ,ZExpressions,SysUtils,Zc_Ops,Classes,Compiler
   {$endif}
   ;
 
