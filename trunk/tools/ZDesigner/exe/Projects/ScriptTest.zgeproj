@@ -498,6 +498,20 @@ else
     <Mesh Name="Mesh1">
       <Producers>
         <MeshBox Name="MeshBox1" XCount="50"/>
+        <MeshExpression VertexColors="255">
+          <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+//TexCoord : current texture coordinate (turn on HasTexCoords)
+
+this.C.R=0.5;
+this.C.G=0.7;
+
+this.V.X*=1.5;
+V.X*=0.5;]]>
+          </Expression>
+        </MeshExpression>
       </Producers>
     </Mesh>
     <Material Name="Material1" Blend="1"/>
@@ -508,5 +522,6 @@ else
     <DefineConstant Name="ConF" Value="1"/>
     <DefineVariable Name="VarM" Type="3"/>
     <DefineArray Name="ModelArray" Type="3" SizeDim1="4"/>
+    <DefineVariable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
   </Content>
 </ZApplication>

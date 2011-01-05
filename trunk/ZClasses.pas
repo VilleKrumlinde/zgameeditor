@@ -25,7 +25,7 @@ unit ZClasses;
 interface
 
 {$ifndef minimal}
-uses uSymTab,Contnrs;
+uses uSymTab,Contnrs,Classes;
 {$endif}
 
 type
@@ -532,6 +532,11 @@ const
   FloatTextDecimals = 4;  //Nr of fraction digits when presenting float-values as text
 
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
+procedure GetAllObjects(C : TZComponent; List : TObjectList);
+procedure GetObjectNames(C : TZComponent; List : TStringList);
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 
 var
   DesignerPreviewProducer : TZComponent;
@@ -540,7 +545,7 @@ var
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$ifndef minimal},Classes,LibXmlParser,AnsiStrings,SysUtils,Math,zlib, ZApplication,
+  {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib, ZApplication,
   Generics.Collections,Zc_Ops
   {$endif}
   ;
@@ -787,6 +792,141 @@ procedure Register(C : TZComponentClass; ClassId : TZClassIds);
 begin
   ComponentManager.Register(C,ClassId);
 end;
+
+
+
+//Utility
+
+{$ifndef minimal}
+procedure GetAllObjects(C : TZComponent; List : TObjectList);
+//Returns all objects
+begin
+  C.GetAllChildren(List,True);
+end;
+
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+//Returns all objects that refers to component Target
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+  All : TObjectList;
+  C : TZComponent;
+begin
+  All := TObjectList.Create(False);
+  try
+    GetAllObjects(Root,All);
+    for I := 0 to All.Count-1 do
+    begin
+      C := TZComponent(All[I]);
+      if C.DesignDisable then
+        Continue;
+      PropList := C.GetProperties;
+      for J := 0 to PropList.Count-1 do
+      begin
+        Prop := TZProperty(PropList[J]);
+        case Prop.PropertyType of
+          zptComponentRef :
+            begin
+              C.GetProperty(Prop,Value);
+              if Value.ComponentValue=Target then
+                List.Add(C);
+            end;
+          zptPropertyRef :
+            begin
+              C.GetProperty(Prop,Value);
+              if Value.PropertyValue.Component=Target then
+                List.Add(C);
+            end;
+        end;
+      end;
+    end;
+  finally
+    All.Free;
+  end;
+end;
+
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
+var
+  TargetList,List : TObjectList;
+  I,J : integer;
+  C : TZComponent;
+begin
+  TargetList:= TObjectList.Create(False);
+  List:=TObjectList.Create(False);
+  try
+    //Hämta alla barnen till Target
+    if Deep then
+      GetAllObjects(Target,TargetList)
+    else
+      TargetList.Add(Target);
+    for I := 0 to TargetList.Count-1 do
+    begin
+      //Kolla alla barnen om det finns referens som är utanför targetlist
+      C := TargetList[I] as TZComponent;
+      List.Clear;
+      GetReferersTo(Root,C,List);
+      for J := 0 to List.Count-1 do
+      begin
+        if TargetList.IndexOf(List[J])=-1 then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+    end;
+    Result := False;
+  finally
+    List.Free;
+    TargetList.Free;
+  end;
+end;
+
+procedure GetObjectNames(C : TZComponent; List : TStringList);
+//Returns all objectnames
+//Hoppar över objekt som ej har namn tilldelat
+var
+  I : integer;
+  ObList : TObjectList;
+  S : string;
+begin
+  ObList := TObjectList.Create(False);
+  try
+    GetAllObjects(C,ObList);
+    for I := 0 to ObList.Count-1 do
+    begin
+      S := String(TZComponent(ObList[I]).Name);
+      if Length(S)>0 then
+        List.AddObject(S , TZComponent(ObList[I]) );
+    end;
+  finally
+    ObList.Free;
+  end;
+end;
+
+function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
+var
+  I : integer;
+  ObList : TObjectList;
+begin
+  Result := nil;
+  ObList := TObjectList.Create(False);
+  try
+    GetAllObjects(C,ObList);
+    for I := 0 to ObList.Count-1 do
+    begin
+      if TZComponent(ObList[I]) is Zc then
+      begin
+        Result := TZComponent(ObList[I]);
+        Break;
+      end;
+    end;
+  finally
+    ObList.Free;
+  end;
+end;
+{$endif}
 
 
 { TZComponent }
