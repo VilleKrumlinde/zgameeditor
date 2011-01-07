@@ -2756,7 +2756,8 @@ begin
       //ZApp.Content.AddComponent( Imp.Import );
       Parent := Tree.FindNodeForComponentList(ZApp.Content);
       Assert(Parent<>nil,'Can''t find app.content node');
-      Node := InsertAndRenameComponent(Imp.Import, Parent);
+      Imp.Import;
+      Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
       Node.Expand(False);
       //Auto-select the Model-component
       Tree.Selected := Node.GetLastChild.GetLastChild;

@@ -92,7 +92,7 @@ implementation
 uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions, pngimage, ZApplication;
+  frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1582,6 +1582,30 @@ var
     ArrayEditForm.ShowModal;
   end;
 
+  procedure InGetMeshImport;
+  var
+    D : TOpenDialog;
+    Imp : T3dsImport;
+  begin
+    D := TOpenDialog.Create(Self);
+    try
+      D.Filter := '3D-studio files (*.3ds)|*.3ds';
+      D.DefaultExt := '*.3ds';
+      if not D.Execute then
+        Exit;
+      Imp := T3dsImport.Create(D.FileName);
+      try
+        Imp.MeshImpToUpdate := Component as TMeshImport;
+        Imp.Import;
+        Component.Change;
+      finally
+        Imp.Free;
+      end;
+    finally
+      D.Free;
+    end;
+  end;
+
 begin
   M := TMemoryStream.Create;
   try
@@ -1601,13 +1625,15 @@ begin
       ApplicationClassId :
         if not InGetIcon then
           Exit;
+      MeshImportClassId :
+        InGetMeshImport;
       DefineArrayClassId :
         InEditArray;
     else
       raise Exception.Create('Unknown binary property');
     end;
 
-    if ComponentManager.GetInfo(Component).ClassId<>DefineArrayClassId then
+    if M.Size>0 then
     begin
       Value.BinaryValue.Size := M.Size;
       GetMem(Value.BinaryValue.Data,M.Size);
@@ -1634,8 +1660,8 @@ var
 begin
   inherited;
 
-  if not IsReadOnlyProp then
-    IsReadOnlyProp := (ComponentManager.GetInfo(C).ClassId=MeshImportClassId);
+//  if not IsReadOnlyProp then
+//    IsReadOnlyProp := (ComponentManager.GetInfo(C).ClassId=MeshImportClassId);
   IsEnabled := (not Self.IsReadOnlyProp);
 
   ValuePanel.Alignment := taLeftJustify;
