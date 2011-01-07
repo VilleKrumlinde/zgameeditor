@@ -54,44 +54,6 @@ type
     destructor Destroy; override;
   end;
 
-  T3dsImport = class
-  strict private
-    DataFile : T3dsFileParser;
-    FileName,NamePrefix : string;
-    MeshScale : single;
-    AutoCenter,AutoScale,InvertNormals,SingleMesh: boolean;
-    procedure ScaleAndCenter;
-    function GenerateMesh(M : TObject) : TZComponent;
-    function GenerateModel: TZComponent;
-    procedure ApplyPivotPoint;
-    procedure CollapseToSingleMesh;
-  public
-    constructor Create(const FileName : string);
-    destructor Destroy; override;
-    function Import : TZComponent;
-  end;
-
-  T3dsExport = class
-  private
-    Stream : TMemoryStream;
-    Materials : TObjectList;
-    procedure WriteMaterials;
-    procedure WriteString(const S: string);
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure DoExport(M : TMesh; const FileName : string);
-    function MakeChunk(Id : word) : pointer;
-    procedure CloseChunk(P : pointer);
-  end;
-
-
-implementation
-
-uses ZLog,SysUtils,ZMath,Renderer,
-  frm3dsImportOptions, Controls, Forms, DesignerGUI;
-
-type
   T3dsVertex = TZVector3f;
 
   T3dsFace = packed record
@@ -104,8 +66,11 @@ type
     DiffuseColor : TZColorf;
     Faces : TList;
     constructor Create;
+  public
     destructor Destroy; override;
   end;
+
+  T3dsExport = class;
 
   T3dsMesh = class
   protected
@@ -129,6 +94,45 @@ type
     procedure CreateMaterials(Materials : TObjectList);
   end;
 
+  T3dsImport = class
+  strict private
+    DataFile : T3dsFileParser;
+    FileName,NamePrefix : string;
+    MeshScale : single;
+    AutoCenter,AutoScale,InvertNormals,SingleMesh: boolean;
+    procedure ScaleAndCenter;
+    function GenerateMesh(M : TObject) : TZComponent;
+    function GenerateModel: TZComponent;
+    procedure ApplyPivotPoint;
+    procedure CollapseToSingleMesh;
+    procedure UpdateMeshImp(InMesh: T3dsMesh; MeshImp: TMeshImport);
+  public
+    MeshImpToUpdate : TMeshImport;  //Set by caller when updating a meshimport with a single mesh
+    ResultModelGroup : TZComponent; //Set after import to new group
+    constructor Create(const FileName : string);
+    destructor Destroy; override;
+    procedure Import;
+  end;
+
+  T3dsExport = class
+  private
+    Stream : TMemoryStream;
+    Materials : TObjectList;
+    procedure WriteMaterials;
+    procedure WriteString(const S: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure DoExport(M : TMesh; const FileName : string);
+    function MakeChunk(Id : word) : pointer;
+    procedure CloseChunk(P : pointer);
+  end;
+
+
+implementation
+
+uses ZLog,SysUtils,ZMath,Renderer,
+  frm3dsImportOptions, Controls, Forms, DesignerGUI;
 
 { T3dsFileParser }
 
@@ -404,24 +408,15 @@ begin
   inherited;
 end;
 
-function T3dsImport.GenerateMesh(M: TObject): TZComponent;
+procedure T3dsImport.UpdateMeshImp(InMesh : T3dsMesh; MeshImp: TMeshImport);
+//Write to MeshImp from 3dsMesh
 var
-  InMesh : T3dsMesh;
-  OutMesh : TMesh;
-  MeshImp : TMeshImport;
   I,Color : integer;
   Stream,StU,StV : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   Sm : smallint;
 begin
-  InMesh := T3dsMesh(M);
-
-  OutMesh := TMesh.Create(nil);
-  OutMesh.SetString('Comment',AnsiString(InMesh.Name));
-  OutMesh.SetString('Name',AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
-
-  MeshImp := TMeshImport.Create(OutMesh.Producers);
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
 
   Stream := TMemoryStream.Create;
@@ -520,6 +515,8 @@ begin
     end;
 
     //Write data to binary property
+    if MeshImp.MeshData.Data<>nil then
+      FreeMem(MeshImp.MeshData.Data,MeshImp.MeshData.Size);
     GetMem(MeshImp.MeshData.Data,Stream.Size);
     MeshImp.MeshData.Size := Stream.Size;
     Stream.Position := 0;
@@ -527,6 +524,23 @@ begin
   finally
     Stream.Free;
   end;
+end;
+
+
+function T3dsImport.GenerateMesh(M: TObject): TZComponent;
+var
+  InMesh : T3dsMesh;
+  OutMesh : TMesh;
+  MeshImp : TMeshImport;
+begin
+  InMesh := T3dsMesh(M);
+
+  OutMesh := TMesh.Create(nil);
+  OutMesh.SetString('Comment',AnsiString(InMesh.Name));
+  OutMesh.SetString('Name',AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
+
+  MeshImp := TMeshImport.Create(OutMesh.Producers);
+  UpdateMeshImp(InMesh,MeshImp);
 
   InMesh.ZMesh := OutMesh;
 
@@ -578,7 +592,7 @@ end;
 var
   OptionDialog : TImport3dsForm;
 
-function T3dsImport.Import: TZComponent;
+procedure T3dsImport.Import;
 var
   Group,MeshGroup : TLogicalGroup;
   I : integer;
@@ -587,6 +601,16 @@ begin
   if OptionDialog=nil then
     OptionDialog := TImport3dsForm.Create(Application.MainForm);
   OptionDialog.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
+  if Assigned(Self.MeshImpToUpdate) then
+  begin
+    OptionDialog.SingleMeshCheckBox.Checked := True;
+    OptionDialog.SingleMeshCheckBox.Enabled := False;
+    OptionDialog.NamePrefixEdit.Enabled := False;
+  end else
+  begin
+    OptionDialog.SingleMeshCheckBox.Enabled := True;
+    OptionDialog.NamePrefixEdit.Enabled := True;
+  end;
   if OptionDialog.ShowModal=mrCancel then
     Abort;
   Self.NamePrefix := OptionDialog.GetValidatedName(OptionDialog.NamePrefixEdit.Text);
@@ -620,20 +644,29 @@ begin
   if AutoScale or AutoCenter then
     ScaleAndCenter;
 
-  Group := TLogicalGroup.Create(nil);
-
-  MeshGroup := TLogicalGroup.Create(Group.Children);
-  MeshGroup.SetString('Comment','Meshes');
-  for I := 0 to DataFile.MeshList.Count - 1 do
+  if Assigned(Self.MeshImpToUpdate) then
   begin
-    Mesh := DataFile.MeshList[I] as T3dsMesh;
-    MeshGroup.Children.AddComponent( GenerateMesh(Mesh) );
+    //Just refresh a single MeshImport-component
+    UpdateMeshImp(DataFile.MeshList[0] as T3dsMesh,Self.MeshImpToUpdate);
+  end
+  else
+  begin
+    //Create a group with Model and Meshes
+    Group := TLogicalGroup.Create(nil);
+
+    MeshGroup := TLogicalGroup.Create(Group.Children);
+    MeshGroup.SetString('Comment','Meshes');
+    for I := 0 to DataFile.MeshList.Count - 1 do
+    begin
+      Mesh := DataFile.MeshList[I] as T3dsMesh;
+      MeshGroup.Children.AddComponent( GenerateMesh(Mesh) );
+    end;
+
+    Group.Children.AddComponent( GenerateModel );
+    Group.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
+
+    Self.ResultModelGroup := Group;
   end;
-
-  Group.Children.AddComponent( GenerateModel );
-  Group.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
-
-  Result := Group;
 end;
 
 procedure T3dsImport.ScaleAndCenter;

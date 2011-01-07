@@ -1646,6 +1646,9 @@ var
   PColor : PMeshVertexColor;
   PTex : PZVector2f;
 begin
+  if MeshData.Size=0 then
+    Exit;
+
   Stream := TZInputStream.CreateFromMemory(MeshData.Data,MeshData.Size);
 
   Stream.Read(VertCount,4);
@@ -1956,7 +1959,6 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TMeshImport,MeshImportClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate := True;{$endif}
   ZClasses.Register(TMeshCombine,MeshCombineClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}

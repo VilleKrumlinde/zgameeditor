@@ -21,6 +21,7 @@ THE SOFTWARE.}
 program ZDesigner;
 
 {$WEAKLINKRTTI ON}
+{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
 uses
   Forms,
