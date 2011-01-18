@@ -34,6 +34,7 @@ type
     FileName : TPropString;
     FileNameFloatRef : TZPropertyRef;
     FileEmbedded : TZBinaryPropValue;
+    FilePosition,FileSize : integer;
     Encoding : (feChar,feBinary);
     OnRead : TZComponentList;
     OnWrite : TZComponentList;
@@ -104,6 +105,13 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite), zptComponentList);
+
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@FilePosition), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@FileSize), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 { TFileAction }
@@ -131,6 +139,7 @@ var
   NameBuf : array[0..254] of ansichar;
 begin
   {$ifndef minimal}
+  ZAssert(ZFile<>nil,'File property not set');
   if CurFileState<>fsNone then
     //Only allow a single file-operation to be active at one time
     ZHalt('FileAction failed. CurFileState<>fsNone.');
@@ -175,6 +184,10 @@ begin
   end;
 
   CurFile := Self.ZFile;
+
+  CurFile.FilePosition := 0;
+  if Action=faRead then
+    CurFile.FileSize := CurInStream.Size;
 
   case Action of
     faRead :
@@ -251,6 +264,7 @@ begin
             CurInStream.Read(V,SizeOf(V));
         end;
         PropValuePtr^ := V;
+        CurFile.FilePosition := CurInStream.Position;
       end;
     fsWriting :
       begin
@@ -273,6 +287,7 @@ begin
             end;
         end;
         Inc(CurWriteBuf.Position);
+        CurFile.FilePosition := CurWriteBuf.ByteSize;
       end;
   end;
 end;

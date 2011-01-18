@@ -10,7 +10,7 @@ inherited SoundEditFrame: TSoundEditFrame
     Top = 0
     Width = 801
     Height = 597
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alClient
     TabOrder = 0
     object TabSheet1: TTabSheet

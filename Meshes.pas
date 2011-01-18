@@ -1045,7 +1045,6 @@ begin
     LocalIndex^[0] := i;
     LocalIndex^[1] := VQm2;
     LocalIndex^[2] := i+1;
-//    Inc(LocalIndex,3);
     LocalIndex := @LocalIndex^[3];
   end;
 
@@ -1064,11 +1063,7 @@ begin
   FreeMem(afCos);
   FreeMem(afSin);
 
-//  Mesh.Scale( Vector3f(0.25,2,1) );
   Mesh.Scale( Self.Scale );
-
-//     Mesh.Normals := nil;
-//     Mesh.ComputeNormals;
 
   Stack.Push(Mesh);
 end;
@@ -1720,8 +1715,6 @@ begin
         PTex^[J] := Sm / High(Smallint);
       end;
     end;
-
-//    Stream.Read(PTex^,VertCount * 8);
   end;
 
   Mesh.Scale( Self.Scale );
