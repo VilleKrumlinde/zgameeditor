@@ -280,7 +280,6 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     HasFrame : boolean;
-    IsFunction : boolean;      //if false=simple expression
     HasReturnValue : boolean;
     Arguments : integer;
   end;
@@ -1187,7 +1186,6 @@ procedure TExpReturn.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'HasFrame',{$ENDIF}integer(@HasFrame), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'IsFunction',{$ENDIF}integer(@IsFunction), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}integer(@HasReturnValue), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'Arguments',{$ENDIF}integer(@Arguments), zptInteger);
 end;
