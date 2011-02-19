@@ -890,7 +890,7 @@ begin
         HasReturnValue := False;
         StackPopTo(I1);
         {$ifndef minimal}
-        ZLog.GetLog('Zc').Write(String(PAnsiChar(I1)));
+        ZLog.GetLog('Zc').Write(String(PAnsiChar(I1)),lleUserTrace);
         {$endif}
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}

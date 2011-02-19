@@ -3111,7 +3111,7 @@ end;
 
 procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
-const Levels : array[TLogLevel] of string = ('Normal','Warning','Error');
+const Levels : array[TLogLevel] of string = ('Normal','Warning','Error','UserTrace');
 var
   Point : TPoint;
   Index : Integer;
