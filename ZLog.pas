@@ -32,7 +32,7 @@ type
   TLogString = {$ifdef zlog}string{$else}PAnsiChar{$endif};
 
   {$ifdef zlog}
-  TLogLevel = (lleNormal,lleWarning,lleError);
+  TLogLevel = (lleNormal,lleWarning,lleError,lleUserTrace);
 
   TLog = class
   private
@@ -40,7 +40,8 @@ type
   public
     ID : integer;
     Name : TLogString;
-    procedure Write(S : TLogString);
+    procedure Write(S : TLogString); overload;
+    procedure Write(S : TLogString; Level : TLogLevel); overload;
     procedure Warning(S : TLogString);
     procedure Error(S : TLogString);
     procedure BeginTimer;
@@ -135,20 +136,23 @@ end;
 
 procedure TLog.Write(S: TLogString);
 begin
+  Write(S,lleNormal);
+end;
+
+procedure TLog.Write(S : TLogString; Level : TLogLevel);
+begin
   if Assigned(ReceiverFunc) then
-    ReceiverFunc(Self,S,lleNormal);
+    ReceiverFunc(Self,S,Level);
 end;
 
 procedure TLog.Warning(S: TLogString);
 begin
-  if Assigned(ReceiverFunc) then
-    ReceiverFunc(Self,S,lleWarning);
+  Write(S,lleWarning);
 end;
 
 procedure TLog.Error(S: TLogString);
 begin
-  if Assigned(ReceiverFunc) then
-    ReceiverFunc(Self,S,lleError);
+  Write(S,lleError);
 end;
 
 procedure TLog.BeginTimer;

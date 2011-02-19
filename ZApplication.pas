@@ -51,6 +51,11 @@ type
     CollisionsEnabled : boolean;
   end;
 
+  {$ifdef zgeviz}
+  TZApplication = class;
+  TAppCallback = procedure(App : TZApplication) of object;
+  {$endif}
+
   TZApplication = class(TZComponent)
   strict private
     DepthList : TZArrayList;
@@ -123,9 +128,10 @@ type
     ZcGlobalNames : TObjectList;
     {$endif}
     {$ifdef zgeviz}
-    ZgeVizCameraTranslate,ZgeVizCameraRotation : TZVector3f;
+    ZgeVizCameraRotation : TZVector3f;
     ZgeVizTime : single;
     ZgeVizRenderPassOverride : integer;
+    ZgeVizCameraCallback : TAppCallback;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -324,7 +330,7 @@ var
   Remaining : integer;
 {$endif}
 
-  {$ifndef minimal}
+  {$if not (defined(minimal) or defined(ZgeViz))}
   procedure InDumpDebugInfo;
   var
     I,J : integer;
@@ -334,7 +340,7 @@ var
       Inc(J,Models.Get(I).Count);
     ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + ManagedHeap_GetStatus );
   end;
- {$endif}
+  {$ifend}
 
 begin
 
@@ -370,9 +376,9 @@ begin
       FpsCounter := FpsFrames / (Time-FpsTime);
       FpsFrames := 0;
       FpsTime := Time;
-      {$ifndef minimal}
+      {$if not (defined(minimal) or defined(ZgeViz))}
       InDumpDebugInfo;
-      {$endif}
+      {$ifend}
     end;
 
     if ManagedHeap_GetAllocCount>0 then
@@ -587,20 +593,27 @@ begin
     if Self.OnBeginRenderPass.Count>0 then
       Self.OnBeginRenderPass.ExecuteCommands;
 
+    {$ifndef zgeviz}
     if {$ifdef minimal}(ViewportRatio=vprCustom) and {$endif}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
-
-    //Setup view and camera
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity;
+    {$endif}
 
     {$ifdef zgeviz}
-    glTranslatef(ZgeVizCameraTranslate[0],ZgeVizCameraTranslate[1],0);
+    if Assigned(Self.ZgeVizCameraCallback) then
+      Self.ZgeVizCameraCallback(Self)
+    else
+    begin
     {$endif}
-    gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity;
+      //Setup view and camera
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity;
+      gluPerspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity;
+    {$ifdef zgeviz}
+    end;
+    {$endif}
 
     {$ifdef zgeviz}
     glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);

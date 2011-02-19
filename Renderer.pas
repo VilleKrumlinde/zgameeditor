@@ -204,6 +204,7 @@ type
     procedure Execute; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
+    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -1367,6 +1368,12 @@ begin
   if TextFloatRef.Component<>nil then
     Result := Result + '  ' + AnsiString(GetPropRefAsString(TextFloatRef));
 end;
+
+procedure TRenderText.DesignerFreeResources;
+begin
+  if Assigned(DefaultFont) then
+    FreeAndNil(DefaultFont);
+end;
 {$endif}
 
 
@@ -1991,7 +1998,7 @@ var
       S := 'Fragment';
     if Status=GL_TRUE then
     begin
-      ZLog.GetLog(Self.ClassName).Write( S + ' shader compiled OK' );
+      //ZLog.GetLog(Self.ClassName).Write( S + ' shader compiled OK' );
       Result := True
     end
     else
