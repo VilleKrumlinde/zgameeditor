@@ -45,7 +45,7 @@ type
  ImplicitWarpClassId,MeshImportClassId,
  FontClassId,ModelStateClassId,SetModelStateClassId,
  AnimatorGroupClassId,AnimatorSimpleClassId,MouseModelControllerClassId,
- StartAnimatorClassId,
+ StartAnimatorClassId, CurvePointClassId, CurveClassId, AnimatorCurveClassId,
  UseMaterialClassId,RenderMeshClassId,RenderTransformClassId,RenderSpriteClassId,
  RenderBeamsClassId,RenderTransformGroupClassId,RenderTextClassId,RenderSetColorClassId,RenderNetClassId,
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
@@ -2402,7 +2402,14 @@ begin
       C.GetProperty(Prop,Value);
       case Prop.PropertyType of
         zptString : V := InAttrValue( Value.StringValue );
-        zptFloat,zptScalar : V := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
+        zptFloat,zptScalar :
+          if IsNan(Value.FloatValue) then
+          begin
+            ZLog.GetLog(Self.ClassName).Warning('NaN value for property: ' + Prop.Name);
+            V := '0';
+          end
+          else
+            V := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
         zptRectf : V := InArray(Value.RectfValue.Area);
         zptColorf : V := InArray(Value.ColorfValue.V);
         zptInteger : V := IntToStr(Value.IntegerValue);
@@ -2605,7 +2612,7 @@ procedure TZInputStream.Read(var Buf; Count: integer);
 begin
   if Position+Count>Size then
   begin
-    {$ifdef zlog} 
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('Read beyond EOF attempted');
     {$endif}
     Exit;
