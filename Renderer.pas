@@ -2333,6 +2333,9 @@ begin
 //  ZApp.UpdateViewport(W, H);
   glViewport(0,0,W,H);
   ZApp.ActualViewportRatio := W/H;
+  {$ifdef zgeviz}
+  ZApp.ViewportChanged;
+  {$endif}
 
   if Self.ClearBeforeUse then
   begin
@@ -2412,14 +2415,16 @@ begin
         CurrentRenderTarget.UseTextureBegin;
         glGenerateMipmapEXT(GL_TEXTURE_2D);
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        CurrentRenderTarget := nil;
         ZApp.UpdateViewport;
       end;
     end
     else
     begin
-      Self.RenderTarget.Activate;
+      //CurrentRenderTarget must be set before viewport-change because of zgeviz-onviewcallback
+      CurrentRenderTarget := Self.RenderTarget;
+      CurrentRenderTarget.Activate;
     end;
-    CurrentRenderTarget := Self.RenderTarget;
   end;
 end;
 

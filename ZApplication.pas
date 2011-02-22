@@ -131,7 +131,8 @@ type
     ZgeVizCameraRotation : TZVector3f;
     ZgeVizTime : single;
     ZgeVizRenderPassOverride : integer;
-    ZgeVizCameraCallback : TAppCallback;
+    ZgeVizCameraCallback,ZgeVizViewportCallback : TAppCallback;
+    procedure ViewportChanged;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -499,8 +500,18 @@ begin
     end;
     glViewport(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
   end;
+  {$ifdef zgeviz}
+  ViewportChanged;
+  {$endif}
 end;
 
+{$ifdef zgeviz}
+procedure TZApplication.ViewportChanged;
+begin
+  if Assigned(Self.ZgeVizViewportCallback) then
+    Self.ZgeVizViewportCallback(Self);
+end;
+{$endif}
 
 procedure SortModels(List : TZArrayList);
 //http://en.wikipedia.org/wiki/Cocktail_sort

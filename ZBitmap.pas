@@ -63,7 +63,7 @@ type
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers;
+uses BitmapProducers,ZApplication;
 {$endif}
 
 { TZBitmap }
@@ -205,6 +205,9 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     {$endif}
     glViewport(0, 0, PixelWidth, PixelHeight);
+    {$ifdef zgeviz}
+    ZApp.ViewportChanged;
+    {$endif}
 end;
 
 procedure TZBitmap.RenderTargetEnd;
@@ -212,6 +215,9 @@ begin
     glBindTexture(GL_TEXTURE_2D, TexObject);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
   glPopAttrib;
+  {$ifdef zgeviz}
+  ZApp.ViewportChanged;
+  {$endif}
 end;
 
 //Set this bitmap as current opengl texture
