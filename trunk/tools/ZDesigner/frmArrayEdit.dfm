@@ -17,15 +17,15 @@ object ArrayEditForm: TArrayEditForm
     286)
   PixelsPerInch = 96
   TextHeight = 13
-  object Button1: TButton
+  object OkButton: TButton
     Left = 343
     Top = 253
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'OK'
-    ModalResult = 1
     TabOrder = 0
+    OnClick = OkButtonClick
   end
   object Grid: TStringGrid
     Left = 16
