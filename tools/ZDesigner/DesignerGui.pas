@@ -1579,7 +1579,7 @@ var
     if ArrayEditForm=nil then
       Application.CreateForm(TArrayEditForm,ArrayEditForm);
     ArrayEditForm.SetArray(A);
-    ArrayEditForm.ShowModal;
+    ArrayEditForm.Show;
   end;
 
   procedure InGetMeshImport;

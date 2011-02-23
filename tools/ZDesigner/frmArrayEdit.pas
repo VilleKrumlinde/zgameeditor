@@ -8,7 +8,7 @@ uses
 
 type
   TArrayEditForm = class(TForm)
-    Button1: TButton;
+    OkButton: TButton;
     Grid: TStringGrid;
     UpDown1: TUpDown;
     Dim3Edit: TEdit;
@@ -20,6 +20,7 @@ type
       NewValue: Smallint; Direction: TUpDownDirection);
     procedure CopyAllButtonClick(Sender: TObject);
     procedure PasteAllButtonClick(Sender: TObject);
+    procedure OkButtonClick(Sender: TObject);
   private
     { Private declarations }
     TheArray : TDefineArray;
@@ -170,6 +171,11 @@ begin
   end
   else
     AllowChange := False;
+end;
+
+procedure TArrayEditForm.OkButtonClick(Sender: TObject);
+begin
+  Close;
 end;
 
 procedure TArrayEditForm.CopyAllButtonClick(Sender: TObject);

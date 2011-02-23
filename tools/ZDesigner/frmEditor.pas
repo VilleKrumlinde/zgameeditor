@@ -408,7 +408,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit;
 
 { TEditorForm }
 
@@ -1593,9 +1593,13 @@ begin
 end;
 
 procedure TEditorForm.Timer1Timer(Sender: TObject);
+var
+  H : cardinal;
 begin
-  //Only draw when topmost
-  if (GetActiveWindow=Handle) and (Glp.Tag=0) then
+  //Only draw when topmost (or editing arrays)
+  H := GetActiveWindow;
+  if ((H=Handle) or (Assigned(ArrayEditForm) and (H=ArrayEditForm.Handle)))
+     and (Glp.Tag=0) then
     Glp.Invalidate;
 end;
 
