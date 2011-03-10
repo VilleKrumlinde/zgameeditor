@@ -36,7 +36,6 @@ program ZzDC;
 }
 
 uses
-//  FastMM4 in 'FastMM4.pas',
   ZClasses in 'ZClasses.pas',
   ZOpenGL in 'ZOpenGL.pas',
   ZBitmap in 'ZBitmap.pas',
@@ -55,7 +54,8 @@ uses
   AudioPlayer in 'AudioPlayer.pas',
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
-  ZFile in 'ZFile.pas';
+  ZFile in 'ZFile.pas',
+  NanoJpeg in 'NanoJpeg.pas';
 
 {$ifdef Win32}
   {$ifdef fpc}

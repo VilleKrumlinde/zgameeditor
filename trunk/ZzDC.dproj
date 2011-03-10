@@ -121,6 +121,7 @@
 			<DCCReference Include="AudioComponents.pas"/>
 			<DCCReference Include="ImplicitMeshes.pas"/>
 			<DCCReference Include="ZFile.pas"/>
+			<DCCReference Include="NanoJpeg.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

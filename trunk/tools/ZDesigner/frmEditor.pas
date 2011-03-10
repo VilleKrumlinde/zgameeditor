@@ -29,7 +29,8 @@ uses
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
-  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile;
+  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
+  Jpeg;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -2207,6 +2208,11 @@ begin
 
   if UsePiggyback then
   begin
+    if not FileExists(ExePath + PlayerName) then
+    begin
+      ShowMessage('Player file missing for chosen platform (they are not included in the ZGE beta version).');
+      Exit;
+    end;
     BuildBinary(PlayerName,OutFile);
   end
   else
@@ -3498,7 +3504,7 @@ var
   Ci : TZComponentInfo;
   UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
-  DisplayDetailedReport : boolean;
+  NeedJpeg,DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
@@ -3573,15 +3579,23 @@ begin
     end;
 
     //Get names of used classes
+    NeedJpeg := False;
     AllObjects := TObjectList.Create(False);
-    GetAllObjects(Self.Root,AllObjects);
-    UsedComponents.Sorted := True;
-    UsedComponents.Add('TAudioMixer');
-    UsedComponents.Add('TMaterial');
-    UsedComponents.Add('TMaterialTexture');
-    for I := 0 to AllObjects.Count - 1 do
-      UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
-    AllObjects.Free;
+    try
+      GetAllObjects(Self.Root,AllObjects);
+      UsedComponents.Sorted := True;
+      UsedComponents.Add('TAudioMixer');
+      UsedComponents.Add('TMaterial');
+      UsedComponents.Add('TMaterialTexture');
+      for I := 0 to AllObjects.Count - 1 do
+      begin
+        UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
+        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).IsJpegEncoded) then
+          NeedJpeg := True;
+      end;
+    finally
+      AllObjects.Free;
+    end;
     if UsedComponents.IndexOf('TRenderText')>=0 then
     begin
       UsedComponents.Add('TZBitmap');
@@ -3591,6 +3605,8 @@ begin
       UsedComponents.Add('TMeshCombine');
     if UsedComponents.IndexOf('TRenderNet')>=0 then
       UsedComponents.Add('TMesh');
+    if not NeedJpeg then
+      ClassesToRemove.Add('TNjDecoder');
 
     //NamesToRemove = AllNames - UsedNames
     Infos := ZClasses.ComponentManager.GetAllInfos;
