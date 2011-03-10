@@ -50,6 +50,7 @@ type
     BitmapFile : TZBinaryPropValue;
     Transparency : (btNone,btBlackColor,btAlphaLayer);
     HasAlphaLayer : boolean;
+    IsJpegEncoded : boolean;
   end;
 
   TBitmapBlur = class(TContentProducer)
@@ -133,7 +134,7 @@ type
 
 implementation
 
-uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer;
+uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg;
 
 function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
@@ -361,6 +362,8 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['None','BlackColor','AlphaLayer']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}integer(@HasAlphaLayer), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'IsJpegEncoded',{$ENDIF}integer(@IsJpegEncoded), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 procedure TBitmapFromFile.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -371,28 +374,44 @@ var
   PixelCount,Pixel : integer;
   I: Integer;
   B : byte;
+  Nj : TNjDecoder;
 begin
   BM := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
   Mem := nil;
 
   PixelCount := BM.PixelWidth*BM.PixelHeight;
 
-  {$ifndef minimal}
-  if BitmapFile.Size<(PixelCount*3) then
-  begin
-    BM.Free;
-    Exit;
-  end;
-  {$endif}
-
   //Ifall det behövs format och storleksdata om bitmappen
   //så kan man lägga till properties senare.
+  if IsJpegEncoded then
+  begin
+    Nj := TNjDecoder.Create;
+    if not Nj.Decode(BitmapFile.Data,BitmapFile.Size) then
+    begin
+      {$ifndef minimal}
+      ZLog.GetLog(Self.ClassName).Warning('Jpeg decoder failed.');
+      BM.Free;
+      Exit;
+      {$endif}
+    end;
+    SP := Nj.GetImage;
+  end else
+  begin
+    {$ifndef minimal}
+    if BitmapFile.Size<(PixelCount*3) then
+    begin
+      BM.Free;
+      Exit;
+    end;
+    {$endif}
+    Nj := nil;
+    SP := BitmapFile.Data;
+  end;
 
   IsTransparent := Transparency<>btNone;
   if IsTransparent or HasAlphaLayer then
   begin
     GetMem(Mem,PixelCount*4);
-    SP := BitmapFile.Data;
     DP := Mem;
     Pixel := 0;
     for I := 0 to (PixelCount*3) - 1 do
@@ -424,12 +443,14 @@ begin
     BM.SetMemory(Mem,GL_RGBA,GL_UNSIGNED_BYTE);
   end else
   begin
-    BM.SetMemory(BitmapFile.Data,GL_RGB,GL_UNSIGNED_BYTE);
+    BM.SetMemory(SP,GL_RGB,GL_UNSIGNED_BYTE);
   end;
 
   //Needed to send the bitmap to opengl
   BM.UseTextureBegin;
 //  BM.UseTextureEnd;
+
+  Nj.Free;
 
   if Mem<>nil then
     FreeMem(Mem);

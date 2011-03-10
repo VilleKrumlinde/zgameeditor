@@ -92,7 +92,8 @@ implementation
 uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes;
+  frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes,
+  Jpeg;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1359,7 +1360,6 @@ begin
     Pic.LoadFromFile(FileName);
 
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
-//    if Pic.Graphic is TOleGraphic then
     if not (Pic.Graphic is Graphics.TBitmap) then
     begin
       Bm := GraphicToBitmap(Pic);
@@ -1383,6 +1383,13 @@ begin
            );
         Abort;
       end;
+    end;
+
+    (Self.Component as TBitmapFromFile).IsJpegEncoded := Pic.Graphic is TJpegImage;
+    if (Self.Component as TBitmapFromFile).IsJpegEncoded  then
+    begin
+      Stream.LoadFromFile(FileName);
+      Exit;
     end;
 
     UseAlpha := Bm.PixelFormat=pf32bit;
