@@ -30,7 +30,6 @@ type
   //32 bits per pixel image
   TZBitmap = class(TContent)
   private
-    TexObject: GLuint;
     IsInitialized : boolean;
     Memory : pointer;
     MemFormat,MemType : GLuint;
@@ -40,6 +39,7 @@ type
     procedure CopyAndDestroy(Source : TContent); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    Handle: GLuint;
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     PropWidth,PropHeight : TBitmapSize;
     Filter : (bmfLinear,bmfNearest,bmfMipmap);
@@ -63,7 +63,7 @@ type
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers,ZApplication;
+uses BitmapProducers,ZApplication,ZLog;
 {$endif}
 
 { TZBitmap }
@@ -107,7 +107,7 @@ begin
   if IsInitialized then
   begin
     IsInitialized := False;
-    glDeleteTextures(1, @TexObject);
+    glDeleteTextures(1, @Handle);
   end;
 end;
 
@@ -117,7 +117,7 @@ var
 begin
   CleanUp;
   B := TZBitmap(Source);
-  Self.TexObject := B.TexObject;
+  Self.Handle := B.Handle;
   Self.IsInitialized := B.IsInitialized;
   Self.PropHeight := B.PropHeight;
   Self.PropWidth := B.PropWidth;
@@ -125,7 +125,7 @@ begin
   Self.MemFormat := B.MemFormat;
   Self.MemType := B.MemType;
   Self.Filter := B.Filter;
-  B.TexObject := 0;
+  B.Handle := 0;
   B.IsInitialized := False;
   B.Free;
 end;
@@ -148,8 +148,8 @@ begin
   else
   begin
     //Create as a texgen buffer
-    glGenTextures(1, @TexObject);
-    glBindTexture(GL_TEXTURE_2D, TexObject);
+    glGenTextures(1, @Handle);
+    glBindTexture(GL_TEXTURE_2D, Handle);
 
     W := PixelWidth;
     H := PixelHeight;
@@ -212,8 +212,16 @@ end;
 
 procedure TZBitmap.RenderTargetEnd;
 begin
-    glBindTexture(GL_TEXTURE_2D, TexObject);
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
+    glBindTexture(GL_TEXTURE_2D, Handle);
+    {$ifndef minimal}
+    try
+    {$endif}
+      glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
+    {$ifndef minimal}
+    except
+      ZLog.GetLog(Self.ClassName).Warning('glCopyTexSubImage2D call crashed (ATI card?)');
+    end;
+    {$endif}
   glPopAttrib;
   {$ifdef zgeviz}
   ZApp.ViewportChanged;
@@ -226,7 +234,7 @@ begin
   if (not IsInitialized)
    {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
     ReInit;
-  glBindTexture(GL_TEXTURE_2D, TexObject);
+  glBindTexture(GL_TEXTURE_2D, Handle);
 end;
 
 procedure TZBitmap.Update;

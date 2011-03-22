@@ -129,18 +129,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 624
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 624
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -162,17 +154,12 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TickStyle = tsNone
             OnChange = TrackBar1Change
-            ExplicitWidth = 613
           end
         end
         object TabSheet3: TTabSheet
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -231,10 +218,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 624
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -268,7 +251,6 @@ object EditorForm: TEditorForm
             Caption = '&Shader editor'
             TabOrder = 1
             OnClick = ExprPanelClick
-            ExplicitWidth = 624
           end
         end
       end
@@ -309,10 +291,6 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -654,7 +632,7 @@ object EditorForm: TEditorForm
                 end
                 inherited Panel1: TPanel
                   Width = 468
-                  ExplicitWidth = 466
+                  ExplicitWidth = 468
                   inherited SoundGraphPaintBox: TPaintBox
                     Width = 468
                     ExplicitWidth = 245
@@ -688,10 +666,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -724,10 +698,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 503
-          ExplicitHeight = 651
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -751,12 +721,12 @@ object EditorForm: TEditorForm
               Width = 314
               Height = 653
               ExplicitWidth = 314
-              ExplicitHeight = 651
+              ExplicitHeight = 653
               inherited ScrollBox1: TScrollBox
                 Width = 310
                 Height = 636
                 ExplicitWidth = 310
-                ExplicitHeight = 634
+                ExplicitHeight = 636
               end
             end
             inherited RightPanel: TGroupBox
@@ -765,16 +735,16 @@ object EditorForm: TEditorForm
               Height = 653
               ExplicitLeft = 318
               ExplicitWidth = 187
-              ExplicitHeight = 651
+              ExplicitHeight = 653
               inherited PreviewPanel: TPanel
                 Width = 183
                 Height = 636
                 ExplicitWidth = 183
-                ExplicitHeight = 634
+                ExplicitHeight = 636
                 inherited Panel1: TPanel
                   Top = 614
                   Width = 183
-                  ExplicitTop = 612
+                  ExplicitTop = 614
                   ExplicitWidth = 183
                 end
               end
@@ -803,12 +773,12 @@ object EditorForm: TEditorForm
               Width = 214
               Height = 653
               ExplicitWidth = 214
-              ExplicitHeight = 651
+              ExplicitHeight = 653
               inherited ScrollBox1: TScrollBox
                 Width = 210
                 Height = 636
                 ExplicitWidth = 210
-                ExplicitHeight = 634
+                ExplicitHeight = 636
               end
             end
             inherited RightPanel: TGroupBox
@@ -816,27 +786,27 @@ object EditorForm: TEditorForm
               Width = 287
               Height = 653
               ExplicitLeft = 218
-              ExplicitWidth = 285
-              ExplicitHeight = 651
+              ExplicitWidth = 287
+              ExplicitHeight = 653
               inherited WireframeCheckBox: TCheckBox
                 Width = 283
-                ExplicitWidth = 281
+                ExplicitWidth = 283
               end
               inherited NormalsCheckBox: TCheckBox
                 Width = 283
-                ExplicitWidth = 281
+                ExplicitWidth = 283
               end
               inherited Panel1: TPanel
                 Top = 629
                 Width = 283
-                ExplicitTop = 627
-                ExplicitWidth = 281
+                ExplicitTop = 629
+                ExplicitWidth = 283
               end
               inherited PreviewPanel: TPanel
                 Width = 283
                 Height = 580
-                ExplicitWidth = 281
-                ExplicitHeight = 578
+                ExplicitWidth = 283
+                ExplicitHeight = 580
               end
             end
           end
@@ -1264,7 +1234,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010E000801E8001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E000801F8001000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1931,17 +1901,13 @@ object EditorForm: TEditorForm
       end
     end
   end
-  object XPManifest1: TXPManifest
-    Left = 32
-    Top = 216
-  end
   object ActionDisabledImageList: TImageList
     BlendColor = 16185075
     BkColor = 16185075
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E00D40010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E00E40010001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6

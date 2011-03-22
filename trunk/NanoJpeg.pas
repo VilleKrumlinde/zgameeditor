@@ -2,6 +2,9 @@ unit NanoJpeg;
 
 interface
 
+{.$define USE_CHROMA_FILTER}
+
+
 type
   //Original code by Martin Fiedler http://keyj.s2000.ws/?p=137
   //Delphi port by Ville Krumlinde
@@ -19,7 +22,7 @@ type
       bits,code : byte;
     end;
     type PVlcCode = ^VlcCode;
-    type Component = packed record
+    type Component = record
       cid,
       ssx, ssy,
       width, height,
@@ -30,7 +33,7 @@ type
       pixels : PByte;
     end;
     type PComponent = ^Component;
-    type Context = packed record
+    type Context = record
       error : ErrorCodes;
       pos : PByte;
       size,
@@ -61,7 +64,6 @@ type
       W5 = 1609;
       W6 = 1108;
       W7 = 565;
-    function Clip(const X : integer) : byte;
     procedure RowIDCT(blk : PInteger);
     procedure ColIDCT(blk : PInteger; pout : PByte; stride : integer);
     function ShowBits(bits : integer) : integer;
@@ -80,8 +82,15 @@ type
     procedure DecodeDRI;
     function GetVLC(vlc: PVlcCode; code: PByte): integer;
     procedure DecodeScan;
+    {$ifdef USE_CHROMA_FILTER}
+    procedure UpsampleV(c: PComponent);
+    procedure UpsampleH(c: PComponent);
+    {$else}
     procedure Upsample(c: PComponent);
+    {$endif}
     procedure Convert;
+  private
+    class function Clip(const X : integer) : byte;
   public
     function Decode(jpeg: pointer; const size: integer): boolean;
     destructor Destroy; override;
@@ -103,7 +112,7 @@ end;
 
 { TNjDecoder }
 
-function TNjDecoder.Clip(const X: integer): byte;
+class function TNjDecoder.Clip(const X: integer): byte;
 begin
   if X<0 then
     Result := 0
@@ -269,9 +278,7 @@ begin
     end;
   end;
 
-//    return (nj.buf >> (nj.bufbits - bits)) & ((1 << bits) - 1);
-
-  Result := cshr(ctx.buf,(ctx.bufbits - bits)) and ((1 shl bits) - 1);
+  Result := (ctx.buf shr (ctx.bufbits - bits)) and ((1 shl bits) - 1);
 end;
 
 procedure TNjDecoder.SkipBits(bits : integer);
@@ -369,7 +376,7 @@ begin
   begin
     c.cid := ctx.pos[0];
 
-    c.ssx := cshr(ctx.pos[1], 4);
+    c.ssx := ctx.pos[1] shr 4;
     if c.ssx=0 then
       njThrow(SyntaxError);
 
@@ -449,7 +456,7 @@ begin
     i := ctx.pos[0];
     if (i and $EC)<>0 then njThrow(SyntaxError);
     if (i and $02)<>0 then njThrow(Unsupported);
-    i := (i or cshr(i, 3)) and 3;  // combined DC/AC + tableid value
+    i := (i or (i shr 3)) and 3;  // combined DC/AC + tableid value
 
     for codelen := 1 to 16 do
       counts[codelen - 1] := ctx.pos[codelen];
@@ -566,7 +573,7 @@ begin
       break;  // EOB
     if ( ((code and $0F)=0) and (code <> $F0)) then
       njThrow(SyntaxError);
-    coef := coef + cshr(code, 4) + 1;
+    coef := coef + (code shr 4) + 1;
     if (coef > 63) then
       njThrow(SyntaxError);
     ctx.block[ ZZ[coef] ] := value * ctx.qtab[c.qtsel][coef];
@@ -605,7 +612,7 @@ begin
       njThrow(SyntaxError);
     if (ctx.pos[1] and $EE)<>0 then
       njThrow(SyntaxError);
-    c.dctabsel := cshr(ctx.pos[1], 4);
+    c.dctabsel := (ctx.pos[1] shr 4);
     c.actabsel := (ctx.pos[1] and 1) or 2;
     Skip(2);
     Inc(C);
@@ -654,6 +661,98 @@ begin
   ctx.error := Internal_Finished;
 end;
 
+{$ifdef USE_CHROMA_FILTER}
+
+const
+  CF4A = (-9);
+  CF4B = (111);
+  CF4C = (29);
+  CF4D = (-3);
+  CF3A = (28);
+  CF3B = (109);
+  CF3C = (-9);
+  CF3X = (104);
+  CF3Y = (27);
+  CF3Z = (-3);
+  CF2A = (139);
+  CF2B = (-11);
+
+function CF(const X : integer) : integer;
+begin
+  Result := TNjDecoder.clip( cshr((x + 64), 7) );
+end;
+
+procedure TNjDecoder.UpsampleH(c : PComponent);
+var
+  xmax,x,y : integer;
+  pout,lin,lout : PByte;
+begin
+  xmax := c.width - 3;
+  GetMem(pout, (c.width * c.height) shl 1);
+  if (pout=nil) then
+    njThrow(OutOfMemory);
+  lin := c.pixels;
+  lout := pout;
+  for y := c.height downto 1 do
+  begin
+    lout[0] := CF(CF2A * lin[0] + CF2B * lin[1]);
+    lout[1] := CF(CF3X * lin[0] + CF3Y * lin[1] + CF3Z * lin[2]);
+    lout[2] := CF(CF3A * lin[0] + CF3B * lin[1] + CF3C * lin[2]);
+    for x := 0 to xmax-1 do
+    begin
+      lout[(x shl 1) + 3] := CF(CF4A * lin[x] + CF4B * lin[x + 1] + CF4C * lin[x + 2] + CF4D * lin[x + 3]);
+      lout[(x shl 1) + 4] := CF(CF4D * lin[x] + CF4C * lin[x + 1] + CF4B * lin[x + 2] + CF4A * lin[x + 3]);
+    end;
+    lin := lin + c.stride;
+    lout := lout + (c.width shl 1);
+    lout[-3] := CF(CF3A * lin[-1] + CF3B * lin[-2] + CF3C * lin[-3]);
+    lout[-2] := CF(CF3X * lin[-1] + CF3Y * lin[-2] + CF3Z * lin[-3]);
+    lout[-1] := CF(CF2A * lin[-1] + CF2B * lin[-2]);
+  end;
+  c.width := c.width shl 1;
+  c.stride := c.width;
+  FreeMem(c.pixels);
+  c.pixels := pout;
+end;
+
+procedure TNjDecoder.UpsampleV(c : PComponent);
+var
+  w,s1,s2,x,y : integer;
+  pout,cin,cout : PByte;
+begin
+  w := c.width;
+  s1 := c.stride;
+  s2 := s1 + s1;
+  GetMem(pout,(c.width * c.height) shl 1);
+  if (pout=nil) then
+    njThrow(OutOfMemory);
+  for x := 0 to w-1 do
+  begin
+    cin := @c.pixels[x];
+    cout := @pout[x];
+    cout^ := CF(CF2A * cin[0] + CF2B * cin[s1]); cout := cout + w;
+    cout^ := CF(CF3X * cin[0] + CF3Y * cin[s1] + CF3Z * cin[s2]); cout := cout + w;
+    cout^ := CF(CF3A * cin[0] + CF3B * cin[s1] + CF3C * cin[s2]); cout := cout + w;
+    cin := cin + s1;
+    for y := c.height - 3 downto 1 do
+    begin
+      cout^ := CF(CF4A * cin[-s1] + CF4B * cin[0] + CF4C * cin[s1] + CF4D * cin[s2]); cout := cout + w;
+      cout^ := CF(CF4D * cin[-s1] + CF4C * cin[0] + CF4B * cin[s1] + CF4A * cin[s2]); cout := cout + w;
+      cin := cin + s1;
+    end;
+    cin := cin + s1;
+    cout^ := CF(CF3A * cin[0] + CF3B * cin[-s1] + CF3C * cin[-s2]); cout := cout + w;
+    cout^ := CF(CF3X * cin[0] + CF3Y * cin[-s1] + CF3Z * cin[-s2]); cout := cout + w;
+    cout^ := CF(CF2A * cin[0] + CF2B * cin[-s1]);
+  end;
+  c.height := c.height shl 1;
+  c.stride := c.width;
+  FreeMem(c.pixels);
+  c.pixels := pout;
+end;
+
+{$else}
+
 procedure TNjDecoder.Upsample(c : PComponent);
 var
   x, y, xshift, yshift : integer;
@@ -679,15 +778,17 @@ begin
   lout := pout;
   for y := 0 to c.height-1 do
   begin
-    lin := @c.pixels[cshr(y, yshift) * c.stride];
+    lin := @c.pixels[(y shr yshift) * c.stride];
     for x := 0 to c.width-1 do
-      lout[x] := lin[cshr(x, xshift)];
+      lout[x] := lin[(x shr xshift)];
     lout := lout + c.width;
   end;
   c.stride := c.width;
   FreeMem(c.pixels);
   c.pixels := pout;
 end;
+
+{$endif}
 
 procedure TNjDecoder.Convert;
 var
@@ -700,8 +801,19 @@ begin
   c := @ctx.comp;
   for i := 0 to ctx.ncomp-1 do
   begin
+    {$ifdef USE_CHROMA_FILTER}
+    while (c.width < ctx.width) or (c.height < ctx.height) do
+    begin
+      if (c.width < ctx.width) then UpsampleH(c);
+//      if (ctx.error>OK) then Exit;
+      if (c.height < ctx.height) then UpsampleV(c);
+//      if (ctx.error>OK) then Exit;
+    end;
+    {$else}
     if ((c.width < ctx.width) or (c.height < ctx.height)) then
       Upsample(c);
+    {$endif}
+
     if ((c.width < ctx.width) or (c.height < ctx.height)) then
       njThrow(InternalError);
     Inc(c);
