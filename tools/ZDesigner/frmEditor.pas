@@ -28,7 +28,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
-  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls,
+  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
   Jpeg;
 
@@ -115,7 +115,6 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     ToolButton7: TToolButton;
-    XPManifest1: TXPManifest;
     FileOpenAction: TFileOpen;
     Open1: TMenuItem;
     ToolButton8: TToolButton;
