@@ -108,7 +108,6 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@FilePosition), zptInteger);
     List.GetLast.NeverPersist := True;
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@FileSize), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -254,6 +253,7 @@ begin
   case CurFileState of
     fsReading :
       begin
+        CurInStream.Position := CurFile.FilePosition;
         case CurFile.Encoding of
           feChar :
             begin
