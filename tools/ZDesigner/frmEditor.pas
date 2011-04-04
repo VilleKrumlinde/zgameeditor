@@ -397,7 +397,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '2.0.0b';
+  AppVersion = '2.0.0';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -948,12 +948,13 @@ begin
   if ShowNode=nil then
     Exit;
 
+  //Set window size to make sure camera ratio calculations are correct
+  ZApplication.ScreenWidth := Glp.Width;
+  ZApplication.ScreenHeight := Glp.Height;
+
   if (ShowNode is TZApplication) and (IsAppRunning) then
   begin
     try
-      //Set window size to make sure camera ratio calculations are correct
-      ZApplication.ScreenWidth := Glp.Width;
-      ZApplication.ScreenHeight := Glp.Height;
       //Update app
       (ShowNode as TZApplication).Main;
     except

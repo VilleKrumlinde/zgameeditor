@@ -557,8 +557,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
   ZClasses.Register(TStartAnimator,StartAnimatorClassId);
 
-  ZClasses.Register(TCurvePoint,CurvePointClassId);
-  ZClasses.Register(TCurve,CurveClassId);
-  ZClasses.Register(TAnimatorCurve,AnimatorCurveClassId);
+//Remove until we know how to implement correctly
+//  ZClasses.Register(TCurvePoint,CurvePointClassId);
+//  ZClasses.Register(TCurve,CurveClassId);
+//  ZClasses.Register(TAnimatorCurve,AnimatorCurveClassId);
 
 end.

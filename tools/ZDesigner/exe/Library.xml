@@ -248,55 +248,37 @@ if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2
     </Group>
     <Group Comment="Meshes">
       <Children>
-        <Mesh Comment="Better looking Sphere A">
+        <Mesh Comment="Improved Sphere">
           <Producers>
-            <MeshSphere ZSamples="15" RadialSamples="15"/>
+            <MeshBox Scale="1 0.5 1" XCount="31" YCount="15" Grid2DOnly="255"/>
             <MeshExpression AutoNormals="0">
               <Expression>
-<![CDATA[if (this.V.X != 0 || this.V.Y != 0) {
-      float fi1 = atan2(sqrt(this.V.X*this.V.X+this.V.Y*this.V.Y),this.V.Z);
-      float psi1 = atan2(this.V.Y,this.V.X);
-      if (fi1 > PI/2) {
-        fi1 = PI - fi1;
-        fi1 /= PI/2;
-        fi1 = fi1*fi1;
-        fi1 *= PI/2;
-        fi1 = -1*fi1 + PI;
-      }
-      if (fi1 < PI/2) {
-        fi1 /= PI/2;
-        fi1 = fi1*fi1;
-        fi1 *= PI/2;
-      }
-      this.V.X = sin(fi1)*cos(psi1);
-      this.V.Y = sin(fi1)*sin(psi1);
-      this.V.Z = cos(fi1);
-    }]]>
-              </Expression>
-            </MeshExpression>
-          </Producers>
-        </Mesh>
-        <Mesh Comment="Better looking Sphere B">
-          <Producers>
-            <MeshSphere ZSamples="15" RadialSamples="15"/>
-            <MeshExpression AutoNormals="0">
-              <Expression>
-<![CDATA[//V : current vertex
-    float fi;
-    float psi;
+        <![CDATA[//
 
-    if (this.V.X != 0 || this.V.Y != 0) {
-      fi = (1-this.V.Z)*PI/2;
-      psi = atan2(this.V.Y,this.V.X);
-      this.V.X = sin(fi)*cos(psi);
-      this.V.Y = sin(fi)*sin(psi);
-      this.V.Z = cos(fi);
+        float E, A, C, X, Y, Z;
 
-      this.N.X = sin(fi)*cos(psi);
-      this.N.Y = sin(fi)*sin(psi);
-      this.N.Z = cos(fi);
+        // Convert range to radians
 
-    }]]>
+        E = this.V.Y*PI; // Elevation
+        A = this.V.X*PI; // Azimuth
+
+        // Convert spherical coordinates into cartesian
+
+        C = cos(E);
+
+        X = sin(A)*C;
+        Y = sin(E);
+        Z = cos(A)*C;
+
+        // Assign coordinates
+
+        this.V.X = X/2;
+        this.V.Y = Y/2;
+        this.V.Z = Z/2;
+
+        this.N.X = X;
+        this.N.Y = Y;
+        this.N.Z = Z;]]>
               </Expression>
             </MeshExpression>
           </Producers>
