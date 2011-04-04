@@ -289,6 +289,31 @@ begin
   end;
 end;
 
+function GetModelDefined(Op : TZcOp) : TZComponent;
+{
+  If op is referring to a component that is defined in Model.Definitions
+  then return that component, else return nil.
+}
+var
+  O : TObject;
+  OwnerC,C : TZComponent;
+  PropValue : TZPropertyValue;
+begin
+  Result := nil;
+  O := CompilerContext.SymTab.Lookup(Op.Id);
+  if not (O is TZComponent) then
+    Exit;
+  C := O as TZComponent;
+  OwnerC := C.OwnerList.Owner;
+  if ComponentManager.GetInfo(OwnerC).ClassId<>ModelClassId then
+    Exit;
+  //Var must be in Definitions-list
+  OwnerC.GetProperty( OwnerC.GetProperties.GetByName('Definitions'), PropValue );
+  if PropValue.ComponentListValue<>C.OwnerList then
+    Exit;
+  Result := C;
+end;
+
 function TZcOp.GetExtendedDataType: TZcExtendedDataType;
 var
   Etyp : TZcExtendedDataType;
@@ -296,22 +321,12 @@ var
 
   function DoModelDefined(var Edt : TZcExtendedDataType) : boolean;
   var
-    O : TObject;
-    OwnerC,C : TZComponent;
+    C : TZComponent;
     I : integer;
-    PropValue : TZPropertyValue;
   begin
     Result := False;
-    O := CompilerContext.SymTab.Lookup(Self.Id);
-    if not (O is TZComponent) then
-      Exit;
-    C := O as TZComponent;
-    OwnerC := C.OwnerList.Owner;
-    if ComponentManager.GetInfo(OwnerC).ClassId<>ModelClassId then
-      Exit;
-    //Var must be in Definitions-list
-    OwnerC.GetProperty( OwnerC.GetProperties.GetByName('Definitions'), PropValue );
-    if PropValue.ComponentListValue<>C.OwnerList then
+    C := GetModelDefined(Self);
+    if C=nil then
       Exit;
     Edt.Kind := edtModelDefined;
     Edt.Component := C;
@@ -758,6 +773,11 @@ var
   PName : string;
 begin
   Result := Op;
+
+  if (Op.Kind=zcSelect) and (Op.Ref<>nil) and (GetModelDefined(Op)=nil) then
+    //Avoid situations like "App.Time" conflicting with global variable "Time"
+    Op.Ref := nil;
+
   if (Op.Kind in [zcIdentifier,zcSelect])
     and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant))
     and (CompilerContext.ThisC.GetProperties.GetByName(Op.Id)=nil)

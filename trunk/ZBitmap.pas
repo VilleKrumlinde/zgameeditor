@@ -29,7 +29,7 @@ type
 
   //32 bits per pixel image
   TZBitmap = class(TContent)
-  private
+  strict private
     IsInitialized : boolean;
     Memory : pointer;
     MemFormat,MemType : GLuint;
@@ -213,15 +213,7 @@ end;
 procedure TZBitmap.RenderTargetEnd;
 begin
     glBindTexture(GL_TEXTURE_2D, Handle);
-    {$ifndef minimal}
-    try
-    {$endif}
-      glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
-    {$ifndef minimal}
-    except
-      ZLog.GetLog(Self.ClassName).Warning('glCopyTexSubImage2D call crashed (ATI card?)');
-    end;
-    {$endif}
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
   glPopAttrib;
   {$ifdef zgeviz}
   ZApp.ViewportChanged;

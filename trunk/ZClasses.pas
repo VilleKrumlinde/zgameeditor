@@ -45,7 +45,7 @@ type
  ImplicitWarpClassId,MeshImportClassId,
  FontClassId,ModelStateClassId,SetModelStateClassId,
  AnimatorGroupClassId,AnimatorSimpleClassId,MouseModelControllerClassId,
- StartAnimatorClassId, CurvePointClassId, CurveClassId, AnimatorCurveClassId,
+ StartAnimatorClassId, {CurvePointClassId, CurveClassId, AnimatorCurveClassId,}
  UseMaterialClassId,RenderMeshClassId,RenderTransformClassId,RenderSpriteClassId,
  RenderBeamsClassId,RenderTransformGroupClassId,RenderTextClassId,RenderSetColorClassId,RenderNetClassId,
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
