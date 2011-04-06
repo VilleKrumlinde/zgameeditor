@@ -375,6 +375,7 @@ type
     procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
     procedure ClearRoot;
     procedure SetRoot(C: TZComponent);
+    procedure SaveCurrentEdits;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -1243,6 +1244,13 @@ begin
   if IsAppRunning and (not LockShow) then
     AppPreviewStopAction.Execute;
 
+  SaveCurrentEdits;
+
+  AllowChange:=True;
+end;
+
+procedure TEditorForm.SaveCurrentEdits;
+begin
   if Assigned(ActiveControl) and
     (ActiveControl is TEdit) and
     Assigned((ActiveControl as TEdit).OnExit) then
@@ -1260,10 +1268,7 @@ begin
 
   //Save shader
   if CompileShaderButton.Enabled then CompileShaderButton.Click;
-
-  AllowChange:=True;
 end;
-
 
 procedure TEditorForm.SaveBinaryMenuItemClick(Sender: TObject);
 var
@@ -3217,15 +3222,13 @@ end;
 
 procedure TEditorForm.SaveProjectActionExecute(Sender: TObject);
 begin
-//  if MessageDlg('Save to file: ' + CurrentFileName + '?',mtConfirmation,mbOKCancel,0)<>mrOk then
-//    Exit;
+  SaveCurrentEdits;
   if CurrentFileName='' then
     FileSaveAsAction.Execute
   else
     ComponentManager.SaveXml(Root,CurrentFileName);
   SetFileChanged(False);
 end;
-
 
 
 procedure TEditorForm.ForumsMenuItemsClick(Sender: TObject);
