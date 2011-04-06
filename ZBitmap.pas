@@ -63,7 +63,7 @@ type
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers,ZApplication,ZLog;
+uses BitmapProducers,ZApplication,ZLog,SysUtils;
 {$endif}
 
 { TZBitmap }
@@ -82,12 +82,39 @@ begin
   inherited;
 end;
 
+//The call to glGetTexImage crashes on some ati radeon cards
+{.$define atibughunt}
+
+{$ifdef atibughunt}
+procedure TestOK(B : TZBitmap);
+const GL_TEXTURE_2D_BINDING = $8069;
+var
+  I : integer;
+begin
+  Assert( glIsEnabled(GL_TEXTURE_2D), 'no texture enabled' );
+
+  glGetIntegerv(GL_TEXTURE_2D_BINDING,@I);
+  Assert((I=B.Handle) and (I>0), 'Invalid handle: i' + IntToStr(I) + ' b:' + IntToStr(B.Handle));
+
+  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,@I);
+  Assert((I=B.PixelWidth) and (I>0), 'Texture width mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelWidth));
+
+  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,@I);
+  Assert((I=B.PixelHeight) and (I>0), 'Texture height mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelHeight));
+end;
+{$endif}
+
 function TZBitmap.GetCopyAsFloats: pointer;
 var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
+  glEnable(GL_TEXTURE_2D);
   UseTextureBegin;
+  {$ifdef atibughunt}
+    TestOk(Self); //**
+    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$endif}
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
   Result := P;
 end;
@@ -97,7 +124,12 @@ var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
+  glEnable(GL_TEXTURE_2D);
   UseTextureBegin;
+  {$ifdef atibughunt}
+    TestOk(Self); //**
+    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$endif}
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_FLOAT,P);
   Result := P;
 end;
@@ -212,6 +244,7 @@ end;
 
 procedure TZBitmap.RenderTargetEnd;
 begin
+    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, Handle);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
   glPopAttrib;
@@ -226,6 +259,7 @@ begin
   if (not IsInitialized)
    {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
     ReInit;
+
   glBindTexture(GL_TEXTURE_2D, Handle);
 end;
 

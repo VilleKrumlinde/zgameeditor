@@ -1326,6 +1326,11 @@ procedure glVertex3f(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$END
 procedure glVertexPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glViewport(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 
+{$ifndef minimal}
+function glIsEnabled(cap: GLEnum): bytebool; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+procedure glGetTexLevelParameteriv(target: GLEnum; level: GLint; pname: GLEnum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+{$endif}
+
 {$ifdef WIN32}
 function wglGetProcAddress (P : pansichar) : pointer; stdcall; external opengl;
 {$endif}
