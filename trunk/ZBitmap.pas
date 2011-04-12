@@ -101,6 +101,9 @@ begin
 
   glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,@I);
   Assert((I=B.PixelHeight) and (I>0), 'Texture height mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelHeight));
+
+  glPixelStorei(GL_PACK_ALIGNMENT,1);
+  glFlush;
 end;
 {$endif}
 
@@ -109,7 +112,7 @@ var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
-  glEnable(GL_TEXTURE_2D);
+    {$ifdef atibughunt}glActiveTexture($84C0);{$endif} //**
   UseTextureBegin;
   {$ifdef atibughunt}
     TestOk(Self); //**
@@ -124,7 +127,6 @@ var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
-  glEnable(GL_TEXTURE_2D);
   UseTextureBegin;
   {$ifdef atibughunt}
     TestOk(Self); //**
@@ -243,10 +245,24 @@ begin
 end;
 
 procedure TZBitmap.RenderTargetEnd;
+var
+  P : pointer;
 begin
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, Handle);
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
+
+    {
+      glCopyTexSubImage2D cannot be used here because the combination of calling
+      glCopyTexSubImage2D and then later glGetTexImage on the same texture causes
+      a crash in atioglxx.dll on ATI Radeon X1650 and X1550.
+      Instead we copy to the main memory first and then update.
+    }
+    //    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);  //**
+    GetMem(P, PixelWidth * PixelHeight * 4);
+    glReadPixels(0, 0, PixelWidth, PixelHeight, GL_RGBA, GL_UNSIGNED_BYTE, P);
+    SetMemory(P,GL_RGBA,GL_UNSIGNED_BYTE);
+    ReInit;
+    FreeMem(P);
+
   glPopAttrib;
   {$ifdef zgeviz}
   ZApp.ViewportChanged;
