@@ -1329,6 +1329,7 @@ procedure glViewport(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall
 {$ifndef minimal}
 function glIsEnabled(cap: GLEnum): bytebool; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glGetTexLevelParameteriv(target: GLEnum; level: GLint; pname: GLEnum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+procedure glPixelStorei(pname: GLEnum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 {$endif}
 
 {$ifdef WIN32}
