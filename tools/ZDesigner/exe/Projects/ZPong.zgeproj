@@ -88,8 +88,8 @@ if( (CurrentModel.Position.X<-6) || (CurrentModel.Position.X>6) ) {
   CurrentModel.Position.Y=0;
   CurrentModel.Velocity.X*=-1.01;
   CurrentModel.Velocity.Y*=1.025;
-  CpuSpeed.Value *= 1.2;
-  CpuSpeed.Value = clamp(CpuSpeed.Value,0,5);
+  CpuSpeed *= 1.2;
+  CpuSpeed = clamp(CpuSpeed,0,5);
   BallMissed=1;
 } else
   BallMissed=0;]]>
@@ -175,7 +175,7 @@ LastMoveSoundTime=App.Time;]]>
             <ZExpression>
               <Expression>
 <![CDATA[if(BallModel.Velocity.X>0) { 
-  CpuBatModel.Velocity.Y = (BallModel.Position.Y-CpuBatModel.Position.Y) * CpuSpeed.Value;
+  CpuBatModel.Velocity.Y = (BallModel.Position.Y-CpuBatModel.Position.Y) * CpuSpeed;
 } else CpuBatModel.Velocity.Y=0;]]>
               </Expression>
             </ZExpression>
