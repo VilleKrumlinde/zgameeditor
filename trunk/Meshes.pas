@@ -67,15 +67,15 @@ type
       end;
     {$endif}
     IsDynamic : boolean;   //True if vertices can be changed in runtime
-    procedure Scale(const V : TZVector3f);
-    procedure MakeNet(XCount,YCount : integer);
-    procedure BeforeRender;
-    procedure CreateData(VQuantity,TQuantity : integer; WithTexCoords : boolean = False;
-      WithColors : boolean = False);
     procedure ComputeNormals;
+    procedure CreateData(VQuantity, TQuantity: integer; WithTexCoords : boolean = False; WithColors : boolean = False);
+    procedure MakeNet(XCount, YCount: integer);
+    procedure Scale(const V: TZVector3f);
+    procedure BeforeRender;
     destructor Destroy; override;
     {$ifndef minimal}
     procedure DesignerFreeResources; override;
+    procedure DesignerCopyFrom(M: TMesh);
     {$endif}
   end;
 
@@ -442,6 +442,23 @@ begin
   {$endif}
 end;
 
+{$ifndef minimal}
+procedure TMesh.DesignerCopyFrom(M : TMesh);
+begin
+  FreeData;
+  CreateData(M.VerticesCount,M.IndicesCount div 3,M.TexCoords<>nil,M.Colors<>nil);
+  Move(M.Vertices^,Self.Vertices^,SizeOf(TZVector3f) * VerticesCount);
+  Move(M.Indices^,Self.Indices^,SizeOf(TMeshVertexIndex) * IndicesCount);
+  Move(M.Normals^,Self.Normals^,SizeOf(TZVector3f) * VerticesCount);
+  if M.TexCoords<>nil then
+    Move(M.TexCoords^,Self.TexCoords^,SizeOf(TZVector2f) * VerticesCount);
+  if M.Colors<>nil then
+    Move(M.Colors^,Self.Colors^,SizeOf(TMeshVertexColor) * VerticesCount);
+  IsChanged := False;
+  Producers.IsChanged := False;
+end;
+{$endif}
+
 procedure TMesh.CreateData(VQuantity, TQuantity: integer; WithTexCoords : boolean = False;
   WithColors : boolean = False);
 begin
@@ -474,8 +491,6 @@ end;
 
 procedure TMesh.FreeData;
 begin
-  VerticesCount := 0;
-  IndicesCount := 0;
   if Vertices<>nil then
     FreeMem(Vertices);
   if Indices<>nil then
@@ -485,10 +500,14 @@ begin
   if TexCoords<>nil then
     FreeMem(TexCoords);
   if Colors<>nil then
-  begin
     FreeMem(Colors);
-    Colors := nil;
-  end;
+
+  VerticesCount := 0;
+  IndicesCount := 0;
+  Vertices := nil;
+  Normals := nil;
+  TexCoords := nil;
+  Colors := nil;
 
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
