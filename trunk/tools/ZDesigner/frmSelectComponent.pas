@@ -74,7 +74,7 @@ procedure TSelectComponentForm.CompListViewCustomDrawItem(
   var DefaultDraw: Boolean);
 begin
   if EnabledList[Item.Index] then
-    CompListView.Canvas.Font.Color := clBlack
+    CompListView.Canvas.Font.Color := clWindowText
   else
     CompListView.Canvas.Font.Color := clGrayText;
 end;
