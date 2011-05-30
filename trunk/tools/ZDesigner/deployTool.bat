@@ -32,9 +32,7 @@ copy .\exe\projects\RenderTexture.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderPass.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
 
-copy .\exe\projects\ModPlay\ModPlay.zgeproj ..\..\Deploy\%tool%\projects\ModPlay\
-copy .\exe\projects\ModPlay\*.xm ..\..\Deploy\%tool%\projects\ModPlay\
-copy .\exe\projects\ModPlay\*.dll ..\..\Deploy\%tool%\projects\ModPlay\
+copy .\exe\projects\Visualizer\* ..\..\Deploy\%tool%\projects\Visualizer\
 
 
 rem Remove any extra files

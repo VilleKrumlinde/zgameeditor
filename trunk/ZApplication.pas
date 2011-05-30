@@ -27,20 +27,6 @@ uses ZClasses,Meshes,Collision,Commands,AudioComponents
 ;
 
 type
-
-  TSliceCallback = procedure of object;
-  TClock = class
-  protected
-    LastTime : single;
-    procedure Slice(Callback : TSliceCallback);
-  public
-    Time : single;    //1.0 = 1 second
-    AccumulatedTime : single;
-    DeltaTime : single;
-    FrameLoss : boolean;  //sätts till true ifall vi tappar frames
-    procedure UpdateTime;
-  end;
-
   //Application states
   TAppState = class(TStateBase)
   private
@@ -51,10 +37,23 @@ type
     CollisionsEnabled : boolean;
   end;
 
-  {$ifdef zgeviz}
   TZApplication = class;
+
+  {$ifdef zgeviz}
   TAppCallback = procedure(App : TZApplication) of object;
   {$endif}
+
+  TCamera = class(TZComponent)
+  private
+    procedure ApplyTransform(App : TZApplication);
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (catPerspective,catOrthograpic);
+    Position : TZVector3f;
+    Rotation : TZVector3f;
+    ClipNear,ClipFar,OrthoZoom,FOV : single;
+  end;
 
   TZApplication = class(TZComponent)
   strict private
@@ -69,13 +68,15 @@ type
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
+    LastTime : single;
     procedure RenderModels;
-  private
-    CurrentState : TAppState;
+    procedure ApplyCameraTransform;
+    procedure MainSlice;
     procedure Init;
     procedure Shutdown;
-    procedure MainSlice;
     procedure UpdateScreen;
+  private
+    CurrentState : TAppState;
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
@@ -110,7 +111,6 @@ type
     CustomViewportRatio,FOV,ClipNear,ClipFar : single;
     ViewportRatio : (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
     ActualViewportRatio : single;
-    Clock : TClock;
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
     MouseVisible : boolean;
@@ -119,6 +119,8 @@ type
     WindowHandle : integer;
     ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     MouseWheelDelta : integer;
+    Camera : TCamera;
+    FrameLoss : boolean;  //sätts till true ifall vi tappar frames
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
@@ -194,8 +196,6 @@ uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
 constructor TZApplication.Create(OwnerList: TZComponentList);
 begin
   inherited;
-  Clock := TClock.Create;
-
   Models := TModels.Create;
 
   Collisions := TCollisionChecks.Create(Models);
@@ -211,7 +211,6 @@ end;
 destructor TZApplication.Destroy;
 begin
   Terminating := True;
-  Clock.Free;
 
   //ev problem med models.free, borde göra models.removeall vid terminate först
   //annars kan models referera modeller som redan har gjorts free på
@@ -294,11 +293,35 @@ begin
 end;
 
 procedure TZApplication.UpdateTime;
+const
+  //Maximum time step for update and collision=1/10 second
+  MaxUpdateStep = 1.0 / 10;
 begin
-  Clock.UpdateTime;
-  //Copy deltatime so it can be read as a property from zexpressions
-  DeltaTime := Clock.DeltaTime;
-  Time := Clock.Time;
+  {$ifdef zgeviz}
+  Time := Self.ZgeVizTime;
+  {$else}
+  Time := Platform_GetTime;
+  {$endif}
+  DeltaTime := Time - LastTime;
+
+  //Avoid too high steps such as when grabbing win-caption with mouse
+  if DeltaTime>MaxUpdateStep then
+  begin
+    DeltaTime := MaxUpdateStep;
+    Self.FrameLoss := True;
+  end
+  else
+    Self.FrameLoss := False;
+    //todo: om deltatime är för hög, öka LostTime, och justera Time och Accumulated med den
+
+  if DeltaTime<0 then
+    //Apparantly deltatime can become negative in multicore processors
+    DeltaTime := 0;
+
+  //Also see this discussion
+  //http://www.yakyak.org/viewtopic.php?t=48231&highlight=&sid=7a0084f72cfc50768c1ed4ce3fe0ae8c
+
+  LastTime := Time;
 end;
 
 procedure TZApplication.UpdateStateVars;
@@ -363,10 +386,7 @@ begin
 
     UpdateStateVars;
 
-    //Dela upp tiden.
-    //MainSlice anropas för varje movementfactor 1, detta så att collision sker
-    //för varje enskilt movement.
-    Clock.Slice(Self.MainSlice);
+    Self.MainSlice;
 
     //Draw all
     UpdateScreen;
@@ -588,6 +608,37 @@ begin
   Meshes.CurrentModel := nil;
 end;
 
+procedure TZApplication.ApplyCameraTransform;
+begin
+  {$ifdef zgeviz}
+  if Assigned(Self.ZgeVizCameraCallback) then
+    Self.ZgeVizCameraCallback(Self)
+  else
+  begin
+  {$endif}
+    //Setup view and camera
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
+    gluPerspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
+  {$ifdef zgeviz}
+  end;
+  {$endif}
+
+  {$ifdef zgeviz}
+  glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
+  {$endif}
+
+  //Reverse order to make XYZ-rotation
+  glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
+  glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
+  glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
+  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+end;
+
 procedure TZApplication.UpdateScreen;
 var
   I : integer;
@@ -610,33 +661,11 @@ begin
       UpdateViewport;
     {$endif}
 
-    {$ifdef zgeviz}
-    if Assigned(Self.ZgeVizCameraCallback) then
-      Self.ZgeVizCameraCallback(Self)
+    //Use custom camera or default
+    if Camera<>nil then
+      Camera.ApplyTransform(Self)
     else
-    begin
-    {$endif}
-      //Setup view and camera
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity;
-      gluPerspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
-      glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity;
-    {$ifdef zgeviz}
-    end;
-    {$endif}
-
-    {$ifdef zgeviz}
-    glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
-    {$endif}
-
-    //Reverse order to make XYZ-rotation
-    glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
-    glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
-    glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
-    //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-    //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-    glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+      ApplyCameraTransform;
 
     if (ClearScreenMode=0) and (CurrentRenderTarget=nil) then
     begin
@@ -926,6 +955,10 @@ begin
     //Camera default is z 10
     List.GetLast.DefaultValue.Vector3fValue[2] := 10;
   List.AddProperty({$IFNDEF MINIMAL}'CameraRotation',{$ENDIF}integer(@CameraRotation), zptVector3f);
+
+  List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}integer(@Camera), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCamera]);{$endif}
+
   List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}integer(@LightPosition), zptVector3f);
     //Light default is down the Z axis
     List.GetLast.DefaultValue.Vector3fValue[2] := 1;
@@ -979,7 +1012,7 @@ begin
 
   Self.Time := 0;
   Self.DeltaTime := 0;
-  Self.Clock.LastTime := 0;
+  Self.LastTime := 0;
   Self.FpsTime := 0;
 
   //Initial tree update
@@ -999,47 +1032,6 @@ begin
 end;
 {$endif}
 
-{ TClock }
-
-procedure TClock.Slice(Callback : TSliceCallback);
-begin
-  //Skip slicing now, DeltaTime is maxed out directly in updatetime instead
-  Callback;
-end;
-
-procedure TClock.UpdateTime;
-const
-  //Maximum time step for update and collision=1/10 second
-  MaxUpdateStep = 1.0 / 10;
-begin
-  {$ifdef zgeviz}
-  Time := ZApp.ZgeVizTime;
-  {$else}
-  Time := Platform_GetTime;
-  {$endif}
-  DeltaTime := Time - LastTime;
-
-  //Avoid too high steps, for instance when grabbing win-caption with mouse
-  if DeltaTime>MaxUpdateStep then
-  begin
-    DeltaTime := MaxUpdateStep;
-    Self.FrameLoss := True;
-  end
-  else
-    Self.FrameLoss := False;
-    //todo: om deltatime är för hög, öka LostTime, och justera Time och Accumulated med den
-
-  if DeltaTime<0 then
-    //Apparantly deltatime can become negative in multicore processors
-    DeltaTime := 0;
-
-  //Also see this discussion
-  //http://www.yakyak.org/viewtopic.php?t=48231&highlight=&sid=7a0084f72cfc50768c1ed4ce3fe0ae8c
-
-  LastTime := Time;
-
-  AccumulatedTime := Time;
-end;
 
 /////////////////////////////
 
@@ -1091,6 +1083,58 @@ begin
 end;
 {$endif}
 
+{ TCamera }
+
+procedure TCamera.ApplyTransform(App : TZApplication);
+var
+  N,F : single;
+begin
+  //Setup view and camera
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  case Self.Kind of
+    catPerspective :
+      begin
+        gluPerspective(Self.FOV, App.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+      end;
+  else
+    begin
+      //Ortho
+      N := Self.ClipNear;
+      F := Self.ClipFar;
+      glScalef(App.ActualViewportRatio*Self.OrthoZoom,Self.OrthoZoom,-2/(F-N));
+      glTranslatef(0,0,0.5*(F+N));
+    end;
+  end;
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+
+  //Reverse order to make XYZ-rotation
+  glRotatef( (Rotation[0]*360) , 1, 0, 0);
+  glRotatef( (Rotation[1]*360) , 0, 1, 0);
+  glRotatef( (Rotation[2]*360) , 0, 0, 1);
+  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+  glTranslatef(-Position[0], -Position[1], -Position[2]);
+end;
+
+procedure TCamera.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Perspective','Orthographic']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 0.1;
+  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 100;
+  List.AddProperty({$IFNDEF MINIMAL}'OrthoZoom',{$ENDIF}integer(@OrthoZoom), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 45;
+end;
+
 initialization
 
   ZClasses.Register(TZApplication,ApplicationClassId);
@@ -1102,5 +1146,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.AutoName:=True;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=20;{$endif}
   ZClasses.Register(TSetAppState,SetAppStateClassId);
+  ZClasses.Register(TCamera,CameraClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
 
 end.

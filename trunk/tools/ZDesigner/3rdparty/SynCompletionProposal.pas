@@ -1518,7 +1518,6 @@ begin
 {$ENDIF}
 end;
 
-{$MESSAGE 'Check what must be adapted in DoKeyPressW and related methods'}
 procedure TSynBaseCompletionProposalForm.DoKeyPressW(Key: WideChar);
 begin
   if Key <> #0 then

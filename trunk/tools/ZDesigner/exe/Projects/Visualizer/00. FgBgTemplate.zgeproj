@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="jph wacheski - 2011" ClearColor="0.051 0.051 0.051 1" CameraPosition="0 0 22.5" LightPosition="0 1 1" FOV="95">
+  <Comment>
+<![CDATA[Templet script - implements the seven standard parameteres
+
+Alpha
+Hue
+Saturation
+Lightness
+Size
+Position X
+Position Y
+
+Whatever you type here will be displayed when "Show help for this effect" is used. 
+
+Get script creation info. here;  http://www.emix8.org/forum/viewtopic.php?t=684
+Get ZGE scripting info. here;  http://www.zgameeditor.org/index.php/Main/WritingExpressions
+
+Remember to keep the Parameters[] array as large as the number of Parameters you are using or you will crash FLstudio!
+
+Have fun!]]>
+  </Comment>
+  <OnLoaded>
+    <ZLibrary Comment="HSV convertion by Kjell">
+      <Source>
+<![CDATA[float angle(float X)
+{
+  if(X >= 0 && X < 360)return X;
+  if(X > 360)return X-floor(X/360)* 360;
+  if(X <   0)return X+floor(X/360)*-360;
+}
+  //used for the color convertion from RGB to HSV
+void hsv(float H, float S, float V)
+{
+  float R,G,B,I,F,P,Q,T;
+  
+  H = angle(H);
+  S = clamp(S,0,100);
+  V = clamp(V,0,100);
+
+  H /= 60;
+  S /= 100;
+  V /= 100;
+  
+  if(S == 0)
+  {
+    Color[0] = V;
+    Color[1] = V;
+    Color[2] = V;
+    return;
+  }
+
+  I = floor(H);
+  F = H-I;
+
+  P = V*(1-S);
+  Q = V*(1-S*F);
+  T = V*(1-S*(1-F));
+
+  if(I == 0){R = V; G = T; B = P;}
+  if(I == 1){R = Q; G = V; B = P;}
+  if(I == 2){R = P; G = V; B = T;}
+  if(I == 3){R = P; G = Q; B = V;}
+  if(I == 4){R = T; G = P; B = V;}
+  if(I == 5){R = V; G = P; B = Q;}
+  
+  Color[0] = R;
+  Color[1] = G;
+  Color[2] = B;
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression Comment="do setup stuff,. .">
+      <Expression>
+<![CDATA[FFTmulti=SpecBandArray.SizeDim1/32;
+
+/* used for changes in the FFT settings,
+as the size of the array can be user set; 32 - 255.]]>
+      </Expression>
+    </ZExpression>
+    <SpawnModel Comment="spawn the main object" Model="o_object"/>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression Comment="update from sliders">
+      <Expression>
+<![CDATA[//call the color convertion script
+hsv(Parameters[1]*360,Parameters[2]*100,(1-Parameters[3])*100);
+  //result is saved to Color[] array, moved to shader
+r.value=Color[0];
+g.value=Color[1];
+b.value=Color[2];
+  // get alpha value to shader as well
+a.value=(1-Parameters[0]);
+
+  //size can be done by moveing Camera
+app.CameraPosition.z=45-Parameters[4]*45;
+  //or changeing object scale
+  //CurrentModel.Scale=Parameters[4]*2;
+
+app.cameraPosition.x=(-0.5+Parameters[5])*-100;
+app.cameraPosition.y=(-0.5+Parameters[6])*100;
+
+  //Position similarly can be set by moving the Camera or the objects;
+  //CurrentModel.Postion.X=(-0.5+Parameters[5])*8;
+  //CurrentModel.Postion.Y=(-0.5+Parameters[6])*8;
+
+
+/*
+Alpha
+Hue
+Saturation
+Lightness
+Size
+Position X
+Position Y]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <Content>
+    <Group Comment="values and such">
+      <Children>
+        <DefineArray Name="Color" SizeDim1="3"/>
+        <DefineVariable Name="FFTmulti" Type="1"/>
+        <DefineArray Name="SpecBandArray" SizeDim1="32"/>
+        <DefineVariable Name="SongPositionInBeats"/>
+        <DefineArray Name="Parameters" SizeDim1="8" Persistent="255">
+          <Comment>
+<![CDATA[Remember to keep the Parameters[] array as large as the number of Parameters you are using or you will crash FLstudio!
+
+Edit the values in this array to set values foir when the script loads or is reset.]]>
+          </Comment>
+          <Values>
+<![CDATA[78DA6360C000F6C81800070400FD]]>
+          </Values>
+        </DefineArray>
+        <DefineConstant Name="ParamHelpConst" Comment="Add new Parametere names here, each new line creates a new slider in the GUI." Type="2">
+          <StringValue>
+<![CDATA[Alpha
+Hue
+Saturation
+Lightness
+Size
+Position X
+Position Y]]>
+          </StringValue>
+        </DefineConstant>
+      </Children>
+    </Group>
+    <Group Comment="assets">
+      <Children>
+        <Mesh Name="g_box" Comment="g is for geometry">
+          <Producers>
+            <MeshBox/>
+          </Producers>
+        </Mesh>
+        <Bitmap Name="b_texture" Comment="b is for bitmap" Width="3" Height="3">
+          <Producers>
+            <BitmapExpression Comment="use math to create image">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+//Sample expression: this.Pixel.R=abs(sin(this.X*16));
+
+ this.Pixel.R=sin(y*Pi);
+ this.Pixel.G=abs(sin(this.X*16));
+ this.Pixel.B=sin(x*Pi*3)*2;
+
+if (rnd()<.005) this.Pixel=random(.9,.1);     // light speckles
+if (rnd()<.003) this.Pixel*=0.1;   // dark speckles
+
+this.Pixel.A=1;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Shader Name="shader_plain">
+          <VertexShaderSource>
+<![CDATA[void main() {
+
+	gl_Position = ftransform();		
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+
+}]]>
+          </VertexShaderSource>
+          <FragmentShaderSource>
+<![CDATA[uniform sampler2D texture;
+
+uniform float r,g,b,a;
+vec4 color = vec4(r,g,b,a);
+
+void main (void) {
+
+	vec4 tex = texture2D( texture, gl_TexCoord[0].st);
+	gl_FragColor = tex * color;
+
+}]]>
+          </FragmentShaderSource>
+          <UniformVariables>
+            <ShaderVariable Name="r" VariableName="r" Value="1"/>
+            <ShaderVariable Name="g" VariableName="g" Value="1"/>
+            <ShaderVariable Name="b" VariableName="b" Value="1"/>
+            <ShaderVariable Name="a" VariableName="a" Value="1"/>
+          </UniformVariables>
+        </Shader>
+        <Material Name="m_basic" Comment="m is for material" WireframeWidth="1" Shading="1" Color="1 1 1 1" Blend="1" Shader="shader_plain">
+          <Textures>
+            <MaterialTexture Texture="b_texture" TexCoords="1"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group>
+    <Model Name="o_object" Comment="o is for object" RotationVelocity="0 0.1 0">
+      <OnRender>
+        <UseMaterial Material="m_basic"/>
+        <RenderSetColor Name="set_c" Comment="this sould be removed when using a shader." Color="1 1 1 1"/>
+        <RenderTransformGroup Name="nameHere">
+          <Children>
+            <RenderMesh Mesh="g_box"/>
+          </Children>
+        </RenderTransformGroup>
+      </OnRender>
+      <OnUpdate>
+        <ZExpression Comment="process FFT info.">
+          <Expression>
+<![CDATA[//average = overall audio level
+float avg;
+for (int b=0; b<32; b++) avg+=SpecBandArray[b*FFTmulti];
+avg=(avg/32);
+
+nameHere.Scale=1+abs(avg)*9;  //SpecBandArray values renage -1 to 1, abs used to keep it positive.
+
+
+
+// useing the sequencer's timeing
+nameHere.translate.y=frac(SongPositionInBeats)*nameHere.Scale;]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="non-shader color control">
+          <Expression>
+<![CDATA[//if not using a shader color can be sent to a color component this sould be removed when using a shader.
+set_c.color.R=Color[0];
+set_c.color.G=Color[1];
+set_c.color.B=Color[2];
+set_c.color.A=(1-Parameters[0]);]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+    </Model>
+  </Content>
+</ZApplication>

@@ -249,7 +249,6 @@ begin
   startLine := CurrLine;
   oldLineStart := StartOfLine;
   CommentStr := CharAt(BufferPosition);
-Result := false;
 if (CurrInputCh = '/') then
   begin
 NextCh;
@@ -293,7 +292,6 @@ StartOfLine := oldLineStart
 end;
 BufferPosition := BufferPosition - 1;
 CurrInputCh := LastInputCh;
-Result := false;
 end;
 end;
 Result := false;
