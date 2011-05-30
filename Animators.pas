@@ -224,7 +224,7 @@ end;
 
 procedure TAnimatorBase.Update;
 begin
-  UpdateWithTimeStep(ZApp.Clock.DeltaTime)
+  UpdateWithTimeStep(ZApp.DeltaTime)
 end;
 
 procedure TAnimatorBase.UpdateWithTimeStep(DeltaTime: single);

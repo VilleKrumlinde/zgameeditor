@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="jph wacheski 2011" RenderPasses="2">
+  <OnLoaded>
+    <ZExternalLibrary ModuleName="opengl32">
+      <Source>
+<![CDATA[//openGL definitions
+
+void glClear(int mask) { }
+void glBegin(int mode) { }
+void glEnd() { }
+void glMatrixMode(int mode) {}
+void glPushMatrix() {}
+void glPopMatrix() {}
+void glLoadIdentity() {}
+void glTexCoord2f(float s,float t) {}
+void glVertex2i(int s,int t) {}]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZLibrary Comment="HSV convertion by Kjell">
+      <Source>
+<![CDATA[float angle(float X)
+{
+  if(X >= 0 && X < 360)return X;
+  if(X > 360)return X-floor(X/360)* 360;
+  if(X <   0)return X+floor(X/360)*-360;
+}
+
+void hsv(float H, float S, float V)
+{
+  float R,G,B,I,F,P,Q,T;
+  
+  H = angle(H);
+  S = clamp(S,0,100);
+  V = clamp(V,0,100);
+
+  H /= 60;
+  S /= 100;
+  V /= 100;
+  
+  if(S == 0)
+  {
+    Color[0] = V;
+    Color[1] = V;
+    Color[2] = V;
+    return;
+  }
+
+  I = floor(H);
+  F = H-I;
+
+  P = V*(1-S);
+  Q = V*(1-S*F);
+  T = V*(1-S*(1-F));
+
+  if(I == 0){R = V; G = T; B = P;}
+  if(I == 1){R = Q; G = V; B = P;}
+  if(I == 2){R = P; G = V; B = T;}
+  if(I == 3){R = P; G = Q; B = V;}
+  if(I == 4){R = T; G = P; B = V;}
+  if(I == 5){R = V; G = P; B = Q;}
+  
+  Color[0] = R;
+  Color[1] = G;
+  Color[2] = B;
+}
+
+void renderCanvas(float S, float T)            //thanks again to Kjell the tech. wizard..,
+{
+  glPushMatrix();
+  glLoadIdentity();
+
+  glMatrixMode(0x1701);
+  glPushMatrix();
+  glLoadIdentity();
+
+  glBegin(0x7);
+  glTexCoord2f(0,0); glVertex2i(-1,-1);
+  glTexCoord2f(S,0); glVertex2i(1, -1);
+  glTexCoord2f(S,T); glVertex2i(1,  1);
+  glTexCoord2f(0,T); glVertex2i(-1, 1);
+  glEnd();
+
+  glPopMatrix();
+
+  glMatrixMode(0x1700);
+  glPopMatrix();
+}]]>
+      </Source>
+    </ZLibrary>
+    <SpawnModel Model="Canvas"/>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[// color convertion,. .
+hsv(Parameters[1]*360,Parameters[2]*100,(1-Parameters[3])*100);
+
+ClearingMaterial.color.R=Color[0];
+ClearingMaterial.color.G=Color[1];
+ClearingMaterial.color.B=Color[2];
+
+ClearingMaterial.color.A = (1-Parameters[0]);]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnBeginRenderPass>
+    <Condition Comment="render pass" Expression="return App.CurrentRenderPass == 0;">
+      <OnTrue>
+        <SetRenderTarget RenderTarget="CanvasTarget"/>
+      </OnTrue>
+      <OnFalse>
+        <SetRenderTarget/>
+      </OnFalse>
+    </Condition>
+  </OnBeginRenderPass>
+  <Content>
+    <Group Comment="values">
+      <Children>
+        <DefineArray Name="Parameters" SizeDim1="4" Persistent="255">
+          <Values>
+<![CDATA[78DA636040060DF600014F00C0]]>
+          </Values>
+        </DefineArray>
+        <DefineConstant Name="ParamHelpConst" Type="2">
+          <StringValue>
+<![CDATA[Alpha
+Hue
+Saturation
+Lightness]]>
+          </StringValue>
+        </DefineConstant>
+        <DefineArray Name="Color" SizeDim1="3"/>
+      </Children>
+    </Group>
+    <RenderTarget Name="CanvasTarget" Width="0" Height="0" ClearBeforeUse="0" AutoPowerOfTwo="255"/>
+    <Material Name="CanvasMaterial" Color="1 1 1 1" Light="0" Blend="1" ZBuffer="0">
+      <Textures>
+        <MaterialTexture RenderTarget="CanvasTarget" TexCoords="1"/>
+      </Textures>
+    </Material>
+    <Material Name="ClearingMaterial" Color="0 0 0 1" Light="0" Blend="1" ZBuffer="0"/>
+    <Model Name="Canvas">
+      <OnRender>
+        <Condition Comment="pass 0 or 1 ?" Expression="return App.CurrentRenderPass == 0;">
+          <OnTrue>
+            <UseMaterial Material="ClearingMaterial"/>
+            <ZExpression Comment="draw full frame" Expression="renderCanvas(1,1);"/>
+          </OnTrue>
+          <OnFalse>
+            <UseMaterial Material="CanvasMaterial"/>
+            <ZExpression Comment="draw full frame" Expression="renderCanvas(1,1);"/>
+          </OnFalse>
+        </Condition>
+      </OnRender>
+    </Model>
+  </Content>
+</ZApplication>

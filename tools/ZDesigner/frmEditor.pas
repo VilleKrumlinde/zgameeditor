@@ -398,7 +398,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '2.0.0';
+  AppVersion = '2.0.1b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -1576,7 +1576,6 @@ begin
     end
     else
     begin
-      ZApp.Clock.DeltaTime := 0;
       ZApp.DeltaTime := 0;
     end;
     Renderer.Render_Begin;
@@ -2523,7 +2522,7 @@ procedure TEditorForm.ResetModelButtonClick(Sender: TObject);
 begin
   if ShowNode<>nil then
   begin
-    ZApp.Clock.Time := 0;
+    ZApp.Time := 0;
     ShowNode.DesignerReset;
   end;
 end;

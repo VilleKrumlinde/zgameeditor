@@ -1870,7 +1870,7 @@ var
   ScaledGravity : TZVector2f;
   UseGravity : boolean;
 begin
-  if ZApp.Clock.FrameLoss and (System.Random<0.5) then
+  if ZApp.FrameLoss and (System.Random<0.5) then
     Exit; //If we are losing frames then randomly skip update for trying to catch up
 
   //Copy to local for making the loop faster
