@@ -723,19 +723,10 @@ begin
   //Used for previewing app-state in designer
   UpdateViewport;
 
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
-
-  gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
-
-  //Reverse order to make XYZ-rotation
-  glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
-  glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
-  glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
-  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
+  if Camera<>nil then
+    Camera.ApplyTransform(Self)
+  else
+    Self.ApplyCameraTransform;
 
   glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
 
@@ -1087,7 +1078,7 @@ end;
 
 procedure TCamera.ApplyTransform(App : TZApplication);
 var
-  N,F : single;
+  W,H : single;
 begin
   //Setup view and camera
 
@@ -1101,10 +1092,9 @@ begin
   else
     begin
       //Ortho
-      N := Self.ClipNear;
-      F := Self.ClipFar;
-      glScalef(App.ActualViewportRatio*Self.OrthoZoom,Self.OrthoZoom,-2/(F-N));
-      glTranslatef(0,0,0.5*(F+N));
+      H := (1.0/Self.OrthoZoom);
+      W := App.ActualViewportRatio * H;
+      glOrtho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
     end;
   end;
   glMatrixMode(GL_MODELVIEW);
@@ -1131,6 +1121,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
   List.AddProperty({$IFNDEF MINIMAL}'OrthoZoom',{$ENDIF}integer(@OrthoZoom), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
 end;
