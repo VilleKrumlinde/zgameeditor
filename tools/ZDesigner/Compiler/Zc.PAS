@@ -107,6 +107,7 @@ destructor Destroy; override;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
+    function MakeTempName : string;
 
   protected
     { Protected Declarations }
@@ -135,6 +136,7 @@ destructor Destroy; override;
     ReturnType : TZcDataType;
     AllowFunctions : boolean;
     GlobalNames : TObjectList;
+    TempCounter : integer;
 
   published
     { Published Declarations }
@@ -205,6 +207,13 @@ begin
   ZFunctions.Free;
 end;
 
+function TZc.MakeTempName : string;
+begin
+  Inc(TempCounter);
+  Result := '#temp' + IntToStr(TempCounter);
+end;
+
+
 procedure TZc.ZError(const S : string);
 var
   E : EParseError;
@@ -249,6 +258,7 @@ begin
   startLine := CurrLine;
   oldLineStart := StartOfLine;
   CommentStr := CharAt(BufferPosition);
+Result := false;
 if (CurrInputCh = '/') then
   begin
 NextCh;
@@ -292,6 +302,7 @@ StartOfLine := oldLineStart
 end;
 BufferPosition := BufferPosition - 1;
 CurrInputCh := LastInputCh;
+Result := false;
 end;
 end;
 Result := false;
@@ -1796,10 +1807,11 @@ Expect(_rbraceSym);
 end;
 
 procedure TZc._EmbeddedStatement (var  OutOp  :  TZcOp);var
-   Op,IfOp,IfBody,ElseOp  :  TZcOp;
+   SwitchValueOp,Op,IfOp,IfBody,ElseOp  :  TZcOp;
    ForInitOp,ForCondOp,ForIncOp,ForBodyOp  :  TZcOp;
    WhileCondOp,WhileBodyOp  :  TZcOp;
    SwitchOp  :  TZcOpSwitch;
+   Loc  :  TZcOpLocalVar;
 
 begin
 case fCurrentInputSymbol of
@@ -1831,12 +1843,21 @@ OutOp  :=  MakeOp(zcIf,[IfOp,IfBody,ElseOp]);
   switchSym : begin
 Get;
 Expect(_lparenSym);
-_Expr(Op);
+_Expr(SwitchValueOp);
 Expect(_rparenSym);
 
+  Loc  :=  TZcOpLocalVar.Create(nil);
+  Loc.Id  :=  MakeTempName;
+  Loc.Typ  :=  SwitchValueOp.GetDataType;
+  SymTab.Add(Loc.Id,Loc);
+  CurrentFunction.AddLocal(Loc);
+
+  OutOp  :=  MakeOp(zcBlock);
+  OutOp.Children.Add(  MakeAssign(atAssign,  MakeOp(zcIdentifier,Loc.Id),SwitchValueOp)  );
+
   SwitchOp  :=  TZcOpSwitch.Create(nil);
-  SwitchOp.ValueOp  :=  Op;
-  OutOp  :=  SwitchOp;
+  SwitchOp.ValueOp  :=  MakeIdentifier(Loc.Id);
+  OutOp.Children.Add(SwitchOp);
 
 Expect(_lbraceSym);
 while (fCurrentInputSymbol = caseSym) OR
@@ -1999,16 +2020,16 @@ _Init(InitOp);
 Loc.InitExpression:=InitOp;
 end;
 
-SymTab.Add(Loc.Id,Loc);
-CurrentFunction.AddLocal(Loc);
+  SymTab.Add(Loc.Id,Loc);
+  CurrentFunction.AddLocal(Loc);
 
-if  Assigned(Loc.InitExpression)  then
-begin
-   //Generate  tree  for  initial  assignment
-   if  OutOp=nil  then
-     OutOp  :=  MakeOp(zcBlock);
-   OutOp.Children.Add(  MakeAssign(atAssign,  MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression)  );
-end;
+  if  Assigned(Loc.InitExpression)  then
+  begin
+    //Generate  tree  for  initial  assignment
+    if  OutOp=nil  then
+      OutOp  :=  MakeOp(zcBlock);
+    OutOp.Children.Add(  MakeAssign(atAssign,  MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression)  );
+  end;
 
 
 end;
