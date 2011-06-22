@@ -13,11 +13,13 @@ DELPHI
     ReturnType : TZcDataType;
     AllowFunctions : boolean;
     GlobalNames : TObjectList;
+    TempCounter : integer;
   PRIVATE
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
+    function MakeTempName : string;
   CREATE
     ZFunctions := TObjectList.Create(False);
   DESTROY
@@ -54,6 +56,13 @@ begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
 end;
+
+function T-->Grammar<--.MakeTempName : string;
+begin
+  Inc(TempCounter);
+  Result := '#temp' + IntToStr(TempCounter);
+end;
+
 
 procedure T-->Grammar<--.ZError(const S : string);
 var
@@ -275,10 +284,10 @@ LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitO
 
         Loc := TZcOpLocalVar.Create(nil);
         Loc.Id := LexString;
-        Loc.Typ := Typ;        
+        Loc.Typ := Typ;
      .)
      [ "=" Init<InitOp> (. Loc.InitExpression:=InitOp; .) ]
-     (. 
+     (.
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
@@ -358,10 +367,11 @@ LocalVarDecl<OutOp> ";"
 /*------------------------------------------------------------------------*/
 EmbeddedStatement<var OutOp : TZcOp>
   (. var
-       Op,IfOp,IfBody,ElseOp : TZcOp;
+       SwitchValueOp,Op,IfOp,IfBody,ElseOp : TZcOp;
        ForInitOp,ForCondOp,ForIncOp,ForBodyOp : TZcOp;
        WhileCondOp,WhileBodyOp : TZcOp;
        SwitchOp : TZcOpSwitch;
+       Loc : TZcOpLocalVar;
   .)
 = Block<OutOp>
 | ";"   (. OutOp := MakeOp(zcNop); .)
@@ -369,11 +379,20 @@ EmbeddedStatement<var OutOp : TZcOp>
 | "if" (. ElseOp := nil; .)
   "(" Expr<IfOp> ")" EmbeddedStatement<IfBody> ["else" EmbeddedStatement<ElseOp>]
         (. OutOp := MakeOp(zcIf,[IfOp,IfBody,ElseOp]); .)
- | "switch" "(" Expr<Op> ")"
+ | "switch" "(" Expr<SwitchValueOp> ")"
       (.
+         Loc := TZcOpLocalVar.Create(nil);
+         Loc.Id := MakeTempName;
+         Loc.Typ := SwitchValueOp.GetDataType;
+         SymTab.Add(Loc.Id,Loc);
+         CurrentFunction.AddLocal(Loc);
+
+         OutOp := MakeOp(zcBlock);
+         OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),SwitchValueOp) );
+
          SwitchOp := TZcOpSwitch.Create(nil);
-         SwitchOp.ValueOp := Op;
-         OutOp := SwitchOp;
+         SwitchOp.ValueOp := MakeIdentifier(Loc.Id);
+         OutOp.Children.Add(SwitchOp);
       .)
    "{" {
      (. SwitchOp.CaseOps.Add( MakeOp(zcNop) ); SwitchOp.StatementsOps.Add( MakeOp(zcNop) ); .)
