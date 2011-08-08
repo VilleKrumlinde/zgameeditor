@@ -22,7 +22,7 @@ unit Renderer;
 
 interface
 
-uses Meshes,ZClasses,ZBitmap;
+uses Meshes,ZClasses,ZBitmap,ZExpressions;
 
 type
   TRenderCommand = class(TCommand);
@@ -72,6 +72,7 @@ type
     VariableName : TPropString;
     Value : single;
     ValuePropRef : TZPropertyRef;
+    ValueArrayRef : TDefineArray;
     {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
@@ -325,7 +326,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZExpressions
+uses ZOpenGL, ZMath, ZApplication, ZPlatform
   {$ifdef zlog},ZLog,SysUtils{$endif};
 
 var
@@ -2083,12 +2084,18 @@ begin
     if Sv.Location=-1 then Continue;
     {$endif}
 
-    if Sv.ValuePropRef.Component<>nil then
-      V := PFloat(Sv.ValuePropRef.Component.GetPropertyPtr(Sv.ValuePropRef.Prop,Sv.ValuePropRef.Index))^
+    if Sv.ValueArrayRef<>nil then
+    begin
+      glUniform1fv(Sv.Location,Sv.ValueArrayRef.CalcLimit,PGLFloat(Sv.ValueArrayRef.GetData))
+    end
     else
-      V := Sv.Value;
-
-    glUniform1f(Sv.Location,V);
+    begin
+      if Sv.ValuePropRef.Component<>nil then
+        V := PFloat(Sv.ValuePropRef.Component.GetPropertyPtr(Sv.ValuePropRef.Prop,Sv.ValuePropRef.Index))^
+      else
+        V := Sv.Value;
+      glUniform1f(Sv.Location,V);
+    end;
   end;
 end;
 
@@ -2101,7 +2108,12 @@ begin
   begin
     Sv := TShaderVariable(UniformVariables[I]);
     {$ifndef minimal}
-    if Length(Sv.VariableName)=0 then Continue;
+    if Length(Sv.VariableName)=0 then
+    begin
+      if Length(Sv.Name)>0 then
+        ZLog.GetLog(Self.ClassName).Warning( 'Ignoring shader variable because VariableName property not set: ' + String(Sv.Name) );
+      Continue;
+    end;
     {$endif}
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
     {$ifndef minimal}
@@ -2177,6 +2189,8 @@ begin
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}integer(@ValuePropRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}integer(@ValueArrayRef), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
 end;
 
 {$ifndef minimal}
@@ -2184,6 +2198,8 @@ function TShaderVariable.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   Result := Result + '  ' + VariableName;
+  if Length(VariableName)=0 then
+    Result := Result + '*VariableName not set*';
 end;
 {$endif}
 

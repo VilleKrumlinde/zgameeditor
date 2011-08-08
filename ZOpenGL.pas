@@ -1383,7 +1383,7 @@ var
 //  glUniform2i: procedure(location: GLint; v0: GLint; v1: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3i: procedure(location: GLint; v0: GLint; v1: GLint; v2: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform4i: procedure(location: GLint; v0: GLint; v1: GLint; v2: GLint; v3: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glUniform1fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glUniform1fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform2fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform4fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1490,7 +1490,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..30{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..31{$ifndef minimal}+4{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1549,7 +1549,7 @@ const ExtFuncArray : packed array[0..30{$ifndef minimal}+4{$endif}] of
 //(Name : 'glUniform4iv'; Ptr : @@glUniform4iv),
 //(Name : 'glUniform1iv'; Ptr : @@glUniform1iv),
 //(Name : 'glUniformMatrix2fv'; Ptr : @@glUniformMatrix2fv),
-//(Name : 'glUniform1fv'; Ptr : @@glUniform1fv),
+(Name : 'glUniform1fv'; Ptr : @@glUniform1fv),
 //(Name : 'glUniformMatrix3fv'; Ptr : @@glUniformMatrix3fv),
 //(Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
 //(Name : 'glUniform2i'; Ptr : @@glUniform2i),
