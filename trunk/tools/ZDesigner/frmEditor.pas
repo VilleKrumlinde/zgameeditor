@@ -444,6 +444,10 @@ begin
   Tree.MultiSelect := True;
   Tree.MultiSelectStyle := [msControlSelect, msShiftSelect, msSiblingOnly];
 
+  //InitAudio needs hwnd of main window to work
+  Platform_DesignerSetDC(0,Self.Handle);
+  Platform_InitAudio;
+
   Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
   Glp.OnGLDraw := Self.OnGlDraw;
@@ -460,8 +464,6 @@ begin
   //Mousewheel måste sättas på formuläret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
-
-  Platform_InitAudio;
 
   ExePath := ExtractFilePath(Application.ExeName);
   SaveDialog.InitialDir := ExePath + 'Projects';
@@ -791,37 +793,41 @@ end;
 procedure TEditorForm.WriteAppSettingsToIni;
 var
   Ini : TIniFile;
-  Section,S : string;
+  Section,S,FName : string;
 begin
-  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
+  FName := ChangeFileExt(Application.ExeName,'.ini');
+  Ini := TIniFile.Create( FName );
   try
-    Section := 'Designer';
-    Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
+    try
+      Section := 'Designer';
+      Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
 
-    Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
+      Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
-    S := ExtractFilePath(CurrentFileName);
-    if S='' then
-      S:= ExtractFilePath(FileOpenAction.Dialog.FileName);
-    if S<>'' then
-      Ini.WriteString(Section,'LastOpenedPath',S);
+      S := ExtractFilePath(CurrentFileName);
+      if S='' then
+        S:= ExtractFilePath(FileOpenAction.Dialog.FileName);
+      if S<>'' then
+        Ini.WriteString(Section,'LastOpenedPath',S);
 
-    Ini.WriteInteger(Section,'Width',Self.Width);
-    Ini.WriteInteger(Section,'Height',Self.Height);
+      Ini.WriteInteger(Section,'Width',Self.Width);
+      Ini.WriteInteger(Section,'Height',Self.Height);
 
-    Ini.WriteBool(Section,'IsMaximized', Self.WindowState=wsMaximized);
+      Ini.WriteBool(Section,'IsMaximized', Self.WindowState=wsMaximized);
 
-    Ini.WriteString(Section,'MruList', MruList.CommaText);
+      Ini.WriteString(Section,'MruList', MruList.CommaText);
 
-    Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
-    Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
-    Ini.WriteInteger(Section,'LeftPanel.Width',LeftPanel.Width);
+      Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
+      Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
+      Ini.WriteInteger(Section,'LeftPanel.Width',LeftPanel.Width);
 
-    Ini.WriteString(Section,'PackerProg', Self.PackerProg);
-    Ini.WriteString(Section,'PackerParams', Self.PackerParams);
+      Ini.WriteString(Section,'PackerProg', Self.PackerProg);
+      Ini.WriteString(Section,'PackerParams', Self.PackerParams);
 
-    Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
-
+      Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
+    except
+      ShowMessage('Could not save settings to file: ' + FName);
+    end;
   finally
     Ini.Free;
   end;

@@ -62,7 +62,7 @@ uses
   QSynEditHighlighter,
   QSynEditKbdHandler,
   QSynEdit,
-  QSynUnicode,  
+  QSynUnicode,
 {$ELSE}
   Windows,
   Messages,
@@ -102,7 +102,7 @@ type
     Shift: TShiftState; Index: Integer; EndToken: WideChar) of object;
 
   TValidateEvent = procedure(Sender: TObject; Shift: TShiftState;
-    EndToken: WideChar) of object; 
+    EndToken: WideChar) of object;
 
   TCompletionParameter = procedure(Sender: TObject; CurrentIndex: Integer;
     var Level, IndexToDisplay: Integer; var Key: WideChar;
@@ -227,7 +227,7 @@ type
 {$IFDEF SYN_CLX}
     function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer;
       const MousePos: TPoint): Boolean; override;
-    procedure KeyString(var S: UnicodeString; var Handled: Boolean); override;      
+    procedure KeyString(var S: UnicodeString; var Handled: Boolean); override;
     function WidgetFlags: Integer; override;
 {$ELSE}
     procedure WMChar(var Msg: TWMChar); message WM_CHAR;
@@ -363,7 +363,7 @@ type
   protected
     procedure DefineProperties(Filer: TFiler); override;
     procedure SetOptions(const Value: TSynCompletionOptions); virtual;
-    procedure EditorCancelMode(Sender: TObject); virtual;                       
+    procedure EditorCancelMode(Sender: TObject); virtual;
     procedure HookedEditorCommand(Sender: TObject; AfterProcessing: Boolean;
       var Handled: Boolean; var Command: TSynEditorCommand; var AChar: WideChar;
       Data: Pointer; HandlerData: Pointer); virtual;
@@ -452,7 +452,7 @@ type
     function GetTimerInterval: Integer;
     procedure SetTimerInterval(const Value: Integer);
     function GetEditor(i: Integer): TCustomSynEdit;
-    procedure InternalCancelCompletion; 
+    procedure InternalCancelCompletion;
   protected
     procedure DoExecute(AEditor: TCustomSynEdit); virtual;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -471,7 +471,7 @@ type
     procedure ExecuteEx(s: UnicodeString; x, y: Integer; Kind : SynCompletionType
       {$IFDEF SYN_COMPILER_4_UP} = ctCode {$ENDIF}); override;
     procedure ActivateCompletion;
-    procedure CancelCompletion; 
+    procedure CancelCompletion;
     procedure ActivateTimer(ACurrentEditor: TCustomSynEdit);
     procedure DeactivateTimer;
     property Editors[i: Integer]: TCustomSynEdit read GetEditor;
@@ -493,8 +493,8 @@ type
     fAutoCompleteList: TUnicodeStrings;
     fNoNextKey : Boolean;
     FEndOfTokenChr: UnicodeString;
-    FOnBeforeExecute: TNotifyEvent;  
-    FOnAfterExecute: TNotifyEvent;   
+    FOnBeforeExecute: TNotifyEvent;
+    FOnAfterExecute: TNotifyEvent;
     FInternalCompletion: TSynCompletionProposal;
     FDoLookup: Boolean;
     FOptions: TSynCompletionOptions;
@@ -544,7 +544,7 @@ type
     FInternalWidth: Integer;
     FFontStyle: TFontStyles;
   protected
-    procedure DefineProperties(Filer: TFiler); override;    
+    procedure DefineProperties(Filer: TFiler); override;
   public
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
@@ -1304,7 +1304,7 @@ var
   iLinesToScroll: integer;
 begin
   if ssCtrl in Application.KeyState then
-    iLinesToScroll := FLinesInWindow 
+    iLinesToScroll := FLinesInWindow
   else
     iLinesToScroll := 3;
   Inc(fMouseWheelAccumulator, WheelDelta);
@@ -1411,16 +1411,16 @@ end;
 procedure TSynBaseCompletionProposalForm.KeyDown(var Key: Word; Shift: TShiftState);
 var
   C: WideChar;
-begin          
+begin
   if DisplayType = ctCode then
   begin
     case Key of
       SYNEDIT_RETURN:
         if (FCompleteWithEnter) and Assigned(OnValidate) then
-          OnValidate(Self, Shift, #0); 
+          OnValidate(Self, Shift, #0);
       SYNEDIT_TAB:
         if  (FCompleteWithTab) and Assigned(OnValidate) then
-          OnValidate(Self, Shift, #0); 
+          OnValidate(Self, Shift, #0);
       SYNEDIT_ESCAPE:
       begin
         if Assigned(OnCancel) then
@@ -1556,7 +1556,7 @@ begin
           OnCancel(Self);
     end;
   end;
-  Invalidate; 
+  Invalidate;
 end;
 
 procedure TSynBaseCompletionProposalForm.MouseDown(Button: TMouseButton;
@@ -1768,7 +1768,7 @@ end;
 
 procedure TSynBaseCompletionProposalForm.ScrollbarOnScroll(Sender: TObject;
   ScrollCode: TScrollCode; var ScrollPos: Integer);
-begin  
+begin
   with CurrentEditor as TCustomSynEdit do
   begin
     SetFocus;
@@ -1884,11 +1884,11 @@ begin
     RecalcList;
     AdjustScrollBarPosition;
     Position := 0;
-    
+
     if Visible and Assigned(FOnChangePosition) and (DisplayType = ctCode) then
       FOnChangePosition(Owner as TSynBaseCompletionProposal,
         LogicalToPhysicalIndex(FPosition));
-        
+
     Repaint;
   end
   else
@@ -2101,7 +2101,8 @@ begin
     if DisplayType = ctCode then
     begin
       (Owner as TSynBaseCompletionProposal).FWidth := Width;
-      (Owner as TSynBaseCompletionProposal).FNbLinesInWindow := FLinesInWindow;
+//Ville: Stop window from growing each time activated
+//      (Owner as TSynBaseCompletionProposal).FNbLinesInWindow := FLinesInWindow;
     end;
   end;
   //GBN 28/08/2002
@@ -2457,22 +2458,19 @@ begin
 
   case Kind of
   ctCode:
+    if Form.AssignedList.Count > 0 then
     begin
-      CurrentString := s;
-
+      //This may seem redundant, but it fixes scrolling bugs for the first time
+      //That is the only time these occur
+      Position := 0;
+      Form.AdjustScrollBarPosition;
+      Form.FScrollbar.Position := Form.Position;
       Form.FScrollbar.Visible := True;
 
       RecalcFormPlacement;
+      Form.Show;
 
-      //This may seem redundant, but it fixes scrolling bugs for the first time
-      //up when MatchText is not true.  That is the only time these occur
-      if not(scoLimitToMatchedText in Options) then
-      begin
-        Form.AdjustScrollBarPosition;
-        Form.FScrollbar.Position := Form.Position;
-      end;
-      if Form.AssignedList.Count > 0 then
-        Form.Show
+      CurrentString := s;  // bug id 1496148
     end;
   ctParams, ctHint:
     begin
@@ -2656,7 +2654,7 @@ procedure TSynBaseCompletionProposal.AddItemAt(Where: Integer; ADisplayText, AIn
 begin
   try
     GetInsertList.Insert(Where, AInsertText);
-    GetItemList.Insert(Where, ADisplayText);                 
+    GetItemList.Insert(Where, ADisplayText);
   except
     raise Exception.Create('Cannot insert item at position ' + IntToStr(Where) + '.');
   end;
@@ -3119,7 +3117,7 @@ begin
     s := AEditor.LineText;
     i := AEditor.CaretX - 1;
     if i <= Length(s) then
-    begin                                 
+    begin
       FAdjustCompletionStart := False;
       while (i > 0) and (s[i] > #32) and not Self.IsWordBreakChar(s[i]) do
         dec(i);
@@ -3131,7 +3129,7 @@ begin
       FAdjustCompletionStart := True;
 
     FCompletionStart := i + 1;
-  end;       
+  end;
 end;
 
 function TSynCompletionProposal.GetPreviousToken(AEditor: TCustomSynEdit): UnicodeString;
@@ -3214,7 +3212,7 @@ end;
 procedure TSynCompletionProposal.TimerExecute(Sender: TObject);
 begin
   if not Assigned(FTimer) then exit;
-  FTimer.Enabled := False; //GBN 13/11/2001  
+  FTimer.Enabled := False; //GBN 13/11/2001
   if Application.Active then
   begin
     DoExecute(Form.CurrentEditor as TCustomSynEdit);
@@ -3349,7 +3347,7 @@ begin
         ExecuteEx(GetCurrentInput(AEditor), p.x, p.y, DefaultType);
         FNoNextKey := (DefaultType = ctCode) and FCanExecute and Form.Visible;
       end;
-    end;  
+    end;
 end;
 
 procedure TSynCompletionProposal.InternalCancelCompletion;
@@ -3366,7 +3364,7 @@ end;
 procedure TSynCompletionProposal.CancelCompletion;
 begin
   InternalCancelCompletion;
-  if Assigned(OnCancelled) then OnCancelled(Self); 
+  if Assigned(OnCancelled) then OnCancelled(Self);
 end;
 
 procedure TSynCompletionProposal.EditorCancelMode(Sender: TObject);
@@ -3555,7 +3553,7 @@ begin
       fNoNextKey := True;
       for j := 1 to Length(Token) do
         Editor.CommandProcessor(ecDeleteLastChar, ' ', nil);
-      BeginningSpaceCount := Editor.DisplayX - 1;  
+      BeginningSpaceCount := Editor.DisplayX - 1;
       if not(eoTabsToSpaces in Editor.Options) and
         (BeginningSpaceCount >= Editor.TabWidth)
       then
@@ -3610,7 +3608,7 @@ begin
 
       Editor.UndoList.AddChange(crAutoCompleteEnd, StartOfBlock, StartOfBlock,
         '', smNormal);
-      fNoNextKey := False;  
+      fNoNextKey := False;
     end
     else if LookupIfNotExact and Assigned(FInternalCompletion) then
     begin
@@ -3635,7 +3633,7 @@ begin
     end;
   finally
     if Assigned(OnAfterExecute) then OnAfterExecute(Self);
-  end;    
+  end;
 end;
 
 procedure TSynAutoComplete.DoInternalAutoCompletion(Sender: TObject;
@@ -3790,3 +3788,4 @@ begin
 end;
 
 end.
+
