@@ -1092,9 +1092,16 @@ begin
   else
     begin
       //Ortho
+      {$ifndef minimal}
+      if Abs(Self.OrthoZoom)>0.000001 then
+      begin //Avoid divide by zero
+      {$endif}
       H := (1.0/Self.OrthoZoom);
       W := App.ActualViewportRatio * H;
       glOrtho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
+      {$ifndef minimal}
+      end;
+      {$endif}
     end;
   end;
   glMatrixMode(GL_MODELVIEW);

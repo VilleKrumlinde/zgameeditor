@@ -2921,6 +2921,7 @@ var
   C,Tmp : TObject;
   L : TZComponentList;
   I : integer;
+  Node : TTreeNode;
 begin
   C:=Tree.ZSelected.Component;
   L:=(Tree.Selected.Parent as TZComponentTreeNode).ComponentList;
@@ -2929,9 +2930,15 @@ begin
   L[I-1] := C;
   L[I] := Tmp;
   L.Change;
-  Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index-1],naInsert);
-  SetFileChanged(True);
+
+  Node := Tree.Selected;
   Tree.ClearSelection(True);
+  //Must set selected to false before moving, otherwise error in comctrls when using keyboard shortcut
+  Node.Selected := False;
+  Node.MoveTo(Node.Parent.Item[Node.Index-1],naInsert);
+  Node.Selected := True;
+
+  SetFileChanged(True);
   if CompEditor<>nil then
     CompEditor.OnTreeChanged;
 end;
@@ -2941,6 +2948,7 @@ var
   C,Tmp : TObject;
   L : TZComponentList;
   I : integer;
+  Node : TTreeNode;
 begin
   C:=Tree.ZSelected.Component;
   L:=(Tree.Selected.Parent as TZComponentTreeNode).ComponentList;
@@ -2949,12 +2957,17 @@ begin
   L[I+1] := C;
   L[I] := Tmp;
   L.Change;
-  if I<L.Count-2 then
-    Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index+2],naInsert)
-  else
-    Tree.Selected.MoveTo(Tree.Selected.Parent,naAddChild);
-  SetFileChanged(True);
+
+  Node := Tree.Selected;
   Tree.ClearSelection(True);
+  Node.Selected := False;
+  if I<L.Count-2 then
+    Node.MoveTo(Node.Parent.Item[Node.Index+2],naInsert)
+  else
+    Node.MoveTo(Node.Parent,naAddChild);
+  Node.Selected := True;
+
+  SetFileChanged(True);
   if CompEditor<>nil then
     CompEditor.OnTreeChanged;
 end;
