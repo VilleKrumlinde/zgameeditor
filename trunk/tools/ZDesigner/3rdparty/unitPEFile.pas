@@ -30,7 +30,7 @@ unit unitPEFile;
 
 interface
 
-uses Windows, Classes, SysUtils, ConTnrs, unitResourceDetails, ImageHlp;
+uses Windows, Classes, SysUtils, ConTnrs, unitResourceDetails, Winapi.ImageHlp;
 
 type
 
@@ -75,7 +75,7 @@ TPEModule = class (TResourceModule)
 private
   fDOSHeader : TImageDosHeader;
   fCOFFHeader : TImageFileHeader;
-  fOptionalHeader : PImageOptionalHeader;
+  fOptionalHeader : PImageOptionalHeader32;
   fSectionList : TObjectList;                   // List of TImageSection objects
   fDOSStub : TMemoryStream;
   fCommentBlock : PAnsiChar;
@@ -102,7 +102,7 @@ private
 protected
   procedure Decode (memory : pointer; exeSize : Integer); virtual;
   procedure Encode; virtual;
-  property OptionalHeaderPtr : PImageOptionalHeader read fOptionalHeader;
+  property OptionalHeaderPtr : PImageOptionalHeader32 read fOptionalHeader;
   function FindDictionaryEntrySection (entryNo : Integer; var offset : Integer): Integer;
 
 public

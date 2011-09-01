@@ -64,6 +64,8 @@ uses
 {$ENDIF}
   Classes;
 
+const MaxListSize = 1000000; //Ville
+
 type
   PIntArray = ^TIntArray;
   TIntArray = array[0..MaxListSize - 1] of Integer;

@@ -62,6 +62,8 @@ var
   // Accumulate/hide whitespace at EOL (at end of wrapped rows, actually)
   OldWhitespaceBehaviour: Boolean = False;
 
+const MaxListSize = 1000000; //Ville
+
 type
   TLineIndex = 0..MaxListSize;
   TRowIndex = 0..MaxListSize;

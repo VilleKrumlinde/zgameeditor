@@ -129,10 +129,18 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -160,6 +168,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -218,6 +230,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -291,6 +307,10 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -473,7 +493,6 @@ object EditorForm: TEditorForm
               Height = 25
               Action = AppPreviewStartAction
               Caption = 'Start'
-              DoubleBuffered = True
               Glyph.Data = {
                 36040000424D3604000000000000360000002800000010000000100000000100
                 2000000000000004000000000000000000000000000000000000FF00FF00FF00
@@ -509,7 +528,6 @@ object EditorForm: TEditorForm
                 3A0077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-              ParentDoubleBuffered = False
               TabOrder = 0
             end
             object AppStopButton: TBitBtn
@@ -519,7 +537,6 @@ object EditorForm: TEditorForm
               Height = 25
               Action = AppPreviewStopAction
               Caption = 'Stop'
-              DoubleBuffered = True
               Glyph.Data = {
                 36040000424D3604000000000000360000002800000010000000100000000100
                 2000000000000004000000000000000000000000000000000000FF00FF00FF00
@@ -555,7 +572,6 @@ object EditorForm: TEditorForm
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
                 FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-              ParentDoubleBuffered = False
               TabOrder = 1
             end
             object DisableShadersCheckBox: TCheckBox
@@ -666,6 +682,10 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -698,6 +718,10 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -1234,7 +1258,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 40
     Bitmap = {
-      494C01010E00080124011000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00080128011000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1907,7 +1931,7 @@ object EditorForm: TEditorForm
     Left = 200
     Top = 72
     Bitmap = {
-      494C01010B000E00100110001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E00140110001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6
