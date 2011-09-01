@@ -1,0 +1,2311 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="ZBlastApp" Caption="ZBlast - www.emix8.org  Version 0.02">
+  <OnLoaded>
+    <DefineVariable Name="TargetsCount" Comment="todo: should be int. Nr of targets to hit before end of level"/>
+    <DefineVariable Name="ShipShotDir"/>
+    <DefineVariable Name="LevelNr" Comment="Current level nr"/>
+    <DefineVariable Name="Temp1"/>
+    <DefineVariable Name="Temp2"/>
+    <DefineVariable Name="Temp3"/>
+    <DefineConstant Name="EdgeL" Comment="Left screen edge" Value="-5.5"/>
+    <DefineConstant Name="EdgeR" Value="5.5"/>
+    <DefineConstant Name="EdgeT" Comment="Top screen edge" Value="4"/>
+    <DefineConstant Name="EdgeB" Value="-4"/>
+    <DefineCollision Comment="Asteroids vs shipshots" Cat1="1" Cat2="2"/>
+    <DefineVariable Name="LevelTime" Comment="Time since current level started"/>
+    <SetAppState State="TitleState"/>
+    <DefineCollision Comment="Enemies vs ship" Cat1="1" Cat2="3"/>
+    <DefineVariable Name="PlayerScore"/>
+    <DefineVariable Name="LevelGruntCount" Comment="Nr of grunts for current level"/>
+    <DefineVariable Name="LevelAsteroidLargeCount"/>
+    <DefineVariable Name="LevelAsteroidMediumCount"/>
+    <DefineVariable Name="LevelAsteroidSmallCount"/>
+    <DefineVariable Name="LevelShooterCount"/>
+    <DefineVariable Name="LevelSpikeCount"/>
+    <DefineVariable Name="LevelSkullCount"/>
+    <DefineVariable Name="Temp4"/>
+    <DefineConstant Name="AsteroidBaseSpeed" Value="3"/>
+    <DefineConstant Name="SafeZone" Comment="Radius för del runt ship där enemies ej spawnas" Value="2"/>
+    <DefineVariable Name="PlayerShipCount" Comment="Nr of lifes left"/>
+  </OnLoaded>
+  <States>
+    <AppState Name="TitleState" Comment="Display title screen">
+      <OnStart>
+        <RemoveAllModels/>
+        <SpawnModel Model="TitleModel"/>
+        <SpawnModel Model="ScreenFadeInModel"/>
+      </OnStart>
+      <OnUpdate>
+        <KeyPress Comment="Press space to start game" Keys=" ">
+          <OnPressed>
+            <StartAnimator Animator="TitleExitAnimator"/>
+            <SpawnModel Model="ScreenFadeOutModel"/>
+          </OnPressed>
+        </KeyPress>
+        <AnimatorGroup Name="TitleExitAnimator" Duration="0.5">
+          <OnStop>
+            <SetAppState State="NewGameState"/>
+          </OnStop>
+        </AnimatorGroup>
+      </OnUpdate>
+    </AppState>
+    <AppState Name="NewGameState">
+      <OnStart>
+        <RemoveAllModels/>
+        <ZExpression>
+          <Expression>
+<![CDATA[LevelNr=StartLevel;
+PlayerScore=0;
+PlayerShipCount=2;]]>
+          </Expression>
+        </ZExpression>
+        <SetAppState State="NewLevelState"/>
+      </OnStart>
+    </AppState>
+    <AppState Name="NewLevelState">
+      <OnStart>
+        <RemoveAllModels/>
+        <ZExpression>
+          <Expression>
+<![CDATA[TargetsCount=0;
+
+//LevelGruntCount=2+LevelNr;
+Temp1=0.5+noise2(LevelNr*3.1314,0)*0.5;
+Temp2=clamp(LevelNr/100,0,1);
+if(Temp1<0.3)
+  LevelGruntCount=0;
+else
+  LevelGruntCount=Temp1*20*(1+Temp2*2);
+//Gör till heltal
+//todo skip when counts are integers
+LevelGruntCount-=frac(LevelGruntCount);
+
+Temp1=0.5+noise2(LevelNr*7.777,0)*0.5;
+if(Temp1>0.5)
+  LevelAsteroidLargeCount=0;
+else
+  LevelAsteroidLargeCount=clamp((0.8+Temp1)+(Temp2*2),0,4);
+LevelAsteroidLargeCount-=frac(LevelAsteroidLargeCount);
+LevelAsteroidMediumCount=0;
+LevelAsteroidSmallCount=0;
+
+Temp1=0.5+noise2(LevelNr*45,0)*0.5;
+if((Temp1>0.5) || (LevelNr<2) )
+  LevelShooterCount=0;
+else
+  LevelShooterCount=clamp((Temp1*0.5+Temp2)*6,0,6);
+LevelShooterCount-=frac(LevelShooterCount);
+
+LevelSpikeCount=10 +
+  (Temp1*5) +
+  (Temp2*5);
+
+if(LevelNr>2)
+  LevelSkullCount=2;
+else
+  LevelSkullCount=0;
+
+//Debug-code
+/*LevelSpikeCount=0;
+LevelGruntCount=0;
+LevelAsteroidLargeCount=1;
+LevelShooterCount=0;
+LevelSkullCount=2;*/]]>
+          </Expression>
+        </ZExpression>
+        <PlaySound Sound="LevelEntrySound" NoteNr="48"/>
+        <RefreshContent Comment="Beräkna om bakgrundsbitmap baserat på levelnr." Component="BackgroundBitmap"/>
+        <SetAppState State="ReEnterLevelState"/>
+      </OnStart>
+    </AppState>
+    <AppState Name="ReEnterLevelState" Comment="State för att starta (och återstarta) level">
+      <OnStart>
+        <RemoveAllModels/>
+        <SpawnModel Model="BackgroundModel" SpawnStyle="1"/>
+        <ZExpression>
+          <Expression>
+<![CDATA[//Leveltime nollställs så att enemies initialt rör sig långsamt
+LevelTime=0;
+TargetsCount=
+  LevelGruntCount +
+  LevelShooterCount +
+  LevelAsteroidLargeCount +
+  LevelAsteroidMediumCount + 
+  LevelAsteroidSmallCount + 
+  LevelSkullCount;]]>
+          </Expression>
+        </ZExpression>
+        <Repeat>
+          <OnIteration>
+            <SpawnModel Model="GruntModel"/>
+          </OnIteration>
+          <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+return this.Iteration<LevelGruntCount;]]>
+          </WhileExp>
+        </Repeat>
+        <Repeat>
+          <OnIteration>
+            <SpawnModel Model="ShooterModel"/>
+          </OnIteration>
+          <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+return Iteration<LevelShooterCount;]]>
+          </WhileExp>
+        </Repeat>
+        <Repeat WhileExp="return this.Iteration&lt;LevelAsteroidLargeCount;">
+          <OnIteration>
+            <SpawnModel Model="AsteroidLargeModel"/>
+          </OnIteration>
+        </Repeat>
+        <Repeat WhileExp="return this.Iteration&lt;LevelAsteroidMediumCount;">
+          <OnIteration>
+            <SpawnModel Model="AsteroidMediumModel"/>
+          </OnIteration>
+        </Repeat>
+        <Repeat WhileExp="return this.Iteration&lt;LevelAsteroidSmallCount;">
+          <OnIteration>
+            <SpawnModel Model="AsteroidSmallModel"/>
+          </OnIteration>
+        </Repeat>
+        <Repeat WhileExp="return this.Iteration&lt;LevelSpikeCount;">
+          <OnIteration>
+            <SpawnModel Model="SpikesModel"/>
+          </OnIteration>
+        </Repeat>
+        <Repeat WhileExp="return this.Iteration&lt;LevelSkullCount;">
+          <OnIteration>
+            <SpawnModel Model="SkullModel"/>
+          </OnIteration>
+        </Repeat>
+        <SpawnModel Model="ScoreDisplayModel"/>
+        <SpawnModel Model="LevelEntryModel"/>
+      </OnStart>
+    </AppState>
+    <AppState Name="PlayingState">
+      <OnStart>
+        <SpawnModel Model="ShipModel" SpawnStyle="1"/>
+      </OnStart>
+      <OnUpdate>
+        <Condition Expression="return TargetsCount&gt;0;">
+          <OnFalse>
+            <ZExpression Expression="LevelNr+=1;"/>
+            <SetAppState State="NewLevelState"/>
+          </OnFalse>
+        </Condition>
+        <ZExpression Expression="LevelTime+=ZBlastApp.DeltaTime;"/>
+      </OnUpdate>
+    </AppState>
+    <AppState Name="LoseLifeState" ModelUpdatesEnabled="0" CollisionsEnabled="0">
+      <OnStart>
+        <PlaySound Sound="LoseShipSound" NoteNr="44" Channel="1"/>
+        <StartAnimator Animator="LoseLifeAnimator"/>
+        <ZExpression Expression="PlayerShipCount-=1;"/>
+      </OnStart>
+      <OnUpdate>
+        <AnimatorGroup Name="LoseLifeAnimator">
+          <Animators>
+            <AnimatorSimple Duration="0.25" Target="ShipModel Scale" FromValue="1" ToValue="10" AutoReverse="255"/>
+            <AnimatorSimple Duration="0.3" Target="ShipModel Scale 1" FromValue="1" ToValue="2" AutoReverse="255"/>
+          </Animators>
+          <OnStop>
+            <Condition Expression="return PlayerShipCount&gt;0;">
+              <OnTrue>
+                <SetAppState State="ReEnterLevelState"/>
+              </OnTrue>
+              <OnFalse>
+                <SetAppState State="GameOverState"/>
+              </OnFalse>
+            </Condition>
+          </OnStop>
+        </AnimatorGroup>
+      </OnUpdate>
+    </AppState>
+  </States>
+  <Content>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.36" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.36" Ch1UseDelay="1" Ch1DelayLength="0.14" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
+    <Group Name="Materials">
+      <Children>
+        <Material Name="ShadowMaterial" Shading="1" Color="0.3 0.3 0.3 0.3"/>
+        <Material Name="AsteroidLargeMaterial" Shading="1" Color="0.11 0 0.66 0"/>
+        <Material Name="AsteroidLargeWireMaterial" Shading="2" Color="1 0 0 1"/>
+        <Material Name="AsteroidMediumMaterial" Shading="1" Color="0.01 0.08 0.58 0"/>
+        <Material Name="AsteroidMediumWireMaterial" Shading="2" Color="1 0 0 1"/>
+        <Material Name="AsteroidSmallMaterial" Shading="1" Color="0.26 0.67 0.16 1"/>
+        <Material Name="ShipMaterial" Color="0.6 0.58 0.88 1"/>
+        <Material Name="ShipShotMaterial" Color="0.74 0.79 0.71 1"/>
+        <Material Name="ExplosionMaterial" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="ExplosionBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
+        <Bitmap Name="ExplosionBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[this.Pixel.R=
+  (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
+  (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
+this.Pixel.G=this.Pixel.R;
+this.Pixel.B=this.Pixel.R;
+this.Pixel.A=this.Pixel.R;
+
+/*
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) )*2;
+//Angle 0..1
+Temp2 = (1 + (atan2(Temp3,Temp2) / 33.14)) * 0.5;
+//Temp1 = Temp1 + Temp2*0.5;
+
+Temp1=Temp1*1.6 + noise2(Temp2*33,Temp2*27) * 0.8;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1;
+*/]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Material Name="HurtMaterial" Comment="Bright white when model has been shot" Shading="1" Color="1 1 1 0" Light="0"/>
+      </Children>
+    </Group> <!-- Materials -->
+
+    <Group Name="Models">
+      <Children>
+        <Mesh Name="AsteroidMesh">
+          <Producers>
+            <MeshSphere ZSamples="12" RadialSamples="12"/>
+            <MeshNoise NoiseSpeed="2 2 2" NoiseScale="0.5 0.5 0.5"/>
+          </Producers>
+        </Mesh>
+        <Model Name="AsteroidLargeModel" Category="1" CollisionBounds="1 1 0 0">
+          <Definitions>
+            <DefineVariable Name="AsteroidLargeRotX" Comment="Rotation x speed"/>
+            <DefineVariable Name="AsteroidLargeRotY" Comment="Rotation y speed"/>
+            <DefineConstant Name="AsteroidLargeSize" Comment="Size in test for outside screen" Value="1.5"/>
+            <DefineVariable Name="AsteroidLargeLife" Comment="Nr of hits before explode"/>
+            <DefineVariable Name="AsteroidLargeHurt" Comment="Time to display &quot;hurt&quot; material"/>
+          </Definitions>
+          <States>
+            <ModelState Name="AsteroidLargeAppearingState">
+              <OnUpdate>
+                <AnimatorGroup Duration="0.8" AutoStart="255">
+                  <OnStop>
+                    <SetModelState State="AsteroidLargeActiveState"/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </ModelState>
+            <ModelState Name="AsteroidLargeActiveState">
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[AsteroidLargeModel.Rotation.X+=AsteroidLargeRotX * ZBlastApp.DeltaTime;
+AsteroidLargeModel.Rotation.Y+=AsteroidLargeRotY * ZBlastApp.DeltaTime;
+
+if(AsteroidLargeModel.Position.X>EdgeR) {
+  AsteroidLargeModel.Position.X=EdgeR;
+  AsteroidLargeModel.Velocity.X*=-1;
+} else if(AsteroidLargeModel.Position.X<EdgeL) {
+  AsteroidLargeModel.Position.X=EdgeL;
+  AsteroidLargeModel.Velocity.X*=-1;
+}
+
+if(AsteroidLargeModel.Position.Y<EdgeB) {
+  AsteroidLargeModel.Position.Y=EdgeB;
+  AsteroidLargeModel.Velocity.Y*=-1;
+} else if(AsteroidLargeModel.Position.Y>EdgeT) {
+  AsteroidLargeModel.Position.Y=EdgeT;
+  AsteroidLargeModel.Velocity.Y*=-1;
+}
+  
+AsteroidLargeHurt-=ZBlastApp.DeltaTime;]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+            </ModelState>
+          </States>
+          <OnRender>
+            <Condition Expression="return AsteroidLargeHurt&gt;0;">
+              <OnTrue>
+                <UseMaterial Material="HurtMaterial"/>
+              </OnTrue>
+              <OnFalse>
+                <UseMaterial Material="AsteroidLargeMaterial"/>
+              </OnFalse>
+            </Condition>
+            <RenderMesh Mesh="AsteroidMesh"/>
+            <RenderTransform Scale="1.15 1.15 1.15"/>
+          </OnRender>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[AsteroidLargeLife=6;
+
+//Random start, avoiding center
+
+//Random angle
+Temp1=rnd()*3.14*2;
+//radius
+Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+AsteroidLargeModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+AsteroidLargeModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+
+AsteroidLargeModel.Velocity.X=sin(Temp1)*random(AsteroidBaseSpeed,0.3);
+AsteroidLargeModel.Velocity.Y=cos(Temp1)*random(AsteroidBaseSpeed,0.3);
+
+AsteroidLargeRotX = random(0,0.003)*60;
+AsteroidLargeRotY = random(0,0.003)*60;]]>
+              </Expression>
+            </ZExpression>
+            <SetModelState State="AsteroidLargeAppearingState"/>
+          </OnSpawn>
+          <OnCollision>
+            <ZExpression>
+              <Expression>
+<![CDATA[AsteroidLargeLife-=1;
+if( frac(AsteroidLargeLife/4)==0 )
+  AsteroidLargeHurt=0.6;]]>
+              </Expression>
+            </ZExpression>
+            <Condition Expression="return AsteroidLargeLife==0;">
+              <OnTrue>
+                <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
+                <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
+                <RemoveModel/>
+                <ZExpression>
+                  <Expression>
+<![CDATA[TargetsCount-=1;  //ta bort en
+LevelAsteroidLargeCount-=1;
+
+TargetsCount+=2;  //två nya
+LevelAsteroidMediumCount+=2;]]>
+                  </Expression>
+                </ZExpression>
+                <SpawnModel Model="BigExplosionModel" UseSpawnerPosition="255"/>
+              </OnTrue>
+              <OnFalse>
+                <PlaySound Sound="PingSound" NoteNr="99"/>
+              </OnFalse>
+            </Condition>
+          </OnCollision>
+        </Model>
+        <Mesh Name="AsteroidMediumMesh">
+          <Producers>
+            <MeshSphere Scale="0.5 0.5 0.5" ZSamples="3" RadialSamples="4"/>
+          </Producers>
+        </Mesh>
+        <Model Name="AsteroidMediumModel" Category="1" CollisionBounds="0.5 0.5 0 0">
+          <States>
+            <ModelState Name="AsteroidMediumAppearingState">
+              <OnUpdate>
+                <AnimatorGroup AutoStart="255">
+                  <Animators>
+                    <AnimatorSimple Duration="0.8" Target="AsteroidMediumModel Scale" FromValue="10" ToValue="1" Smooth="255"/>
+                    <AnimatorSimple Duration="0.8" Target="AsteroidMediumModel Scale 1" ToValue="1" Smooth="255"/>
+                  </Animators>
+                  <OnStop>
+                    <SetModelState State="AsteroidMediumActiveState"/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </ModelState>
+            <ModelState Name="AsteroidMediumActiveState">
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[AsteroidMediumModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
+AsteroidMediumModel.Rotation.Y+=0.003*60 * ZBlastApp.DeltaTime;
+
+if(AsteroidMediumModel.Position.X>EdgeR) {
+  AsteroidMediumModel.Position.X=EdgeR;
+  AsteroidMediumModel.Velocity.X*=-1;
+} else if(AsteroidMediumModel.Position.X<EdgeL) {
+  AsteroidMediumModel.Position.X=EdgeL;
+  AsteroidMediumModel.Velocity.X*=-1;
+}
+
+if(AsteroidMediumModel.Position.Y<EdgeB) {
+  AsteroidMediumModel.Position.Y=EdgeB;
+  AsteroidMediumModel.Velocity.Y*=-1;
+} else if(AsteroidMediumModel.Position.Y>EdgeT) {
+  AsteroidMediumModel.Position.Y=EdgeT;
+  AsteroidMediumModel.Velocity.Y*=-1;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+            </ModelState>
+          </States>
+          <OnRender>
+            <UseMaterial Material="AsteroidMediumMaterial"/>
+            <RenderMesh Mesh="AsteroidMediumMesh"/>
+          </OnRender>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Antingen spawn från largeasteroid eller från reenterlevel
+if( (AsteroidMediumModel.Position.X==0) && (AsteroidMediumModel.Position.Y==0) ) {
+  //Random angle
+  Temp1=rnd()*3.14*2;
+  //radius
+  Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+  AsteroidMediumModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+  AsteroidMediumModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+} else {
+  //Flytta lite från startpos så att de får spridning
+  AsteroidMediumModel.Position.X+=random(0,0.8);
+  AsteroidMediumModel.Position.Y+=random(0,0.8);
+}
+
+Temp1=1-(rnd()<0.5)*2;
+Temp2=1-(rnd()<0.5)*2;
+
+AsteroidMediumModel.Velocity.X=random(AsteroidBaseSpeed,0.3) * Temp1;
+AsteroidMediumModel.Velocity.Y=random(AsteroidBaseSpeed,0.3) * Temp2;
+
+AsteroidMediumModel.Rotation.Z = rnd();]]>
+              </Expression>
+            </ZExpression>
+            <SetModelState State="AsteroidMediumAppearingState"/>
+          </OnSpawn>
+          <OnCollision>
+            <Repeat Count="4">
+              <OnIteration>
+                <SpawnModel Model="AsteroidSmallModel" UseSpawnerPosition="255"/>
+              </OnIteration>
+            </Repeat>
+            <RemoveModel/>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Parameters till explosion.onspawn
+Temp3=1;
+
+TargetsCount-=1;  //ta bort en
+LevelAsteroidMediumCount-=1;
+
+TargetsCount+=4;  //fyra nya
+LevelAsteroidSmallCount+=4;]]>
+              </Expression>
+            </ZExpression>
+            <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+          </OnCollision>
+        </Model>
+        <Mesh Name="AsteroidSmallMesh">
+          <Producers>
+            <MeshSphere Scale="0.25 0.25 0.25" ZSamples="3" RadialSamples="4"/>
+          </Producers>
+        </Mesh>
+        <Model Name="AsteroidSmallModel" Category="1" CollisionBounds="0.35 0.35 0 0">
+          <Definitions>
+            <DefineConstant Name="AsteroidSmallSize" Value="0.25"/>
+          </Definitions>
+          <States>
+            <ModelState Name="AsteroidSmallAppearingState">
+              <OnUpdate>
+                <AnimatorGroup AutoStart="255">
+                  <Animators>
+                    <AnimatorSimple Duration="0.8" Target="AsteroidSmallModel Scale" FromValue="10" ToValue="1" Smooth="255"/>
+                    <AnimatorSimple Duration="0.8" Target="AsteroidSmallModel Scale 1" ToValue="1"/>
+                  </Animators>
+                  <OnStop>
+                    <SetModelState State="AsteroidSmallActiveState"/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </ModelState>
+            <ModelState Name="AsteroidSmallActiveState">
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[AsteroidSmallModel.Rotation.X+=0.001*60 * ZBlastApp.DeltaTime;
+AsteroidSmallModel.Rotation.Y+=0.003*60 * ZBlastApp.DeltaTime;
+
+if(AsteroidSmallModel.Position.X>EdgeR) {
+  AsteroidSmallModel.Position.X=EdgeR;
+  AsteroidSmallModel.Velocity.X*=-1;
+} else if(AsteroidSmallModel.Position.X<EdgeL) {
+  AsteroidSmallModel.Position.X=EdgeL;
+  AsteroidSmallModel.Velocity.X*=-1;
+}
+
+if(AsteroidSmallModel.Position.Y<EdgeB) {
+  AsteroidSmallModel.Position.Y=EdgeB;
+  AsteroidSmallModel.Velocity.Y*=-1;
+} else if(AsteroidSmallModel.Position.Y>EdgeT) {
+  AsteroidSmallModel.Position.Y=EdgeT;
+  AsteroidSmallModel.Velocity.Y*=-1;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+            </ModelState>
+          </States>
+          <OnRender>
+            <UseMaterial Material="AsteroidSmallMaterial"/>
+            <RenderMesh Mesh="AsteroidSmallMesh"/>
+          </OnRender>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Antingen spawn från largeasteroid eller från reenterlevel
+if( (AsteroidSmallModel.Position.X==0) && (AsteroidSmallModel.Position.Y==0) ) {
+  //Random angle
+  Temp1=rnd()*3.14*2;
+  //radius
+  Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+  AsteroidSmallModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+  AsteroidSmallModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+} else {
+  //Flytta lite från startpos så att de får spridning
+  AsteroidSmallModel.Position.X+=random(0,0.8);
+  AsteroidSmallModel.Position.Y+=random(0,0.8);
+}
+
+Temp1=1-(rnd()<0.5)*2;
+Temp2=1-(rnd()<0.5)*2;
+
+AsteroidSmallModel.Velocity.X=random(AsteroidBaseSpeed,0.5) * Temp1;
+AsteroidSmallModel.Velocity.Y=random(AsteroidBaseSpeed,0.5) * Temp2;
+
+
+//Rotera så att inledning scale-animering är i olika riktningar
+AsteroidSmallModel.Rotation.Z = rnd();]]>
+              </Expression>
+            </ZExpression>
+            <SetModelState State="AsteroidSmallAppearingState"/>
+          </OnSpawn>
+          <OnCollision>
+            <RemoveModel/>
+            <ZExpression>
+              <Expression>
+<![CDATA[Temp3=2; TargetsCount-=1; LevelAsteroidSmallCount-=1;
+PlayerScore+=100;]]>
+              </Expression>
+            </ZExpression>
+            <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+          </OnCollision>
+        </Model>
+        <Group Name="BackgroundGroup">
+          <Children>
+            <Model Name="BackgroundModel" Position="0 0 8.93">
+              <Definitions>
+                <DefineVariable Name="BackWarpTime" Comment="Larger than zero if warping is in effect"/>
+                <DefineVariable Name="BackWarpX"/>
+                <DefineVariable Name="BackWarpY"/>
+              </Definitions>
+              <OnRender>
+                <RenderTransformGroup Scale="16 12 1">
+                  <Children>
+                    <UseMaterial Material="BackgroundMaterial"/>
+                    <RenderNet/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorGroup Name="BackgroundAnimators">
+                  <Animators>
+                    <AnimatorSimple Duration="2" Target="BackgroundModel Position 2" FromValue="10" ToValue="-2" Smooth="255"/>
+                  </Animators>
+                </AnimatorGroup>
+                <ZExpression>
+                  <Expression>
+<![CDATA[if(BackWarpTime>0) {
+  BackWarpTime-=ZBlastApp.DeltaTime;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+              <OnSpawn>
+                <StartAnimator Animator="BackgroundAnimators"/>
+              </OnSpawn>
+            </Model>
+            <Material Name="BackgroundMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BackgroundBitmap" TextureScale="2 2 2" TextureX="1.5" TextureY="1.5" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Bitmap Name="BackgroundBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//this.Pixel.R=(sin(X*30) + sin(Y*200))*0.3;
+//todo: temp1 är constant för alla pixlar
+//ändra till ett bitmap.InitExpr och bitmap.PixelExpr
+//LevelNr=8;
+Temp1=0.2 + abs(noise2(LevelNr*42.71727,0));
+//Temp1=0;
+//Temp1=0.8;
+
+if( frac(LevelNr/2)==0 ) {
+Temp1=
+  abs(
+    random(0.5,0.045) *
+    (X + sin((1-X)*(1-Y)*(5+Temp1*22)  ))) *
+    (0.5 + (Temp1*0.5));
+this.Pixel.B=this.Pixel.G*Temp1;
+  this.Pixel.R=0;
+} else if( frac(LevelNr/3)==0 ) {
+Temp1=
+  abs(
+    random(0.5,0.085) *
+    (sin(X*Y* (5+Temp1*52)  ))) *
+    (0.5 + (Temp1*0.5));
+} else {
+//this.Pixel.R=sin(abs(X*40))*0.5 + cos(abs(Y*20))*0.5;;
+Temp2=X* (1+Temp1) ;//X-0.5;
+Temp3=Y-0.25;
+//Distance from center 1..0
+Temp4 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) )*2;
+//Angle 0..1
+Temp2 = atan2(Temp3,Temp2) + noise2(Y*9,X*5);
+//Temp1 = Temp1 + Temp2*0.5;
+//Temp1+=noise2(Temp2*0.5,0);
+Temp1=(abs(sin(Temp4*(11+Temp1*10) ))*Temp4+sin(Temp2)*0.5 )*0.6;
+}
+
+//Temp1 now holds output pattern
+Temp2=frac(LevelNr/4);
+if(Temp2==0) {
+  this.Pixel.R=Temp1;
+  this.Pixel.G=0;
+  this.Pixel.B=0;
+} else if (Temp2==0.25) {
+  this.Pixel.R=0;
+  this.Pixel.G=Temp1;
+  this.Pixel.B=0;
+} else if (Temp2==0.5) {
+  this.Pixel.R=Temp1;
+  this.Pixel.G=0;
+  this.Pixel.B=Temp1;
+} else {
+  this.Pixel.R=0;
+  this.Pixel.G=0;
+  this.Pixel.B=Temp1;
+}
+
+//if(Temp1>0.5)
+//  this.Pixel.R=this.Pixel.G*1;
+//else
+
+//this.Pixel.R=(rnd()*(sin(X*Y*10)));
+
+//this.Pixel.B=0;
+//this.Pixel.B=sqrt(this.Pixel.R*0.3);
+//this.Pixel.G=sqrt(Y)*0.1+X*0.4;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Bitmap Name="_BackgroundDiscBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+
+if(Temp1<0.51) {
+this.Pixel.R=0;
+this.Pixel.G=0;
+this.Pixel.B=0;
+this.Pixel.A=0;
+} else {
+this.Pixel.R=0.5;
+this.Pixel.G=0.4;
+this.Pixel.B=0.0;
+this.Pixel.A=0.2-Temp1*0.2;
+}]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="_BackgroundDiscMaterial" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="_BackgroundDiscBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group> <!-- BackgroundGroup -->
+
+        <Mesh Name="ShipMesh">
+          <Producers>
+            <MeshSphere ZSamples="7"/>
+          </Producers>
+        </Mesh>
+        <Model Name="ShipModel" Category="3" CollisionBounds="0.25 0.25 0 0">
+          <OnRender>
+            <RenderTransform Scale="0.2 0.2 0.2" Rotate="0 0.5 0"/>
+            <UseMaterial Material="ShipMaterial"/>
+            <RenderMesh Mesh="ShipMesh"/>
+          </OnRender>
+          <OnUpdate>
+            <MouseModelController ScaleX="5.5" ScaleY="4"/>
+            <KeyPress Name="ShootKeys" Keys="AWDS" RepeatDelay="0.07">
+              <OnPressed>
+                <ZExpression Expression="ShipShotDir=ShootKeys.KeyIndex+1;"/>
+                <SpawnModel Model="ShipShotModel" UseSpawnerPosition="255"/>
+                <PlaySound Sound="ShipShotSound" NoteNr="60"/>
+              </OnPressed>
+            </KeyPress>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Restore scale som loselife kan ha ändrat
+CurrentModel.Scale.X=1;
+CurrentModel.Scale.Y=1;
+CurrentModel.Position.X=0;
+CurrentModel.Position.Y=0;]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+          <OnCollision>
+            <Condition Expression="return (DebugImmortal==0);">
+              <OnTrue>
+                <SetAppState State="LoseLifeState"/>
+              </OnTrue>
+            </Condition>
+          </OnCollision>
+        </Model>
+        <Mesh Name="ShipShotMesh">
+          <Producers>
+            <MeshBox Scale="0.03 0.2 0.05"/>
+          </Producers>
+        </Mesh>
+        <Model Name="ShipShotModel" Category="2" CollisionBounds="0.1 0.1 0 0">
+          <Definitions>
+            <DefineConstant Name="ShipShotSpeed" Value="19"/>
+          </Definitions>
+          <OnRender>
+            <UseMaterial Material="ShipShotMaterial"/>
+            <RenderMesh Mesh="ShipShotMesh"/>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[ShipShotModel.Scale.Y+=0.01;
+ShipShotModel.Rotation.Z+=0.001*60 * ZBlastApp.DeltaTime;
+//ShipShotModel.Rotation.Z+=1 * ZBlastApp.DeltaTime;]]>
+              </Expression>
+            </ZExpression>
+            <Condition>
+              <Expression>
+<![CDATA[return 
+  (ShipShotModel.Position.X<EdgeL) ||
+  (ShipShotModel.Position.X>EdgeR) ||
+  (ShipShotModel.Position.Y>EdgeT) ||
+  (ShipShotModel.Position.Y<EdgeB);]]>
+              </Expression>
+              <OnTrue>
+                <RemoveModel/>
+              </OnTrue>
+            </Condition>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[Temp1=random(0,0.1);
+//ShipShotModel.Scale.X=random(1,0.5);
+//ShipShotModel.Scale.Y=random(1,0.5);
+if(ShipShotDir==1) {
+  //Left
+  ShipShotModel.Velocity.X=-ShipShotSpeed;
+  ShipShotModel.Rotation.Z=-0.25;
+//  ShipShotModel.Position.Y+=Temp1;
+} else if(ShipShotDir==2) {
+  //Up
+  ShipShotModel.Velocity.Y=ShipShotSpeed;
+} else if(ShipShotDir==3) {
+  //Right
+  ShipShotModel.Velocity.X=ShipShotSpeed;
+  ShipShotModel.Rotation.Z=0.25;
+} else if(ShipShotDir==4) {
+  //Down
+  ShipShotModel.Velocity.Y=-ShipShotSpeed;
+}
+
+ShipShotDir=0;]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+          <OnCollision>
+            <RemoveModel/>
+          </OnCollision>
+        </Model>
+        <Group Name="Enemies" Comment="All enemy models here">
+          <Children>
+            <Group Name="GruntEnemyGroup" Comment="All definitions for Grunt">
+              <Children>
+                <Mesh Name="GruntMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.1 0.3 0.1"/>
+                  </Producers>
+                </Mesh>
+                <Model Name="GruntModel" Category="1" CollisionBounds="0.3 0.3 0 0">
+                  <Definitions>
+                    <DefineVariable Name="GruntDirMod"/>
+                    <DefineVariable Name="GruntSpeedMod"/>
+                    <DefineVariable Name="GruntState"/>
+                    <DefineVariable Name="GruntTimeState"/>
+                    <DefineConstant Name="GruntBaseSpeed" Value="2"/>
+                    <DefineVariable Name="GruntHomingMod"/>
+                  </Definitions>
+                  <States>
+                    <ModelState Name="GruntAppearingState">
+                      <OnUpdate>
+                        <AnimatorGroup AutoStart="1">
+                          <Animators>
+                            <AnimatorSimple Duration="0.8" Target="GruntModel Scale" FromValue="20" ToValue="1" Smooth="255"/>
+                          </Animators>
+                          <OnStop>
+                            <SetModelState State="GruntActiveState"/>
+                          </OnStop>
+                        </AnimatorGroup>
+                      </OnUpdate>
+                    </ModelState>
+                    <ModelState Name="GruntActiveState">
+                      <OnUpdate>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[GruntTimeState-=ZBlastApp.DeltaTime;
+if(GruntTimeState<=0) {
+  GruntState=1-GruntState;
+  GruntTimeState=random(2-GruntState,0.5);
+}
+
+if(GruntState==0) {
+  //State 0 = homing
+  Temp1 = ShipModel.Position.X + ShipModel.Velocity.X * GruntHomingMod;
+  Temp1 = Temp1 - GruntModel.Position.X;
+//  Temp1 = ShipModel.Position.X - GruntModel.Position.X;
+  //X noll är ej giltig param till arctan2
+  if(Temp1==0)
+    Temp1 = 0.0001;
+
+  //ArcTan2 är grader mellan 0.0 och en punkt
+  //(0 är rakt till höger)
+  Temp3 = ShipModel.Position.Y + ShipModel.Velocity.Y * GruntHomingMod;
+//  Temp2 = atan2(ShipModel.Position.Y - GruntModel.Position.Y, Temp1) + GruntDirMod*3.14;
+  Temp2 = atan2(Temp3 - GruntModel.Position.Y, Temp1) + GruntDirMod*3.14;
+
+//  Temp3 = (ShipModel.Position.X-GruntModel.Position.X);
+//  Temp4 = (ShipModel.Position.Y-GruntModel.Position.Y);
+//  Temp3 = abs(sqrt(Temp3*Temp3+Temp4*Temp4));
+
+  //Scale med leveltime för att öka hastighet
+  Temp1 = clamp(LevelTime*0.1 + GruntSpeedMod,0,4);
+  Temp1+=GruntBaseSpeed;
+  
+  GruntModel.Velocity.X=cos(Temp2) * Temp1;
+  GruntModel.Velocity.Y=sin(Temp2) * Temp1;
+  
+} else {
+  //State 1 = slow down
+  GruntModel.Velocity.X*=0.95;
+  GruntModel.Velocity.Y*=0.95;
+}
+
+GruntModel.Rotation.Z += (0.1+GruntSpeedMod) * ZBlastApp.DeltaTime;]]>
+                          </Expression>
+                        </ZExpression>
+                      </OnUpdate>
+                    </ModelState>
+                  </States>
+                  <OnRender>
+                    <UseMaterial Material="GruntMaterial"/>
+                    <RenderMesh Mesh="GruntMesh"/>
+                    <RenderTransform Scale="1 1 1.5" Rotate="0 0 0.25"/>
+                    <RenderMesh Mesh="GruntMesh"/>
+                  </OnRender>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Random start, avoiding center
+
+//Random angle
+Temp1=rnd()*3.14*2;
+//radius
+Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+GruntModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+GruntModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+
+
+//GruntModel.Scale.X -= rnd()*0.25;
+GruntModel.Scale.Y -= rnd()*0.25;
+//GruntModel.Rotation.X = rnd()*0.1;
+
+GruntModel.Rotation.Z = rnd();
+
+GruntDirMod = random(0,0.25);
+
+GruntTimeState=rnd() * 5;
+
+GruntSpeedMod = rnd()*0.4;
+
+//Nr of seconds to look ahead in time
+//for ships position.
+GruntHomingMod=rnd()*0.6;]]>
+                      </Expression>
+                    </ZExpression>
+                    <SetModelState State="GruntAppearingState"/>
+                  </OnSpawn>
+                  <OnCollision>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[Temp3=2;
+PlayerScore+=100;
+TargetsCount-=1;
+LevelGruntCount-=1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <RemoveModel/>
+                    <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+                  </OnCollision>
+                </Model>
+                <Material Name="GruntMaterial" Color="0.19 0.16 0.69 0"/>
+              </Children>
+            </Group> <!-- GruntEnemyGroup -->
+
+            <Group Name="ShooterEnemyGroup" Comment="All definitions for Shooter">
+              <Children>
+                <Mesh Name="ShooterMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.1 0.4 0.16" ZSamples="4"/>
+                    <MeshExpression>
+                      <Expression>
+<![CDATA[//V : current vertex
+//this.V.X += cos(abs(this.V.Y*10000));
+if(this.V.Y>0)
+  this.V.X*=this.V.Y*22;
+if(this.V.Y<-0.3)
+  this.V.X=this.V.X*0.3;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Model Name="ShooterModel" Category="1" CollisionBounds="0.3 0.3 0 0">
+                  <Definitions>
+                    <DefineVariable Name="ShooterDirMod"/>
+                    <DefineVariable Name="ShooterSpeedMod"/>
+                    <DefineVariable Name="ShooterState"/>
+                    <DefineVariable Name="ShooterTimeState"/>
+                    <DefineVariable Name="ShooterAccelX"/>
+                    <DefineVariable Name="ShooterAccelY"/>
+                    <DefineConstant Name="ShooterMaxVeloc" Value="4"/>
+                  </Definitions>
+                  <States>
+                    <ModelState Name="ShooterAppearingState">
+                      <OnUpdate>
+                        <AnimatorGroup Duration="1" AutoStart="255">
+                          <Animators>
+                            <AnimatorSimple Duration="0.8" Target="ShooterModel Scale 1" FromValue="5" ToValue="1" Smooth="255"/>
+                            <AnimatorSimple Duration="0.8" Target="ShooterModel Scale" ToValue="1" Smooth="255"/>
+                          </Animators>
+                          <OnStop>
+                            <SetModelState State="ShooterActiveState"/>
+                          </OnStop>
+                        </AnimatorGroup>
+                      </OnUpdate>
+                    </ModelState>
+                    <ModelState Name="ShooterActiveState">
+                      <OnUpdate>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[ShooterTimeState-=ZBlastApp.DeltaTime;
+if(ShooterTimeState<=0) {
+  //Select a new angle
+  Temp1 = ShipModel.Position.X - ShooterModel.Position.X;
+  //X noll är ej giltig param till arctan2
+  if(Temp1==0)
+    Temp1 = 0.0001;
+  Temp1 = atan2(ShipModel.Position.Y - ShooterModel.Position.Y, Temp1);
+  Temp1*=random(1,0.25);
+
+  //Choose a random angle
+//  Temp1=rnd() * (2*3.14);
+  ShooterModel.Velocity.X=cos(Temp1)*ShooterMaxVeloc;
+  ShooterModel.Velocity.Y=sin(Temp1)*ShooterMaxVeloc;
+  ShooterTimeState=random(2,0.5);
+  ShooterAccelX=random(0,1)*3.5;
+  ShooterAccelY=random(0,1)*3.5;
+}
+
+//Apply acceleration
+ShooterModel.Velocity.X+=ShooterAccelX * ZBlastApp.DeltaTime;
+if(ShooterModel.Velocity.X>ShooterMaxVeloc)
+  ShooterModel.Velocity.X=ShooterMaxVeloc;
+ShooterModel.Velocity.Y+=ShooterAccelY * ZBlastApp.DeltaTime;
+if(ShooterModel.Velocity.Y>ShooterMaxVeloc)
+  ShooterModel.Velocity.Y=ShooterMaxVeloc;
+
+//Rotera skepp i den riktning den åker
+Temp1 = atan2(ShooterModel.Velocity.Y, ShooterModel.Velocity.X);
+//todo: rotation vectors should be in radians
+Temp1 = (1/(3.14*2)) * (Temp1+3.14/2);
+Temp1 = Temp1-ShooterModel.Rotation.Z;
+ShooterModel.Rotation.Z+=Temp1 * 0.1;
+//Vinkla i x och y också vid tvära svängar
+ShooterModel.Rotation.X=Temp1;
+ShooterModel.Rotation.Y=Temp1;
+
+//Keep within playfield
+if(ShooterModel.Position.X>=EdgeR)
+  ShooterModel.Position.X=EdgeR;
+if(ShooterModel.Position.X<=EdgeL)
+  ShooterModel.Position.X=EdgeL;
+
+if(ShooterModel.Position.Y<=EdgeB)
+  ShooterModel.Position.Y=EdgeB;
+else if(ShooterModel.Position.Y>=EdgeT)
+  ShooterModel.Position.Y=EdgeT;
+  
+//Kolla om dags att skjuta
+Temp1=clamp(LevelTime*0.01,0,0.1);
+if(rnd()<Temp1) {
+  Temp2 = ShipModel.Position.X - ShooterModel.Position.X;
+  Temp3 = ShipModel.Position.Y - ShooterModel.Position.Y;
+  Temp3 = sqrt(Temp2*Temp2 + Temp3 * Temp3);
+  //Måste vara ett visst avstånd för att skjuta
+  if(abs(Temp3)>3)
+    Temp1=1;
+  else
+    Temp1=0;
+} else {
+  Temp1=0;
+}
+
+//exit: Temp1=1 if spawn shot]]>
+                          </Expression>
+                        </ZExpression>
+                        <Condition Expression="return Temp1!=0;">
+                          <OnTrue>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[Temp1=1;
+Temp2=rnd();]]>
+                              </Expression>
+                            </ZExpression>
+                            <Repeat Count="6">
+                              <OnIteration>
+                                <SpawnModel Model="ShooterShotModel" UseSpawnerPosition="255"/>
+                                <ZExpression Expression="Temp1+=1;"/>
+                              </OnIteration>
+                            </Repeat>
+                            <PlaySound Sound="ShooterShotSound" NoteNr="60"/>
+                          </OnTrue>
+                        </Condition>
+                      </OnUpdate>
+                    </ModelState>
+                  </States>
+                  <OnRender>
+                    <UseMaterial Material="ShooterMaterial"/>
+                    <RenderMesh Mesh="ShooterMesh"/>
+                  </OnRender>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Random start, avoiding center
+//Random angle
+Temp1=rnd()*3.14*2;
+//radius
+Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+ShooterModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+ShooterModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+
+ShooterModel.Rotation.Z=rnd();
+
+ShooterTimeState=rnd() * 1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <SetModelState State="ShooterAppearingState"/>
+                  </OnSpawn>
+                  <OnCollision>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[Temp3=2;
+PlayerScore+=250;
+TargetsCount-=1;
+LevelShooterCount-=1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <RemoveModel/>
+                    <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+                  </OnCollision>
+                </Model>
+                <Material Name="ShooterMaterial" Color="0.58 0.53 0.58 0"/>
+              </Children>
+            </Group> <!-- ShooterEnemyGroup -->
+
+            <Group Name="ShooterShotEnemyGroup" Comment="All definitions for ShooterShot">
+              <Children>
+                <Model Name="ShooterShotModel" Position="-42557 -1379.33 0" Velocity="-6.5 -0.21 0" Scale="0.2 0.2 0.2" Category="1" CollisionBounds="0.3 0.3 0 0">
+                  <Definitions>
+                    <DefineVariable Name="ShooterShotDirMod"/>
+                    <DefineVariable Name="ShooterShotSpeedMod"/>
+                    <DefineVariable Name="ShooterShotState"/>
+                    <DefineVariable Name="ShooterShotTimeState"/>
+                    <DefineVariable Name="ShooterShotIndex"/>
+                    <DefineConstant Name="ShooterShotMaxVeloc" Value="4"/>
+                  </Definitions>
+                  <OnRender>
+                    <UseMaterial Material="ShooterShotMaterial"/>
+                    <RenderSprite/>
+                  </OnRender>
+                  <OnUpdate>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[ShooterShotTimeState-=ZBlastApp.DeltaTime;
+
+if(ShooterShotTimeState<0) {
+  if(ShooterShotState==0) {
+    Temp1=ShooterShotIndex*((3.14*2)/6);
+    ShooterShotModel.Velocity.X+=cos(Temp1);
+    ShooterShotModel.Velocity.Y+=sin(Temp1);
+    ShooterShotState=1;
+  }
+}]]>
+                      </Expression>
+                    </ZExpression>
+                    <Condition>
+                      <Expression>
+<![CDATA[//Keep within playfield
+return ( (ShooterShotModel.Position.X>=EdgeR)
+  || (ShooterShotModel.Position.X<=EdgeL)
+  || (ShooterShotModel.Position.Y<=EdgeB)
+  || (ShooterShotModel.Position.Y>=EdgeT));]]>
+                      </Expression>
+                      <OnTrue>
+                        <RemoveModel/>
+                      </OnTrue>
+                    </Condition>
+                  </OnUpdate>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//In: Temp1 holds index
+//In: Temp2 holds speed mod
+ShooterShotIndex=Temp1;
+
+//Select a new angle
+Temp3 = ShipModel.Position.X - ShooterShotModel.Position.X;
+//X noll är ej giltig param till arctan2
+if(Temp3==0)
+  Temp3 = 0.0001;
+Temp3 = atan2(ShipModel.Position.Y - ShooterShotModel.Position.Y, Temp3);
+//Temp1*=random(1,0.05);
+
+ShooterShotModel.Velocity.X=cos(Temp3)*(6+Temp2);
+ShooterShotModel.Velocity.Y=sin(Temp3)*(6+Temp2);
+
+ShooterShotTimeState=0.5;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                  <OnCollision>
+                    <RemoveModel/>
+                  </OnCollision>
+                </Model>
+                <Material Name="ShooterShotMaterial" Light="0" Blend="1" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="ShooterShotBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
+                <Bitmap Name="ShooterShotBitmap">
+                  <Producers>
+                    <BitmapExpression>
+                      <Expression>
+<![CDATA[this.Pixel.R=1;
+
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+if(Temp1<0.5)
+  Temp1=0;
+else if(Temp1<0.68)
+  Temp1*=1.4;
+else
+  Temp1*=2.7;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1/2.1;
+this.Pixel.B=Temp1;
+if(Temp1==0)
+  this.Pixel.A=0;
+else
+  this.Pixel.A=1;]]>
+                      </Expression>
+                    </BitmapExpression>
+                  </Producers>
+                </Bitmap>
+              </Children>
+            </Group> <!-- ShooterShotEnemyGroup -->
+
+            <Group Name="SkullGroup">
+              <Children>
+                <Mesh Name="SkullMesh">
+                  <Producers>
+                    <MeshSphere Scale="1.5 1 0.2" ZSamples="5" RadialSamples="30"/>
+                    <MeshExpression Scale="0.4 0.4 1">
+                      <Expression>
+<![CDATA[//V : current vertex
+if(this.V.Y<-0.85)
+  this.V.Y*=1.6;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="SkullEyeMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.2 0.2 0.1" ZSamples="3"/>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="SkullTooth">
+                  <Producers>
+                    <MeshBox Scale="0.04 0.12 0.1"/>
+                  </Producers>
+                </Mesh>
+                <Model Name="SkullModel" Category="1" CollisionBounds="0.5 0.5 0 0">
+                  <Definitions>
+                    <DefineVariable Name="SkullSeed"/>
+                    <DefineVariable Name="SkullTime"/>
+                    <DefineVariable Name="SkullShootTime"/>
+                    <DefineVariable Name="SkullState"/>
+                    <DefineVariable Name="SkullStateTimer"/>
+                  </Definitions>
+                  <States>
+                    <ModelState Name="SkullAppearingState">
+                      <OnUpdate>
+                        <AnimatorGroup Duration="0.8" AutoStart="255">
+                          <Animators>
+                            <AnimatorSimple Duration="0.4" Target="SkullModel Position 2" FromValue="-8" Smooth="255"/>
+                          </Animators>
+                          <OnStop>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//Sätt time och Temp1 som param för tailmodel.spawn
+Temp1=SkullTime;
+Temp2=0.8;]]>
+                              </Expression>
+                            </ZExpression>
+                            <Repeat Count="6">
+                              <OnIteration>
+                                <ZExpression>
+                                  <Expression>
+<![CDATA[Temp1-=0.1;
+Temp2-=0.05;]]>
+                                  </Expression>
+                                </ZExpression>
+                                <SpawnModel Model="SkullTailModel" UseSpawnerPosition="255" SpawnerIsParent="255"/>
+                              </OnIteration>
+                            </Repeat>
+                            <SetModelState State="SkullActiveState"/>
+                          </OnStop>
+                        </AnimatorGroup>
+                      </OnUpdate>
+                    </ModelState>
+                    <ModelState Name="SkullActiveState">
+                      <OnUpdate>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[SkullTime+=ZBlastApp.DeltaTime;
+//Speed scale
+Temp2 = 4 * clamp(LevelTime*0.2,0,1);
+
+Temp1=
+  clamp(
+  sin(SkullTime*1.8)*0.5 +
+  sin(SkullTime*0.7771) * 0.35 +
+  sin(SkullTime*1.472) * 0.35,-1,1);
+//SkullModel.Position.X=Temp1 * (EdgeR-1);
+Temp1=Temp1 * (EdgeR);
+SkullModel.Velocity.X=(Temp1-SkullModel.Position.X) * Temp2;
+
+Temp1=
+  clamp(
+  cos(SkullTime*1.3*2)*0.5 +
+  cos(SkullTime*0.6781*2) * 0.45 +
+  cos(SkullTime*1.93372*2) * 0.45,-1,1);
+//SkullModel.Position.Y=Temp1 * (EdgeT-1);
+Temp1=Temp1 * (EdgeT);
+SkullModel.Velocity.Y=(Temp1-SkullModel.Position.Y) * Temp2;
+
+
+Temp1=0;
+if(SkullState==0) { //State 0 är normal
+  //Testa om dags att skjuta
+  if( (LevelTime>2) && (rnd()<0.02) ) {
+    SkullShootTime=1;
+    SkullState=1;
+    Temp1=2;
+  } else if(rnd()>0.992) {
+    SkullState=2;
+    SkullStateTimer=0;
+  }
+} else if(SkullState==1) { //State 1 är 'About to shoot'
+  SkullShootTime-=ZBlastApp.DeltaTime;
+  if(SkullShootTime<=0) {
+    SkullShootTime=0;
+    Temp1=1;
+    SkullState=0;
+  }
+} else {  //State 2: rotera
+  SkullStateTimer=clamp(SkullStateTimer+ZBlastApp.DeltaTime*0.5,0,1);
+  if(SkullStateTimer==1) {
+    SkullModel.Rotation.Y=0;
+    SkullState=0;
+  } else
+    SkullModel.Rotation.Y=SkullStateTimer;
+}
+
+//SkullModel.Velocity.X=0;
+//SkullModel.Velocity.Y=0;
+
+//on exit:
+//  temp==1 : shoot
+//  temp==2 : play about to shoot sound]]>
+                          </Expression>
+                        </ZExpression>
+                        <Condition Expression="return Temp1==1;">
+                          <OnTrue>
+                            <ZExpression Expression="Temp1=-1;"/>
+                            <SpawnModel Model="SkullShotModel" UseSpawnerPosition="255"/>
+                            <ZExpression Expression="Temp1=1;"/>
+                            <SpawnModel Model="SkullShotModel" UseSpawnerPosition="255"/>
+                          </OnTrue>
+                          <OnFalse>
+                            <Condition Expression="return Temp1==2;">
+                              <OnTrue>
+                                <PlaySound Sound="SkullShotSound" NoteNr="61" Channel="1"/>
+                              </OnTrue>
+                            </Condition>
+                          </OnFalse>
+                        </Condition>
+                      </OnUpdate>
+                    </ModelState>
+                  </States>
+                  <OnRender>
+                    <UseMaterial Material="SkullMaterial"/>
+                    <RenderSetColor Color="0.93 0.93 0.93 1"/>
+                    <RenderMesh Mesh="SkullMesh"/>
+                    <RenderSetColor Color="0.05 0 0 1"/>
+                    <RenderTransformGroup Comment="left eye" Translate="-0.25 0 0.17" Rotate="0 -0.01 0">
+                      <Children>
+                        <RenderMesh Mesh="SkullEyeMesh"/>
+                      </Children>
+                    </RenderTransformGroup>
+                    <RenderTransformGroup Comment="right eye" Translate="0.25 0 0.17" Rotate="0 0.01 0">
+                      <Children>
+                        <RenderMesh Mesh="SkullEyeMesh"/>
+                      </Children>
+                    </RenderTransformGroup>
+                    <RenderTransformGroup Translate="0 -0.4 0.1">
+                      <Children>
+                        <RenderMesh Mesh="SkullTooth"/>
+                      </Children>
+                    </RenderTransformGroup>
+                    <RenderTransformGroup Translate="0.12 -0.4 0.1">
+                      <Children>
+                        <RenderMesh Mesh="SkullTooth"/>
+                      </Children>
+                    </RenderTransformGroup>
+                    <RenderTransformGroup Translate="-0.12 -0.4 0.1">
+                      <Children>
+                        <RenderMesh Mesh="SkullTooth"/>
+                      </Children>
+                    </RenderTransformGroup>
+                    <Condition Comment="Render if about to shoot" Expression="return SkullShootTime&gt;0;">
+                      <OnTrue>
+                        <UseMaterial Material="SkullEyeBeamMaterial"/>
+                        <RenderTransformGroup Comment="left eye beam" Translate="-0.25 0 0">
+                          <Children>
+                            <RenderBeams Count="8" Length="0.8" Width="1" Speed="4"/>
+                          </Children>
+                        </RenderTransformGroup>
+                        <RenderTransformGroup Comment="right eye beam" Translate="0.25 0 0">
+                          <Children>
+                            <RenderBeams Count="8" Length="0.8" Width="1" Speed="4"/>
+                          </Children>
+                        </RenderTransformGroup>
+                      </OnTrue>
+                    </Condition>
+                  </OnRender>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Random start, avoiding center
+
+//Random angle
+Temp1=rnd()*3.14*2;
+//radius
+Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+SkullModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+SkullModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB,EdgeR);
+
+SkullTime=122 + rnd() * 42;]]>
+                      </Expression>
+                    </ZExpression>
+                    <SetModelState State="SkullAppearingState"/>
+                  </OnSpawn>
+                  <OnCollision>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[Temp3=1;
+PlayerScore+=300;
+TargetsCount-=1;
+LevelSkullCount-=1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <RemoveModel/>
+                    <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+                  </OnCollision>
+                </Model>
+                <Material Name="SkullMaterial"/>
+                <Model Name="SkullTailModel" Comment="ett segment i skull-svans">
+                  <Definitions>
+                    <DefineVariable Name="SkullTailTime"/>
+                  </Definitions>
+                  <OnRender>
+                    <UseMaterial Material="SkullTailMaterial"/>
+                    <RenderParticles Name="TailParticles" ParticlesPerSecond="10" Direction="1" Spread="3.14" ParticleWidth="0.3" ParticleHeight="0.3" Speed="0.5" ParticleLifetime="0.3" AnimateAlpha="-0.2"/>
+                  </OnRender>
+                  <OnUpdate>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[SkullTailTime+=ZBlastApp.DeltaTime;
+//Speed scale
+Temp2 = 4 * clamp(LevelTime*0.2,0,1);
+
+Temp1=clamp(
+  sin(SkullTailTime*1.8)*0.5 +
+  sin(SkullTailTime*0.7771) * 0.35 +
+  sin(SkullTailTime*1.472) * 0.35,-1,1);
+Temp1=Temp1 * (EdgeR);
+SkullTailModel.Velocity.X=(Temp1-SkullTailModel.Position.X) * Temp2;
+
+Temp1=clamp(
+  cos(SkullTailTime*1.3*2)*0.5 +
+  cos(SkullTailTime*0.6781*2) * 0.45 +
+  cos(SkullTailTime*1.93372*2) * 0.45,-1,1);
+Temp1=Temp1 * (EdgeT);
+SkullTailModel.Velocity.Y=(Temp1-SkullTailModel.Position.Y) * Temp2;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnUpdate>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[SkullTailTime=Temp1;
+TailParticles.ParticleLifeTime=Temp2;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                </Model>
+                <Material Name="SkullTailMaterial" Blend="2">
+                  <Textures>
+                    <MaterialTexture Texture="DebrisBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
+                <Model Name="SkullShotModel" Scale="0.3 0.3 1" Category="1" CollisionBounds="0.3 0.3 0 0">
+                  <OnRender>
+                    <UseMaterial Material="SkullShotMaterial"/>
+                    <RenderParticles Name="SkullShotParticles" ParticlesPerSecond="20" Spread="0.1" ParticleWidth="1" ParticleHeight="1" Speed="2" Radius="0.1" ParticleLifetime="1" AnimateAlpha="-1">
+                      <OnEmitExpression>
+<![CDATA[//Emit particle.
+//PColor : particle color
+this.PColor.G=clamp(abs(SkullShotModel.Position.X),0,0.5);
+this.PColor.B=clamp(abs(SkullShotModel.Position.Y),0,0.5);
+this.PColor.R=1;]]>
+                      </OnEmitExpression>
+                    </RenderParticles>
+                  </OnRender>
+                  <OnUpdate>
+                    <Condition>
+                      <Expression>
+<![CDATA[//Keep within playfield
+return ( (SkullShotModel.Position.X>=EdgeR)
+  || (SkullShotModel.Position.X<=EdgeL)
+  || (SkullShotModel.Position.Y<=EdgeB)
+  || (SkullShotModel.Position.Y>=EdgeT));]]>
+                      </Expression>
+                      <OnTrue>
+                        <RemoveModel/>
+                      </OnTrue>
+                    </Condition>
+                  </OnUpdate>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//In: Temp1 holds index (left/right eye)
+
+SkullShotModel.Position.X += 0.25 * Temp1;
+
+//Select a new angle
+Temp3 = ShipModel.Position.X - SkullShotModel.Position.X;
+//X noll är ej giltig param till arctan2
+if(Temp3==0)
+  Temp3 = 0.0001;
+Temp3 = atan2(ShipModel.Position.Y - SkullShotModel.Position.Y, Temp3);
+
+SkullShotModel.Velocity.X=cos(Temp3) * 5.8;
+SkullShotModel.Velocity.Y=sin(Temp3) * 5.8;
+
+SkullShotParticles.Direction=(3.14*1.5) - Temp3;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                  <OnCollision>
+                    <RemoveModel/>
+                  </OnCollision>
+                </Model>
+                <Material Name="SkullEyeBeamMaterial" Color="1 0.31 0.31 1" Light="0" Blend="2" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
+                <Bitmap Name="SkullShotBitmap">
+                  <Producers>
+                    <BitmapExpression>
+                      <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+Temp2=X-0.5;
+Temp3=(Y-0.5)*1.15;  //Lite ovalt öga
+
+//Distance from center 1..0
+Temp1 = sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+
+if(0) { //Temp1<0.1) {
+  this.Pixel.R=0;
+  this.Pixel.G=0;
+  this.Pixel.B=0;
+  this.Pixel.A=1;
+} else if(Temp1<0.4) {
+  this.Pixel.R=1-Temp1*0.5;
+  this.Pixel.G=1-Temp1*0.5;
+  this.Pixel.B=1;
+  this.Pixel.A=1;
+} else if(Temp1<0.45)  {
+  this.Pixel.R=0.85;
+  this.Pixel.G=0.0;
+  this.Pixel.B=0.1;
+  this.Pixel.A=1;
+} else {
+  this.Pixel.R=0;
+  this.Pixel.G=0;
+  this.Pixel.B=0;
+  this.Pixel.A=0;// Temp1<0.54;
+}]]>
+                      </Expression>
+                    </BitmapExpression>
+                  </Producers>
+                </Bitmap>
+                <Material Name="SkullShotMaterial" Light="0" Blend="2" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="SkullShotBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
+                <Sound Name="SkullShotSound" Comment="note 61" Volume="1" UseFilter="1" FilterCutoff="0.07" FilterQ="0.57" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="9" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.45" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.18"/>
+              </Children>
+            </Group> <!-- SkullGroup -->
+
+            <Group Name="SpikesGroup">
+              <Children>
+                <Model Name="SpikesModel" Category="1" CollisionBounds="0.4 0.4 0 0">
+                  <Definitions>
+                    <DefineVariable Name="SpikesRot"/>
+                  </Definitions>
+                  <OnRender>
+                    <UseMaterial Material="SpikesMaterial"/>
+                    <RenderMesh Mesh="SpikesMesh"/>
+                  </OnRender>
+                  <OnUpdate>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[SpikesModel.Rotation.Z+=(SpikesRot*0.01) * ZBlastApp.DeltaTime;
+SpikesModel.Rotation.X+=((1-SpikesRot)*0.05) * ZBlastApp.DeltaTime;
+SpikesModel.Rotation.Y+=(SpikesRot*0.09) * ZBlastApp.DeltaTime;]]>
+                      </Expression>
+                    </ZExpression>
+                    <AnimatorGroup AutoStart="255">
+                      <Animators>
+                        <AnimatorSimple Duration="0.8" Target="SpikesModel Position 2" FromValue="6" Smooth="255"/>
+                      </Animators>
+                    </AnimatorGroup>
+                  </OnUpdate>
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Random start, avoiding center
+
+//Random angle
+Temp1=rnd()*3.14*2;
+//radius
+Temp2=SafeZone + rnd() * (EdgeR-SafeZone);
+SpikesModel.Position.X = clamp(sin(Temp1)*Temp2,EdgeL,EdgeR);
+SpikesModel.Position.Y = clamp(cos(Temp1)*Temp2,EdgeB+0.5,EdgeT-0.5);
+
+SpikesModel.Rotation.Z = rnd();
+
+SpikesRot=rnd();]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                  <OnCollision>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[Temp3=2;
+PlayerScore+=25;
+LevelSpikeCount-=1;]]>
+                      </Expression>
+                    </ZExpression>
+                    <RemoveModel/>
+                    <SpawnModel Model="ExplosionModel" UseSpawnerPosition="255"/>
+                  </OnCollision>
+                </Model>
+                <Bitmap Name="SpikesBitmap">
+                  <Producers>
+                    <BitmapExpression>
+                      <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+
+//Pixel : current color (rgb)
+
+Temp1=abs(noise2(this.X*2,this.Y*2))*0.5;
+Temp1+=abs(noise2(this.X*4,this.Y*4))*0.5;
+//Temp1+=abs(noise2(this.X*8,this.Y*8))*0.3;
+
+this.Pixel.R=Temp1*5;
+this.Pixel.G=Temp1*1.5;
+this.Pixel.B=0;//Temp1*1.4;]]>
+                      </Expression>
+                    </BitmapExpression>
+                  </Producers>
+                </Bitmap>
+                <Material Name="SpikesMaterial">
+                  <Textures>
+                    <MaterialTexture Texture="SpikesBitmap"/>
+                  </Textures>
+                </Material>
+                <Mesh Name="SpikesMesh">
+                  <Producers>
+                    <MeshSphere ZSamples="20" RadialSamples="20"/>
+                    <MeshExpression>
+                      <Expression>
+<![CDATA[//http://mathworld.wolfram.com/SphericalCoordinates.html
+
+Temp2=atan2(this.V.Y,this.V.X);
+
+Temp4=this.V.Z;
+Temp3=atan2(sqrt(1 - Temp4 * Temp4), Temp4);
+
+/*if( (Temp2>0.1) && (Temp2<0.2) )
+  this.V.X*=2;
+
+if( (Temp3>0.1) && (Temp3<0.2) )
+  this.V.X*=2;*/
+
+//Temp1=1+clamp(cos(Temp2*10),0,1) * 0.3;
+//this.V.X*=Temp1;
+//Temp1=1+clamp(sin(Temp3*10),0,1) * 0.3;
+//this.V.Y*=Temp1;
+Temp1=
+ clamp(-0.8+
+  (cos(Temp2*4) +
+  sin(Temp3*8)) * 0.9,0,1);
+this.V.X*=1 + Temp1;
+this.V.Y*=1 + Temp1;
+this.V.Z*=1 + Temp1;
+//this.V.Z*=Temp1+Temp2;
+
+//Final scaling
+this.V.X*=0.2;
+this.V.Y*=0.2;
+this.V.Z*=0.2;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+              </Children>
+            </Group> <!-- SpikesGroup -->
+
+          </Children>
+        </Group> <!-- Enemies -->
+
+        <Sound Name="ShooterShotSound" Comment="note 46" Volume="0.34" UseFilter="1" FilterCutoff="0.3" FilterQ="0.61" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.33" Mod2Active="1" Mod2Source="4" Mod2Destination="9" Mod2Amount="1" Env0Active="1" Env0ReleaseTime="0.6" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.22" Lfo1IsBipolar="1" Lfo1Style="1" Lfo1Speed="1"/>
+        <Group Name="TitleGroup">
+          <Children>
+            <Model Name="TitleModel">
+              <Definitions>
+                <DefineVariable Name="TitleTextClock"/>
+              </Definitions>
+              <OnRender>
+                <RenderTransformGroup Name="TitleModelTransformGroup1" Scale="13.81 10 1">
+                  <Children>
+                    <UseMaterial Material="TitleBackgroundMaterial"/>
+                    <RenderSprite/>
+                  </Children>
+                </RenderTransformGroup>
+                <UseMaterial Material="TitleTextMaterial"/>
+                <RenderText Name="Text1" Text="ZBLAST" Scale="2.2">
+                  <RenderCharExpression>
+<![CDATA[//6=string length
+Temp2=6-CharI;
+
+Temp1=TitleTextClock;
+//Temp1=20;
+
+CharX=4.1-clamp(Temp1*1.1,0,Temp2*0.7);
+CharRotate=clamp((-3.14/2)-(Temp2+1)*0.5 + Temp1,-3.14/2,0);
+
+//CharX,CharY : current coordinate
+//Temp1=noise2(this.CharI*0.1,ZBlastApp.Time*0.25);
+//this.CharX*= (((2+Temp1)*0.5));
+//this.CharX+=Temp1*0.5;
+//this.CharY= 0-Temp1*12;
+//this.CharRotate=Temp1;
+//this.CharScale=2+Temp1*1.5+CharI*0.1;//1+CharI*0.1;
+//this.CharY+=Temp1*2;]]>
+                  </RenderCharExpression>
+                </RenderText>
+                <RenderSetColor Color="1 1 1 1"/>
+                <RenderText Text="CONTROLS: MOVE SHIP WITH MOUSE, KEYS W A S D FIRE" Y="-0.88" Scale="0.37"/>
+                <RenderSetColor Color="1 1 1 1"/>
+                <RenderText Text="(C) 2006 VILLE KRUMLINDE" Y="0.96" Scale="0.5">
+                  <RenderCharExpression>
+<![CDATA[Temp2=CharI;
+
+Temp1=-3 + TitleTextClock + Temp3;
+//Temp1=20;
+
+CharY=1.4 - clamp(Temp1,0,1.5);
+CharX=-12.5 + clamp(Temp1*2.8,0,Temp2*0.8);
+CharRotate=clamp((-3.14/2)-(Temp2+1)*0.5 + Temp1*2,-3.14/2,0);
+CharScale=clamp( (0-Temp2)*0.5 + Temp1*2,0,1);]]>
+                  </RenderCharExpression>
+                </RenderText>
+                <Condition Comment="Flash text" Expression="return frac(ZBlastApp.Time)&gt;0.5;">
+                  <OnTrue>
+                    <RenderSetColor Color="1 1 1 1"/>
+                    <RenderText Text="PRESS SPACE TO BEGIN" Y="-0.8" Scale="0.66" RenderCharExpression="//CharX,CharY : current coordinate"/>
+                  </OnTrue>
+                </Condition>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorGroup Name="TitleAnimatorGroup" AutoStart="1">
+                  <Animators>
+                    <AnimatorSimple Comment="Scale background pattern slowly up and down" Duration="10" Target="TitleModelTransformGroup1 Scale" FromValue="12" ToValue="14" Smooth="255" AutoReverse="255" RepeatCount="100"/>
+                    <AnimatorSimple Duration="2" Target="Text1 Y" FromValue="1"/>
+                  </Animators>
+                </AnimatorGroup>
+                <ZExpression Expression="TitleTextClock+=ZBlastApp.DeltaTime;"/>
+              </OnUpdate>
+              <OnSpawn>
+                <ZExpression Expression="TitleTextClock=0;"/>
+              </OnSpawn>
+            </Model>
+            <Material Name="TitleTextMaterial" Color="0.34 0.4 0.89 1" Light="0" Blend="3" ZBuffer="0"/>
+            <Material Name="TitleTextMaterial2" Color="1 1 1 1" Light="0" Blend="3" ZBuffer="0"/>
+            <Bitmap Name="TitleBackgroundBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.Pixel.B=noise2(this.X*10,this.Y)*0.8;
+this.Pixel.G=this.Pixel.B*0.2;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="TitleBackgroundMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="TitleBackgroundBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group> <!-- TitleGroup -->
+
+        <Sound Name="PingSound" Comment="Note 99" Length="0.1" Volume="0.2" UseFilter="1" FilterCutoff="0.47" FilterQ="0.7" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.1"/>
+        <Group Name="Decor group">
+          <Children>
+            <Model Name="ScoreDisplayModel">
+              <OnRender>
+                <UseMaterial Material="ScoreDisplayMaterial"/>
+                <RenderText Name="ScoreDisplayModelText1" TextFloatRef="PlayerScore Value" X="-0.5" Y="0.8" Scale="0.6"/>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorSimple Duration="0.8" AutoStart="255" Target="ScoreDisplayModelText1 X" FromValue="-1" ToValue="-0.5" Smooth="255"/>
+              </OnUpdate>
+            </Model>
+            <Material Name="ScoreDisplayMaterial" Color="0.88 0.92 0.99 1" Light="0" Blend="2" ZBuffer="0"/>
+            <Model Name="LevelEntryModel">
+              <OnRender>
+                <UseMaterial Material="ScoreDisplayMaterial"/>
+                <RenderText Name="LevelEntryText1" Text="LEVEL"/>
+                <RenderText Name="LevelEntryText2" TextFloatRef="LevelNr Value" X="0.5"/>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorGroup AutoStart="255">
+                  <Animators>
+                    <AnimatorSimple Duration="0.5" Target="LevelEntryText1 X" FromValue="-1.5" Smooth="255"/>
+                    <AnimatorSimple Duration="1" BeginTime="1" Target="LevelEntryText1 X" ToValue="-2" Smooth="255"/>
+                    <AnimatorSimple Duration="0.5" Target="LevelEntryText2 X" FromValue="1" ToValue="0.5" Smooth="255"/>
+                    <AnimatorSimple Duration="0.5" BeginTime="1" Target="LevelEntryText2 X" FromValue="0.5" ToValue="1.5" Smooth="255"/>
+                  </Animators>
+                </AnimatorGroup>
+                <AnimatorGroup Duration="1" AutoStart="255">
+                  <OnStop>
+                    <SetAppState State="PlayingState"/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </Model>
+            <Model Name="ScreenFadeOutModel" Scale="12 12 1">
+              <OnRender>
+                <UseMaterial Material="ScreenFadeMaterial"/>
+                <RenderSprite/>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorGroup AutoStart="255">
+                  <Animators>
+                    <AnimatorSimple Duration="0.5" Target="ScreenFadeMaterial Color 3" ToValue="1"/>
+                  </Animators>
+                  <OnStop>
+                    <RemoveModel/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </Model>
+            <Model Name="ScreenFadeInModel" Scale="12 12 1">
+              <OnRender>
+                <UseMaterial Material="ScreenFadeMaterial"/>
+                <RenderSprite/>
+              </OnRender>
+              <OnUpdate>
+                <AnimatorGroup AutoStart="255">
+                  <Animators>
+                    <AnimatorSimple Duration="0.5" Target="ScreenFadeMaterial Color 3" FromValue="1"/>
+                  </Animators>
+                  <OnStop>
+                    <RemoveModel/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
+            </Model>
+            <Material Name="ScreenFadeMaterial" Color="0 0 0 1" Light="0" Blend="1" ZBuffer="0"/>
+          </Children>
+        </Group> <!-- Decor group -->
+
+        <Sound Name="LevelEntrySound" Comment="note 61" Volume="0.48" Osc1Waveform="1" UseOsc2="1" Osc2Waveform="1" Osc2NoteModifier="0.8" UseFilter="1" FilterCutoff="0.26" FilterQ="0.07" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.79" Mod2Active="1" Mod2Source="4" Mod2Amount="0.08" Mod3Active="1" Mod3Source="1" Mod3Destination="1" Mod3Amount="1" Env0Active="1" Env0AttackTime="0.05" Env0ReleaseTime="0.15" Env1Active="1" Env1AttackTime="1.2" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.38" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Style="1" Lfo1Speed="0.01"/>
+        <Sound Name="ShipShotSound" Comment="note 60" Length="0.1" Volume="0.4" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.49" FilterQ="0.01" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1ReleaseTime="0.1"/>
+        <Sound Name="LoseShipSound" Comment="note 44" Length="1.2" Volume="0.34" UseOsc2="1" Osc2Waveform="1" Osc2NoteModifier="10" UseFilter="1" FilterCutoff="0.17" FilterQ="0.39" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.17" Mod2Active="1" Mod2Source="3" Mod2Amount="0.49" Mod3Active="1" Mod3Source="4" Mod3Destination="10" Mod3Amount="0.15" Env0Active="1" Env0ReleaseTime="0.4" Lfo0Active="1" Lfo0Speed="0.17" Lfo1Active="1" Lfo1Speed="0.06"/>
+      </Children>
+    </Group> <!-- Models -->
+
+    <Group Name="TestGroup">
+      <Children>
+        <Mesh Name="NoiseMesh">
+          <Producers>
+            <MeshSphere Scale="1 0.5 1" ZSamples="22" RadialSamples="22"/>
+            <MeshNoise NoiseSpeed="1 1 2"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//this.V.Z+=noise2(this.V.X,this.V.Y*1000);
+if(this.V.Y>0.4) {
+  this.V.X *= sin(this.V.Y);
+  this.V.Z *= 4;//sin(this.V.Y);
+  this.V.Y *= this.V.Y*10;
+}]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Model Name="NoiseModel">
+          <OnRender>
+            <UseMaterial Material="NoiseMaterial"/>
+            <RenderMesh Mesh="NoiseMesh"/>
+          </OnRender>
+        </Model>
+        <Material Name="NoiseMaterial">
+          <Textures>
+            <MaterialTexture Texture="SpikesBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
+        <Bitmap Name="NoiseBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[this.Pixel.R=
+    abs(noise2(cos(X*8),sin(Y)*10)) +
+    abs(noise2(X*4,Y*5)) ;
+    
+this.Pixel.R=cos(this.Pixel.R*7);
+
+this.Pixel.G=1-this.Pixel.R*3;
+//    abs(noise2(X*8,Y*10)*0.7) +
+//    abs(noise2(X*4,Y*5)*0.7) ;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Mesh>
+          <Producers>
+            <MeshSphere Scale="0.08 0.08 0.1" ZSamples="5" RadialSamples="8"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+if( (abs(this.V.X)>0.02) &&
+(abs(this.V.Y)>0.02) )
+{
+  this.V.X*=4;
+  this.V.Y*=4;
+}]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh>
+          <Producers>
+            <MeshSphere ZSamples="20" RadialSamples="20"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[Temp1=noise3(this.V.X, this.V.Y, this.V.Z);
+Temp1=atan2(this.V.Y,this.V.X);
+
+Temp1=(0.5+sin(Temp1*4)*0.5) *0.8;
+this.V.X*=(1 + Temp1);
+
+Temp1=(0.5+cos(Temp1*16)*0.5)*0.8;
+this.V.Y*=1 + Temp1;
+
+//Temp1=atan2(this.V.Y+this.V.X,this.V.Z);
+//Temp1=(0.5+sin(Temp1*6)*0.5)*0.8;
+//this.V.Z*=1 + Temp1;]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Model>
+          <OnRender>
+            <UseMaterial Material="NoiseMaterial"/>
+            <RenderNet XCount="4" YCount="4">
+              <RenderVertexExpression>
+<![CDATA[//Update each vertex.
+//Vertex : current vertex
+Temp1=noise3(this.Vertex.X,this.Vertex.Y,ZBlastApp.Time*0.2)*(3.14*2);
+//this.Vertex.X+=cos(Temp1)*0.1;
+//this.Vertex.Y+=sin(Temp1)*0.1;
+
+this.TexCoord.X+=cos(Temp1)*0.1;
+this.TexCoord.Y+=sin(Temp1)*0.1;]]>
+              </RenderVertexExpression>
+            </RenderNet>
+          </OnRender>
+        </Model>
+        <Model Name="ParticleTestModel">
+          <OnRender>
+            <UseMaterial Material="ShooterShotMaterial"/>
+            <RenderParticles ParticlesPerSecond="300" Spread="3" ParticleWidth="0.1" ParticleHeight="0.1" Speed="1" ParticleLifetime="0.87"/>
+            <UseMaterial Material="BeamMaterial"/>
+            <RenderBeams Count="8" Length="3" Width="0.2"/>
+          </OnRender>
+        </Model>
+        <Bitmap>
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+Temp2=frac(X*2)-0.5;
+Temp3=(Y*2-0.5);
+
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+
+if(Temp1>0.85)
+  Temp1=0;
+else
+  Temp1=1;
+
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group> <!-- TestGroup -->
+
+    <Group Name="Settings">
+      <Children>
+        <DefineConstant Name="DebugImmortal"/>
+        <DefineConstant Name="StartLevel" Comment="Debug set start level, default should be 1" Value="1"/>
+      </Children>
+    </Group> <!-- Settings -->
+
+    <Group Name="ExplosionGroup">
+      <Children>
+        <Group Name="BeamGroup">
+          <Children>
+            <Bitmap Name="BeamBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[this.Pixel.R=1;
+
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+this.Pixel.A=Temp1;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="BeamMaterial" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group> <!-- BeamGroup -->
+
+        <Model Name="ExplosionModel" Comment="Particle explosion">
+          <OnRender>
+            <UseMaterial Material="ExplosionMaterial"/>
+            <RenderParticles ParticlesPerSecond="200" Spread="3.14" ParticleWidth="0.6" ParticleHeight="0.6" Radius="0.4" ParticleLifetime="0.8" AnimateAlpha="-0.5" Duration="0.8">
+              <OnEmitExpression>
+<![CDATA[//Emit particle.
+//PColor : particle color
+this.PColor.R=1-rnd()*0.5;
+if(rnd()<0.2) {
+  this.PColor.G=1;//ExplodeModColor*1.2;
+  this.PColor.B=0;//1-ExplodeModColor*0.5;
+} else {
+  this.PColor.G=0.2;//ExplodeModColor*1.2;
+  this.PColor.B=0.2;//1-ExplodeModColor*0.5;
+}
+  this.PColor.A=0.2;]]>
+              </OnEmitExpression>
+            </RenderParticles>
+            <UseMaterial Material="DebrisMaterial"/>
+            <RenderParticles ParticlesPerSecond="400" Spread="3.16" ParticleWidth="0.06" ParticleHeight="0.06" Speed="1" Radius="0.1" ParticleLifetime="1" AnimateAlpha="1" Duration="0.1">
+              <OnEmitExpression>
+<![CDATA[this.PColor.A=0;
+this.PColor.R=clamp(rnd(),0.5,1);
+this.PColor.G=clamp(rnd(),0,0.2);
+this.PColor.B=clamp(rnd(),0,0.2);]]>
+              </OnEmitExpression>
+            </RenderParticles>
+          </OnRender>
+          <OnUpdate>
+            <AnimatorGroup Duration="1" AutoStart="255">
+              <OnStop>
+                <RemoveModel/>
+              </OnStop>
+            </AnimatorGroup>
+          </OnUpdate>
+          <OnSpawn>
+            <PlaySound Sound="SmallExplodeSound" NoteNr="60"/>
+            <ZExpression>
+              <Expression>
+<![CDATA[Temp1=2.6 - (Temp3*0.8);
+ExplosionModel.Scale.X=Temp1;
+ExplosionModel.Scale.Y=Temp1;]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+        <Model Name="BigExplosionModel" Comment="Particle explosion" Scale="3 3 1">
+          <OnRender>
+            <UseMaterial Material="BeamMaterial"/>
+            <RenderBeams Count="16" Length="1" Width="0.15"/>
+            <RenderBeams Count="8" Length="1.5" Width="0.05"/>
+            <UseMaterial Material="ExplosionMaterial"/>
+            <RenderParticles ParticlesPerSecond="200" Spread="3.14" ParticleWidth="0.6" ParticleHeight="0.6" Radius="0.4" ParticleLifetime="0.8" AnimateAlpha="-0.5" Duration="0.8">
+              <OnEmitExpression>
+<![CDATA[//Emit particle.
+//PColor : particle color
+this.PColor.R=1-rnd()*0.5;
+if(rnd()<0.2) {
+  this.PColor.G=1;
+  this.PColor.B=0;
+} else {
+  this.PColor.G=0.2;
+  this.PColor.B=0.2;
+}
+this.PColor.A=0.2;]]>
+              </OnEmitExpression>
+            </RenderParticles>
+            <UseMaterial Material="DebrisMaterial"/>
+            <RenderParticles ParticlesPerSecond="400" Spread="3.16" ParticleWidth="0.06" ParticleHeight="0.06" Speed="1" Radius="0.1" ParticleLifetime="1" AnimateAlpha="1" Duration="0.1">
+              <OnEmitExpression>
+<![CDATA[this.PColor.A=0;
+this.PColor.R=clamp(rnd(),0.5,1);
+this.PColor.G=clamp(rnd(),0,0.2);
+this.PColor.B=clamp(rnd(),0,0.2);]]>
+              </OnEmitExpression>
+            </RenderParticles>
+          </OnRender>
+          <OnUpdate>
+            <AnimatorGroup Duration="1" AutoStart="255">
+              <OnStop>
+                <RemoveModel/>
+              </OnStop>
+            </AnimatorGroup>
+          </OnUpdate>
+          <OnSpawn>
+            <PlaySound Sound="BigExplodeSound" NoteNr="60"/>
+          </OnSpawn>
+        </Model>
+        <Sound Name="BigExplodeSound" Length="0.8" Volume="1" Osc1Waveform="2" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.54" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="0.3"/>
+        <Sound Name="SmallExplodeSound" Comment="note 60" Length="0.2" Volume="0.42" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.24" FilterQ="0.47" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="2" Mod1Destination="5" Mod1Amount="0.35" Mod2Active="1" Mod2Destination="2" Mod2Amount="0.74" Mod3Active="1" Mod3Source="4" Mod3Amount="0.11" Env0Active="1" Env0ReleaseTime="1.3" Env1AttackTime="0.25" Lfo0Speed="0.06"/>
+        <Bitmap Name="DebrisBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+this.Pixel.R=1;
+
+Temp2=X-0.5;
+Temp3=Y-0.5;
+//Distance from center 1..0
+Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+Temp1+=noise2(X*5,Y*3)*0.2;
+if(Temp1<0.6)
+  Temp1=0;
+this.Pixel.R=Temp1;
+this.Pixel.G=Temp1;
+this.Pixel.B=Temp1;
+
+if(Temp1==0)
+  this.Pixel.A=0;
+else
+  this.Pixel.A=Temp1;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Material Name="DebrisMaterial" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="DebrisBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group> <!-- ExplosionGroup -->
+
+    <Group Name="GameOverGroup">
+      <Children>
+        <AppState Name="GameOverState" Comment="Display title screen">
+          <OnStart>
+            <RemoveAllModels/>
+            <SpawnModel Model="GameOverModel"/>
+            <SpawnModel Model="ScreenFadeInModel"/>
+          </OnStart>
+          <OnUpdate>
+            <KeyPress Comment="Press space continue" Keys=" ">
+              <OnPressed>
+                <StartAnimator Animator="GameOverExitAnimator"/>
+                <SpawnModel Model="ScreenFadeOutModel"/>
+              </OnPressed>
+            </KeyPress>
+            <AnimatorGroup Name="GameOverExitAnimator" Duration="0.5">
+              <OnStop>
+                <SetAppState State="TitleState"/>
+              </OnStop>
+            </AnimatorGroup>
+          </OnUpdate>
+        </AppState>
+        <Model Name="GameOverModel">
+          <Definitions>
+            <DefineVariable Name="GameOverTimer"/>
+          </Definitions>
+          <OnRender>
+            <RenderTransformGroup Scale="12 10 1">
+              <Children>
+                <UseMaterial Material="GameOverBackgroundMaterial"/>
+                <RenderNet XCount="4" YCount="4">
+                  <RenderVertexExpression>
+<![CDATA[//Update each vertex.
+//Vertex : current vertex
+Temp1=noise3(this.Vertex.X,this.Vertex.Y,ZBlastApp.Time*0.2)*(3.14*2);
+//this.Vertex.X+=cos(Temp1)*0.1;
+//this.Vertex.Y+=sin(Temp1)*0.1;
+
+this.TexCoord.X+=cos(Temp1)*0.1;
+this.TexCoord.Y+=sin(Temp1)*0.1;]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </Children>
+            </RenderTransformGroup>
+            <UseMaterial Material="TitleTextMaterial"/>
+            <RenderText Text="GAME OVER" Y="0.3" Scale="1.67">
+              <RenderCharExpression>
+<![CDATA[//CharX,CharY : current coordinate
+Temp1=noise2(this.CharI*0.1,ZBlastApp.Time*0.25);
+//this.CharX*= (((2+Temp1)*0.5));
+this.CharX+=Temp1*0.5;
+this.CharY= 0-Temp1*10;
+this.CharRotate=Temp1*3;
+this.CharScale=1.5+Temp1*1.5+CharI*0.1;//1+CharI*0.1;
+//this.CharY+=Temp1*2;]]>
+              </RenderCharExpression>
+            </RenderText>
+            <RenderSetColor Color="1 1 1 1"/>
+            <RenderText Name="Text2" Text="PRESS SPACE TO CONTINUE" Y="-0.8" Scale="0.66" RenderCharExpression="//CharX,CharY : current coordinate"/>
+            <RenderText Text="FINAL SCORE" X="-0.4" Y="-0.5" Scale="0.66">
+              <RenderCharExpression>
+<![CDATA[//GameOverTimer=0;
+Temp1=clamp(GameOverTimer*2-CharI*0.2,0,1);
+CharScale=4-Temp1*3;]]>
+              </RenderCharExpression>
+            </RenderText>
+            <RenderText TextFloatRef="PlayerScore Value" X="0.74" Y="-0.5"/>
+          </OnRender>
+          <OnUpdate>
+            <ZExpression Expression="GameOverTimer+=ZBlastApp.DeltaTime;"/>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression Expression="GameOverTimer=0;"/>
+          </OnSpawn>
+        </Model>
+        <Bitmap Name="GameOverBackgroundBitmap">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+Temp1=abs(noise2(this.X*2,this.Y*2))*0.5;
+Temp1+=abs(noise2(this.X*4,this.Y*4))*0.5;
+
+this.Pixel.R=Temp1*0;
+this.Pixel.G=Temp1*0;
+this.Pixel.B=Temp1*1.2;//Temp1*1.4;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Material Name="GameOverBackgroundMaterial" Light="0" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="GameOverBackgroundBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group> <!-- GameOverGroup -->
+
+  </Content>
+</ZApplication>

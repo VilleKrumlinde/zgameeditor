@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="YakYak new posts" ViewportRatio="3" MouseVisible="255">
+  <OnLoaded>
+    <ZExpression>
+      <Expression>
+<![CDATA[Color1.Color=1;
+RefreshTimer.Interval=0.1;
+IsUpdating=0;
+Rtext1.Text="";]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <AnimatorSimple Duration="10" AutoStart="255" Target="Rt1 Rotate 2" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+    <Timer Name="RefreshTimer" Interval="10">
+      <OnTimer>
+        <ZExpression>
+          <Expression>
+<![CDATA[Color1.Color=1;
+RefreshTimer.Interval=10;
+IsUpdating=1;]]>
+          </Expression>
+        </ZExpression>
+        <WebOpen Name="Web1" Url="http://www.yakyak.org/search.php?search_id=newposts">
+          <OnResult>
+            <ZExpression>
+              <Expression>
+<![CDATA[Color1.Color.G=0;
+Color1.Color.B=0;
+IsUpdating=0;
+
+string topicmatch="topictitle";
+string data=Web1.ResultString;
+string display="";
+
+int linkCount=0;
+int i=0;
+while(1)  {
+
+  //Sample string that we are trying to parse:
+  //<a href="./viewtopic.php?f=2&amp;t=78879" class="topictitle">Question about English language?</a>
+  //We want to extract the topictitle and the topicID (the number after "t=") so that we can create a url to it
+
+  i=indexOf(topicmatch,data,i);
+  if(i==-1) {
+    break;
+  } else {
+    //Extract topic id
+    int k=indexOf(";t=",data,i-25) + 3;
+    int l=indexOf("\"",data,k);
+    Links[linkCount]=strToInt( subStr(data,k,l-k) );
+    linkCount++;
+    if(linkCount==Links.SizeDim1)
+      break;
+
+    //Extract topic title
+    k=indexOf("</a>",data,i);
+    i+=length(topicmatch)+2;
+    //Add topic title to displaystring
+    display+=subStr(data,i,k-i) + "\n";
+    i=k;
+  }
+
+}
+Rtext1.Text=display;]]>
+              </Expression>
+            </ZExpression>
+          </OnResult>
+        </WebOpen>
+      </OnTimer>
+    </Timer>
+    <KeyPress Comment="Click" Keys="{" RepeatDelay="0.5">
+      <OnPressed>
+        <ZExpression>
+          <Expression>
+<![CDATA[int clicked=round( (1.0 - ((App.MousePosition.Y+1.0)/2.0)) * 9 );
+Web2.Url="http://www.yakyak.org/viewtopic.php?f=2&t=" + intToStr(Links[clicked]);]]>
+          </Expression>
+        </ZExpression>
+        <WebOpen Name="Web2" Url="http://www.yakyak.org/viewtopic.php?f=2&amp;t=1808514482" InBrowser="255"/>
+      </OnPressed>
+    </KeyPress>
+  </OnUpdate>
+  <OnRender>
+    <Condition Expression="return IsUpdating==1;">
+      <OnTrue>
+        <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="6.97 3.97 0" Rotate="0 0 -3.9669">
+          <Children>
+            <RenderSetColor Name="Color1" Color="1 1 1 1"/>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+      </OnTrue>
+    </Condition>
+    <UseMaterial Material="Material1"/>
+    <RenderText Name="Rtext1" X="-0.97" Y="0.92" Scale="0.3" Align="1" StretchY="3.11"/>
+  </OnRender>
+  <Content>
+    <Group/>
+    <DefineArray Name="Links" Type="1" SizeDim1="10"/>
+    <Material Name="Material1"/>
+    <DefineVariable Name="IsUpdating" Type="1"/>
+  </Content>
+</ZApplication>
