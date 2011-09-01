@@ -68,7 +68,8 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
+  System.Types;
 
 {$R *.dfm}
 

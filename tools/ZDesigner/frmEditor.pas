@@ -409,7 +409,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
 
 { TEditorForm }
 
@@ -423,7 +423,7 @@ begin
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
-  DecimalSeparator := '.';
+  FormatSettings.DecimalSeparator := '.';
 
   Ed := TZPropertyEditor.Create(Self);
   Ed.Align := alClient;

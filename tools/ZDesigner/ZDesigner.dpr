@@ -47,7 +47,7 @@ uses
   frmSelectComponent in 'frmSelectComponent.pas' {SelectComponentForm},
   Steering in '..\..\Steering.pas',
   frmCompEditBase in 'frmCompEditBase.pas' {CompEditFrameBase: TFrame},
-  uSymTab in 'uSymTab.pas',
+  uSymTab in '..\..\uSymTab.pas',
   dmCommon in 'dmCommon.pas' {CommonModule: TDataModule},
   AudioPlayer in '..\..\AudioPlayer.pas',
   AudioComponents in '..\..\AudioComponents.pas',
@@ -80,7 +80,9 @@ uses
   frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame},
   frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
   ZPlatform in '..\..\ZPlatform.pas',
-  frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm};
+  frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm},
+  Vcl.Themes,
+  Vcl.Styles;
 
 {$R *.res}
 

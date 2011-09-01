@@ -2492,14 +2492,14 @@ end;
 
 procedure TZXmlWriter.OnDocumentEnd;
 begin
-  SysUtils.DecimalSeparator := Self.OldSeparator;
+  FormatSettings.DecimalSeparator := Self.OldSeparator;
 end;
 
 procedure TZXmlWriter.OnDocumentStart;
 begin
   WriteLine('<?xml version="1.0" encoding="iso-8859-1" ?>');
-  Self.OldSeparator := SysUtils.DecimalSeparator;
-  SysUtils.DecimalSeparator := '.';
+  Self.OldSeparator := FormatSettings.DecimalSeparator;
+  FormatSettings.DecimalSeparator := '.';
 end;
 
 procedure TZXmlWriter.WriteString(const S: string);
@@ -2951,8 +2951,8 @@ constructor TZXmlReader.Create;
 begin
   MainXml := TXmlParser.Create;
   FixUps := TZArrayList.Create;
-  Self.OldSeparator := SysUtils.DecimalSeparator;
-  SysUtils.DecimalSeparator := '.';
+  Self.OldSeparator := FormatSettings.DecimalSeparator;
+  FormatSettings.DecimalSeparator := '.';
 end;
 
 procedure TZXmlReader.LoadFromFile(const FileName: string);
@@ -2975,7 +2975,7 @@ end;
 
 destructor TZXmlReader.Destroy;
 begin
-  SysUtils.DecimalSeparator := Self.OldSeparator;
+  FormatSettings.DecimalSeparator := Self.OldSeparator;
   MainXml.Free;
   FixUps.Free;
   if ExternalSymTab then

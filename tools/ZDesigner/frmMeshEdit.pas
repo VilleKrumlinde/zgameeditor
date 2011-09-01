@@ -71,7 +71,7 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile;
+uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, System.Types;
 
 {$R *.dfm}
 

@@ -99,7 +99,7 @@ implementation
 {$R *.dfm}
 
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
-  frmEnvelopeFrame,ZPlatform,Math, uHelp;
+  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types;
 
 
 var
