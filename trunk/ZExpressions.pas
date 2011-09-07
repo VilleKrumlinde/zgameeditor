@@ -203,7 +203,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpOpJumpKind;
-    Destination : integer;  //todo could be smallint or byte
+    Destination : integer;
     _Type : (jutFloat,jutInt,jutString);
   end;
 
@@ -224,8 +224,8 @@ type
     Kind : TExpFuncCallKind;
   end;
 
-  //Built-in functions that return strings
-  TExpStringFuncCall = class(TExpBase)
+  //Built-in functions that return pointer
+  TExpPointerFuncCall = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -284,7 +284,7 @@ type
     Arguments : integer;
   end;
 
-  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1);
+  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,emPtrDerefPointer);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute; override;
@@ -340,6 +340,12 @@ type
     procedure Execute; override;
   end;
 
+  //Assign ptr to Pointersize value, both on stack
+  TExpAssignPointer = class(TExpBase)
+  protected
+    procedure Execute; override;
+  end;
+
   //Join two strings
   TExpStringConCat = class(TExpBase)
   protected
@@ -377,6 +383,11 @@ type
     {$endif}
   end;
 
+  TExpAddToPointer = class(TExpBase)
+  protected
+    procedure Execute; override;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
@@ -405,21 +416,26 @@ var
 const
   ZcStackSize=16384;
 
+type
+  TStackElement = NativeUInt;
+  PStackElement = ^TStackElement;
+
 var
-  ZcStack : array[0..ZcStackSize div SizeOf(Integer)] of integer;
-  ZcStackPtr : PInteger;
+  ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
+  ZcStackPtr : PStackElement;
 
 const
-  ZcStackBegin : PInteger = @ZcStack;
+  ZcStackBegin : PStackElement = @ZcStack;
+
+{$POINTERMATH ON}
 
 function StackGetDepth : integer; inline;
 begin
-  {$if SizeOf(Integer)<>4}
-  'update shift bits to divide with word length below'
-  {$ifend}
-  Result := (integer(ZcStackPtr) - integer(ZcStackBegin)) shr 2;
+  //Returns the number of stack elements from start of stack
+  Result := (ZcStackPtr - ZcStackBegin);
 end;
 
+//Push 32-bit value
 procedure StackPush(const X);
 begin
   {$ifndef minimal}
@@ -430,11 +446,23 @@ begin
   Inc(ZcStackPtr);
 end;
 
+//Push 32 or 64-bit value depending on architechture
+procedure StackPushPointer(const X);
+begin
+  {$ifndef minimal}
+  if StackGetDepth>=High(ZcStack) then
+    ZHalt('Zc Stack Overflow (infinite recursion?)');
+  {$endif}
+  ZcStackPtr^ := TStackElement( PPointer(@X)^ );
+  Inc(ZcStackPtr);
+end;
+
 procedure StackPushValue(X : pointer); inline;
 begin
   StackPush(X);
 end;
 
+//Pop 32-bit value
 procedure StackPopTo(var X);
 begin
   {$ifndef minimal}
@@ -442,7 +470,18 @@ begin
     ZHalt('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
-  PInteger(@X)^:=ZcStackPtr^;
+  PInteger(@X) ^:= ZcStackPtr^;
+end;
+
+//Pop 32 or 64-bit value depending on architechture
+procedure StackPopToPointer(var X);
+begin
+  {$ifndef minimal}
+  if StackGetDepth=0 then
+    ZHalt('Zc Stack Underflow');
+  {$endif}
+  Dec(ZcStackPtr);
+  PPointer(@X)^ := pointer(ZcStackPtr^);
 end;
 
 function StackPopFloat : single;
@@ -450,7 +489,7 @@ begin
   StackPopTo(Result);
 end;
 
-function StackGetPtrToItem(const Index : integer) : PInteger; inline;
+function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
 begin
   Result := @ZcStack;
   Inc(Result,Index);
@@ -458,14 +497,14 @@ end;
 
 procedure SaveExecutionState;
 begin
-  StackPush(gCurrentPc);
+  StackPushPointer(gCurrentPc);
   StackPush(gCurrentBp);
 end;
 
 procedure RestoreExecutionState;
 begin
   StackPopTo(gCurrentBp);
-  StackPopTo(gCurrentPc);
+  StackPopToPointer(gCurrentPc);
 end;
 
 {$ifndef minimal}
@@ -478,6 +517,8 @@ end;
 {$endif}
 
 procedure RunCode(Code : TZComponentList);
+const
+  NilP : pointer = nil;
 var
 {$ifndef minimal}
   GuardLimit,GuardAllocLimit : integer;
@@ -492,7 +533,7 @@ begin
 
   SaveDepth := StackGetDepth;
 
-  StackPushValue(nil); //Push return adress nil
+  StackPushPointer(NilP); //Push return adress nil
 
   {$ifndef minimal}
   GuardLimit := 50 * 1000000;
@@ -521,9 +562,9 @@ begin
 end;
 
 {$ifndef minimal}
-procedure CheckNilDeref(P : integer);
+procedure CheckNilDeref(P : pointer);
 begin
-  ZAssert(P>1024,'Null pointer referenced in expression');
+  ZAssert( NativeUInt(P)>1024,'Null pointer referenced in expression');
 end;
 {$endif}
 
@@ -670,6 +711,7 @@ procedure TExpJump.Execute;
 var
   L,R : single;
   Li,Ri : integer;
+  Lp,Rp : pointer;
   Jump : boolean;
 begin
   Jump := True;
@@ -708,9 +750,9 @@ begin
           end;
         jutString:
           begin
-            StackPopTo(Ri);
-            StackPopTo(Li);
-            Jump := ZStrCompare(PAnsiChar(Li),PAnsiChar(Ri));
+            StackPopToPointer(Rp);
+            StackPopToPointer(Lp);
+            Jump := ZStrCompare(PAnsiChar(Lp),PAnsiChar(Rp));
             if Kind=jsJumpNE then
                Jump := not Jump;
           end;
@@ -752,8 +794,8 @@ end;
 procedure TExpFuncCall.Execute;
 var
   V,A1,A2,A3 : single;
-  I1,I2,I3 : integer;
-  M : TModel;
+  I1,I2 : integer;
+  P1,P2 : pointer;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -853,44 +895,34 @@ begin
       end;
     fcStringLength :
       begin
-        StackPopTo(I1);
-        PInteger(@V)^ := ZStrLength(PAnsiChar(I1));
+        StackPopToPointer(P1);
+        PInteger(@V)^ := ZStrLength(PAnsiChar(P1));
       end;
     fcStringIndexOf :
       begin
         //x=indexOf("lo","hello",2)
         StackPopTo(I1);
-        StackPopTo(I2);
-        StackPopTo(I3);
-        PInteger(@V)^ := ZStrPos(PAnsiChar(I3),PAnsiChar(I2),I1);
+        StackPopToPointer(P1);
+        StackPopToPointer(P2);
+        PInteger(@V)^ := ZStrPos(PAnsiChar(P2),PAnsiChar(P1),I1);
       end;
     fcStrToInt :
       begin
-        StackPopTo(I1);
-        PInteger(@V)^ := ZStrToInt(PAnsiChar(I1));
+        StackPopToPointer(P1);
+        PInteger(@V)^ := ZStrToInt(PAnsiChar(P1));
       end;
     fcOrd :
       begin
         //i=ord("A")
-        StackPopTo(I1);
-        PInteger(@V)^ := PByte(I1)^;
-      end;
-    fcCreateModel :
-      begin
-        StackPopTo(I1);
-        SaveExecutionState;
-          //AddToScene will call m.OnSpawn which in turn can run expressions
-          M := TModel(TModel(I1).Clone);
-          M.AddToScene;
-        RestoreExecutionState;
-        V := single(M);
+        StackPopToPointer(P1);
+        PInteger(@V)^ := PByte(P1)^;
       end;
     fcTrace :
       begin
         HasReturnValue := False;
-        StackPopTo(I1);
+        StackPopToPointer(P1);
         {$ifndef minimal}
-        ZLog.GetLog('Zc').Write(String(PAnsiChar(I1)),lleUserTrace);
+        ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
@@ -948,6 +980,7 @@ begin
     ZHalt('Array read outside range: ' + String(TheArray.Name));
   {$endif}
   V := P^;
+  //todo: 64 bit
   StackPush( V );
 end;
 
@@ -1016,6 +1049,7 @@ begin
   CleanUpStrings(AllocType,AllocItemCount,AllocPtr);
   {$endif}
   Self.Limit := CalcLimit;
+  //Todo: 64 bit
   ByteSize := Limit * SizeOf(single);
   if Persistent then
   begin
@@ -1160,12 +1194,13 @@ end;
 
 procedure TExpAccessLocal.Execute;
 var
-  P : PInteger;  //4 byte data
+  P : PStackElement;
 begin
+  //Use pointer size to get all bits in 64-bit mode
   P := StackGetPtrToItem( gCurrentBP + Self.Index );
   case Kind of
-    loLoad: StackPush(P^);
-    loStore: StackPopTo(P^);
+    loLoad: StackPushPointer(P^);
+    loStore: StackPopToPointer(P^);
   end;
 end;
 
@@ -1193,12 +1228,13 @@ end;
 {$warnings off}
 procedure TExpReturn.Execute;
 var
-  RetVal : integer;
+  RetVal : pointer;
 begin
   if HasReturnValue then
   begin
     //Local0 holds returnvalue
-    RetVal := PInteger( StackGetPtrToItem( gCurrentBP ) )^;
+    //Treat return value as pointer to get all bits in 64-bit mode
+    RetVal := PPointer( StackGetPtrToItem( gCurrentBP ) )^;
   end;
 
   if HasFrame then
@@ -1208,14 +1244,14 @@ begin
   end;
 
   //Get return adress
-  StackPopTo(gCurrentPc);
+  StackPopToPointer(gCurrentPc);
 
   //Clean stack of function arguments
   Dec(ZcStackPtr,Arguments);
 
   if HasReturnValue then
   begin
-    StackPush(RetVal);
+    StackPushPointer(RetVal);
   end;
 end;
 {$warnings on}
@@ -1240,7 +1276,12 @@ begin
     case Prop.PropertyType of
       zptFloat,zptScalar : S := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
       zptInteger : S := IntToStr(Value.IntegerValue);
-      zptComponentRef : S := String(Value.ComponentValue.Name);
+      zptComponentRef :
+        begin
+          S := String(Value.ComponentValue.Name);
+          if S='' then
+            S := Value.ComponentValue.ClassName;
+        end;
       zptPropertyRef :
         begin
           S := String(Value.PropertyValue.Component.Name) + ' ' + String(Value.PropertyValue.Prop.Name);
@@ -1268,6 +1309,7 @@ end;
 procedure TExpMisc.Execute;
 var
   V : integer;
+  P : pointer;
 begin
   case Kind of
     emPop: StackPopFloat;  //Pop, discard value from top of stack
@@ -1278,23 +1320,32 @@ begin
         StackPush(V);
       end;
     emLoadCurrentModel :
-      StackPush( Meshes.CurrentModel );
+      StackPushPointer( Meshes.CurrentModel );
     emPtrDeref4 :
       begin
-        StackPopTo(V);
+        StackPopToPointer(P);
         {$ifndef MINIMAL}
-        CheckNilDeref(integer(V));
+        CheckNilDeref(P);
         {$endif}
-        StackPush(pointer(V)^);
+        V := PInteger(P)^;
+        StackPush(V);
       end;
     emPtrDeref1 :
       begin
-        StackPopTo(V);
+        StackPopToPointer(P);
         {$ifndef MINIMAL}
-        CheckNilDeref(integer(V));
+        CheckNilDeref(P);
         {$endif}
-        V := PByte(V)^;
+        V := PByte(P)^;
         StackPush(V);
+      end;
+    emPtrDerefPointer :
+      begin
+        StackPopToPointer(P);
+        {$ifndef MINIMAL}
+        CheckNilDeref(P);
+        {$endif}
+        StackPushPointer(P^);
       end;
   end;
 end;
@@ -1325,7 +1376,7 @@ end;
 
 procedure TExpUserFuncCall.Execute;
 begin
-  StackPush(gCurrentPC);
+  StackPushPointer(gCurrentPC);
   gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
   Dec(gCurrentPc);
 end;
@@ -1366,7 +1417,7 @@ var
   P : pointer;
 begin
   StackPopTo(I);
-  StackPopTo(P);
+  StackPopToPointer(P);
   PInteger(P)^ := I;
 end;
 
@@ -1380,9 +1431,20 @@ var
 begin
   //Cast integer to byte before assigning
   StackPopTo(V);
-  StackPopTo(P);
+  StackPopToPointer(P);
   B := V;
   PByte(P)^ := B;
+end;
+
+{ TExpAssignPointer }
+
+procedure TExpAssignPointer.Execute;
+var
+  V,P : pointer;
+begin
+  StackPopToPointer(V);
+  StackPopToPointer(P);
+  PPointer(P)^ := V;
 end;
 
 { TDefineVariableBase }
@@ -1409,8 +1471,8 @@ var
   P1,P2,Dest : PAnsiChar;
   I : integer;
 begin
-  StackPopTo(P2);
-  StackPopTo(P1);
+  StackPopToPointer(P2);
+  StackPopToPointer(P1);
 
   I := ZStrLength(P1) + ZStrLength(P2);
 
@@ -1420,22 +1482,23 @@ begin
   ZStrCopy(Dest,P1);
   ZStrCat(Dest,P2);
 
-  StackPush(Dest);
+  StackPushPointer(Dest);
 end;
 
-{ TExpStringFuncCall }
+{ TExpPointerFuncCall }
 
-procedure TExpStringFuncCall.DefineProperties(List: TZPropertyList);
+procedure TExpPointerFuncCall.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
 end;
 
-procedure TExpStringFuncCall.Execute;
+procedure TExpPointerFuncCall.Execute;
 var
   I1,I2 : integer;
   Buf : array[0..15] of ansichar;
   P1,Dest : PAnsiChar;
+  M : TModel;
 begin
   case Kind of
     fcIntToStr:
@@ -1450,7 +1513,7 @@ begin
         //s=subStr("hello",0,2)
         StackPopTo(I1);
         StackPopTo(I2);
-        StackPopTo(P1);
+        StackPopToPointer(P1);
         Dest := ManagedHeap_Alloc(I1+1);
         ZStrSubString(P1,Dest,I2,I1);
       end;
@@ -1462,8 +1525,18 @@ begin
         Dest^ := PAnsiChar(@I1)^;
         PBytes(Dest)^[1] := 0;
       end;
+    fcCreateModel :
+      begin
+        StackPopToPointer(M);
+        SaveExecutionState;
+          //AddToScene will call m.OnSpawn which in turn can run expressions
+          M := TModel(M.Clone);
+          M.AddToScene;
+        RestoreExecutionState;
+        Dest := pointer(M);
+      end;
   end;
-  StackPush(Dest);
+  StackPushPointer(Dest);
 end;
 
 { TExternalLibrary }
@@ -1545,6 +1618,12 @@ begin
 end;
 {$endif}
 
+{$ifndef CPUX86}
+procedure TExpExternalFuncCall.Execute;
+begin
+  //Not supported
+end;
+{$else}
 procedure TExpExternalFuncCall.Execute;
 {.$define darwin}
 type
@@ -1660,6 +1739,7 @@ begin
   if Self.ReturnType<>zctVoid then
     StackPush(RetVal);
 end;
+{$endif}
 
 { TExpLoadComponent }
 
@@ -1671,7 +1751,7 @@ end;
 
 procedure TExpLoadComponent.Execute;
 begin
-  StackPushValue(Self.Component);
+  StackPushPointer(Self.Component);
 end;
 
 { TExpLoadPropOffset }
@@ -1688,12 +1768,12 @@ var
 begin
   if not IsInit then
   begin
-    StackPopTo(C);
+    StackPopToPointer(C);
     {$ifndef minimal}
-    CheckNilDeref(integer(C));
+    CheckNilDeref(C);
     {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
-    StackPushValue(C);
+    StackPushPointer(C);
     IsInit := True;
   end;
   StackPush(Self.Offset);
@@ -1713,18 +1793,34 @@ end;
 
 procedure TExpLoadModelDefined.Execute;
 var
-  C : TModel;
+  M : TModel;
+  C : TZComponent;
 begin
-  StackPopTo(C);
+  StackPopToPointer(M);
   {$ifndef minimal}
-  CheckNilDeref(integer(C));
-  if (Self.DefinedIndex>=C.Definitions.Count) or
-    (not SameText(String(TZComponent(C.Definitions[Self.DefinedIndex]).Name),String(DefinedName))) then
+  CheckNilDeref(M);
+  if (Self.DefinedIndex>=M.Definitions.Count) or
+    (not SameText(String(TZComponent(M.Definitions[Self.DefinedIndex]).Name),String(DefinedName))) then
   begin
-    ZHalt('Defined var mismatch "' + DefinedName + '" in model "' + String(C.Name) + '" must be at position ' + IntToStr(Self.DefinedIndex) + ' in Definitions-list.');
+    ZHalt('Defined var mismatch "' + DefinedName + '" in model "' + String(M.Name) + '" must be at position ' + IntToStr(Self.DefinedIndex) + ' in Definitions-list.');
   end;
   {$endif}
-  StackPushValue( C.Definitions[Self.DefinedIndex] );
+  C := TZComponent(M.Definitions[Self.DefinedIndex]);
+  StackPushPointer( C );
+end;
+
+{ TExpAddToPointer }
+
+procedure TExpAddToPointer.Execute;
+//Add 32-bit value to pointer and store the result as pointer
+var
+  V : integer;
+  P : pbyte;
+begin
+  StackPopTo(V);
+  StackPopToPointer(P);
+  Inc(P,V);
+  StackPushPointer(P);
 end;
 
 initialization
@@ -1780,17 +1876,21 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAssign1,ExpAssign1ClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAssignPointer,ExpAssignPointerClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStringConstant,ExpStringConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStringConCat,ExpStringConCatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpStringFuncCall,ExpStringFuncCallClassId);
+  ZClasses.Register(TExpPointerFuncCall,ExpPointerFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpLoadComponent,ExpLoadComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpLoadPropOffset,ExpLoadPropOffsetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpLoadModelDefined,ExpLoadModelDefinedClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAddToPointer,ExpAddToPointerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

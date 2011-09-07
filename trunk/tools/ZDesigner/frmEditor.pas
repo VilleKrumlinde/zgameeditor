@@ -420,6 +420,7 @@ begin
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
   Self.Log := ZLog.GetLog(Self.ClassName);
+  Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -1605,7 +1606,7 @@ end;
 
 procedure TEditorForm.Timer1Timer(Sender: TObject);
 var
-  H : cardinal;
+  H : HWND;
 begin
   //Only draw when topmost (or editing arrays)
   H := GetActiveWindow;
@@ -3660,6 +3661,9 @@ begin
       NamesToRemove.Add('ZPlatform.Platform_NetRead');
     end;
 
+    //NamesToRemove.Add('System.@HandleAnyException');
+    //NamesToRemove.Add('System.@FinalizeArray');
+
     //ok, start removing
     NamesKept := TObjectList.Create(False);
     Stream := Section.RawData;
@@ -3681,8 +3685,11 @@ begin
       end;
       Stream.Seek(Item.Start,soBeginning);
       B := $90; //nop
+      {$ifdef CPU386}
+      //TODO: this does not work on 64-bit, not sure why
       for J := 0 to Item.Size - 1 do
         Stream.Write(B,1);
+      {$endif}
       Inc(TotalRemovedBytes,Item.Size);
       //Log.Write(Item.Name);
     end;

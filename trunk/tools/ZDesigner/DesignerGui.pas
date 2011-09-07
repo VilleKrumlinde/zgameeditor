@@ -1416,7 +1416,7 @@ begin
         if Bm.PixelFormat=pf32bit then
           Inc(PPixel)
         else
-          Inc(integer(PPixel),3);
+          Inc(NativeInt(PPixel),3);
 
         Stream.Write(R,1);
         Stream.Write(G,1);

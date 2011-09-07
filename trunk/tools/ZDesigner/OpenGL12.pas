@@ -227,11 +227,15 @@ unit OpenGL12;
 interface
 
 {.$define MULTITHREADOPENGL}
-                                      
+
+{$if defined(Win64)}
+  {$define Win32}
+{$ifend}
+
 uses
   {$ifdef Win32}
     Windows
-  {$endif Win32}
+  {$endif}
 
   {$ifdef LINUX}
     Libc, Xlib, Types
@@ -5728,50 +5732,7 @@ var
   gluEndPolygon: procedure(tess: PGLUtesselator); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluEndPolygon}
 
-  // window support functions
-  {$ifdef Win32}
-  wglGetProcAddress: function(ProcName: PAnsiChar): Pointer; stdcall;
-  {$EXTERNALSYM wglGetProcAddress}
-  wglCopyContext: function(p1: HGLRC; p2: HGLRC; p3: Cardinal): BOOL; stdcall;
-  {$EXTERNALSYM wglCopyContext}
-  wglCreateContext: function(DC: HDC): HGLRC; stdcall;
-  {$EXTERNALSYM wglCreateContext}
-  wglCreateLayerContext: function(p1: HDC; p2: Integer): HGLRC; stdcall;
-  {$EXTERNALSYM wglCreateLayerContext}
-  wglDeleteContext: function(p1: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglDeleteContext}
-  wglDescribeLayerPlane:function(p1: HDC; p2, p3: Integer; p4: Cardinal; var p5: TLayerPlaneDescriptor): BOOL; stdcall;
-  {$EXTERNALSYM wglDescribeLayerPlane}
-  wglGetCurrentContext: function: HGLRC; stdcall;
-  {$EXTERNALSYM wglGetCurrentContext}
-  wglGetCurrentDC: function: HDC; stdcall;
-  {$EXTERNALSYM wglGetCurrentDC}
-  wglGetLayerPaletteEntries: function(p1: HDC; p2, p3, p4: Integer; var pcr): Integer; stdcall;
-  {$EXTERNALSYM wglGetLayerPaletteEntries}
-  wglMakeCurrent: function(DC: HDC; p2: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglMakeCurrent}
-  wglRealizeLayerPalette: function(p1: HDC; p2: Integer; p3: BOOL): BOOL; stdcall;
-  {$EXTERNALSYM wglRealizeLayerPalette}
-  wglSetLayerPaletteEntries: function(p1: HDC; p2, p3, p4: Integer; var pcr): Integer; stdcall;
-  {$EXTERNALSYM wglSetLayerPaletteEntries}
-  wglShareLists: function(p1, p2: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglShareLists}
-  wglSwapLayerBuffers: function(p1: HDC; p2: Cardinal): BOOL; stdcall;
-  {$EXTERNALSYM wglSwapLayerBuffers}
-  wglSwapMultipleBuffers: function(p1: UINT; const p2: PWGLSwap): DWORD; stdcall;
-  {$EXTERNALSYM wglSwapMultipleBuffers}
-  wglUseFontBitmapsA: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmapsA}
-  wglUseFontOutlinesA: function (p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlinesA}
-  wglUseFontBitmapsW: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmapsW}
-  wglUseFontOutlinesW: function (p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlinesW}
-  wglUseFontBitmaps: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmaps}
-  wglUseFontOutlines: function(p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlines}
+  wglGetProcAddress : function (P : pansichar) : pointer; stdcall;
 
   // ARB wgl extensions
   wglGetExtensionsStringARB: function(DC: HDC): PAnsiChar; stdcall;
@@ -5785,7 +5746,6 @@ var
   wglChoosePixelFormatARB: function(DC: HDC; const piAttribIList: PInteger; const pfAttribFList: PGLFloat;
     nMaxFormats: UINT; piFormats: PInteger; nNumFormats: PUINT) : BOOL; stdcall;
   {$EXTERNALSYM wglChoosePixelFormatARB}
-  {$endif}
 
   // ARB_multitexture
   glMultiTexCoord1dARB: procedure(target: TGLenum; s: TGLdouble); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
@@ -7373,32 +7333,8 @@ begin
   glVertexPointer := nil; 
   glViewport := nil; 
 
-  {$ifdef Win32}
-  wglGetProcAddress := nil; 
-  wglCopyContext := nil; 
-  wglCreateContext := nil; 
-  wglCreateLayerContext := nil; 
-  wglDeleteContext := nil; 
-  wglDescribeLayerPlane := nil; 
-  wglGetCurrentContext := nil; 
-  wglGetCurrentDC := nil;
-  wglGetLayerPaletteEntries := nil; 
-  wglMakeCurrent := nil; 
-  wglRealizeLayerPalette := nil; 
-  wglSetLayerPaletteEntries := nil; 
-  wglShareLists := nil; 
-  wglSwapLayerBuffers := nil; 
-  wglSwapMultipleBuffers := nil; 
-  wglUseFontBitmapsA := nil; 
-  wglUseFontOutlinesA := nil; 
-  wglUseFontBitmapsW := nil; 
-  wglUseFontOutlinesW := nil; 
-  wglUseFontBitmaps := nil; 
-  wglUseFontOutlines := nil; 
-  {$endif}
-
   // GL 1.2
-  glDrawRangeElements := nil; 
+  glDrawRangeElements := nil;
   glTexImage3D := nil; 
 
   // GL 1.2 ARB imaging
@@ -7502,12 +7438,12 @@ end;
 procedure LoadProcAddresses;
 
 var
-  Handle: Cardinal;
+  Handle: NativeInt;
 
 begin
   if GLHandle <> INVALID_MODULEHANDLE then
   begin
-    Handle := Cardinal(GLHandle); // Kylix compatiblilty trick
+    Handle := NativeInt(GLHandle); // Kylix compatiblilty trick
 
     glAccum := GetProcAddress(Handle, 'glAccum');
     glAlphaFunc := GetProcAddress(Handle, 'glAlphaFunc'); 
@@ -7827,8 +7763,8 @@ begin
     glVertex2iv := GetProcAddress(Handle, 'glVertex2iv'); 
     glVertex2s := GetProcAddress(Handle, 'glVertex2s'); 
     glVertex2sv := GetProcAddress(Handle, 'glVertex2sv'); 
-    glVertex3d := GetProcAddress(Handle, 'glVertex3d'); 
-    glVertex3dv := GetProcAddress(Handle, 'glVertex3dv'); 
+    glVertex3d := GetProcAddress(Handle, 'glVertex3d');
+    glVertex3dv := GetProcAddress(Handle, 'glVertex3dv');
     glVertex3f := GetProcAddress(Handle, 'glVertex3f'); 
     glVertex3fv := GetProcAddress(Handle, 'glVertex3fv'); 
     glVertex3i := GetProcAddress(Handle, 'glVertex3i'); 
@@ -7842,33 +7778,13 @@ begin
     glVertex4i := GetProcAddress(Handle, 'glVertex4i'); 
     glVertex4iv := GetProcAddress(Handle, 'glVertex4iv'); 
     glVertex4s := GetProcAddress(Handle, 'glVertex4s'); 
-    glVertex4sv := GetProcAddress(Handle, 'glVertex4sv'); 
-    glVertexPointer := GetProcAddress(Handle, 'glVertexPointer'); 
-    glViewport := GetProcAddress(Handle, 'glViewport'); 
+    glVertex4sv := GetProcAddress(Handle, 'glVertex4sv');
+    glVertexPointer := GetProcAddress(Handle, 'glVertexPointer');
+    glViewport := GetProcAddress(Handle, 'glViewport');
 
     // window support routines
     {$ifdef Win32}
-    wglGetProcAddress := GetProcAddress(Handle, 'wglGetProcAddress'); 
-    wglCopyContext := GetProcAddress(Handle, 'wglCopyContext'); 
-    wglCreateContext := GetProcAddress(Handle, 'wglCreateContext'); 
-    wglCreateLayerContext := GetProcAddress(Handle, 'wglCreateLayerContext'); 
-    wglDeleteContext := GetProcAddress(Handle, 'wglDeleteContext'); 
-    wglDescribeLayerPlane := GetProcAddress(Handle, 'wglDescribeLayerPlane'); 
-    wglGetCurrentContext := GetProcAddress(Handle, 'wglGetCurrentContext'); 
-    wglGetCurrentDC := GetProcAddress(Handle, 'wglGetCurrentDC'); 
-    wglGetLayerPaletteEntries := GetProcAddress(Handle, 'wglGetLayerPaletteEntries'); 
-    wglMakeCurrent := GetProcAddress(Handle, 'wglMakeCurrent'); 
-    wglRealizeLayerPalette := GetProcAddress(Handle, 'wglRealizeLayerPalette');
-    wglSetLayerPaletteEntries := GetProcAddress(Handle, 'wglSetLayerPaletteEntries'); 
-    wglShareLists := GetProcAddress(Handle, 'wglShareLists'); 
-    wglSwapLayerBuffers := GetProcAddress(Handle, 'wglSwapLayerBuffers'); 
-    wglSwapMultipleBuffers := GetProcAddress(Handle, 'wglSwapMultipleBuffers'); 
-    wglUseFontBitmapsA := GetProcAddress(Handle, 'wglUseFontBitmapsA'); 
-    wglUseFontOutlinesA := GetProcAddress(Handle, 'wglUseFontOutlinesA'); 
-    wglUseFontBitmapsW := GetProcAddress(Handle, 'wglUseFontBitmapsW'); 
-    wglUseFontOutlinesW := GetProcAddress(Handle, 'wglUseFontOutlinesW');
-    wglUseFontBitmaps := GetProcAddress(Handle, 'wglUseFontBitmapsA'); 
-    wglUseFontOutlines := GetProcAddress(Handle, 'wglUseFontOutlinesA');
+    wglGetProcAddress := GetProcAddress(Handle, 'wglGetProcAddress');
     {$endif}
 
     // GL 1.2

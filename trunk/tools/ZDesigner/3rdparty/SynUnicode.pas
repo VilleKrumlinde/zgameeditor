@@ -341,7 +341,6 @@ function UnicodeStringReplace(const S, OldPattern, NewPattern: UnicodeString;
 { functions taken from JCLUnicode.pas }
 function WStrComp(Str1, Str2: PWideChar): Integer;
 function WStrLComp(Str1, Str2: PWideChar; MaxLen: Cardinal): Integer;
-procedure StrSwapByteOrder(Str: PWideChar);
 function WideQuotedStr(const S: UnicodeString; Quote: WideChar): UnicodeString;
 function WideExtractQuotedStr(var Src: PWideChar; Quote: WideChar): UnicodeString;
 function UnicodeStringOfChar(C: WideChar; Count: Cardinal): UnicodeString;
@@ -465,6 +464,7 @@ uses
 
 {$IFNDEF UNICODE}
 { TUnicodeStrings }
+procedure StrSwapByteOrder(Str: PWideChar); forward;
 
 constructor TUnicodeStrings.Create;
 begin
@@ -1542,6 +1542,7 @@ begin
 end;
 
 function WStrCopy(Dest: PWideChar; const Source: PWideChar): PWideChar;
+{$ifdef CPU86}
 asm
         PUSH    EDI
         PUSH    ESI
@@ -1563,8 +1564,14 @@ asm
         POP     ESI
         POP     EDI
 end;
+{$else}
+begin
+  Result := WStrMove(Dest,Source,Length(Source)+1);
+end;
+{$endif}
 
 function WStrLCopy(Dest: PWideChar; const Source: PWideChar; MaxLen: Cardinal): PWideChar;
+{$ifdef CPU86}
 asm
         PUSH    EDI
         PUSH    ESI
@@ -1594,6 +1601,11 @@ asm
         POP     ESI
         POP     EDI
 end;
+{$else}
+begin
+  Result := PWideChar( System.Copy(Source,1,MaxLen) );
+end;
+{$endif}
 
 function WStrCat(Dest: PWideChar; const Source: PWideChar): PWideChar;
 begin
@@ -2186,6 +2198,7 @@ end;
 // byte to go from LSB to MSB and vice versa.
 // EAX contains address of string
 procedure StrSwapByteOrder(Str: PWideChar);
+{$ifdef CPU86}
 asm
        PUSH    ESI
        PUSH    EDI
@@ -2205,6 +2218,11 @@ asm
        POP     EDI
        POP     ESI
 end;
+{$else}
+begin
+  //Todo: ignore for now in 64-bit
+end;
+{$endif}
 
 // works like QuotedStr from SysUtils.pas but can insert any quotation character
 function WideQuotedStr(const S: UnicodeString; Quote: WideChar): UnicodeString;

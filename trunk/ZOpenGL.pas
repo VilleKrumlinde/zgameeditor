@@ -1233,6 +1233,9 @@ const
   {$IFDEF Win32}
   opengl = 'opengl32.dll';
   {$ENDIF}
+  {$IFDEF Win64}
+  opengl = 'opengl32.dll';
+  {$ENDIF}
   {$IFDEF LINUX}
   opengl = 'libGL.so';
   {$ENDIF}
@@ -1332,9 +1335,9 @@ procedure glGetTexLevelParameteriv(target: GLEnum; level: GLint; pname: GLEnum; 
 procedure glPixelStorei(pname: GLEnum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 {$endif}
 
-{$ifdef WIN32}
+{$if defined(WIN32) or defined(WIN64)}
 function wglGetProcAddress (P : pansichar) : pointer; stdcall; external opengl;
-{$endif}
+{$ifend}
 
 var
    glActiveTexture : procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
