@@ -122,9 +122,11 @@ const
 
 implementation
 
-{$ifndef minimal}
-uses ZLog;
-{$endif}
+
+{$if defined(CPUX64)}
+uses System.Math;
+{$ifend}
+
 
 function ColorFtoB(const C : TZColorf) : integer;
 begin
@@ -272,12 +274,18 @@ begin
 end;
 
 function Tan(const X: single): single;
+{$IFDEF CPU386}
 asm
         FLD    X
         FPTAN
         FSTP   ST(0)      { FPTAN pushes 1.0 after result }
         FWAIT
 end;
+{$else}
+begin
+  Result := System.Tangent(X);
+end;
+{$endif}
 
 function VecLengthSquared3(const v: TZVector3f): Single;
 begin
@@ -348,8 +356,8 @@ begin
   Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and
     (PInteger(@V[2])^=0);
   {$ifndef minimal}
-  if Result then
-    ZAssert(((abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON)),'VecIsNull3');
+//  if Result then
+//    ZAssert(((abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON)),'VecIsNull3');
   {$endif}
 end;
 
@@ -359,8 +367,8 @@ begin
   Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and
     (PInteger(@V[2])^=0) and (PInteger(@V[3])^=0);
   {$ifndef minimal}
-  if Result then
-    ZAssert(result=(abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON) and (abs(V[3])<EPSILON),'VecIsNull4');
+//  if Result then
+//    ZAssert(result=(abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON) and (abs(V[3])<EPSILON),'VecIsNull4');
   {$endif}
 end;
 
@@ -371,10 +379,10 @@ begin
     (PInteger(@V1[2])^=PInteger(@V2[2])^) and
     (PInteger(@V1[3])^=PInteger(@V2[3])^);
   {$ifndef minimal}
-  ZAssert(Result =
-    (V1[0]=V2[0]) and (V1[1]=V2[1]) and (V1[2]=V2[2]) and (V1[3]=V2[3]),
-    'VecIsEqual4'
-    );
+//  ZAssert(Result =
+//    (V1[0]=V2[0]) and (V1[1]=V2[1]) and (V1[2]=V2[2]) and (V1[3]=V2[3]),
+//    'VecIsEqual4'
+//    );
   {$endif}
 end;
 
@@ -403,13 +411,18 @@ end;
 
 
 function ArcTan2(const Y, X: single): single;
+{$IFDEF CPU386}
 asm
         FLD     Y
         FLD     X
         FPATAN
         FWAIT
 end;
-
+{$else}
+begin
+  Result := System.Math.ArcTan2(Y,X);
+end;
+{$endif}
 
 //Perlin new noise for hardware
 //Approx range: -0.3 .. 0.3
@@ -546,6 +559,7 @@ end;
 
 //Från math.pas
 function IntPower(const Base: Extended; const Exponent: Integer): Extended;
+{$IFDEF CPU386}
 asm
         mov     ecx, eax
         cdq
@@ -568,6 +582,11 @@ asm
 @@3:
         fwait
 end;
+{$else}
+begin
+  Result := System.Math.IntPower(Base,Exponent);
+end;
+{$endif}
 
 function Power(const Base, Exponent: single): single;
 begin
@@ -711,6 +730,7 @@ end;
 
 
 procedure SinCos(const Theta: Single; out Sin, Cos: Single);
+{$IFDEF CPU386}
 // EAX contains address of Sin
 // EDX contains address of Cos
 // Theta is passed over the stack
@@ -720,6 +740,15 @@ asm
    FSTP DWORD PTR [EDX]    // cosine
    FSTP DWORD PTR [EAX]    // sine
 end;
+{$else}
+var
+  S,C : double;
+begin
+  System.SineCosine(Theta, S, C);
+  Sin := S;
+  Cos := C;
+end;
+{$endif}
 
 procedure CreateScaleAndTranslationMatrix(const scale, offset : TZVector3f; out Result : TZMatrix4f);
 begin
@@ -808,15 +837,9 @@ begin
     Result := Result + 1.0;
 end;
 
-{function Floor(const X: single): Integer;
-begin
-  Result := Integer(Trunc(X));
-  if Frac(X) < 0 then
-    Dec(Result);
-end;}
-
 //Fastcode project: Floor32_PLR_IA32_1
 function Floor(const X: Single): integer;
+{$ifdef CPU86}
 var
   LOldCW, LNewCW: Word;
   LResult: Integer;
@@ -832,11 +855,18 @@ asm
   mov eax, LResult
   fldcw LOldCW
 end;
-
+{$else}
+begin
+  Result := Integer(Trunc(X));
+  if Frac(X) < 0 then
+    Dec(Result);
+end;
+{$endif}
 
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa
 function ArcSin(const X : Single) : Single;
+{$ifdef CPU86}
 asm
   fld1
   fld    X
@@ -846,9 +876,15 @@ asm
   fsqrt
   fpatan
 end;
+{$else}
+begin
+  Result := ArcTan2(X, Sqrt((1 + X) * (1 - X)))
+end;
+{$endif}
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa
 function ArcCos(const X : Single) : Single;
+{$ifdef CPU86}
 asm
   fld1
   fld    X
@@ -859,14 +895,27 @@ asm
   fxch
   fpatan
 end;
+{$else}
+begin
+  Result := ArcTan2(Sqrt((1 + X) * (1 - X)), X);
+end;
+{$endif}
 
 function Log2(const X : Single) : Single;
+{$ifdef CPU86}
 asm
   FLD1
   FLD     X
   FYL2X
   FWAIT
 end;
+{$else}
+const
+  InvLn2 : LongWord = $3FB8AA3B; // 1/Ln(2)
+begin
+  Result := Ln(X) * PSingle(@InvLn2)^;
+end;
+{$endif}
 
 function CreateTransform(const Rotation,Scale,Position : TZVector3f) : TZMatrix4f;
 var

@@ -57,14 +57,14 @@ uses
   ZFile in 'ZFile.pas',
   NanoJpeg in 'NanoJpeg.pas';
 
-{$ifdef Win32}
+{$if defined(Win32) or defined(Win64)}
   {$ifdef fpc}
     {$R Data.res}
   {$else}
     {$R Data.res Data.rc}
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
   {$endif}
-{$endif}
+{$ifend}
 
 begin
 

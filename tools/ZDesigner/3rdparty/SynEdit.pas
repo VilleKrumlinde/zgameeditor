@@ -5261,14 +5261,14 @@ end;
 
 procedure TCustomSynEdit.WMSetText(var Msg: TWMSetText);
 begin
-  LongBool(Msg.Result) := True;
+  PLongBool(@Msg.Result)^ := True;
   try
     if HandleAllocated and IsWindowUnicode(Handle) then
       Text := PWideChar(Msg.Text)
     else
       Text := UnicodeString(PAnsiChar(Msg.Text));
   except
-    LongBool(Msg.Result) := False;
+    PLongBool(@Msg.Result)^ := False;
     raise
   end
 end;

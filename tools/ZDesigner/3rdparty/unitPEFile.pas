@@ -71,11 +71,14 @@ PImageImportDirectory = ^TImageImportDirectory;
 //----------------------------------------------------------------------
 // TPEModule class
 
+PImageOptionalHeader = ^TImageOptionalHeader;
+
+
 TPEModule = class (TResourceModule)
 private
   fDOSHeader : TImageDosHeader;
   fCOFFHeader : TImageFileHeader;
-  fOptionalHeader : PImageOptionalHeader32;
+  fOptionalHeader : PImageOptionalHeader;
   fSectionList : TObjectList;                   // List of TImageSection objects
   fDOSStub : TMemoryStream;
   fCommentBlock : PAnsiChar;
@@ -102,7 +105,7 @@ private
 protected
   procedure Decode (memory : pointer; exeSize : Integer); virtual;
   procedure Encode; virtual;
-  property OptionalHeaderPtr : PImageOptionalHeader32 read fOptionalHeader;
+  property OptionalHeaderPtr : PImageOptionalHeader read fOptionalHeader;
   function FindDictionaryEntrySection (entryNo : Integer; var offset : Integer): Integer;
 
 public
@@ -455,7 +458,10 @@ begin
   // doesn't do any harm making it $16000 instead, and the formula works for everything
   // else I've tested...
 
+  {$ifdef Win32}
+  //todo: What should happen here in 64 bit?
   fOptionalHeader^.BaseOfData := fOptionalHeader.BaseOfCode + DWORD (i);
+  {$endif}
 
   fOptionalHeader^.SizeOfImage := iSize;
 end;

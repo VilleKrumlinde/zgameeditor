@@ -57,8 +57,8 @@ type
  ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
- ExpAssign4ClassId,ExpAssign1ClassId,ExpStringConstantClassId,ExpStringConCatClassId,
- ExpStringFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,
+ ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
+ ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -1052,7 +1052,7 @@ procedure TZComponent.GetProperty(Prop: TZProperty; var Value: TZPropertyValue);
 var
   P : pointer;
 begin
-  P := pointer(integer(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       Value.FloatValue := PFloat(P)^;
@@ -1102,7 +1102,7 @@ var
   S : ansistring;
   {$endif}
 begin
-  P := pointer(integer(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       PFloat(P)^ := Value.FloatValue;
@@ -1177,9 +1177,9 @@ end;
 //Används för att hitta target för propertyrefs
 function TZComponent.GetPropertyPtr(Prop: TZProperty; Index: integer): pointer;
 begin
-  Result := pointer(integer(Self) + Prop.Offset);
+  Result := pointer(NativeInt(Self) + Prop.Offset);
   if Index>0 then
-    Result := pointer(integer(Result) + Index*4);
+    Result := pointer(NativeInt(Result) + Index*4);
 end;
 
 procedure TZComponent.Change;
@@ -1300,13 +1300,13 @@ begin
         begin
           Result.SetProperty(Prop,Value);
           if (Value.ComponentValue<>nil) and (Value.ComponentValue.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(integer(Result) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
         end;
       zptPropertyRef :
         begin
           Result.SetProperty(Prop,Value);
           if (Value.PropertyValue.Component<>nil) and (Value.PropertyValue.Component.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(integer(Result) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
         end;
       zptComponentList :
         begin
@@ -2797,7 +2797,7 @@ begin
         begin
           PStream.Read(Value.ComponentValue,4);
           if Value.ComponentValue<>nil then
-            FixUps.Add( TObject(PPointer(integer(C) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
         end;
       zptPropertyRef :
         begin
@@ -2807,7 +2807,7 @@ begin
           PStream.Read(B,1);
           Value.PropertyValue.Index := B;
           if Value.PropertyValue.Component<>nil then
-            PropFixUps.Add( TObject(PPointer(integer(C) + Prop.Offset)) );
+            PropFixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
         end;
       zptVector3f :
         PStream.Read(Value.Vector3fValue,SizeOf(TZVector3f));
@@ -3220,7 +3220,9 @@ begin
                 Fix.Name := String(LowerCase(L[0]));
                 Fix.PropName := String(LowerCase(L[1]));
                 if L.Count>2 then
-                  Value.PropertyValue.Index := StrToIntDef(L[2],0);
+                  Value.PropertyValue.Index := StrToIntDef(L[2],0)
+                else
+                  Value.PropertyValue.Index := 0;
                 Fix.Prop := Prop;
                 Fix.Obj := C;
                 FixUps.Add( Fix );

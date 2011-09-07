@@ -38,7 +38,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, Windows, ZApplication, AudioPlayer,Commands
+uses ZOpenGL, ZLog, Winapi.Windows, ZApplication, AudioPlayer,Commands
  {$ifndef minimal}
   ,SysUtils
  {$endif}
@@ -655,7 +655,7 @@ end;
 
 procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
-  Windows.MessageBoxA(H_Wnd, ErrorMessage, 'ZZDC Error', MB_OK);
+  MessageBoxA(H_Wnd, ErrorMessage, 'ZZDC Error', MB_OK);
 end;
 
 function Platform_GetMousePos : TZPointi;
@@ -876,7 +876,7 @@ begin
   HGlobal := LoadResource(HInstance, HResInfo);
   //if HGlobal = 0 then Error;
   Size := SizeOfResource(HInstance, HResInfo);
-  if Size=4 then
+  if Size<=4 then
     //Only dummy data present, return nil
     Exit;
   Result := TZInputStream.CreateFromMemory(LockResource(HGlobal), Size);

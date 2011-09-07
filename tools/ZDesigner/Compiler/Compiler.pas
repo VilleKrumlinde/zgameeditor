@@ -195,7 +195,7 @@ type
     procedure GenFuncCall(Op : TZcOp; NeedReturnValue : boolean);
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
     procedure GenAddress(Op : TZcOp);
-    procedure GenAddInteger(const Value : integer);
+    procedure GenAddToPointer(const Value : integer);
     procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
     procedure MakeStringLiteralOp(const Value : string);
     procedure SetBreak(L : TZCodeLabel);
@@ -234,6 +234,7 @@ begin
   case Size of
     4 : Result := TExpAssign4.Create(nil);
     1 : Result := TExpAssign1.Create(nil);
+    100 : Result := TExpAssignPointer.Create(nil);
   else
     raise ECodeGenError.Create('Wrong datatype for assign');
   end;
@@ -284,6 +285,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   var
     Etyp : TZcExtendedDataType;
     PTyp : TZPropertyType;
+    E : TExpMisc;
   begin
     Etyp := Op.GetExtendedDataType;
     if ETyp.Kind=edtPropIndex then
@@ -296,15 +298,12 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     else
       raise ECodeGenError.Create('Failed to deref ' + Op.Id);
 
-    if PTyp in [zptByte,zptBoolean] then
-    begin
-      with TExpMisc.Create(Target) do
-        Kind := emPtrDeref1;
-    end
+    E := TExpMisc.Create(Target);
+    case PTyp of
+      zptString,zptComponentRef: E.Kind := emPtrDerefPointer;
+      zptByte,zptBoolean: E.Kind := emPtrDeref1;
     else
-    begin
-      with TExpMisc.Create(Target) do
-        Kind := emPtrDeref4;
+      E.Kind := emPtrDeref4;
     end;
   end;
 
@@ -473,19 +472,17 @@ begin
   end;
 end;
 
-procedure TZCodeGen.GenAddInteger(const Value: integer);
+procedure TZCodeGen.GenAddToPointer(const Value: integer);
 var
-  Add : TExpOpBinaryInt;
   Cnt : TExpConstantInt;
 begin
   if Value=0 then
     Exit;
 
-  if (Target.Last is TExpOpBinaryInt) then
+  if (Target.Last is TExpAddToPointer) then
   begin
     //Accumulate to previous add
-    Add := Target.Last as TExpOpBinaryInt;
-    if (Add.Kind=vbkPlus) and (Target[ Target.Count-2 ] is TExpConstantInt) then
+    if (Target[ Target.Count-2 ] is TExpConstantInt) then
     begin
       Cnt := Target[ Target.Count-2 ] as TExpConstantInt;
       Inc(Cnt.Constant,Value);
@@ -496,7 +493,7 @@ begin
   //Create new add
   Cnt := TExpConstantInt.Create(Target);
   Cnt.Constant := Value;
-  TExpOpBinaryInt.Create(Target,vbkPlus);
+  TExpAddToPointer.Create(Target);
 end;
 
 procedure TZCodeGen.GenAddress(Op: TZcOp);
@@ -517,12 +514,12 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
           GenValue(Op.Children.First);
           with TExpLoadPropOffset.Create(Target) do
             PropId := ETyp.Prop.PropId;
-          TExpOpBinaryInt.Create(Target,vbkPlus);
+          TExpAddToPointer.Create(Target);
         end;
       edtPropIndex :
         begin
           GenAddress(Op.Children.First);
-          GenAddInteger(ETyp.PropIndex * 4);
+          GenAddToPointer(ETyp.PropIndex * 4);
         end;
       else
         raise ECodeGenError.Create('Invalid datatype for select: ' + Op.Id);
@@ -591,10 +588,12 @@ begin
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
     if (Prop.PropertyType=zptString) and (not Prop.IsStringTarget) then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-    if Prop.PropertyType in [zptByte,zptBoolean] then
-      AssignSize:=1
+    case Prop.PropertyType of
+      zptString, zptComponentRef: AssignSize := 100;
+      zptByte, zptBoolean: AssignSize := 1;
     else
-      AssignSize:=4;
+      AssignSize := 4;
+    end;
     Target.AddComponent( MakeAssignOp(AssignSize) );
     if LeaveValue=alvPost then
       GenValue(LeftOp);
@@ -1065,7 +1064,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
   var
     I : integer;
     F : TExpFuncCall;
-    SF : TExpStringFuncCall;
+    SF : TExpPointerFuncCall;
   begin
     if NeedReturnValue and (Func.ReturnType=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1073,9 +1072,9 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
       GenValue(Op.Child(I));
-    if Func.FuncId in [fcIntToStr,fcSubStr,fcChr] then
+    if Func.FuncId in [fcIntToStr,fcSubStr,fcChr,fcCreateModel] then
     begin
-      SF := TExpStringFuncCall.Create(Target);
+      SF := TExpPointerFuncCall.Create(Target);
       SF.Kind := Func.FuncId;
     end else
     begin
