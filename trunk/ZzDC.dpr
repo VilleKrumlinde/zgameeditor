@@ -22,6 +22,10 @@ program ZzDC;
 
 {$WEAKLINKRTTI ON}
 
+{$if defined(CPUX64)}
+  {$EXCESSPRECISION OFF} //Needed for fast single-precision math
+{$ifend}
+
 //Zzap Dynamic Content engine
 
 {
