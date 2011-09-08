@@ -910,10 +910,8 @@ asm
   FWAIT
 end;
 {$else}
-const
-  InvLn2 : LongWord = $3FB8AA3B; // 1/Ln(2)
 begin
-  Result := Ln(X) * PSingle(@InvLn2)^;
+  Result := System.Math.Log2(X);
 end;
 {$endif}
 

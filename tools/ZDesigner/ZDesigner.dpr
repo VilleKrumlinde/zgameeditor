@@ -23,6 +23,10 @@ program ZDesigner;
 {$WEAKLINKRTTI ON}
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
+{$if defined(CPUX64)}
+  {$EXCESSPRECISION OFF} //Needed for fast single-precision math
+{$ifend}
+
 uses
   Forms,
   HTMLHelpViewer,
