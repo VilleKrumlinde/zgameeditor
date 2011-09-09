@@ -52,7 +52,7 @@ type
   end;
 
   TZComponentTreeView = class(TTreeView)
-  private
+  strict private
     RootComponent : TZComponent;
     procedure RebuildGui;
     procedure MyCustomDrawItem(Sender: TCustomTreeView; Node: TTreeNode; State: TCustomDrawState; var DefaultDraw: Boolean);
@@ -89,7 +89,7 @@ function ColorToZColor(C : TColor) : TZColorf;
 
 implementation
 
-uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
+uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
   frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes,
