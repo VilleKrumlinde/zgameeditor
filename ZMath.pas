@@ -839,7 +839,7 @@ end;
 
 //Fastcode project: Floor32_PLR_IA32_1
 function Floor(const X: Single): integer;
-{$ifdef CPU86}
+{$ifdef CPU386}
 var
   LOldCW, LNewCW: Word;
   LResult: Integer;
@@ -866,7 +866,7 @@ end;
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa
 function ArcSin(const X : Single) : Single;
-{$ifdef CPU86}
+{$ifdef CPU386}
 asm
   fld1
   fld    X
@@ -884,7 +884,7 @@ end;
 
 //From Fastcode project: by John O'Harrow and Norbert Juffa
 function ArcCos(const X : Single) : Single;
-{$ifdef CPU86}
+{$ifdef CPU386}
 asm
   fld1
   fld    X
@@ -902,7 +902,7 @@ end;
 {$endif}
 
 function Log2(const X : Single) : Single;
-{$ifdef CPU86}
+{$ifdef CPU386}
 asm
   FLD1
   FLD     X

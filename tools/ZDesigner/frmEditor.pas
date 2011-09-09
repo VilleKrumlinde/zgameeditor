@@ -36,11 +36,6 @@ type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
     bbNormalLinux,bbNormalOsx86);
 
-  TPageControl = class(ComCtrls.TPageControl)
-  protected
-    procedure CreateWnd; override;
-  end;
-
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
     Timer1: TTimer;
@@ -220,6 +215,7 @@ type
     BoundsCheckBox: TCheckBox;
     DisableShadersCheckBox: TCheckBox;
     DisableFBOCheckBox: TCheckBox;
+    StyleMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -289,8 +285,7 @@ type
     procedure BoundsCheckBoxClick(Sender: TObject);
     procedure DisableShadersCheckBoxClick(Sender: TObject);
     procedure DisableFBOCheckBoxClick(Sender: TObject);
-  protected
-    procedure Paint; override;
+    procedure OnChooseStyleMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -376,6 +371,7 @@ type
     procedure ClearRoot;
     procedure SetRoot(C: TZComponent);
     procedure SaveCurrentEdits;
+    procedure BuildStyleMenu;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -409,7 +405,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, Vcl.Themes;
 
 { TEditorForm }
 
@@ -540,6 +536,8 @@ begin
 
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
+
+  BuildStyleMenu;
 
   Application.OnException := OnAppException;
 
@@ -3775,42 +3773,36 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
-procedure TEditorForm.Paint;
+procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
+var
+  M : TMenuItem;
 begin
-  inherited;
+  M := (Sender as TMenuItem);
+  M.Checked := True;
+  TStyleManager.TrySetStyle( M.Hint );
+  // Force rebuild gui because Treeview gets recreated and it's difficult to
+  // keep the state of the custom treenodes.
+  // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
+  Application.ProcessMessages;
+  Tree.SetRootComponent(Self.Root);
 end;
-{var
-  vert : array[0..1] of TRIVERTEX;
-  gRect : GRADIENT_RECT;
-  FromColor, ToColor:TColor;
+
+procedure TEditorForm.BuildStyleMenu;
+var
+  M : TMenuItem;
+  S : string;
 begin
-  FromColor := clSkyBlue;
-  ToColor := clBlue;
-  vert [0] .x      := 0;
-  vert [0] .y      := 0;
-  vert [0] .Red    := GetRValue(FromColor) shl 8;
-  vert [0] .Green  := GetGValue(FromColor) shl 8;
-  vert [0] .Blue   := GetBValue(FromColor) shl 8;
-  vert [0] .Alpha  := $0000;
-
-  vert [1] .x      := Self.Width;
-  vert [1] .y      := Self.Height;
-  vert [1] .Red    := GetRValue(ToColor) shl 8;
-  vert [1] .Green  := GetGValue(ToColor) shl 8;
-  vert [1] .Blue   := GetBValue(ToColor) shl 8;
-  vert [1] .Alpha  := $0000;
-
-  gRect.UpperLeft  := 0;
-  gRect.LowerRight := 1;
-  GradientFill(Self.Canvas.Handle, @vert,2,@gRect,1,GRADIENT_FILL_RECT_V);
-end;}
-
-{ TPageControl }
-
-procedure TPageControl.CreateWnd;
-begin
-  inherited;
-//  SetWindowLong(Self.Handle, GWL_EXSTYLE, WS_EX_TRANSPARENT);
+  for S in TStyleManager.StyleNames do
+  begin
+    M := TMenuItem.Create(Self);
+    M.OnClick := Self.OnChooseStyleMenuItemClick;
+    M.Hint := S;
+    M.Caption := S;
+    M.RadioItem := True;
+    StyleMenuItem.Add(M);
+  end;
 end;
+
+
 
 end.
