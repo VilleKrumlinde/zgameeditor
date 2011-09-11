@@ -290,7 +290,7 @@ end;
 { TMusic }
 
 const
-  MidiTimeScale = 0.01;  //Midi times to seconds
+  MidiTimeScale : single = 0.01;  //Midi times to seconds
 
 function TMusic.ReadVarLength : Integer;
 var

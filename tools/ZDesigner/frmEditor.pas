@@ -30,7 +30,7 @@ uses
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg;
+  Jpeg, Vcl.Themes;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -216,6 +216,9 @@ type
     DisableShadersCheckBox: TCheckBox;
     DisableFBOCheckBox: TCheckBox;
     StyleMenuItem: TMenuItem;
+    OpenStyleMenuItem: TMenuItem;
+    N15: TMenuItem;
+    OpenStyleDialog: TOpenDialog;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -286,6 +289,7 @@ type
     procedure DisableShadersCheckBoxClick(Sender: TObject);
     procedure DisableFBOCheckBoxClick(Sender: TObject);
     procedure OnChooseStyleMenuItemClick(Sender: TObject);
+    procedure OpenStyleMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -372,6 +376,7 @@ type
     procedure SetRoot(C: TZComponent);
     procedure SaveCurrentEdits;
     procedure BuildStyleMenu;
+    procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -405,7 +410,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, Vcl.Themes;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
 
 { TEditorForm }
 
@@ -3773,18 +3778,34 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
+procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
+begin
+  if StyleHandle=nil then
+    TStyleManager.TrySetStyle( StyleName )
+  else
+    TStyleManager.SetStyle( StyleHandle );
+  // Force rebuild gui because Treeview gets recreated and it's difficult to
+  // keep the state of the custom treenodes.
+  // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
+  Application.ProcessMessages;
+  Tree.SetRootComponent(Self.Root);
+end;
+
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
 var
   M : TMenuItem;
 begin
   M := (Sender as TMenuItem);
   M.Checked := True;
-  TStyleManager.TrySetStyle( M.Hint );
-  // Force rebuild gui because Treeview gets recreated and it's difficult to
-  // keep the state of the custom treenodes.
-  // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
-  Application.ProcessMessages;
-  Tree.SetRootComponent(Self.Root);
+  SwitchToStyle(M.Hint,nil);
+end;
+
+procedure TEditorForm.OpenStyleMenuItemClick(Sender: TObject);
+begin
+  if OpenStyleDialog.Execute(Self.Handle) then
+  begin
+    SwitchToStyle('', TStyleManager.LoadFromFile(OpenStyleDialog.FileName));
+  end;
 end;
 
 procedure TEditorForm.BuildStyleMenu;
@@ -3802,7 +3823,6 @@ begin
     StyleMenuItem.Add(M);
   end;
 end;
-
 
 
 end.
