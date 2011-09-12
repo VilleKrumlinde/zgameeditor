@@ -2,10 +2,9 @@ object SettingsForm: TSettingsForm
   Left = 206
   Top = 110
   BorderIcons = [biSystemMenu]
-  BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 384
-  ClientWidth = 328
+  ClientHeight = 374
+  ClientWidth = 333
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,13 +15,13 @@ object SettingsForm: TSettingsForm
   Position = poScreenCenter
   OnCreate = FormCreate
   DesignSize = (
-    328
-    384)
+    333
+    374)
   PixelsPerInch = 96
   TextHeight = 13
   object OkButton: TButton
-    Left = 165
-    Top = 352
+    Left = 170
+    Top = 342
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -30,30 +29,30 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
-    ExplicitLeft = 180
-    ExplicitTop = 350
+    ExplicitLeft = 165
+    ExplicitTop = 352
   end
   object Button2: TButton
-    Left = 247
-    Top = 352
+    Left = 252
+    Top = 342
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
-    ExplicitLeft = 262
-    ExplicitTop = 350
+    ExplicitLeft = 247
+    ExplicitTop = 352
   end
   object GroupBox1: TGroupBox
     Left = 8
     Top = 118
-    Width = 312
+    Width = 317
     Height = 154
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Packer settings'
     TabOrder = 2
-    ExplicitWidth = 327
+    ExplicitWidth = 312
     object Label1: TLabel
       Left = 14
       Top = 32
@@ -125,12 +124,12 @@ object SettingsForm: TSettingsForm
   object GroupBox2: TGroupBox
     Left = 8
     Top = 63
-    Width = 312
+    Width = 317
     Height = 49
     Anchors = [akLeft, akTop, akRight]
     Caption = 'File association'
     TabOrder = 3
-    ExplicitWidth = 327
+    ExplicitWidth = 312
     object ShellCheck: TCheckBox
       Left = 10
       Top = 16
@@ -144,12 +143,12 @@ object SettingsForm: TSettingsForm
   object GroupBox3: TGroupBox
     Left = 8
     Top = 8
-    Width = 312
+    Width = 317
     Height = 49
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Designer layout'
     TabOrder = 4
-    ExplicitWidth = 327
+    ExplicitWidth = 312
     object Label6: TLabel
       Left = 14
       Top = 19
@@ -172,14 +171,14 @@ object SettingsForm: TSettingsForm
   object GroupBox4: TGroupBox
     Left = 8
     Top = 278
-    Width = 312
+    Width = 317
     Height = 59
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Code editor'
     TabOrder = 5
-    ExplicitWidth = 327
+    ExplicitWidth = 312
     DesignSize = (
-      312
+      317
       59)
     object Label7: TLabel
       Left = 14

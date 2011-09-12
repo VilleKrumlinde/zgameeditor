@@ -407,7 +407,7 @@ implementation
 {$R *.dfm}
 
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
-  ShellApi, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
+  ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
@@ -3779,6 +3779,25 @@ begin
 end;
 
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
+
+  procedure RecolorHighlighter(H : TSynCustomHighlighter);
+  var
+    I : integer;
+    A : TSynHighlighterAttributes;
+  begin
+    H.WhitespaceAttribute.Background := StyleServices.GetStyleColor(scTreeView);
+    for I := 0 to H.AttrCount-1 do
+    begin
+      A := H.Attribute[I];
+      if A.Style=[fsBold] then
+        A.Foreground := clHighLight
+      else if A.Style=[fsItalic] then
+        A.Foreground := clGrayText
+      else
+        A.Foreground := StyleServices.GetStyleFontColor(sfTreeItemTextNormal);
+    end;
+  end;
+
 begin
   if StyleHandle=nil then
     TStyleManager.TrySetStyle( StyleName )
@@ -3789,6 +3808,9 @@ begin
   // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
   Application.ProcessMessages;
   Tree.SetRootComponent(Self.Root);
+
+  RecolorHighlighter(ExprSynEdit.Highlighter);
+  RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
 
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
