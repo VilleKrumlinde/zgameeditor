@@ -181,7 +181,7 @@ Zc (. var
 
   IF AllowFunctions THEN 
   BEGIN { 
-    ("void" (. Typ := zctVoid; .) | Type<Typ> ) ident (. 
+    ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (.
           if SymTab.Contains(LexString) then
             ZError('Name already defined: ' + LexString);
             
@@ -332,10 +332,12 @@ Type<var Typ : TZcDataType>
 
 SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
-= "float" (. Typ := zctFloat; .)
-  | "int" (. Typ := zctInt; .)
-  | "string" (. Typ := zctString; .)
-  | "model" (. Typ := zctModel; .)
+= "float" (. Typ.Kind := zctFloat; .)
+  | "int" (. Typ.Kind := zctInt; .)
+  | "string" (. Typ.Kind := zctString; .)
+  | "model" (. Typ.Kind := zctModel; .)
+  | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
+  | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -428,13 +430,13 @@ EmbeddedStatement<var OutOp : TZcOp>
     (.
         if (Op=nil) then
         begin
-          if CurrentFunction.ReturnType<>zctVoid then
+          if CurrentFunction.ReturnType.Kind<>zctVoid then
             SynError(202)
           else
             OutOp := MakeOp(zcReturn);
         end else
         begin
-          if CurrentFunction.ReturnType=zctVoid then
+          if CurrentFunction.ReturnType.Kind=zctVoid then
             SynError(203)
           else
             OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
@@ -691,14 +693,14 @@ Primary<var OutOp : TZcOp>
   (
     ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
   | Literal<Typ>  (.
-        if Typ in [zctString,zctNull] then
-          OutOp := TZcOpLiteral.Create(Typ,LexString)
+        if Typ.Kind in [zctString,zctNull] then
+          OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
         else
         begin
           try
             S := LexString;
             V := ZcStrToFloat(S);
-            OutOp := TZcOpLiteral.Create(Typ,V)
+            OutOp := TZcOpLiteral.Create(Typ.Kind,V)
           except on EConvertError do
             SynError(200);
           end;
@@ -753,10 +755,10 @@ Primary<var OutOp : TZcOp>
 .
 /*------------------------------------------------------------------------*/
 Literal<var Typ : TZcDataType>
-= intCon (. Typ :=zctInt; .) |
-  realCon (. Typ := zctFloat; .) |
-  stringCon (. Typ := zctString; .)
-  | "null" (. Typ := zctNull; .)
+= intCon (. Typ.Kind :=zctInt; .) |
+  realCon (. Typ.Kind := zctFloat; .) |
+  stringCon (. Typ.Kind := zctString; .)
+  | "null" (. Typ.Kind := zctNull; .)
   (* | "true" | "false"  *)
 .
 

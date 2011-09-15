@@ -906,7 +906,7 @@ procedure TImplicitExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
-    {$ifndef minimal}List.GetLast.ReturnType := zctFloat;{$endif}
+    {$ifndef minimal}List.GetLast.ReturnType.Kind := zctFloat;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
