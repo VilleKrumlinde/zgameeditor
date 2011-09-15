@@ -16,7 +16,7 @@ type
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect);
 
-  TZcExtendedDataType = record
+  TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
     DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
     case Integer of
@@ -41,7 +41,7 @@ type
     function Child(I : integer) : TZcOp;
     function Optimize : TZcOp; virtual;
     function GetDataType : TZcDataType; virtual;
-    function GetExtendedDataType : TZcExtendedDataType; virtual;
+    function GetIdentifierInfo : TZcIdentifierInfo;
     function Clone : TZcOp; virtual;
   end;
 
@@ -68,8 +68,8 @@ type
     Typ : TZcDataType;
     Value : single;
     StringValue : string;
-    constructor Create(Typ : TZcDataType; Value : single); reintroduce; overload;
-    constructor Create(Typ : TZcDataType; const StringValue : string); reintroduce; overload;
+    constructor Create(TypeKind : TZcDataTypeKind; Value : single); reintroduce; overload;
+    constructor Create(TypeKind : TZcDataTypeKind; const StringValue : string); reintroduce; overload;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
   end;
@@ -134,14 +134,16 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 function MakeIdentifier(const Id : string) : TZcOp;
 
-function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
+function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp; overload;
+function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp; overload;
+
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
-function GetZcTypeName(Typ : TZcDataType) : string;
+function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : single;
 
 function GetBuiltInFunctions : TObjectList;
@@ -162,7 +164,7 @@ var
 
 implementation
 
-uses SysUtils,Math,Compiler,Classes;
+uses SysUtils,Math,Compiler,Classes,StrUtils;
 
 var
   BuiltInFunctions : TObjectList=nil;
@@ -170,23 +172,27 @@ var
   BuiltInCleanUps : TObjectList;
 
 const
-  ZcTypeNames : array[TZcDataType] of string =
+  ZcTypeNames : array[TZcDataTypeKind] of string =
 (('void'),('float'),('int'),('string'),('model'),('#reference'),('null'));
 
-function GetZcTypeName(Typ : TZcDataType) : string;
+function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
-  Result := ZcTypeNames[Typ];
+  if Typ.Kind=zctReference then
+    Result := ComponentManager.GetInfoFromId(Typ.ReferenceClassId).ZClassName
+  else
+    Result := ZcTypeNames[Typ.Kind];
 end;
 
 function PropTypeToZType(PTyp : TZPropertyType) : TZcDataType;
 begin
-  Result := zctVoid;
+  FillChar(Result,SizeOf(Result),0);
+  Result.Kind := zctVoid;
   if PTyp in ZClasses.FloatTypes then
-    Result := zctFloat
+    Result.Kind := zctFloat
   else
     case PTyp of
-      zptInteger,zptByte,zptBoolean : Result := zctInt;
-      zptString : Result := zctString;
+      zptInteger,zptByte,zptBoolean : Result.Kind := zctInt;
+      zptString : Result.Kind := zctString;
     end;
 end;
 
@@ -219,7 +225,7 @@ end;
 
 function TZcOp.GetDataType: TZcDataType;
 var
-  Etyp : TZcExtendedDataType;
+  Etyp : TZcIdentifierInfo;
 
   procedure DoIdentifier;
   var
@@ -227,12 +233,14 @@ var
   begin
     if Ref is TZComponent then
     begin
-      Result := zctReference;
+      Result.Kind := zctReference;
       C := Ref as TZComponent;
       if ComponentManager.GetInfo(C).ClassId=ModelClassId then
-        Result := zctModel;
+        Result.Kind := zctModel
+      else
+        Result.ReferenceClassId := ComponentManager.GetInfo(C).ClassId;
     end else if SameText(Id,'currentmodel') then
-      Result := zctModel;
+      Result.Kind := zctModel;
   end;
 
   procedure DoProp;
@@ -240,15 +248,19 @@ var
     if Etyp.Prop.PropertyType=zptComponentRef then
     begin
       if ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).ClassId=ModelClassId then
-        Result := zctModel
+        Result.Kind := zctModel
       else
-        Result := zctReference;
+      begin
+        Result.Kind := zctReference;
+        Result.ReferenceClassId := ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).ClassId;
+      end;
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
   end;
 
 begin
-  Result := zctVoid;
+  FillChar(Result,SizeOf(Result),0);
+  Result.Kind := zctVoid;
   if (Ref is TZcOp) and (Kind<>zcSelect) then
   begin
     //Local vars, func calls
@@ -260,25 +272,29 @@ begin
     if (Ref is TDefineArray) then
     begin
       case (Ref as TDefineArray)._Type of
-        dvbFloat : Result := zctFloat;
-        dvbInt : Result := zctInt;
-        dvbString : Result := zctString;
-        dvbModel : Result := zctModel;
+        dvbFloat : Result.Kind := zctFloat;
+        dvbInt : Result.Kind := zctInt;
+        dvbString : Result.Kind := zctString;
+        dvbModel : Result.Kind := zctModel;
       end;
     end;
   end
   else if Kind=zcConstLiteral then
-    Result := zctFloat
+    Result.Kind := zctFloat
   else if Kind=zcConditional then
     Result := Children[1].GetDataType
   else if Kind=zcSelect then
   begin
-    Etyp := Self.GetExtendedDataType;
+    Etyp := Self.GetIdentifierInfo;
     case Etyp.Kind of
-      edtComponent: Result := zctReference;
+      edtComponent:
+        begin
+          Result.Kind := zctReference;
+          Result.ReferenceClassId := ComponentManager.GetInfo(Etyp.Component).ClassId;
+        end;
       edtProperty: DoProp;
-      edtPropIndex: Result := zctFloat;
-      edtModelDefined : Result := zctReference;
+      edtPropIndex: Result.Kind := zctFloat;
+      edtModelDefined : Result.Kind := zctReference;
     else
       Assert(False);
     end;
@@ -314,12 +330,12 @@ begin
   Result := C;
 end;
 
-function TZcOp.GetExtendedDataType: TZcExtendedDataType;
+function TZcOp.GetIdentifierInfo: TZcIdentifierInfo;
 var
-  Etyp : TZcExtendedDataType;
+  Etyp : TZcIdentifierInfo;
   I : integer;
 
-  function DoModelDefined(var Edt : TZcExtendedDataType) : boolean;
+  function DoModelDefined(var Edt : TZcIdentifierInfo) : boolean;
   var
     C : TZComponent;
     I : integer;
@@ -348,20 +364,33 @@ var
     end;
   end;
 
+var
+  FirstType : TZcDataType;
 begin
-  if (Ref is TZComponent) and (Kind=zcIdentifier) then
+  //Kind should only be zcIdentifier or zcSelect
+
+  if (Kind=zcIdentifier) and (Children.Count=0) then
   begin
-    Result.Kind := edtComponent;
-    Result.Component := Ref as TZComponent;
-    Exit;
+    if (Ref is TZComponent) then
+    begin
+      Result.Kind := edtComponent;
+      Result.Component := Ref as TZComponent;
+      Exit;
+    end;
   end else if (Children.Count>0) then
   begin
-    if Children.First.GetDataType=zctModel then
+    FirstType := Children.First.GetDataType;
+    if FirstType.Kind=zctModel then
     begin
       DoProp(ComponentManager.GetInfoFromId(ModelClassId).GetProperties,True);
       Exit;
+    end else if (FirstType.Kind=zctReference) and (Ord(FirstType.ReferenceClassId)>0) then
+    begin
+      DoProp(ComponentManager.GetInfoFromId(FirstType.ReferenceClassId).GetProperties);
+      Exit;
     end;
-    ETyp := Children.First.GetExtendedDataType;
+
+    ETyp := Children.First.GetIdentifierInfo;
     if ETyp.Kind in [edtComponent,edtModelDefined] then
     begin
       DoProp(ETyp.Component.GetProperties);
@@ -526,12 +555,12 @@ var
 
   procedure DoConstant(NewValue : single);
   begin
-    Result := TZcOpLiteral.Create(C1.Typ,NewValue);
+    Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;
 
   procedure DoIntConstant(NewValue : integer);
   begin
-    Result := TZcOpLiteral.Create(C1.Typ,NewValue);
+    Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;
 
 begin
@@ -544,7 +573,7 @@ begin
   begin
     C1 := Child(0) as TZcOpLiteral;
     C2 := Child(1) as TZcOpLiteral;
-    if C1.Typ=zctString then
+    if C1.Typ.Kind=zctString then
     begin
       if Kind=zcPlus then
         Result := TZcOpLiteral.Create(zctString,'"' + C1.StringValue + C2.StringValue + '"');
@@ -568,9 +597,9 @@ begin
   if (Children.Count=1) and (Child(0)<>nil) and (Child(0).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
-    if C1.Typ<>zctString then
+    if C1.Typ.Kind<>zctString then
       case Kind of
-        zcNegate : Result := TZcOpLiteral.Create(C1.Typ,C1.Value * -1);
+        zcNegate : Result := TZcOpLiteral.Create(C1.Typ.Kind,C1.Value * -1);
       end;
   end;
 end;
@@ -597,7 +626,7 @@ end;
 procedure TZcOpFunctionBase.AddLocal(Local: TZcOpLocalVar);
 begin
   Local.Ordinal := Locals.Count;
-  if ReturnType<>zctVoid then
+  if ReturnType.Kind<>zctVoid then
     Inc(Local.Ordinal);
   Locals.Add(Local);
 end;
@@ -623,7 +652,7 @@ function TZcOpFunctionBase.GetStackSize: integer;
 begin
   //One entry per local var + one entry for return value
   Result := Locals.Count;
-  if ReturnType<>zctVoid then
+  if ReturnType.Kind<>zctVoid then
     Inc(Result);
 end;
 
@@ -656,7 +685,7 @@ end;
 
 function TZcOpLocalVar.ToString: string;
 begin
-  Result := ZcTypeNames[Typ] + ' ' + Id + ';'#13#10;
+  Result := GetZcTypeName(Typ) + ' ' + Id + ';'#13#10;
 end;
 
 { TZcOpVariableBase }
@@ -691,13 +720,13 @@ begin
   if (Child(0).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
-    Result := TZcOpLiteral.Create(Self.ToType,C1.Value);
+    Result := TZcOpLiteral.Create(Self.ToType.Kind,C1.Value);
   end;
 end;
 
 function TZcOpConvert.ToString: string;
 begin
-  Result := '((' + ZcTypeNames[ToType] + ')' + Child(0).ToString + ')';
+  Result := '((' + GetZcTypeName(ToType) + ')' + Child(0).ToString + ')';
 end;
 
 //-----------------
@@ -744,28 +773,41 @@ begin
     Result.Children.Add(Children[I]);
 end;
 
-function MakeCompatible(Op : TZcOp; WantedType : TZcDataType) : TZcOp;
+function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp;
 const
-  NullCompatible : set of TZcDataType = [zctModel,zctReference];
+  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference];
 var
   ExistingType : TZcDataType;
 begin
   ExistingType := Op.GetDataType;
 
-  if (ExistingType=WantedType) or (WantedType=zctVoid) or (ExistingType=zctVoid) then
+  if (ExistingType.Kind=zctReference) and (WantedType.Kind=zctReference) and
+    (ExistingType.ReferenceClassId<>WantedType.ReferenceClassId) then
+    raise ECodeGenError.Create('Cannot convert ' + GetZcTypeName(ExistingType) + ' to ' + GetZcTypeName(WantedType));
+
+  if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
     Exit(Op);
 
-  if ((WantedType=zctNull) and (ExistingType in NullCompatible)) or
-    ((ExistingType=zctNull) and (WantedType in NullCompatible)) then
+  if ((WantedType.Kind=zctNull) and (ExistingType.Kind in NullCompatible)) or
+    ((ExistingType.Kind=zctNull) and (WantedType.Kind in NullCompatible)) then
     Exit(Op);
 
-  if (WantedType=zctNull) or (ExistingType=zctNull)  then
+  if (WantedType.Kind=zctNull) or (ExistingType.Kind=zctNull)  then
     raise ECodeGenError.Create('Cannot convert to/from null: ' + Op.ToString);
 
-  if (WantedType=zctString) or (ExistingType=zctString)  then
+  if (WantedType.Kind=zctString) or (ExistingType.Kind=zctString)  then
     raise ECodeGenError.Create('Cannot convert to/from string: ' + Op.ToString);
 
   Result := TZcOpConvert.Create(WantedType,Op);
+end;
+
+function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp;
+var
+  WantedType : TZcDataType;
+begin
+  FillChar(WantedType,SizeOf(WantedType),0);
+  WantedType.Kind := WantedKind;
+  Result := MakeCompatible(Op,WantedType);
 end;
 
 function CheckPrimary(Op : TZcOp) : TZcOp;
@@ -812,7 +854,7 @@ begin
   T1 := Op1.GetDataType;
   T2 := Op2.GetDataType;
   //Cast to common type that does not lose precision
-  if T2=zctFloat then
+  if T2.Kind=zctFloat then
     Op1 := MakeCompatible(Op1,T2)
   else
     Op2 := MakeCompatible(Op2,T1);
@@ -823,7 +865,7 @@ function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 var
   Op : TZcOp;
 begin
-  Op := TZcOpLiteral.Create(LeftOp.GetDataType,1);
+  Op := TZcOpLiteral.Create(LeftOp.GetDataType.Kind,1);
   case Kind of
     zcPreInc,zcPostInc:
       Result := MakeOp(Kind, [LeftOp, MakeOp(zcPlus,[LeftOp,Op]) ]);
@@ -838,7 +880,7 @@ function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 const
   AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
 var
-  Etyp : TZcExtendedDataType;
+  Etyp : TZcIdentifierInfo;
 
   function InMultiAssign : TZcOp;
   const
@@ -849,12 +891,12 @@ var
 
     function InSelect(Op : TZcOp; const S : string) : TZcOp;
     var
-      Etyp : TZcExtendedDataType;
+      Etyp : TZcIdentifierInfo;
       //I : integer;
     begin
       if Op.Kind=zcSelect then
       begin
-        ETyp := Op.GetExtendedDataType;
+        ETyp := Op.GetIdentifierInfo;
         if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
         begin
           Op := MakeOp(zcSelect,Op);
@@ -892,7 +934,7 @@ begin
   begin
     //Detect multiassigns such as Model1.Position=Model2.Position;
     //This is converted into a block of individual assignment (position.x=position.x etc)
-    ETyp := LeftOp.GetExtendedDataType;
+    ETyp := LeftOp.GetIdentifierInfo;
     if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
       Exit( InMultiAssign );
   end;
@@ -935,11 +977,11 @@ end;
 
 { TZcOpLiteral }
 
-constructor TZcOpLiteral.Create(Typ: TZcDataType; Value: single);
+constructor TZcOpLiteral.Create(TypeKind: TZcDataTypeKind; Value: single);
 begin
   inherited Create(nil);
   Kind := zcConstLiteral;
-  Self.Typ := Typ;
+  Self.Typ.Kind := TypeKind;
   Self.Value := Value;
 end;
 
@@ -954,11 +996,11 @@ begin
   end;
 end;
 
-constructor TZcOpLiteral.Create(Typ: TZcDataType; const StringValue: string);
+constructor TZcOpLiteral.Create(TypeKind: TZcDataTypeKind; const StringValue: string);
 begin
   inherited Create(nil);
   Kind := zcConstLiteral;
-  Self.Typ := Typ;
+  Self.Typ.Kind := TypeKind;
   Self.OriginalString := StringValue;
   Self.StringValue := ZDequoteString(StringValue);
 end;
@@ -970,7 +1012,7 @@ end;
 
 function TZcOpLiteral.ToString: string;
 begin
-  if GetDataType=zctString then
+  if GetDataType.Kind=zctString then
     Result := Self.OriginalString
   else
     Result := FloatToStr( RoundTo( Value ,-FloatTextDecimals) );
@@ -984,12 +1026,14 @@ var
 
   function CharToType(C : char) : TZcDataType;
   begin
+    FillChar(Result,SizeOf(Result),0);
     case C of
-      'V' : Result := zctVoid;
-      'F' : Result := zctFloat;
-      'I' : Result := zctInt;
-      'S' : Result := zctString;
-      'M' : Result := zctModel;
+      'V' : Result.Kind := zctVoid;
+      'F' : Result.Kind := zctFloat;
+      'I' : Result.Kind := zctInt;
+      'S' : Result.Kind := zctString;
+      'M' : Result.Kind := zctModel;
+      'R' : Result.Kind := zctReference;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
@@ -998,17 +1042,25 @@ var
   procedure MakeOne(Id :string; Kind : TExpFuncCallKind; Sig : string);
   var
     F : TZcOpFunctionBuiltIn;
-    I : integer;
+    I,J : integer;
     Arg : TZcOpArgumentVar;
   begin
     F := TZcOpFunctionBuiltIn.Create(BuiltInCleanUps);
     F.Id := Id;
     F.FuncId := Kind;
     F.ReturnType := CharToType(Sig[1]);
-    for I := 2 to Length(Sig) do
+    I := 2;
+    while I<=Length(Sig) do
     begin
       Arg := TZcOpArgumentVar.Create(BuiltInCleanUps);
       Arg.Typ := CharToType(Sig[I]);
+      if Arg.Typ.Kind=zctReference then
+      begin
+        J := PosEx('}',Sig,I+1);
+        Arg.Typ.ReferenceClassId := ComponentManager.GetInfoFromName(Copy(Sig,I+2, J-I-2)).ClassId;
+        I := J+1;
+      end else
+        Inc(I);
       F.AddArgument(Arg);
     end;
 
@@ -1055,6 +1107,7 @@ begin
   MakeOne('ord',fcOrd,'IS');
   MakeOne('createModel',fcCreateModel,'MM');
   MakeOne('trace',fcTrace,'VS');
+  MakeOne('playSound',fcPlaySound,'VR{Sound}FI');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);

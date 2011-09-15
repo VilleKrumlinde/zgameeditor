@@ -213,7 +213,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,fcPlaySound);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -404,7 +404,8 @@ var
 implementation
 
 
-uses ZMath,ZPlatform,ZApplication,ZLog, Meshes
+uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
+  AudioComponents, AudioPlayer
 {$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
 
 var
@@ -756,6 +757,7 @@ begin
             if Kind=jsJumpNE then
                Jump := not Jump;
           end;
+        //todo: need to compare pointer-size here for win64
       end;
     end;
   end;
@@ -924,6 +926,18 @@ begin
         {$ifndef minimal}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
+      end;
+    fcPlaySound :
+      begin
+        HasReturnValue := False;
+        StackPopTo(I1);
+        StackPopTo(A1);
+        StackPopToPointer(P1);
+        {$ifndef minimal}
+        ZAssert(TObject(P1) is TSound,'playSound function: first parameter is not a Sound');
+        {$endif}
+        if not NoSound then
+          AudioPlayer.AddNoteToEmitList(@TSound(P1).Voice, A1, I1, 0, 1.0);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
@@ -1712,7 +1726,7 @@ begin
     end;
   {$endif}
 
-  if Self.ReturnType=zctFloat then
+  if Self.ReturnType.Kind=zctFloat then
   begin
     //Float-values results returned on float-stack
     asm
@@ -1736,7 +1750,7 @@ begin
   end;
   {$endif}
 
-  if Self.ReturnType<>zctVoid then
+  if Self.ReturnType.Kind<>zctVoid then
     StackPush(RetVal);
 end;
 {$endif}

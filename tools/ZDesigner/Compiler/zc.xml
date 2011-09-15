@@ -6,17 +6,17 @@
     <File Type="Info" Display="Generated Component File" FileName="C:\DATA\Delphi32\ZzDC_Public\tools\ZDesigner\Compiler\Zc.PAS" />
   </Files>
   <Errors>
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="MulExpr is a deletable symbol" Line="635" Col="0" Data="MulExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="AddExpr is a deletable symbol" Line="621" Col="0" Data="AddExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="ShiftExpr is a deletable symbol" Line="610" Col="0" Data="ShiftExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="RelExpr is a deletable symbol" Line="596" Col="0" Data="RelExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="EqlExpr is a deletable symbol" Line="584" Col="0" Data="EqlExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitAndExpr is a deletable symbol" Line="575" Col="0" Data="BitAndExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitXorExpr is a deletable symbol" Line="570" Col="0" Data="BitXorExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitOrExpr is a deletable symbol" Line="561" Col="0" Data="BitOrExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="AndExpr is a deletable symbol" Line="553" Col="0" Data="AndExpr" />
-    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="OrExpr is a deletable symbol" Line="543" Col="0" Data="OrExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="MulExpr is a deletable symbol" Line="637" Col="0" Data="MulExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="AddExpr is a deletable symbol" Line="623" Col="0" Data="AddExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="ShiftExpr is a deletable symbol" Line="612" Col="0" Data="ShiftExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="RelExpr is a deletable symbol" Line="598" Col="0" Data="RelExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="EqlExpr is a deletable symbol" Line="586" Col="0" Data="EqlExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitAndExpr is a deletable symbol" Line="577" Col="0" Data="BitAndExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitXorExpr is a deletable symbol" Line="572" Col="0" Data="BitXorExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="BitOrExpr is a deletable symbol" Line="563" Col="0" Data="BitOrExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="AndExpr is a deletable symbol" Line="555" Col="0" Data="AndExpr" />
+    <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="OrExpr is a deletable symbol" Line="545" Col="0" Data="OrExpr" />
     <Error Severity="Warning" Type="4" Description="warning" Code="200" Text="ZcFuncBody is a deletable symbol" Line="240" Col="0" Data="ZcFuncBody" />
-    <Error Severity="Warning" Type="2" Description="LL(1) error" Code="202" Text=" in EmbeddedStatement:  &quot;else&quot; is the start &amp; successor of a deletable structure" Line="380" Col="0" Data=" in EmbeddedStatement:  &quot;else&quot;" />
+    <Error Severity="Warning" Type="2" Description="LL(1) error" Code="202" Text=" in EmbeddedStatement:  &quot;else&quot; is the start &amp; successor of a deletable structure" Line="382" Col="0" Data=" in EmbeddedStatement:  &quot;else&quot;" />
   </Errors>
 </CocoRDelphi>

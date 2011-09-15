@@ -235,7 +235,13 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull);
+  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull);
+  TZcDataType = record
+    Kind : TZcDataTypeKind;
+    {$ifndef minimal}
+    ReferenceClassId : TZClassIds;
+    {$endif}
+  end;
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -405,9 +411,6 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
-  {$IFNDEF MINIMAL}
-    function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
-  {$ENDIF}
     procedure Register(C : TZComponentClass; ClassId : TZClassIds);
     function GetProperties(Component : TZComponent) : TZPropertyList;
     {$ifndef minimal}public
@@ -426,6 +429,7 @@ type
     procedure SaveXml(Component : TZComponent; FileName : string);
     function SaveXmlToStream(Component: TZComponent) : TObject;
     function GetAllInfos : PComponentInfoArray;
+    function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
   {$ENDIF}
     function LoadBinary : TZComponent;
   end;

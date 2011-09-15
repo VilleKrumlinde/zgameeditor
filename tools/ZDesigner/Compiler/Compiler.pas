@@ -185,7 +185,7 @@ type
     BreakLabel,ContinueLabel : TZCodeLabel;
     BreakStack,ContinueStack : TStack<TZCodeLabel>;
     procedure Gen(Op : TZcOp);
-    procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataType = zctFloat);
+    procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataTypeKind = zctFloat);
     function NewLabel : TZCodeLabel;
     procedure DefineLabel(Lbl : TZCodeLabel);
     procedure ResolveLabels;
@@ -210,7 +210,7 @@ type
 
 function MakeBinaryOp(Kind : TExpOpBinaryKind; Typ : TZcDataType) : TExpBase;
 begin
-  case Typ of
+  case Typ.Kind of
     zctFloat :
       begin
         if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryShiftLeft,vbkBinaryShiftRight] then
@@ -243,7 +243,7 @@ end;
 
 procedure TZCodeGen.MakeLiteralOp(const Value : single; Typ : TZcDataType);
 begin
-  case Typ of
+  case Typ.Kind of
     zctFloat :
       with TExpConstantFloat.Create(Target) do
         Constant := Value;
@@ -283,13 +283,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoDeref(Op : TZcOp);
   var
-    Etyp : TZcExtendedDataType;
+    Etyp : TZcIdentifierInfo;
     PTyp : TZPropertyType;
     E : TExpMisc;
   begin
-    Etyp := Op.GetExtendedDataType;
+    Etyp := Op.GetIdentifierInfo;
     if ETyp.Kind=edtPropIndex then
-      Etyp := Op.Children.First.GetExtendedDataType;
+      Etyp := Op.Children.First.GetIdentifierInfo;
 
     if Etyp.Kind=edtProperty then
       PTyp := Etyp.Prop.PropertyType
@@ -335,9 +335,9 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoGenSelect;
   var
-    ETyp : TZcExtendedDataType;
+    ETyp : TZcIdentifierInfo;
   begin
-    ETyp := Op.GetExtendedDataType;
+    ETyp := Op.GetIdentifierInfo;
     case ETyp.Kind of
       edtModelDefined :
         begin
@@ -404,13 +404,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     COp := Op As TZcOpConvert;
     Kind := TExpConvertKind(99);
     C := TExpConvert.Create(Target);
-    case Cop.Child(0).GetDataType of
+    case Cop.Child(0).GetDataType.Kind of
       zctFloat :
-        case Cop.ToType of
+        case Cop.ToType.Kind of
           zctInt: Kind := eckFloatToInt;
         end;
       zctInt :
-        case Cop.ToType of
+        case Cop.ToType.Kind of
           zctFloat: Kind := eckIntToFloat;
         end;
     end;
@@ -421,7 +421,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoLiteral;
   begin
-    if Op.GetDataType=zctString then
+    if Op.GetDataType.Kind=zctString then
       MakeStringLiteralOp((Op as TZcOpLiteral).StringValue)
     else
       MakeLiteralOp((Op as TZcOpLiteral).Value, Op.GetDataType);
@@ -505,9 +505,9 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
 
   procedure DoGenSelect;
   var
-    ETyp : TZcExtendedDataType;
+    ETyp : TZcIdentifierInfo;
   begin
-    ETyp := Op.GetExtendedDataType;
+    ETyp := Op.GetIdentifierInfo;
     case ETyp.Kind of
       edtProperty :
         begin
@@ -546,7 +546,7 @@ var
   Aw : TExpArrayWrite;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
-  Etyp : TZcExtendedDataType;
+  Etyp : TZcIdentifierInfo;
   Prop : TZProperty;
 begin
   //Left-hand side of the assignment
@@ -572,12 +572,12 @@ begin
   begin
     GenAddress(LeftOp);
     GenValue(RightOp);
-    Etyp := LeftOp.GetExtendedDataType;
+    Etyp := LeftOp.GetIdentifierInfo;
     case Etyp.Kind of
       edtProperty : Prop := Etyp.Prop;
       edtPropIndex :
         begin
-          Etyp := LeftOp.Children.First.GetExtendedDataType;
+          Etyp := LeftOp.Children.First.GetIdentifierInfo;
           Assert(Etyp.Kind=edtProperty);
           Prop := Etyp.Prop;
         end
@@ -717,7 +717,7 @@ var
     if not Assigned(LReturn) then
       //Global label shared for all return statements
       LReturn := NewLabel;
-    if CurrentFunction.ReturnType<>zctVoid then
+    if CurrentFunction.ReturnType.Kind<>zctVoid then
     begin
       GenValue(Op.Child(0));
       //Store return value in local0
@@ -765,7 +765,7 @@ var
     end;
     Ret := TExpReturn.Create(Target);
     Ret.HasFrame := Func.NeedFrame;
-    Ret.HasReturnValue := Func.ReturnType<>zctVoid;
+    Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
     Ret.Arguments := Func.Arguments.Count;
   end;
 
@@ -798,14 +798,14 @@ var
         begin
           GenValue(Op.ValueOp);
           GenValue(CaseOp.Child(J));
-          GenJump(jsJumpEQ,CaseLabels[I],CaseType);
+          GenJump(jsJumpEQ,CaseLabels[I],CaseType.Kind);
         end;
       end;
     end;
     if LDefault<>nil then
-      GenJump(jsJumpAlways,LDefault,CaseType)
+      GenJump(jsJumpAlways,LDefault,CaseType.Kind)
     else
-      GenJump(jsJumpAlways,LExit,CaseType);
+      GenJump(jsJumpAlways,LExit,CaseType.Kind);
     //Generate statements
     for I := 0 to CaseCount-1 do
     begin
@@ -875,7 +875,7 @@ begin
   Labels.Add(Result);
 end;
 
-procedure TZCodeGen.GenJump(Kind: TExpOpJumpKind; Lbl: TZCodeLabel; T : TZcDataType = zctFloat);
+procedure TZCodeGen.GenJump(Kind: TExpOpJumpKind; Lbl: TZCodeLabel; T : TZcDataTypeKind = zctFloat);
 var
   Op : TExpJump;
   U : TLabelUse;
@@ -961,7 +961,7 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
     //Assert(Op.Arguments.Count=2);
     GenValue(Op.Child(0));
     GenValue(Op.Child(1));
-    GenJump(Kind,Lbl,Op.Child(0).GetDataType);
+    GenJump(Kind,Lbl,Op.Child(0).GetDataType.Kind);
   end;
 
   procedure DoGenAnd;
@@ -985,7 +985,7 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
     //if(1) blir: value,0, compare and jump
     GenValue(Op);
     MakeLiteralOp(0, Op.GetDataType);
-    GenJump(jsJumpNE,Lbl, Op.GetDataType);
+    GenJump(jsJumpNE,Lbl, Op.GetDataType.Kind);
   end;
 
 begin
@@ -1013,7 +1013,7 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
     //Assert(Op.Arguments.Count=2);
     GenValue(Op.Child(0));
     GenValue(Op.Child(1));
-    GenJump(Kind,Lbl,Op.Child(0).GetDataType);
+    GenJump(Kind,Lbl,Op.Child(0).GetDataType.Kind);
   end;
 
   procedure DoGenAnd;
@@ -1037,7 +1037,7 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
     //if(1) blir: value,0, compare and jump
     GenValue(Op);
     MakeLiteralOp(0, Op.GetDataType);
-    GenJump(jsJumpEQ,Lbl,Op.GetDataType);
+    GenJump(jsJumpEQ,Lbl,Op.GetDataType.Kind);
   end;
 
 begin
@@ -1066,7 +1066,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     F : TExpFuncCall;
     SF : TExpPointerFuncCall;
   begin
-    if NeedReturnValue and (Func.ReturnType=zctVoid) then
+    if NeedReturnValue and (Func.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
     if Op.Children.Count<>Func.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
@@ -1081,7 +1081,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F := TExpFuncCall.Create(Target);
       F.Kind := Func.FuncId;
     end;
-    if (not NeedReturnValue) and (Func.ReturnType<>zctVoid) then
+    if (not NeedReturnValue) and (Func.ReturnType.Kind<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do
         Kind := emPop;
@@ -1093,7 +1093,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     F : TExpUserFuncCall;
     FE : TExpExternalFuncCall;
   begin
-    if NeedReturnValue and (UserFunc.ReturnType=zctVoid) then
+    if NeedReturnValue and (UserFunc.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
     if Op.Children.Count<>UserFunc.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
@@ -1115,7 +1115,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F.Index := UserFunc.LibIndex;
     end;
 
-    if (not NeedReturnValue) and (UserFunc.ReturnType<>zctVoid) then
+    if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do
         Kind := emPop;

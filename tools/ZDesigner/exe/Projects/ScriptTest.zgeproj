@@ -466,6 +466,22 @@ if(m.Defined3!="Hej")
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
+    <ZExpression Comment="Material and Sound datatypes">
+      <Expression>
+<![CDATA[Material mat=Material1;
+
+mat.Shading = 0;
+if(mat.Shading!=0)
+  Error=1201;
+
+mat.Shading = 1;
+if(mat.Shading!=1)
+  Error=1202;
+
+Sound snd = Sound1;
+playSound(snd,55,0);]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
@@ -514,7 +530,7 @@ V.X*=0.5;]]>
         </MeshExpression>
       </Producers>
     </Mesh>
-    <Material Name="Material1" Blend="1"/>
+    <Material Name="Material1" Shading="1" Blend="1"/>
     <DefineVariable Name="Global1" Type="1"/>
     <DefineVariable Name="GlobalFloat"/>
     <DefineConstant Name="ConS" Type="2" StringValue="String"/>
@@ -523,5 +539,7 @@ V.X*=0.5;]]>
     <DefineVariable Name="VarM" Type="3"/>
     <DefineArray Name="ModelArray" Type="3" SizeDim1="4"/>
     <DefineVariable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
+    <Sound Name="Sound1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="2.56"/>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.14" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
   </Content>
 </ZApplication>
