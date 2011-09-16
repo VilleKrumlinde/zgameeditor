@@ -1933,6 +1933,10 @@ begin
   IsPiggy := (PlayerName<>'');
   if not CompileAll then
     Exit;
+
+  //Set the NoSound-flag if no sound is used, this means we can remove all audio code later
+  ZApp.NoSound := FindInstanceOf(Self.Root, TSound)=nil;
+
   M2 := ComponentManager.SaveBinaryToStream(Root) as TMemoryStream;
   M1 := TMemoryStream.Create;
   try
@@ -3657,6 +3661,15 @@ begin
       NamesToRemove.Add('AudioPlayer.UpdateEnvelope');
       NamesToRemove.Add('AudioPlayer.UpdateLfo');
       NamesToRemove.Add('AudioPlayer.UpdateFrame');
+      NamesToRemove.Add('AudioPlayer.UpdateFrame');
+      ClassesToRemove.Add('TAudioMixer');
+      NamesToRemove.Add('ZPlatform.Platform_InitAudio');
+      NamesToRemove.Add('AudioPlayer.EmitSoundsInEmitList');
+      NamesToRemove.Add('AudioPlayer.RenderToMixBuffer');
+      NamesToRemove.Add('ZPlatform.Platform_ShutdownAudio');
+      NamesToRemove.Add('AudioPlayer.RenderChannel');
+      NamesToRemove.Add('AudioPlayer.ChannelApplyDelay');
+      NamesToRemove.Add('ZPlatform.PlaybackThread_Execute');
     end;
     if UsedComponents.IndexOf('TWebOpen')=-1 then
     begin

@@ -563,11 +563,7 @@ begin
   if (NewM=nil) then
     Exit;
 
-  if (not VecIsNull4(NewM.Color.V)) then
-    glColor4fv(@NewM.Color)
-  else
-    //default color, alpha is set to 1 by default
-    glColor3fv(@ZMath.UNIT_XYZ3);
+  glColor4fv(@NewM.Color);
 
   //Test for equal material after setting color
   //This is because rendersetcolor may have been called so we need reset material.color
@@ -854,6 +850,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+    List.GetLast.DefaultValue.ColorfValue := TZColorf(Vector4f(1,1,1,1));
   List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}integer(@Light), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend), zptByte);

@@ -858,7 +858,7 @@ begin
     fcCenterMouse :
       begin
         HasReturnValue := False;
-        Platform_SetMousePos(ScreenWidth div 2,ScreenHeight div 2);
+        Platform_SetMousePos(ScreenWidth shr 1,ScreenHeight shr 1);
       end;
     fcSetRandomSeed :
       begin
@@ -936,7 +936,7 @@ begin
         {$ifndef minimal}
         ZAssert(TObject(P1) is TSound,'playSound function: first parameter is not a Sound');
         {$endif}
-        if not NoSound then
+        if not ZApp.NoSound then
           AudioPlayer.AddNoteToEmitList(@TSound(P1).Voice, A1, I1, 0, 1.0);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}

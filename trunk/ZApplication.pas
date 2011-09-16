@@ -120,6 +120,7 @@ type
     ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     MouseWheelDelta : integer;
     Camera : TCamera;
+    NoSound : boolean;
     FrameLoss : boolean;  //sätts till true ifall vi tappar frames
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
@@ -180,7 +181,6 @@ var
   ZApp : TZApplication;
   ScreenWidth : integer{$ifndef minimal}=800{$endif};
   ScreenHeight : integer{$ifndef minimal}=600{$endif};
-  NoSound : boolean;
 
 
 implementation
@@ -270,7 +270,8 @@ begin
 
     TargetFrameRate := Platform_GetDisplayRefreshRate;
 
-    NoSound := Platform_CommandLine('s');
+    if Platform_CommandLine('s') then
+      NoSound := True;
     if not NoSound then
       Platform_InitAudio;
   {$endif}
@@ -982,6 +983,10 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}integer(@NoSound), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
