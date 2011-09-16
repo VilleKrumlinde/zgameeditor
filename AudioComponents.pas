@@ -260,7 +260,7 @@ procedure TPlaySound.Execute;
 begin
   {$ifndef minimal}if Sound=nil then Exit;{$endif}
 
-  if NoSound then
+  if ZApp.NoSound then
     Exit;
 
   //  Sound.Play;
@@ -330,7 +330,7 @@ begin
         begin
           Sound := TSound(Self.Instruments[InstrumentNr]);
           NoteLength := NoteLength + Sound.Voice.Envelopes[0].ReleaseTime;
-          if not NoSound then
+          if not ZApp.NoSound then
             AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity);
           if Self.OnPlayNote.Count>0 then
           begin
