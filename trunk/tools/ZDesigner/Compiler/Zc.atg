@@ -1,44 +1,64 @@
 COMPILER Zc
 
-DELPHI
-  USES (INTERFACE) Zc_Ops,contnrs,uSymTab,ZClasses
-  USES (IMPLEMENTATION) Compiler
+FRAME "delphi.frm"
 
-  TYPE
+uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils .)
 
-
-  PUBLIC
+public = (.
     ZFunctions : TObjectList;
     SymTab : TSymbolTable;
     ReturnType : TZcDataType;
     AllowFunctions : boolean;
     GlobalNames : TObjectList;
     TempCounter : integer;
-  PRIVATE
+    destructor Destroy; override;
+    procedure CheckHomograph(var sym: Integer); override;
+.)
+private = (.
+    IsInIdent : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     function MakeTempName : string;
-  CREATE
+    procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
+    .)
+precreate = (.
     ZFunctions := TObjectList.Create(False);
-  DESTROY
-    CleanUp;
-  ERRORS
+    Self.OnError := OnParserError;
+.)
+
+semErrors = (.
     200 : Result := 'Not a floating point value';
     201 : Result := 'Name already defined in this scope';
     202 : Result := 'Return value expected';
     203 : Result := 'Function should not return a value';
     204 : Result := 'Only function definitions are allowed here';
     205 : Result := 'Syntax not supported';
-END_DELPHI
+.)
+    
+implementation = (.
 
-(* Arbitrary Code *)
+procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
+begin
+  ZError(data);
+end;
 
+procedure TZc.CheckHomograph(var sym: Integer);
+begin
+  //Only Homographs are name of component datatypes
+  //If inside identifier "x.y.z" then let it refer to identifier instead
+  if IsInIdent then 
+    sym := identSym;
+end; 
 
+destructor TZc.Destroy;
+begin
+  inherited;
+  CleanUp;
+end;
 
-
-procedure T-->Grammar<--.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
+procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
 begin
   if Op=nil then
   begin
@@ -51,29 +71,34 @@ begin
   Op := nil;
 end;
 
-procedure T-->Grammar<--.CleanUp;
+procedure TZc.CleanUp;
 begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
 end;
 
-function T-->Grammar<--.MakeTempName : string;
+function TZc.MakeTempName : string;
 begin
   Inc(TempCounter);
   Result := '#temp' + IntToStr(TempCounter);
 end;
 
-
-procedure T-->Grammar<--.ZError(const S : string);
+procedure TZc.ZError(const S : string);
 var
   E : EParseError;
+  P : TSymbolRec;
 begin
   E := EParseError.Create(S);
   E.Message := S;
-  E.Line := (Scanner as TZcScanner).CurrentSymbol.Line;
-  E.Col := (Scanner as TZcScanner).CurrentSymbol.Col;
+  Scanner.GetPosition(P);
+  E.Line := P.Line;
+  E.Col := P.Col;
   raise E;
 end;
+
+.)
+
+END
 
 
 CHARACTERS
@@ -101,7 +126,7 @@ TOKENS
                 ( digit {digit}
                 | ("0x" | "0X") hexDigit {hexDigit}
                 )
-                (* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] *)
+                /* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] */
                 .
   /*--------------------------------------------------------------------------------*/
         realCon =
@@ -166,6 +191,17 @@ COMMENTS FROM "//" TO eol
 
 IGNORE eol + cr + tab
 
+HOMOGRAPHS
+  "Material"
+  "Sound"
+  "Shader" 
+  "Bitmap" 
+  "Mesh"
+  "Camera" 
+  "Font"
+  "Sample" 
+
+
 PRODUCTIONS
 
 /*------------------------------------------------------------------------*
@@ -179,52 +215,53 @@ Zc (. var
     .)
 = 
 
-  IF AllowFunctions THEN 
-  BEGIN { 
+  IF (. AllowFunctions .) 
+  { 
     ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (.
           if SymTab.Contains(LexString) then
             ZError('Name already defined: ' + LexString);
-            
+
           Func := TZcOpFunctionUserDefined.Create(GlobalNames);
           Func.Id := LexString;
           Func.ReturnType := Typ;
           SymTab.Add(Func.Id,Func);
-          ZFunctions.Add(Func); 
+          ZFunctions.Add(Func);
           Self.CurrentFunction := Func;
           SymTab.PushScope;
           try
        .)
-    "(" [ FormalParams ] ")" "{" ZcFuncBody "}"  
-        (. 
+    "(" [ FormalParams ] ")" "{" ZcFuncBody "}"
+        (.
           finally
-          SymTab.PopScope;
+            SymTab.PopScope;
           end;
         .)
-    } 
-  END ELSE
-  BEGIN
-
-
+  } 
+  |
+  {
+  IF (. not AllowFunctions .) 
   (. 
        Func := TZcOpFunctionUserDefined.Create(nil);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
-       SymTab.PushScope;
        try
-       ZFunctions.Add(Func);
+         SymTab.PushScope;
+         try
+           ZFunctions.Add(Func);
   .)
-
   /* A zc-expression is treated like the body of a nameless function
      to allow local var declarations  */
 
   ZcFuncBody
-
-  (. 
-       finally
-       SymTab.PopScope;
+  (.
+         finally
+           SymTab.PopScope;
+         end;
+       except on E: Exception do
+         ZError(E.Message);
        end;
   .)
-  END
+  }
 
 (.  
        if Successful then
@@ -336,8 +373,15 @@ SimpleType<var Typ : TZcDataType>
   | "int" (. Typ.Kind := zctInt; .)
   | "string" (. Typ.Kind := zctString; .)
   | "model" (. Typ.Kind := zctModel; .)
+
   | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
-  | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .)
+  | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .) 
+  | "Shader" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ShaderClassId; .)
+  | "Bitmap" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZBitmapClassId; .)
+  | "Mesh" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MeshClassId; .)
+  | "Camera" (. Typ.Kind := zctReference; Typ.ReferenceClassId := CameraClassId; .)
+  | "Font" (. Typ.Kind := zctReference; Typ.ReferenceClassId := FontClassId; .)
+  | "Sample" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -354,11 +398,11 @@ SimpleType<var Typ : TZcDataType>
 Statement<var OutOp : TZcOp>
 = (. OutOp := nil; .)
 /* "const" Type ident "=" Expr<Op> {"," ident "=" Expr<Op>} ";" */
-(*IF IsLocalVarDecl THEN
+/*IF IsLocalVarDecl THEN
 BEGIN
   LocalVarDecl ";"
 END
-|  EmbeddedStatement<OutOp> *)
+|  EmbeddedStatement<OutOp> */
 
 LocalVarDecl<OutOp> ";"
 | EmbeddedStatement<OutOp>
@@ -638,7 +682,7 @@ MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcO
 =       (. OutOp := InOp; .)
   { ("*"      (. Kind := zcMul; .)
     | "/"     (. Kind := zcDiv; .)
-  (*  | "%" *)
+  /*  | "%" */
     ) Unary<Tmp>
          (. OutOp := MakeBinary(Kind,InOp,Tmp);
             InOp := OutOp;
@@ -650,12 +694,12 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
 =       (. LastOp := nil; Kind := zcNop; .)
   {
     (
-      (* "+" | *)
+      /* "+" | */
       "-"   (. Kind := zcNegate; .) |
       "++"  (. Kind := zcPreInc; .) |    
       "--"  (. Kind := zcPreDec; .) |
       "!"   (. Kind := zcNot; .)
-      (* | "~" | "*" *)
+      /* | "~" | "*" */
     )
     (.
        if Kind in [zcNegate,zcNot] then
@@ -707,10 +751,10 @@ Primary<var OutOp : TZcOp>
         end;
      .)
   | "(" Expr<OutOp> ")"
-(*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" /* predefined type member access */
+/*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" 
     | "float"  | "int"    | "long" | "object"  | "sbyte"
     | "short"  | "string" | "uint" | "ulong"   | "ushort"
-    ) "." ident *)
+    ) "." ident */
   )
 
   {
@@ -719,7 +763,9 @@ Primary<var OutOp : TZcOp>
 
 /*  | "->" ident */
 
-  | "." ident (.
+  | "." (. IsInIdent := True; .) ident (.
+
+      
 
       if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
         ZError('Invalid use of "."');
@@ -728,6 +774,8 @@ Primary<var OutOp : TZcOp>
       Op.Children.Add(OutOp);
 
       OutOp := CheckPrimary(Op);
+
+      IsInIdent := False;
 
     .)
 
@@ -759,7 +807,7 @@ Literal<var Typ : TZcDataType>
   realCon (. Typ.Kind := zctFloat; .) |
   stringCon (. Typ.Kind := zctString; .)
   | "null" (. Typ.Kind := zctNull; .)
-  (* | "true" | "false"  *)
+  /* | "true" | "false"  */
 .
 
 END Zc.

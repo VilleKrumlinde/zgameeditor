@@ -57,8 +57,7 @@ var
 
 implementation
 
-uses Zc,Zc_Ops,Dialogs, ZApplication,
-  CocoBase, Generics.Collections;
+uses Zc,Zc_Ops, Vcl.Dialogs, ZApplication, Generics.Collections;
 
 
 //ThisC = object som är 'this'
@@ -1162,10 +1161,8 @@ var
   Compiler : TZc;
   CodeGen : TZCodeGen;
   I : integer;
-  Err,S : string;
+  S : string;
   Target : TZComponentList;
-  PError : EParseError;
-  Error : TCocoError;
   AllowFuncDefs : boolean;
 begin
   //allow function definitions if compiling a library
@@ -1182,26 +1179,11 @@ begin
     Compiler.SymTab := SymTab;
     Compiler.ReturnType := ReturnType;
     Compiler.GlobalNames := GlobalNames;
-    Compiler.SourceStream.Write(S[1],Length(S)*SizeOf(Char));
+
+    Compiler.SetSource(S);
+
     Compiler.AllowFunctions := AllowFuncDefs;
     Compiler.Execute;
-    if not Compiler.Successful then
-    begin
-      I := Compiler.ListStream.Size;
-      SetLength(Err,I);
-      Compiler.ListStream.Read(Err[1],I);
-      PError := EParseError.Create(Err);
-      if Compiler.ErrorList.Count>0 then
-      begin
-        Error := TCocoError(Compiler.ErrorList[0]);
-        PError.Message := Compiler.ErrorStr(Error.ErrorCode,Error.Data);
-        PError.Line := TCocoError(Compiler.ErrorList[0]).Line;
-        PError.Col := TCocoError(Compiler.ErrorList[0]).Col;
-      end;
-      raise PError;
-      //ShowMessage( Err );
-      //Exit;
-    end;
 
     Target.Clear;
     CodeGen := TZCodeGen.Create;
