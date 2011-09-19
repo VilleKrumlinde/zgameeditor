@@ -194,8 +194,6 @@
 			<DCCReference Include="..\..\ZExpressions.pas"/>
 			<DCCReference Include="Compiler\Compiler.pas"/>
 			<DCCReference Include="..\..\Collision.pas"/>
-			<DCCReference Include="Compiler\CocoBase.pas"/>
-			<DCCReference Include="Compiler\mwStringHashList.pas"/>
 			<DCCReference Include="Compiler\Zc.PAS"/>
 			<DCCReference Include="frmSelectComponent.pas">
 				<Form>SelectComponentForm</Form>
@@ -282,6 +280,8 @@
 			<DCCReference Include="frmXmlEdit.pas">
 				<Form>XmlEditForm</Form>
 			</DCCReference>
+			<DCCReference Include="Compiler\CocoAncestor.pas"/>
+			<DCCReference Include="Compiler\CocoSets.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

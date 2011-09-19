@@ -45,8 +45,6 @@ uses
   ZExpressions in '..\..\ZExpressions.pas',
   Compiler in 'Compiler\Compiler.pas',
   Collision in '..\..\Collision.pas',
-  CocoBase in 'Compiler\CocoBase.pas',
-  mwStringHashList in 'Compiler\mwStringHashList.pas',
   Zc in 'Compiler\Zc.PAS',
   frmSelectComponent in 'frmSelectComponent.pas' {SelectComponentForm},
   Steering in '..\..\Steering.pas',
@@ -86,7 +84,9 @@ uses
   ZPlatform in '..\..\ZPlatform.pas',
   frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm},
   Vcl.Themes,
-  Vcl.Styles;
+  Vcl.Styles,
+  CocoAncestor in 'Compiler\CocoAncestor.pas',
+  CocoSets in 'Compiler\CocoSets.pas';
 
 {$R *.res}
 
