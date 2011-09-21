@@ -90,7 +90,7 @@ uses
 
 {$R *.res}
 
-{.$SETPEFlAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+{.$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
 
 //+>2gb memory in 64-bitwindows
 {$SETPEFLAGS $21}

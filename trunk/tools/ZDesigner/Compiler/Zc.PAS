@@ -575,7 +575,7 @@ end;
 
 procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
 begin
-  ZError(data);
+  ZError(Msg + ' ' + data);
 end;
 
 procedure TZc.CheckHomograph(var sym: Integer);
@@ -633,7 +633,6 @@ end;
 
 procedure TZc._Zc;
       var 
-        I : integer;
         Func : TZcOpFunctionUserDefined; 
         Typ : TZcDataType;
     
@@ -682,11 +681,11 @@ begin
         
        end;
   end
-  else if InSet(CurrentInputSymbol,3) then
+  else if InSet(CurrentInputSymbol,3) and ( not AllowFunctions ) then
   begin
-       while InSet(CurrentInputSymbol,4) and ( not AllowFunctions ) do
+       while InSet(CurrentInputSymbol,4) do
        begin
-     
+    
        Func := TZcOpFunctionUserDefined.Create(nil);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
@@ -705,13 +704,6 @@ begin
        end;
   
        end;
-  
-       if Successful then
-       begin
-         for I:=0 to ZFunctions.Count-1 do
-           ZFunctions[I] := TZcOp(ZFunctions[I]).Optimize;
-       end;
-
   end
   else SynError(1);
 end;
