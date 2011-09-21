@@ -1292,9 +1292,14 @@ begin
       zptInteger : S := IntToStr(Value.IntegerValue);
       zptComponentRef :
         begin
-          S := String(Value.ComponentValue.Name);
-          if S='' then
-            S := Value.ComponentValue.ClassName;
+          if Value.ComponentValue=nil then
+            S := '*null*'
+          else
+          begin
+            S := String(Value.ComponentValue.Name);
+            if S='' then
+              S := Value.ComponentValue.ClassName;
+          end;
         end;
       zptPropertyRef :
         begin

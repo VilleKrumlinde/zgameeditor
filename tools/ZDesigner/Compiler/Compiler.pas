@@ -1185,6 +1185,13 @@ begin
     Compiler.AllowFunctions := AllowFuncDefs;
     Compiler.Execute;
 
+    if Compiler.Successful then
+    begin
+      for I:=0 to Compiler.ZFunctions.Count-1 do
+        Compiler.ZFunctions[I] := TZcOp(Compiler.ZFunctions[I]).Optimize;
+    end else
+      raise EParseError.Create('Compilation failed');
+
     Target.Clear;
     CodeGen := TZCodeGen.Create;
     try

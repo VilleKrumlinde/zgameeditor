@@ -782,6 +782,9 @@ begin
     Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
     Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
 
+    S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
+    if S<>TStyleManager.ActiveStyle.Name then
+      SwitchToStyle(S,nil);
   finally
     Ini.Free;
   end;
@@ -829,6 +832,8 @@ begin
       Ini.WriteString(Section,'PackerParams', Self.PackerParams);
 
       Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
+
+      Ini.WriteString(Section,'Style', TStyleManager.ActiveStyle.Name);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;

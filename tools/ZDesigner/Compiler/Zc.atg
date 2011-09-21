@@ -41,7 +41,7 @@ implementation = (.
 
 procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
 begin
-  ZError(data);
+  ZError(Msg + ' ' + Data);
 end;
 
 procedure TZc.CheckHomograph(var sym: Integer);
@@ -209,8 +209,7 @@ PRODUCTIONS
  *------------------------------------------------------------------------*/
 
 Zc (. var 
-        I : integer;
-        Func : TZcOpFunctionUserDefined; 
+        Func : TZcOpFunctionUserDefined;
         Typ : TZcDataType;
     .)
 = 
@@ -237,10 +236,10 @@ Zc (. var
           end;
         .)
   } 
-  |
+  | IF (. not AllowFunctions .)
   {
-  IF (. not AllowFunctions .) 
-  (. 
+
+  (.
        Func := TZcOpFunctionUserDefined.Create(nil);
        Func.ReturnType := Self.ReturnType;
        Self.CurrentFunction := Func;
@@ -263,13 +262,6 @@ Zc (. var
   .)
   }
 
-(.  
-       if Successful then
-       begin
-         for I:=0 to ZFunctions.Count-1 do
-           ZFunctions[I] := TZcOp(ZFunctions[I]).Optimize;
-       end;
-.)
 .
 
 /*------------------------------------------------------------------------*/
@@ -374,6 +366,7 @@ SimpleType<var Typ : TZcDataType>
   | "string" (. Typ.Kind := zctString; .)
   | "model" (. Typ.Kind := zctModel; .)
 
+  /* Changes below also must be made in homographs-section */
   | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
   | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .) 
   | "Shader" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ShaderClassId; .)
