@@ -417,7 +417,6 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
 constructor TEditorForm.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
   Self.Log := ZLog.GetLog(Self.ClassName);
@@ -2136,6 +2135,9 @@ begin
 
     if UseCodeRemoval then
       RemoveUnusedCode(M);
+
+    //Important, otherwise Win7 won't recognize program icon
+    M.SortResources;
 
     M.SaveToFile( AnsiString(OutFile) );
   finally

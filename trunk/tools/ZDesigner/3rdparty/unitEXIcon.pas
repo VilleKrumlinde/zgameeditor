@@ -1261,6 +1261,13 @@ begin
     Stream.Read (dirEntry [i], SizeOf (TIconDirEntry));
     fImages [i].FWidth := dirEntry [i].bWidth;
     fImages [i].FHeight := dirEntry [i].bHeight;
+    case dirEntry [i].wBitCount of
+      1 : fImages [i].FPixelFormat  := pf1bit;
+      4 : fImages [i].FPixelFormat  := pf4bit;
+      8 : fImages [i].FPixelFormat  := pf8bit;
+      16 : fImages [i].FPixelFormat  := pf16bit;
+      32 : fImages [i].FPixelFormat  := pf32bit;
+    end;
   end;
 
                   // Read the icon images into their Memory streams
@@ -1272,9 +1279,11 @@ begin
     fImages [i].FMemoryImage.CopyFrom (stream, dirEntry [i].dwBytesInRes);
 
     p := FImages [i].GetBitmapInfoHeader;
-    p^.biSizeImage := 0;
-
-    fImages [i].FPixelFormat := GetBitmapInfoPixelFormat (p^);
+    if Assigned(P) then
+    begin
+      p^.biSizeImage := 0;
+      fImages [i].FPixelFormat := GetBitmapInfoPixelFormat (p^);
+    end;
   end;
 
   FCurrentImage := 0;
@@ -1696,7 +1705,11 @@ function TExIconImage.GetBitmapInfo: PBitmapInfo;
 begin
   if Assigned (FMemoryImage) then
     if FIsIcon then
-      result := PBitmapInfo (FMemoryImage.Memory)
+    begin
+      result := PBitmapInfo (FMemoryImage.Memory);
+      if copy(PAnsiChar(Result),2,3)='PNG' then
+        Result:=nil;
+    end
     else
       result := PBitmapInfo (PAnsiChar (FMemoryImage.Memory) + sizeof (DWORD))
   else
