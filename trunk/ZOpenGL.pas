@@ -812,6 +812,8 @@ const
   GL_LUMINANCE                      = $1909;
   GL_LUMINANCE_ALPHA                = $190A;
 
+  GL_R32F = $822E; //OpenGL 3+
+
   // PixelMap
   //      GL_PIXEL_MAP_I_TO_I
   //      GL_PIXEL_MAP_S_TO_S
@@ -1261,6 +1263,7 @@ procedure glColor4f(red, green, blue, alpha: GLfloat); {$IFDEF WIN32}stdcall;{$E
 procedure glColor4fv(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glColorMaterial(face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glColorPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+procedure glTexSubImage1D(target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glCopyTexImage2D(target: GLenum; level: GLint; internalFormat: GLenum; x, y: GLint; width, height: GLsizei; border: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glCopyTexSubImage2D(target: GLenum; level, xoffset, yoffset, x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glCullFace(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
@@ -1321,6 +1324,7 @@ procedure glShadeModel(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF
 procedure glTexCoord2f(s, t: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glTexCoordPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glTexGeni(coord: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+procedure glTexImage1D(target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glTexImage2D(target: GLenum; level, internalformat: GLint; width, height: GLsizei; border: GLint; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glTexParameterf(target: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 procedure glTranslatef(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
@@ -1365,6 +1369,7 @@ var
 //  glGetProgramInfoLog: procedure(_program: GLuint; bufSize: GLsizei; length: PGLsizei; infoLog: PGLchar); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetShaderiv: procedure(shader: GLuint; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetShaderInfoLog: procedure(shader: GLuint; bufSize: GLsizei; length: PGLsizei; infoLog: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetProgramInfoLog: procedure(prog: GLuint; bufSize: GLsizei; length: PGLsizei; infoLog: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glGetShaderSource: procedure(shader: GLuint; bufSize: GLsizei; length: PGLsizei; source: PGLchar); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetUniformLocation: function(_program: GLuint; name: pointer): GLint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glGetUniformfv: procedure(_program: GLuint; location: GLint; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1493,7 +1498,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..31{$ifndef minimal}+4{$endif}] of
+const ExtFuncArray : packed array[0..31{$ifndef minimal}+5{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1516,12 +1521,15 @@ const ExtFuncArray : packed array[0..31{$ifndef minimal}+4{$endif}] of
 //(Name : 'glGetAttachedShaders'; Ptr : @@glGetAttachedShaders),
 //(Name : 'glGetActiveUniform'; Ptr : @@glGetActiveUniform),
 //(Name : 'glGetProgramInfoLog'; Ptr : @@glGetProgramInfoLog),
+
 {$ifndef minimal}
 (Name : 'glGetProgramiv'; Ptr : @@glGetProgramiv),
 (Name : 'glGetShaderiv'; Ptr : @@glGetShaderiv),
 (Name : 'glGetShaderInfoLog'; Ptr : @@glGetShaderInfoLog),
+(Name : 'glGetProgramInfoLog'; Ptr : @@glGetProgramInfoLog),
 (Name : 'glValidateProgram'; Ptr : @@glValidateProgram),
 {$endif}
+
 //(Name : 'glGetShaderSource'; Ptr : @@glGetShaderSource),
 //(Name : 'glGetUniformiv'; Ptr : @@glGetUniformiv),
 (Name : 'glGetUniformLocation'; Ptr : @@glGetUniformLocation),

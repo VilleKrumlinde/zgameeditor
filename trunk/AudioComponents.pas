@@ -570,7 +570,7 @@ begin
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Sample : current sample (-1..1)'#13#10 +
       '//Time : current time'#13#10 +
-      '//Example: Sample=sin(Time*((PI*2)*777));'#13#10;
+      '//Example: this.Sample=sin(Time*((PI*2)*777));'#13#10;
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}integer(@Sample), zptFloat);
     List.GetLast.NeverPersist := True;
