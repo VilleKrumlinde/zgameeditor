@@ -750,6 +750,10 @@ begin
       PropEditorPanel.Height := Self.Height div 2;
     end;
 
+    S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
+    if S<>TStyleManager.ActiveStyle.Name then
+      SwitchToStyle(S,nil);
+
     if (ParamCount=1) and FileExists(ParamStr(1)) then
       OpenProject(ParamStr(1))
     else
@@ -780,10 +784,6 @@ begin
 
     Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
     Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
-
-    S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
-    if S<>TStyleManager.ActiveStyle.Name then
-      SwitchToStyle(S,nil);
   finally
     Ini.Free;
   end;
@@ -3827,7 +3827,8 @@ begin
   // keep the state of the custom treenodes.
   // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
   Application.ProcessMessages;
-  Tree.SetRootComponent(Self.Root);
+  if Self.Root<>nil then
+    Tree.SetRootComponent(Self.Root);
 
   RecolorHighlighter(ExprSynEdit.Highlighter);
   RecolorHighlighter(ShaderSynEdit.Highlighter);

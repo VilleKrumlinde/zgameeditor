@@ -66,6 +66,7 @@ type
   TShaderVariable = class(TZComponent)
   private
     Location : integer;
+    TextureHandle : integer;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -74,16 +75,20 @@ type
     ValuePropRef : TZPropertyRef;
     ValueArrayRef : TDefineArray;
     {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+    destructor Destroy; override;
   end;
 
   TShader = class(TZComponent)
   strict private
     ProgHandle,VShaderHandle,FShaderHandle : cardinal;
     LastVariableUpdate : single;
+    TexCount,FirstTexIndex : integer;
     procedure ReInit;
     procedure CleanUp;
     procedure UpdateVariableLocations;
     procedure UpdateVariableValues;
+  private
+    procedure DetachArrayVariables;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure UseShader;
@@ -667,7 +672,9 @@ begin
       glEnable(GL_TEXTURE_2D);
       Tex.RenderTarget.UseTextureBegin;
     end else
+    begin
       glDisable(GL_TEXTURE_2D);
+    end;
 
     //Texture matrix
     //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
@@ -700,6 +707,8 @@ begin
 
   if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
   begin
+    if (not NilOld) and (OldM.Shader<>nil) then
+      OldM.Shader.DetachArrayVariables;
     if NewM.Shader<>nil then
       NewM.Shader.UseShader
     else
@@ -1976,12 +1985,17 @@ begin
 end;
 
 procedure TShader.ReInit;
-const
-  TexVar : array[0..4] of ansichar = 'tex'#0#0;
-var
-  I,J : integer;
-
   {$ifndef minimal}
+  procedure InDumpProgramLog(Prog : GLuint);
+  var
+    GlMess : array[0..511] of ansichar;
+    MessLen : integer;
+  begin
+    glGetProgramInfoLog(Prog,SizeOf(GlMess),@MessLen,@GlMess);
+    if MessLen>0 then
+      ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
+  end;
+
   function InCheckShaderValid(Shader : PGLuint; Kind: GLEnum) : boolean;
   var
     Status : GLUInt;
@@ -2002,11 +2016,9 @@ var
     else
     begin
       ZLog.GetLog(Self.ClassName).Warning( 'Error in ' + S + ' shader compilation' );
-
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
         ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
-
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
@@ -2020,11 +2032,17 @@ var
   begin
     glGetProgramiv(ProgHandle,GL_LINK_STATUS,@Status);
     if Status=GL_FALSE then
+    begin
       ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      InDumpProgramLog(ProgHandle);
+    end;
     glValidateProgram(ProgHandle);
     glGetProgramiv(ProgHandle,GL_VALIDATE_STATUS,@Status);
     if Status=GL_FALSE then
+    begin
       ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      InDumpProgramLog(ProgHandle);
+    end;
   end;
   {$endif}
 
@@ -2043,6 +2061,10 @@ var
     {$ifndef minimal}CheckGLError;{$endif}
   end;
 
+const
+  TexVar : array[0..4] of ansichar = 'tex'#0#0;
+var
+  I,J : integer;
 begin
   CleanUp;
 
@@ -2073,7 +2095,40 @@ var
   I : integer;
   Sv : TShaderVariable;
   V : single;
+
+  procedure UpdateArrayVar;
+  var
+    Count : integer;
+    P : pointer;
+  begin
+    Count := Sv.ValueArrayRef.CalcLimit;
+    P := Sv.ValueArrayRef.GetData;
+    glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
+    glEnable(GL_TEXTURE_1D);
+    if Sv.TextureHandle=0 then
+    begin
+      glGenTextures(1, @Sv.TextureHandle);
+      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+      glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    end else
+    begin
+      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+      glTexSubImage1D(GL_TEXTURE_1D, 0, 0, Count, GL_RED, GL_FLOAT, P);
+    end;
+    glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
+    Inc(Self.TexCount);
+  end;
+
 begin
+  //Arrays are passed as sampler1d so update with the index of the texture
+  if CurrentMaterial<>nil then
+    Self.FirstTexIndex := CurrentMaterial.Textures.Count
+  else
+    FirstTexIndex := 0;
+  Self.TexCount := 0;
+
   for I := 0 to UniformVariables.Count - 1 do
   begin
     Sv := TShaderVariable(UniformVariables[I]);
@@ -2082,9 +2137,7 @@ begin
     {$endif}
 
     if Sv.ValueArrayRef<>nil then
-    begin
-      glUniform1fv(Sv.Location,Sv.ValueArrayRef.CalcLimit,PGLFloat(Sv.ValueArrayRef.GetData))
-    end
+      UpdateArrayVar
     else
     begin
       if Sv.ValuePropRef.Component<>nil then
@@ -2117,6 +2170,17 @@ begin
     if Sv.Location=-1 then
       ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + String(Sv.VariableName) );
     {$endif}
+  end;
+end;
+
+procedure TShader.DetachArrayVariables;
+var
+  I : integer;
+begin
+  for I := Self.TexCount downto 0 do
+  begin
+    glActiveTexture($84C0 + Self.FirstTexIndex + I);
+    glDisable(GL_TEXTURE_1D);
   end;
 end;
 
@@ -2220,6 +2284,13 @@ begin
   CurrentRenderTarget := nil;
 end;
 {$endif}
+
+destructor TShaderVariable.Destroy;
+begin
+  if TextureHandle<>0 then
+    glDeleteTextures(1, @TextureHandle);
+  inherited;
+end;
 
 { TMaterialTexture }
 
