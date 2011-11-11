@@ -482,6 +482,28 @@ if(mat.Shading!=1)
 playSound(Sound1,55,0);]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Compares">
+      <Expression>
+<![CDATA[model m=Model1;
+int i= m==Model1;
+float f= m==Model1;
+
+if(i==0)
+  Error=1301;
+
+if(f==0)
+  Error=1302;
+
+i= m!=Model1;
+f= m!=Model1;
+
+if(i!=0)
+  Error=1303;
+
+if(f!=0)
+  Error=1304;]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
