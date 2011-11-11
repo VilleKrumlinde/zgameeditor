@@ -74,7 +74,10 @@ type
     Value : single;
     ValuePropRef : TZPropertyRef;
     ValueArrayRef : TDefineArray;
-    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    procedure DesignerFreeResources; override;
+    {$endif}
     destructor Destroy; override;
   end;
 
@@ -1299,7 +1302,7 @@ begin
 
   //Font pixel size
   if not Self.UseModelSpace then
-    FontSize := Round(Scale * (ScreenWidth / CharsScreen))
+    FontSize := Round(Scale * (ZApp.ScreenWidth / CharsScreen))
   else
     FontSize := 16;
 
@@ -2111,7 +2114,7 @@ var
       glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
       glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
       glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     end else
     begin
       glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
@@ -2262,7 +2265,23 @@ begin
   if Length(VariableName)=0 then
     Result := Result + '*VariableName not set*';
 end;
+
+procedure TShaderVariable.DesignerFreeResources;
+begin
+  if TextureHandle<>0 then
+  begin
+    glDeleteTextures(1, @TextureHandle);
+    TextureHandle := 0;
+  end;
+end;
 {$endif}
+
+destructor TShaderVariable.Destroy;
+begin
+  if TextureHandle<>0 then
+    glDeleteTextures(1, @TextureHandle);
+  inherited;
+end;
 
 {$ifndef minimal}
 procedure CleanUp;
@@ -2284,13 +2303,6 @@ begin
   CurrentRenderTarget := nil;
 end;
 {$endif}
-
-destructor TShaderVariable.Destroy;
-begin
-  if TextureHandle<>0 then
-    glDeleteTextures(1, @TextureHandle);
-  inherited;
-end;
 
 { TMaterialTexture }
 

@@ -299,6 +299,9 @@ begin
       Assert(False);
     end;
   end
+  else if Kind in [zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ] then
+    //Comparisons are always of int-type
+    Result.Kind := zctInt
   else if Children.Count>0 then
   begin
     Result := Children.First.GetDataType;

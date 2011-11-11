@@ -627,6 +627,7 @@ begin
   //Read settings last. Must be after compileall because it selects nodes which
   //will call RefreshContent that requires to have expressions already compiled.
   ReadProjectSettingsFromIni;
+  Tree.Invalidate;
 end;
 
 procedure TEditorForm.SetRoot(C : TZComponent);
@@ -964,8 +965,11 @@ begin
     Exit;
 
   //Set window size to make sure camera ratio calculations are correct
-  ZApplication.ScreenWidth := Glp.Width;
-  ZApplication.ScreenHeight := Glp.Height;
+  if ZApp<>nil then
+  begin
+    ZApp.ScreenWidth := Glp.Width;
+    ZApp.ScreenHeight := Glp.Height;
+  end;
 
   if (ShowNode is TZApplication) and (IsAppRunning) then
   begin

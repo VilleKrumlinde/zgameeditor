@@ -205,6 +205,9 @@ type
     Kind : TExpOpJumpKind;
     Destination : integer;
     _Type : (jutFloat,jutInt,jutString);
+    {$ifndef minimal}
+    function ExpAsText : string; override;
+    {$endif}
   end;
 
   TExpFuncCallKind = (fcSin,fcSqrt,fcCos,fcAbs,fcRnd,fcFrac,fcExp,
@@ -765,6 +768,13 @@ begin
     Inc(gCurrentPc,Destination);
 end;
 
+{$ifndef minimal}
+function TExpJump.ExpAsText : string;
+begin
+  Result := inherited ExpAsText + ' ' + Copy(GetEnumName(TypeInfo(TExpOpJumpKind),Ord(Kind)),7,100);
+end;
+{$endif}
+
 { TDefineVariable }
 
 procedure TDefineVariable.DefineProperties(List: TZPropertyList);
@@ -858,7 +868,7 @@ begin
     fcCenterMouse :
       begin
         HasReturnValue := False;
-        Platform_SetMousePos(ScreenWidth shr 1,ScreenHeight shr 1);
+        Platform_SetMousePos(ZApp.ScreenWidth shr 1,ZApp.ScreenHeight shr 1);
       end;
     fcSetRandomSeed :
       begin

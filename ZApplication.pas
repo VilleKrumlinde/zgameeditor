@@ -122,6 +122,8 @@ type
     Camera : TCamera;
     NoSound : boolean;
     FrameLoss : boolean;  //sätts till true ifall vi tappar frames
+    ScreenWidth : integer;
+    ScreenHeight : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     PreviewClearColor : TZColorf;
@@ -179,8 +181,6 @@ const
 
 var
   ZApp : TZApplication;
-  ScreenWidth : integer{$ifndef minimal}=800{$endif};
-  ScreenHeight : integer{$ifndef minimal}=600{$endif};
 
 
 implementation
@@ -235,7 +235,9 @@ var
   I : integer;
 {$endif}
 begin
+  {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
+  {$endif}
 
   {$ifndef minimal}
     //no init if inside designer tool
@@ -980,6 +982,15 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ViewportHeight',{$ENDIF}integer(@ViewportHeight), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenHeight',{$ENDIF}integer(@ScreenHeight), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 600;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenWidth',{$ENDIF}integer(@ScreenWidth), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 800;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
