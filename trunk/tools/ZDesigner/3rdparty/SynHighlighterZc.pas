@@ -60,7 +60,7 @@ type
     fRange: TRangeState;
     FTokenID: TtkTokenKind;
     FExtTokenID: TxtkTokenKind;
-    //VK: update to upper limit in KeyIndices
+    //**VK: update to upper limit in KeyIndices
     fIdentFuncTable: array[0..16] of TIdentFuncTableFunc;
     fAsmAttri: TSynHighlighterAttributes;
     fCommentAttri: TSynHighlighterAttributes;
@@ -185,14 +185,15 @@ uses
 //**** VK: Merge begin
 
 const
-  KeyWords: array[0..13] of UnicodeString = (
-    'break', 'case', 'continue', 'else', 'float', 'for', 'if', 'int', 'model',
-    'return', 'string', 'switch', 'while', 'void'
+  KeyWords: array[0..14] of UnicodeString = (
+    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if', 'int',
+    'model', 'return', 'string', 'switch', 'while', 'void'
   );
 
   KeyIndices: array[0..16] of Integer = (
-    -1, 11, 13, -1, 8, 1, 9, 3, 6, 7, 0, 2, 12, -1, 5, 4, 10
+    1, 14, -1, 5, 8, 10, 3, 0, 11, 2, 6, 7, -1, 12, 13, 9, 4
   );
+
 
 {$Q-}
 function TSynZcSyn.HashKey(Str: PWideChar): Cardinal;
@@ -200,13 +201,14 @@ begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 806 + Ord(Str^) * 2;
+    Result := Result * 497 + Ord(Str^) * 42;
     inc(Str);
   end;
   Result := Result mod 17;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
+
 
 //**** VK: Merge end
 //----

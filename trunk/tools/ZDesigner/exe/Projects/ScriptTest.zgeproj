@@ -35,9 +35,13 @@ int intMultiply(int x,int y) {
   return x*y;
 }
 
+const int Lib2X = 42;
+
 void assignGlobal(float x) {
   GlobalFloat=x;
-}]]>
+}
+
+const int Lib2Y = 88;]]>
       </Source>
     </ZLibrary>
     <ZExpression>
@@ -502,6 +506,39 @@ if(i!=0)
 
 if(f!=0)
   Error=1304;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Script defined constants">
+      <Expression>
+<![CDATA[const int x=1;
+if(x!=1)
+  Error=1401;
+
+const float f=1.5;
+if(f!=1.5)
+  Error=1402;
+
+const string s="hej";
+if(s!="hej")
+  Error=1403;
+
+const int xx=x*x+1;
+if(xx!=2)
+  Error=1404;
+
+const string ss=s + "hej";
+if(ss!="hejhej")
+  Error=1405;
+
+const float ff=f + 1;
+if(ff!=2.5)
+  Error=1406;
+
+if(Lib2X!=42)
+  Error=1407;
+
+if(Lib2X+Lib2Y+2!=132)
+  Error=1408;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>

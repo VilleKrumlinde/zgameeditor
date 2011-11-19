@@ -2,7 +2,7 @@ COMPILER Zc
 
 FRAME "delphi.frm"
 
-uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils .)
+uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils, ZExpressions .)
 
 public = (.
     ZFunctions : TObjectList;
@@ -36,7 +36,7 @@ semErrors = (.
     204 : Result := 'Only function definitions are allowed here';
     205 : Result := 'Syntax not supported';
 .)
-    
+
 implementation = (.
 
 procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
@@ -48,9 +48,9 @@ procedure TZc.CheckHomograph(var sym: Integer);
 begin
   //Only Homographs are name of component datatypes
   //If inside identifier "x.y.z" then let it refer to identifier instead
-  if IsInIdent then 
+  if IsInIdent then
     sym := identSym;
-end; 
+end;
 
 destructor TZc.Destroy;
 begin
@@ -199,7 +199,7 @@ HOMOGRAPHS
   "Mesh"
   "Camera" 
   "Font"
-  "Sample" 
+  "Sample"
 
 
 PRODUCTIONS
@@ -208,14 +208,15 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
-Zc (. var 
+Zc (. var
         Func : TZcOpFunctionUserDefined;
         Typ : TZcDataType;
     .)
-= 
-
-  IF (. AllowFunctions .) 
-  { 
+=
+  IF (. AllowFunctions .)
+  {
+    ConstantDeclaration
+    |
     ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (.
           if SymTab.Contains(LexString) then
             ZError('Name already defined: ' + LexString);
@@ -235,7 +236,7 @@ Zc (. var
             SymTab.PopScope;
           end;
         .)
-  } 
+  }
   | IF (. not AllowFunctions .)
   {
 
@@ -384,20 +385,72 @@ SimpleType<var Typ : TZcDataType>
 . */
 
 
+ConstantDeclaration
+(.
+var
+  Cns : TDefineConstant;
+  Typ : TZcDataType;
+  Op : TZcOp;
+  Lit : TZcOpLiteral;
+  CnsName : string;
+.)
+=
+"const" Type<Typ> ident (. CnsName := LexString; .)"=" Expr<Op>
+  (.
+   Op := Op.Optimize;
+   if not (Op is TZcOpLiteral) then
+     ZError('Constant expression expected: ' + Op.ToString);
+
+   Lit := Op as TZcOpLiteral;
+
+   if Lit.Typ.Kind<>Typ.Kind then
+     ZError('Constant expression is not of the expected type: ' + Op.ToString);
+
+   Cns := TDefineConstant.Create(nil);
+   Cns.SetString('Name',AnsiString(CnsName));
+   GlobalNames.Add(Cns);
+
+   case Typ.Kind of
+     zctInt:
+       begin
+         Cns._Type := dvbInt;
+         Cns.IntValue := Round(Lit.Value);
+       end;
+     zctFloat:
+       begin
+         Cns._Type := dvbFloat;
+         Cns.Value := Lit.Value;
+       end;
+     zctString:
+       begin
+         Cns._Type := dvbString;
+         Cns.SetString('StringValue',AnsiString(Lit.StringValue));
+       end;
+     else
+       ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
+   end;
+   SymTab.Add(CnsName,Cns);
+  .)
+/* {"," ident "=" Expr<Op>} */
+  ";"
+.
+
 /*------------------------------------------------------------------------*
  *------------------------------ Statements ------------------------------*
  *------------------------------------------------------------------------*/
 
 Statement<var OutOp : TZcOp>
 = (. OutOp := nil; .)
-/* "const" Type ident "=" Expr<Op> {"," ident "=" Expr<Op>} ";" */
+
+ConstantDeclaration
+
 /*IF IsLocalVarDecl THEN
 BEGIN
   LocalVarDecl ";"
 END
 |  EmbeddedStatement<OutOp> */
 
-LocalVarDecl<OutOp> ";"
+| LocalVarDecl<OutOp> ";"
 | EmbeddedStatement<OutOp>
   /* LL(1) confict between LocalVarDecl and StatementExpr: *
    * ident {"." ident} { "[" ...                           */

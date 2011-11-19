@@ -972,7 +972,7 @@ begin
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
   end else
   begin
-    Error := 'Unknown function';
+    Error := 'Unknown function: ' + Op.Id;
     Exit;
   end;
   Result := True;

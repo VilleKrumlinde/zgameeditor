@@ -1157,9 +1157,7 @@ begin
     ((Dimensions=dadThree) and ((I1>=SizeDim1) or (I2>=SizeDim2) or (I3>=SizeDim3)))
     then
   begin
-    {$ifdef zlog}
-    ZLog.GetLog(Self.ClassName).Warning('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
-    {$endif}
+    ZHalt('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     Result := nil;
     Exit;
   end;
