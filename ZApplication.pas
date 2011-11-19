@@ -811,7 +811,10 @@ begin
   begin
     //Remove user function names from symtab
     if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
-      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id);
+      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id)
+    else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
+      //Also remove inline constants
+      SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name));
   end;
   ZcGlobalNames.Clear;
 
