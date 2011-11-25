@@ -1,9 +1,9 @@
 object EditorForm: TEditorForm
-  Left = 294
-  Top = 134
+  Left = 0
+  Top = 0
   Caption = 'ZDesigner'
-  ClientHeight = 758
-  ClientWidth = 1073
+  ClientHeight = 767
+  ClientWidth = 1092
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,489 +21,112 @@ object EditorForm: TEditorForm
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter2: TSplitter
-    Left = 433
+    Left = 280
     Top = 22
     Width = 4
-    Height = 736
+    Height = 745
+    ExplicitLeft = 433
     ExplicitTop = 30
     ExplicitHeight = 537
   end
   object LeftPanel: TPanel
     Left = 0
     Top = 22
-    Width = 433
-    Height = 736
+    Width = 280
+    Height = 745
     Align = alLeft
+    BevelOuter = bvNone
+    Constraints.MinWidth = 100
     TabOrder = 0
-    object Splitter3: TSplitter
-      Left = 1
-      Top = 256
-      Width = 431
-      Height = 4
-      Cursor = crVSplit
-      Align = alTop
-      ExplicitLeft = 0
-      ExplicitTop = 266
-    end
-    object TreePanel: TPanel
-      Left = 1
-      Top = 1
-      Width = 431
-      Height = 255
-      Align = alTop
+    ExplicitHeight = 823
+    object TreePanel: TGroupBox
+      Left = 0
+      Top = 0
+      Width = 280
+      Height = 823
+      Align = alClient
+      Caption = 'Project &tree'
       Constraints.MinHeight = 150
       TabOrder = 0
     end
-    object Panel1: TPanel
-      Left = 1
-      Top = 260
-      Width = 431
-      Height = 475
-      Align = alClient
-      TabOrder = 1
-      object PropEditorPanel: TPanel
-        Left = 1
-        Top = 1
-        Width = 429
-        Height = 473
-        Align = alClient
-        TabOrder = 0
-      end
-    end
   end
   object ViewerPanel: TPanel
-    Left = 437
+    Left = 284
     Top = 22
-    Width = 636
-    Height = 736
+    Width = 808
+    Height = 745
     Align = alClient
+    BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 823
     object Splitter1: TSplitter
-      Left = 1
-      Top = 575
-      Width = 634
+      Left = 0
+      Top = 585
+      Width = 808
       Height = 4
       Cursor = crVSplit
       Align = alBottom
+      ExplicitLeft = 1
       ExplicitTop = 376
       ExplicitWidth = 475
     end
-    object ViewerPageControl: TPageControl
-      Left = 1
-      Top = 1
-      Width = 634
-      Height = 574
-      ActivePage = ViewerGlTabSheet
-      Align = alClient
-      TabOrder = 0
-      object ViewerGlTabSheet: TTabSheet
-        Caption = 'ViewerGlTabSheet'
-        TabVisible = False
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
-        object RotateModelPanel: TPanel
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 50
-          Align = alTop
-          TabOrder = 0
-          object ViewTranslateLabel: TLabel
-            Left = 416
-            Top = 5
-            Width = 32
-            Height = 30
-            Alignment = taRightJustify
-            AutoSize = False
-            Caption = 'ViewTranslateLabel'
-            Font.Charset = ANSI_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -8
-            Font.Name = 'Arial'
-            Font.Style = []
-            ParentFont = False
-            WordWrap = True
-          end
-          object Label2: TLabel
-            Left = 7
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate X'
-          end
-          object Label3: TLabel
-            Left = 112
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate Y'
-          end
-          object Label4: TLabel
-            Left = 217
-            Top = 22
-            Width = 42
-            Height = 13
-            Caption = 'Rotate Z'
-          end
-          object Label5: TLabel
-            Left = 324
-            Top = 22
-            Width = 27
-            Height = 13
-            Caption = 'Zoom'
-          end
-          object ViewRotateXTrackBar: TTrackBar
-            Left = 0
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 0
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object TrackBar2: TTrackBar
-            Tag = 1
-            Left = 104
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 1
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object TrackBar3: TTrackBar
-            Tag = 2
-            Left = 209
-            Top = 0
-            Width = 100
-            Height = 24
-            Max = 100
-            TabOrder = 2
-            TickStyle = tsNone
-            OnChange = ViewRotateXTrackBarChange
-          end
-          object ZoomTrackBar: TTrackBar
-            Left = 316
-            Top = 0
-            Width = 100
-            Height = 24
-            TabOrder = 3
-            TickStyle = tsNone
-            OnChange = ZoomTrackBarChange
-          end
-          object Panel4: TPanel
-            Left = 371
-            Top = 1
-            Width = 254
-            Height = 48
-            Align = alRight
-            BevelOuter = bvNone
-            TabOrder = 4
-            DesignSize = (
-              254
-              48)
-            object NormalsCheckBox: TCheckBox
-              Left = 9
-              Top = 7
-              Width = 61
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Normals'
-              TabOrder = 0
-              OnClick = NormalsCheckBoxClick
-            end
-            object ResetCameraButton: TButton
-              Left = 172
-              Top = 25
-              Width = 73
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Reset camera'
-              TabOrder = 1
-              OnClick = ResetCameraButtonClick
-            end
-            object ResetModelButton: TButton
-              Left = 172
-              Top = 5
-              Width = 73
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = '&Reset time'
-              Enabled = False
-              TabOrder = 2
-              OnClick = ResetModelButtonClick
-            end
-            object UpdateTimeCheckBox: TCheckBox
-              Left = 72
-              Top = 5
-              Width = 81
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Update time'
-              TabOrder = 3
-              OnClick = UpdateTimeCheckBoxClick
-            end
-            object WireframeCheckBox: TCheckBox
-              Left = 72
-              Top = 22
-              Width = 74
-              Height = 17
-              Anchors = [akTop, akRight]
-              Caption = 'Wireframe'
-              TabOrder = 4
-            end
-          end
-        end
-        object AppControlPanel: TPanel
-          Left = 0
-          Top = 50
-          Width = 626
-          Height = 41
-          Align = alTop
-          TabOrder = 1
-          object AppStartButton: TBitBtn
-            Left = 7
-            Top = 6
-            Width = 75
-            Height = 25
-            Action = AppPreviewStartAction
-            Caption = 'Start'
-            TabOrder = 0
-            Glyph.Data = {
-              36040000424D3604000000000000360000002800000010000000100000000100
-              2000000000000004000000000000000000000000000000000000FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00D5E0D50077AD66004188260041802600418026004188
-              260077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF0077AD660041882D00579A48005EA457006FAD66006FAD66005EA4
-              5700579A480041882D0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF0077AD660048913A005EA45700ADCBAD00ADCBAD003A8833003A883A00489A
-              410057A457005EA4570048913A0077AD6600FF00FF00FF00FF00FF00FF00D5E0
-              D50041882D00579A4F0041914100ADCBAD00FFFFFF00ADCBAD0041883A004188
-              3A00419141004F9A48005EA4570041882D00D5E0D500FF00FF00FF00FF0077AD
-              66004F9141004F9148004F914800ADCBAD00FFFFFF00FFFFFF00ADCBAD004F91
-              48004F9148004F9A4800579A4F005791410077AD6600FF00FF00FF00FF004180
-              260033802D0033802D0033802D00ADCBAD00FFFFFF00FFFFFF00FFFFFF00ADCB
-              AD0033802D0033802D00488841005EA4570041802600FF00FF00FF00FF004180
-              20003A7733003A7733003A773300ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF00BAD2BA003A7733003A7733006F9A5E0041802000FF00FF00FF00FF004888
-              3300488048004880480048804800ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF00FFFFFF0078E9C2004880480077AD770041802600FF00FF00FF00FF004888
-              3300579A5E00579A5E00579A5E00BAD2BA00FFFFFF00FFFFFF00FFFFFF00FFFF
-              FF0026CC8000579A5E00579A5E0077AD770048883300FF00FF00FF00FF0077AD
-              6600579A4F005EA46F005EA46F00BAD2BA00FFFFFF00FFFFFF00FFFFFF0026CC
-              80005EA46F005EA46F005EA46F005EA46F0077AD6600FF00FF00FF00FF00D5E0
-              D500488833006FAD80006FB78800BAD2BA00FFFFFF00FFFFFF0026CC80006FB7
-              88006FB788006FB788006FB7880048883300D5E0D500FF00FF00FF00FF00FF00
-              FF0077AD66005791480077B7880026CC8000FFFFFF0026CC80006FB791006FB7
-              910077B7910077B791005791480077AD6600FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF0077AD66004888330026CC800026CC800088C19A0088C1A40080B7
-              880066A466004F883A0077AD6600FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00D5E0D50077AD66004F883A0041802600418026004F88
-              3A0077AD6600D5E0D500FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-          end
-          object AppStopButton: TBitBtn
-            Left = 88
-            Top = 6
-            Width = 75
-            Height = 25
-            Action = AppPreviewStopAction
-            Caption = 'Stop'
-            TabOrder = 1
-            Glyph.Data = {
-              36040000424D3604000000000000360000002800000010000000100000000100
-              2000000000000004000000000000000000000000000000000000FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF007060D0002010C0002010C0002010C0002010C0002010C0002010
-              C0002010C0002010C0002010C0007060D000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF002010C000A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8
-              F800A8A8F800A8A8F800A8A8F8002010C000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF002010C0009898D8004038E8004038E8004038E8004038E8004038
-              E8004038E8004038E8009898D8002010C000FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003828C8007878F0003830E8003830E8003830E8003830E8003830
-              E8003830E8003830E8007878F0003828C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003838B8007068F0003020E8003020E8003020E8003020E8003020
-              E8003020E8003020E8007068F0003838B800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003838B8007878F0003830E8003830E8003830E8003830E8003830
-              E8003830E8003830E8007878F0003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003840C8009898D8004840E8004840E8004840E8004840E8004840
-              E8004840E8004840E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF003840C8009898D8005048E8005048E8005048E8005048E8005048
-              E8005048E8005048E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF004050C800A8A8F8005050E8005050E8005050E8005050E8005050
-              E8005050E8005050E800A8A8F8004050C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF004050C800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0
-              F800A8B0F800A8B0F800A8B0F8004050C800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF009898D8004858C8004858C8004858C8004858C8004858C8004858
-              C8004858C8004858C8004858C8009898D800FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-              FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
-          end
-        end
-      end
-      object ViewerSoundTabSheet: TTabSheet
-        Caption = 'ViewerSoundTabSheet'
-        ImageIndex = 1
-        TabVisible = False
-        inline SoundEditFrame1: TSoundEditFrame
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 564
-          Align = alClient
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 0
-          TabStop = True
-          ExplicitWidth = 626
-          ExplicitHeight = 564
-          inherited PageControl1: TPageControl
-            Width = 626
-            Height = 564
-            ExplicitWidth = 626
-            ExplicitHeight = 564
-            inherited TabSheet1: TTabSheet
-              ExplicitLeft = 4
-              ExplicitTop = 24
-              ExplicitWidth = 618
-              ExplicitHeight = 536
-              inherited Label8: TLabel
-                Width = 55
-                ExplicitWidth = 55
-              end
-              inherited Label6: TLabel
-                Width = 25
-                ExplicitWidth = 25
-              end
-              inherited Label12: TLabel
-                Width = 50
-                ExplicitWidth = 50
-              end
-              inherited Label1: TLabel
-                Width = 82
-                ExplicitWidth = 82
-              end
-              inherited SoundGraphPaintBox: TPaintBox
-                Width = 200
-                ExplicitWidth = 245
-              end
-              inherited Label16: TLabel
-                Width = 35
-                ExplicitWidth = 35
-              end
-              inherited Label17: TLabel
-                Width = 19
-                ExplicitWidth = 19
-              end
-              inherited GroupBox4: TGroupBox
-                inherited Label5: TLabel
-                  Width = 49
-                  ExplicitWidth = 49
-                end
-                inherited Label11: TLabel
-                  Width = 33
-                  ExplicitWidth = 33
-                end
-              end
-              inherited GroupBox2: TGroupBox
-                inherited Label3: TLabel
-                  Width = 28
-                  ExplicitWidth = 28
-                end
-              end
-              inherited GroupBox1: TGroupBox
-                inherited Label2: TLabel
-                  Width = 62
-                  ExplicitWidth = 62
-                end
-                inherited Label18: TLabel
-                  Width = 62
-                  ExplicitWidth = 62
-                end
-              end
-            end
-            inherited TabSheet2: TTabSheet
-              ExplicitLeft = 0
-              ExplicitTop = 0
-              ExplicitWidth = 0
-              ExplicitHeight = 0
-              inherited Label15: TLabel
-                Width = 58
-                ExplicitWidth = 58
-              end
-              inherited Label19: TLabel
-                Width = 69
-                ExplicitWidth = 69
-              end
-              inherited ChannelsParent: TScrollBox
-                Width = 472
-                ExplicitWidth = 472
-              end
-            end
-          end
-        end
-      end
-      object ViewerMusicTabSheet: TTabSheet
-        Caption = 'ViewerMusicTabSheet'
-        ImageIndex = 2
-        TabVisible = False
-        inline MusicEditFrame1: TMusicEditFrame
-          Left = 0
-          Top = 0
-          Width = 626
-          Height = 564
-          Align = alClient
-          TabOrder = 0
-          TabStop = True
-          ExplicitWidth = 626
-          ExplicitHeight = 564
-        end
-      end
-      object ViewerBlankTabSheet: TTabSheet
-        Caption = 'ViewerBlankTabSheet'
-        ImageIndex = 3
-        TabVisible = False
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
-      end
-    end
     object LowerRightPanel: TPanel
-      Left = 1
-      Top = 579
-      Width = 634
+      Left = 0
+      Top = 589
+      Width = 808
       Height = 156
       Align = alBottom
-      TabOrder = 1
+      BevelOuter = bvNone
+      TabOrder = 0
+      ExplicitTop = 667
       object Splitter4: TSplitter
-        Left = 460
-        Top = 1
-        Height = 154
+        Left = 634
+        Top = 0
+        Width = 4
+        Height = 156
         Align = alRight
-        ExplicitLeft = 301
+        ExplicitLeft = 0
+      end
+      object LogPanel: TPanel
+        Left = 638
+        Top = 0
+        Width = 170
+        Height = 156
+        Align = alRight
+        BevelOuter = bvNone
+        Constraints.MinWidth = 4
+        TabOrder = 1
+        object LogListBox: TListBox
+          Left = 0
+          Top = 0
+          Width = 170
+          Height = 156
+          Style = lbOwnerDrawFixed
+          Align = alClient
+          BevelInner = bvNone
+          BevelOuter = bvNone
+          Color = 2976796
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = []
+          ItemHeight = 14
+          ParentFont = False
+          PopupMenu = LogPopupMenu
+          TabOrder = 0
+          OnDrawItem = LogListBoxDrawItem
+          OnMouseMove = LogListBoxMouseMove
+        end
       end
       object CustomPropEditorsPageControl: TPageControl
-        Left = 1
-        Top = 1
-        Width = 459
-        Height = 154
+        Left = 0
+        Top = 0
+        Width = 634
+        Height = 156
         ActivePage = TabSheet3
         Align = alClient
+        Constraints.MinWidth = 100
         TabOrder = 0
         object TabSheet2: TTabSheet
           Caption = 'TabSheet2'
@@ -522,8 +145,8 @@ object EditorForm: TEditorForm
           ExplicitWidth = 0
           ExplicitHeight = 0
           DesignSize = (
-            451
-            144)
+            626
+            146)
           object Label1: TLabel
             Left = 16
             Top = 8
@@ -535,7 +158,7 @@ object EditorForm: TEditorForm
           object TrackBar1: TTrackBar
             Left = 8
             Top = 25
-            Width = 440
+            Width = 615
             Height = 45
             Anchors = [akLeft, akTop, akRight]
             Max = 1000
@@ -553,32 +176,34 @@ object EditorForm: TEditorForm
           ExplicitWidth = 0
           ExplicitHeight = 0
           DesignSize = (
-            451
-            144)
-          object ExprPanel: TPanel
+            626
+            146)
+          object ExprPanel: TGroupBox
             Left = 0
             Top = 0
-            Width = 451
-            Height = 105
+            Width = 626
+            Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
-            Caption = 'Placeholder f'#246'r synedit'
+            Caption = '&Code editor'
             TabOrder = 0
+            OnClick = ExprPanelClick
           end
           object ExprCompileButton: TButton
             Left = 8
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
             Caption = '&OK'
+            Enabled = False
             TabOrder = 1
             OnClick = ExprCompileButtonClick
           end
           object CompileErrorLabel: TStaticText
             Left = 168
-            Top = 111
-            Width = 280
+            Top = 113
+            Width = 455
             Height = 26
             Anchors = [akLeft, akRight, akBottom]
             AutoSize = False
@@ -595,7 +220,7 @@ object EditorForm: TEditorForm
           end
           object ExprHelpButton: TButton
             Left = 87
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
@@ -613,62 +238,573 @@ object EditorForm: TEditorForm
           ExplicitWidth = 0
           ExplicitHeight = 0
           DesignSize = (
-            451
-            144)
+            626
+            146)
           object Label6: TLabel
             Left = 96
-            Top = 120
+            Top = 122
             Width = 93
             Height = 13
             Anchors = [akLeft, akBottom]
             Caption = 'GLSL Shader editor'
+            ExplicitTop = 120
           end
           object CompileShaderButton: TButton
             Left = 8
-            Top = 113
+            Top = 115
             Width = 75
             Height = 25
             Anchors = [akLeft, akBottom]
             Caption = '&OK'
+            Enabled = False
             TabOrder = 0
             OnClick = CompileShaderButtonClick
           end
-          object ShaderPanel: TPanel
+          object ShaderPanel: TGroupBox
             Left = 0
             Top = 0
-            Width = 451
-            Height = 105
+            Width = 626
+            Height = 107
             Align = alTop
             Anchors = [akLeft, akTop, akRight, akBottom]
-            Caption = 'Placeholder f'#246'r synedit'
+            Caption = '&Shader editor'
             TabOrder = 1
+            OnClick = ExprPanelClick
           end
         end
       end
-      object LogPanel: TPanel
-        Left = 463
-        Top = 1
-        Width = 170
-        Height = 154
-        Align = alRight
+    end
+    object Panel2: TPanel
+      Left = 0
+      Top = 0
+      Width = 808
+      Height = 585
+      Align = alClient
+      BevelOuter = bvNone
+      TabOrder = 1
+      ExplicitHeight = 663
+      object Splitter3: TSplitter
+        Left = 291
+        Top = 0
+        Width = 4
+        Height = 585
+        ExplicitLeft = 100
+        ExplicitHeight = 574
+      end
+      object PropEditorPanel: TGroupBox
+        Left = 0
+        Top = 0
+        Width = 291
+        Height = 585
+        Align = alLeft
+        Caption = '&Properties'
         TabOrder = 1
-        object LogListBox: TListBox
-          Left = 1
-          Top = 1
-          Width = 168
-          Height = 152
-          Style = lbOwnerDrawFixed
-          Align = alClient
-          Color = 2976796
-          Font.Charset = ANSI_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = []
-          ItemHeight = 14
-          ParentFont = False
-          TabOrder = 0
-          OnDrawItem = LogListBoxDrawItem
+        ExplicitHeight = 663
+      end
+      object ViewerPageControl: TPageControl
+        Left = 295
+        Top = 0
+        Width = 513
+        Height = 585
+        ActivePage = ViewerGlTabSheet
+        Align = alClient
+        TabOrder = 0
+        ExplicitHeight = 663
+        object ViewerGlTabSheet: TTabSheet
+          Caption = 'ViewerGlTabSheet'
+          TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
+          object RotateModelPanel: TPanel
+            Left = 0
+            Top = 0
+            Width = 505
+            Height = 50
+            Align = alTop
+            TabOrder = 0
+            object ViewTranslateLabel: TLabel
+              Left = 416
+              Top = 5
+              Width = 32
+              Height = 30
+              Alignment = taRightJustify
+              AutoSize = False
+              Caption = 'ViewTranslateLabel'
+              Font.Charset = ANSI_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -8
+              Font.Name = 'Arial'
+              Font.Style = []
+              ParentFont = False
+              WordWrap = True
+            end
+            object Label2: TLabel
+              Left = 7
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate X'
+            end
+            object Label3: TLabel
+              Left = 112
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate Y'
+            end
+            object Label4: TLabel
+              Left = 217
+              Top = 22
+              Width = 42
+              Height = 13
+              Caption = 'Rotate Z'
+            end
+            object Label5: TLabel
+              Left = 324
+              Top = 22
+              Width = 27
+              Height = 13
+              Caption = 'Zoom'
+            end
+            object ViewRotateXTrackBar: TTrackBar
+              Left = 0
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 0
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object TrackBar2: TTrackBar
+              Tag = 1
+              Left = 104
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 1
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object TrackBar3: TTrackBar
+              Tag = 2
+              Left = 209
+              Top = 0
+              Width = 100
+              Height = 24
+              Max = 100
+              TabOrder = 2
+              TickStyle = tsNone
+              OnChange = ViewRotateXTrackBarChange
+            end
+            object ZoomTrackBar: TTrackBar
+              Left = 316
+              Top = 0
+              Width = 100
+              Height = 24
+              TabOrder = 3
+              TickStyle = tsNone
+              OnChange = ZoomTrackBarChange
+            end
+            object Panel4: TPanel
+              Left = 250
+              Top = 1
+              Width = 254
+              Height = 48
+              Align = alRight
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 4
+              DesignSize = (
+                254
+                48)
+              object NormalsCheckBox: TCheckBox
+                Left = 9
+                Top = 5
+                Width = 61
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Normals'
+                TabOrder = 0
+                OnClick = NormalsCheckBoxClick
+              end
+              object ResetCameraButton: TButton
+                Left = 172
+                Top = 25
+                Width = 73
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Reset camera'
+                TabOrder = 1
+                OnClick = ResetCameraButtonClick
+              end
+              object ResetModelButton: TButton
+                Left = 172
+                Top = 5
+                Width = 73
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = '&Reset time'
+                Enabled = False
+                TabOrder = 2
+                OnClick = ResetModelButtonClick
+              end
+              object UpdateTimeCheckBox: TCheckBox
+                Left = 72
+                Top = 5
+                Width = 81
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Update time'
+                TabOrder = 3
+                OnClick = UpdateTimeCheckBoxClick
+              end
+              object WireframeCheckBox: TCheckBox
+                Left = 72
+                Top = 22
+                Width = 74
+                Height = 17
+                Anchors = [akTop, akRight]
+                Caption = 'Wireframe'
+                TabOrder = 4
+              end
+              object BoundsCheckBox: TCheckBox
+                Left = 9
+                Top = 22
+                Width = 61
+                Height = 17
+                Hint = 'Click to display collision bounds'
+                Anchors = [akTop, akRight]
+                Caption = 'Bounds'
+                TabOrder = 5
+                OnClick = BoundsCheckBoxClick
+              end
+            end
+          end
+          object AppControlPanel: TPanel
+            Left = 0
+            Top = 50
+            Width = 505
+            Height = 41
+            Align = alTop
+            BevelOuter = bvNone
+            TabOrder = 1
+            object AppStartButton: TBitBtn
+              Left = 7
+              Top = 6
+              Width = 75
+              Height = 25
+              Action = AppPreviewStartAction
+              Caption = 'Start'
+              TabOrder = 0
+            end
+            object AppStopButton: TBitBtn
+              Left = 88
+              Top = 6
+              Width = 75
+              Height = 25
+              Action = AppPreviewStopAction
+              Caption = 'Stop'
+              Glyph.Data = {
+                36040000424D3604000000000000360000002800000010000000100000000100
+                2000000000000004000000000000000000000000000000000000FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF007060D0002010C0002010C0002010C0002010C0002010C0002010
+                C0002010C0002010C0002010C0007060D000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF002010C000A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8
+                F800A8A8F800A8A8F800A8A8F8002010C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF002010C0009898D8004038E8004038E8004038E8004038E8004038
+                E8004038E8004038E8009898D8002010C000FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003828C8007878F0003830E8003830E8003830E8003830E8003830
+                E8003830E8003830E8007878F0003828C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003838B8007068F0003020E8003020E8003020E8003020E8003020
+                E8003020E8003020E8007068F0003838B800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003838B8007878F0003830E8003830E8003830E8003830E8003830
+                E8003830E8003830E8007878F0003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003840C8009898D8004840E8004840E8004840E8004840E8004840
+                E8004840E8004840E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF003840C8009898D8005048E8005048E8005048E8005048E8005048
+                E8005048E8005048E8009898D8003840C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF004050C800A8A8F8005050E8005050E8005050E8005050E8005050
+                E8005050E8005050E800A8A8F8004050C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF004050C800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0
+                F800A8B0F800A8B0F800A8B0F8004050C800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF009898D8004858C8004858C8004858C8004858C8004858C8004858
+                C8004858C8004858C8004858C8009898D800FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+                FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00}
+              TabOrder = 1
+            end
+            object DisableShadersCheckBox: TCheckBox
+              Left = 192
+              Top = 2
+              Width = 97
+              Height = 17
+              Hint = 'Click to disable OpenGL shaders'
+              Caption = 'Disable shaders'
+              TabOrder = 2
+              OnClick = DisableShadersCheckBoxClick
+            end
+            object DisableFBOCheckBox: TCheckBox
+              Left = 192
+              Top = 18
+              Width = 97
+              Height = 17
+              Hint = 'Click to disable OpenGL FBO (render to texture)'
+              Caption = 'Disable FBO'
+              TabOrder = 3
+              OnClick = DisableFBOCheckBoxClick
+            end
+          end
+        end
+        object ViewerSoundTabSheet: TTabSheet
+          Caption = 'ViewerSoundTabSheet'
+          ImageIndex = 1
+          TabVisible = False
+          inline SoundEditFrame1: TSoundEditFrame
+            Left = 0
+            Top = 0
+            Width = 505
+            Height = 575
+            Align = alClient
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 0
+            TabStop = True
+            ExplicitWidth = 505
+            ExplicitHeight = 575
+            inherited PageControl1: TPageControl
+              Width = 505
+              Height = 575
+              ExplicitWidth = 505
+              ExplicitHeight = 575
+              inherited TabSheet1: TTabSheet
+                ExplicitLeft = 4
+                ExplicitTop = 24
+                ExplicitWidth = 497
+                ExplicitHeight = 547
+                inherited Label8: TLabel
+                  Width = 55
+                  ExplicitWidth = 55
+                end
+                inherited Label6: TLabel
+                  Width = 25
+                  ExplicitWidth = 25
+                end
+                inherited Label12: TLabel
+                  Width = 50
+                  ExplicitWidth = 50
+                end
+                inherited Label1: TLabel
+                  Width = 82
+                  ExplicitWidth = 82
+                end
+                inherited Label16: TLabel
+                  Width = 35
+                  ExplicitWidth = 35
+                end
+                inherited Label17: TLabel
+                  Width = 19
+                  ExplicitWidth = 19
+                end
+                inherited Panel1: TPanel
+                  Width = 468
+                  ExplicitWidth = 468
+                  inherited SoundGraphPaintBox: TPaintBox
+                    Width = 468
+                    ExplicitWidth = 245
+                  end
+                end
+                inherited GroupBox4: TGroupBox
+                  inherited Label5: TLabel
+                    Width = 49
+                    ExplicitWidth = 49
+                  end
+                  inherited Label11: TLabel
+                    Width = 33
+                    ExplicitWidth = 33
+                  end
+                end
+                inherited GroupBox2: TGroupBox
+                  inherited Label3: TLabel
+                    Width = 28
+                    ExplicitWidth = 28
+                  end
+                end
+                inherited GroupBox1: TGroupBox
+                  inherited Label2: TLabel
+                    Width = 62
+                    ExplicitWidth = 62
+                  end
+                  inherited Label18: TLabel
+                    Width = 62
+                    ExplicitWidth = 62
+                  end
+                end
+              end
+              inherited TabSheet2: TTabSheet
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
+                inherited Label15: TLabel
+                  Width = 58
+                  ExplicitWidth = 58
+                end
+                inherited Label19: TLabel
+                  Width = 69
+                  ExplicitWidth = 69
+                end
+              end
+            end
+          end
+        end
+        object ViewerMusicTabSheet: TTabSheet
+          Caption = 'ViewerMusicTabSheet'
+          ImageIndex = 2
+          TabVisible = False
+          inline MusicEditFrame1: TMusicEditFrame
+            Left = 0
+            Top = 0
+            Width = 505
+            Height = 575
+            Align = alClient
+            TabOrder = 0
+            TabStop = True
+            ExplicitWidth = 505
+            ExplicitHeight = 575
+          end
+        end
+        object ViewerBlankTabSheet: TTabSheet
+          Caption = 'ViewerBlankTabSheet'
+          ImageIndex = 3
+          TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
+        end
+        object ViewerBitmapTabSheet: TTabSheet
+          ImageIndex = 4
+          TabVisible = False
+          inline BitmapEditFrame1: TBitmapEditFrame
+            Left = 0
+            Top = 0
+            Width = 505
+            Height = 575
+            Align = alClient
+            TabOrder = 0
+            ExplicitWidth = 505
+            ExplicitHeight = 575
+            inherited Splitter1: TSplitter
+              Left = 314
+              Height = 575
+              ExplicitLeft = 223
+              ExplicitHeight = 463
+            end
+            inherited LeftPanel: TGroupBox
+              Width = 314
+              Height = 575
+              ExplicitWidth = 314
+              ExplicitHeight = 653
+              inherited ScrollBox1: TScrollBox
+                Width = 310
+                Height = 636
+                ExplicitWidth = 310
+                ExplicitHeight = 636
+              end
+            end
+            inherited RightPanel: TGroupBox
+              Left = 318
+              Width = 187
+              Height = 575
+              ExplicitLeft = 318
+              ExplicitWidth = 187
+              ExplicitHeight = 653
+              inherited PreviewPanel: TPanel
+                Width = 183
+                Height = 636
+                ExplicitWidth = 183
+                ExplicitHeight = 636
+                inherited Panel1: TPanel
+                  Top = 614
+                  Width = 183
+                  ExplicitTop = 614
+                  ExplicitWidth = 183
+                end
+              end
+            end
+          end
+        end
+        object ViewerMeshTabSheet: TTabSheet
+          ImageIndex = 5
+          TabVisible = False
+          inline MeshEditFrame1: TMeshEditFrame
+            Left = 0
+            Top = 0
+            Width = 505
+            Height = 575
+            Align = alClient
+            TabOrder = 0
+            ExplicitWidth = 505
+            ExplicitHeight = 575
+            inherited Splitter1: TSplitter
+              Left = 214
+              Height = 575
+              ExplicitLeft = 223
+              ExplicitHeight = 483
+            end
+            inherited LeftPanel: TGroupBox
+              Width = 214
+              Height = 575
+              ExplicitWidth = 214
+              ExplicitHeight = 653
+              inherited ScrollBox1: TScrollBox
+                Width = 210
+                Height = 636
+                ExplicitWidth = 210
+                ExplicitHeight = 636
+              end
+            end
+            inherited RightPanel: TGroupBox
+              Left = 218
+              Width = 287
+              Height = 575
+              ExplicitLeft = 218
+              ExplicitWidth = 287
+              ExplicitHeight = 653
+              inherited WireframeCheckBox: TCheckBox
+                Width = 283
+                ExplicitWidth = 283
+              end
+              inherited NormalsCheckBox: TCheckBox
+                Width = 283
+                ExplicitWidth = 283
+              end
+              inherited Panel1: TPanel
+                Top = 629
+                Width = 283
+                ExplicitTop = 629
+                ExplicitWidth = 283
+              end
+              inherited PreviewPanel: TPanel
+                Width = 283
+                Height = 580
+                ExplicitWidth = 283
+                ExplicitHeight = 580
+              end
+            end
+          end
         end
       end
     end
@@ -676,7 +812,7 @@ object EditorForm: TEditorForm
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 1073
+    Width = 1092
     Height = 22
     AutoSize = True
     ButtonWidth = 178
@@ -685,10 +821,9 @@ object EditorForm: TEditorForm
     DrawingStyle = dsGradient
     Images = ActionImageList
     List = True
-    ShowCaptions = True
     AllowTextButtons = True
     TabOrder = 2
-    Transparent = True
+    Transparent = False
     object ToolButton8: TToolButton
       Left = 0
       Top = 0
@@ -778,6 +913,19 @@ object EditorForm: TEditorForm
       Left = 256
       Top = 0
       Action = RunExeAction
+    end
+    object ToolButton14: TToolButton
+      Left = 280
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton14'
+      ImageIndex = 9
+      Style = tbsSeparator
+    end
+    object ToolButton17: TToolButton
+      Left = 288
+      Top = 0
+      Action = EditXmlAction
     end
   end
   object SaveDialog: TSaveDialog
@@ -873,7 +1021,7 @@ object EditorForm: TEditorForm
       Category = 'File'
       Caption = '&Open...'
       Dialog.DefaultExt = '*.zgeproj'
-      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj'
+      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj|Any file (*.*)|*.*'
       Hint = 'Open|Opens an existing file'
       ImageIndex = 5
       ShortCut = 16463
@@ -881,7 +1029,7 @@ object EditorForm: TEditorForm
     end
     object EditCopyAction: TEditCopy
       Category = 'Edit'
-      Caption = '&Copy'
+      Caption = '&Copy component'
       Enabled = False
       Hint = 'Copy|Copies the selection and puts it on the Clipboard'
       ImageIndex = 6
@@ -905,6 +1053,7 @@ object EditorForm: TEditorForm
       Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj'
       Dialog.Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing]
       Hint = 'Save As|Saves the active file with a new name'
+      ShortCut = 24659
       BeforeExecute = FileSaveAsActionBeforeExecute
       OnAccept = FileSaveAsActionAccept
     end
@@ -916,7 +1065,7 @@ object EditorForm: TEditorForm
       OnExecute = GenerateEXEClick
     end
     object GenerateReleaseLinuxAction: TAction
-      Caption = 'Build Linux binary'
+      Caption = 'Build Linux x86 binary'
       OnExecute = GenerateReleaseLinuxActionExecute
     end
     object FileSaveBinaryAsAction: TAction
@@ -960,11 +1109,6 @@ object EditorForm: TEditorForm
       Caption = 'New &Window'
       OnExecute = FileNewWindowActionExecute
     end
-    object GenerateActiveXAction: TAction
-      Caption = 'Build and compress ActiveX'
-      Enabled = False
-      OnExecute = GenerateActiveXActionExecute
-    end
     object Import3dsAction: TAction
       Caption = 'Import 3DS-file'
       OnExecute = Import3dsActionExecute
@@ -974,7 +1118,7 @@ object EditorForm: TEditorForm
       OnExecute = GenerateReleaseOsx86ActionExecute
     end
     object ShowSettingsAction: TAction
-      Caption = 'Options...'
+      Caption = 'Settings...'
       OnExecute = ShowSettingsActionExecute
     end
     object FindComponentAction: TAction
@@ -983,15 +1127,64 @@ object EditorForm: TEditorForm
       ShortCut = 16454
       OnExecute = FindComponentActionExecute
     end
+    object ShowCompilerDetailsAction: TAction
+      Caption = 'Show compiler details'
+      OnExecute = ShowCompilerDetailsActionExecute
+    end
+    object UndoDeleteAction: TAction
+      Caption = 'Undo delete'
+      OnExecute = UndoDeleteActionExecute
+      OnUpdate = UndoDeleteActionUpdate
+    end
+    object ForceRefreshAction: TAction
+      Caption = 'Refresh content'
+      ShortCut = 116
+      OnExecute = ForceRefreshActionExecute
+    end
+    object HelpContentsAction: TAction
+      Caption = '&Contents'
+      ShortCut = 112
+      OnExecute = HelpContentsActionExecute
+    end
+    object EditXmlAction: TAction
+      Category = 'Edit'
+      Caption = 'Edit project as XML'
+      Hint = 'Edit as XML'
+      ImageIndex = 13
+      ShortCut = 16461
+      OnExecute = EditXmlActionExecute
+    end
+    object DisableComponentAction: TAction
+      Caption = 'Disable component'
+      ShortCut = 16452
+      OnExecute = DisableComponentActionExecute
+      OnUpdate = DisableComponentActionUpdate
+    end
   end
   object TreePopupMenu: TPopupMenu
+    Images = ActionImageList
     Left = 168
     Top = 40
     object Addcomponent2: TMenuItem
       Action = AddComponentAction
     end
+    object AddFromLibraryMenuItem: TMenuItem
+      Caption = 'Add from library...'
+      OnClick = AddFromLibraryMenuItemClick
+      object TMenuItem
+      end
+    end
+    object Import3DSfile1: TMenuItem
+      Action = Import3dsAction
+    end
+    object N12: TMenuItem
+      Caption = '-'
+    end
     object DeleteComponentAction1: TMenuItem
       Action = DeleteComponentAction
+    end
+    object Undodelete1: TMenuItem
+      Action = UndoDeleteAction
     end
     object N2: TMenuItem
       Caption = '-'
@@ -1001,9 +1194,11 @@ object EditorForm: TEditorForm
     end
     object Copy1: TMenuItem
       Action = CopyComponentAction
+      ImageIndex = 6
     end
     object Paste1: TMenuItem
       Action = PasteComponentAction
+      ImageIndex = 7
     end
     object Moveup1: TMenuItem
       Action = MoveUpComponentAction
@@ -1014,8 +1209,14 @@ object EditorForm: TEditorForm
     object N1: TMenuItem
       Caption = '-'
     end
+    object Refresh1: TMenuItem
+      Action = ForceRefreshAction
+    end
     object ResetComponentAction1: TMenuItem
       Action = ResetComponentAction
+    end
+    object Disablecomponent1: TMenuItem
+      Action = DisableComponentAction
     end
     object Lockshow1: TMenuItem
       Action = LockShowAction
@@ -1025,11 +1226,140 @@ object EditorForm: TEditorForm
     BlendColor = clBlack
     BkColor = clBlack
     DrawingStyle = dsTransparent
-    Left = 200
-    Top = 40
+    Masked = False
+    Left = 208
+    Top = 96
     Bitmap = {
-      494C01010B000E0004001000100000000000FF00FFFFFFFFFFFFFFFF424D3600
-      0000000000003600000028000000400000003000000001002000000000000030
+      494C01010E0008014C011000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      0000000000003600000028000000400000004000000001002000000000000040
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000002379EFFF1C73E2FF2677ECFF2978
+      F6FF2577E4FF2678E7FF2471E2FF226EE9FF2170F3FF246EEDFF1F5DDAFF265E
+      E5FF2069E3FF2067DDFF1B61DAFF2248D3FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000002A77DDFF145AB2FF286FCEFF2879
+      EBFF1D5DAFFF2D6DCAFF205BB4FF2164D9FF2071F0FF296EDCFF1F4EA5FF295C
+      D6FF1F58B5FF2050A2FF184A9FFF1643B7FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000005B9FF1FF92B4DBFF2461B4FF5492
+      E2FF97C0E0FF6197D8FF8FB1DDFF2162D1FF196FF5FF5D94EBFF8CA7D5FF3C69
+      CDFF9BBDE9FFACBDDCFFACBBD9FF4362BAFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000840000008400
+      0000840000000000000000000000000000005898EDFFF0F6F8FF416FAFFF92B8
+      E2FFDBEEF6FF72A2D6FFDDEAF7FF2866CAFF1867E4FF7FA9E9FFD2DCEDFF4974
+      C7FFEDF9FEFFF9FBFEFFF7F7FFFF5E79C7FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000840000008400
+      0000840000000000000000000000000000003981E9FFEAF1F6FF7493BAFFBFD2
+      E6FFBFD0E6FF6B9BDCFFE4EDF2FF3267BEFF2158B1FF81A4D9FFDAE2EAFF4879
+      C9FFF5FAFAFFBFD5EBFFB1C9F0FF4874D8FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000002576F1FFBDD5F5FFB7C8D8EEE3ED
+      F7FF88A8E2FF6397E8FFE0ECF7FF5880C1FF8DAAD3FF7EA0CBFFD7E3EDFF4577
+      CCFFF1F9FCFF4F7EBEFF3067D3FF205ADDFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000840000008400
+      0000840000000000000000000000000000002272F4FF89B3EDFFF2F9F9FDEBF9
+      FCFF4D85E0FF6097E9FFE0EBF8FF839CC6FFD8E5F1FF809EC1FFD3E1EFFF4876
+      CCFFF2F8FEFF4276C8FF215DE3FF1F59E7FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000840000008400
+      0000840000000000000000000000000000002473F3FF5D93E5FFF4FAF6FFDAEB
+      F3FF2B6ED8FF6198E8FFE5EDF7FFA8B7CFFFF0F7F8FF95ADC6FFD2E0EFFF4A77
+      CAFFF4F8FEFF4473C5FF295FE4FF255AE6FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000008400
+      0000840000008400000000000000000000001D71F0FF397CDFFFEDF5FCFFB7CA
+      DDFF2260CCFF5F96ECFFE5ECF3FFC7D5DDFFEFF6F9FFBAC6D5FFD4E0EDFF4178
+      C9FFEFF9FEFF4372C6FF2360E7FF235CE4FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000840000008400000084000000000000001D71F0FF538CDEFFF7F9F7FFD5DF
+      EBFF2258B6FF5F96EAFFEFF1F5FFE6EFF3FFB7CEE6FFE4EBF1EBD9E2EDFF4178
+      CAFFF0FAFEFF4573C5FF2463E8FF225EE6FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000840000008400000084000000000000000000
+      0000000000008400000084000000840000001F70F0FF83ACE5FFFAF9F8FFF1F7
+      F8FF3D66AFFF5D94E4FFF8F8F9FFE9F1F7FF78A7DFFFF9FBF8FFDDE3ECFF4176
+      CDFFF2FAFDFF4573C6FF2567E8FF2260E8FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000840000008400000084000000000000000000
+      000000000000840000008400000084000000266FEBFFB1CEEEFFD6DBE9FFE6F2
+      F7FF718EBEFF5C91DCFFF9FAFBFFCBD8EDFF5193E8FFF7FAF9FFDCE3EDFF4076
+      CFFFF2FAFDFF4373C8FF2368E9FF2262E9FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000840000008400000084000000000000000000
+      0000000000008400000084000000840000003272E2FFD7EDFAFF97AFDDFFBCD9
+      F1FFAABDD9FF578BD0FFF5FCFEFFA2BCE5FF3480EAFFE8F1FBFFD7E1F0FF3E78
+      D1FFEEFAFDFF4375CFFF1F6AEBFF2164EBFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000008400000084000000840000008400
+      000084000000840000008400000000000000558BEAFFE5F8F9FF628FE4FF85B6
+      EAFFDEEBF9FF6194D2FFECFAFEFF7CA7EAFF2874EBFFC8DBF8FFD2E4F6FF4180
+      D8FFEBF9FEFF487EDDFF1D6DEFFF2166EDFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000084000000840000008400
+      000084000000840000000000000000000000558CF0FFA2C5EFFF3B79EBFF4E8F
+      E7FFA5C5F2FF5D98E7FFA2C8F3FF518DECFF2571EEFF80A8EDFF91B8EEFF3D84
+      E3FFA1C8F4FF4181EAFF1F6EF3FF2168EFFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000002868EBFF2B6DEBFF256FF0FF2673
+      ECFF2976E8FF2B78EDFF2B78EDFF2572EEFF2370F2FF2A71EEFF2773E6FF2C7F
+      EBFF297DEDFF2675F3FF246EF5FF226AF1FF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1039,117 +1369,117 @@ object EditorForm: TEditorForm
       D0000773CF000470CF00016ECE00000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      0000D5E0D50077AD66004188260041802600418026004188260077AD6600D5E0
-      D500000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000041882600418026004180260041882600000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000000000000003DA3DA00BCEBFA00BCEB
       FC00BFEEFE00C6F4FF00CEF8FF00D3FAFF00D0F8FF00C7F2FF00BAE9FC00B3E4
       F900B0E2F800B0E2F8000571CF00000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000000000000000000077AD
-      660041882D00579A48005EA457006FAD66006FAD66005EA45700579A48004188
-      2D0077AD66000000000000000000000000000000000000000000000000007060
+      0000000000000000000000000000000000000000000000000000000000000000
+      000041882D00579A48005EA457006FAD66006FAD66005EA45700579A48004188
+      2D00000000000000000000000000000000000000000000000000000000007060
       D0002010C0002010C0002010C0002010C0002010C0002010C0002010C0002010
       C0002010C0007060D00000000000000000000000000043A8DB00BFECFB0059CF
       F50041B0EC004EBAEF005AC2EF0060C6EF005CC4EF004CB6EF0037A5E6002A9A
       E10038B8EE00B1E3F8000975D000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000000000000000000000000000000000000077AD66004891
+      0000000000000000000000000000840084008400840084848400000000000000
+      0000000000000000000000000000000000000000000000000000000000004891
       3A005EA45700ADCBAD00ADCBAD003A8833003A883A00489A410057A457005EA4
-      570048913A0077AD660000000000000000000000000000000000000000002010
+      570048913A000000000000000000000000000000000000000000000000002010
       C000A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8F800A8A8
       F800A8A8F8002010C00000000000000000000000000049ADDC00C1EEFB005FD3
       F7006CDBFC007FE5FF008FEDFF0097F2FF0093EDFF007CDFFF005BCCF80046BE
       EF003CBAEE00B3E3F9000E79D100000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000D5E0D50041882D00579A
+      0000000000008400840084008400FFFFFF00FFFFFF00C6C6C600848484000000
+      000000000000000000000000000000000000000000000000000041882D00579A
       4F0041914100ADCBAD00FFFFFF00ADCBAD0041883A0041883A00419141004F9A
-      48005EA4570041882D00D5E0D500000000000000000000000000000000002010
+      48005EA4570041882D0000000000000000000000000000000000000000002010
       C0009898D8004038E8004038E8004038E8004038E8004038E8004038E8004038
       E8009898D8002010C0000000000000000000000000004EB2DD00C3EFFB0065D6
       F8004CB6EC005ABDEF0095EBFF003097DD004D82AB0084E1FF0041A9E900329F
-      E10042BEEF00B4E5F900137ED200000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000077AD66004F9141004F91
+      E10042BEEF00B4E5F900137ED200000000000000000000000000000000008400
+      840084008400FFFFFF00FFFFFF000000000000000000C6C6C600C6C6C6008484
+      84000000000000000000000000000000000000000000000000004F9141004F91
       48004F914800ADCBAD00FFFFFF00FFFFFF00ADCBAD004F9148004F9148004F9A
-      4800579A4F005791410077AD6600000000000000000000000000000000003828
+      4800579A4F005791410000000000000000000000000000000000000000003828
       C8007878F0003830E8003830E8003830E8003830E8003830E8003830E8003830
       E8007878F0003828C80000000000000000000000000053B7DE00C6F0FC006AD9
       F8007CE2FD0090E8FF0099E9FF00329FDF00548BB2008AE2FF006AD0F90050C5
-      F10046C1F000B6E7F9001883D300000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000000000000000000000000000004180260033802D003380
+      F10046C1F000B6E7F9001883D30000000000848484008400840084008400FFFF
+      FF00FFFFFF000000000000000000840084008400840000000000C6C6C600C6C6
+      C60084848400000000000000000000000000000000004180260033802D003380
       2D0033802D00ADCBAD00FFFFFF00FFFFFF00FFFFFF00ADCBAD0033802D003380
       2D00488841005EA4570041802600000000000000000000000000000000003838
       B8007068F0003020E8003020E8003020E8003020E8003020E8003020E8003020
       E8007068F0003838B80000000000000000000000000058BBDF00C7F1FC006FDC
       F90056BBED0061BDEF009BE7FF0035A6E2004BA4E10090E2FF0049ADE90038A4
-      E30049C4F000B8E8F9001E88D400000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000418020003A7733003A77
+      E30049C4F000B8E8F9001E88D400000000008484840084008400FFFFFF000000
+      000000000000840084008400840084008400840084008400840000000000C6C6
+      C600C6C6C60084848400000000000000000000000000418020003A7733003A77
       33003A773300ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFFFF00BAD2BA003A77
       33003A7733006F9A5E0041802000000000000000000000000000000000003838
       B8007878F0003830E8003830E8003830E8003830E8003830E8003830E8003830
       E8007878F0003840C8000000000000000000000000005CBFE000C8F3FC0075DF
       F90089E6FD0095E7FF009AE5FF00AAEEFF00A8EDFF0099E3FF0074D5F90059CC
-      F3004FC8F100BBE9FA00248DD500000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000048883300488048004880
+      F3004FC8F100BBE9FA00248DD500000000008484840000000000000000008400
+      840084008400840084000084840000FFFF008400840084008400840084000000
+      0000C6C6C600C6C6C60084848400000000000000000048883300488048004880
       480048804800ADCBAD00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF0078E9
       C2004880480077AD770041802600000000000000000000000000000000003840
       C8009898D8004840E8004840E8004840E8004840E8004840E8004840E8004840
       E8009898D8003840C80000000000000000000000000060C2E100C9F3FC00CBF3
       FD00D4F6FE00D7F6FF00D8F4FF00E0F8FF00DFF8FF00DAF5FF00CDF1FC00C2ED
-      FA00BDEBFA00BDEBFA002B93D600000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000048883300579A5E00579A
+      FA00BDEBFA00BDEBFA002B93D600000000008484840084008400840084008400
+      8400840084008400840084008400008484008400840084008400840084008400
+      840000000000C6C6C60000000000000000000000000048883300579A5E00579A
       5E00579A5E00BAD2BA00FFFFFF00FFFFFF00FFFFFF00FFFFFF0026CC8000579A
       5E00579A5E0077AD770048883300000000000000000000000000000000003840
       C8009898D8005048E8005048E8005048E8005048E8005048E8005048E8005048
       E8009898D8003840C80000000000000000000000000061C3E10088A0A8009191
       91008E8E8E005AB9DC0055B8DF0051B5DE004DB1DD0049ADDC0046A8D7007878
-      780076767600657E8D003199D800000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000077AD6600579A4F005EA4
+      780076767600657E8D003199D800000000000000000084008400FFFFFF008400
+      84008400840084008400840084008400840000FFFF0000FFFF00840084008400
+      8400840084000000000000000000000000000000000000000000579A4F005EA4
       6F005EA46F00BAD2BA00FFFFFF00FFFFFF00FFFFFF0026CC80005EA46F005EA4
-      6F005EA46F005EA46F0077AD6600000000000000000000000000000000004050
+      6F005EA46F005EA46F0000000000000000000000000000000000000000004050
       C800A8A8F8005050E8005050E8005050E8005050E8005050E8005050E8005050
       E800A8A8F8004050C8000000000000000000000000000000000099999900C6C6
       C600949494008F8F8F00000000000000000000000000000000007E7E7E007D7D
-      7D00ABABAB007676760000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000D5E0D500488833006FAD
+      7D00ABABAB00767676000000000000000000000000000000000084008400FFFF
+      FF0084008400840084008400840084008400840084000084840000FFFF0000FF
+      FF00840084008400840000000000000000000000000000000000488833006FAD
       80006FB78800BAD2BA00FFFFFF00FFFFFF0026CC80006FB788006FB788006FB7
-      88006FB7880048883300D5E0D500000000000000000000000000000000004050
+      88006FB788004888330000000000000000000000000000000000000000004050
       C800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0F800A8B0
       F800A8B0F8004050C800000000000000000000000000000000009D9D9D00C4C4
       C400A1A1A1009393930000000000000000000000000000000000828282008989
-      8900A9A9A9007979790000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000000000000000000000000000000000000077AD66005791
+      8900A9A9A9007979790000000000000000000000000000000000000000008400
+      8400FFFFFF00840084008400840084008400008484008400840000FFFF0000FF
+      FF00840084008400840084008400000000000000000000000000000000005791
       480077B7880026CC8000FFFFFF0026CC80006FB791006FB7910077B7910077B7
-      91005791480077AD660000000000000000000000000000000000000000009898
+      9100579148000000000000000000000000000000000000000000000000009898
       D8004858C8004858C8004858C8004858C8004858C8004858C8004858C8004858
       C8004858C8009898D80000000000000000000000000000000000A1A1A100BABA
       BA00BFBFBF009898980094949400919191008E8E8E008A8A8A0087878700A8A8
       A8009E9E9E007D7D7D0000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000000000000000000077AD
-      66004888330026CC800026CC800088C19A0088C1A40080B7880066A466004F88
-      3A0077AD66000000000000000000000000000000000000000000000000000000
+      000084008400FFFFFF00840084008400840000FFFF0000FFFF0000FFFF008400
+      8400840084008400840000000000000000000000000000000000000000000000
+      00004888330026CC800026CC800088C19A0088C1A40080B7880066A466004F88
+      3A00000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000A4A4A400A1A1
       A100C4C4C400BEBEBE00A1A1A100969696009393930097979700AEAEAE00AEAE
       AE00848484008181810000000000000000000000000000000000000000000000
+      00000000000084008400FFFFFF00840084008400840084008400840084008400
+      8400000000000000000000000000000000000000000000000000000000000000
+      000000000000000000004F883A0041802600418026004F883A00000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000D5E0D50077AD66004F883A0041802600418026004F883A0077AD6600D5E0
-      D500000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000000000000000000000000000000A4A4
       A400A2A2A200BCBCBC00CACACA00CCCCCC00CACACA00C2C2C200ADADAD008C8C
       8C00898989000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000084008400FFFFFF008400840084008400000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1157,7 +1487,7 @@ object EditorForm: TEditorForm
       0000000000000000000000000000000000000000000000000000000000000000
       0000A5A5A500A3A3A300A0A0A0009D9D9D009A9A9A0097979700949494009090
       9000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000840084008400840000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1415,12 +1745,16 @@ object EditorForm: TEditorForm
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000000424D3E000000000000003E000000
-      2800000040000000300000000100010000000000800100000000000000000000
-      000000000000000000000000FFFFFF00FFFFFFFF80010000F00FFFFF80010000
-      E007E00380010000C003E003800100008001E003800100008001E00380010000
-      8001E003800100008001E003800100008001E003800100008001E00380010000
-      8001E003C3C300008001E003C3C30000C003E003C0030000E007FFFFC0030000
-      F00FFFFFE0070000FFFFFFFFF00F0000FFFFFFFFF800C001FFFFFFFF8000C001
+      2800000040000000400000000100010000000000000200000000000000000000
+      000000000000000000000000FFFFFF00FFFF000000000000F9FF000000000000
+      F9FF000000000000F3C700000000000073C700000000000027FF000000000000
+      07C700000000000000C700000000000001E300000000000003F1000000000000
+      06380000000000000E380000000000001E380000000000003F01000000000000
+      7F83000000000000FFFF000000000000FFFFFFFF8001FFFFFC3FFFFF8001FE3F
+      F00FE0038001F81FE007E0038001E00FC003E00380018007C003E00380010003
+      8001E003800100018001E003800100008001E003800100018001E00380018001
+      C003E003C3C3C001C003E003C3C3E000E007E003C003F000F00FFFFFC003F803
+      FC3FFFFFE007FC0FFFFFFFFFF00FFE3FFFFFFFFFF800C001FFFFFFFF8000C001
       E3E300078000C001C1C100038000C001C00100038000C001E00300018000C001
       F00700018000C001F80F00008000C001F80F00008000C003F00700008000C003
       E00300078000C003C00100078001C003C1C100F88003C003E3E301FC8007F81F
@@ -1428,11 +1762,12 @@ object EditorForm: TEditorForm
       FC3FF81FFC3F8000FC3FF81FF81F8000FC3FF81FF00F8000FC3FF81FE0078000
       C003F81FC0038000C003F81FC0038000C003C003F81F8000C003C003F81F8000
       FC3FE007F81F8000FC3FF00FF81F8000FC3FF81FF81F8000FC3FFC3FF81F8000
-      FFFFFE7FFC3F8000FFFFFFFFFFFFFFFF}
+      FFFFFE7FFC3F8000FFFFFFFFFFFFFFFF00000000000000000000000000000000
+      000000000000}
   end
   object MainMenu1: TMainMenu
     Images = ActionImageList
-    Left = 48
+    Left = 40
     Top = 88
     object File1: TMenuItem
       Caption = '&File'
@@ -1444,8 +1779,6 @@ object EditorForm: TEditorForm
       end
       object ReopenMenuItem: TMenuItem
         Caption = 'Reopen'
-        object TMenuItem
-        end
       end
       object NewWindow1: TMenuItem
         Action = FileNewWindowAction
@@ -1477,6 +1810,18 @@ object EditorForm: TEditorForm
         Action = FileExitAction
       end
     end
+    object Edit1: TMenuItem
+      Caption = 'Edit'
+      object Undodelete2: TMenuItem
+        Action = UndoDeleteAction
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object EditasXML1: TMenuItem
+        Action = EditXmlAction
+      end
+    end
     object Run1: TMenuItem
       Caption = 'Project'
       object Run2: TMenuItem
@@ -1488,6 +1833,15 @@ object EditorForm: TEditorForm
       object Buildreleaseversionsmallest1: TMenuItem
         Action = GenerateReleaseAction
       end
+      object RemoveUnusedMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Remove unused code'
+        Checked = True
+      end
+      object DetailedBuildReportMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Display detailed build report'
+      end
       object N9: TMenuItem
         Caption = '-'
       end
@@ -1496,9 +1850,6 @@ object EditorForm: TEditorForm
       end
       object BuildMacOSXIntelbinary1: TMenuItem
         Action = GenerateReleaseOsx86Action
-      end
-      object BuildandcompressAciveX1: TMenuItem
-        Action = GenerateActiveXAction
       end
       object N5: TMenuItem
         Caption = '-'
@@ -1515,9 +1866,31 @@ object EditorForm: TEditorForm
       object Settings2: TMenuItem
         Action = ShowSettingsAction
       end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+      object N10: TMenuItem
+        Action = ShowCompilerDetailsAction
+      end
+    end
+    object StyleMenuItem: TMenuItem
+      Caption = 'Style'
+      object OpenStyleMenuItem: TMenuItem
+        Caption = 'Open style...'
+        OnClick = OpenStyleMenuItemClick
+      end
+      object N15: TMenuItem
+        Caption = '-'
+      end
     end
     object Help1: TMenuItem
       Caption = 'Help'
+      object Contents1: TMenuItem
+        Action = HelpContentsAction
+      end
+      object N13: TMenuItem
+        Caption = '-'
+      end
       object Onlinehelp1: TMenuItem
         Caption = 'ZGameEditor Home Page'
         OnClick = Onlinehelp1Click
@@ -1534,17 +1907,15 @@ object EditorForm: TEditorForm
       end
     end
   end
-  object XPManifest1: TXPManifest
-    Left = 32
-    Top = 216
-  end
   object ActionDisabledImageList: TImageList
     BlendColor = 16185075
     BkColor = 16185075
-    Left = 200
-    Top = 72
+    DrawingStyle = dsTransparent
+    Masked = False
+    Left = 208
+    Top = 152
     Bitmap = {
-      494C01010B000E00040010001000F3F6F600FF00FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E002C0110001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6
@@ -1944,6 +2315,22 @@ object EditorForm: TEditorForm
       FC3FF81FFC3F8000FC3FF81FF81F8000FC3FF81FF00F8000FC3FF81FE0078000
       C003F81FC0038000C003F81FC0038000C003C003F81F8000C003C003F81F8000
       FC3FE007F81F8000FC3FF00FF81F8000FC3FF81FF81F8000FC3FFC3FF81F8000
-      FFFFFE7FFC3F8000FFFFFFFFFFFFFFFF}
+      FFFFFE7FFC3F8000FFFFFFFFFFFFFFFF00000000000000000000000000000000
+      000000000000}
+  end
+  object LogPopupMenu: TPopupMenu
+    Left = 40
+    Top = 312
+    object LogCopytoclipboardMenuItem: TMenuItem
+      Caption = 'Copy to clipboard'
+      OnClick = LogCopytoclipboardMenuItemClick
+    end
+  end
+  object OpenStyleDialog: TOpenDialog
+    DefaultExt = '*.vsf'
+    Filter = 'Style (*.vsf)|*.vsf'
+    Title = 'Open style'
+    Left = 56
+    Top = 368
   end
 end

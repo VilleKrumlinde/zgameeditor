@@ -84,52 +84,37 @@ type
          inherited, loop children c.UpdateWithTimeStep}
 
   TAnimatorWithTargetBase = class(TAnimatorBase)
-  protected
+  private
+    IsGoingForward : boolean;
+    CurrentIteration : integer;
+    LastBeginTime : single;
     TargetPropPtr : pointer;
+  protected
     procedure DefineProperties(List: TZPropertyList); override;
+    function SetLocalTime: Boolean; override;
   public
+    AutoReverse : boolean;
+    RepeatCount : integer;
     Target : TZPropertyRef;
     procedure Start; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
   TAnimatorSimple = class(TAnimatorWithTargetBase)
-  private
-    LastBeginTime,InternalFromValue : single;
-    IsGoingForward : boolean;
-    CurrentIteration : integer;
+  strict private
+    InternalFromValue : single;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure DoAnimate; override;
-    function SetLocalTime: Boolean; override;
   public
     FromKind : (frkUseFromValue,frkUseTargetValue);
     FromValue : single;
     ToValue : single;
     Smooth : boolean;
-    AutoReverse : boolean;
-    RepeatCount : integer;
     procedure Start; override;
-    procedure Stop; override;
   end;
-{
-     TAnimatorSimple
-       Target
-       FromValue ToValue
-       BeginTime
-       Duration
-       DoAnimate
-         x=time-begintime
-         if x<0 exit  //not yet started
-         if x>duration active=false exit
-         x=x/duration  //0..1 in animation
-         target=fromvalue + ( (tovalue-fromvalue) * x );
-       Reset
-         inherited
-         target = fromvalue
-}
 
   TMouseModelController = class(TCommand)
   protected
@@ -140,14 +125,37 @@ type
     procedure Execute; override;
   end;
 
-
   TStartAnimator = class(TCommand)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Animator : TAnimatorBase;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+  end;
+
+  TCurvePoint = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Frame,Value : single;
+    InX,InY,OutX,OutY : single;
+  end;
+
+  TCurve = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Points : TZComponentList;
+    function GetValueAt(const T : single) : single;
+  end;
+
+  TAnimatorCurve = class(TAnimatorWithTargetBase)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure DoAnimate; override;
+  public
+    Curve : TCurve;
   end;
 
 implementation
@@ -178,9 +186,9 @@ end;
 procedure TAnimatorBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'AutoStart',{$ENDIF}integer(@AutoStart) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AutoStart',{$ENDIF}integer(@AutoStart), zptBoolean);
 end;
 
 {$ifndef minimal}
@@ -216,7 +224,7 @@ end;
 
 procedure TAnimatorBase.Update;
 begin
-  UpdateWithTimeStep(ZApp.Clock.DeltaTime)
+  UpdateWithTimeStep(ZApp.DeltaTime)
 end;
 
 procedure TAnimatorBase.UpdateWithTimeStep(DeltaTime: single);
@@ -236,8 +244,8 @@ end;
 procedure TMouseModelController.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY), zptFloat);
 end;
 
 procedure TMouseModelController.Execute;
@@ -249,14 +257,14 @@ begin
   {$ifndef minimal}if (CurrentModel=nil) then Exit;{$endif}
 
   //-1 .. 1, 0 is center
-  Value := ZApp.EventState.MousePosition[0] * ScaleX;
+  Value := ZApp.MousePosition[0] * ScaleX;
   Diff := (Value - CurrentModel.Position[0]);
   //Velocity is how far to move per second
   //Multiply by constant to reach target faster
   CurrentModel.Velocity[0] := Diff * Speed;
 
   //Y-axis is reversed compared to OpenGL
-  Value := ZApp.EventState.MousePosition[1] * ScaleY;
+  Value := ZApp.MousePosition[1] * ScaleY;
   Diff := (Value - CurrentModel.Position[1]);
   CurrentModel.Velocity[1] := Diff * Speed;
 end;
@@ -266,9 +274,9 @@ end;
 procedure TAnimatorGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Animators',{$ENDIF}integer(@Animators) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Animators',{$ENDIF}integer(@Animators), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAnimatorBase]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnStop',{$ENDIF}integer(@OnStop) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStop',{$ENDIF}integer(@OnStop), zptComponentList);
 end;
 
 procedure TAnimatorGroup.Start;
@@ -318,13 +326,11 @@ end;
 procedure TAnimatorSimple.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'FromValue',{$ENDIF}integer(@FromValue) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'FromKind',{$ENDIF}integer(@FromKind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FromValue',{$ENDIF}integer(@FromValue), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FromKind',{$ENDIF}integer(@FromKind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['UseFromValue','UseTargetValue']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ToValue',{$ENDIF}integer(@ToValue) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Smooth',{$ENDIF}integer(@Smooth) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'AutoReverse',{$ENDIF}integer(@AutoReverse) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ToValue',{$ENDIF}integer(@ToValue), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Smooth',{$ENDIF}integer(@Smooth), zptBoolean);
 end;
 
 
@@ -346,9 +352,52 @@ begin
   PFloat(TargetPropPtr)^ := InternalFromValue + ( (ToValue-InternalFromValue) * X );
 end;
 
-//Override localtime for adddition of Repeat and AutoReverse behaviour
-//Maybe move this functionality to baseclass
-function TAnimatorSimple.SetLocalTime: Boolean;
+procedure TAnimatorSimple.Start;
+begin
+  inherited;
+  case FromKind of
+    frkUseFromValue :
+      begin
+        InternalFromValue := FromValue;
+        PFloat(TargetPropPtr)^ := FromValue;
+      end;
+    frkUseTargetValue :
+      InternalFromValue := PFloat(TargetPropPtr)^;
+  end;
+end;
+
+{ TAnimatorWithTargetBase }
+
+procedure TAnimatorWithTargetBase.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}integer(@Target), zptPropertyRef);
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'AutoReverse',{$ENDIF}integer(@AutoReverse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount), zptInteger);
+end;
+
+{$ifndef minimal}
+function TAnimatorWithTargetBase.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(Target.Component) then
+    Result := Result + '  ' + AnsiString(ZClasses.GetPropRefAsString(Target));
+end;
+{$endif}
+
+procedure TAnimatorWithTargetBase.Start;
+begin
+  inherited;
+  {$ifndef minimal}if Target.Component=nil then exit;{$endif}
+  TargetPropPtr := Target.Component.GetPropertyPtr(Target.Prop,Target.Index);
+  IsGoingForward := True;
+  LastBeginTime := BeginTime;
+  CurrentIteration := 0;
+end;
+
+//Override localtime for addition of Repeat and AutoReverse behaviour
+function TAnimatorWithTargetBase.SetLocalTime: Boolean;
 var
   X : single;
 begin
@@ -386,60 +435,13 @@ begin
   LocalTime := X;
 end;
 
-procedure TAnimatorSimple.Start;
-begin
-  inherited;
-  case FromKind of
-    frkUseFromValue :
-      begin
-        InternalFromValue := FromValue;
-        PFloat(TargetPropPtr)^ := FromValue;
-      end;
-    frkUseTargetValue :
-      InternalFromValue := PFloat(TargetPropPtr)^;
-  end;
-  IsGoingForward := True;
-  LastBeginTime := BeginTime;
-  CurrentIteration := 0;
-end;
-
-procedure TAnimatorSimple.Stop;
-begin
-  inherited;
-//  PFloat(TargetPropPtr)^ := ToValue;
-end;
-
-{ TAnimatorWithTargetBase }
-
-procedure TAnimatorWithTargetBase.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}integer(@Target) - integer(Self), zptPropertyRef);
-    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-end;
-
-{$ifndef minimal}
-function TAnimatorWithTargetBase.GetDisplayName: String;
-begin
-  Result := inherited GetDisplayName;
-  if Assigned(Target.Component) then
-    Result := Result + '  ' + ZClasses.GetPropRefAsString(Target);
-end;
-{$endif}
-
-procedure TAnimatorWithTargetBase.Start;
-begin
-  inherited;
-  {$ifndef minimal}if Target.Component=nil then exit;{$endif}
-  TargetPropPtr := Target.Component.GetPropertyPtr(Target.Prop,Target.Index);
-end;
 
 { TStartAnimator }
 
 procedure TStartAnimator.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Animator',{$ENDIF}integer(@Animator) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Animator',{$ENDIF}integer(@Animator), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAnimatorBase]);{$endif}
 end;
 
@@ -450,7 +452,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TStartAnimator.GetDisplayName: String;
+function TStartAnimator.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Animator) then
@@ -458,6 +460,91 @@ begin
 end;
 {$endif}
 
+
+{ TCurvePoint }
+
+procedure TCurvePoint.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Frame',{$ENDIF}integer(@Frame), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'InX',{$ENDIF}integer(@InX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'InY',{$ENDIF}integer(@InY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OutX',{$ENDIF}integer(@OutX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OutY',{$ENDIF}integer(@OutY), zptFloat);
+end;
+
+{ TCurve }
+
+procedure TCurve.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Points',{$ENDIF}integer(@Points), zptComponentList);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCurvePoint]);{$endif}
+end;
+
+function TCurve.GetValueAt(const T: single): single;
+var
+  X1, Y1, X2, Y2, X3, Y3, X4, Y4, A, B, X, Y : single;
+  Key : integer;
+  P1,P2 : TCurvePoint;
+begin
+  Key := 0;
+  while (Key<Points.Count) and ( TCurvePoint(Points[Key]).Frame<T ) do
+    Inc(Key);
+
+  if (Key=0) or (Key=Points.Count) then
+    Exit( 0 );
+
+  P1 := TCurvePoint(Points[Key-1]);
+  P2 := TCurvePoint(Points[Key]);
+
+  X1 := P1.Frame;
+  Y1 := P1.Value;
+
+  X4 := P2.Frame;
+  Y4 := P2.Value;
+
+  X2 := P1.OutX + X1;
+  Y2 := P1.OutY + Y1;
+
+  X3 := P2.InX + X4;
+  Y3 := P2.InY + Y4;
+
+  B := (T-X1)/(X4-X1);
+  A := 1-B;
+
+  X := X1*A*A*A+X2*3*A*A*B+X3*3*A*B*B+X4*B*B*B;
+
+  B := (X-X1)/(X4-X1);
+  A := 1-B;
+
+  Y := Y1*A*A*A+Y2*3*A*A*B+Y3*3*A*B*B+Y4*B*B*B;
+
+  Result := Y;
+end;
+
+{ TAnimatorCurve }
+
+procedure TAnimatorCurve.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Curve',{$ENDIF}integer(@Curve), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCurve]);{$endif}
+end;
+
+procedure TAnimatorCurve.DoAnimate;
+var
+  T : single;
+begin
+  {$ifndef minimal}if (Target.Component=nil) or (Curve=nil) then exit;{$endif}
+
+  T := LocalTime;
+  if not IsGoingForward then
+    T := Duration-T;
+
+  PFloat(TargetPropPtr)^ := Curve.GetValueAt(T);
+end;
 
 initialization
 
@@ -469,5 +556,10 @@ initialization
   ZClasses.Register(TMouseModelController,MouseModelControllerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
   ZClasses.Register(TStartAnimator,StartAnimatorClassId);
+
+//Remove until we know how to implement correctly
+//  ZClasses.Register(TCurvePoint,CurvePointClassId);
+//  ZClasses.Register(TCurve,CurveClassId);
+//  ZClasses.Register(TAnimatorCurve,AnimatorCurveClassId);
 
 end.

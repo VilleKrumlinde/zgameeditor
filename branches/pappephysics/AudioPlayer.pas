@@ -49,7 +49,7 @@ type
   TSoundOutputUnit = smallint;
   PSoundOutputUnit = ^TSoundOutputUnit;
 
-  TWaveform = (wfSquare,wfSaw,wfNoise);
+  TWaveform = (wfSquare,wfSaw,wfNoise,wfSine);
 
   //All calculations of frequency is based on midi notenumbers
   //This way relative frequency is constant over all octaves
@@ -137,15 +137,11 @@ type
     Buf0,Buf1 : integer;
 
     //Sampled waveform
-    //Must be compatible with TZBinaryPropValue
-    SampleData : record
-      Size : integer;
-      Data : pointer;
-    end;
-    SampleRate : single;
+    SampleRef : pointer;  //Pointer to TSample-component
+    SampleData : pointer;
     SampleRepeatPosition,SampleStep,SamplePosition : integer;
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
-    SampleFormat : (sfoSigned8bit,sfoSigned16bit);
+    UseSampleHz : boolean;
 
     Next : PVoiceEntry;
   end;
@@ -163,7 +159,7 @@ type
   end;
 
 const
-  AudioRate = 22050;  //22khz
+  AudioRate = 44100;  //44khz
 
   OutputBits = SizeOf(TSoundOutputUnit)*8;
 
@@ -211,7 +207,7 @@ procedure DesignerResetMixer;
 
 implementation
 
-uses ZPlatform,ZMath,ZClasses;
+uses ZPlatform,ZMath,ZClasses,AudioComponents;
 
 
 const
@@ -420,7 +416,6 @@ begin
   end;
 end;
 
-
 procedure SetVoiceFrameConstants(V : PVoiceEntry);
 //Uppdatera värden i Voice som gäller tills nästa gång update anropas
 var
@@ -432,21 +427,25 @@ begin
   if StereoChannels=2 then
   begin
     //EQP panning. kebby.org.
-    V.IPanL := Trunc( Sqrt(1.0 - V.Pan) * (1 shl VoiceVolBits) );
-    V.IPanR := Trunc( Sqrt(V.Pan) * (1 shl VoiceVolBits) );
+    V.IPanL := Round( Sqrt(1.0 - V.Pan) * (1 shl VoiceVolBits) );
+    V.IPanR := Round( Sqrt(V.Pan) * (1 shl VoiceVolBits) );
   end;
 
   NoteNr := (V.NoteNr-69.0) + V.BaseNoteNr;
 
-  //double MIDItoFreq( char keynum ) { return 440.0 * pow( 2.0, ((double)keynum - 69.0) / 12.0 ); }
-  V.Osc1.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc1.NoteModifier))/12);
+  if V.UseSampleHz then
+    //Set playback speed to 44100hz so sample will use original pitch
+    V.Osc1.Frequency := AudioRate
+  else
+    //double MIDItoFreq( char keynum ) { return 440.0 * pow( 2.0, ((double)keynum - 69.0) / 12.0 ); }
+    V.Osc1.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc1.NoteModifier))/12);
 
-  if V.SampleData.Size>0 then
+  if V.SampleData<>nil then
   begin
     //440 / (22050 * (22050/8363))
 //    V.SampleStep := Round(V.Osc1.Frequency / (AudioRate * (AudioRate/8363)) * (1 shl SamplePosPBits));
     //11025 /  (11025 * (AudioRate/11025) ))
-    V.SampleStep := Round(V.Osc1.Frequency / (V.SampleRate * (AudioRate/V.SampleRate)) * (1 shl SamplePosPBits));
+    V.SampleStep := Round((V.Osc1.Frequency / AudioRate) * (1 shl SamplePosPBits));
   end;
 
   //Måste ta freq*2 pga MixFullRange ej kan representeras som en integer-konstant
@@ -472,14 +471,7 @@ end;
 //Read a sample value. Only called from RenderVoice.
 function GetSample(V : PVoiceEntry; SamplePos : integer) : TSoundMixUnit;
 begin
-  case V.SampleFormat of
-    sfoSigned8bit :
-      Result := shortint(PBytes(V.SampleData.Data)^[ SamplePos ]) *
-        (1 shl (VoicePBits-8));
-    else //sfoSigned16bit :
-      Result := smallint(PWords(V.SampleData.Data)^[ SamplePos ]) *
-        (1 shl (VoicePBits-16));
-  end;
+  Result := Round(PSampleUnits(V.SampleData)^[SamplePos] * (1 shl (VoicePBits-1)) );
 end;
 
 procedure RenderVoice(V : PVoiceEntry; Count : integer);
@@ -515,7 +507,7 @@ begin
 
   Value1 := 0;  //Get rid of warning
 
-  HasSample := V.SampleData.Size>0;
+  HasSample := V.SampleData<>nil;
 
   Buf := @VoiceBuffer[0];
   W1 := V.Osc1.CurValue;
@@ -541,6 +533,10 @@ begin
             //Value1 := IntRandom div (1 shl (MixToOutputBits));
             Value1 := VoiceLowestValue + Round(System.Random*(VoiceFullRange-1));
             Dec(W1, High(TSoundMixUnit) div 2 );
+          end;
+        wfSine :
+          begin
+            Value1 := VoiceLowestValue + Round( (1.0 + Sin(W1 * (1/High(integer)* PI*2) )) * (VoiceFullRange div 2-1));
           end;
       end;
     end
@@ -993,8 +989,11 @@ begin
         V.Volume := V.Volume * Note.Velocity;
 
         //Determine the nr of samples in sampledata (size in bytes / sampleformat)
-        if V.SampleData.Size>0 then
-          V.SampleCount := V.SampleData.Size shr (ord(V.SampleFormat));
+        if V.SampleRef<>nil then
+        begin
+          V.SampleData := TSample(V.SampleRef).GetMemory;
+          V.SampleCount := TSample(V.SampleRef).SampleCount;
+        end;
 
         //Initialize modulations
         for I := 0 to High(V.Modulations) do

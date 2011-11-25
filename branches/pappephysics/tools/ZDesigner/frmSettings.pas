@@ -4,12 +4,11 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls;
+  StdCtrls, ComCtrls;
 
 type
   TSettingsForm = class(TForm)
     OkButton: TButton;
-    ShellCheck: TCheckBox;
     Button2: TButton;
     PackerEdit: TEdit;
     PackerParamsEdit: TEdit;
@@ -20,6 +19,15 @@ type
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    GroupBox2: TGroupBox;
+    ShellCheck: TCheckBox;
+    GroupBox3: TGroupBox;
+    Label6: TLabel;
+    GuiLayoutCombo: TComboBox;
+    GroupBox4: TGroupBox;
+    UpDown1: TUpDown;
+    CompDelayEdit: TEdit;
+    Label7: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
@@ -46,7 +54,8 @@ procedure RegZgeExt;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       WriteString(ZgeProjExtension, '', ZgeRegName);
       WriteString(ZgeRegName, '', 'ZGameEditor Project');
       WriteString(ZgeRegName + '\DefaultIcon', '', Application.ExeName + ',0');
@@ -62,7 +71,8 @@ procedure UnRegZgeExt;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       EraseSection(ZgeProjExtension);
       EraseSection(ZgeRegName);
    finally
@@ -74,7 +84,8 @@ function IsRegZgeExt : boolean;
 begin
   with TRegIniFile.Create('') do
     try
-      RootKey := HKEY_CLASSES_ROOT;
+      RootKey := HKEY_CURRENT_USER;
+      OpenKey('Software\Classes',True);
       Result := KeyExists(ZgeProjExtension);
    finally
       Free;
@@ -108,8 +119,9 @@ type
       P,A : string;
     end;
 const
-  Presets : array[0..4] of TPreset = (
+  Presets : array[0..5] of TPreset = (
 (P:'{$toolpath}upx.exe'; A:'{$exename}'),
+(P:'{$toolpath}upx.exe'; A:'--lzma {$exename}'),
 (P:'{$toolpath}upx.exe'; A:'--best {$exename}'),
 (P:'{$toolpath}upx.exe'; A:'--brute {$exename}'),
 (P:'{$toolpath}kkrunchy.exe'; A:'{$exename}'),
@@ -124,6 +136,7 @@ end;
 procedure TSettingsForm.ReadSettings;
 begin
   ShellCheck.Checked := IsRegZgeExt;
+  ShellChanged := False;
 end;
 
 procedure TSettingsForm.SaveSettings;

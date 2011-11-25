@@ -1,17 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>2007-07-13 16:57:29.921.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\u3dsFile.pas</Transaction>
-    <Transaction>2007-07-19 16:10:31.125.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\OKCNHLP1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.pas</Transaction>
-    <Transaction>2007-07-19 16:10:31.125.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\OKCNHLP1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.dfm</Transaction>
-    <Transaction>2007-07-19 16:11:22.703.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.pas=</Transaction>
-    <Transaction>2007-07-19 16:11:22.703.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.dfm=</Transaction>
-    <Transaction>2007-07-19 16:11:36.906.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.pas</Transaction>
-    <Transaction>2007-07-19 16:11:36.906.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frm3dsImportOptions.dfm</Transaction>
-    <Transaction>2007-09-06 17:21:39.062.PAS,c:\program files\codegear\rad studio\5.0\ObjRepos\DelphiWin32\OKCANCL1.PAS=</Transaction>
-    <Transaction>2007-09-06 17:21:39.078.dfm,c:\program files\codegear\rad studio\5.0\ObjRepos\DelphiWin32\OKCANCL1.dfm=</Transaction>
-    <Transaction>2007-09-25 16:24:18.265.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.pas</Transaction>
-    <Transaction>2007-09-25 16:24:18.265.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm</Transaction>
-    <Transaction>2008-09-09 13:42:03.468.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.dfm,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmXmlEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\u3dsFile.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm</Transaction>
   </Transactions>
 </BorlandProject>

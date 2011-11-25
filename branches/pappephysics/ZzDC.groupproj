@@ -1,54 +1,62 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <ProjectGuid>{ad88dd67-0846-4bd0-9cdf-b22a9136d570}</ProjectGuid>
-  </PropertyGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <Projects Include="tools\ZDesigner\expr\ExprTest.dproj" />
-    <Projects Include="tools\ZDesigner\ZDesigner.dproj" />
-    <Projects Include="ZzDC.dproj" />
-  </ItemGroup>
-  <ProjectExtensions>
-    <Borland.Personality>Default.Personality</Borland.Personality>
-    <Borland.ProjectType />
-    <BorlandProject>
-<BorlandProject xmlns=""><Default.Personality></Default.Personality></BorlandProject></BorlandProject>
-  </ProjectExtensions>
-  <Target Name="ZzDC">
-    <MSBuild Projects="ZzDC.dproj" Targets="" />
-  </Target>
-  <Target Name="ZzDC:Clean">
-    <MSBuild Projects="ZzDC.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ZzDC:Make">
-    <MSBuild Projects="ZzDC.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ZDesigner">
-    <MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="" />
-  </Target>
-  <Target Name="ZDesigner:Clean">
-    <MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ZDesigner:Make">
-    <MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ExprTest">
-    <MSBuild Projects="tools\ZDesigner\expr\ExprTest.dproj" Targets="" />
-  </Target>
-  <Target Name="ExprTest:Clean">
-    <MSBuild Projects="tools\ZDesigner\expr\ExprTest.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ExprTest:Make">
-    <MSBuild Projects="tools\ZDesigner\expr\ExprTest.dproj" Targets="Make" />
-  </Target>
-  <Target Name="Build">
-    <CallTarget Targets="ZzDC;ZDesigner;ExprTest" />
-  </Target>
-  <Target Name="Clean">
-    <CallTarget Targets="ZzDC:Clean;ZDesigner:Clean;ExprTest:Clean" />
-  </Target>
-  <Target Name="Make">
-    <CallTarget Targets="ZzDC:Make;ZDesigner:Make;ExprTest:Make" />
-  </Target>
-  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
-</Project>
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{ad88dd67-0846-4bd0-9cdf-b22a9136d570}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="ZzDC.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="tools\ZDesigner\ZDesigner.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\pappe\PhysicsDemo.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<BorlandProject>
+					<Default.Personality/>
+				</BorlandProject>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="ZzDC">
+			<MSBuild Projects="ZzDC.dproj"/>
+		</Target>
+		<Target Name="ZzDC:Clean">
+			<MSBuild Projects="ZzDC.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="ZzDC:Make">
+			<MSBuild Projects="ZzDC.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="ZDesigner">
+			<MSBuild Projects="tools\ZDesigner\ZDesigner.dproj"/>
+		</Target>
+		<Target Name="ZDesigner:Clean">
+			<MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="ZDesigner:Make">
+			<MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="PhysicsDemo">
+			<MSBuild Projects="..\pappe\PhysicsDemo.dproj"/>
+		</Target>
+		<Target Name="PhysicsDemo:Clean">
+			<MSBuild Projects="..\pappe\PhysicsDemo.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="PhysicsDemo:Make">
+			<MSBuild Projects="..\pappe\PhysicsDemo.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="ZzDC;ZDesigner;PhysicsDemo"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="ZzDC:Clean;ZDesigner:Clean;PhysicsDemo:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="ZzDC:Make;ZDesigner:Make;PhysicsDemo:Make"/>
+		</Target>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
+	</Project>

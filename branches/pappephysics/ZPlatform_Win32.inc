@@ -38,12 +38,16 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, Windows, MMSystem, Types, ZApplication,AudioPlayer,
+uses ZOpenGL, ZLog, Winapi.Windows, ZApplication, AudioPlayer,Commands
+ {$ifndef minimal}
+  ,SysUtils
+ {$endif}
  {$IFDEF FPC}
-    WinEvent;
+  ,WinEvent
  {$ELSE}
-    Messages;
+//    Messages;
  {$ENDIF}
+ ;
 
 
 //gl code based on, http://www.sulaco.co.za
@@ -54,14 +58,72 @@ var
   h_RC   : HGLRC;                    // OpenGL rendering context
 
   Keys : array[0..255] of boolean;
-  KeyMap : array[char] of byte;
+  KeyMap : array[AnsiChar] of byte;
   LastMouse : TPoint;
 
+
+procedure UpdateJoysticks; forward;
+procedure InitJoysticks; forward;
+
+
+//Copied from Messages.pas
+const
+  WM_CREATE           = $0001;
+  WM_DESTROY          = $0002;
+  WM_CLOSE            = $0010;
+  WM_KEYDOWN          = $0100;
+  WM_KEYUP            = $0101;
+  WM_MOUSEMOVE        = $0200;
+  WM_LBUTTONDOWN      = $0201;
+  WM_LBUTTONUP        = $0202;
+  WM_RBUTTONDOWN      = $0204;
+  WM_RBUTTONUP        = $0205;
+  WM_MBUTTONDOWN      = $0207;
+  WM_MBUTTONUP        = $0208;
+  WM_QUIT             = $0012;
+  WM_INITDIALOG       = $0110;
+  WM_COMMAND          = $0111;
+  WM_ACTIVATE         = $0006;
+  WM_ACTIVATEAPP      = $001C;
+  WM_NCACTIVATE       = $0086;
+  WM_MOUSEWHEEL       = $020A;
+  WM_LBUTTONDBLCLK    = $0203;
+
+  BM_SETCHECK = $00F1;
+  CBN_SELCHANGE  = 1;
+
+  CB_ADDSTRING             = $0143;
+  CB_SETCURSEL             = $014E;
+  CB_GETCURSEL             = $0147;
+
+  {$ifdef fpc}
+  ID_OK = 1;
+  ID_CANCEL = 2;
+  {$endif}
+
+
+type
+  PMessage = ^TMessage;
+  TMessage = packed record
+    Msg: Cardinal;
+    case Integer of
+      0: (
+        WParam: WPARAM;
+        LParam: LPARAM;
+        Result: LRESULT);
+      1: (
+        WParamLo: Word;
+        WParamHi: Word;
+        LParamLo: Word;
+        LParamHi: Word;
+        ResultLo: Word;
+        ResultHi: Word);
+  end;
 
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
 begin
   Result := 0;
-  case (Msg) of
+  case Msg of
     WM_CREATE:
       begin
         // Insert stuff you want executed when the program starts
@@ -69,8 +131,10 @@ begin
     WM_CLOSE,WM_DESTROY:
       begin
         //In screensaver mode with ParentWindow: parent window sends destroy to
-        //all child windows, important to quit otherwise process will keep on living. 
+        //all child windows, important to quit otherwise process will keep on living.
+        {$ifdef minimal}
         PostQuitMessage(0);
+        {$endif}
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
@@ -79,7 +143,7 @@ begin
     WM_KEYUP:         // Set the released key (wparam) to equal false so we can check if its pressed
       begin
         {$ifdef minimal}
-        if wParam=VK_ESCAPE then
+        if (wParam=VK_ESCAPE) and ZApp.EscapeToQuit then
           PostMessage(hWnd,WM_QUIT,0,0);
         {$endif}
         Keys[Lo(wParam)] := False;
@@ -95,21 +159,37 @@ begin
     WM_RBUTTONDOWN,WM_RBUTTONUP :
       //Use '}' as key for right mouse button
       Keys[ Ord('}') ] := Msg=WM_RBUTTONDOWN;
+    WM_MBUTTONDOWN,WM_MBUTTONUP :
+      //Use '|' as key for middle mouse button
+      Keys[ Ord('|') ] := Msg=WM_MBUTTONDOWN;
+    WM_LBUTTONDBLCLK :
+      Keys[ Ord('[') ] := True;
+    WM_MOUSEWHEEL :
+      begin
+        ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
+      end;
 {$ifdef minimal}
     else
       Result := DefWindowProc(hWnd, Msg, wParam, lParam);    // Default result if nothing happens
 {$endif}
   end;
+
+  {$ifdef zgeviz}
+  //Always pass on the message to avoid zgeviz stealing keypresses from FL-studio
+  if (Msg=WM_KEYDOWN) or (Msg=WM_KEYUP) then
+    Result := DefWindowProc(hWnd, Msg, wParam, lParam);
+  {$endif}
 end;
 
 {$if (not defined(minimal))}
 procedure Platform_DesignerWindowProc(P : pointer);
 var
-  M : Messages.PMessage;
+  M : PMessage;
 begin
   //Brygga mellan vcl-tmessage och win-api wndproc.
-  M := Messages.PMessage(P);
+  M := PMessage(P);
   WndProc(h_Wnd,M.Msg,M.WParam,M.LParam);
+  UpdateJoysticks;
 end;
 {$ifend}
 
@@ -183,9 +263,9 @@ begin
   KillWnd(FullScreen);
 end;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 var
-  wndClass : TWndClass;         // Window class
+  wndClass : TWndClassA;         // Window class
   dwStyle : DWORD;              // Window styles
   dwExStyle : DWORD;            // Extended window styles
   dmScreenSettings : DEVMODE;   // Screen settings (fullscreen, etc...)
@@ -197,14 +277,21 @@ var
 
   R : TRect;
   DesktopSize : TRect;
-  WinX,WinY{,ViewportH,ViewportW},DesktopPixelDepth : integer;
+  WinX,WinY,DesktopPixelDepth : integer;
+  UseFullScreenWindow : boolean;
 begin
-//width := 1600; height := 1200;
-
-//  if not ZOpenGL.InitOpenGL then
-//    raise Exception.Create('Could not init opengl');
+  GetClientRect(GetDesktopWindow,DesktopSize);
 
   FullScreen := UseFullScreen;
+
+  //FullscreenWindow means use full desktop size without making a mode-switch
+  UseFullScreenWindow := Width=-1;
+  if UseFullScreenWindow then
+  begin
+    FullScreen := False;
+    Width := DesktopSize.Right;
+    Height := DesktopSize.Bottom;
+  end;
 
   {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
   if PreviewParentHWnd<>0 then
@@ -224,28 +311,35 @@ begin
     ReleaseDC(0, ScreenDC);
   end;
 
-  ZeroMemory(@wndClass, SizeOf(wndClass));  // Clear the window class structure
+  FillChar(wndClass, SizeOf(wndClass),0);  // Clear the window class structure
 
   // Set up the window class
+//  wndClass.cbSize := SizeOf(wndClass);
   wndClass.style  := CS_HREDRAW or    // Redraws entire window if length changes
                      CS_VREDRAW or    // Redraws entire window if height changes
-                     CS_OWNDC;        // Unique device context for the window
+                     CS_OWNDC or      // Unique device context for the window
+                     CS_DBLCLKS;      // Receive doubleclick messages
   wndClass.lpfnWndProc   := @WndProc;        // Set the window procedure to our func WndProc
   wndClass.hInstance     := HInstance;  //Delphi rtl gets the hinstance (SysInit.Unit)
   wndClass.hCursor       := LoadCursor(0, IDC_ARROW);
   wndClass.lpszClassName := 'OpenGL';
+//  wndClass.hIconSm := LoadIcon(0, IDI_APPLICATION);
+  wndClass.hIcon := LoadIcon(0, IDI_APPLICATION);
 
-  if (RegisterClass(wndClass) = 0) then  // Attemp to register the window class
+//if LoadImageA(HInstance, '1', IMAGE_ICON, 32, 32, 0)=0 then
+//  zhalt('crash2');
+//if LoadIconA(hInstance,'HEJ')=0 then
+//  zhalt('crash');
+
+  if (RegisterClassA(wndClass) = 0) then  // Attemp to register the window class
     {$if not defined(zzdc_activex)}
     ZHalt('Failed to register window class')
     {$ifend};
 
-  GetClientRect(GetDesktopWindow,DesktopSize);
-
   // Change to fullscreen if so desired
   if Fullscreen then
   begin
-    ZeroMemory(@dmScreenSettings, SizeOf(dmScreenSettings));
+    FillChar(dmScreenSettings, SizeOf(dmScreenSettings), 0);
     with dmScreenSettings do begin              // Set parameters for the screen setting
       dmSize       := SizeOf(dmScreenSettings);
       dmPelsWidth  := Width;                    // Window width
@@ -259,8 +353,7 @@ begin
       ZHalt('Unable to switch to fullscreen.');
   end;
 
-  // If we are still in fullscreen then
-  if (Fullscreen) then
+  if Fullscreen or UseFullScreenWindow then
   begin
     dwStyle := WS_POPUP or                // Creates a popup window
                WS_CLIPCHILDREN            // Doesn't draw within child windows
@@ -291,9 +384,9 @@ begin
   end;
   {$ifend}
 
- {$ifndef minimal}
- try
- {$endif}
+  {$ifndef minimal}
+  try
+  {$endif}
     R.Top := 0;
     R.Left := 0;
     R.Bottom := Height;
@@ -301,7 +394,7 @@ begin
 //    ViewportH := Height;
 //    ViewportW := Width;
 
-    if (not Fullscreen)
+    if (not Fullscreen) and (not UseFullScreenWindow)
       {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
       and (PreviewParentHWnd=0)
       {$ifend}
@@ -318,7 +411,7 @@ begin
     end;
 
     // Attempt to create the actual window
-    h_Wnd := CreateWindowEx(dwExStyle,      // Extended window styles
+    h_Wnd := CreateWindowExA(dwExStyle,      // Extended window styles
                             'OpenGL',       // Class name
                             Title,   // Window title (caption)
                             dwStyle,        // Window styles
@@ -341,7 +434,7 @@ begin
       ZHalt('Unable to get a device context.');
 
     // Settings for the OpenGL window
-    ZeroMemory(@pfd, SizeOf(pfd));
+    FillChar(pfd, SizeOf(pfd), 0);
     with pfd do
     begin
       nSize           := SizeOf(TPIXELFORMATDESCRIPTOR); // Size Of This Pixel Format Descriptor
@@ -404,19 +497,10 @@ begin
   end;
  {$endif}
 
-  // Initializes the timer used to calculate the FPS
-//  SetTimer(h_Wnd, FPS_TIMER, FPS_INTERVAL, nil);
-
   // Settings to ensure that the window is the topmost window
   ShowWindow(h_Wnd, SW_SHOW);
   SetForegroundWindow(h_Wnd);
   SetFocus(h_Wnd);
-
-  //Hide mouse, except in preview mode
-  {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
-  if PreviewParentHWnd=0 then
-  {$ifend}
-    ShowCursor(False);
 
   if FullScreen then
     //Try to workaround corrupt font problem in fullscreen
@@ -429,9 +513,24 @@ begin
   //Must have initial mouseposition in screensaver mode
   GetCursorPos(LastMouse);
   {$endif}
+
+  Result := h_Wnd;
 end;
 
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
+begin
+  SetWindowTextA(h_Wnd,Title);
+end;
 
+procedure Platform_ShowMouse(Visible : boolean);
+begin
+  //Hide mouse, except in preview mode
+  {$if defined(zzdc_screensaver) or defined(zzdc_activex)}
+  if PreviewParentHWnd<>0 then
+    Exit;
+  {$ifend}
+  ShowCursor(Visible);
+end;
 
 procedure Platform_SwapBuffers;
 begin
@@ -492,6 +591,8 @@ begin
       if not (Callback()) then
         Finished := True;
 
+      UpdateJoysticks;
+
       {$ifdef zzdc_activex}
       if ZgeActiveXFinished then
         Finished := True;
@@ -512,10 +613,7 @@ var
   I : integer;
 begin
   for I := 0 to 255 do
-    KeyMap[chr(I)] := I;
-  for I := ord('a') to ord('z') do
-    KeyMap[chr(I)] := I - (ord('a')-ord('A'));;
-
+    KeyMap[AnsiChar(I)] := I;
   KeyMap[UpKey] := VK_UP;
   KeyMap[DownKey] := VK_DOWN;
   KeyMap[LeftKey] := VK_LEFT;
@@ -523,19 +621,17 @@ begin
 end;
 
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
-//  {$ifndef minimal}
-//  Result := GetAsyncKeyState( MapVirtualKey(ord(C),1) )<0;
-//  Result := GetAsyncKeyState( ord(C) )<0;
-//  {$else}
   Result := Keys[ KeyMap[C] ];
-//  {$endif}
+  if Result and (C='[') then
+    //Buffer doubleclick event until read
+    Keys[ Ord('[') ] := False;
 end;
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 var
-  P : PChar;
+  P : PAnsiChar;
 begin
   {$ifdef zzdc_screensaver}
   if Switch[0] in ['f','s'] then
@@ -544,7 +640,7 @@ begin
     Exit;
   end;
   {$endif}
-  P := GetCommandLine;
+  P := GetCommandLineA;
   Result := False;
   while(P[0]<>#0) do
   begin
@@ -557,9 +653,9 @@ begin
   end;
 end;
 
-procedure Platform_Error(ErrorMessage : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
-  Windows.MessageBox(H_Wnd, ErrorMessage, 'ZZDC Error', MB_OK);
+  MessageBoxA(H_Wnd, ErrorMessage, 'ZZDC Error', MB_OK);
 end;
 
 function Platform_GetMousePos : TZPointi;
@@ -572,14 +668,6 @@ begin
     //Och getcursorpos används pga wm_mousemove enbart skickas till aktuellt fönster
     GetCursorPos(TPoint(Result));
     ScreenToClient(h_Wnd,TPoint(Result));
-    if Result.X<0 then
-      Result.X := 0;
-    if Result.X>=ScreenWidth then
-      Result.X := ScreenWidth-1;
-    if Result.Y<0 then
-      Result.Y := 0;
-    if Result.Y>=ScreenHeight then
-      Result.Y := ScreenHeight-1;
   end;
 end;
 
@@ -594,51 +682,51 @@ begin
   SetCursorPos(Tmp.X,Tmp.Y)
 end;
 
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 begin
   GetMem(Result,256);
-  GetModuleFileName(0, Result, 256)
+  GetModuleFileNameA(0, Result, 256)
 end;
 
 
 {$ifndef minimal}
 var
-  DesignerFilePath : string;
+  DesignerFilePath : AnsiString;
 
-procedure Platform_DesignerSetFilePath(const P : string);
+procedure Platform_DesignerSetFilePath(const P : AnsiString);
 begin
   DesignerFilePath := P;
 end;
 {$endif}
 
-procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of ansichar);
 {$ifdef minimal}
 var
   I : integer;
 {$endif}
 begin
   {$ifdef minimal}
-  I := GetModuleFileName(0,Buf,255);
+  I := GetModuleFileNameA(0,Buf,255);
   while (I>0) and (Buf[I]<>'\') do
     Dec(I);
   if I>0 then
   begin
     Buf[I+1]:=#0;
     //lstrcat(Buf,FileName);
-    ZStrCat(PChar(@Buf),FileName);
+    ZStrCat(PAnsiChar(@Buf),FileName);
   end;
   {$else}
   Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
-  ZStrCopy(PChar(@Buf),PChar(DesignerFilePath));
-  ZStrCat(PChar(@Buf),FileName);
+  ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+  ZStrCat(PAnsiChar(@Buf),FileName);
   {$endif}
 end;
 
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
   Handle : THandle;
   Dummy : longword;
-  Buf : array[0..254] of char;
+  Buf : array[0..254] of AnsiChar;
   OpenFlag : LongWord;
 begin
   MakeFullPath(FileName,Buf);
@@ -649,7 +737,7 @@ begin
   else
     OpenFlag := CREATE_ALWAYS;
 
-  Handle := CreateFile(FileName, GENERIC_WRITE,
+  Handle := CreateFileA(FileName, GENERIC_WRITE,
     0, nil, OpenFlag,
     FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -667,11 +755,11 @@ begin
   CloseHandle(Handle);
 end;
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   Handle : THandle;
   Dummy : longword;
-  Buf : array[0..254] of char;
+  Buf : array[0..254] of AnsiChar;
 begin
 
   //Open file relative to path of exe-file
@@ -681,7 +769,7 @@ begin
     FileName := @Buf;
   end;
 
-  Handle := CreateFile(FileName, GENERIC_READ,
+  Handle := CreateFileA(FileName, GENERIC_READ,
     0, nil, OPEN_EXISTING,
     FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -700,86 +788,6 @@ begin
 end;
 
 
-procedure Platform_SimpleText(Scale,X,Y : single; Msg : PChar);
-const
-  Base : integer = 0;
-var
-  FirstChar : integer;
-  Quantity : integer;
-  Start : integer;
-  NChars : integer;
-  Font : HFONT;
-  Size : Types.TSize;
-  CenteredX,CenteredY : single;
-begin
-//  TextOut(h_dc,10,10,Msg,10);
-
-  //first time
-  if Base=0 then
-  begin
-    FirstChar := ord(' ');
-    Quantity := 127 - FirstChar;
-    Start := glGenLists(Quantity);
-    Base := Start - FirstChar;
-//    SelectObject(h_DC,GetStockObject(SYSTEM_FONT));
-
-  Font := CreateFont( -48,              // Height Of Font
-            0,                // Width Of Font
-            0,                // Angle Of Escapement
-            0,                // Orientation Angle
-            0,            // Font Weight
-            0,              // Italic
-            0,              // Underline
-            0,              // Strikeout
-            ANSI_CHARSET,         // Character Set Identifier
-            OUT_TT_PRECIS,          // Output Precision
-            CLIP_DEFAULT_PRECIS,      // Clipping Precision
-            ANTIALIASED_QUALITY,      // Output Quality
-            FF_DONTCARE or DEFAULT_PITCH,   // Family And Pitch
-            'Arial Black');
-  SelectObject(h_DC, font);           // Selects The Font We Want
-  wglUseFontBitmaps(h_DC,FirstChar,Quantity,Start);
-//  SelectObject(h_DC, oldfont);              // Selects The Font We Want
-//  DeleteObject(font);                 // Delete The Font
-
-//    wglUseFontBitmaps(h_DC,FirstChar,Quantity,Start);
-    //todo delete lists on finalization
-  end;
-
-  NChars := Windows.LStrLen(Msg);
-
-  Windows.GetTextExtentPoint32(h_DC, Msg, NChars, Size);
-  CenteredX := X - (Size.Cx/ZApplication.ScreenWidth);
-  CenteredY := Y - (Size.Cy/ZApplication.ScreenHeight);
-
-  //  glClearColor(random,random,random,0);
-
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glOrtho(-1, 1, -1, 1, 1, -1.0);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-
-//glColor3f(1,1,0.6f);
-
-//  glColor3f(1,1,1);
-//  glPixelZoom(Scale,Scale);
-  glRasterPos2f(CenteredX,CenteredY);
-
-  glPushAttrib(GL_LIST_BIT);
-    glListBase(Base);
-    glCallLists( NChars, GL_UNSIGNED_BYTE, Msg);
-  glPopAttrib();
-
-  // restore matrices
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 var
@@ -819,59 +827,6 @@ begin
   Result := Start;
 end;
 
-function Platform_GenerateFontTexture(Char : integer) : integer;
-const
-  Size = 32;
-var
-  OldFont,Font : HFONT;
-  lpgm : TGLYPHMETRICS;
-  lpmat2 : TMAT2;
-  BufferSize : integer;
-  Buf : pointer;
-  TexId : integer;
-begin
-  Font := CreateFont( -Size,              // Height Of Font
-                          0,              // Width Of Font
-                          0,              // Angle Of Escapement
-                          0,              // Orientation Angle
-                          0,              // Font Weight
-                          0,              // Italic
-                          0,              // Underline
-                          0,              // Strikeout
-                          ANSI_CHARSET,           // Character Set Identifier
-                          OUT_TT_PRECIS,          // Output Precision
-                          CLIP_DEFAULT_PRECIS,          // Clipping Precision
-                          ANTIALIASED_QUALITY,          // Output Quality
-                          FF_DONTCARE or DEFAULT_PITCH, // Family And Pitch
-                          'Courier New'); //'Courier New');
-  oldfont := HFONT(SelectObject(h_DC, font));           // Selects The Font We Want
-
-//      lpMat->eM11 = FixedFromDouble(1);
-//    lpMat->eM12 = FixedFromDouble(0);
-//    lpMat->eM21 = FixedFromDouble(0);
-//    lpMat->eM22 = FixedFromDouble(1);
-  FillChar(lpmat2,sizeof(lpmat2),0);
-  lpmat2.em11.value:=1;
-  lpmat2.em22.value:=1;
-
-  FillChar(lpgm,sizeof(lpgm),0);
-  BufferSize := GetGlyphOutline(h_DC,Char, GGO_BITMAP, lpgm, 0,  nil, lpmat2);
-  GetMem(buf,BufferSize);
-  GetGlyphOutline(h_DC,Char, GGO_BITMAP, lpgm, 0,  nil, lpmat2);
-
-  //buffer måset resizas för att passa en gltexture
-
-  glGenTextures(1, @TexId);
-  glBindTexture(GL_TEXTURE_2D,TexId);
-  glTexImage2D(GL_TEXTURE_2D, 0, 1, Size, Size, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, Buf);
-
-  Freemem(Buf);
-
-  SelectObject(h_DC, oldfont);
-  DeleteObject(font);
-
-  Result := TexId;
-end;
 
 var
   TimerFreq,TimerStart : int64;
@@ -895,6 +850,13 @@ begin
 //  Result := GetTickCount;
 end;
 
+function Platform_GetSystemTime : integer;
+var
+  T : TSystemTime;
+begin
+  GetLocalTime(T);
+  Result := T.wHour * 3600 + T.wMinute * 60 + T.wSecond;
+end;
 
 procedure Platform_DesignerSetDC(DC : longword; HWnd : longword);
 begin
@@ -909,13 +871,12 @@ var
   Size : integer;
 begin
   Result := nil;
-  {$ifdef fpc}exit;{$endif}
   HResInfo := FindResource(HInstance,'data_file', RT_RCDATA);
   //if HResInfo = 0 then Error;
   HGlobal := LoadResource(HInstance, HResInfo);
   //if HGlobal = 0 then Error;
   Size := SizeOfResource(HInstance, HResInfo);
-  if Size=4 then
+  if Size<=4 then
     //Only dummy data present, return nil
     Exit;
   Result := TZInputStream.CreateFromMemory(LockResource(HGlobal), Size);
@@ -925,6 +886,27 @@ end;
 
 ////////////////////////////////
 // AUDIO
+
+//From mmsystem.pas
+type
+  PWaveFormatEx = ^TWaveFormatEx;
+  tWAVEFORMATEX = packed record
+    wFormatTag: Word;         { format type }
+    nChannels: Word;          { number of channels (i.e. mono, stereo, etc.) }
+    nSamplesPerSec: DWORD;  { sample rate }
+    nAvgBytesPerSec: DWORD; { for buffer estimation }
+    nBlockAlign: Word;      { block size of data }
+    wBitsPerSample: Word;   { number of bits per sample of mono data }
+    cbSize: Word;           { the count in bytes of the size of }
+  end;
+  MMRESULT = UINT;
+
+const
+  WAVE_FORMAT_PCM     = 1;
+  mmsyst = 'winmm.dll';
+
+function timeBeginPeriod(uPeriod: UINT): MMRESULT; stdcall; external mmsyst;
+function timeEndPeriod(uPeriod: UINT): MMRESULT; stdcall; external mmsyst;
 
 function PlaybackThread_Execute(Parameter: Pointer): Integer; stdcall; forward;
 
@@ -995,7 +977,7 @@ type
     _AddRef : function(This : PDirectSound) : Integer; stdcall;
     _Release : function(This : PDirectSound) : Integer; stdcall;
     // IDirectSound methods
-    CreateSoundBuffer : function(This : PDirectSound;const pcDSBufferDesc: TDSBufferDesc; ppDSBuffer: pointer; pUnkOuter: IUnknown): HResult; stdcall;
+    CreateSoundBuffer : function(This : PDirectSound;const pcDSBufferDesc: TDSBufferDesc; ppDSBuffer: pointer; pUnkOuter: pointer): HResult; stdcall;
     GetCaps : function (This : PDirectSound; out pDSCaps: TDSCaps): HResult; stdcall;
     DuplicateSoundBuffer : function (This : PDirectSound; pDSBufferOriginal: pointer; out ppDSBufferDuplicate: pointer): HResult; stdcall;
     SetCooperativeLevel : function (This : PDirectSound; hwnd: HWND; dwLevel: DWORD): HResult; stdcall;
@@ -1073,7 +1055,7 @@ const
 
 var
   DirectSoundLib: THandle;
-  DirectSoundCreate: function(lpGuid: PGUID; ppDS: pointer; pUnkOuter: IUnknown): HResult; stdcall;
+  DirectSoundCreate: function(lpGuid: PGUID; ppDS: pointer; pUnkOuter: pointer): HResult; stdcall;
   DS : PDirectSound;
   DSBuffer : PDirectSoundBuffer;
   DSPrimary : PDirectSoundBuffer;
@@ -1127,7 +1109,7 @@ begin
   Buf.dwSize := SizeOf(Buf);
   Buf.dwBufferBytes := SoundBufferByteSize;
   Buf.lpwfxFormat := @Fmt;
-  Buf.dwFlags := DSBCAPS_GETCURRENTPOSITION2;
+  Buf.dwFlags := DSBCAPS_GETCURRENTPOSITION2 or DSBCAPS_GLOBALFOCUS;
   Err:=DS.Vtbl.CreateSoundBuffer(DS,Buf,@DSBuffer,nil);
   if Err<>0 then
     ZHalt('dsound.createSoundBuffer failed');
@@ -1170,8 +1152,9 @@ begin
   if DSPrimary<>nil then
     DSPrimary.Vtbl._Release(DSPrimary);
 
-  if DS<>nil then
-    DS.Vtbl._Release(DS);
+//This code crashes when used with bass.dll
+//  if DS<>nil then
+//    DS.Vtbl._Release(DS);
 
   if DirectSoundLib<>0 then
     FreeLibrary(DirectSoundLib);
@@ -1324,7 +1307,7 @@ begin
     I := 1;
     repeat
       S := ParamStr(I);
-      if (Length(S)>0) and (S[1] in ['0'..'9']) then
+      if (Length(S)>0) and (ansichar(S[1]) in ['0'..'9']) then
       begin
         Val(S, PreviewParentHWnd, E);
         Break;
@@ -1344,7 +1327,7 @@ begin
 end;
 {$endif}
 
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := wglGetProcAddress(P);
 end;
@@ -1360,13 +1343,19 @@ begin
   QueryPerformanceCounter(TimerStart);
 
   InitKeyMap;
+
+  InitJoysticks;
 end;
 
 
 /////////////////////////////
 //Option dialog code
 
-{$R OptionsDialog.res OptionsDialog.rc}
+{$ifdef fpc}
+  {$R OptionsDialog.res}
+{$else}
+  {$R OptionsDialog.res OptionsDialog.rc}
+{$endif}
 
 const
   // OptionDialog ID numbers
@@ -1376,10 +1365,11 @@ const
 function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint): Bool; stdcall;
 const
   xstr = 'x'#0;
+  DesktopStr = 'Use Desktop resolution'#0;
 var
   I : integer;
-  Tmp1 : array[0..10] of char;
-  Str : array[0..100] of char;
+  Tmp1 : array[0..10] of AnsiChar;
+  Str : array[0..100] of AnsiChar;
   R : TRect;
 begin
 //  Result := True;
@@ -1388,14 +1378,18 @@ begin
     begin
       for I := 0 to High(ScreenModes) do
       begin
-        //inttofloat conversion
-        ZStrConvertFloat(ScreenModes[I].W, PChar(@Str));
-        ZStrCat(Str,xstr);
-        ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
-        ZStrCat(Str,Tmp1);
+        if I=0 then
+          ZStrCopy(Str,DesktopStr)
+        else
+        begin
+          ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Str));
+          ZStrCat(Str,xstr);
+          ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
+          ZStrCat(Str,Tmp1);
+        end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
       end;
-      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,1,0);
+      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(ZApp.ScreenMode),0);
 
       //Center on screen
       GetWindowRect(GetDesktopWindow, R);
@@ -1437,14 +1431,14 @@ end;
 
 function Platform_ShowOptionDialog : boolean;
 begin
-  Result := DialogBoxParam(hInstance, 'IDDLG_OPTIONSDIALOG', 0,@Options,0)=ID_OK;
+  Result := DialogBoxParamA(hInstance, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,0)=ID_OK;
 end;
 
 function Platform_GetDisplayRefreshRate : integer;
 var
   dmScreenSettings : DEVMODE;
 begin
-  ZeroMemory(@dmScreenSettings, SizeOf(dmScreenSettings));
+  FillChar(dmScreenSettings, SizeOf(dmScreenSettings), 0);
   dmScreenSettings.dmSize       := SizeOf(dmScreenSettings);
   EnumDisplaySettings(nil,0,dmScreenSettings);
   Result := dmScreenSettings.dmDisplayFrequency;
@@ -1455,9 +1449,354 @@ begin
   Sleep(time);
 end;
 
+
+//-------------------------------------------
+//JOYSTICK support
+//Inspired and borrowed from SDL_mmjoystick.c
+
+const
+  MAX_JOYSTICKS = 16;
+  MAX_AXES = 6;
+
+type
+  //From mmsystem.pas and slightly modified
+  TZ_JOYCAPS = record
+    wMid: Word;
+    wPid: Word;
+    szPname: array[0..32-1] of byte;
+    wXmin: UINT;
+    wXmax: UINT;
+    wYmin: UINT;
+    wYmax: UINT;
+    wZmin: UINT;
+    wZmax: UINT;
+    wNumButtons: UINT;
+    wPeriodMin: UINT;
+    wPeriodMax: UINT;
+    wRmin: UINT;
+    wRmax: UINT;
+    wUmin: UINT;
+    wUmax: UINT;
+    wVmin: UINT;
+    wVmax: UINT;
+    wCaps: UINT;
+    wMaxAxes: UINT;
+    wNumAxes: integer;
+    wMaxButtons: UINT;
+    szRegKey: array[0..32 - 1] of byte;
+    szOEMVxD: array[0..260 - 1] of byte;
+  end;
+
+  TZ_JOYINFOEX = record
+    dwSize: DWORD;
+    dwFlags: DWORD;
+    wXpos: UINT;
+    wYpos: UINT;
+    wZpos: UINT;
+    dwRpos: DWORD;
+    dwUpos: DWORD;
+    dwVpos: DWORD;
+    dwButtons: DWORD;
+    dwButtonNumber: DWORD;
+    wPOV: word;
+    filler1 : word;
+    dwReserved1: DWORD;
+    dwReserved2: DWORD;
+  end;
+
+  PJoystick = ^TJoystick;
+  TJoystick =
+    record
+      Caps : TZ_JOYCAPS;
+      TransAxis : array[0..MAX_AXES-1] of
+        record
+          Offset : single;
+          Scale : single;
+        end;
+      Values : array[0..MAX_AXES-1] of single;
+      Buttons : DWORD;
+      POV : single;
+    end;
+
+var
+  Joysticks : array[0..MAX_JOYSTICKS-1] of TJoystick;
+  JoyCount : integer;
+
+function joyGetNumDevs: UINT; stdcall; external mmsyst;
+function joyGetPosEx(uJoyID: UINT; lpInfo: pointer): MMRESULT; stdcall; external mmsyst;
+function joyGetDevCapsA(uJoyID: UINT; lpCaps: pointer; uSize: UINT): MMRESULT; stdcall; external mmsyst;
+
+
+
+procedure InitJoysticks;
+type
+  PMinMax = ^TMinMax;
+  TMinMax = packed record min,max : LongWord; end;
+var
+  I,J,MaxDevs : integer;
+  MinMax : PMinMax;
+  Joy : PJoystick;
+begin
+  MaxDevs := joyGetNumDevs();
+  if MaxDevs>MAX_JOYSTICKS then
+    MaxDevs := MAX_JOYSTICKS;
+
+  for I := 0 to MaxDevs - 1 do
+  begin
+    Joy := @Joysticks[I];
+    if joyGetDevCapsA(I,@Joy.Caps,SizeOf(TZ_JOYCAPS))<>0 then
+      Break;
+
+    MinMax := @Joy.Caps.wXmin;
+    for J := 0 to MAX_AXES-1 do
+    begin
+      if (MinMax.Min<>0) or (MinMax.Max<>0) then
+      begin
+        Joy.TransAxis[J].Offset := MinMax.Min;
+        Joy.TransAxis[J].Scale := (2.0) / (MinMax.Max-MinMax.Min);
+      end;
+      if J=2 then
+        MinMax := @Joy.Caps.wRmin
+      else
+        Inc(MinMax);
+    end;
+  end;
+  JoyCount := I;
+  {$ifndef minimal}
+  ZLog.GetLog('Platform').Write('Gamepads detected: ' + IntToStr(JoyCount));
+  {$endif}
+end;
+
+procedure UpdateJoystick(JoyId : integer; var Joy : TJoystick);
+const
+  Mask : LongWord = $FFFFFFF0;
+var
+  Info : TZ_JOYINFOEX;
+  Flag : LongWord;
+  I : integer;
+  Pos : ^LongWord;
+begin
+  Info.dwSize := SizeOf(Info);
+  Info.dwFlags := $BF or $200;
+
+  if joyGetPosEx(JoyId, @Info)<>0 then
+    Exit;
+
+  Pos := @Info.wXpos;
+  Flag := 1;
+  for I := 0 to MAX_AXES - 1 do
+  begin
+    if (Info.dwFlags and Flag)>0 then
+      Joy.Values[I] := (((Pos^ and Mask) - Joy.TransAxis[I].Offset) * Joy.TransAxis[I].Scale)-1.0;
+    Flag := Flag shl 1;
+    Inc(Pos);
+  end;
+
+  Joy.Buttons := Info.dwButtons;
+
+  if Info.wPOV=$FFFF then
+    Joy.POV := -1
+  else
+    Joy.POV := Info.wPOV*0.01;
+end;
+
+procedure UpdateJoysticks;
+var
+  I : integer;
+begin
+  for I := 0 to JoyCount - 1 do
+    UpdateJoystick(I,Joysticks[I]);
+end;
+
+
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+var
+  Joy : PJoystick;
+begin
+  Result := 0;
+  if JoyId<JoyCount then
+  begin
+    Joy := @Joysticks[JoyId];
+    if Axis<Joy.Caps.wNumAxes then
+      Result := Joysticks[JoyId].Values[Axis];
+  end;
+end;
+
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+begin
+  Result := False;
+  if JoyId<JoyCount then
+    Result := (Joysticks[JoyId].Buttons and (1 shl Button))>0;
+end;
+
+function Platform_GetJoystickPOV(JoyId : integer) : single;
+begin
+  Result := -1;
+  if JoyId<JoyCount then
+    Result := (Joysticks[JoyId]).POV;
+end;
+
+/////////////
+//Net-support
+
+//From WinInet.pas
+type
+  HINTERNET = Pointer;
+  PInternetAsyncResult = ^TInternetAsyncResult;
+  TInternetAsyncResult = packed record
+    dwResult: DWORD; { the HINTERNET, DWORD or BOOL return code from an async API }
+    dwError: DWORD; { dwError - the error code if the API failed }
+  end;
+
+const
+  INTERNET_STATUS_HANDLE_CREATED              = 60;
+  INTERNET_STATUS_REQUEST_COMPLETE            = 100;
+  INTERNET_STATUS_RESPONSE_RECEIVED           = 41;
+  INTERNET_OPEN_TYPE_PRECONFIG        = 0;  { use registry configuration }
+  INTERNET_FLAG_ASYNC = $10000000;                  { this request is asynchronous (where supported) }
+  winetdll = 'wininet.dll';
+
+function InternetOpenA(lpszAgent: PAnsiChar; dwAccessType: DWORD;
+  lpszProxy, lpszProxyBypass: PAnsiChar; dwFlags: DWORD): HINTERNET; stdcall; external winetdll;
+function InternetSetStatusCallback(hInet: HINTERNET;
+  lpfnInternetCallback: pointer): pointer; stdcall; external winetdll;
+function InternetOpenUrlA(hInet: HINTERNET; lpszUrl: PAnsiChar;
+  lpszHeaders: PAnsiChar; dwHeadersLength: DWORD; dwFlags: DWORD;
+  dwContext: DWORD): HINTERNET; stdcall; external winetdll;
+function InternetQueryDataAvailable(hFile: HINTERNET; var lpdwNumberOfBytesAvailable: DWORD;
+  dwFlags, dwContext: DWORD): BOOL; stdcall; external winetdll;
+function InternetReadFile(hFile: HINTERNET; lpBuffer: Pointer;
+  dwNumberOfBytesToRead: DWORD; var lpdwNumberOfBytesRead: DWORD): BOOL; stdcall; external winetdll;
+function InternetCloseHandle(hInet: HINTERNET): BOOL; stdcall; external winetdll;
+
+var
+  SessionHandle : HINTERNET;
+  SessionWait : boolean;
+
+
+procedure NetCallback(hInternet : HINTERNET;
+    dwContext : DWORD_PTR;
+    dwInternetStatus :DWORD;
+    lpvStatusInformation : pointer;
+    dwStatusInformationLength : DWORD
+    ); stdcall;
+begin
+//  OutputDebugString( PChar(IntToStr(dwInternetStatus)) );
+  case dwInternetStatus of
+    INTERNET_STATUS_HANDLE_CREATED :
+      begin
+        TWebOpen(dwContext).Handle := pointer(PInternetAsyncResult(lpvStatusInformation).dwResult);
+      end;
+    INTERNET_STATUS_REQUEST_COMPLETE :
+      begin
+        if SessionWait then
+          SessionWait := False
+        else
+          TWebOpen(dwContext).StartReading;
+      end;
+    INTERNET_STATUS_RESPONSE_RECEIVED :
+        if SessionWait then
+          SessionWait := False
+  end;
+
+end;
+
+function ShellExecuteA(hWnd: HWND; Operation, FileName, Parameters,
+  Directory: PAnsiChar; ShowCmd: Integer): HINST; stdcall;  external 'shell32.dll';
+
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+begin
+  if InBrowser then
+  begin
+    //Workaround for mouse/key-up messages being lost
+    FillChar(Keys,SizeOf(Keys),0);
+    ShellExecuteA(0, PAnsiChar('open'),Url, nil, nil, SW_SHOWDEFAULT);
+  end
+  else
+  begin
+    if SessionHandle=nil then
+    begin
+      SessionHandle := InternetOpenA(PAnsiChar('ZGE'),
+        INTERNET_OPEN_TYPE_PRECONFIG,
+        nil,nil,INTERNET_FLAG_ASYNC);
+      InternetSetStatusCallback(SessionHandle,@NetCallBack);
+    end;
+    InternetOpenUrlA(SessionHandle,Url,nil,0,0,Cardinal(WebOpen));
+  end;
+  {$ifndef minimal}
+  ZLog.GetLog('Platform').Write('Net open: ' + Url);
+  {$endif}
+end;
+
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+var
+  BytesRead,Avail,ThisSize : dword;
+begin
+  while True and (Size>0) do
+  begin
+    SessionWait := True;
+    ThisSize := Size;
+    if InternetQueryDataAvailable(Handle,Avail,0,0) then
+    begin
+      if Avail=0 then
+        Break;
+      if ThisSize>Avail then
+        ThisSize:=Avail;
+      //Without this sleep InternetReadFile will hang on status 40
+      Sleep(100);
+    end;
+
+    if not InternetReadFile(Handle,Buffer,ThisSize,BytesRead) then
+    begin
+      if (GetLastError()<>ERROR_IO_PENDING) then
+        Break;
+      //BytesRead isn't updated until INTERNET_STATUS_REQUEST_COMPLETE
+      while SessionWait do
+        Sleep(200);
+    end;
+
+    if (BytesRead=0) then
+      Break;
+
+    Inc(pbyte(Buffer),BytesRead);
+    Dec(Size,BytesRead);
+  end;
+  if Size>0 then
+  begin
+    PByte(Buffer)^:=0;
+  end;
+  InternetCloseHandle(Handle);
+end;
+
+
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+{$ifndef minimal}
+var
+  S : ansistring;
+{$endif}
+begin
+  //Open file relative to path of exe-file
+  {$ifndef minimal}
+  //Inside designer we must provide full path to zgeproj-file
+  S := DesignerFilePath + Name;
+  if FileExists(String(DesignerFilePath + Name)) then
+    Result := LoadLibraryA(PAnsiChar(S))
+  else
+    //Not found in zgeproj-path, assume system32-dll such as user32 and load without path
+    Result := LoadLibraryA(Name)
+  {$else}
+  //In engine always let the OS find the dll without path
+  Result := LoadLibraryA(Name);
+  {$endif}
+end;
+
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+begin
+  Result := GetProcAddress(Module,Name);
+end;
+
 {initialization
 
 finalization}
 
 end.
-

@@ -20,9 +20,18 @@ THE SOFTWARE.}
 
 program ZDesigner;
 
+{$WEAKLINKRTTI ON}
+{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+
+{$if defined(CPUX64)}
+  {$EXCESSPRECISION OFF} //Needed for fast single-precision math
+{$ifend}
+
 uses
 //  FastMM4,
   Forms,
+  HTMLHelpViewer,
+  ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
   ZBitmap in '..\..\ZBitmap.pas',
@@ -35,15 +44,13 @@ uses
   ZApplication in '..\..\ZApplication.pas',
   Commands in '..\..\Commands.pas',
   ZExpressions in '..\..\ZExpressions.pas',
-  ExprEdit in 'ExprEdit.pas',
+  Compiler in 'Compiler\Compiler.pas',
   Collision in '..\..\Collision.pas',
-  CocoBase in 'expr\CocoBase.pas',
-  mwStringHashList in 'expr\mwStringHashList.pas',
-  Zc in 'expr\Zc.PAS',
+  Zc in 'Compiler\Zc.PAS',
   frmSelectComponent in 'frmSelectComponent.pas' {SelectComponentForm},
   Steering in '..\..\Steering.pas',
   frmCompEditBase in 'frmCompEditBase.pas' {CompEditFrameBase: TFrame},
-  uSymTab in 'uSymTab.pas',
+  uSymTab in '..\..\uSymTab.pas',
   dmCommon in 'dmCommon.pas' {CommonModule: TDataModule},
   AudioPlayer in '..\..\AudioPlayer.pas',
   AudioComponents in '..\..\AudioComponents.pas',
@@ -70,10 +77,25 @@ uses
   frmSettings in 'frmSettings.pas' {SettingsForm},
   unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
   unitEXIcon in '3rdparty\unitEXIcon.pas',
-  Zc_Ops in 'expr\Zc_Ops.pas',
-  PAPPE in '..\..\PAPPE.pas';
+  Zc_Ops in 'Compiler\Zc_Ops.pas',
+  PAPPE in '..\..\PAPPE.pas',
+  frmBitmapEdit in 'frmBitmapEdit.pas' {BitmapEditFrame: TFrame},
+  SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
+  frmMeshEdit in 'frmMeshEdit.pas' {MeshEditFrame: TFrame},
+  frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
+  ZPlatform in '..\..\ZPlatform.pas',
+  frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm},
+  Vcl.Themes,
+  Vcl.Styles,
+  CocoAncestor in 'Compiler\CocoAncestor.pas',
+  CocoSets in 'Compiler\CocoSets.pas';
 
 {$R *.res}
+
+{.$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+
+//+>2gb memory in 64-bitwindows
+{$SETPEFLAGS $21}
 
 begin
   //Report memleaks when run inside delphi debugger

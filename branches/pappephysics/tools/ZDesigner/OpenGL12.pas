@@ -227,11 +227,15 @@ unit OpenGL12;
 interface
 
 {.$define MULTITHREADOPENGL}
-                                      
+
+{$if defined(Win64)}
+  {$define Win32}
+{$ifend}
+
 uses
   {$ifdef Win32}
     Windows
-  {$endif Win32}
+  {$endif}
 
   {$ifdef LINUX}
     Libc, Xlib, Types
@@ -775,6 +779,8 @@ const
   {$EXTERNALSYM GL_MINMAX_FORMAT}
   GL_MINMAX_SINK                                    = $8030;
   {$EXTERNALSYM GL_MINMAX_SINK}
+
+  GL_MAX_TEXTURE_UNITS = 34018;
 
   // buffers
   GL_NONE                                           = 0;
@@ -5088,7 +5094,7 @@ var
   {$EXTERNALSYM glGetPointerv}
   glGetPolygonStipple: procedure(mask: PGLubyte); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetPolygonStipple}
-  glGetString: function(name: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
+  glGetString: function(name: TGLEnum): PAnsiChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetString}
   glGetTexEnvfv: procedure(target, pname: TGLEnum; params: PGLfloat); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM glGetTexEnvfv}
@@ -5618,7 +5624,7 @@ var
   // GL utility functions and procedures
   gluErrorString: function(errCode: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluErrorString}
-  gluGetString: function(name: TGLEnum): PChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
+  gluGetString: function(name: TGLEnum): PAnsiChar; {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluGetString}
   gluOrtho2D: procedure(left, right, bottom, top: TGLdouble); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluOrtho2D}
@@ -5726,53 +5732,10 @@ var
   gluEndPolygon: procedure(tess: PGLUtesselator); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
   {$EXTERNALSYM gluEndPolygon}
 
-  // window support functions
-  {$ifdef Win32}
-  wglGetProcAddress: function(ProcName: PChar): Pointer; stdcall;
-  {$EXTERNALSYM wglGetProcAddress}
-  wglCopyContext: function(p1: HGLRC; p2: HGLRC; p3: Cardinal): BOOL; stdcall;
-  {$EXTERNALSYM wglCopyContext}
-  wglCreateContext: function(DC: HDC): HGLRC; stdcall;
-  {$EXTERNALSYM wglCreateContext}
-  wglCreateLayerContext: function(p1: HDC; p2: Integer): HGLRC; stdcall;
-  {$EXTERNALSYM wglCreateLayerContext}
-  wglDeleteContext: function(p1: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglDeleteContext}
-  wglDescribeLayerPlane:function(p1: HDC; p2, p3: Integer; p4: Cardinal; var p5: TLayerPlaneDescriptor): BOOL; stdcall;
-  {$EXTERNALSYM wglDescribeLayerPlane}
-  wglGetCurrentContext: function: HGLRC; stdcall;
-  {$EXTERNALSYM wglGetCurrentContext}
-  wglGetCurrentDC: function: HDC; stdcall;
-  {$EXTERNALSYM wglGetCurrentDC}
-  wglGetLayerPaletteEntries: function(p1: HDC; p2, p3, p4: Integer; var pcr): Integer; stdcall;
-  {$EXTERNALSYM wglGetLayerPaletteEntries}
-  wglMakeCurrent: function(DC: HDC; p2: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglMakeCurrent}
-  wglRealizeLayerPalette: function(p1: HDC; p2: Integer; p3: BOOL): BOOL; stdcall;
-  {$EXTERNALSYM wglRealizeLayerPalette}
-  wglSetLayerPaletteEntries: function(p1: HDC; p2, p3, p4: Integer; var pcr): Integer; stdcall;
-  {$EXTERNALSYM wglSetLayerPaletteEntries}
-  wglShareLists: function(p1, p2: HGLRC): BOOL; stdcall;
-  {$EXTERNALSYM wglShareLists}
-  wglSwapLayerBuffers: function(p1: HDC; p2: Cardinal): BOOL; stdcall;
-  {$EXTERNALSYM wglSwapLayerBuffers}
-  wglSwapMultipleBuffers: function(p1: UINT; const p2: PWGLSwap): DWORD; stdcall;
-  {$EXTERNALSYM wglSwapMultipleBuffers}
-  wglUseFontBitmapsA: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmapsA}
-  wglUseFontOutlinesA: function (p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlinesA}
-  wglUseFontBitmapsW: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmapsW}
-  wglUseFontOutlinesW: function (p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlinesW}
-  wglUseFontBitmaps: function(DC: HDC; p2, p3, p4: DWORD): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontBitmaps}
-  wglUseFontOutlines: function(p1: HDC; p2, p3, p4: DWORD; p5, p6: Single; p7: Integer; p8: PGlyphMetricsFloat): BOOL; stdcall;
-  {$EXTERNALSYM wglUseFontOutlines}
+  wglGetProcAddress : function (P : pansichar) : pointer; stdcall;
 
   // ARB wgl extensions
-  wglGetExtensionsStringARB: function(DC: HDC): PChar; stdcall;
+  wglGetExtensionsStringARB: function(DC: HDC): PAnsiChar; stdcall;
   {$EXTERNALSYM wglGetExtensionsStringARB}
   wglGetPixelFormatAttribivARB: function(DC: HDC; iPixelFormat, iLayerPlane: Integer; nAttributes: UINT;
     const piAttributes: PInteger; piValues : PInteger) : BOOL; stdcall;
@@ -5783,7 +5746,6 @@ var
   wglChoosePixelFormatARB: function(DC: HDC; const piAttribIList: PInteger; const pfAttribFList: PGLFloat;
     nMaxFormats: UINT; piFormats: PInteger; nNumFormats: PUINT) : BOOL; stdcall;
   {$EXTERNALSYM wglChoosePixelFormatARB}
-  {$endif}
 
   // ARB_multitexture
   glMultiTexCoord1dARB: procedure(target: TGLenum; s: TGLdouble); {$ifdef Win32} stdcall; {$endif} {$ifdef LINUX} cdecl; {$endif}
@@ -7021,11 +6983,11 @@ end;
 
 {$ifndef VER140}
 
-procedure RaiseLastOSError;
+(*procedure RaiseLastOSError;
 
 begin
   RaiseLastWin32Error;
-end;
+end;*)
 
 {$endif VER140}
 
@@ -7371,32 +7333,8 @@ begin
   glVertexPointer := nil; 
   glViewport := nil; 
 
-  {$ifdef Win32}
-  wglGetProcAddress := nil; 
-  wglCopyContext := nil; 
-  wglCreateContext := nil; 
-  wglCreateLayerContext := nil; 
-  wglDeleteContext := nil; 
-  wglDescribeLayerPlane := nil; 
-  wglGetCurrentContext := nil; 
-  wglGetCurrentDC := nil;
-  wglGetLayerPaletteEntries := nil; 
-  wglMakeCurrent := nil; 
-  wglRealizeLayerPalette := nil; 
-  wglSetLayerPaletteEntries := nil; 
-  wglShareLists := nil; 
-  wglSwapLayerBuffers := nil; 
-  wglSwapMultipleBuffers := nil; 
-  wglUseFontBitmapsA := nil; 
-  wglUseFontOutlinesA := nil; 
-  wglUseFontBitmapsW := nil; 
-  wglUseFontOutlinesW := nil; 
-  wglUseFontBitmaps := nil; 
-  wglUseFontOutlines := nil; 
-  {$endif}
-
   // GL 1.2
-  glDrawRangeElements := nil; 
+  glDrawRangeElements := nil;
   glTexImage3D := nil; 
 
   // GL 1.2 ARB imaging
@@ -7500,12 +7438,12 @@ end;
 procedure LoadProcAddresses;
 
 var
-  Handle: Cardinal;
+  Handle: NativeInt;
 
 begin
   if GLHandle <> INVALID_MODULEHANDLE then
   begin
-    Handle := Cardinal(GLHandle); // Kylix compatiblilty trick
+    Handle := NativeInt(GLHandle); // Kylix compatiblilty trick
 
     glAccum := GetProcAddress(Handle, 'glAccum');
     glAlphaFunc := GetProcAddress(Handle, 'glAlphaFunc'); 
@@ -7825,8 +7763,8 @@ begin
     glVertex2iv := GetProcAddress(Handle, 'glVertex2iv'); 
     glVertex2s := GetProcAddress(Handle, 'glVertex2s'); 
     glVertex2sv := GetProcAddress(Handle, 'glVertex2sv'); 
-    glVertex3d := GetProcAddress(Handle, 'glVertex3d'); 
-    glVertex3dv := GetProcAddress(Handle, 'glVertex3dv'); 
+    glVertex3d := GetProcAddress(Handle, 'glVertex3d');
+    glVertex3dv := GetProcAddress(Handle, 'glVertex3dv');
     glVertex3f := GetProcAddress(Handle, 'glVertex3f'); 
     glVertex3fv := GetProcAddress(Handle, 'glVertex3fv'); 
     glVertex3i := GetProcAddress(Handle, 'glVertex3i'); 
@@ -7840,33 +7778,13 @@ begin
     glVertex4i := GetProcAddress(Handle, 'glVertex4i'); 
     glVertex4iv := GetProcAddress(Handle, 'glVertex4iv'); 
     glVertex4s := GetProcAddress(Handle, 'glVertex4s'); 
-    glVertex4sv := GetProcAddress(Handle, 'glVertex4sv'); 
-    glVertexPointer := GetProcAddress(Handle, 'glVertexPointer'); 
-    glViewport := GetProcAddress(Handle, 'glViewport'); 
+    glVertex4sv := GetProcAddress(Handle, 'glVertex4sv');
+    glVertexPointer := GetProcAddress(Handle, 'glVertexPointer');
+    glViewport := GetProcAddress(Handle, 'glViewport');
 
     // window support routines
     {$ifdef Win32}
-    wglGetProcAddress := GetProcAddress(Handle, 'wglGetProcAddress'); 
-    wglCopyContext := GetProcAddress(Handle, 'wglCopyContext'); 
-    wglCreateContext := GetProcAddress(Handle, 'wglCreateContext'); 
-    wglCreateLayerContext := GetProcAddress(Handle, 'wglCreateLayerContext'); 
-    wglDeleteContext := GetProcAddress(Handle, 'wglDeleteContext'); 
-    wglDescribeLayerPlane := GetProcAddress(Handle, 'wglDescribeLayerPlane'); 
-    wglGetCurrentContext := GetProcAddress(Handle, 'wglGetCurrentContext'); 
-    wglGetCurrentDC := GetProcAddress(Handle, 'wglGetCurrentDC'); 
-    wglGetLayerPaletteEntries := GetProcAddress(Handle, 'wglGetLayerPaletteEntries'); 
-    wglMakeCurrent := GetProcAddress(Handle, 'wglMakeCurrent'); 
-    wglRealizeLayerPalette := GetProcAddress(Handle, 'wglRealizeLayerPalette');
-    wglSetLayerPaletteEntries := GetProcAddress(Handle, 'wglSetLayerPaletteEntries'); 
-    wglShareLists := GetProcAddress(Handle, 'wglShareLists'); 
-    wglSwapLayerBuffers := GetProcAddress(Handle, 'wglSwapLayerBuffers'); 
-    wglSwapMultipleBuffers := GetProcAddress(Handle, 'wglSwapMultipleBuffers'); 
-    wglUseFontBitmapsA := GetProcAddress(Handle, 'wglUseFontBitmapsA'); 
-    wglUseFontOutlinesA := GetProcAddress(Handle, 'wglUseFontOutlinesA'); 
-    wglUseFontBitmapsW := GetProcAddress(Handle, 'wglUseFontBitmapsW'); 
-    wglUseFontOutlinesW := GetProcAddress(Handle, 'wglUseFontOutlinesW');
-    wglUseFontBitmaps := GetProcAddress(Handle, 'wglUseFontBitmapsA'); 
-    wglUseFontOutlines := GetProcAddress(Handle, 'wglUseFontOutlinesA');
+    wglGetProcAddress := GetProcAddress(Handle, 'wglGetProcAddress');
     {$endif}
 
     // GL 1.2
@@ -7983,7 +7901,7 @@ begin
     gluEndTrim := GetProcAddress(Handle, 'gluEndTrim'); 
     gluErrorString := GetProcAddress(Handle, 'gluErrorString');
     gluGetNurbsProperty := GetProcAddress(Handle, 'gluGetNurbsProperty'); 
-    gluGetString := GetProcAddress(Handle, 'gluGetString'); 
+    gluGetString := GetProcAddress(Handle, 'gluGetString');
     gluGetTessProperty := GetProcAddress(Handle, 'gluGetTessProperty'); 
     gluLoadSamplingMatrices := GetProcAddress(Handle, 'gluLoadSamplingMatrices'); 
     gluLookAt := GetProcAddress(Handle, 'gluLookAt'); 
@@ -9220,53 +9138,50 @@ begin
     // There must be at least one dot to separate major and minor version number.
     Separator := Pos('.', Buffer);
     // At least one number must be before and one after the dot.
-    if (Separator > 1) and (Separator < Length(Buffer)) and (Buffer[Separator - 1] in ['0'..'9']) and
-      (Buffer[Separator + 1] in ['0'..'9']) then
+    if (Separator > 1) and (Separator < Length(Buffer)) and CharInSet(Buffer[Separator - 1],['0'..'9']) and
+      CharInSet(Buffer[Separator + 1],['0'..'9']) then
     begin
       // OK, it's a valid version string. Now remove unnecessary parts.
-      Dec(Separator); 
+      Dec(Separator);
       // Find last non-numeric character before version number.
-      while (Separator > 0) and (Buffer[Separator] in ['0'..'9']) do
-        Dec(Separator); 
+      while (Separator > 0) and CharInSet(Buffer[Separator],['0'..'9']) do
+        Dec(Separator);
       // Delete leading characters which do not belong to the version string.
       Delete(Buffer, 1, Separator);
       Separator := Pos('.', Buffer) + 1;
       // Find first non-numeric character after version number
-      while (Separator <= Length(Buffer)) and (Buffer[Separator] in ['0'..'9']) do
-        Inc(Separator); 
+      while (Separator <= Length(Buffer)) and CharInSet(Buffer[Separator],['0'..'9']) do
+        Inc(Separator);
       // delete trailing characters not belonging to the version string
-      Delete(Buffer, Separator, 255); 
+      Delete(Buffer, Separator, 255);
       // Now translate the numbers.
       Separator := Pos('.', Buffer); // This is necessary because the buffer length might have changed.
-      Max := StrToInt(Copy(Buffer, 1, Separator - 1)); 
-      Min := StrToInt(Copy(Buffer, Separator + 1, 255)); 
+      Max := StrToInt(Copy(Buffer, 1, Separator - 1));
+      Min := StrToInt(Copy(Buffer, Separator + 1, 255));
     end
     else
-      Abort; 
+      Abort;
   except
-    Min := 0; 
-    Max := 0; 
-  end; 
-end; 
+    Min := 0;
+    Max := 0;
+  end;
+end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
 procedure ReadImplementationProperties;
  
 var
-  Buffer: string; 
+  Buffer: string;
   MajorVersion,
   MinorVersion: Integer;
 
   //--------------- local function --------------------------------------------
 
    function CheckExtension(const Extension: string): Boolean;
-
    // Checks if the given Extension string is in Buffer.
-
    var
      ExtPos: Integer;
-
    begin
      // First find the position of the extension string as substring in Buffer.
      ExtPos := Pos(Extension, Buffer);
@@ -9274,50 +9189,50 @@ var
      // Now check that it isn't only a substring of another extension.
      if Result then
        Result := ((ExtPos + Length(Extension) - 1) = Length(Buffer)) or
-         not (Buffer[ExtPos + Length(Extension)] in ['_', 'A'..'Z', 'a'..'z']);
-   end; 
+         not CharInSet(Buffer[ExtPos + Length(Extension)],['_', 'A'..'Z', 'a'..'z']);
+   end;
 
   //--------------- end local function ----------------------------------------
 
 begin
   // determine version of implementation
   // GL
-  Buffer := glGetString(GL_VERSION); 
-  TrimAndSplitVersionString(Buffer, Majorversion, MinorVersion); 
-  GL_VERSION_1_0 := True; 
-  GL_VERSION_1_1 := False; 
-  GL_VERSION_1_2 := False; 
+  Buffer := string(glGetString(GL_VERSION));
+  TrimAndSplitVersionString(String(Buffer), Majorversion, MinorVersion);
+  GL_VERSION_1_0 := True;
+  GL_VERSION_1_1 := False;
+  GL_VERSION_1_2 := False;
   if MajorVersion > 0 then
   begin
     if MinorVersion > 0 then
     begin
-      GL_VERSION_1_1 := True; 
+      GL_VERSION_1_1 := True;
       if MinorVersion > 1 then
         GL_VERSION_1_2 := True;
-    end; 
-  end; 
+    end;
+  end;
 
   // GLU
-  GLU_VERSION_1_1 := False; 
-  GLU_VERSION_1_2 := False; 
+  GLU_VERSION_1_1 := False;
+  GLU_VERSION_1_2 := False;
   GLU_VERSION_1_3 := False; 
   // gluGetString is valid for version 1.1 or later
   if Assigned(gluGetString) then
   begin
-    Buffer := gluGetString(GLU_VERSION); 
-    TrimAndSplitVersionString(Buffer, Majorversion, MinorVersion); 
+    Buffer := string(gluGetString(GLU_VERSION));
+    TrimAndSplitVersionString(String(Buffer), Majorversion, MinorVersion);
     GLU_VERSION_1_1 := True; 
     if MinorVersion > 1 then
     begin
       GLU_VERSION_1_2 := True; 
       if MinorVersion > 2 then
         GLU_VERSION_1_3 := True; 
-    end; 
-  end; 
+    end;
+  end;
 
   // check supported extensions
   // GL
-  Buffer := glGetString(GL_EXTENSIONS); 
+  Buffer := string(glGetString(GL_EXTENSIONS));
   GL_3DFX_multisample :=CheckExtension('GL_3DFX_multisample');
   GL_3DFX_tbuffer := CheckExtension('GL_3DFX_tbuffer'); 
   GL_3DFX_texture_compression_FXT1 := CheckExtension('GL_3DFX_texture_compression_FXT1'); 
@@ -9331,7 +9246,7 @@ begin
   GL_ARB_texture_compression := CheckExtension('GL_ARB_texture_compression'); 
   GL_ARB_texture_cube_map := CheckExtension('GL_ARB_texture_cube_map'); 
   GL_ARB_transpose_matrix := CheckExtension('GL_ARB_transpose_matrix'); 
-  GL_ARB_vertex_blend := CheckExtension('GL_ARB_vertex_blend'); 
+  GL_ARB_vertex_blend := CheckExtension('GL_ARB_vertex_blend');
 
   GL_EXT_422_pixels := CheckExtension('GL_EXT_422_pixels'); 
   GL_EXT_abgr := CheckExtension('GL_EXT_abgr'); 
@@ -9340,13 +9255,13 @@ begin
   GL_EXT_blend_func_separate := CheckExtension('GL_EXT_blend_func_separate'); 
   GL_EXT_blend_logic_op := CheckExtension('GL_EXT_blend_logic_op'); 
   GL_EXT_blend_minmax := CheckExtension('GL_EXT_blend_minmax'); 
-  GL_EXT_blend_subtract := CheckExtension('GL_EXT_blend_subtract'); 
+  GL_EXT_blend_subtract := CheckExtension('GL_EXT_blend_subtract');
   GL_EXT_clip_volume_hint := CheckExtension('GL_EXT_clip_volume_hint'); 
   GL_EXT_cmyka := CheckExtension('GL_EXT_cmyka'); 
   GL_EXT_color_subtable := CheckExtension('GL_EXT_color_subtable');
   GL_EXT_compiled_vertex_array := CheckExtension('GL_EXT_compiled_vertex_array'); 
   GL_EXT_convolution := CheckExtension('GL_EXT_convolution'); 
-  GL_EXT_coordinate_frame := CheckExtension('GL_EXT_coordinate_frame'); 
+  GL_EXT_coordinate_frame := CheckExtension('GL_EXT_coordinate_frame');
   GL_EXT_copy_texture := CheckExtension('GL_EXT_copy_texture'); 
   GL_EXT_cull_vertex := CheckExtension('GL_EXT_cull_vertex'); 
   GL_EXT_draw_range_elements := CheckExtension('GL_EXT_draw_range_elements'); 
@@ -9372,7 +9287,7 @@ begin
   GL_EXT_separate_specular_color := CheckExtension('GL_EXT_separate_specular_color'); 
   GL_EXT_shared_texture_palette := CheckExtension('GL_EXT_shared_texture_palette'); 
   GL_EXT_stencil_wrap := CheckExtension('GL_EXT_stencil_wrap'); 
-  GL_EXT_subtexture := CheckExtension('GL_EXT_subtexture'); 
+  GL_EXT_subtexture := CheckExtension('GL_EXT_subtexture');
   GL_EXT_texture_color_table := CheckExtension('GL_EXT_texture_color_table'); 
   GL_EXT_texture_compression_s3tc := CheckExtension('GL_EXT_texture_compression_s3tc'); 
   GL_EXT_texture_cube_map := CheckExtension('GL_EXT_texture_cube_map'); 
@@ -9381,13 +9296,13 @@ begin
   GL_EXT_texture_env_combine := CheckExtension('GL_EXT_texture_env_combine'); 
   GL_EXT_texture_filter_anisotropic := CheckExtension('GL_EXT_texture_filter_anisotropic'); 
   GL_EXT_texture_lod_bias := CheckExtension('GL_EXT_texture_lod_bias'); 
-  GL_EXT_texture_object := CheckExtension('GL_EXT_texture_object'); 
+  GL_EXT_texture_object := CheckExtension('GL_EXT_texture_object');
   GL_EXT_texture_perturb_normal := CheckExtension('GL_EXT_texture_perturb_normal'); 
   GL_EXT_texture3D := CheckExtension('GL_EXT_texture3D'); 
   GL_EXT_vertex_array := CheckExtension('GL_EXT_vertex_array'); 
   GL_EXT_vertex_weighting := CheckExtension('GL_EXT_vertex_weighting'); 
 
-  GL_FfdMaskSGIX := CheckExtension('GL_FfdMaskSGIX'); 
+  GL_FfdMaskSGIX := CheckExtension('GL_FfdMaskSGIX');
   GL_HP_convolution_border_modes := CheckExtension('GL_HP_convolution_border_modes'); 
   GL_HP_image_transform := CheckExtension('GL_HP_image_transform'); 
   GL_HP_occlusion_test := CheckExtension('GL_HP_occlusion_test'); 
@@ -9413,7 +9328,7 @@ begin
   GL_NV_light_max_exponent := CheckExtension('GL_NV_light_max_exponent'); 
   GL_NV_register_combiners := CheckExtension('GL_NV_register_combiners'); 
   GL_NV_texgen_emboss := CheckExtension('GL_NV_texgen_emboss'); 
-  GL_NV_texgen_reflection := CheckExtension('GL_NV_texgen_reflection'); 
+  GL_NV_texgen_reflection := CheckExtension('GL_NV_texgen_reflection');
   GL_NV_texture_env_combine4 := CheckExtension('GL_NV_texture_env_combine4'); 
   GL_NV_vertex_array_range := CheckExtension('GL_NV_vertex_array_range'); 
   GL_NV_vertex_program := CheckExtension('GL_NV_vertex_program'); 
@@ -9428,7 +9343,7 @@ begin
   GL_SGI_depth_pass_instrument := CheckExtension('GL_SGI_depth_pass_instrument'); 
 
   GL_SGIS_detail_texture := CheckExtension('GL_SGIS_detail_texture'); 
-  GL_SGIS_fog_function := CheckExtension('GL_SGIS_fog_function'); 
+  GL_SGIS_fog_function := CheckExtension('GL_SGIS_fog_function');
   GL_SGIS_generate_mipmap := CheckExtension('GL_SGIS_generate_mipmap'); 
   GL_SGIS_multisample := CheckExtension('GL_SGIS_multisample'); 
   GL_SGIS_multitexture := CheckExtension('GL_SGIS_multitexture'); 
@@ -9463,13 +9378,13 @@ begin
   GL_SGIX_ir_instrument1 := CheckExtension('GL_SGIX_ir_instrument1'); 
   GL_SGIX_list_priority := CheckExtension('GL_SGIX_list_priority'); 
   GL_SGIX_pixel_texture := CheckExtension('GL_SGIX_pixel_texture'); 
-  GL_SGIX_pixel_tiles := CheckExtension('GL_SGIX_pixel_tiles'); 
+  GL_SGIX_pixel_tiles := CheckExtension('GL_SGIX_pixel_tiles');
   GL_SGIX_polynomial_ffd := CheckExtension('GL_SGIX_polynomial_ffd'); 
   GL_SGIX_reference_plane := CheckExtension('GL_SGIX_reference_plane'); 
   GL_SGIX_resample := CheckExtension('GL_SGIX_resample'); 
   GL_SGIX_shadow := CheckExtension('GL_SGIX_shadow'); 
   GL_SGIX_shadow_ambient := CheckExtension('GL_SGIX_shadow_ambient');
-  GL_SGIX_sprite := CheckExtension('GL_SGIX_sprite'); 
+  GL_SGIX_sprite := CheckExtension('GL_SGIX_sprite');
   GL_SGIX_subsample := CheckExtension('GL_SGIX_subsample'); 
   GL_SGIX_tag_sample_buffer := CheckExtension('GL_SGIX_tag_sample_buffer'); 
   GL_SGIX_texture_add_env := CheckExtension('GL_SGIX_texture_add_env'); 
@@ -9496,7 +9411,7 @@ begin
   WGL_ARB_pixel_format := CheckExtension('WGL_ARB_pixel_format');
 
   // GLU
-  Buffer := gluGetString(GLU_EXTENSIONS); 
+  Buffer := string(gluGetString(GLU_EXTENSIONS));
   GLU_EXT_TEXTURE := CheckExtension('GLU_EXT_TEXTURE'); 
   GLU_EXT_object_space_tess := CheckExtension('GLU_EXT_object_space_tess'); 
   GLU_EXT_nurbs_tessellator := CheckExtension('GLU_EXT_nurbs_tessellator');
@@ -9504,7 +9419,7 @@ begin
   // ARB wgl extensions
   if Assigned(wglGetExtensionsStringARB) then
   begin
-    Buffer := wglGetExtensionsStringARB(wglGetCurrentDC);
+    Buffer := string(wglGetExtensionsStringARB(wglGetCurrentDC));
     WGL_ARB_extensions_string := CheckExtension('WGL_ARB_extensions_string');
     WGL_ARB_pixel_format := CheckExtension('WGL_ARB_pixel_format');
   end
@@ -9591,7 +9506,7 @@ begin
       dwFlags := dwFlags or PFD_STEREO; 
     iPixelType := PFD_TYPE_RGBA; 
     cColorBits := ColorBits; 
-    cDepthBits := 32; 
+    cDepthBits := 16;
     cStencilBits := StencilBits; 
     cAccumBits := AccumBits; 
     cAuxBuffers := AuxBuffers; 

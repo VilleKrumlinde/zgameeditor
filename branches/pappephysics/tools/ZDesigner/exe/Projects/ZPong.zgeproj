@@ -31,8 +31,16 @@ this.Pixel.B = 0;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="BallMaterial" Texture="BallTexture" TextureScale="0.69 0.69 0.69"/>
-        <Material Name="BatMaterial" Texture="BatTexture" TextureX="0.5" TexCoords="1"/>
+        <Material Name="BallMaterial">
+          <Textures>
+            <MaterialTexture Name="BallMaterialTexture" Texture="BallTexture" TextureScale="0.69 0.69 0.69"/>
+          </Textures>
+        </Material>
+        <Material Name="BatMaterial">
+          <Textures>
+            <MaterialTexture Texture="BatTexture" TextureX="0.5" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- Materials -->
 
@@ -48,7 +56,7 @@ this.Pixel.B = 0;]]>
             <MeshSphere Scale="0.5 0.5 0.5" ZSamples="16" RadialSamples="16"/>
           </Producers>
         </Mesh>
-        <Model Name="BallModel" Position="-0.22 -3.76 0" Rotation="5.81 8.29 0" Velocity="-6.06 3.69 0" Category="1" CollisionBounds="1 1 0 0">
+        <Model Name="BallModel" Position="1.4181 -2.4266 0" Rotation="6.9732 9.9475 0" Velocity="6 3.6 0" Category="1" CollisionBounds="1 1 0 0">
           <Definitions>
             <DefineVariable Name="BallMissed"/>
           </Definitions>
@@ -80,8 +88,8 @@ if( (CurrentModel.Position.X<-6) || (CurrentModel.Position.X>6) ) {
   CurrentModel.Position.Y=0;
   CurrentModel.Velocity.X*=-1.01;
   CurrentModel.Velocity.Y*=1.025;
-  CpuSpeed.Value *= 1.2;
-  CpuSpeed.Value = clamp(CpuSpeed.Value,0,5);
+  CpuSpeed *= 1.2;
+  CpuSpeed = clamp(CpuSpeed,0,5);
   BallMissed=1;
 } else
   BallMissed=0;]]>
@@ -94,7 +102,7 @@ if( (CurrentModel.Position.X<-6) || (CurrentModel.Position.X>6) ) {
                   <Expression>
 <![CDATA[//Make the ball look a bit different after each miss
 //by changing the texturescale.
-BallMaterial.TextureScale = random(1.4,0.8);]]>
+BallMaterialTexture.TextureScale = random(1.4,0.8);]]>
                   </Expression>
                 </ZExpression>
               </OnTrue>
@@ -124,7 +132,7 @@ BallModel.Velocity.Y=0.06*60;]]>
 BouncePlaySound.NoteNr = 62 + BallModel.Position.Y*5;]]>
               </Expression>
             </ZExpression>
-            <PlaySound Name="BouncePlaySound" Sound="BounceSound" NoteNr="53.62"/>
+            <PlaySound Name="BouncePlaySound" Sound="BounceSound" NoteNr="49.9555"/>
           </OnCollision>
         </Model>
         <Model Name="BatModel" Category="2" CollisionBounds="1 3 0 0">
@@ -167,7 +175,7 @@ LastMoveSoundTime=App.Time;]]>
             <ZExpression>
               <Expression>
 <![CDATA[if(BallModel.Velocity.X>0) { 
-  CpuBatModel.Velocity.Y = (BallModel.Position.Y-CpuBatModel.Position.Y) * CpuSpeed.Value;
+  CpuBatModel.Velocity.Y = (BallModel.Position.Y-CpuBatModel.Position.Y) * CpuSpeed;
 } else CpuBatModel.Velocity.Y=0;]]>
               </Expression>
             </ZExpression>
@@ -194,9 +202,9 @@ MoveSound.Pan=0.9;]]>
     <Group Name="Audio">
       <Children>
         <AudioMixer Ch0Active="1" Ch0Volume="0.38" Ch0UseDelay="1" Ch0DelayLength="0.2" Ch1Active="1" Ch1Volume="0.38" Ch1UseDelay="1" Ch1DelayLength="0.1" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.04" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
-        <Sound Name="BounceSound" Length="0.3" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Pan="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="2" Mod1Amount="0.19" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
+        <Sound Name="BounceSound" Length="0.3" Osc2NoteModifier="0.5" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Pan="0" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="2" Mod1Amount="0.19" Env0Active="1" Env0ReleaseTime="0.2" Lfo0Speed="0.2" Lfo1Speed="0.2"/>
         <Sound Name="MissSound" Length="0.5" Volume="0.3" UseOsc2="1" Osc2NoteModifier="0.5" HardSync="1" UseFilter="1" FilterCutoff="0.54" FilterQ="0.25" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="3" Mod1Destination="2" Mod1Amount="0.92" Mod2Active="1" Mod2Amount="0.18" Mod3Active="1" Mod3Source="4" Mod3Destination="9" Mod3Amount="0.95" Env0Active="1" Env0ReleaseTime="0.2" Lfo1Active="1" Lfo1Style="1" Lfo1Speed="0.2"/>
-        <Sound Name="MoveSound" Length="0.1" Volume="0.23" UseOsc2="1" Osc2NoteModifier="0.4" UseFilter="1" FilterCutoff="0.06" FilterQ="0.19" Pan="0.1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="1" Mod1Amount="0.13" Mod2Active="1" Mod2Source="3" Mod2Destination="10" Mod2Amount="0.43" Mod3Active="1" Mod3Amount="0.28" Env0Active="1" Env0ReleaseTime="0.05" Lfo0Active="1" Lfo0Speed="0.75" Lfo1Active="1" Lfo1Speed="0.09"/>
+        <Sound Name="MoveSound" Length="0.1" Volume="0.23" UseOsc2="1" Osc2NoteModifier="0.4" UseFilter="1" FilterCutoff="0.06" FilterQ="0.19" Pan="0.9" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="4" Mod1Destination="1" Mod1Amount="0.13" Mod2Active="1" Mod2Source="3" Mod2Destination="10" Mod2Amount="0.43" Mod3Active="1" Mod3Amount="0.28" Env0Active="1" Env0ReleaseTime="0.05" Lfo0Active="1" Lfo0Speed="0.75" Lfo1Active="1" Lfo1Speed="0.09"/>
       </Children>
     </Group> <!-- Audio -->
 

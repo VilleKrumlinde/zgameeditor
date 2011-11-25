@@ -783,6 +783,8 @@ const Vector2Origin:TPhysicsVector2=(x:0;y:0);
       Matrix4x4Identity:TPhysicsMatrix4x4=((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1));
       Matrix4x4Null:TPhysicsMatrix4x4=((0,0,0,0),(0,0,0,0),(0,0,0,0),(0,0,0,0));
 
+      QuaternionIdentity:TPhysicsQuaternion=(w:1;x:0;y:0;z:0);
+
 var PhysicsInstance:PPhysics;
 
 function GetSign(x:TPhysicsFloat):integer; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
@@ -853,6 +855,7 @@ procedure Vector3RotateY(var v:TPhysicsVector3;a:TPhysicsFloat); {$ifdef physics
 procedure Vector3RotateZ(var v:TPhysicsVector3;a:TPhysicsFloat); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
 procedure Vector3MatrixMul(var v:TPhysicsVector3;const m:TPhysicsMatrix3x3); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 procedure Vector3MatrixMul(var v:TPhysicsVector3;const m:TPhysicsMatrix4x4); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
+procedure Vector3NormalMatrixMul(var v:TPhysicsVector3;const m:TPhysicsMatrix4x4); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 function Vector3TermMatrixMul(const v:TPhysicsVector3;const m:TPhysicsMatrix3x3):TPhysicsVector3; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 function Vector3TermMatrixMul(const v:TPhysicsVector3;const m:TPhysicsMatrix4x4):TPhysicsVector3; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 procedure Vector3Rotate(var v:TPhysicsVector3;const Axis:TPhysicsVector3;a:TPhysicsFloat); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
@@ -947,6 +950,7 @@ function PlaneFromEdgePoints(P1,P2,N:TPhysicsVector4):TPhysicsPlane; {$ifdef phy
 function PlaneFromPoints(P1,P2,P3:TPhysicsVector3):TPhysicsPlane; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 function PlaneFromPoints(P1,P2,P3:TPhysicsVector4):TPhysicsPlane; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
 
+function QuaternionLengthSquared(const AQuaternion:TPhysicsQuaternion):TPhysicsFloat; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
 function QuaternionNormal(const AQuaternion:TPhysicsQuaternion):TPhysicsFloat; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
 procedure QuaternionNormalize(var AQuaternion:TPhysicsQuaternion); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
 function QuaternionFromAxisAngle(const Axis:TPhysicsVector3;Angle:TPhysicsFloat):TPhysicsQuaternion; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
@@ -1828,6 +1832,15 @@ begin
  t.x:=(m[0,0]*v.x)+(m[1,0]*v.y)+(m[2,0]*v.z)+m[3,0];
  t.y:=(m[0,1]*v.x)+(m[1,1]*v.y)+(m[2,1]*v.z)+m[3,1];
  t.z:=(m[0,2]*v.x)+(m[1,2]*v.y)+(m[2,2]*v.z)+m[3,2];
+ v:=t;
+end;
+
+procedure Vector3NormalMatrixMul(var v:TPhysicsVector3;const m:TPhysicsMatrix4x4); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif} overload;
+var t:TPhysicsVector3;
+begin
+ t.x:=(m[0,0]*v.x)+(m[1,0]*v.y)+(m[2,0]*v.z);
+ t.y:=(m[0,1]*v.x)+(m[1,1]*v.y)+(m[2,1]*v.z);
+ t.z:=(m[0,2]*v.x)+(m[1,2]*v.y)+(m[2,2]*v.z);
  v:=t;
 end;
 
@@ -2896,6 +2909,11 @@ begin
  result.b:=n.y;
  result.c:=n.z;
  result.d:=-((result.a*P1.x)+(result.b*P1.y)+(result.c*P1.z));
+end;
+
+function QuaternionLengthSquared(const AQuaternion:TPhysicsQuaternion):TPhysicsFloat; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
+begin
+ result:=sqr(AQuaternion.w)+sqr(AQuaternion.x)+sqr(AQuaternion.y)+sqr(AQuaternion.z);
 end;
 
 function QuaternionNormal(const AQuaternion:TPhysicsQuaternion):TPhysicsFloat; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
@@ -6990,23 +7008,23 @@ end;
 procedure PhysicsCollideDone(var Instance:TPhysicsCollide); {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
 var i:integer;
 begin
- with Instance do begin
-  for i:=0 to AllContacts-1 do begin
-   if assigned(Contacts^[i]) then begin
-    dispose(Contacts^[i]);
-    Contacts^[i]:=nil;
+   with Instance do begin
+    for i:=0 to AllContacts-1 do begin
+     if assigned(Contacts^[i]) then begin
+      dispose(Contacts^[i]);
+      Contacts^[i]:=nil;
+     end;
+    end;
+    if assigned(Contacts) then begin
+     freemem(Contacts);
+     Contacts:=nil;
+    end;
+    if assigned(Objects) then begin
+     freemem(Objects);
+     Objects:=nil;
+    end;
    end;
-  end;
-  if assigned(Contacts) then begin
-   freemem(Contacts);
-   Contacts:=nil;
-  end;
-  if assigned(Objects) then begin
-   freemem(Objects);
-   Objects:=nil;
-  end;
- end;
- fillchar(Instance,sizeof(TPhysicsCollide),#0);
+   fillchar(Instance,sizeof(TPhysicsCollide),#0);
 end;
 
 function PhysicsCollideAddContact(var Instance:TPhysicsCollide;TheObject:PPhysicsObject;const ThePoint,TheNormal:TPhysicsVector3;TheDepth:TPhysicsFloat;SwapObjects:boolean=false;TheMinDepth:boolean=false;DoTransform:boolean=true):boolean; {$ifdef physicsstdcall}stdcall;{$else}{$ifdef physicscdecl}cdecl;{$else}{$ifdef physicsregister}register;{$endif}{$endif}{$endif}
@@ -8733,84 +8751,84 @@ end;
 
 const CollideProcs:TPhysicsCollideProcs=(
                                          (// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectMeshMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxMesh;SwapObjects:true),// BodyBox
+                                          (Proc:PhysicsCollideObjectSphereMesh;SwapObjects:true),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderMesh;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleMesh;SwapObjects:true),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectPlaneMesh;SwapObjects:true),// BodyPlane
+                                          (Proc:PhysicsCollideObjectHeightMapMesh;SwapObjects:true),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectMeshMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxMesh;SwapObjects:false),// BodyMesh
                                           (Proc:PhysicsCollideObjectBoxBox;SwapObjects:false),// BodyBox
                                           (Proc:PhysicsCollideObjectSphereBox;SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectBoxCylinder};SwapObjects:false),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleBox};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectBoxPlane};SwapObjects:false),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectBoxHeightMap};SwapObjects:false),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectBoxCylinder;SwapObjects:false),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleBox;SwapObjects:true),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectBoxPlane;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectBoxHeightMap;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectBoxMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectSphereMesh;SwapObjects:false),// BodyMesh
                                           (Proc:PhysicsCollideObjectSphereBox;SwapObjects:false),// BodyBox
                                           (Proc:PhysicsCollideObjectSphereSphere;SwapObjects:false),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderSphere};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleSphere};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectSpherePlane};SwapObjects:false),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectSphereHeightMap};SwapObjects:false),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectCylinderSphere;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleSphere;SwapObjects:true),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectSpherePlane;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectSphereHeightMap;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectSphereMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectCylinderMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxCylinder;SwapObjects:true),// BodyBox
+                                          (Proc:PhysicsCollideObjectCylinderSphere;SwapObjects:false),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderCylinder;SwapObjects:false),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCylinderCapsule;SwapObjects:false),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectCylinderPlane;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectCylinderHeightMap;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectCylinderMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectCapsuleMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectCapsuleBox;SwapObjects:false),// BodyBox
+                                          (Proc:PhysicsCollideObjectCapsuleSphere;SwapObjects:false),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderCapsule;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleCapsule;SwapObjects:false),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectCapsulePlane;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectCapsuleHeightMap;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectCapsuleMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectPlaneMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxPlane;SwapObjects:true),// BodyBox
+                                          (Proc:PhysicsCollideObjectSpherePlane;SwapObjects:true),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderPlane;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsulePlane;SwapObjects:true),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectPlaneMesh;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectPlaneMesh;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectPlaneMesh;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectHeightMapMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxHeightMap;SwapObjects:true),// BodyBox
+                                          (Proc:PhysicsCollideObjectSphereHeightMap;SwapObjects:true),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderHeightMap;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleHeightMap;SwapObjects:true),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectHeightMapMesh;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectHeightMapMesh;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectHeightMapConvexHull;SwapObjects:false) // BodyConvexHull
                                          ),
                                          (// BodyConvexHull
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false),// BodyMesh
-                                          (Proc:nil{PhysicsCollideObjectBoxMesh};SwapObjects:true),// BodyBox
-                                          (Proc:nil{PhysicsCollideObjectSphereMesh};SwapObjects:true),// BodySphere
-                                          (Proc:nil{PhysicsCollideObjectCylinderMesh};SwapObjects:true),// BodyCylinder
-                                          (Proc:nil{PhysicsCollideObjectCapsuleMesh};SwapObjects:true),// BodyCapsule
-                                          (Proc:nil{PhysicsCollideObjectPlaneMesh};SwapObjects:true),// BodyPlane
-                                          (Proc:nil{PhysicsCollideObjectHeightMapMesh};SwapObjects:true),// BodyHeightmap
-                                          (Proc:nil{PhysicsCollideObjectMeshMesh};SwapObjects:false) // BodyConvexHull
+                                          (Proc:PhysicsCollideObjectConvexHullMesh;SwapObjects:false),// BodyMesh
+                                          (Proc:PhysicsCollideObjectBoxConvexHull;SwapObjects:true),// BodyBox
+                                          (Proc:PhysicsCollideObjectSphereConvexHull;SwapObjects:true),// BodySphere
+                                          (Proc:PhysicsCollideObjectCylinderConvexHull;SwapObjects:true),// BodyCylinder
+                                          (Proc:PhysicsCollideObjectCapsuleConvexHull;SwapObjects:false),// BodyCapsule
+                                          (Proc:PhysicsCollideObjectPlaneConvexHull;SwapObjects:false),// BodyPlane
+                                          (Proc:PhysicsCollideObjectHeightMapConvexHull;SwapObjects:false),// BodyHeightmap
+                                          (Proc:PhysicsCollideObjectConvexHullConvexHull;SwapObjects:false) // BodyConvexHull
                                          )
                                         );
 

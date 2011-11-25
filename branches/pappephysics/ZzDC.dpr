@@ -20,6 +20,12 @@ THE SOFTWARE.}
 
 program ZzDC;
 
+{$WEAKLINKRTTI ON}
+
+{$if defined(CPUX64)}
+  {$EXCESSPRECISION OFF} //Needed for fast single-precision math
+{$ifend}
+
 //Zzap Dynamic Content engine
 
 {
@@ -53,20 +59,22 @@ uses
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas',
+  NanoJpeg in 'NanoJpeg.pas',
   PAPPE in 'PAPPE.pas';
 
-{$ifndef fpc}
-  {$R Data.res Data.rc}
-{$endif}
+{$if defined(Win32) or defined(Win64)}
+  {$ifdef fpc}
+    {$R Data.res}
+  {$else}
+    {$R Data.res Data.rc}
+    {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+  {$endif}
+{$ifend}
 
 begin
 
   ZApp := ZApplication.LoadApplicationComponent;
-//  try
-    ZApp.Run;
-    ZApp.Terminate;
-//  finally
-    ZApp.Free;
-//  end;
+  ZApp.Run;
+  ZApp.Free;
 
 end.

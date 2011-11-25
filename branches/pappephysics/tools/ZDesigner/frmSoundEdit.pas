@@ -66,6 +66,7 @@ type
     Osc1PWTrackBar: TTrackBar;
     MasterVolumeTrackBar: TTrackBar;
     Label19: TLabel;
+    Panel1: TPanel;
     procedure NotesEditKeyPress(Sender: TObject; var Key: Char);
     procedure AutoPlayCheckBoxClick(Sender: TObject);
     procedure AutoPlayTimerTimer(Sender: TObject);
@@ -87,6 +88,7 @@ type
   public
     procedure SetComponent(C: TZComponent; TreeNode: TZComponentTreeNode);  override;
     procedure OnKeyPress(var Key: Char); override;
+    constructor Create(AOwner: TComponent) ; override;
   end;
 
 var
@@ -97,7 +99,7 @@ implementation
 {$R *.dfm}
 
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
-  frmEnvelopeFrame,ZPlatform,Math, uHelp;
+  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types;
 
 
 var
@@ -209,6 +211,12 @@ begin
   PlayNoteFromChar(NotesEdit.Text[AutoPlayCharI]);
 end;
 
+constructor TSoundEditFrame.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Panel1.DoubleBuffered := True;
+end;
+
 procedure TSoundEditFrame.TempoTrackBarChange(Sender: TObject);
 begin
   AutoPlayTimer.Interval := 250 + ((5-TempoTrackBar.Position)*20);
@@ -314,7 +322,10 @@ begin
     begin
       //Lägg i en panel för att få en ram
       P :=  TPanel.Create(ChannelsParent);
-      P.Width := 40;
+      P.BorderStyle := bsNone;
+      P.BevelOuter := bvNone;
+      P.BevelInner := bvNone;
+      P.Width := 26;
 
       ChannelFrame := TChannelFrame.Create(ChannelsParent);
       ChannelFrame.NrLabel.Caption := IntToStr(I);
@@ -359,7 +370,7 @@ procedure TSoundEditFrame.OnKeyPress(var Key: Char);
 var
   P : TPoint;
 begin
-  if (Key in ['a','s','d','f','g','h','j','k','l','ö','ä']) then
+  if CharInSet(Key,['a','s','d','f','g','h','j','k','l','ö','ä']) then
   begin
     P := Self.ClientToScreen( Point(0,0) );
     if PtInRect( Rect(P.X,P.Y,P.X + Width, P.Y + Height) , Mouse.CursorPos ) then
@@ -411,6 +422,23 @@ begin
   Platform_EnterMutex(SoundGraphMutex);
   try
 
+    //Draw bounds
+    YSize := SoundGraphBitmap.Height div (2 * StereoChannels);
+    SoundGraphBitmap.Canvas.Pen.Color := clGreen;
+    for J := 0 to StereoChannels-1 do
+    begin
+      FSample := 1;
+      Y := (YSize + J*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := Point(0,Y);
+      SoundGraphBitmap.Canvas.LineTo(SoundGraphBitmap.Width,Y);
+
+      FSample := -1;
+      Y := (YSize + J*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := Point(0,Y);
+      SoundGraphBitmap.Canvas.LineTo(SoundGraphBitmap.Width,Y);
+    end;
+
+
     //Antal samples att stega i buffer för varje pixel
     D := Round( (SoundGraphMaxLength/StereoChannels)/SoundGraphBitmap.Width );
     //Max antal pixels att rita under en timeranrop
@@ -427,15 +455,18 @@ begin
       begin
         ISample := SoundGraphBuffer[SoundGraphReadIndex+J];
 
-        YSize := SoundGraphBitmap.Height div (2 * StereoChannels);
         if ISample>=0 then
           FSample := ISample/High(TSoundOutputUnit)
         else
           FSample := ISample/Abs(Low(TSoundOutputUnit));
         Y := (YSize + J*(YSize*2)) -
           Round(FSample * YSize);
+
         SoundGraphBitmap.Canvas.PenPos := SoundGraphSavePenPos[J];
-        SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
+        if SoundGraphPixelPos=0 then
+          SoundGraphBitmap.Canvas.PenPos := Point(0,Y)
+        else
+          SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
         SoundGraphSavePenPos[J] := SoundGraphBitmap.Canvas.PenPos;
       end;
 
@@ -456,18 +487,6 @@ begin
   SoundGraphPaintBox.Canvas.Draw(0,0,SoundGraphBitmap);
 end;
 
-procedure TSoundEditFrame.DumpButtonClick(Sender: TObject);
-var
-  F : file;
-  FileName : string;
-begin
-  FileName := 'c:\temp\dump.dat';
-  AssignFile(F,FileName);
-  Rewrite(F,1);
-  BlockWrite(F,SoundGraphBuffer,SoundGraphMaxLength*SizeOf(TSoundOutputUnit) );
-  CloseFile(F);
-end;
-
 procedure TSoundEditFrame.VolumeTrackBarChange(Sender: TObject);
 begin
   Sound.Voice.Volume := (Sender as TTrackBar).Position * 1 / (Sender as TTrackBar).Max;
@@ -476,6 +495,30 @@ end;
 procedure TSoundEditFrame.PanTrackBarChange(Sender: TObject);
 begin
   Sound.Voice.Pan := (Sender as TTrackBar).Position * 1 / (Sender as TTrackBar).Max;
+end;
+
+var
+  SaveDialog : TSaveDialog;
+
+procedure TSoundEditFrame.DumpButtonClick(Sender: TObject);
+var
+  F : file;
+begin
+  if SaveDialog=nil then
+  begin
+    SaveDialog := TSaveDialog.Create(Self);
+    SaveDialog.Filter := 'RAW audio file (*.raw)|*.raw';
+    SaveDialog.DefaultExt := '*.raw';
+  end;
+  if not SaveDialog.Execute then
+    Exit;
+  AssignFile(F,SaveDialog.FileName);
+  try
+    Rewrite(F,1);
+    BlockWrite(F,SoundGraphBuffer,SoundGraphMaxLength*SizeOf(TSoundOutputUnit) );
+  finally
+    CloseFile(F);
+  end;
 end;
 
 initialization

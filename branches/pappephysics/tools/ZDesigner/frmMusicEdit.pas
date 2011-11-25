@@ -90,7 +90,7 @@ begin
       T := TPlaybackThread.Create(True);
       T.Priority := tpTimeCritical;
       T.Music:=Music;
-      T.Resume;
+      T.Start;
       T.FreeOnTerminate := True;
       Self.Thread := T;
 {    end

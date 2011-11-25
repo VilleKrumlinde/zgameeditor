@@ -39,7 +39,7 @@ type
     Kind : (sbkSeekModel,sbkSeparation,sbkNoise,sbkFleeModel,sbkExpression,sbkWallAvoidance);
     Expression : TZExpressionPropValue;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -57,6 +57,8 @@ type
     procedure SteerWallAvoidance(WallModels : TZArrayList; out Result : TZVector3f);
     procedure ApplySteeringForce(const Force : TZVector3f);
     function AccumulateForce(var RunningTot : TZVector3f; const ForceToAdd : TZVector3f) : boolean;
+    class function LineIntersection2D(const A, B, C, D: TZVector2f; out Dist: single;
+      out HitPoint: TZVector2f): boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -117,15 +119,15 @@ end;
 procedure TSteeringController.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Behaviours',{$ENDIF}integer(@Behaviours) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Behaviours',{$ENDIF}integer(@Behaviours), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSteeringBehaviour]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Mass',{$ENDIF}integer(@Mass) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Mass',{$ENDIF}integer(@Mass), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'MaxSpeed',{$ENDIF}integer(@MaxSpeed) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'MaxForce',{$ENDIF}integer(@MaxForce) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'MaxSpeed',{$ENDIF}integer(@MaxSpeed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'MaxForce',{$ENDIF}integer(@MaxForce), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'AdjustHeading',{$ENDIF}integer(@AdjustHeading) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AdjustHeading',{$ENDIF}integer(@AdjustHeading), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius), zptFloat);
 end;
 
 procedure TSteeringController.Execute;
@@ -136,6 +138,10 @@ var
 begin
   //Jobba mot currentmodel
   Self.Model := Meshes.CurrentModel;
+  {$ifndef minimal}
+  if Model=nil then
+    Exit;
+  {$endif}
 
   //Beräkna forward-vector
   VecCopy3(Model.Velocity,Self.ForwardV);
@@ -330,6 +336,52 @@ begin
   Result := B.OutVector;
 end;
 
+
+//-------------------- LineIntersection2D-------------------------
+//
+//	Given 2 lines in 2D space AB, CD this returns true if an
+//	intersection occurs and sets dist to the distance the intersection
+//  occurs along AB. Also sets the 2d vector point to the point of
+//  intersection
+//-----------------------------------------------------------------
+class function TSteeringController.LineIntersection2D(const A,B,C,D : TZVector2f;
+  out Dist : single;
+  out HitPoint : TZVector2f) : boolean;
+var
+  rTop,rBot : single;
+  sTop,sBot : single;
+  r,s : single;
+  Tmp : TZVector2f;
+begin
+  Result := False;
+
+  rTop := (A[1]-C[1])*(D[0]-C[0])-(A[0]-C[0])*(D[1]-C[1]);
+  rBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
+
+  sTop := (A[1]-C[1])*(B[0]-A[0])-(A[0]-C[0])*(B[1]-A[1]);
+  sBot := (B[0]-A[0])*(D[1]-C[1])-(B[1]-A[1])*(D[0]-C[0]);
+
+  if (rBot=0) or (sBot=0) then
+    //lines are parallel
+    Exit;
+
+  r := rTop/rBot;
+  s := sTop/sBot;
+
+  if (r > 0) and (r < 1) and (s > 0) and (s < 1) then
+  begin
+    Dist := Vec2DDistance(A,B) * r;
+    VecSub2(B,A,Tmp);
+    Tmp := VecScalarMult2(Tmp,R);
+    HitPoint := VecAdd2(A,Tmp);
+    //point = A + r * (B - A);
+    Result := True;
+  end
+  else
+    Dist := 0;
+end;
+
+
 procedure TSteeringController.SteerWallAvoidance(WallModels: TZArrayList; out Result: TZVector3f);
 //Från boken "Programming game AI by example"
 type
@@ -343,7 +395,7 @@ var
   Feelers : array[0..2] of TZVector2f;
   Feeler : PZVector2f;
   Walls : array[0..3] of TWall2D;
-  Bounds : TCollisionBounds;
+  Bounds : PCollisionCoordinates;
   I,J,K,ClosestWall : integer;
   ModelPos2D,HitPoint,ClosestPoint,OverShoot,Tmp : TZVector2f;
   DistToThis,DistToClosest,T1 : single;
@@ -391,7 +443,8 @@ begin
   for I := 0 to WallModels.Count-1 do
   begin
     //obs, collisionstyle måste vara rect2d
-    TModel(WallModels[I]).GetCollisionBounds(Bounds);
+    TModel(WallModels[I]).UpdateCollisionCoordinates;
+    Bounds := @TModel(WallModels[I]).CollisionCoordinates;
 
     Walls[0].P1 := Vector2f(Bounds.Rect.Right,Bounds.Rect.Top);
     Walls[0].P2 := Vector2f(Bounds.Rect.Left,Bounds.Rect.Top);
@@ -461,29 +514,29 @@ const
 procedure TSteeringBehaviour.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(SteerKindNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TargetModel',{$ENDIF}integer(@TargetModel) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TargetModel',{$ENDIF}integer(@TargetModel), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TargetCategory',{$ENDIF}integer(@TargetCategory) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Weight',{$ENDIF}integer(@Weight) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TargetCategory',{$ENDIF}integer(@TargetCategory), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Weight',{$ENDIF}integer(@Weight), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//OutVector : result steer vector';
     {$endif}
   //Outvector for expressions
-  List.AddProperty({$IFNDEF MINIMAL}'OutVector',{$ENDIF}integer(@OutVector) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'OutVector',{$ENDIF}integer(@OutVector), zptVector3f);
     List.GetLast.NeverPersist := True;
 end;
 
 {$ifndef minimal}
-function TSteeringBehaviour.GetDisplayName: string;
+function TSteeringBehaviour.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  Result := Result + '  ' + SteerKindNames[ ord(Kind) ];
+  Result := Result + '  ' + AnsiString(SteerKindNames[ ord(Kind) ]);
 end;
 {$endif}
 

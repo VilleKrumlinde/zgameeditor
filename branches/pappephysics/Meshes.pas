@@ -23,33 +23,42 @@ unit Meshes;
 
 interface
 
-uses ZClasses, ZBitmap, ZExpressions, PAPPE;
+uses ZClasses, ZBitmap, ZExpressions, ZOpenGL, PAPPE;
 
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
-  TMeshVertexIndex = word;
+  TMeshVertexIndex = integer; //word,integer
   PIndicesArray = ^TIndicesArray;
   TIndicesArray = array[0..10000] of TMeshVertexIndex;
 
+  PMeshVertexColor = ^TMeshVertexColor;
+  TMeshVertexColor = integer;
+  PMeshColorArray = ^TMeshColorArray;
+  TMeshColorArray = array[0..10000] of TMeshVertexColor;
+
   TMesh = class(TContent)
   private
+    VboHandles: array[0..1] of GLuint;
+    VboOffsets : array[0..2] of integer;
     procedure FreeData;
   protected
+    procedure Transform(const Matrix,NormalMatrix : TZMatrix4f);
     procedure CopyAndDestroy(Source : TContent); override;
-    {$ifndef minimal}
     procedure DefineProperties(List: TZPropertyList); override;
+    {$ifndef minimal}
     procedure UpdateBounds;
     {$endif}
   public
     //Note: keep fields in sync with CopyAndDestroy-method
     Vertices : PZVector3Array;
-    VerticesCount : integer;
+    VerticesCount : TMeshVertexIndex;
     Indices : PIndicesArray;
     IndicesCount : integer;
     Normals : PZVector3Array;
     TexCoords : PZVector2Array;
-    Colors : PInteger;
+    Colors : PMeshColorArray;
     Style : (msTris,msQuads);
+    CurrentRecursion : integer;
     {$ifndef minimal}
     BoundSphere :
       record
@@ -57,13 +66,17 @@ type
         Radius : single;
       end;
     {$endif}
-    destructor Destroy; override;
-    procedure Scale(const V : TZVector3f);
-    procedure MakeNet(XCount,YCount : integer);
-    procedure BeforeRender;
-    procedure CreateData(VQuantity,TQuantity : integer; WithTexCoords : boolean = False;
-      WithColors : boolean = False);
+    IsDynamic : boolean;   //True if vertices can be changed in runtime
     procedure ComputeNormals;
+    procedure CreateData(VQuantity, TQuantity: integer; WithTexCoords : boolean = False; WithColors : boolean = False);
+    procedure MakeNet(XCount, YCount: integer);
+    procedure Scale(const V: TZVector3f);
+    procedure BeforeRender;
+    destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    procedure DesignerCopyFrom(M: TMesh);
+    {$endif}
   end;
 
   TMeshProducer = class(TContentProducer)
@@ -110,7 +123,8 @@ type
     Expression : TZExpressionPropValue;
     V,N : TZVector3f;
     C : TZColorf;
-    AutoNormals,VertexColors : boolean;
+    TexCoord : TZVector2f;
+    AutoNormals,VertexColors,HasTexCoords : boolean;
   end;
 
   //Created by 3ds-import
@@ -122,6 +136,48 @@ type
     HasVertexColors : boolean;
     HasTextureCoords : boolean;
     MeshData : TZBinaryPropValue;
+  end;
+
+  //Combine the vertexes of two meshes
+  TMeshCombine = class(TMeshProducer)
+  protected
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+  end;
+
+  //Loads a copy of another mesh onto the stack
+  TMeshLoad = class(TMeshProducer)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+    Mesh : TMesh;
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+  end;
+
+  //Transforms the vertices of the incoming mesh
+  TMeshTransform = class(TMeshProducer)
+  protected
+    Matrix,NormalMatrix : TZMatrix4f;
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+  public
+    Position : TZVector3f;
+    Rotation : TZVector3f;
+    Accumulate : boolean;
+  end;
+
+  TMeshLoop = class(TMeshProducer)
+  protected
+    procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Count : integer;
+    RecursionCount : integer;
+    OnIteration : TZComponentList;
+    Iteration : integer;
+    Position : TZVector3f;
+    Rotation : TZVector3f;
   end;
 
   //State for models
@@ -139,16 +195,18 @@ type
     State : TModelState;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
-  TCollisionStyle = (csRect2D,csSphere3D,csBox3D,csRect2D_OBB);
-  TCollisionBounds =
+  TCollisionStyle = (csRect2D,csSphere3D,csBox3D,csRect2D_OBB,csCircle2D);
+  PCollisionCoordinates = ^TCollisionCoordinates;
+  TCollisionCoordinates =
     record
-      Rect : TZRectf;
-      Box : TZBox3D;
-      OBB : TOBB_2D;
+      case Integer of
+        0 : (Rect : TZRectf);
+        1 : (Box : TZBox3D);
+        2 : (OBB : TOBB_2D);
     end;
 
   TModel = class(TZComponent)
@@ -182,19 +240,23 @@ type
     Active : boolean;
     Personality : single;  //Varje instans har egen random "personlighet", som kan användas i expressions.
     LastPosition : TZVector3f;  //Används i collision
-
     UsePhysics : boolean;
     PhysicsIsRigid : boolean;
     PhysicsSize : TZVector3f;
     PhysicsGeoStyle : (pgsBox,pgsSphere,pgsMesh);
     PhysicsMesh : TMesh;
-
+    CollisionCoordinates : TCollisionCoordinates;
+    CollisionCoordinatesUpdatedTime : single;
+    RenderOrder : (roNormal,roDepthsorted);
+    SortKey : single; //Used when depthsorting models
+    ModelClassId : integer;
+    CollidedWith : TModel;
     procedure Update; override;        //anropas ej ifall active=false
-    procedure GetCollisionBounds(out Result : TCollisionBounds);
+    procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
+    procedure AddToScene;
     {$ifndef minimal}
     procedure DesignerUpdate;
-    procedure DesignerReset; override;
     {$endif}
     procedure RunRenderCommands;
     constructor Create(OwnerList: TZComponentList); override;
@@ -232,7 +294,7 @@ type
     UseSpawnerPosition : boolean;
     SpawnerIsParent : boolean;  //Spawned model becomes child to currentmodel
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRemoveModel = class(TCommand)
@@ -246,7 +308,7 @@ type
   public
     OfType : TModel;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
 
@@ -254,12 +316,22 @@ var
   CurrentModel : TModel;  //Set to the model that is currently updated
 
 
+{$ifndef minimal}
+const
+  CollisionStyleNames : array[0..4] of string =
+('Rect2D','Sphere3D','Box3D','Rect2D_OBB','Circle2D');
+{$endif}
+
 implementation
 
 uses ZMath, ZApplication
 {$ifndef minimal}, Animators, Renderer{$endif}
 {$ifdef zdebug}, ZLog, Sysutils{$endif}
 ;
+
+var
+  //Declare as "class var" in TModel when fpc supports static class variables
+  _NextModelClassId : integer;
 
 procedure ExecuteWithCurrentModel(M : TModel; CommandList : TZComponentList);
 var
@@ -329,6 +401,20 @@ begin
     VecNormalize3(Normals^[I]);
 end;
 
+procedure TMesh.Transform(const Matrix,NormalMatrix : TZMatrix4f);
+var
+  I : integer;
+  V : TZVector3f;
+begin
+  for I := 0 to Self.VerticesCount-1 do
+  begin
+    VecCopy3(Self.Vertices^[I],V);
+    VectorTransform(V,Matrix,Self.Vertices^[I]);
+    VecCopy3(Self.Normals^[I],V);
+    VectorTransform(V,NormalMatrix,Self.Normals^[I]);
+  end;
+end;
+
 procedure TMesh.CopyAndDestroy(Source: TContent);
 var
   M : TMesh;
@@ -346,6 +432,7 @@ begin
   TexCoords := M.TexCoords;
   Colors := M.Colors;
   Style := M.Style;
+  IsDynamic := M.IsDynamic;
   M.Vertices :=nil;
   M.Indices :=nil;
   M.Normals :=nil;
@@ -353,9 +440,32 @@ begin
   M.Colors :=nil;
   M.Free;
   {$ifdef zlog}
-  ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+  if CurrentRecursion=0 then
+  begin
+    if VerticesCount>=High(TMeshVertexIndex) then
+      ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
+    else if (not ZApp.DesignerIsRunning) then
+      ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+  end;
   {$endif}
 end;
+
+{$ifndef minimal}
+procedure TMesh.DesignerCopyFrom(M : TMesh);
+begin
+  FreeData;
+  CreateData(M.VerticesCount,M.IndicesCount div 3,M.TexCoords<>nil,M.Colors<>nil);
+  Move(M.Vertices^,Self.Vertices^,SizeOf(TZVector3f) * VerticesCount);
+  Move(M.Indices^,Self.Indices^,SizeOf(TMeshVertexIndex) * IndicesCount);
+  Move(M.Normals^,Self.Normals^,SizeOf(TZVector3f) * VerticesCount);
+  if M.TexCoords<>nil then
+    Move(M.TexCoords^,Self.TexCoords^,SizeOf(TZVector2f) * VerticesCount);
+  if M.Colors<>nil then
+    Move(M.Colors^,Self.Colors^,SizeOf(TMeshVertexColor) * VerticesCount);
+  IsChanged := False;
+  Producers.IsChanged := False;
+end;
+{$endif}
 
 procedure TMesh.CreateData(VQuantity, TQuantity: integer; WithTexCoords : boolean = False;
   WithColors : boolean = False);
@@ -381,13 +491,14 @@ begin
   if WithTexCoords then
     GetMem(TexCoords, SizeOf(TZVector2f) * VerticesCount);
   if WithColors then
-    GetMem(Colors, SizeOf(Integer) * VerticesCount);
+    GetMem(Colors, SizeOf(TMeshVertexColor) * VerticesCount);
+
+  //Use VBOs for larger meshes only
+  IsDynamic := TQuantity<1024;
 end;
 
 procedure TMesh.FreeData;
 begin
-  VerticesCount := 0;
-  IndicesCount := 0;
   if Vertices<>nil then
     FreeMem(Vertices);
   if Indices<>nil then
@@ -397,11 +508,33 @@ begin
   if TexCoords<>nil then
     FreeMem(TexCoords);
   if Colors<>nil then
-  begin
     FreeMem(Colors);
-    Colors := nil;
+
+  VerticesCount := 0;
+  IndicesCount := 0;
+  Vertices := nil;
+  Normals := nil;
+  TexCoords := nil;
+  Colors := nil;
+
+  if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
+  begin
+    glDeleteBuffersARB(2, @VboHandles);
+    VboHandles[0]:=0;
   end;
 end;
+
+{$ifndef minimal}
+procedure TMesh.DesignerFreeResources;
+begin
+  if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
+  begin
+    glDeleteBuffersARB(2, @VboHandles);
+    VboHandles[0]:=0;
+  end;
+  inherited;
+end;
+{$endif}
 
 destructor TMesh.Destroy;
 begin
@@ -410,6 +543,8 @@ begin
 end;
 
 procedure TMesh.BeforeRender;
+var
+  VertSize,NormSize,ColsSize,TexSize : integer;
 begin
   if (Vertices=nil) or (Producers.IsChanged) or (IsChanged) then
   begin
@@ -418,6 +553,68 @@ begin
     UpdateBounds;
     {$endif}
   end;
+
+  if ZOpenGL.VbosSupported and (not IsDynamic) then
+  begin
+
+    if Self.VboHandles[0]=0 then
+    begin
+      glGenBuffersARB(2, @VboHandles);
+
+      VertSize := VerticesCount * SizeOf(TZVector3f);
+      NormSize := VertSize;
+
+      if Colors<>nil then
+        ColsSize:= VerticesCount * SizeOf(TMeshVertexColor)
+      else
+        ColsSize:= 0;
+
+      if TexCoords<>nil then
+        TexSize:= VerticesCount * SizeOf(TZVector2f)
+      else
+        TexSize:= 0;
+
+      glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
+      glBufferDataARB(GL_ARRAY_BUFFER_ARB, VertSize + NormSize + ColsSize + TexSize, nil, STATIC_DRAW_ARB);
+
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, VertSize, Vertices);
+
+      VboOffsets[0] := VertSize;
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[0], NormSize, Normals);
+
+      VboOffsets[1]:=VboOffsets[0]+NormSize;
+      if ColsSize>0 then
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[1], ColsSize, Colors);
+
+      VboOffsets[2]:=VboOffsets[1]+ColsSize;
+      if TexSize>0 then
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[2], TexSize, TexCoords);
+
+      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
+      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, IndicesCount * SizeOf(TMeshVertexIndex), Indices, STATIC_DRAW_ARB);
+    end;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
+
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT,0,pointer(VboOffsets[0]));
+
+    if Colors<>nil then
+    begin
+      glEnableClientState(GL_COLOR_ARRAY);
+      glColorPointer(4,GL_UNSIGNED_BYTE,0,pointer(VboOffsets[1]));
+    end;
+
+    if TexCoords<>nil then
+    begin
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      glTexCoordPointer(2,GL_FLOAT,0,pointer(VboOffsets[2]));
+    end;
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3,GL_FLOAT,0,nil);
+  end;
+
 end;
 
 procedure TMesh.Scale(const V: TZVector3f);
@@ -470,13 +667,18 @@ begin
 
   Self.BoundSphere.Radius := sqrt(R);
 end;
+{$endif}
 
 procedure TMesh.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  {$ifndef minimal}
   List.GetByName('Producers').SetChildClasses([TMeshProducer]);
+  {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRecursion',{$ENDIF}integer(@CurrentRecursion), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
-{$endif}
 
 procedure TMesh.MakeNet(XCount, YCount: integer);
 var
@@ -554,61 +756,89 @@ end;
 
 { TModel }
 
+procedure TModel.AddToScene;
+begin
+  Self.Active:=True;
+  ZApp.AddModel( Self );
+  ExecuteWithCurrentModel(Self,Self.OnSpawn);
+  {$ifndef minimal}
+  //Clones should not increase classid
+  if not IsSpawnedAsReference then
+    Dec(_NextModelClassId);
+  {$endif}
+end;
+
 procedure TModel.Collision(Hit: TModel);
 begin
-  ZApp.EventState.CollidedCategory := Hit.Category;
-  Meshes.CurrentModel := Self;
-  OnCollision.ExecuteCommands;
-  if (CurrentState<>nil) then
-    CurrentState.OnCollision.ExecuteCommands;
+  Self.CollidedWith := Hit;
+  ExecuteWithCurrentModel(Self,Self.OnCollision);
+  if CurrentState<>nil then
+    ExecuteWithCurrentModel(Self,CurrentState.OnCollision);
 end;
 
 procedure TModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
-//    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}integer(@OnSpawn) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}integer(@OnRemove) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}integer(@OnCollision) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Velocity',{$ENDIF}integer(@Velocity) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}integer(@OnSpawn), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}integer(@OnRemove), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}integer(@OnCollision), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Velocity',{$ENDIF}integer(@Velocity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'RotationVelocity',{$ENDIF}integer(@RotationVelocity) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Category',{$ENDIF}integer(@Category) - integer(Self), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionBounds',{$ENDIF}integer(@CollisionBounds) - integer(Self), zptRectf);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionOffset',{$ENDIF}integer(@CollisionOffset) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionStyle',{$ENDIF}integer(@CollisionStyle) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Rect2D','Sphere3D','Box3D','Rect2D_OBB']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}integer(@Personality) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'RotationVelocity',{$ENDIF}integer(@RotationVelocity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Category',{$ENDIF}integer(@Category), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'CollisionBounds',{$ENDIF}integer(@CollisionBounds), zptRectf);
+  List.AddProperty({$IFNDEF MINIMAL}'CollisionOffset',{$ENDIF}integer(@CollisionOffset), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'CollisionStyle',{$ENDIF}integer(@CollisionStyle), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(CollisionStyleNames);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderOrder',{$ENDIF}integer(@RenderOrder), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Normal','Depthsorted']);{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'ClassId',{$ENDIF}integer(@ModelClassId), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CollidedWith',{$ENDIF}integer(@CollidedWith), zptComponentRef);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'UsePhysics',{$ENDIF}integer(@UsePhysics) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'PhysicsIsRigid',{$ENDIF}integer(@PhysicsIsRigid) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}integer(@Personality), zptFloat);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.DontClone := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+ List.AddProperty({$IFNDEF MINIMAL}'UsePhysics',{$ENDIF}integer(@UsePhysics), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsIsRigid',{$ENDIF}integer(@PhysicsIsRigid), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'PhysicsMass',{$ENDIF}integer(@PhysRig.Mass) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'PhysicsSize',{$ENDIF}integer(@PhysicsSize) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'PhysicsGeoStyle',{$ENDIF}integer(@PhysicsGeoStyle) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsMass',{$ENDIF}integer(@PhysRig.Mass), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsSize',{$ENDIF}integer(@PhysicsSize), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'PhysicsGeoStyle',{$ENDIF}integer(@PhysicsGeoStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Box','Sphere'{,'Mesh'}]);{$endif}
 //  List.AddProperty({$IFNDEF MINIMAL}'PhysicsMesh',{$ENDIF}integer(@PhysicsMesh) - integer(Self), zptComponentRef);
 //    {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
 end;
 
-procedure TModel.GetCollisionBounds(out Result: TCollisionBounds);
+procedure TModel.UpdateCollisionCoordinates;
 var
   W,H,A,S,C : single;
   Start : TZVector3f;
   I : integer;
+  Result : PCollisionCoordinates;
 begin
+  if Self.CollisionCoordinatesUpdatedTime=ZApp.Time then
+    Exit; //Only update once per frame
+  Self.CollisionCoordinatesUpdatedTime:=ZApp.Time;
+
+  Result := @Self.CollisionCoordinates;
+
   VecAdd3(CollisionOffset,Position, Start);
   case Self.CollisionStyle of
     csRect2D:
@@ -646,6 +876,12 @@ begin
         Result.OBB.U[0][1] := S;
         Result.OBB.U[1][0] := -S;
         Result.OBB.U[1][1] := C;
+      end;
+    csCircle2D :
+      begin
+        Result.Rect.Area[0] := Start[0];
+        Result.Rect.Area[1] := Start[1];
+        Result.Rect.Area[2] := CollisionBounds.Area[0] * Scale[0];
       end;
   end;
 end;
@@ -739,6 +975,7 @@ end;
 procedure TModel.RunRenderCommands;
 //Called from render.rendermodel
 begin
+  Meshes.CurrentModel := Self;
   OnRender.ExecuteCommands;
   if CurrentState<>nil then
     CurrentState.OnRender.ExecuteCommands;
@@ -751,12 +988,6 @@ begin
   //Update renderers: particlesystems, beams etc
   OnRender.Update;
 end;
-
-procedure TModel.DesignerReset;
-begin
-  inherited;
-//  OnRender.DesignerReset;
-end;
 {$endif}
 
 constructor TModel.Create(OwnerList: TZComponentList);
@@ -764,6 +995,8 @@ begin
   inherited Create(OwnerList);
   ChildModelRefs := TZArrayList.CreateReferenced;
   Personality := System.Random;
+  ModelClassId := _NextModelClassId;
+  Inc(_NextModelClassId);
 end;
 
 destructor TModel.Destroy;
@@ -783,9 +1016,9 @@ end;
 procedure TMeshSphere.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ZSamples',{$ENDIF}integer(@ZSamples) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ZSamples',{$ENDIF}integer(@ZSamples), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'RadialSamples',{$ENDIF}integer(@RadialSamples) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RadialSamples',{$ENDIF}integer(@RadialSamples), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
@@ -857,30 +1090,28 @@ begin
     begin
 //      RadialFraction := R*InvRS;  // in [0,1)
       Radial := Vector3f(afCos^[R],afSin^[R],0.0);
-      Mesh.Vertices^[I] := VecAdd3( SliceCenter, VecScalarMult3(Radial,SliceRadius) );
-
-      Normal := Mesh.Vertices^[I];
+      VecCopy3(VecAdd3( SliceCenter, VecScalarMult3(Radial,SliceRadius)), Mesh.Vertices^[I]);
+      VecCopy3(Mesh.Vertices^[I],Normal);
       VecNormalize3(Normal);
-
-      Mesh.Normals^[I] := Normal;
+      VecCopy3(Normal,Mesh.Normals^[I]);
       I := I +1;
     end;
 
-    Mesh.Vertices^[I] := Mesh.Vertices^[Save];
-    Mesh.Normals^[I] := Mesh.Normals^[Save];
+    VecCopy3(Mesh.Vertices^[Save],Mesh.Vertices^[I]);
+    VecCopy3(Mesh.Normals^[Save],Mesh.Normals^[I]);
 
     I := I + 1;
   end;
 
   // south pole
-  Mesh.Vertices^[I] := VecScalarMult3(UNIT_Z3,-Radius);
-  Mesh.Normals^[I] := VecScalarMult3(UNIT_Z3,-1);
+  VecCopy3(VecScalarMult3(UNIT_Z3,-Radius),Mesh.Vertices^[I]);
+  VecCopy3(VecScalarMult3(UNIT_Z3,-1),Mesh.Normals^[I]);
 
   I := I + 1;
 
   // north pole
-  Mesh.Vertices^[I] := VecScalarMult3(UNIT_Z3,Radius);
-  Mesh.Normals^[I] := UNIT_Z3;
+  VecCopy3(VecScalarMult3(UNIT_Z3,Radius),Mesh.Vertices^[I]);
+  VecCopy3(UNIT_Z3,Mesh.Normals^[I]);
 
 //  Assert( i == VQuantity );
 
@@ -913,7 +1144,6 @@ begin
     LocalIndex^[0] := i;
     LocalIndex^[1] := VQm2;
     LocalIndex^[2] := i+1;
-//    Inc(LocalIndex,3);
     LocalIndex := @LocalIndex^[3];
   end;
 
@@ -932,11 +1162,7 @@ begin
   FreeMem(afCos);
   FreeMem(afSin);
 
-//  Mesh.Scale( Vector3f(0.25,2,1) );
   Mesh.Scale( Self.Scale );
-
-//     Mesh.Normals := nil;
-//     Mesh.ComputeNormals;
 
   Stack.Push(Mesh);
 end;
@@ -946,11 +1172,11 @@ end;
 procedure TMeshNoise.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'NoiseSpeed',{$ENDIF}integer(@NoiseSpeed) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'NoiseScale',{$ENDIF}integer(@NoiseScale) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryX',{$ENDIF}integer(@SymmetryX) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryY',{$ENDIF}integer(@SymmetryY) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryZ',{$ENDIF}integer(@SymmetryZ) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'NoiseSpeed',{$ENDIF}integer(@NoiseSpeed), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'NoiseScale',{$ENDIF}integer(@NoiseScale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'SymmetryX',{$ENDIF}integer(@SymmetryX), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'SymmetryY',{$ENDIF}integer(@SymmetryY), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'SymmetryZ',{$ENDIF}integer(@SymmetryZ), zptBoolean);
 end;
 
 procedure TMeshNoise.ProduceOutput(Content : TContent; Stack: TZArrayList);
@@ -1004,20 +1230,24 @@ end;
 procedure TMeshExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source := '//V : current vertex'#13#10+
       '//N : current normal (turn off AutoNormals when modifying normals)'#13#10+
-      '//C : current color (turn on VertexColors)';
+      '//C : current color (turn on VertexColors)'#13#10 +
+      '//TexCoord : current texture coordinate (turn on HasTexCoords)';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}integer(@AutoNormals) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}integer(@AutoNormals), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'V',{$ENDIF}integer(@V) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasTexCoords',{$ENDIF}integer(@HasTexCoords), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'V',{$ENDIF}integer(@V), zptVector3f);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'N',{$ENDIF}integer(@N) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'N',{$ENDIF}integer(@N), zptVector3f);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'C',{$ENDIF}integer(@C) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'C',{$ENDIF}integer(@C), zptColorf);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord), zptVector3f);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -1025,7 +1255,8 @@ procedure TMeshExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   Mesh : TMesh;
   I : integer;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
+  PTex : PZVector2f;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
@@ -1034,19 +1265,30 @@ begin
 
   if VertexColors and (Mesh.Colors=nil) then
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
-  PColor := Mesh.Colors;
+  PColor := PMeshVertexColor(Mesh.Colors);
+
+  if HasTexCoords and (Mesh.TexCoords=nil) then
+    GetMem(Mesh.TexCoords,SizeOf(TZVector2f) * Mesh.VerticesCount);
+  PTex := pointer(Mesh.TexCoords);
 
   for I := 0 to Mesh.VerticesCount-1 do
   begin
-    VecCopy3(Mesh.Vertices^[I],V);
-    VecCopy3(Mesh.Normals^[I],N);
+    VecCopy3(Mesh.Vertices^[I],Self.V);
+    VecCopy3(Mesh.Normals^[I],Self.N);
+    if HasTexCoords then
+      PZVector2f(@Self.TexCoord)^ := PTex^;
     ZExpressions.RunCode(Expression.Code);
-    VecCopy3(V,Mesh.Vertices^[I]);
-    VecCopy3(N,Mesh.Normals^[I]);
+    VecCopy3(Self.V,Mesh.Vertices^[I]);
+    VecCopy3(Self.N,Mesh.Normals^[I]);
     if VertexColors then
     begin
       PColor^ := ColorFtoB(Self.C);
       Inc(PColor);
+    end;
+    if HasTexCoords then
+    begin
+      PTex^ := Self.TexCoord;
+      Inc(PTex);
     end;
   end;
 
@@ -1063,7 +1305,7 @@ end;
 procedure TMeshProducer.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
 end;
 
@@ -1079,18 +1321,18 @@ const
 procedure TSpawnModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Model',{$ENDIF}integer(@Model) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Model',{$ENDIF}integer(@Model), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     VecCopy3(ZMath.UNIT_XYZ3,List.GetLast.DefaultValue.Vector3fValue);
-  List.AddProperty({$IFNDEF MINIMAL}'SpawnStyle',{$ENDIF}integer(@SpawnStyle) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'SpawnStyle',{$ENDIF}integer(@SpawnStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(SpawnStyleNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'UseSpawnerPosition',{$ENDIF}integer(@UseSpawnerPosition) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SpawnerIsParent',{$ENDIF}integer(@SpawnerIsParent) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'UseSpawnerPosition',{$ENDIF}integer(@UseSpawnerPosition), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'SpawnerIsParent',{$ENDIF}integer(@SpawnerIsParent), zptBoolean);
 end;
 
 
@@ -1134,8 +1376,7 @@ begin
       //same model instance to model-list
     else
     begin
-      Spawned.Active:=True;
-      ZApp.AddModel( Spawned );
+      Spawned.AddToScene;
       if SpawnerIsParent then
       begin
         CurrentModel.ChildModelRefs.Add(Spawned);
@@ -1143,20 +1384,18 @@ begin
       end;
     end;
 
-    //CurrentModel must be spawned
-    ExecuteWithCurrentModel(Spawned,Spawned.OnSpawn);
   end;
 end;
 
 {$ifndef minimal}
-function TSpawnModel.GetDisplayName: String;
+function TSpawnModel.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Model) then
   begin
     Result := Result + '  ' + Model.Name;
     if Ord(SpawnStyle)<>0 then
-      Result := Result + ' (' + SpawnStyleNames[integer(SpawnStyle)] + ')';
+      Result := Result + ' (' + AnsiString(SpawnStyleNames[integer(SpawnStyle)]) + ')';
   end;
 end;
 {$endif}
@@ -1271,6 +1510,10 @@ begin
   for I := 0 to RemoveList.Count-1 do
   begin
     M := TModel(RemoveList[I]);
+    {$ifndef minimal}
+    //The user may have changed category in designer, guard against this
+    if Get(M.Category).IndexOf(M)>-1 then
+    {$endif}
     Get(M.Category).Remove(M);
     if M.IsSpawnedAsReference then
       //If referenced, remove from list to keep it from being freed below
@@ -1295,7 +1538,7 @@ end;
 procedure TRemoveAllModels.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OfType',{$ENDIF}integer(@OfType) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'OfType',{$ENDIF}integer(@OfType), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
 end;
 
@@ -1317,14 +1560,16 @@ begin
     for I := 0 to List.Count - 1 do
     begin
       M := TModel(List[I]);
-      if M is OfType.ClassType then
-        ZApp.Models.Remove(M);
+      //todo: all are of same class TModel, should test some other property
+      //now all of same category are removed
+      //if M is OfType.ClassType then
+      ZApp.Models.Remove(M);
     end;
   end;
 end;
 
 {$ifndef minimal}
-function TRemoveAllModels.GetDisplayName: String;
+function TRemoveAllModels.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(OfType) then
@@ -1337,7 +1582,7 @@ end;
 procedure TSetModelState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}integer(@State) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}integer(@State), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
 end;
 
@@ -1345,16 +1590,18 @@ procedure TSetModelState.Execute;
 var
   OldState : TModelState;
 begin
-  {$ifndef minimal}if (State=nil) or (CurrentModel=nil) then Exit;{$endif}
+  if CurrentModel=nil then
+    Exit;
   OldState := CurrentModel.CurrentState;
   CurrentModel.CurrentState := State;
   if OldState<>nil then
     OldState.OnLeave.ExecuteCommands;
-  State.OnStart.ExecuteCommands;
+  if State<>nil then
+    State.OnStart.ExecuteCommands;
 end;
 
 {$ifndef minimal}
-function TSetModelState.GetDisplayName: string;
+function TSetModelState.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(State) then
@@ -1368,7 +1615,7 @@ end;
 procedure TModelState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}integer(@OnCollision) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}integer(@OnCollision), zptComponentList);
 end;
 
 { TMeshBox }
@@ -1376,9 +1623,9 @@ end;
 procedure TMeshBox.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}integer(@XCount) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}integer(@YCount) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Grid2DOnly',{$ENDIF}integer(@Grid2DOnly) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}integer(@XCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}integer(@YCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Grid2DOnly',{$ENDIF}integer(@Grid2DOnly), zptBoolean);
 end;
 
 procedure TMeshBox.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1474,12 +1721,9 @@ end;
 procedure TMeshImport.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}integer(@MeshData) - integer(Self), zptBinary);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}integer(@HasVertexColors) - integer(Self), zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}integer(@HasTextureCoords) - integer(Self), zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}integer(@MeshData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}integer(@HasVertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}integer(@HasTextureCoords), zptBoolean);
 end;
 
 procedure TMeshImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1493,9 +1737,12 @@ var
   MinV,DiffV : TZVector3f;
   W : word;
   Sm,Sm2 : smallint;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
   PTex : PZVector2f;
 begin
+  if MeshData.Size=0 then
+    Exit;
+
   Stream := TZInputStream.CreateFromMemory(MeshData.Data,MeshData.Size);
 
   Stream.Read(VertCount,4);
@@ -1525,8 +1772,17 @@ begin
   //Indices
   IndP := pointer(Mesh.Indices);
   PrevIndP := IndP;
+  {$if sizeof(TMeshVertexIndex)=2}
   Stream.Read(IndP^,2*3);
   Inc(IndP,3);
+  {$else}
+  for I := 0 to 2 do
+  begin
+    Stream.Read(Sm,2);
+    IndP^:=Sm;
+    Inc(IndP);
+  end;
+  {$ifend}
   for I := 0 to ((TriCount-1)*3)-1 do
   begin
     Stream.Read(Sm,2);
@@ -1538,7 +1794,7 @@ begin
   //Vertex colors
   if Self.HasVertexColors then
   begin
-    PColor := Mesh.Colors;
+    PColor := PMeshVertexColor(Mesh.Colors);
     Stream.Read(PColor^,VertCount * 4);
   end;
 
@@ -1558,8 +1814,6 @@ begin
         PTex^[J] := Sm / High(Smallint);
       end;
     end;
-
-//    Stream.Read(PTex^,VertCount * 8);
   end;
 
   Mesh.Scale( Self.Scale );
@@ -1568,6 +1822,216 @@ begin
   Stream.Free;
 
   Stack.Push(Mesh);
+end;
+
+{ TMeshCombine }
+
+procedure TMeshCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  M,Mesh1,Mesh2 : TMesh;
+  CopyTex,CopyCols : boolean;
+  I : integer;
+begin
+  if Stack.Count<2 then
+    Exit;
+
+  Mesh1 := TMesh(Stack.Pop);
+  Mesh2 := TMesh(Stack.Pop);
+
+  M := TMesh.Create(nil);
+
+  CopyTex := (Mesh1.TexCoords<>nil) and (Mesh2.TexCoords<>nil);
+  CopyCols := (Mesh1.Colors<>nil) or (Mesh2.Colors<>nil);
+  M.CreateData(Mesh1.VerticesCount + Mesh2.VerticesCount,
+    (Mesh1.IndicesCount + Mesh2.IndicesCount) div 3,
+    CopyTex,CopyCols);
+
+  Move(Mesh1.Vertices^,M.Vertices^,Mesh1.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh2.Vertices^,M.Vertices^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector3f));
+
+  Move(Mesh1.Normals^,M.Normals^,Mesh1.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh2.Normals^,M.Normals^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector3f));
+
+  Move(Mesh1.Indices^,M.Indices^,Mesh1.IndicesCount * SizeOf(TMeshVertexIndex));
+  Move(Mesh2.Indices^,M.Indices^[Mesh1.IndicesCount],Mesh2.IndicesCount * SizeOf(TMeshVertexIndex));
+  for I := Mesh1.IndicesCount to M.IndicesCount - 1 do
+    Inc(M.Indices^[I],Mesh1.VerticesCount);
+
+  if CopyCols then
+  begin
+    if Mesh1.Colors<>nil then
+      Move(Mesh1.Colors^,M.Colors^,Mesh1.VerticesCount * SizeOf(TMeshVertexColor));
+    if Mesh2.Colors<>nil then
+      Move(Mesh2.Colors^,M.Colors^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TMeshVertexColor));
+  end;
+
+  if CopyTex then
+  begin
+    Move(Mesh1.TexCoords^,M.TexCoords^,Mesh1.VerticesCount * SizeOf(TZVector2f));
+    Move(Mesh2.TexCoords^,M.TexCoords^[Mesh1.VerticesCount],Mesh2.VerticesCount * SizeOf(TZVector2f));
+  end;
+
+  Stack.Push(M);
+
+  Mesh1.Free;
+  Mesh2.Free;
+end;
+
+{ TMeshLoad }
+
+procedure TMeshLoad.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}integer(@Mesh), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
+end;
+
+{$ifndef minimal}
+function TMeshLoad.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(Mesh) then
+    Result := Result + '  ' + Mesh.Name;
+end;
+{$endif}
+
+procedure TMeshLoad.ProduceOutput(Content: TContent; Stack: TZArrayList);
+var
+  M : TMesh;
+begin
+  if Mesh=nil then
+    Exit;
+
+  {$ifndef minimal}
+  if Mesh=Content then
+  begin
+    ZLog.GetLog(Self.ClassName).Warning('MeshLoad cannot load itself.');
+    Exit;
+  end;
+  {$endif}
+
+  M := TMesh.Create(nil);
+  Mesh.BeforeRender;
+  M.CreateData(Mesh.VerticesCount,Mesh.IndicesCount div 3,Mesh.TexCoords<>nil,Mesh.Colors<>nil);
+
+  Move(Mesh.Vertices^,M.Vertices^,Mesh.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh.Normals^,M.Normals^,Mesh.VerticesCount * SizeOf(TZVector3f));
+  Move(Mesh.Indices^,M.Indices^,Mesh.IndicesCount * SizeOf(TMeshVertexIndex));
+  if Mesh.TexCoords<>nil then
+    Move(Mesh.TexCoords^,M.TexCoords^,Mesh.VerticesCount * SizeOf(TZVector2f));
+  if Mesh.Colors<>nil then
+    Move(Mesh.Colors^,M.Colors^,Mesh.VerticesCount * SizeOf(TMeshVertexColor));
+
+  M.Scale( Self.Scale );
+
+  Stack.Push(M);
+end;
+
+{ TMeshTransform }
+
+procedure TMeshTransform.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Accumulate',{$ENDIF}integer(@Accumulate), zptBoolean);
+end;
+
+procedure TMeshTransform.ProduceOutput(Content : TContent; Stack: TZArrayList);
+var
+  Mesh : TMesh;
+begin
+  {$ifndef minimal}
+  if Stack.Count=0 then exit;
+  {$endif}
+  Mesh := TMesh(Stack.Pop);
+
+  if not Self.Accumulate then
+  begin
+    Self.Matrix := IdentityHmgMatrix;
+    Self.NormalMatrix := IdentityHmgMatrix;
+  end;
+
+  Self.Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Self.Matrix);
+  Self.NormalMatrix := MatrixMultiply(CreateTransform(Self.Rotation,UNIT_XYZ3,Vector3f(0,0,0)),Self.NormalMatrix);
+
+  Mesh.Transform(Matrix,NormalMatrix);
+
+  Stack.Push(Mesh);
+end;
+
+{ TMeshLoop }
+
+procedure TMeshLoop.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RecursionCount',{$ENDIF}integer(@RecursionCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration), zptInteger);
+    List.GetLast.NeverPersist:=True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+end;
+
+procedure TMeshLoop.ProduceOutput(Content : TContent; Stack: TZArrayList);
+var
+  Mesh : TMesh;
+  I : integer;
+  Matrix,NormalMatrix : TZMatrix4f;
+  Combiner : TMeshCombine;
+  CombineStack : TZArrayList;
+begin
+  Matrix := IdentityHmgMatrix;
+  NormalMatrix := IdentityHmgMatrix;
+
+  CombineStack := TZArrayList.CreateReferenced;
+  Combiner := TMeshCombine.Create(nil);
+
+  Self.Iteration := 0;
+  for I := 0 to Count-1 do
+  begin
+
+    if (RecursionCount>0) and (Self.Iteration=Count-1) then
+    begin
+      if TMesh(Content).CurrentRecursion>=RecursionCount then
+        Break
+      else
+      begin
+        Mesh := TMesh(Content.Clone);
+        Mesh.CurrentRecursion := TMesh(Content).CurrentRecursion + 1;
+        Mesh.RefreshFromProducers;
+        Stack.Push(Mesh);
+      end;
+    end else
+      OnIteration.ExecuteCommands;
+
+    Inc(Self.Iteration);
+
+    if (I>0) and (Stack.Count>0) then
+    begin
+      Mesh := TMesh(Stack.Pop);
+      Mesh.Transform(Matrix,NormalMatrix);
+
+      if (Stack.Count>0) then
+      begin
+        CombineStack.Clear;
+        CombineStack.Push(Mesh);
+        CombineStack.Push(Stack.Pop);
+        Combiner.ProduceOutput(nil,CombineStack);
+        Mesh := TMesh(CombineStack.Pop);
+      end;
+
+      Stack.Push(Mesh);
+    end;
+
+    Matrix := MatrixMultiply(CreateTransform(Self.Rotation,Self.Scale,Self.Position),Matrix);
+    NormalMatrix := MatrixMultiply(CreateTransform(Self.Rotation,UNIT_XYZ3,Vector3f(0,0,0)),NormalMatrix);
+  end;
+
+  CombineStack.Free;
+  Combiner.Free;
 end;
 
 initialization
@@ -1581,11 +2045,22 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
   ZClasses.Register(TMeshNoise,MeshNoiseClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TMeshExpression,MeshExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TMeshImport,MeshImportClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate := True;{$endif}
+  ZClasses.Register(TMeshCombine,MeshCombineClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 2;{$endif}
+  ZClasses.Register(TMeshLoad,MeshLoadClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+  ZClasses.Register(TMeshTransform,MeshTransformClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
+  ZClasses.Register(TMeshLoop,MeshLoopClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}
 
   ZClasses.Register(TModel,ModelClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 13;{$endif}
@@ -1602,7 +2077,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'States';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=19;{$endif}
   ZClasses.Register(TSetModelState,SetModelStateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
 
 end.
+

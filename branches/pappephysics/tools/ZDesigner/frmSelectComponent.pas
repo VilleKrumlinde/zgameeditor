@@ -74,7 +74,7 @@ procedure TSelectComponentForm.CompListViewCustomDrawItem(
   var DefaultDraw: Boolean);
 begin
   if EnabledList[Item.Index] then
-    CompListView.Canvas.Font.Color := clBlack
+    CompListView.Canvas.Font.Color := clWindowText
   else
     CompListView.Canvas.Font.Color := clGrayText;
 end;
@@ -103,9 +103,9 @@ end;
 procedure TSelectComponentForm.FilterBy(ParentComps, ParentLists : TStringList; const Prop : TZProperty);
 var
   Ci : TZComponentInfo;
-  I{,J} : integer;
+  I,J : integer;
   Item : TListItem;
-  {PassedFilter,}Enabled : boolean;
+  PassedFilter,Enabled : boolean;
 begin
   for I := 0 to CompListView.Items.Count - 1 do
   begin
@@ -116,8 +116,8 @@ begin
     if (Ci.NeedParentComp<>'') and (ParentComps.IndexOf(Ci.NeedParentComp)=-1) then
       Enabled := False;
 
-(*    if (Ci.NeedParentList<>'') and (ParentLists.IndexOf(Ci.NeedParentList)=-1) then
-      Enabled := False;
+//    if (Ci.NeedParentList<>'') and (ParentLists.IndexOf(Ci.NeedParentList)=-1) then
+//      Enabled := False;
 
     if High(Prop.ChildClasses)>-1 then
     begin
@@ -137,7 +137,7 @@ begin
       //If no filter, then it is toplevel.
  {     if Ci.NoTopLevelCreate then
         Continue;}
-    end;   *)
+    end;
 
     EnabledList[I] := Enabled;
   end;

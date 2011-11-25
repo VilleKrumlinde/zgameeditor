@@ -64,7 +64,7 @@ begin
 end;
 initialization
   TPicture.RegisterFileFormat('GIF', sGIFImageFile, TTinyGIFImage);
-  TPicture.RegisterFileFormat('JPG', 'JPEG Image', TTinyGIFImage);
+//  TPicture.RegisterFileFormat('JPG', 'JPEG Image', TTinyGIFImage);
 //  TPicture.RegisterFileFormat('PNG', 'PNG Image', TTinyGIFImage);
 finalization
   TPicture.UnregisterGraphicClass(TTinyGIFImage);

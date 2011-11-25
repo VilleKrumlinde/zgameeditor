@@ -108,7 +108,11 @@ CurrentModel.Scale.Y=Temp1;]]>
             </ZExpression>
           </OnUpdate>
         </Model>
-        <Material Name="CubeMaterial" Texture="CleanseBitmap" TexCoords="1"/>
+        <Material Name="CubeMaterial">
+          <Textures>
+            <MaterialTexture Texture="CleanseBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Bitmap Name="CleanseBitmap">
           <Producers>
             <BitmapFromFile>
@@ -122,7 +126,11 @@ CurrentModel.Scale.Y=Temp1;]]>
     </Group>
     <Group Comment="Particles">
       <Children>
-        <Material Name="ParticlesMaterial" Texture="ParticleBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1"/>
+        <Material Name="ParticlesMaterial" Color="1 1 1 1" Light="0" Blend="2">
+          <Textures>
+            <MaterialTexture Texture="ParticleBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Model Name="ParticleModel" RotationVelocity="0 0 0.1">
           <OnRender>
             <UseMaterial Material="ParticlesMaterial"/>
@@ -177,7 +185,11 @@ this.Pixel.A=Temp1*0.3;]]>
             </BitmapFromFile>
           </Producers>
         </Bitmap>
-        <Material Name="BackMaterial" Texture="BackBitmap" Color="1 1 1 0.58" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+        <Material Name="BackMaterial" Color="1 1 1 0.58" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="BackBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Model Name="BackModel" Position="0 0.5 0" Scale="6 8 1">
           <OnRender>
             <UseMaterial Material="BackMaterial"/>
@@ -226,7 +238,11 @@ BackMaterial.Color.A*=clamp(-7 + App.Time,0,1);]]>
           </Producers>
         </Bitmap>
         <Font Name="Font3" Bitmap="FontBitmap3" FirstChar="33" CharPixelWidth="8" CharPixelHeight="8" BorderPixels="1"/>
-        <Material Name="FontMaterial3" Texture="FontBitmap3" Color="0.42 0.42 0.42 1" Light="0" Blend="1" TexCoords="1" ZBuffer="0" Font="Font3"/>
+        <Material Name="FontMaterial3" Color="0.42 0.42 0.42 1" Light="0" Blend="1" ZBuffer="0" Font="Font3">
+          <Textures>
+            <MaterialTexture Texture="FontBitmap3" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Model Name="ScrollerModel">
           <Definitions>
             <DefineVariable Name="ScrollPos"/>
@@ -306,7 +322,11 @@ CurrentModel.Scale.Z=Temp2;*/]]>
             </ZExpression>
           </OnSpawn>
         </Model>
-        <Material Name="CirculatingMaterial" Texture="CirculatingBitmap" TextureScale="0.44 0.44 0.44" TextureX="-1.6" TextureY="0.44" Color="1 1 1 1"/>
+        <Material Name="CirculatingMaterial" Color="1 1 1 1">
+          <Textures>
+            <MaterialTexture Texture="CirculatingBitmap" TextureScale="0.44 0.44 0.44" TextureX="-1.6" TextureY="0.44"/>
+          </Textures>
+        </Material>
         <Mesh Name="CirculatingMesh">
           <Producers>
             <MeshSphere Scale="1.5 1.5 1.5"/>

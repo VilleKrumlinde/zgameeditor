@@ -28,30 +28,32 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
-  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, XPMan, ExtCtrls, ToolWin;
+  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
+  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
+  Jpeg, Vcl.Themes;
 
 type
-  TBuildBinaryKind = (bbNormal,bbScreenSaver,bbActiveX,bbNormalLinux,bbNormalOsx86);
+  TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
+    bbNormalLinux,bbNormalOsx86);
 
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
     Timer1: TTimer;
     LeftPanel: TPanel;
-    TreePanel: TPanel;
-    Panel1: TPanel;
+    TreePanel: TGroupBox;
     Splitter1: TSplitter;
     CustomPropEditorsPageControl: TPageControl;
     TabSheet1: TTabSheet;
     TrackBar1: TTrackBar;
     TabSheet2: TTabSheet;
-    PropEditorPanel: TPanel;
+    PropEditorPanel: TGroupBox;
     ViewerPanel: TPanel;
     Splitter2: TSplitter;
     Label1: TLabel;
     TabSheet3: TTabSheet;
     ExprCompileButton: TButton;
     Splitter3: TSplitter;
-    ExprPanel : TPanel;
+    ExprPanel: TGroupBox;
     ActionList1: TActionList;
     AddComponentAction: TAction;
     TreePopupMenu: TPopupMenu;
@@ -108,7 +110,6 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     ToolButton7: TToolButton;
-    XPManifest1: TXPManifest;
     FileOpenAction: TFileOpen;
     Open1: TMenuItem;
     ToolButton8: TToolButton;
@@ -160,8 +161,6 @@ type
     FileNewWindowAction: TAction;
     ExprHelpButton: TButton;
     ReopenMenuItem: TMenuItem;
-    GenerateActiveXAction: TAction;
-    BuildandcompressAciveX1: TMenuItem;
     Import3dsAction: TAction;
     Import3dsAction1: TMenuItem;
     N8: TMenuItem;
@@ -169,7 +168,7 @@ type
     ViewTranslateLabel: TLabel;
     ShaderTabSheet: TTabSheet;
     CompileShaderButton: TButton;
-    ShaderPanel: TPanel;
+    ShaderPanel: TGroupBox;
     Label6: TLabel;
     GenerateReleaseLinuxAction: TAction;
     BuildandcompressLinuxbinary1: TMenuItem;
@@ -182,6 +181,44 @@ type
     Findcomponent1: TMenuItem;
     NormalsCheckBox: TCheckBox;
     Panel4: TPanel;
+    ShowCompilerDetailsAction: TAction;
+    N10: TMenuItem;
+    N11: TMenuItem;
+    Panel2: TPanel;
+    N12: TMenuItem;
+    UndoDeleteAction: TAction;
+    Undodelete1: TMenuItem;
+    AddFromLibraryMenuItem: TMenuItem;
+    ViewerBitmapTabSheet: TTabSheet;
+    BitmapEditFrame1: TBitmapEditFrame;
+    Import3DSfile1: TMenuItem;
+    ViewerMeshTabSheet: TTabSheet;
+    MeshEditFrame1: TMeshEditFrame;
+    RemoveUnusedMenuItem: TMenuItem;
+    LogPopupMenu: TPopupMenu;
+    LogCopytoclipboardMenuItem: TMenuItem;
+    ForceRefreshAction: TAction;
+    Refresh1: TMenuItem;
+    Contents1: TMenuItem;
+    HelpContentsAction: TAction;
+    N13: TMenuItem;
+    DetailedBuildReportMenuItem: TMenuItem;
+    EditXmlAction: TAction;
+    EditasXML1: TMenuItem;
+    ToolButton14: TToolButton;
+    ToolButton17: TToolButton;
+    Edit1: TMenuItem;
+    Undodelete2: TMenuItem;
+    N14: TMenuItem;
+    DisableComponentAction: TAction;
+    Disablecomponent1: TMenuItem;
+    BoundsCheckBox: TCheckBox;
+    DisableShadersCheckBox: TCheckBox;
+    DisableFBOCheckBox: TCheckBox;
+    StyleMenuItem: TMenuItem;
+    OpenStyleMenuItem: TMenuItem;
+    N15: TMenuItem;
+    OpenStyleDialog: TOpenDialog;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -227,7 +264,6 @@ type
     procedure ForumsMenuItemsClick(Sender: TObject);
     procedure FileNewWindowActionExecute(Sender: TObject);
     procedure ExprHelpButtonClick(Sender: TObject);
-    procedure GenerateActiveXActionExecute(Sender: TObject);
     procedure Import3dsActionExecute(Sender: TObject);
     procedure CompileShaderButtonClick(Sender: TObject);
     procedure GenerateReleaseLinuxActionExecute(Sender: TObject);
@@ -236,16 +272,33 @@ type
     procedure ShowSettingsActionExecute(Sender: TObject);
     procedure FindComponentActionExecute(Sender: TObject);
     procedure NormalsCheckBoxClick(Sender: TObject);
+    procedure ShowCompilerDetailsActionExecute(Sender: TObject);
+    procedure UndoDeleteActionUpdate(Sender: TObject);
+    procedure UndoDeleteActionExecute(Sender: TObject);
+    procedure AddFromLibraryMenuItemClick(Sender: TObject);
+    procedure LogListBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure LogCopytoclipboardMenuItemClick(Sender: TObject);
+    procedure ForceRefreshActionExecute(Sender: TObject);
+    procedure ExprPanelClick(Sender: TObject);
+    procedure HelpContentsActionExecute(Sender: TObject);
+    procedure EditXmlActionExecute(Sender: TObject);
+    procedure DisableComponentActionExecute(Sender: TObject);
+    procedure DisableComponentActionUpdate(Sender: TObject);
+    procedure BoundsCheckBoxClick(Sender: TObject);
+    procedure DisableShadersCheckBoxClick(Sender: TObject);
+    procedure DisableFBOCheckBoxClick(Sender: TObject);
+    procedure OnChooseStyleMenuItemClick(Sender: TObject);
+    procedure OpenStyleMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
-    Glp : TCustomGLPanel;
     Selected,ShowNode : TZComponent;
     LockShow : boolean;
     Root : TZComponent;
     FloatEdit : TEdit;
     MinFloat,MaxFloat : single;
-    ExprEdit : TEdit;
+    ExprEditBox : TEdit;
     CurrentFileName : string;
     ExprSynEdit,ShaderSynEdit : TSynEdit;
     ViewRotate,ViewTranslate : TZVector3f;
@@ -257,11 +310,13 @@ type
     ExePath : string;
     RenderAborted : boolean;
     MruList : TStringList;
-    RendererInitCalled : boolean;
-    PredefinedConstants : TObjectList;
     PackerProg,PackerParams : string;
-    ShowOpCodes : boolean;
-    ZcGlobalNames : TObjectList;
+    GuiLayout : integer;
+    UndoNodes,UndoIndices : TObjectList;
+    UndoParent : TZComponentTreeNode;
+    SysLibrary : TZComponent;
+    AutoComp,ParamComp : TSynCompletionProposal;
+    Log : TLog;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -270,7 +325,7 @@ type
     procedure OnPropValueChange;
     procedure OnTreeSelectItem(Sender : TObject; Node : TTreeNode);
     procedure OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
-    function CompileAll : boolean;
+    function CompileAll(ThrowOnFail : boolean = False) : boolean;
     procedure ReadProjectSettingsFromIni;
     procedure WriteProjectSettingsToIni;
     procedure SetShowNode(Node : TZComponent);
@@ -278,8 +333,6 @@ type
     procedure OnTreeDragOver(Sender, Source: TObject; X, Y: Integer;
       State: TDragState; var Accept: Boolean);
     procedure OnTreeDragDrop(Sender, Source: TObject; X, Y: Integer);
-    procedure SetFileChanged(Value : Boolean);
-    procedure RefreshSymbolTable;
     procedure DoCompile(Node: TZComponentTreeNode;  const Expr: TZPropertyValue; Prop : TZProperty);
     procedure OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure OnGLPanelMouseDown(Sender: TObject; Button: TMouseButton;
@@ -289,35 +342,54 @@ type
     procedure OnGLPanelMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     function InsertAndRenameComponent(InsertC: TZComponent;
-      DestTreeNode: TZComponentTreeNode) : TZComponentTreeNode;
-    procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString);
+      DestTreeNode: TZComponentTreeNode; Index : integer = -1) : TZComponentTreeNode;
+    procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString; Level : TLogLevel);
     procedure OpenProject(const FileName: string);
     procedure NewProject;
     function CloseProject: boolean;
     procedure OnExprChanged(Sender: TObject);
     procedure BuildBinary(const PlayerName, OutputName: string);
     procedure ExecToolAndWait(const ExeFile, ParamString: string);
-    procedure BuildRelease(Kind : TBuildBinaryKind);
+    function BuildRelease(Kind : TBuildBinaryKind) : string;
     procedure ResetCamera;
     procedure ReadAppSettingsFromIni;
     procedure WriteAppSettingsToIni;
     function VerifyToolExists(const ToolName, ToolUrl, ExeFile : string): boolean;
     procedure SetCurrentFileName(const F : string);
-    procedure ReplaceResource(const ExeFile, OutFile, DataFile: string);
+    procedure ReplaceResource(const ExeFile, OutFile, DataFile: string; UseCodeRemoval : boolean);
     procedure RefreshMenuFromMruList;
     procedure OnMruItemClick(Sender: TObject);
-    procedure ReplaceActiveXGuid(const OutFile: string);
-    procedure BuildActiveXTypelibrary(const ClsGuid: TGUID; const OutFile: string);
-    procedure ReplaceTypeLibResource(const InFile, OutFile, DataFile: string);
+    procedure DrawOnRenderComponent;
+    procedure WipeUndoHistory;
+    procedure LoadSysLibrary;
+    procedure OnAddFromLibraryItemClick(Sender: TObject);
+    procedure AddNewComponentToTree(C: TZComponent);
+    procedure AutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure ParamAutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+    procedure OnShaderExprChanged(Sender: TObject);
+    procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
+    procedure OnGlInit(Sender: TObject);
+    procedure OnAppException(Sender: TObject; E: Exception);
+    procedure RemoveUnusedCode(Module: TPEModule);
+    procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
+    procedure ClearRoot;
+    procedure SetRoot(C: TZComponent);
+    procedure SaveCurrentEdits;
+    procedure BuildStyleMenu;
+    procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
   public
+    Glp : TGLPanel;
     Tree : TZComponentTreeView;
-    SymTab : TSymbolTable;
+    procedure SetFileChanged(Value : Boolean);
     //Custom editors
     procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
     procedure ShowExprEditor(Edit : TEdit);
     procedure ShowShaderEditor(Edit : TEdit);
     procedure HideEditor;
     procedure ValidateNewName(const OldName,NewName : string);
+    procedure FindComponentAndFocusInTree(const CName: string); overload;
+    procedure FindComponentAndFocusInTree(C: TZComponent); overload;
+    procedure RefreshCompEditorTreeNode;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -327,29 +399,32 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '1.9.4 *physics test*';
+  AppVersion = '2.0.1b Physics Edition';
   ZgeProjExtension = '.zgeproj';
 
 implementation
 
 {$R *.dfm}
 
-uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, ExprEdit, ZExpressions,
-  ShellApi, SynHighlighterCpp,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
-  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitPEFile,unitResourceDetails,
-  ActiveX, u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops;
+uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
+  ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
+  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
+  u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
 
 { TEditorForm }
 
 constructor TEditorForm.Create(AOwner: TComponent);
-var
-  Con : TDefineConstant;
 begin
   inherited Create(AOwner);
+  ZLog.SetReceiverFunc(OnReceiveLogMessage);
+
+  Self.Log := ZLog.GetLog(Self.ClassName);
+  Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
-  DecimalSeparator := '.';
+  FormatSettings.DecimalSeparator := '.';
 
   Ed := TZPropertyEditor.Create(Self);
   Ed.Align := alClient;
@@ -367,10 +442,15 @@ begin
   Tree.OnDragDrop := OnTreeDragDrop;
   Tree.DragMode := dmAutomatic;
   Tree.RightClickSelect := True;
+  Tree.MultiSelect := True;
+  Tree.MultiSelectStyle := [msControlSelect, msShiftSelect, msSiblingOnly];
 
-  Glp := TCustomGLPanel.Create(Self);
+  //InitAudio needs hwnd of main window to work
+  Platform_DesignerSetDC(0,Self.Handle);
+  Platform_InitAudio;
+
+  Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
-  Glp.Parent := ViewerGlTabSheet;
   Glp.OnGLDraw := Self.OnGlDraw;
   //Byt ut windowproc mot vår platform_windowproc
   OldGlWindowProc := Glp.WindowProc;
@@ -379,41 +459,68 @@ begin
   Glp.OnMouseUp := OnGLPanelMouseUp;
   Glp.OnMouseMove := OnGLPanelMouseMove;
   Glp.TabStop := True;
+  Glp.OnGlInit := Self.OnGlInit;
+  Glp.Parent := ViewerGlTabSheet;
+  Glp.ForceInitGL;
   //Mousewheel måste sättas på formuläret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
-
-  Platform_DesignerSetDC(Glp.Canvas.Handle, Glp.Handle);
-  Platform_InitAudio;
 
   ExePath := ExtractFilePath(Application.ExeName);
   SaveDialog.InitialDir := ExePath + 'Projects';
 
   ExprSynEdit := TSynEdit.Create(Self);
-  ExprSynEdit.Highlighter := TSynCppSyn.Create(Self);
   ExprSynEdit.Align := alClient;
   ExprSynEdit.Gutter.Visible := False;
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
+  ExprSynEdit.Highlighter := TSynZcSyn.Create(Self);
+  ExprSynEdit.WantTabs := True;
+  ExprSynEdit.TabWidth := 2;
+  ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
+  ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
+
+  //SynEdit autocompletion
+  AutoComp := TSynCompletionProposal.Create(Self);
+  AutoComp.Editor := ExprSynEdit;
+  AutoComp.EndOfTokenChr := '+-/*=()[]. ';
+  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.';
+  AutoComp.ShortCut := 16416;
+  AutoComp.OnExecute := AutoCompOnExecute;
+  AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
+  AutoComp.TimerInterval := 2000;
+
+  //SynEdit autocompletion for parameters
+  ParamComp := TSynCompletionProposal.Create(Self);
+  ParamComp.DefaultType := ctParams;
+  ParamComp.Options := [scoLimitToMatchedText, scoUseBuiltInTimer];
+  ParamComp.TriggerChars := '(';
+  ParamComp.EndOfTokenChr := '';
+  ParamComp.ShortCut := 24608;
+  ParamComp.Editor := ExprSynEdit;
+  ParamComp.OnExecute := ParamAutoCompOnExecute;
+  ParamComp.TimerInterval := 2000;
 
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
   ShaderSynEdit.Align := alClient;
   ShaderSynEdit.Gutter.Visible := False;
   ShaderSynEdit.Parent := ShaderPanel;
-  ShaderSynEdit.OnChange := OnExprChanged;
+  ShaderSynEdit.OnChange := OnShaderExprChanged;
+  ShaderSynEdit.WantTabs := True;
+  ShaderSynEdit.TabWidth := 2;
+  ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
+  ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 
-  SymTab := TSymbolTable.Create;
-
-  PredefinedConstants := TObjectList.Create(True);
-  Con := TDefineConstant.Create(nil);
-  Con.Name := 'PI';
-  Con.Value := PI;
-  PredefinedConstants.Add(Con);
+  Application.HelpFile := ExePath + 'ZGameEditor.chm';
 
   ResetCamera;
-
-  ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
   AboutAction.Caption := 'About ' + AppName;
 
@@ -421,24 +528,35 @@ begin
   MruList.StrictDelimiter := True;
   MruList.Duplicates := dupIgnore;
 
-  ZcGlobalNames := TObjectList.Create(True);
-
-  //öppna editor direkt
-  if (ParamCount=1) and FileExists(ParamStr(1)) then
-    OpenProject(ParamStr(1))
-  else
-    NewProject;
+  Platform_InitGlobals;  //Nollställ timer etc
 
   ReadAppSettingsFromIni;
 
   RefreshMenuFromMruList;
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
-  ShowOpCodes := DebugHook<>0;
+  ShowCompilerDetailsAction.Checked := DebugHook<>0;
+  DetailedBuildReportMenuItem.Visible := DebugHook<>0;
 
-  Platform_InitGlobals;  //Nollställ timer etc
+  UndoNodes := TObjectList.Create(True);
+  UndoIndices := TObjectList.Create(False);
+
+  BuildStyleMenu;
+
+  Application.OnException := OnAppException;
 
   Assert(Self.SoundEditFrame1.Osc1WaveformCombo.Items.Count>0,'Dåligt bygge: osc count=0');
+end;
+
+procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
+begin
+  if E is EZHalted then
+  begin
+    Log.Error(E.Message);
+    ZExpressions.ResetScriptState;
+  end
+  else
+    Application.ShowException(E);
 end;
 
 procedure TEditorForm.OnMruItemClick(Sender : TObject);
@@ -467,6 +585,8 @@ begin
 end;
 
 procedure TEditorForm.OpenProject(const FileName : string);
+var
+  C : TZComponent;
 
   function InNewProject : TZApplication;
   begin
@@ -482,13 +602,13 @@ begin
 
   if (FileName='') or (not FileExists(FileName)) then
   begin //New project
-    Root := InNewProject;
+    C := InNewProject;
     SetCurrentFileName('');
   end
   else
   begin
     try
-      Self.Root := ComponentManager.LoadXmlFromFile( FileName );
+      C := ComponentManager.LoadXmlFromFile( FileName );
     except
       on E : Exception do
         begin
@@ -502,15 +622,24 @@ begin
   end;
 
   //Assign ZApp-global to current application
-  ZApp := Root as TZApplication;
+  SetRoot(C);
 
+  //Read settings last. Must be after compileall because it selects nodes which
+  //will call RefreshContent that requires to have expressions already compiled.
+  ReadProjectSettingsFromIni;
+  Tree.Invalidate;
+end;
+
+procedure TEditorForm.SetRoot(C : TZComponent);
+begin
+  Self.Root := C;
+
+  ZApp := Root as TZApplication;
   Ed.RootComponent := Self.Root;
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
 
-  RefreshSymbolTable;
-
-//  Root.Update;
+  ZApp.RefreshSymbolTable;
 
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
@@ -518,10 +647,14 @@ begin
 
   ViewerPageControl.ActivePage := ViewerBlankTabSheet;
 
-  ReadProjectSettingsFromIni;
-
   //Must compile directly after load because no zc-instructions are saved in the xml
   CompileAll;
+
+  //Initial tree update. Must be after compileall.
+  //Slows down opening project but without this call the walls in FpsDemo
+  //become black when WallModel is selected.
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  Root.Update;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -548,40 +681,48 @@ begin
   ResetCamera;
 end;
 
-procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString);
-begin
-  while LogListBox.Items.Count>500 do
-    LogListBox.Items.Delete(0);
-  LogListBox.Items.AddObject(Mess,Log);
-  LogListBox.ItemIndex := LogListBox.Items.Count-1;
-  LogListBox.Repaint;
-end;
+type
+  TListLogItem = class
+  public
+    Level : TLogLevel;
+    Log : TLog;
+    Msg : string;
+  end;
 
-procedure TEditorForm.RefreshSymbolTable;
+procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
 var
-  List : TStringList;
   I : integer;
-  Con : TDefineConstant;
-begin
-  ZcGlobalNames.Clear;
-  SymTab.ClearAll;
+  Tmp : TStringList;
 
-  for I := 0 to PredefinedConstants.Count - 1 do
+  procedure InAddOne(const S : String);
+  var
+    Data : TListLogItem;
   begin
-    Con := TDefineConstant(PredefinedConstants[I]);
-    SymTab.Add(Con.Name,Con);
+    while LogListBox.Items.Count>2000 do
+    begin
+      LogListBox.Items.Objects[0].Free;
+      LogListBox.Items.Delete(0);
+    end;
+    Data := TListLogItem.Create;
+    Data.Log := Log;
+    Data.Msg := Mess;
+    Data.Level := Level;
+    LogListBox.Items.AddObject(S,Data);
   end;
-  SymTab.PushScope;
 
-  List := TStringList.Create;
-  try
-    //todo: skippa getobjectnames, den här rutinen ska själv loopa root
-    GetObjectNames(Root,List);
-    for I := 0 to List.Count-1 do
-      SymTab.Add( List[I], List.Objects[I] );
-  finally
-    List.Free;
+begin
+  if Pos(#10,Mess)=0 then
+    InAddOne(Mess)
+  else
+  begin
+    Tmp := TStringList.Create;
+    Tmp.Text := Mess;
+    for I := 0 to Tmp.Count - 1 do
+      InAddOne(Tmp[I]);
+    Tmp.Free;
   end;
+  LogListBox.ItemIndex := LogListBox.Items.Count-1;
+  LogListBox.Invalidate;
 end;
 
 procedure TEditorForm.ReadAppSettingsFromIni;
@@ -593,11 +734,38 @@ begin
   try
     Section := 'Designer';
 
-    S := Ini.ReadString(Section,'LastOpenedProject','');
-    if (S<>'') and (CurrentFileName='') and (not FindCmdLineSwitch('blank')) then
+    Self.Width := Max(Ini.ReadInteger(Section,'Width',Self.Width),100);
+    Self.Height := Max(Ini.ReadInteger(Section,'Height',Self.Height),100);
+    if Ini.ReadBool(Section,'IsMaximized',False) then
+      Self.WindowState:=wsMaximized;
+
+    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',0),1);
+    if GuiLayout=0 then
     begin
-      CloseProject;
-      OpenProject(S);
+      PropEditorPanel.Parent := LeftPanel;
+      PropEditorPanel.Align := alBottom;
+      TreePanel.Align := alClient;
+      Splitter3.Parent := LeftPanel;
+      Splitter3.Align := alBottom;
+      Splitter3.Cursor := crVSplit;
+      PropEditorPanel.Height := Self.Height div 2;
+    end;
+
+    S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
+    if S<>TStyleManager.ActiveStyle.Name then
+      SwitchToStyle(S,nil);
+
+    if (ParamCount=1) and FileExists(ParamStr(1)) then
+      OpenProject(ParamStr(1))
+    else
+    begin
+      S := Ini.ReadString(Section,'LastOpenedProject','');
+      if (S<>'') and (CurrentFileName='') and (not FindCmdLineSwitch('blank')) then
+      begin
+        CloseProject;
+        OpenProject(S);
+      end else
+        NewProject;
     end;
 
     S := Ini.ReadString(Section,'LastOpenedPath', '');
@@ -608,50 +776,67 @@ begin
     S := Ini.ReadString(Section,'MruList', '');
     MruList.CommaText := S;
 
-    Self.Width := Max(Ini.ReadInteger(Section,'Width',Self.Width),100);
-    Self.Height := Max(Ini.ReadInteger(Section,'Height',Self.Height),100);
-    if Ini.ReadBool(Section,'IsMaximized',False) then
-      Self.WindowState:=wsMaximized;
-
     LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
     LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
+    LeftPanel.Width := Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20);
 
-    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}kkrunchy.exe');
+    Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
+
+    Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
+    Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
   finally
     Ini.Free;
   end;
 end;
 
+procedure TEditorForm.WipeUndoHistory;
+begin
+  UndoNodes.Clear;
+  UndoIndices.Clear;
+  UndoParent := nil;
+end;
+
 procedure TEditorForm.WriteAppSettingsToIni;
 var
   Ini : TIniFile;
-  Section,S : string;
+  Section,S,FName : string;
 begin
-  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
+  FName := ChangeFileExt(Application.ExeName,'.ini');
+  Ini := TIniFile.Create( FName );
   try
-    Section := 'Designer';
-    Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
+    try
+      Section := 'Designer';
+      Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
 
-    S := ExtractFilePath(CurrentFileName);
-    if S='' then
-      S:= ExtractFilePath(FileOpenAction.Dialog.FileName);
-    if S<>'' then
-      Ini.WriteString(Section,'LastOpenedPath',S);
+      Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
-    Ini.WriteInteger(Section,'Width',Self.Width);
-    Ini.WriteInteger(Section,'Height',Self.Height);
+      S := ExtractFilePath(CurrentFileName);
+      if S='' then
+        S:= ExtractFilePath(FileOpenAction.Dialog.FileName);
+      if S<>'' then
+        Ini.WriteString(Section,'LastOpenedPath',S);
 
-    Ini.WriteBool(Section,'IsMaximized', Self.WindowState=wsMaximized);
+      Ini.WriteInteger(Section,'Width',Self.Width);
+      Ini.WriteInteger(Section,'Height',Self.Height);
 
-    Ini.WriteString(Section,'MruList', MruList.CommaText);
+      Ini.WriteBool(Section,'IsMaximized', Self.WindowState=wsMaximized);
 
-    Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
-    Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
+      Ini.WriteString(Section,'MruList', MruList.CommaText);
 
-    Ini.WriteString(Section,'PackerProg', Self.PackerProg);
-    Ini.WriteString(Section,'PackerParams', Self.PackerParams);
+      Ini.WriteInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height);
+      Ini.WriteInteger(Section,'LogPanel.Width',LogPanel.Width);
+      Ini.WriteInteger(Section,'LeftPanel.Width',LeftPanel.Width);
 
+      Ini.WriteString(Section,'PackerProg', Self.PackerProg);
+      Ini.WriteString(Section,'PackerParams', Self.PackerParams);
+
+      Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
+
+      Ini.WriteString(Section,'Style', TStyleManager.ActiveStyle.Name);
+    except
+      ShowMessage('Could not save settings to file: ' + FName);
+    end;
   finally
     Ini.Free;
   end;
@@ -743,17 +928,52 @@ begin
   end;
 end;
 
+procedure TEditorForm.OnGlInit(Sender: TObject);
+var
+  P : PAnsiChar;
+  I : integer;
+begin
+  Renderer.InitRenderer;
+
+  DisableShadersCheckBox.Enabled := ShadersSupported;
+  DisableFBOCheckBox.Enabled := FbosSupported;
+
+  if not ShadersSupported then
+    Log.Write('GL shaders not supported')
+  else
+  begin
+    P := glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if P<>nil then
+      Log.Write('GL shaders: ' + P)
+  end;
+  if not MultiTextureSupported then
+    Log.Write('GL multitexture not supported')
+  else
+  begin
+    glGetIntegerv(GL_MAX_TEXTURE_UNITS,@I);
+    Log.Write('GL texture units: ' + IntToStr(I))
+  end;
+  if not VbosSupported then
+    Log.Write('GL VBOs not supported');
+  if not FbosSupported then
+    Log.Write('GL FBOs not supported');
+end;
+
 procedure TEditorForm.OnGlDraw(Sender: TObject);
 begin
   if ShowNode=nil then
     Exit;
 
+  //Set window size to make sure camera ratio calculations are correct
+  if ZApp<>nil then
+  begin
+    ZApp.ScreenWidth := Glp.Width;
+    ZApp.ScreenHeight := Glp.Height;
+  end;
+
   if (ShowNode is TZApplication) and (IsAppRunning) then
   begin
     try
-      //Set window size to make sure camera ratio calculations are correct
-      ZApplication.ScreenWidth := Glp.Width;
-      ZApplication.ScreenHeight := Glp.Height;
       //Update app
       (ShowNode as TZApplication).Main;
     except
@@ -767,51 +987,89 @@ begin
   else if not RenderAborted then
   begin
     //Gör update på hela trädet för att prop-ändringar skall slå igenom
-    Root.Update;
+//    Root.Update;
+    ShowNode.Update;
 
+    glViewport(0, 0, Glp.Width, Glp.Height);
+
+    //todo: delphi 2010 needs this line
+    Set8087CW($133F);
     ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[2],-1) );
 
-    if not RendererInitCalled then
-    begin
-      Renderer.InitRenderer;
-      RendererInitCalled := True;
-    end;
-    glViewport(0, 0, Glp.Width, Glp.Height);
-
-    //ShowNode.Update;
     if {(ShowNode is TBitmapProducer) or }(ShowNode is TZBitmap)then
       DrawZBitmap
     else if {(ShowNode is TMeshProducer) or }(ShowNode is TMesh) then
       DrawMesh
     else if (ShowNode is TModel) then
       DrawModel
+    else if ((ShowNode is TStateBase) or (ShowNode is TZApplication))then
+      DrawOnRenderComponent
     else
     begin
       //Prevent displaying junk
-      glClearColor(0.5,0.5,0.5,0);
+      glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     end;
   end;
 end;
 
 procedure TEditorForm.SelectComponent(C: TZComponent);
+var
+  OldFocus : TWinControl;
+
+  function InCheckForGraphParent : boolean;
+  //Do not change shownode if parent is bitmap or mesh
+  //This will keep the graph-diagram visible while editing producers
+  var
+    CurParent : TZComponentTreeNode;
+  begin
+    Result := False;
+    if Tree.ZSelected=nil then
+      Exit;
+    CurParent := Tree.ZSelected.Parent as TZComponentTreeNode;
+    while CurParent<>nil do
+    begin
+      if (CurParent.Component is TZBitmap) or (CurParent.Component is TMesh) then
+      begin
+        Result := True;
+        Exit;
+      end;
+      CurParent := CurParent.Parent as TZComponentTreeNode;
+    end;
+  end;
+
 begin
   Selected := C;
-  if not LockShow then
+  if (not LockShow) and (not InCheckForGraphParent) then
     SetShowNode(Selected);
   Ed.SetComponent(C);
   RenderAborted := False;
   ViewerPanel.Refresh;
-//  if Assigned(Ed.WantsFocus) and Ed.WantsFocus.CanFocus and Ed.Parent.Enabled and Visible then
-//    Ed.WantsFocus.SetFocus;
+  if (C<>nil) and Assigned(Ed.WantsFocus) and
+    Ed.WantsFocus.CanFocus and
+    Ed.Parent.Enabled and
+    Visible and
+    (Self.ActiveControl<>Ed.WantsFocus)
+    then
+  begin
+    //Focus editor to make code-editor visible
+    //Then focus back to tree to make tree-navigation with cursorkeys possible
+    OldFocus := Self.ActiveControl;
+    Ed.WantsFocus.SetFocus;
+    if Assigned(OldFocus) and (OldFocus.Visible) then
+      Self.ActiveControl := OldFocus;
+  end;
 end;
 
 procedure TEditorForm.SetShowNode(Node : TZComponent);
 begin
   if CompEditor<>nil then
     CompEditor.OnEditorClose;
+
+  if IsAppRunning and (not (Node is TZApplication)) then
+    AppPreviewStopAction.Execute;
 
   CompEditor := nil;
   CompEditorTreeNode := nil;
@@ -827,14 +1085,24 @@ begin
     ViewerPageControl.ActivePage := ViewerMusicTabSheet;
     CompEditor := MusicEditFrame1;
   end
-  else if (ShowNode is TZBitmap) or
-    (ShowNode is TMesh) or
-    (ShowNode is TZApplication) or
-    (ShowNode is TModel) then
+  else if ShowNode is TZBitmap then
   begin
-    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh);
+    ViewerPageControl.ActivePage := ViewerBitmapTabSheet;
+    CompEditor := BitmapEditFrame1;
+  end
+  else if ShowNode is TMesh then
+  begin
+    ViewerPageControl.ActivePage := ViewerMeshTabSheet;
+    CompEditor := MeshEditFrame1;
+  end
+  else if {(ShowNode is TZBitmap) or}
+    {(ShowNode is TMesh) or}
+    (ShowNode is TZApplication) or
+    (ShowNode is TModel) or
+    (ShowNode is TStateBase) then
+  begin
+    RotateModelPanel.Visible := (ShowNode is TModel) or (ShowNode is TMesh);// or (ShowNode is TStateBase);
     AppControlPanel.Visible := ShowNode is TZApplication;
-//  ZLog.GetLog(Self.ClassName).Write( inttostr(byte(AppControlPanel.Visible)));
     ViewerPageControl.ActivePage := ViewerGlTabSheet;
     ResetCamera;
   end
@@ -877,30 +1145,64 @@ end;
 procedure TEditorForm.FindComponentActionExecute(Sender: TObject);
 var
   S : string;
+begin
+  if InputQuery('Find component','Enter name of component to search for',S) then
+    FindComponentAndFocusInTree(S);
+end;
+
+procedure TEditorForm.DoChangeTreeFocus(var Message : TMessage);
+var
+  Node : TZComponentTreeNode;
+begin
+  Node := TZComponentTreeNode(Message.LParam);
+  Node.Expand(True);
+  Tree.Selected := Node;
+  Tree.SetFocus;
+end;
+
+procedure TEditorForm.FindComponentAndFocusInTree(const CName : string);
+var
   C : TZComponent;
+begin
+  C := Zapp.SymTab.Lookup(CName) as TZComponent;
+  if C<>nil then
+    FindComponentAndFocusInTree(C);
+end;
+
+procedure TEditorForm.FindComponentAndFocusInTree(C : TZComponent);
+var
   I : integer;
   Node : TZComponentTreeNode;
 begin
-  if InputQuery('Find component','Enter name of component to search for',S) then
+  {
+    Find a component then post a win-message to change focus.
+    This is neccessary because this method is called from controls in the
+    property-editor, and those controls are destroyed when changing tree-focus
+    causing access violation.
+  }
+  for I := 0 to Tree.Items.Count-1 do
   begin
-    C := SymTab.Lookup(S) as TZComponent;
-    if C<>nil then
+    Node := Tree.Items[I] as TZComponentTreeNode;
+    if Node.Component=C then
     begin
-      for I := 0 to Tree.Items.Count-1 do
-      begin
-        Node := Tree.Items[I] as TZComponentTreeNode;
-        if Node.Component=C then
-        begin
-          Node.Expand(True);
-          Tree.Selected := Node;
-          Break;
-        end;
-      end;
+      PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
+      Break;
     end;
   end;
 end;
 
+procedure TEditorForm.ForceRefreshActionExecute(Sender: TObject);
+begin
+  if Assigned(Tree.ZSelected.ComponentList) then
+    Tree.ZSelected.ComponentList.Change
+  else if Assigned(Tree.ZSelected.Component) then
+    Tree.ZSelected.Component.Change;
+  Glp.Invalidate;
+end;
+
 procedure TEditorForm.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  I : integer;
 begin
   Action := caFree;
 
@@ -912,6 +1214,12 @@ begin
   Self.RemoveComponent(ShaderSynEdit);
   ShaderSynEdit.Free;
   ShaderSynEdit:=nil;
+
+  for I := 0 to LogListBox.Items.Count - 1 do
+  begin
+    LogListBox.Items.Objects[I].Free;
+    LogListBox.Items.Objects[I] := nil;
+  end;
 end;
 
 procedure TEditorForm.OnPropValueChange;
@@ -926,25 +1234,26 @@ end;
 procedure TEditorForm.OnTreeSelectItem(Sender: TObject; Node : TTreeNode);
 begin
   if (Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>nil) then
-  begin
-    SelectComponent( Tree.ZSelected.Component );
-    if GetAsyncKeyState(VK_SHIFT)<0 then
-      LockShowAction.Execute;
-  end
+    SelectComponent( Tree.ZSelected.Component )
   else
     //Dölj property editor om ingen component är selectad
     Ed.SetComponent(nil);
 end;
 
+procedure TEditorForm.RefreshCompEditorTreeNode;
+begin
+  Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
+  CompEditor.TreeNode.Expand(False);
+  CompEditor.NeedRefreshTreeNode := False;
+  SetFileChanged(True);
+end;
 
 procedure TEditorForm.OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
 begin
   //Körs innan selected byts
   if (CompEditor<>nil) and CompEditor.NeedRefreshTreeNode then
   begin
-    Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
-    SetFileChanged(True);
-    CompEditor.NeedRefreshTreeNode := False;
+    RefreshCompEditorTreeNode();
     AllowChange:=False;
     Exit;
   end;
@@ -953,6 +1262,13 @@ begin
   if IsAppRunning and (not LockShow) then
     AppPreviewStopAction.Execute;
 
+  SaveCurrentEdits;
+
+  AllowChange:=True;
+end;
+
+procedure TEditorForm.SaveCurrentEdits;
+begin
   if Assigned(ActiveControl) and
     (ActiveControl is TEdit) and
     Assigned((ActiveControl as TEdit).OnExit) then
@@ -960,18 +1276,17 @@ begin
     (ActiveControl as TEdit).OnExit(ActiveControl)
   else if ActiveControl=ExprSynEdit then
   begin
-    //Spara expression
-    if ExprCompileButton.Enabled then ExprCompileButton.Click;
   end
   else if ActiveControl=ShaderSynEdit then
   begin
-    //Spara shader
-    if CompileShaderButton.Enabled then CompileShaderButton.Click;
   end;
 
-  AllowChange:=True;
-end;
+  //Save expression
+  if ExprCompileButton.Enabled then ExprCompileButton.Click;
 
+  //Save shader
+  if CompileShaderButton.Enabled then CompileShaderButton.Click;
+end;
 
 procedure TEditorForm.SaveBinaryMenuItemClick(Sender: TObject);
 var
@@ -1163,7 +1478,7 @@ begin
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-    if WireframeCheckBox.Checked then
+    if MeshEditFrame1.WireframeCheckBox.Checked then
       glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
     else
       SetupGLShading;
@@ -1191,6 +1506,39 @@ begin
 end;
 
 
+procedure TEditorForm.DrawOnRenderComponent;
+var
+  OnRender : TZComponentList;
+begin
+  OnRender := nil;
+  if ShowNode is TStateBase then
+    OnRender := (ShowNode as TStateBase).OnRender
+  else if (ShowNode is TZApplication) then
+    OnRender := (ShowNode as TZApplication).OnRender;
+
+  if OnRender=nil then
+    Exit;
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  try
+    ZApp.DesignerSetUpView;
+
+    Renderer.Render_Begin;
+    try
+      OnRender.ExecuteCommands;
+    except
+      on E : EZHalted do
+      begin //Detect errors in onrender-list
+        RenderAborted := True;
+        raise;
+      end;
+    end;
+    Renderer.Render_End;
+  finally
+    glPopAttrib();
+  end;
+end;
+
 procedure TEditorForm.DrawModel;
 var
   Model : TModel;
@@ -1209,7 +1557,7 @@ begin
 
   glShadeModel(GL_SMOOTH);
 
-  glClearColor(0.5,0.5,0.5,0);
+  glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -1246,7 +1594,6 @@ begin
     end
     else
     begin
-      ZApp.Clock.DeltaTime := 0;
       ZApp.DeltaTime := 0;
     end;
     Renderer.Render_Begin;
@@ -1269,10 +1616,38 @@ begin
 end;
 
 procedure TEditorForm.Timer1Timer(Sender: TObject);
+var
+  H : HWND;
 begin
-  //Only draw when topmost
-  if GetActiveWindow=Handle then
+  //Only draw when topmost (or editing arrays)
+  H := GetActiveWindow;
+  if ((H=Handle) or (Assigned(ArrayEditForm) and (H=ArrayEditForm.Handle)))
+     and (Glp.Tag=0) then
     Glp.Invalidate;
+end;
+
+procedure TEditorForm.UndoDeleteActionExecute(Sender: TObject);
+var
+  C : TZComponent;
+  Index : integer;
+begin
+  while UndoNodes.Count>0 do
+  begin
+    C := UndoNodes[UndoNodes.Count-1] as TZComponent;
+    UndoNodes.Extract( C );
+
+    Index := Integer(UndoIndices[UndoIndices.Count-1]);
+    UndoIndices.Delete(UndoIndices.Count-1);
+
+    InsertAndRenameComponent(C,UndoParent,Index);
+  end;
+
+  WipeUndoHistory;
+end;
+
+procedure TEditorForm.UndoDeleteActionUpdate(Sender: TObject);
+begin
+  UndoDeleteAction.Enabled := UndoNodes.Count>0;
 end;
 
 procedure TEditorForm.Update1Click(Sender: TObject);
@@ -1288,11 +1663,30 @@ end;
 destructor TEditorForm.Destroy;
 begin
   inherited;
-  SymTab.Free;
   MruList.Free;
-  PredefinedConstants.Free;
-  ZcGlobalNames.Free;
   Renderer.CleanUp;
+  UndoNodes.Free;
+  UndoIndices.Free;
+  SysLibrary.Free;
+end;
+
+procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
+var
+  CurParent: TZComponentTreeNode;
+begin
+  CurParent := Node.Parent as TZComponentTreeNode;
+  Model := nil;
+  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
+  //så att den kan användas i uttryck.
+  while CurParent <> nil do
+  begin
+    if Assigned(CurParent.Component) and (CurParent.Component is TModel) then
+    begin
+      Model := CurParent.Component as TModel;
+      Break;
+    end;
+    CurParent := CurParent.Parent as TZComponentTreeNode;
+  end;
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
@@ -1357,15 +1751,25 @@ begin
   FloatEdit := Edit;
 end;
 
+procedure TEditorForm.HelpContentsActionExecute(Sender: TObject);
+begin
+  Application.HelpContext(1);
+end;
+
 procedure TEditorForm.HideEditor;
 begin
   CustomPropEditorsPageControl.ActivePageIndex := 0;
 end;
 
+procedure TEditorForm.ShowCompilerDetailsActionExecute(Sender: TObject);
+begin
+  ShowCompilerDetailsAction.Checked := not ShowCompilerDetailsAction.Checked;
+end;
+
 procedure TEditorForm.ShowExprEditor(Edit: TEdit);
 begin
-  ExprEdit := Edit;
-  ExprEdit.ReadOnly := True;
+  ExprEditBox := Edit;
+  ExprEditBox.ReadOnly := True;
   ExprSynEdit.Text := Edit.Text;
   ExprCompileButton.Enabled := False;
   CustomPropEditorsPageControl.ActivePageIndex := 2;
@@ -1379,11 +1783,15 @@ begin
   try
     F.PackerEdit.Text := Self.PackerProg;
     F.PackerParamsEdit.Text := Self.PackerParams;
-
+    F.GuiLayoutCombo.ItemIndex := Self.GuiLayout;
+    F.UpDown1.Position := Self.AutoComp.TimerInterval;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
       Self.PackerParams := F.PackerParamsEdit.Text;
+      Self.GuiLayout := F.GuiLayoutCombo.ItemIndex;
+      Self.AutoComp.TimerInterval := F.UpDown1.Position;
+      Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
     end;
   finally
     F.Free;
@@ -1392,8 +1800,8 @@ end;
 
 procedure TEditorForm.ShowShaderEditor(Edit: TEdit);
 begin
-  ExprEdit := Edit;
-  ExprEdit.ReadOnly := True;
+  ExprEditBox := Edit;
+  ExprEditBox.ReadOnly := True;
   ShaderSynEdit.Text := Edit.Text;
   CompileShaderButton.Enabled := False;
   CustomPropEditorsPageControl.ActivePage := ShaderTabSheet;
@@ -1402,14 +1810,19 @@ end;
 procedure TEditorForm.OnExprChanged(Sender: TObject);
 begin
   ExprCompileButton.Enabled := True;
+end;
+
+procedure TEditorForm.OnShaderExprChanged(Sender: TObject);
+begin
   CompileShaderButton.Enabled := True;
 end;
 
 procedure TEditorForm.CompileShaderButtonClick(Sender: TObject);
 begin
+  CompileShaderButton.Enabled := False;
   //Spara ändrad text i edit-ruta
-  ExprEdit.Text := TrimRight(ShaderSynEdit.Text);
-  ExprEdit.OnExit(ExprEdit);
+  ExprEditBox.Text := TrimRight(ShaderSynEdit.Text);
+  ExprEditBox.OnExit(ExprEditBox);
 end;
 
 procedure TEditorForm.ExprCompileButtonClick(Sender: TObject);
@@ -1420,161 +1833,102 @@ var
   Success : boolean;
   I : integer;
 begin
+  ExprCompileButton.Enabled := False;
   //Spara ändrad text i edit-ruta
-  ExprEdit.Text := TrimRight(ExprSynEdit.Text);
-  ExprEdit.OnExit(ExprEdit);
+  ExprEditBox.Text := TrimRight(ExprSynEdit.Text);
+  ExprEditBox.OnExit(ExprEditBox);
   //Propvärde har nu sparats i component
   //Läs tillbaka propvärde för kompilering
   C := Selected;
-  Prop := C.GetProperties.GetByName(ExprEdit.Hint);
+  Prop := C.GetProperties.GetByName(ExprEditBox.Hint);
   C.GetProperty(Prop,PropValue);
   Success:=False;
   try
-    if C is TZLibrary then
-      Success := CompileAll
+    if (C is TZLibrary) or (C is TZExternalLibrary) then
+      CompileAll(True)
     else
-    begin
       DoCompile(Tree.ZSelected,PropValue,Prop);
-      Success:=True;
-    end;
+    Success:=True;
   except
     on E : EParseError do
     begin
-      ExprSynEdit.CaretXY := Point(E.Col-1,E.Line);
-      ExprSynEdit.BlockBegin := Point(0,E.Line);
-      ExprSynEdit.BlockEnd := Point(0,E.Line+1);
+      ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
+      ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
+      ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
       ExprSynEdit.SetFocus;
       //ShowMessage( E.Message );
       CompileErrorLabel.Caption := E.Message;
-      ZLog.GetLog(Self.ClassName).Write(E.Message);
+      Log.Write(E.Message);
     end;
     on E : ECodeGenError do
     begin
       CompileErrorLabel.BevelKind := bkTile;
       CompileErrorLabel.Caption := E.Message;
-      ZLog.GetLog(Self.ClassName).Write(E.Message);
+      Log.Write(E.Message);
     end;
   end;
 //  Tree.RefreshNode(Tree.Selected,Selected);
   if Success then
   begin
-    ExprCompileButton.Enabled := False;
     CompileErrorLabel.Caption := '';
     CompileErrorLabel.BevelKind := bkNone;
-    if ShowOpCodes then
+    if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
+      ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
       for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
-        ZLog.GetLog(Self.ClassName).Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+        Log.Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
   end;
 end;
 
 procedure TEditorForm.ExprHelpButtonClick(Sender: TObject);
 begin
-  uHelp.ShowHelp('Main/WritingExpressions');
+  HtmlHelp(0,Application.HelpFile + '::writingexpressions.html', HH_DISPLAY_TOPIC, 0);
+//  uHelp.ShowHelp('Main/WritingExpressions');
+end;
+
+procedure TEditorForm.ExprPanelClick(Sender: TObject);
+var
+  X : integer;
+begin
+  X := LowerRightPanel.Height;
+  LowerRightPanel.Height := Panel2.Height;
+  Panel2.Height := X;
 end;
 
 procedure TEditorForm.DoCompile(Node : TZComponentTreeNode; const Expr : TZPropertyValue; Prop : TZProperty);
-var
-  C : TZComponent;
-  CurParent : TZComponentTreeNode;
-  Model : TModel;
 begin
-  if Prop.IsDefaultValue(Expr) then
-  begin
-    //Generate no code for an empty expression
-    Expr.ExpressionValue.Code.Clear;
-    Exit;
-  end;
+  ZApp.CompileProperty(Node.Component,Expr,Prop);
+end;
 
-  C := Node.Component;
-  CurParent := Node.Parent as TZComponentTreeNode;
-  Model := nil;
-  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
-  //så att den kan användas i uttryck.
-  while CurParent<>nil do
-  begin
-    if Assigned(CurParent.Component) and
-      (CurParent.Component is TModel) then
-    begin
-      Model := CurParent.Component as TModel;
-      Break;
-    end;
-    CurParent := CurParent.Parent as TZComponentTreeNode;
-  end;
-  if Assigned(Model) then
-    SymTab.Add('CurrentModel',Model);
+function TEditorForm.CompileAll(ThrowOnFail : boolean = False) : boolean;
+var
+  Node : TZComponentTreeNode;
+begin
+  Result := True;
   try
-    Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
-  finally
-    if Assigned(Model) then
-      SymTab.Remove('CurrentModel');
+    ZApp.Compile;
+  except
+    on E : EZcErrorBase do
+    begin
+      if ThrowOnFail then
+        raise
+      else
+      begin
+        Node := Tree.FindNodeForComponent(E.Component);
+        ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
+        Node.Expand(True);
+        Tree.Selected := Node;
+        Result := False;
+      end;
+    end;
   end;
 end;
 
-function TEditorForm.CompileAll : boolean;
-var
-  I,J,CompiledCount : integer;
-  Node : TZComponentTreeNode;
-  C : TZComponent;
-  Prop : TZProperty;
-  PropValue : TZPropertyValue;
-  PropList : TZPropertyList;
-  Success : boolean;
+procedure TEditorForm.BoundsCheckBoxClick(Sender: TObject);
 begin
-  CompiledCount := 0;
-  Tree.Items.BeginUpdate;
-  Success := True;
-
-  for I := 0 to ZcGlobalNames.Count - 1 do
-  begin
-    //Remove user function names from symtab
-    if SymTab.Contains(TZcOpFunction(ZcGlobalNames[I]).Id) then
-      SymTab.Remove(TZcOpFunction(ZcGlobalNames[I]).Id);
-  end;
-  ZcGlobalNames.Clear;
-
-  try
-    I := 0;
-    while I<Tree.Items.Count do
-    begin
-      Node := Tree.Items[I] as TZComponentTreeNode;
-      if Assigned(Node.Component) then
-      begin
-        C := Node.Component;
-        PropList := C.GetProperties;
-        for J := 0 to PropList.Count-1 do
-        begin
-          Prop := TZProperty(PropList[J]);
-          if Prop.PropertyType=zptExpression then
-          begin
-            C.GetProperty(Prop,PropValue);
-            //Compile(C,PropValue.ExpressionValue,Root,SymTab);
-            try
-              DoCompile(Node,PropValue,Prop);
-            except on E : Exception do
-              begin
-                ShowMessage( 'Error in expression for node: ' + Node.Component.GetDisplayName + ' '#13 + E.Message );
-                Node.Expand(True);
-                Tree.Selected := Node;
-                Success := False;
-              end;
-            end;
-            //Ifall expressioninstruktioner visas så måste träd refreshas
-            //Men då tar omkompilering 5 sekunder
-  //          Tree.RefreshNode(Node,C);
-            Inc(CompiledCount);
-          end;
-        end;
-      end;
-      Inc(I);
-    end;
-  finally
-    Tree.Items.EndUpdate;
-  end;
-  ZLog.GetLog(Self.ClassName).Write('Compiled expressions: ' + IntToStr(CompiledCount));
-  Result := Success;
+  Renderer.CollisionBoundsVisible := (Sender as TCheckBox).Checked;
 end;
 
 procedure TEditorForm.BuildBinary(const PlayerName,OutputName : string);
@@ -1587,6 +1941,10 @@ begin
   IsPiggy := (PlayerName<>'');
   if not CompileAll then
     Exit;
+
+  //Set the NoSound-flag if no sound is used, this means we can remove all audio code later
+  ZApp.NoSound := FindInstanceOf(Self.Root, TSound)=nil;
+
   M2 := ComponentManager.SaveBinaryToStream(Root) as TMemoryStream;
   M1 := TMemoryStream.Create;
   try
@@ -1601,37 +1959,21 @@ begin
     M1.Free;
     M2.Free;
   end;
-  ZLog.GetLog(Self.ClassName).Write('File generated: ' + OutputName);
-end;
-
-procedure TEditorForm.GenerateActiveXActionExecute(Sender: TObject);
-begin
-  BuildRelease(bbActiveX);
+  Log.Write('File generated: ' + OutputName);
 end;
 
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
 begin
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.exe'
-  else
-    OutFile := ChangeFileExt(CurrentFileName,'.exe');
-  BuildBinary('player.bin',OutFile);
+  OutFile := BuildRelease(bbNormalUncompressed);
   //Kör den skapade filen
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TEditorForm.GenerateScreenSaverActionExecute(Sender: TObject);
-var
-  OutFile : string;
 begin
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.scr'
-  else
-    OutFile := ChangeFileExt(CurrentFileName,'.scr');
-  BuildBinary('player_ss.bin',OutFile);
-  ShowMessage('Created file: ' + OutFile);
+  BuildRelease(bbScreenSaverUncompressed);
 end;
 
 function TEditorForm.VerifyToolExists(const ToolName,ToolUrl,ExeFile : string) : boolean;
@@ -1651,12 +1993,67 @@ begin
     Result := True;
 end;
 
+procedure TEditorForm.EditXmlActionExecute(Sender: TObject);
+var
+  F : TXmlEditForm;
+  Sa : AnsiString;
+  Su : string;
+  Stream : TMemoryStream;
+  SymTemp : TSymbolTable;
+  C : TZComponent;
+begin
+  Stream := ComponentManager.SaveXmlToStream(Self.Root) as TMemoryStream;
+  try
+    SetLength(Sa,Stream.Size);
+    Stream.Position := 0;
+    Stream.Read(Sa[1],Stream.Size);
+  finally
+    Stream.Free;
+  end;
+  if not Assigned(XmlEditForm) then
+    XmlEditForm := TXmlEditForm.Create(Self);
+  F := XmlEditForm;
+  SymTemp := TSymbolTable.Create;
+  try
+    F.SynEdit.Text := String(Sa);
+    F.SynEdit.Modified := False;
+    repeat
+      if (F.ShowModal=mrOk) and F.SynEdit.Modified then
+      begin
+        Su := F.SynEdit.Text;
+        SymTemp.ClearAll;
+        C := nil;
+        try
+          C := ComponentManager.LoadXmlFromString(Su,SymTemp);
+          if not (C is TZApplication) then
+            raise Exception.Create('Root component must be ZApplication');
+        except
+          on E : Exception do
+          begin
+            ShowMessage(E.ToString);
+            C.Free;
+            Continue;
+          end;
+        end;
+
+        ClearRoot;
+        SetRoot(C);
+        SetFileChanged(True);
+      end;
+
+      Break;
+    until False;
+  finally
+    SymTemp.Free;
+  end;
+end;
+
 procedure TEditorForm.ExecToolAndWait(const ExeFile,ParamString : string);
 var
   SEInfo: TShellExecuteInfo;
   ExitCode: DWORD;
 begin
-  ZLog.GetLog(Self.ClassName).Write(ExeFile + ' ' + ParamString);
+  Log.Write(ExeFile + ' ' + ParamString);
   FillChar(SEInfo, SizeOf(SEInfo), 0) ;
   SEInfo.cbSize := SizeOf(TShellExecuteInfo) ;
   with SEInfo do
@@ -1678,7 +2075,8 @@ begin
     ShowMessage('Error ' + ExeFile);
 end;
 
-procedure TEditorForm.ReplaceResource(const ExeFile,OutFile,DataFile : string);
+
+procedure TEditorForm.ReplaceResource(const ExeFile,OutFile,DataFile : string; UseCodeRemoval : boolean);
 var
   M : TPEResourceModule;
   R : TResourceDetails;
@@ -1687,7 +2085,7 @@ var
 begin
   M := TPEResourceModule.Create;
   try
-    M.LoadFromFile( ExeFile );
+    M.LoadFromFile( AnsiString(ExeFile) );
 
     R := M.FindResource('10','DATA_FILE',1053);
     Assert(R<>nil);
@@ -1701,18 +2099,18 @@ begin
     end;
 
     //Remove the other two resource (packageinfo), saves about 1kb
-    //todo: remove more resources if ocx
     if ExtractFileExt(OutFile)<>'.ocx' then
     begin
       R := M.FindResource('10','DVCLAL',0);
       if R<>nil then
-        M.DeleteResource(M.IndexOfResource(R));
+        M.DeleteResource(M.IndexOfResource(R))
+      else
+        Log.Warning('Resource not found');
       R := M.FindResource('10','PACKAGEINFO',0);
       if R<>nil then
-        M.DeleteResource(M.IndexOfResource(R));
-
-//      M.DeleteResource(1);
-//      M.DeleteResource(1);
+        M.DeleteResource(M.IndexOfResource(R))
+      else
+        Log.Warning('Resource not found');
     end;
 
     if not ZApp.ShowOptionsDialog then
@@ -1739,187 +2137,80 @@ begin
       //IconR.LoadImage(ExePath + 'test.ico');
     end;
 
-    M.SaveToFile( OutFile );
+    if UseCodeRemoval then
+      RemoveUnusedCode(M);
+
+    //Important, otherwise Win7 won't recognize program icon
+    M.SortResources;
+
+    M.SaveToFile( AnsiString(OutFile) );
   finally
     M.Free;
   end;
 end;
 
-procedure TEditorForm.ReplaceTypeLibResource(const InFile,OutFile,DataFile : string);
-var
-  M : TPEResourceModule;
-  R : TResourceDetails;
-  NewData : TMemoryStream;
+procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
 begin
-  M := TPEResourceModule.Create;
-  try
-    M.LoadFromFile( InFile );
-
-    R := M.FindResource('TYPELIB','1',0);
-    Assert(R<>nil);
-
-    NewData := TMemoryStream.Create;
-      NewData.LoadFromFile(DataFile);
-      R.ChangeData(NewData);
-    NewData.Free;
-
-    M.SaveToFile( OutFile );
-  finally
-    M.Free;
-  end;
+  GoUrl( (Sender as TTaskDialog).URL );
 end;
 
-procedure TEditorForm.BuildActiveXTypelibrary(const ClsGuid : TGUID; const OutFile : string);
-const
-//  ZClsGuid : TGUID = '{49F96FB9-0D7F-4E4E-ADBC-442EAB031529}';
-  ZIntGuid : TGUID = '{8C1FB6F5-666A-44D3-A98C-8B24C1B13CE1}';
-  ITypeInfoGuid : TGUID = '{00020401-0000-0000-C000-000000000046}';
-  IDispatchGuid : TGUID = '{00020400-0000-0000-C000-000000000046}';
+procedure ShowMessageWithLink(const S1,S2 : string);
 var
-  LibGUID : TGUID;
-  Tlb : ICreateTypeLib2;
-  StdOleTlb : ITypeLib;
-  Cls,Intf: ICreateTypeInfo;
-  IntfTypeInfo,DispatchTypeInfo  : ITypeInfo;
-  RefType : HRefType;
+  D: TTaskDialog;
+  M : TMethod;
 begin
-  //Create typelib
-  CoCreateGuid(LibGUID);
-  CreateTypeLib2(SYS_WIN32, StringToOleStr(OutFile), Tlb);
-
-  Tlb.SetGuid(LibGUID);
-  Tlb.SetLcid(0);
-  Tlb.SetName('ZgeActiveX');
-
-  //Create reference to IDispatch in stdole32
-  LoadTypeLib('stdole32.tlb',StdOleTlb);
-  StdOleTlb.GetTypeInfoOfGuid(IDispatchGuid,DispatchTypeInfo);
-
-  //Create interface. Must inherit IDispatch.
-  Tlb.CreateTypeInfo('IZgeActiveXControl', TKIND_INTERFACE, Intf);
-  Intf.SetGuid(ZIntGuid);
-  Intf.AddRefTypeInfo(DispatchTypeInfo, RefType);
-  Intf.AddImplType(0,RefType);
-  Intf.QueryInterface(ITypeInfoGuid,IntfTypeInfo);
-
-  //Create coclass. Implements IZgeActiveXControl.
-  Tlb.CreateTypeInfo('ZgeActiveXControl', TKIND_COCLASS, Cls);
-//  ClsGuid := ZClsGuid;
-  Cls.SetGuid(ClsGUID);
-  Cls.SetTypeFlags(TYPEFLAG_FCANCREATE);
-
-  Cls.AddRefTypeInfo(IntfTypeInfo, RefType);
-  Cls.AddImplType(0,RefType);
-  Cls.SetImplTypeFlags(0,IMPLTYPEFLAG_FDEFAULT);
-
-  Tlb.SaveAllChanges;
-end;
-
-procedure TEditorForm.ReplaceActiveXGuid(const OutFile : string);
-const
-  OriginalG : TGUID = '{49F96FB9-0D7F-4E4E-ADBC-442EAB031529}';
-  HtmlPage : string =
-'<HTML>'#13#10 +
-'<H1> Sample page for using the "%s" ActiveX-control </H1><p>'#13#10 +
-'<a href="http://www.google.com">Google</a>  <a href="http://www.zgameeditor.org">ZGameEditor</a>'#13#10 +
-'<HR><center><P>'#13#10 +
-'<OBJECT'#13#10 +
-'   classid="clsid:%s"'#13#10 +
-'   codebase="%s#Version=-1,-1,-1,-1"'#13#10 +
-'   width=800'#13#10 +
-'   height=600'#13#10 +
-'   align=center'#13#10 +
-'   hspace=0'#13#10 +
-'   vspace=0'#13#10 +
-'>'#13#10 +
-'</OBJECT>'#13#10 +
-'</HTML>'#13#10;
-var
-  Mem : TMemorySTream;
-  I,ReplaceCount : integer;
-  P : PChar;
-  NewG : TGUID;
-  NewGBuf : array[0..100] of WideChar;
-  NewGString,S : string;
-  TempTlbFile : string;
-begin
-  //Every ZGE-application must have its own guid, otherwise IE will not
-  //load another ocx with the same guid.
-
-  //New GUID for the player.
-  CoCreateGuid(NewG);
-
-  //Rebuild and replace the typelibrary within the player-module
-  //(cannot do a binary replace inside a typelibrary so we must rebuild it)
-  TempTlbFile := ExePath + 'temp.tlb';
-  BuildActiveXTypelibrary(NewG,TempTlbFile);
-  ReplaceTypeLibResource(OutFile,OutFile,TempTlbFile);
-  DeleteFile(TempTlbFile);
-  //Delete backupfile generated by resource-code
-  DeleteFile(ChangeFileExt(OutFile,'.~ocx'));
-
-  //Binary replace of the oldguid to the new
-  Mem := TMemoryStream.Create;
-  try
-    Mem.LoadFromFile(OutFile);
-    P := Mem.Memory;
-    ReplaceCount := 0;
-    for I := 0 to Mem.Size - SizeOf(TGUID) - 1 do
-    begin
-      if CompareMem(@OriginalG,P,SizeOf(TGUID)) then
-      begin
-        Move(NewG,P^,SizeOf(TGUID));
-        Inc(ReplaceCount);
-      end;
-      Inc(P);
+  if (Win32MajorVersion >= 6) then
+  begin
+    //Display dialog with hyperlinks on Vista or higher
+    D := TTaskDialog.Create(nil);
+    try
+      D.Flags := [tfEnableHyperlinks,tfUseHiconMain];
+      D.Text := S1 + #13#13 + S2;
+      D.CommonButtons := [tcbOk];
+      D.Title := AppName;
+      D.Caption := AppName;
+      D.CustomMainIcon := Application.Icon;
+      M.Data := D;
+      M.Code := @OnTaskdialogHyperlinkClick;
+      D.OnHyperlinkClicked := TNotifyEvent(M);
+      D.Execute;
+    finally
+      D.Free;
     end;
-    Assert(ReplaceCount>0);
-    Mem.SaveToFile(OutFile);
-
-    //Genereate HTM-page with the new GUID
-    StringFromGUID2(NewG,NewGBuf,39);
-    NewGString := Copy(WideCharToString(NewGBuf),2,36);
-    S := Format(HtmlPage,[ ExtractFileName(OutFile), NewGString, ExtractFileName(OutFile) ]);
-    Mem.Clear;
-    Mem.Write(pointer(S)^,Length(S));
-    Mem.SaveToFile(ChangeFileExt(OutFile,'.htm'));
-  finally
-    Mem.Free;
-  end;
+  end else
+    //Display without hyperlinks
+    ShowMessage(S1);
 end;
 
-procedure TEditorForm.BuildRelease(Kind : TBuildBinaryKind);
+function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
   OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
   ToolPath : string;
-  UsePiggyback : boolean;
+  UsePiggyback,UseCodeRemoval : boolean;
 
-  function InGetSize : integeR;
+  function InGetSize : integer;
   var
     Handle : THandle;
   begin
-    Handle := FileOpen(PChar(OutFile),fmOpenRead);
+    Handle := FileOpen(OutFile,fmOpenRead or fmShareDenyNone);
     Result := GetFileSize(Handle,nil);
     FileClose(Handle);
   end;
 
 begin
   UsePiggyback := False;
+  UseCodeRemoval := False;
   case Kind of
-    bbNormal :
+    bbNormal, bbNormalUncompressed :
       begin
         Ext := 'exe';
         PlayerName := ExePath + 'player.bin';
+        UseCodeRemoval := RemoveUnusedMenuItem.Checked;
       end;
-    bbScreenSaver :
+    bbScreenSaver, bbScreenSaverUncompressed :
       begin
         Ext := 'scr';
-        PlayerName := ExePath + 'player_ss.bin'
-      end;
-    bbActiveX :
-      begin
-        Ext := 'ocx';
-        PlayerName := ExePath + 'player_activex.bin';
+        PlayerName := ExePath + 'player_ss.bin';
       end;
     bbNormalLinux :
       begin
@@ -1946,57 +2237,52 @@ begin
 
   if UsePiggyback then
   begin
+    if not FileExists(ExePath + PlayerName) then
+    begin
+      ShowMessage('Player file missing for chosen platform (they are not included in the ZGE beta version).');
+      Exit;
+    end;
     BuildBinary(PlayerName,OutFile);
   end
   else
   begin
     TempFile := ExePath + 'temp.dat';
     BuildBinary('',TempFile);
-    ReplaceResource(PlayerName,OutFile,TempFile);
+    ReplaceResource(PlayerName,OutFile,TempFile,UseCodeRemoval);
     DeleteFile(TempFile);
   end;
 
-  if Kind=bbActiveX then
-    ReplaceActiveXGuid(OutFile);
-
-  //Kör upx på allt utom Linux (linuxbinärer med piggyback hanteras ej av upx)
-  if (Kind<>bbNormalLinux) and (Kind<>bbNormalOsx86) then
+  //linuxbinärer med piggyback hanteras ej av upx
+  if Kind in [bbNormal,bbScreenSaver] then
   begin
     //Upx -v %1
     ToolPath := ExePath + 'tools\';
 
-//    Tool := ToolPath + 'upx.exe';
     Tool := StringReplace(PackerProg,'{$toolpath}',ToolPath,[rfReplaceAll, rfIgnoreCase]);
     if not VerifyToolExists('Packer','',Tool) then
       Exit;
-//    ToolParams := '-v "' + OutFile + '"';
+
     ToolParams := StringReplace(PackerParams,'{$exename}','"' + OutFile + '"',[rfReplaceAll, rfIgnoreCase]);
     ExecToolAndWait(Tool,ToolParams);
   end;
 
-  //Need to update filedate, the file created by reshacker has same date as original
-  FileSetDate(OutFile,DateTimeToFileDate(Now));
+  case Kind of
+    bbNormalUncompressed: ;
+    bbNormal,bbScreenSaver,bbScreenSaverUncompressed :
+      ShowMessageWithLink('Created file: '#13#13 + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb',
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' );
+    bbNormalLinux:
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+    bbNormalOsx86:
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+  end;
 
-  if Kind=bbActiveX then
-  begin
-    case Application.MessageBox( PChar('Created files: '#13#13 +
-      OutFile + #13 +
-      ChangeFileExt(OutFile,'.htm') + #13#13 +
-      'Size: ' + IntToStr(InGetSize div 1024) + ' kb' + #13#13 +
-      'Click YES to open the html-file in Internet Explorer to test the ActiveX-control.')
-       ,
-      PChar(Caption), MB_YESNO) of
-      IDYES : ShellExecute(Handle, 'open',  PChar('iexplore.exe'), PChar(ChangeFileExt(OutFile,'.htm')), nil, SW_SHOWDEFAULT);
-      IDNO : ;
-    end;
-{    ShowMessage('Created files: '#13#13 +
-      O
-      utFile + #13 +
-      ChangeFileExt(OutFile,'.htm') + #13#13 +
-      'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
-    ShellExecute(Handle, 'open',  PChar('iexplore.exe'), PChar(ChangeFileExt(OutFile,'.htm')), nil, SW_SHOWDEFAULT);}
-  end else
-    ShowMessage('Created file: '#13#13'  ' + OutFile + #13#13 + 'Size: ' + IntToStr(InGetSize div 1024) + ' kb' );
+  //Return created filename
+  Result := OutFile;
 end;
 
 procedure TEditorForm.GenerateReleaseActionExecute(Sender: TObject);
@@ -2035,19 +2321,15 @@ procedure TEditorForm.AddComponentActionExecute(Sender: TObject);
 var
   C : TZComponent;
   Ci : TZComponentInfo;
-  OwnerList : TZComponentList;
   Prop : TZProperty;
   ParentComps,ParentLists : TStringList;
   CurParent : TZComponentTreeNode;
-  S : string;
-  I : integer;
 begin
   //Ta reda på vilken lista som nod ska läggas till
   if not Assigned(Tree.Selected) then
     Exit;
   if Assigned(Tree.ZSelected.ComponentList) then
   begin
-    OwnerList := Tree.ZSelected.ComponentList;
     //ParentC := (Tree.ZSelected.Parent as TZComponentTreeNode).Component;
     Prop := Tree.ZSelected.Prop;
   end
@@ -2091,32 +2373,41 @@ begin
     ParentLists.Free;
   end;
 
-  C := Ci.ZClass.Create(OwnerList);
+  C := Ci.ZClass.Create(nil);
+  AddNewComponentToTree(C);
+end;
+
+procedure TEditorForm.AddNewComponentToTree(C : TZComponent);
+var
+  Ci : TZComponentInfo;
+  S : string;
+begin
+  Ci := ComponentManager.GetInfo(C);
 
   if Ci.AutoName then
   begin  //Give unique name
-    for I := 1 to 100 do
-    begin
-      S := Ci.ZClassName + IntToStr(I);
-      if not SymTab.Contains(S) then
-      begin
-        C.Name := S;
-        SymTab.Add(S,C);
-        Break;
-      end;
-    end;
+    S := ZApp.SymTab.MakeUnique(Ci.ZClassName);
+    C.SetString('Name',AnsiString(S));
+    ZApp.SymTab.Add(S,C);
   end;
 
   Tree.AddNode(C,Tree.Selected).Selected := True;
-  //Signalera till parentlistan att den är ändrad
+  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.AddComponent(C);
   TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
   SetFileChanged(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.AddComponentActionUpdate(Sender: TObject);
+var
+  B : boolean;
 begin
-  (Sender as TAction).Enabled := Tree.Focused and Assigned(Tree.Selected) and Assigned(Tree.ZSelected.ComponentList);
+  B :=Tree.Focused and Assigned(Tree.Selected) and Assigned(Tree.ZSelected.ComponentList);
+  (Sender as TAction).Enabled := B;
+  AddFromLibraryMenuItem.Enabled := B;
 end;
+
 
 procedure TEditorForm.ViewRotateXTrackBarChange(Sender: TObject);
 var
@@ -2138,42 +2429,63 @@ procedure TEditorForm.DeleteComponentActionExecute(Sender: TObject);
 var
   C,CurC : TZComponent;
   List : TObjectList;
-  I : integer;
+  I,J : integer;
+  Node : TZComponentTreeNode;
+  NodeList : TObjectList;
 begin
-  C := Tree.ZSelected.Component;
-  if HasReferers(Root, C) then
-  begin
-    ShowMessage('Cannot delete, other components refers to this component.');
-    Exit;
-  end;
+  WipeUndoHistory;
+  UndoParent := Tree.ZSelected.Parent as TZComponentTreeNode;
 
-  if C=ShowNode then
-  begin
-    ShowNode := nil;
-    Tree.LockShowNode := nil;
-  end;
-
-  //Remove all names from symboltable
-  List := TObjectList.Create(False);
+  NodeList := Tree.SortSelections;
   try
-    GetAllObjects(C,List);
-    for I := 0 to List.Count - 1 do
+    Tree.Selected := nil;
+    for J := 0 to NodeList.Count - 1 do
     begin
-      CurC := List[I] as TZComponent;
-      if CurC.Name<>'' then
-        SymTab.Remove(CurC.Name);
+      Node := NodeList[J] as TZComponentTreeNode;
+
+      C := Node.Component;
+      if HasReferers(Root, C) then
+      begin
+        ShowMessage('Cannot delete, other components refers to this component.');
+        Exit;
+      end;
+
+      if C=ShowNode then
+      begin
+        ShowNode := nil;
+        Tree.LockShowNode := nil;
+        LockShow := False;
+      end;
+
+      //Remove all names from symboltable
+      List := TObjectList.Create(False);
+      try
+        GetAllObjects(C,List);
+        for I := 0 to List.Count - 1 do
+        begin
+          CurC := List[I] as TZComponent;
+          if CurC.Name<>'' then
+            ZApp.SymTab.Remove(String(CurC.Name));
+        end;
+      finally
+        List.Free;
+      end;
+
+      UndoNodes.Add(C);
+      UndoParent.ComponentList.RemoveComponent(C);
+      UndoIndices.Add( TObject(UndoParent.IndexOf(Node)) );
+      Node.Delete;
     end;
   finally
-    List.Free;
+    NodeList.Free;
   end;
 
-  C.Free;
-
   //Signalera till parentlistan att den är ändrad
-  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
-  Tree.ZSelected.Delete;
+  UndoParent.ComponentList.Change;
   SelectComponent(nil);
   SetFileChanged(True);
+  if (CompEditor<>nil) and (Sender<>CompEditor) then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.DeleteComponentActionUpdate(Sender: TObject);
@@ -2188,11 +2500,12 @@ end;
 
 procedure TEditorForm.AppPreviewStartActionExecute(Sender: TObject);
 begin
-  if (Tree.ZSelected.Component<>ZApp) and (ShowNode<>ZApp) then
+  if ((Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>ZApp)) and (ShowNode<>ZApp) then
     Exit;
   if not CompileAll then
     Exit;
   try
+    ZExpressions.ResetScriptState;
     ZApp.DesignerReset;  //Reset timer-components etc
     ZApp.DesignerStart(Glp.Width,Glp.Height);
   except
@@ -2213,6 +2526,8 @@ end;
 procedure TEditorForm.AppPreviewStopActionExecute(Sender: TObject);
 begin
   ZApp.DesignerStop;
+  //Call reset here to unload dll's loaded with ExternalLibrary
+  ZApp.DesignerReset;
   AppPreviewStartAction.ShortCut := 32781;
   AppPreviewStopAction.ShortCut := 0;
   AppPreviewStartAction.Enabled := True;
@@ -2232,7 +2547,7 @@ procedure TEditorForm.ResetModelButtonClick(Sender: TObject);
 begin
   if ShowNode<>nil then
   begin
-    ZApp.Clock.Time := 0;
+    ZApp.Time := 0;
     ShowNode.DesignerReset;
   end;
 end;
@@ -2276,32 +2591,49 @@ var
   SourceC : TZComponent;
   DestList : TZComponentList;
   IsCopy : boolean;
+  I : integer;
+  Nodes : TObjectList;
 begin
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
-  FromNode:=Tree.Selected;
-  ToNode:=Tree.DropTarget;
-  if (FromNode=nil) or (ToNode=nil) then
-    Exit;
-  if ToNode.HasAsParent(FromNode) and (not IsCopy) then
-    Exit;
-  SourceC := (FromNode as TZComponentTreeNode).Component;
-  if not Assigned(SourceC) then
-    Exit;
-  DestList := (ToNode as TZComponentTreeNode).ComponentList;
-  if not Assigned(DestList) then
-    Exit;
 
-  if GetAsyncKeyState(VK_CONTROL)<0 then
-    //Kopiera komponent ifall CTRL är nedtryckt
-    InsertAndRenameComponent(SourceC.Clone,ToNode as TZComponentTreeNode)
-  else
-  begin
-    //Flytta zcomponent
-    SourceC.OwnerList.RemoveComponent(SourceC);
-    DestList.AddComponent(SourceC);
+  Nodes := Tree.SortSelections;
+  try
+    for I := 0 to Nodes.Count - 1 do
+    begin
+      FromNode:=Nodes[I] as TTreeNode;
+      ToNode:=Tree.DropTarget;
+      if (FromNode=nil) or (ToNode=nil) then
+        Exit;
+      if ToNode.HasAsParent(FromNode) and (not IsCopy) then
+        Exit;
+      SourceC := (FromNode as TZComponentTreeNode).Component;
+      if not Assigned(SourceC) then
+        Exit;
+      DestList := (ToNode as TZComponentTreeNode).ComponentList;
+      if not Assigned(DestList) then
+        Exit;
 
-    //Flytta trädnoder
-    FromNode.MoveTo(ToNode,naAddChild);
+      if IsCopy then
+        //Kopiera komponent ifall CTRL är nedtryckt
+        InsertAndRenameComponent(SourceC.Clone,ToNode as TZComponentTreeNode)
+      else
+      begin
+        //Flytta zcomponent
+        SourceC.OwnerList.Change;
+        SourceC.OwnerList.RemoveComponent(SourceC);
+
+        DestList.AddComponent(SourceC);
+        DestList.Change;
+
+        //Flytta trädnoder
+        FromNode.MoveTo(ToNode,naAddChild);
+
+        if CompEditor<>nil then
+          CompEditor.OnTreeChanged;
+      end;
+    end;
+  finally
+    Nodes.Free;
   end;
   SetFileChanged(True);
 end;
@@ -2311,7 +2643,8 @@ const
   MruListMax=8;
 begin
   CurrentFileName := F;
-  Platform_DesignerSetFilePath( ExtractFilePath(CurrentFileName) );
+  Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
+  SetCurrentDir( ExtractFilePath(CurrentFileName) );
   //Add to MRU-list
   if F<>'' then
   begin
@@ -2366,31 +2699,31 @@ begin
   end;
   for I := 1 to Length(NewName) do
   begin
-    if not (NewName[I] in ['a'..'z','A'..'Z','_','0'..'9']) then
+    if not CharInSet(NewName[I],['a'..'z','A'..'Z','_','0'..'9']) then
     begin
       ShowMessage('Name contains invalid characters: ' + NewName);
       Abort;
     end;
   end;
-  if (NewName<>'') and (NewName[1] in ['0'..'9']) then
+  if (NewName<>'') and CharInSet(NewName[1],['0'..'9']) then
   begin
     ShowMessage('Name cannot begin with a digit: ' + NewName);
     Abort;
   end;
-  if (NewName<>'') and SymTab.Contains(NewName) and (SymTab.Lookup(NewName)<>C) then
+  if (NewName<>'') and ZApp.SymTab.Contains(NewName) and (ZApp.SymTab.Lookup(NewName)<>C) then
   begin
     ShowMessage('An component with this name already exists: ' + NewName);
     Abort;
   end;
-  if (NewName='') and HasReferers(Root, C) then
+  if (NewName='') and HasReferers(Root, C, False) then
   begin
     ShowMessage('Cannot set the name to blank, other components refer to this component.');
     Abort;
   end;
   if Trim(OldName)<>'' then
-    SymTab.Remove(OldName);
+    ZApp.SymTab.Remove(OldName);
   if NewName<>'' then
-    SymTab.Add(NewName,C);
+    ZApp.SymTab.Add(NewName,C);
 end;
 
 procedure TEditorForm.CopyComponentActionUpdate(Sender: TObject);
@@ -2404,17 +2737,44 @@ end;
 procedure TEditorForm.CopyComponentActionExecute(Sender: TObject);
 var
   Stream : TMemoryStream;
-  S : string;
+  S : AnsiString;
+  C : TZComponent;
+  Group : TLogicalGroup;
+  I : integer;
+  Nodes : TObjectList;
 begin
-  Stream := ComponentManager.SaveXmlToStream(Tree.ZSelected.Component) as TMemoryStream;
+  Group := nil;
+  if Tree.SelectionCount>1 then
+  begin
+    //Copy several: Create group component as root for the copies
+    Group := TLogicalGroup.Create(nil);
+    Group.SetString('Name', AnsiString('#'));
+    Nodes := Tree.SortSelections;
+    try
+      for I := 0 to Tree.SelectionCount - 1 do
+        Group.Children.AddComponent( (Nodes[I] as TZComponentTreeNode).Component.Clone );
+    finally
+      Nodes.Free;
+    end;
+    C := Group;
+  end
+  else
+  begin
+    //Copy single node
+    C := Tree.ZSelected.Component;
+  end;
+
+  Stream := ComponentManager.SaveXmlToStream(C) as TMemoryStream;
   try
     SetLength(S,Stream.Size);
     Stream.Position := 0;
     Stream.Read(S[1],Stream.Size);
     S := 'ZZDC' + S;
-    Clipboard.SetTextBuf(PChar(S));
+    Clipboard.SetTextBuf( PChar(String(S)) );
   finally
     Stream.Free;
+    if Assigned(Group) then
+      Group.Free;
   end;
 end;
 
@@ -2435,7 +2795,8 @@ begin
       //ZApp.Content.AddComponent( Imp.Import );
       Parent := Tree.FindNodeForComponentList(ZApp.Content);
       Assert(Parent<>nil,'Can''t find app.content node');
-      Node := InsertAndRenameComponent(Imp.Import, Parent);
+      Imp.Import;
+      Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
       Node.Expand(False);
       //Auto-select the Model-component
       Tree.Selected := Node.GetLastChild.GetLastChild;
@@ -2448,7 +2809,8 @@ begin
 end;
 
 function TEditorForm.InsertAndRenameComponent(InsertC : TZComponent;
-  DestTreeNode : TZComponentTreeNode) : TZComponentTreeNode;
+  DestTreeNode : TZComponentTreeNode;
+  Index : integer = -1) : TZComponentTreeNode;
 var
   DestList : TZComponentList;
   C : TZComponent;
@@ -2459,6 +2821,10 @@ var
 begin
   Result := nil;
   DestList := DestTreeNode.ComponentList;
+
+  if (Index>=0) and (Index>=DestList.Count) then
+    Index := -1;
+
   List := TObjectList.Create(False);
   try
     GetAllObjects(InsertC,List);
@@ -2474,11 +2840,11 @@ begin
       if C.Name='' then
         Continue;
 
-      if SymTab.Contains(C.Name) then
+      if ZApp.SymTab.Contains(String(C.Name)) then
       begin
-        StartName := C.Name;
+        StartName := String(C.Name);
         S := '';
-        while (Length(StartName)>0) and (StartName[Length(StartName)] in ['0'..'9']) do
+        while (Length(StartName)>0) and CharInSet(StartName[Length(StartName)],['0'..'9']) do
         begin
           S := StartName[Length(StartName)] + S;
           Delete(StartName,Length(StartName),1);
@@ -2488,28 +2854,34 @@ begin
         for J := FirstCopyNr + 1 to FirstCopyNr + 1000 do
         begin
           NewName := StartName + IntToStr(J);
-          if not SymTab.Contains(NewName) then
+          if not ZApp.SymTab.Contains(NewName) then
           begin
-            C.Name := NewName;
+            C.SetString('Name',AnsiString(NewName));
             NewNameFound := True;
             Break;
           end;
         end;
         if not NewNameFound then
         begin
-          ShowMessage('Could not find unique name for component: ' + C.Name);
+          ShowMessage('Could not find unique name for component: ' + String(C.Name));
           Exit;
         end;
       end;
 
-      SymTab.Add(C.Name,C);
+      ZApp.SymTab.Add(String(C.Name),C);
     end;
   finally
     List.Free;
   end;
-  DestList.AddComponent(InsertC);
+  if Index=-1 then
+    DestList.AddComponent(InsertC)
+  else
+    DestList.InsertComponent(InsertC,Index);
+  DestList.Change;
   SetFileChanged(True);
-  Result := Tree.AddNode(InsertC,DestTreeNode)as TZComponentTreeNode;
+  Result := Tree.AddNode(InsertC,DestTreeNode,Index)as TZComponentTreeNode;
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.PasteComponentActionExecute(Sender: TObject);
@@ -2517,6 +2889,7 @@ var
   DestTreeNode : TZComponentTreeNode;
   S : string;
   C : TZComponent;
+  Group : TLogicalGroup;
 begin
   DestTreeNode := Tree.ZSelected;
 
@@ -2526,8 +2899,20 @@ begin
     if Copy(S,1,4)='ZZDC' then
     begin
       Delete(S,1,4);
-      C := ComponentManager.LoadXmlFromString(S,SymTab);
-      InsertAndRenameComponent(C,DestTreeNode);
+      C := ComponentManager.LoadXmlFromString(S,ZApp.SymTab);
+      if (C is TLogicalGroup) and ((C as TLogicalGroup).Name='#') then
+      begin //Paste several components
+        Group := (C as TLogicalGroup);
+        while Group.Children.Count>0 do
+        begin
+          C := Group.Children.GetComponent(0);
+          Group.Children.RemoveComponent(C);
+          InsertAndRenameComponent(C,DestTreeNode);
+        end;
+        Group.Free;
+      end
+      else //Paste single component
+        InsertAndRenameComponent(C,DestTreeNode);
       CompileAll;
     end;
   end;
@@ -2555,6 +2940,7 @@ var
   C,Tmp : TObject;
   L : TZComponentList;
   I : integer;
+  Node : TTreeNode;
 begin
   C:=Tree.ZSelected.Component;
   L:=(Tree.Selected.Parent as TZComponentTreeNode).ComponentList;
@@ -2562,8 +2948,18 @@ begin
   Tmp := L[I-1];
   L[I-1] := C;
   L[I] := Tmp;
-  Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index-1],naInsert);
+  L.Change;
+
+  Node := Tree.Selected;
+  Tree.ClearSelection(True);
+  //Must set selected to false before moving, otherwise error in comctrls when using keyboard shortcut
+  Node.Selected := False;
+  Node.MoveTo(Node.Parent.Item[Node.Index-1],naInsert);
+  Node.Selected := True;
+
   SetFileChanged(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.MoveDownComponentActionExecute(Sender: TObject);
@@ -2571,6 +2967,7 @@ var
   C,Tmp : TObject;
   L : TZComponentList;
   I : integer;
+  Node : TTreeNode;
 begin
   C:=Tree.ZSelected.Component;
   L:=(Tree.Selected.Parent as TZComponentTreeNode).ComponentList;
@@ -2578,11 +2975,20 @@ begin
   Tmp := L[I+1];
   L[I+1] := C;
   L[I] := Tmp;
+  L.Change;
+
+  Node := Tree.Selected;
+  Tree.ClearSelection(True);
+  Node.Selected := False;
   if I<L.Count-2 then
-    Tree.Selected.MoveTo(Tree.Selected.Parent.Item[Tree.Selected.Index+2],naInsert)
+    Node.MoveTo(Node.Parent.Item[Node.Index+2],naInsert)
   else
-    Tree.Selected.MoveTo(Tree.Selected.Parent,naAddChild);
+    Node.MoveTo(Node.Parent,naAddChild);
+  Node.Selected := True;
+
   SetFileChanged(True);
+  if CompEditor<>nil then
+    CompEditor.OnTreeChanged;
 end;
 
 procedure TEditorForm.MoveUpComponentActionUpdate(Sender: TObject);
@@ -2599,6 +3005,11 @@ begin
   if not Assigned(Root) then
     Exit;
 
+  WriteProjectSettingsToIni;
+
+  //This force current expression-editor to be saved
+  Tree.Selected := nil;
+
   if _FileChanged then
   begin
     case Application.MessageBox('File has changed. Save changes?', PChar(Self.Caption), MB_YESNOCANCEL) of
@@ -2612,13 +3023,18 @@ begin
     end;
   end;
 
-  WriteProjectSettingsToIni;
+  ClearRoot;
+end;
+
+procedure TEditorForm.ClearRoot;
+begin
+  AudioPlayer.DesignerResetMixer;
 
   SetShowNode(nil);
 
-  Tree.Selected := nil;
+  WipeUndoHistory;
+
   LockShow := False;
-//  Selected := nil;
   SelectComponent(nil);
 
   if IsAppRunning then
@@ -2662,7 +3078,7 @@ begin
   begin
     //Enter as tab
     Key := #0; // Eat the Beep
-    SelectNext(ActiveControl AS TWinControl, True, True) // Forward
+    SelectNext(ActiveControl as TWinControl, True, True) // Forward
   end;
   if Assigned(CompEditor) then
     CompEditor.OnKeyPress(Key);
@@ -2678,9 +3094,9 @@ var
   Tmp : TPoint;
   DeltaX,DeltaY : integer;
 begin
-  //From ESS-doll
-  if not Glp.MouseCapture then
+  if (not Glp.MouseCapture) or IsAppRunning then
     Exit;
+  //From ESS-doll
 
   Tmp := Glp.ClientToScreen( Point(X,Y) );
   DeltaX := tmp.X - lockmouse.X;
@@ -2726,17 +3142,65 @@ end;
 procedure TEditorForm.OnGLPanelMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  Glp.MouseCapture := True;
-  LockMouse := Glp.ClientToScreen( Point(X,Y) );
-  ShowCursor(False);
+  if not IsAppRunning then
+  begin
+    Glp.MouseCapture := True;
+    LockMouse := Glp.ClientToScreen( Point(X,Y) );
+    ShowCursor(False);
+  end;
 end;
 
 procedure TEditorForm.OnGLPanelMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  Glp.MouseCapture := False;
-  ShowCursor(True);
-  Glp.SetFocus;
+  if not IsAppRunning then
+  begin
+    Glp.MouseCapture := False;
+    ShowCursor(True);
+    Glp.SetFocus;
+  end;
+end;
+
+procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+const Levels : array[TLogLevel] of string = ('Normal','Warning','Error','UserTrace');
+var
+  Point : TPoint;
+  Index : Integer;
+  S : string;
+  Log : TLog;
+  Data : TListLogItem;
+begin
+  Point.X := X;
+  Point.Y := Y;
+  Index := LogListBox.ItemAtPos(Point,True);
+  if Index<>-1 then
+  begin
+    Data := LogListBox.Items.Objects[Index] as TListLogItem;
+    if Data=nil then
+      Exit;
+    Log := Data.Log;
+    S := Format('Level: %s'#13'Log: %s'#13'Message: %s',
+      [ Levels[ Data.Level ], Log.Name, Data.Msg ]);
+    LogListBox.Hint := S;
+    Point := LogListBox.ClientToScreen(Point);
+    Application.ActivateHint(Point);
+  end;
+end;
+
+procedure TEditorForm.LogCopytoclipboardMenuItemClick(Sender: TObject);
+var
+  //Data : TListLogItem;
+  I : integer;
+  S : string;
+begin
+  S := '';
+  for I := 0 to LogListBox.Items.Count - 1 do
+  begin
+    //Data := LogListBox.Items.Objects[Index] as TListLogItem;
+    S := S + LogListBox.Items[I] + #13#10;
+  end;
+  Clipboard.AsText := S;
 end;
 
 procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl;
@@ -2752,22 +3216,39 @@ var
   Log : TLog;
   S : string;
   I : integer;
+  Data : TListLogItem;
 begin
-  Log := (Control as TListBox).Items.Objects[Index] as TLog;
+  Data := LogListBox.Items.Objects[Index] as TListLogItem;
+  if Data=nil then
+    Exit;
+  Log := Data.Log;
   if Log=nil then
     Exit;
 
   C := (Control as TListBox).Canvas;
 
+  if Data.Level in [lleWarning,lleError] then
+  begin
+    C.Font.Style:=[fsBold];
+    C.Brush.Color := clWhite;
+    if Data.Level=lleWarning then
+      C.Font.Color := (Control as TListBox).Color
+    else
+      C.Font.Color := clRed;
+  end
+  else
+  begin
+    C.Font.Style:=[];
+    C.Brush.Color := (Control as TListBox).Color;
+    C.Font.Color := clWhite;
+  end;
+
   //Clear area in listbox-color, this avoids highlighting selected
-  C.Brush.Color := (Control as TListBox).Color;
   C.FillRect(Rect);
 
-//  C.Font.Style:=[fsBold];
-  C.Font.Color := clWhite;
-  C.TextOut(Rect.Left + 2, Rect.Top, Copy(LogChars[ (Log.ID mod Length(LogChars))+1 ] ,1,1));
+  C.TextOut(Rect.Left + 2, Rect.Top, LogChars[ (Log.ID mod Length(LogChars))+1 ] );
 
-  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
+//  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
   S := (Control as TListBox).Items[Index];
   C.TextOut(Rect.Left + 12, Rect.Top, S);
   I := C.TextWidth(S) + 16;
@@ -2775,10 +3256,10 @@ begin
     (Control as TListBox).ScrollWidth := I;
 end;
 
+
 procedure TEditorForm.SaveProjectActionExecute(Sender: TObject);
 begin
-//  if MessageDlg('Save to file: ' + CurrentFileName + '?',mtConfirmation,mbOKCancel,0)<>mrOk then
-//    Exit;
+  SaveCurrentEdits;
   if CurrentFileName='' then
     FileSaveAsAction.Execute
   else
@@ -2787,10 +3268,608 @@ begin
 end;
 
 
-
 procedure TEditorForm.ForumsMenuItemsClick(Sender: TObject);
 begin
   GoUrl('http://www.emix8.org/forum/');
 end;
+
+
+procedure TEditorForm.LoadSysLibrary;
+var
+  S : string;
+
+  procedure InAddItems(List : TZComponentList; Parent : TMenuItem);
+  var
+    M : TMenuItem;
+    C : TZComponent;
+    I : integer;
+  begin
+    for I := 0 to List.Count - 1 do
+    begin
+      C := List.GetComponent(I);
+      M := TMenuItem.Create(AddFromLibraryMenuItem);
+      M.Caption := String(C.Comment);
+      Parent.Add(M);
+      if (C is TLogicalGroup) and (string(C.Name)='') then
+        InAddItems((C as TLogicalGroup).Children,M)
+      else
+      begin
+        M.OnClick := OnAddFromLibraryItemClick;
+        M.Tag := Integer(C);
+      end;
+    end;
+  end;
+
+begin
+  S := ExePath + 'Library.xml';
+  if not FileExists(S) then
+  begin
+    Log.Write( 'Lib file missing: ' + S );
+    Exit;
+  end;
+  AddFromLibraryMenuItem.Clear;
+  SysLibrary := ComponentManager.LoadXmlFromFile(S);
+  InAddItems((SysLibrary as TZApplication).Content,AddFromLibraryMenuItem);
+end;
+
+procedure TEditorForm.OnAddFromLibraryItemClick(Sender: TObject);
+var
+  M : TMenuItem;
+  C : TZComponent;
+begin
+  M := Sender as TMenuItem;
+  C := TZComponent(M.Tag).Clone;
+  InsertAndRenameComponent(C,Tree.ZSelected);
+  CompileAll;
+  C.Change;
+end;
+
+procedure TEditorForm.AddFromLibraryMenuItemClick(Sender: TObject);
+begin
+  if SysLibrary=nil then
+    LoadSysLibrary;
+end;
+
+procedure AutoCompAddOne(const S : string; Item : TObject; Context : pointer);
+var
+  C : TSynCompletionProposal;
+  Desc : string;
+
+  function InGetSig(Func : TZcOpFunctionBase) : string;
+  var
+    I : integer;
+    Arg : TZcOpArgumentVar;
+  begin
+    Result := Func.Id + '(';
+    for I := 0 to Func.Arguments.Count - 1 do
+    begin
+      Arg := Func.Arguments[I] as TZcOpArgumentVar;
+      if I>0 then
+        Result := Result + ',';
+      Result := Result + GetZcTypeName(Arg.Typ);
+    end;
+    Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
+  end;
+
+begin
+  C := TSynCompletionProposal(Context);
+  Desc := '';
+  if (Item is TZComponent) then
+    Desc := String((Item as TZComponent).GetDisplayName)
+  else if (Item is TZcOpFunctionBase) then
+    Desc := InGetSig(Item as TZcOpFunctionBase)
+  else
+    Desc := S;
+  C.ItemList.Add(Desc);
+  C.InsertList.Add(S);
+end;
+
+procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
+  Sender: TObject; var CurrentInput: string; var x, y: Integer;
+  var CanExecute: Boolean);
+var
+  Comp : TSynCompletionProposal;
+  Line,Ident,PropName : string;
+  I,J,K : integer;
+  C : TZComponent;
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+
+  procedure InAdd(const Items : array of string);
+  var
+    I : integer;
+  begin
+    for I := 0 to High(Items) do
+    begin
+      Comp.InsertList.Add(Items[I]);
+      Comp.ItemList.Add(Items[I]);
+    end;
+  end;
+
+  function InGetC(S : string) : TZComponent;
+  begin
+    if SameText(S,'this') then
+      Result := Tree.ZSelected.Component
+    else if SameText(S,'CurrentModel') then
+    begin
+      FindCurrentModel(Tree.ZSelected,Result);
+    end
+    else
+      Result := ZApp.SymTab.Lookup(S) as TZComponent;
+  end;
+
+begin
+  Comp := Sender as TSynCompletionProposal;
+  Comp.ItemList.Clear;
+  Comp.InsertList.Clear;
+
+  Line := Comp.Editor.LineText;
+  I := Min(Comp.Editor.CaretX+1,Length(Line));
+  while (I>0) and CharInSet(Line[I],['a'..'z','A'..'Z','_','0'..'9']) do
+    Dec(I);
+  if (I>0) and (Line[I]='.') then
+  begin
+    J := I-1;
+    while (J>0) and CharInSet(Line[J],['a'..'z','A'..'Z','_','0'..'9']) do
+      Dec(J);
+    Ident := Copy(Line,J+1,I-J-1);
+    if (J>0) and (Line[J]='.') then
+    begin
+      PropName := Ident;
+      K := J-1;
+      while (K>0) and CharInSet(Line[K],['a'..'z','A'..'Z','_','0'..'9']) do
+        Dec(K);
+      Ident := Copy(Line,K+1,J-K-1);
+      C := InGetC(Ident);
+      if C<>nil then
+      begin
+        PropList := C.GetProperties;
+        Prop := PropList.GetByName(PropName);
+        if Prop<>nil then
+        begin
+          //List members of a property
+          if Prop.PropertyType=zptColorf then
+            InAdd(['R','G','B','A']);
+          if Prop.PropertyType=zptVector3f then
+            InAdd(['X','Y','Z']);
+        end;
+      end;
+    end else
+    begin
+      //List properties of an identifier
+      C := InGetC(Ident);
+      if C<>nil then
+      begin
+        PropList := C.GetProperties;
+        for I := 0 to PropList.Count - 1 do
+        begin
+          Prop := TZProperty(PropList[I]);
+          if (Prop.PropertyType in [zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
+            (Prop.Name='ObjId') then
+            Continue;
+          if Prop.ExcludeFromBinary then
+            Continue;
+          InAdd([Prop.Name]);
+        end;
+      end;
+    end;
+  end else
+  begin
+    //List global identifiers
+    ZApp.SymTab.Iterate(AutoCompAddOne,Comp);
+    InAdd(['CurrentModel','this','string','int','float','while','for']);
+  end;
+  (Comp.ItemList as TStringList).Sort;
+  (Comp.InsertList as TStringList).Sort;
+end;
+
+procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
+  Sender: TObject; var CurrentInput: string; var x, y: Integer;
+  var CanExecute: Boolean);
+var
+  I,J,K,PCount,PIndex : integer;
+  C : char;
+  S,Line,Tmp : string;
+  Comp : TSynCompletionProposal;
+  O : TObject;
+  Func : TZcOpFunctionBase;
+  Arg : TZcOpArgumentVar;
+begin
+  Comp := TSynCompletionProposal(Sender);
+  Line := Comp.Editor.LineText;
+  I := Min(Comp.Editor.CaretX,Length(Line));
+  PCount := 0;
+  PIndex := 0;
+  CanExecute := False;
+  while I>0 do
+  begin
+    C := Line[I];
+    case C  of
+      '(' :
+        if PCount=0 then
+        begin
+          J := I-1;
+          while (J>0) and CharInSet(Line[J] ,['a'..'z','A'..'Z','_','0'..'9']) do
+            Dec(J);
+          S := Copy(Line,J+1,I-J-1);
+          O := ZApp.SymTab.Lookup(S);
+          if (O<>nil) and (O is TZcOpFunctionBase) then
+          begin
+            Func := O as TZcOpFunctionBase;
+            Tmp := '';
+            for K := 0 to Func.Arguments.Count - 1 do
+            begin
+              Arg := Func.Arguments[K] as TZcOpArgumentVar;
+              if K>0 then
+                Tmp := Tmp + ',';
+              Tmp := Tmp + '"' + GetZcTypeName(Arg.Typ) + ' arg' + IntToStr(K) + '"';
+            end;
+            Comp.Form.CurrentIndex := PIndex;
+            Comp.ItemList.Clear;
+            Comp.ItemList.Add(Tmp);
+            CanExecute := True;
+          end;
+          Break;
+        end
+        else
+          Dec(PCount);
+      ')' : Inc(PCount);
+      ',' : if PCount=0 then Inc(PIndex);
+    end;
+    Dec(I);
+  end;
+end;
+
+
+type
+  TMapName = class
+    Name,MapClassName,MapMethodName : string;
+    Start : integer;
+    Size : integer;
+  end;
+
+procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
+var
+  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine : integer;
+  Section : TImageSection;
+  Stream : TMemoryStream;
+  MapNames : TObjectList;
+  B : byte;
+  S,MapFile : string;
+  Splitter,Lines : TStringList;
+  Item : TMapName;
+  Id : TZClassIds;
+
+  Infos : PComponentInfoArray;
+  Ci : TZComponentInfo;
+  UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
+  NamesKept,AllObjects : TObjectList;
+  NeedJpeg,DisplayDetailedReport : boolean;
+begin
+  DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
+
+  Section := Module.ImageSection[0];
+  if Section.SectionName<>'.text' then
+  begin
+    Log.Warning('wrong section');
+    Exit;
+  end;
+
+  MapFile := ExePath + 'zzdc.map';
+  if not FileExists(MapFile) then
+  begin
+    Log.Error('map file not found');
+    Exit;
+  end;
+
+  Lines := TStringList.Create;
+  MapNames := TObjectList.Create(True);
+  NamesToRemove := TStringList.Create;
+  ClassesToRemove := TStringList.Create;
+  UsedComponents := TStringList.Create;
+  Splitter := TStringList.Create;
+  Splitter.Delimiter := '.';
+  try
+    Lines.LoadFromFile(MapFile);
+    FirstLine := Lines.IndexOf('  Address             Publics by Name');
+    if FirstLine=-1 then
+    begin
+      Log.Error('error in map file');
+      Exit;
+    end;
+    for I := FirstLine+2 to Lines.Count - 1 do
+    begin
+      S := Trim(Lines[I]);
+      if Length(S)=0 then
+        Break;
+      if Copy(S,1,4)<>'0001' then
+        Continue;
+      Item := TMapName.Create;
+      Item.Name := Copy(S,21,255);
+      Item.Start := StrToInt('$' + Copy(S,6,8));
+      Splitter.DelimitedText := Item.Name;
+      if Splitter.Count=3 then
+      begin
+        Item.MapClassName := Splitter[1];
+        Item.MapMethodName := Splitter[2];
+        if Length(Item.MapClassName)=0 then
+          Item.MapClassName := Item.MapMethodName;
+      end;
+      MapNames.Add(Item);
+    end;
+    MapNames.SortList(
+      //Sort on start address
+      function (Item1, Item2: Pointer): Integer
+      var
+        I1,I2 : integer;
+        N1,N2 : TMapName;
+      begin
+        N1 := TMapName(Item1);
+        N2 := TMapName(Item2);
+        I1 := N1.Start;
+        I2 := N2.Start;
+        Result := I1-I2;
+      end
+    );
+
+    for I := 0 to MapNames.Count - 2 do
+    begin
+      Item := MapNames[I] as TMapName;
+      Item.Size := TMapName(MapNames[I+1]).Start - Item.Start;
+    end;
+
+    //Get names of used classes
+    NeedJpeg := False;
+    AllObjects := TObjectList.Create(False);
+    try
+      GetAllObjects(Self.Root,AllObjects);
+      UsedComponents.Sorted := True;
+      UsedComponents.Add('TAudioMixer');
+      UsedComponents.Add('TMaterial');
+      UsedComponents.Add('TMaterialTexture');
+      for I := 0 to AllObjects.Count - 1 do
+      begin
+        UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
+        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).IsJpegEncoded) then
+          NeedJpeg := True;
+      end;
+    finally
+      AllObjects.Free;
+    end;
+    if UsedComponents.IndexOf('TRenderText')>=0 then
+    begin
+      UsedComponents.Add('TZBitmap');
+      UsedComponents.Add('TFont');
+    end;
+    if UsedComponents.IndexOf('TMeshLoop')>=0 then
+      UsedComponents.Add('TMeshCombine');
+    if UsedComponents.IndexOf('TRenderNet')>=0 then
+      UsedComponents.Add('TMesh');
+    if not NeedJpeg then
+      ClassesToRemove.Add('TNjDecoder');
+
+    //NamesToRemove = AllNames - UsedNames
+    Infos := ZClasses.ComponentManager.GetAllInfos;
+    for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
+    begin
+      Ci := TZComponentInfo(Infos[Id]);
+      if UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1 then
+        ClassesToRemove.Add(Ci.ZClass.ClassName);
+    end;
+    if UsedComponents.IndexOf('TMeshImplicit')=-1 then
+      ClassesToRemove.Add('TImpProcess');
+    ClassesToRemove.Add('TDefineConstant');
+    if not ZApp.ShowOptionsDialog then
+    begin
+      NamesToRemove.Add('ZPlatform.Options');
+      NamesToRemove.Add('ZPlatform.Platform_ShowOptionDialog');
+    end;
+    if UsedComponents.IndexOf('TSound')=-1 then
+    begin
+      NamesToRemove.Add('AudioPlayer.UpdateModulators');
+      NamesToRemove.Add('AudioPlayer.RenderVoice');
+      NamesToRemove.Add('AudioPlayer.SetVoiceFrameConstants');
+      NamesToRemove.Add('AudioPlayer.UpdateEnvelope');
+      NamesToRemove.Add('AudioPlayer.UpdateLfo');
+      NamesToRemove.Add('AudioPlayer.UpdateFrame');
+      NamesToRemove.Add('AudioPlayer.UpdateFrame');
+      ClassesToRemove.Add('TAudioMixer');
+      NamesToRemove.Add('ZPlatform.Platform_InitAudio');
+      NamesToRemove.Add('AudioPlayer.EmitSoundsInEmitList');
+      NamesToRemove.Add('AudioPlayer.RenderToMixBuffer');
+      NamesToRemove.Add('ZPlatform.Platform_ShutdownAudio');
+      NamesToRemove.Add('AudioPlayer.RenderChannel');
+      NamesToRemove.Add('AudioPlayer.ChannelApplyDelay');
+      NamesToRemove.Add('ZPlatform.PlaybackThread_Execute');
+    end;
+    if UsedComponents.IndexOf('TWebOpen')=-1 then
+    begin
+      NamesToRemove.Add('ZPlatform.Platform_NetOpen');
+      NamesToRemove.Add('ZPlatform.Platform_NetRead');
+    end;
+
+    //NamesToRemove.Add('System.@HandleAnyException');
+    //NamesToRemove.Add('System.@FinalizeArray');
+
+    //ok, start removing
+    NamesKept := TObjectList.Create(False);
+    Stream := Section.RawData;
+    TotalRemovedBytes := 0;
+    for I := 0 to MapNames.Count - 1 do
+    begin
+      Item := TMapName(MapNames[I]);
+      if (Item.Size=0) then
+      begin
+        if DisplayDetailedReport then
+          NamesKept.Add(Item);
+        Continue;
+      end;
+      if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and (NamesToRemove.IndexOf(Item.Name)=-1) then
+      begin
+        if DisplayDetailedReport then
+          NamesKept.Add(Item);
+        Continue;
+      end;
+      Stream.Seek(Item.Start,soBeginning);
+      B := $90; //nop
+      {$ifdef CPU386}
+      //TODO: this does not work on 64-bit, not sure why
+      for J := 0 to Item.Size - 1 do
+        Stream.Write(B,1);
+      {$endif}
+      Inc(TotalRemovedBytes,Item.Size);
+      //Log.Write(Item.Name);
+    end;
+    Log.Write('Removed: ' + IntToStr(TotalRemovedBytes) );
+
+    if DisplayDetailedReport then
+    begin
+      NamesKept.SortList(
+        //Sort on size
+        function (Item1, Item2: Pointer): Integer
+        var
+          I1,I2 : integer;
+          N1,N2 : TMapName;
+        begin
+          N1 := TMapName(Item1);
+          N2 := TMapName(Item2);
+          I1 := N1.Size;
+          I2 := N2.Size;
+          Result := I2-I1;
+        end
+      );
+
+      TotalKeptBytes := 0;
+      for I := 0 to NamesKept.Count - 1 do
+      begin
+        Item := TMapName(NamesKept[I]);
+        Inc(TotalKeptBytes,Item.Size);
+        Log.Write(IntToStr(Item.Size) + ' ' + Item.Name);
+      end;
+      Log.Write('Kept: ' + IntToStr(TotalKeptBytes) );
+    end;
+    NamesKept.Free;
+
+  finally
+    Lines.Free;
+    MapNames.Free;
+    ClassesToRemove.Free;
+    NamesToRemove.Free;
+    UsedComponents.Free;
+    Splitter.Free;
+  end;
+
+end;
+
+procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);
+var
+  Nodes : TObjectList;
+  I : integer;
+  Node : TZComponentTreeNode;
+begin
+  Nodes := Tree.SortSelections;
+  try
+    for I := 0 to Nodes.Count-1 do
+    begin
+      Node := (Nodes[I] as TZComponentTreeNode);
+      Node.Component.DesignDisable := not Node.Component.DesignDisable;
+      Node.RefreshNodeName;
+    end;
+  finally
+    Nodes.Free;
+  end;
+end;
+
+procedure TEditorForm.DisableComponentActionUpdate(Sender: TObject);
+begin
+  (Sender as TAction).Enabled :=
+    (ActiveControl = Tree) and
+    Assigned(Tree.Selected) and
+    Assigned(Tree.ZSelected.Component) and
+    (Tree.ZSelected.Component<>Root) and
+    (not (Tree.ZSelected.Component is TZApplication));
+  if (Sender as TAction).Enabled then
+    (Sender as TAction).Checked := Tree.ZSelected.Component.DesignDisable;
+end;
+
+procedure TEditorForm.DisableFBOCheckBoxClick(Sender: TObject);
+begin
+  FbosSupported := not (Sender as TCheckBox).Checked;
+end;
+
+procedure TEditorForm.DisableShadersCheckBoxClick(Sender: TObject);
+begin
+  ShadersSupported := not (Sender as TCheckBox).Checked;
+end;
+
+procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
+
+  procedure RecolorHighlighter(H : TSynCustomHighlighter);
+  var
+    I : integer;
+    A : TSynHighlighterAttributes;
+  begin
+    H.WhitespaceAttribute.Background := StyleServices.GetStyleColor(scTreeView);
+    for I := 0 to H.AttrCount-1 do
+    begin
+      A := H.Attribute[I];
+      if A.Style=[fsBold] then
+        A.Foreground := clHighLight
+      else if A.Style=[fsItalic] then
+        A.Foreground := clGrayText
+      else
+        A.Foreground := StyleServices.GetStyleFontColor(sfTreeItemTextNormal);
+    end;
+  end;
+
+begin
+  if StyleHandle=nil then
+    TStyleManager.TrySetStyle( StyleName )
+  else
+    TStyleManager.SetStyle( StyleHandle );
+  // Force rebuild gui because Treeview gets recreated and it's difficult to
+  // keep the state of the custom treenodes.
+  // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
+  Application.ProcessMessages;
+  if Self.Root<>nil then
+    Tree.SetRootComponent(Self.Root);
+
+  RecolorHighlighter(ExprSynEdit.Highlighter);
+  RecolorHighlighter(ShaderSynEdit.Highlighter);
+end;
+
+procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
+var
+  M : TMenuItem;
+begin
+  M := (Sender as TMenuItem);
+  M.Checked := True;
+  SwitchToStyle(M.Hint,nil);
+end;
+
+procedure TEditorForm.OpenStyleMenuItemClick(Sender: TObject);
+begin
+  if OpenStyleDialog.Execute(Self.Handle) then
+  begin
+    SwitchToStyle('', TStyleManager.LoadFromFile(OpenStyleDialog.FileName));
+  end;
+end;
+
+procedure TEditorForm.BuildStyleMenu;
+var
+  M : TMenuItem;
+  S : string;
+begin
+  for S in TStyleManager.StyleNames do
+  begin
+    M := TMenuItem.Create(Self);
+    M.OnClick := Self.OnChooseStyleMenuItemClick;
+    M.Hint := S;
+    M.Caption := S;
+    M.RadioItem := True;
+    StyleMenuItem.Add(M);
+  end;
+end;
+
 
 end.

@@ -24,7 +24,7 @@ unit u3dsFile;
 
 interface
 
-uses ZClasses,Classes,Contnrs;
+uses ZClasses, Classes, Contnrs, Meshes;
 
 type
   TChunkInfo = record
@@ -54,32 +54,9 @@ type
     destructor Destroy; override;
   end;
 
-  T3dsImport = class
-  strict private
-    DataFile : T3dsFileParser;
-    FileName,NamePrefix : string;
-    MeshScale : single;
-    AutoCenter,AutoScale,InvertNormals : boolean;
-    procedure ScaleAndCenter;
-    function GenerateMesh(M : TObject) : TZComponent;
-    function GenerateModel: TZComponent;
-    procedure ApplyPivotPoint;
-  public
-    constructor Create(const FileName : string);
-    destructor Destroy; override;
-    function Import : TZComponent;
-  end;
-
-
-implementation
-
-uses ZLog,SysUtils,Meshes,ZMath,Renderer,
-  frm3dsImportOptions,Controls;
-
-type
   T3dsVertex = TZVector3f;
 
-  T3dsFace = record
+  T3dsFace = packed record
     V1, V2, V3, Flag: Word;
   end;
 
@@ -87,7 +64,13 @@ type
   protected
     Name : string;
     DiffuseColor : TZColorf;
+    Faces : TList;
+    constructor Create;
+  public
+    destructor Destroy; override;
   end;
+
+  T3dsExport = class;
 
   T3dsMesh = class
   protected
@@ -105,8 +88,51 @@ type
     MaxFacesMaterial : integer;
     UsedMaterials : integer;
     ZMesh : TMesh;
+    constructor CreateFromMesh(M : TMesh);
+    procedure CombineWith(M : T3dsMesh);
+    procedure WriteTo(Exporter : T3dsExport);
+    procedure CreateMaterials(Materials : TObjectList);
   end;
 
+  T3dsImport = class
+  strict private
+    DataFile : T3dsFileParser;
+    FileName,NamePrefix : string;
+    MeshScale : single;
+    AutoCenter,AutoScale,InvertNormals,SingleMesh: boolean;
+    procedure ScaleAndCenter;
+    function GenerateMesh(M : TObject) : TZComponent;
+    function GenerateModel: TZComponent;
+    procedure ApplyPivotPoint;
+    procedure CollapseToSingleMesh;
+    procedure UpdateMeshImp(InMesh: T3dsMesh; MeshImp: TMeshImport);
+  public
+    MeshImpToUpdate : TMeshImport;  //Set by caller when updating a meshimport with a single mesh
+    ResultModelGroup : TZComponent; //Set after import to new group
+    constructor Create(const FileName : string);
+    destructor Destroy; override;
+    procedure Import;
+  end;
+
+  T3dsExport = class
+  private
+    Stream : TMemoryStream;
+    Materials : TObjectList;
+    procedure WriteMaterials;
+    procedure WriteString(const S: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure DoExport(M : TMesh; const FileName : string);
+    function MakeChunk(Id : word) : pointer;
+    procedure CloseChunk(P : pointer);
+  end;
+
+
+implementation
+
+uses ZLog,SysUtils,ZMath,Renderer,
+  frm3dsImportOptions, Controls, Forms, DesignerGUI;
 
 { T3dsFileParser }
 
@@ -224,7 +250,7 @@ begin
   //3ds xyz are different to zzdc coordinate system
   Stream.Read(Dest^[0],4);
   Stream.Read(Dest^[2],4);
-  Dest^[2] := Dest^[2] * -1;   //Invert Y-axis 
+  Dest^[2] := Dest^[2] * -1;   //Invert Y-axis
   Stream.Read(Dest^[1],4);
 end;
 
@@ -289,7 +315,7 @@ begin
           end;
 
           Stream.Read(W,2); //Number of faces to assign this material
-          if IncludeVertexColors then
+          if (MaterialI>-1) and IncludeVertexColors then
           begin
             SetLength(Faces,W);
             Stream.Read(Faces[0],W*2);
@@ -351,7 +377,7 @@ end;
 function T3dsFileParser.ReadString: string;
 var
   Len: Integer;
-  Buffer: array[Byte] of Char;
+  Buffer: array[Byte] of AnsiChar;
 begin
   Len := 0;
   repeat
@@ -382,24 +408,15 @@ begin
   inherited;
 end;
 
-function T3dsImport.GenerateMesh(M: TObject): TZComponent;
+procedure T3dsImport.UpdateMeshImp(InMesh : T3dsMesh; MeshImp: TMeshImport);
+//Write to MeshImp from 3dsMesh
 var
-  InMesh : T3dsMesh;
-  OutMesh : TMesh;
-  MeshImp : TMeshImport;
   I,Color : integer;
   Stream,StU,StV : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   Sm : smallint;
 begin
-  InMesh := T3dsMesh(M);
-
-  OutMesh := TMesh.Create(nil);
-  OutMesh.Comment := InMesh.Name;
-  OutMesh.Name := NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M));
-
-  MeshImp := TMeshImport.Create(OutMesh.Producers);
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
 
   Stream := TMemoryStream.Create;
@@ -459,7 +476,7 @@ begin
       Stream.Write(Sm,2);
     end;
 
-    if DataFile.IncludeVertexColors and (InMesh.UsedMaterials>1) then
+    if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to InMesh.NVertices - 1 do
@@ -498,6 +515,8 @@ begin
     end;
 
     //Write data to binary property
+    if MeshImp.MeshData.Data<>nil then
+      FreeMem(MeshImp.MeshData.Data,MeshImp.MeshData.Size);
     GetMem(MeshImp.MeshData.Data,Stream.Size);
     MeshImp.MeshData.Size := Stream.Size;
     Stream.Position := 0;
@@ -505,10 +524,39 @@ begin
   finally
     Stream.Free;
   end;
+end;
+
+
+function T3dsImport.GenerateMesh(M: TObject): TZComponent;
+var
+  InMesh : T3dsMesh;
+  OutMesh : TMesh;
+  MeshImp : TMeshImport;
+begin
+  InMesh := T3dsMesh(M);
+
+  OutMesh := TMesh.Create(nil);
+  OutMesh.SetString('Comment',AnsiString(InMesh.Name));
+  OutMesh.SetString('Name',AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
+
+  MeshImp := TMeshImport.Create(OutMesh.Producers);
+  UpdateMeshImp(InMesh,MeshImp);
 
   InMesh.ZMesh := OutMesh;
 
   Result := OutMesh;
+end;
+
+procedure T3dsImport.CollapseToSingleMesh;
+var
+  Mesh : T3dsMesh;
+begin
+  while DataFile.MeshList.Count>1 do
+  begin
+    Mesh := DataFile.MeshList[0] as T3dsMesh;
+    Mesh.CombineWith(DataFile.MeshList[1] as T3dsMesh);
+    DataFile.MeshList.Delete(1);
+  end;
 end;
 
 function T3dsImport.GenerateModel : TZComponent;
@@ -527,7 +575,8 @@ begin
       Continue;
 
     if ((not DataFile.IncludeVertexColors) or (Mesh.UsedMaterials=1)) and
-      (Mesh.DominatingMaterial<>nil) then
+      (Mesh.DominatingMaterial<>nil) and
+      (not SingleMesh) then
     begin
       SColor := TRenderSetColor.Create(M.OnRender);
       SColor.Color := Mesh.DominatingMaterial.DiffuseColor;
@@ -536,34 +585,58 @@ begin
     RMesh := TRenderMesh.Create(M.OnRender);
     RMesh.Mesh := Mesh.ZMesh;
   end;
-  M.Name := NamePrefix + 'Model';
+  M.SetString('Name',AnsiString(NamePrefix + 'Model') );
   Result := M;
 end;
 
-function T3dsImport.Import: TZComponent;
+var
+  OptionDialog : TImport3dsForm;
+
+procedure T3dsImport.Import;
 var
   Group,MeshGroup : TLogicalGroup;
   I : integer;
   Mesh : T3dsMesh;
-  F : TImport3dsForm;
 begin
-  F := TImport3dsForm.Create(nil);
-  try
-    F.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
-    if F.ShowModal=mrCancel then
-      Abort;
-    Self.NamePrefix := F.GetValidatedName(F.NamePrefixEdit.Text);
-    Self.MeshScale := StrToIntDef(F.MeshScaleEdit.Text,100) / 100.0;
-    Self.DataFile.IncludeVertexColors := F.ColorsCheckBox.Checked;
-    Self.AutoCenter := F.AutoCenterCheckBox.Checked;
-    Self.AutoScale := F.AutoScaleCheckBox.Checked;
-    Self.InvertNormals := F.InvertNormalsCheckBox.Checked;
-    Self.DataFile.IncludeTextureCoords := F.TexCoordsCheckBox.Checked;
-  finally
-    F.Free;
+  if OptionDialog=nil then
+    OptionDialog := TImport3dsForm.Create(Application.MainForm);
+  OptionDialog.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
+  if Assigned(Self.MeshImpToUpdate) then
+  begin
+    OptionDialog.SingleMeshCheckBox.Checked := True;
+    OptionDialog.SingleMeshCheckBox.Enabled := False;
+    OptionDialog.NamePrefixEdit.Enabled := False;
+  end else
+  begin
+    OptionDialog.SingleMeshCheckBox.Enabled := True;
+    OptionDialog.NamePrefixEdit.Enabled := True;
   end;
+  if OptionDialog.ShowModal=mrCancel then
+    Abort;
+  Self.NamePrefix := OptionDialog.GetValidatedName(OptionDialog.NamePrefixEdit.Text);
+  Self.MeshScale := StrToIntDef(OptionDialog.MeshScaleEdit.Text,100) / 100.0;
+  Self.DataFile.IncludeVertexColors := OptionDialog.ColorsCheckBox.Checked;
+  Self.AutoCenter := OptionDialog.AutoCenterCheckBox.Checked;
+  Self.AutoScale := OptionDialog.AutoScaleCheckBox.Checked;
+  Self.InvertNormals := OptionDialog.InvertNormalsCheckBox.Checked;
+  Self.SingleMesh := OptionDialog.SingleMeshCheckBox.Checked;
+  Self.DataFile.IncludeTextureCoords := OptionDialog.TexCoordsCheckBox.Checked;
 
   Self.DataFile.Parse;
+
+  I := 0;
+  while I<DataFile.MeshList.Count do
+  begin
+    Mesh := DataFile.MeshList[I] as T3dsMesh;
+    //Some meshes are faulty, others are lights or cameras without geometry
+    if Mesh.NVertices<=2 then
+      DataFile.MeshList.Delete(I)
+    else
+      Inc(I);
+  end;
+
+  if SingleMesh then
+    CollapseToSingleMesh;
 
   if not AutoCenter then
     ApplyPivotPoint;
@@ -571,22 +644,29 @@ begin
   if AutoScale or AutoCenter then
     ScaleAndCenter;
 
-  Group := TLogicalGroup.Create(nil);
-
-  MeshGroup := TLogicalGroup.Create(Group.Children);
-  MeshGroup.Comment := 'Meshes';
-  for I := 0 to DataFile.MeshList.Count - 1 do
+  if Assigned(Self.MeshImpToUpdate) then
   begin
-    Mesh := DataFile.MeshList[I] as T3dsMesh;
-    //Some meshes are faulty, others are lights or cameras without geometry
-    if Mesh.NVertices>2 then
+    //Just refresh a single MeshImport-component
+    UpdateMeshImp(DataFile.MeshList[0] as T3dsMesh,Self.MeshImpToUpdate);
+  end
+  else
+  begin
+    //Create a group with Model and Meshes
+    Group := TLogicalGroup.Create(nil);
+
+    MeshGroup := TLogicalGroup.Create(Group.Children);
+    MeshGroup.SetString('Comment','Meshes');
+    for I := 0 to DataFile.MeshList.Count - 1 do
+    begin
+      Mesh := DataFile.MeshList[I] as T3dsMesh;
       MeshGroup.Children.AddComponent( GenerateMesh(Mesh) );
+    end;
+
+    Group.Children.AddComponent( GenerateModel );
+    Group.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
+
+    Self.ResultModelGroup := Group;
   end;
-
-  Group.Children.AddComponent( GenerateModel );
-  Group.Comment := 'Imported from ' + ExtractFileName(Self.FileName);
-
-  Result := Group;
 end;
 
 procedure T3dsImport.ScaleAndCenter;
@@ -646,12 +726,12 @@ begin
 end;
 
 procedure T3dsImport.ApplyPivotPoint;
-var
+{var
   I,J : integer;
-  Mesh : T3dsMesh;
+  Mesh : T3dsMesh;}
 begin
-exit; //todo: this needs more debugging
-  for I := 0 to DataFile.MeshList.Count - 1 do
+//todo: this needs more debugging
+{  for I := 0 to DataFile.MeshList.Count - 1 do
   begin
     Mesh := T3dsMesh(DataFile.MeshList[I]);
     for J := 0 to High(Mesh.Vertices) do
@@ -659,8 +739,292 @@ exit; //todo: this needs more debugging
       VecSub3(Mesh.Vertices[J],DataFile.Pivot,Mesh.Vertices[J]);
       VecSub3(Mesh.Vertices[J],Mesh.LocalOrigin,Mesh.Vertices[J]);
     end;
+  end;}
+end;
+
+
+{ T3dsMesh }
+
+procedure T3dsMesh.CombineWith(M: T3dsMesh);
+var
+  I : integer;
+begin
+  if Self.NVertices + M.NVertices>High(Word) then
+    raise Exception.Create('Too many vertices in combined 3ds-mesh. Import with "Single mesh" off.');
+
+  SetLength(Self.Vertices, Self.NVertices + M.NVertices);
+  Move(M.Vertices[0],Self.Vertices[Self.NVertices],M.NVertices * SizeOf(M.Vertices[0]));
+
+  SetLength(Self.VertexColors, Self.NVertices + M.NVertices);
+  Move(M.VertexColors[0],Self.VertexColors[Self.NVertices],M.NVertices * SizeOf(M.VertexColors[0]));
+
+  if Length(M.TextureCoords)>0 then
+  begin
+    SetLength(Self.TextureCoords, Self.NVertices + M.NVertices);
+    Move(M.TextureCoords[0],Self.TextureCoords[Self.NVertices],M.NVertices * SizeOf(M.TextureCoords[0]));
+  end;
+
+  SetLength(Self.Faces, Self.NFaces + M.NFaces);
+  Move(M.Faces[0],Self.Faces[Self.NFaces],M.NFaces * SizeOf(M.Faces[0]));
+  for I := 0 to M.NFaces-1 do
+  begin
+    Inc(Self.Faces[ Self.NFaces + I ].V1, Self.NVertices );
+    Inc(Self.Faces[ Self.NFaces + I ].V2, Self.NVertices );
+    Inc(Self.Faces[ Self.NFaces + I ].V3, Self.NVertices );
+  end;
+
+  Inc(Self.NVertices,M.NVertices);
+  Inc(Self.NFaces,M.NFaces);
+end;
+
+constructor T3dsMesh.CreateFromMesh(M: TMesh);
+var
+  I,J : integer;
+begin
+  Name := String(M.Name);
+  if M.VerticesCount>High(Word) then
+  begin
+    ZLog.GetLog(Self.ClassName).Error('Cannot export: too many vertices');
+    Abort;
+  end;
+  NVertices := M.VerticesCount;
+  SetLength(Vertices,NVertices);
+  for I := 0 to NVertices-1 do
+  begin
+    Vertices[I][0] := M.Vertices[I][0];
+    Vertices[I][1] := M.Vertices[I][2] * -1;
+    Vertices[I][2] := M.Vertices[I][1];
+  end;
+  SetLength(VertexColors,NVertices);
+  if M.Colors<>nil then
+  begin
+    for I := 0 to NVertices-1 do
+      Self.VertexColors[I] := ColorToZColor(M.Colors^[I]);
+  end;
+  NFaces := M.IndicesCount div 3;
+  SetLength(Faces,NFaces);
+  J := 0;
+  for I := 0 to NFaces-1 do
+  begin
+    Faces[I].V1 := M.Indices^[J];
+    Faces[I].V2 := M.Indices^[J+1];
+    Faces[I].V3 := M.Indices^[J+2];
+    Inc(J,3);
   end;
 end;
 
+procedure T3dsMesh.CreateMaterials(Materials: TObjectList);
+var
+  I : integer;
+  Col : TZColorf;
+  MaterialLookup : TStringList;
+  ColKey : string;
+  Mat : T3dsMaterial;
+
+  function ColToString(const Col : TZColorf) : string;
+  begin
+    Result := IntToStr(Round(Col.R*255)) + IntToStr(Round(Col.G*255)) + IntToStr(Round(Col.B*255));
+  end;
+
+begin
+  MaterialLookup := TStringList.Create;
+  MaterialLookup.CaseSensitive := True;
+
+  for I := 0 to NFaces-1 do
+  begin
+    Col := VertexColors[ Faces[I].V1 ];
+    ColKey := ColToString(Col);
+    if MaterialLookup.IndexOf(ColKey)=-1 then
+    begin
+      Mat := T3dsMaterial.Create;
+      Mat.Name := 'M' + IntToStr(Materials.Count);
+      Mat.DiffuseColor := Col;
+      Materials.Add(Mat);
+      MaterialLookup.AddObject(ColKey,Mat);
+    end else
+      Mat := T3dsMaterial(MaterialLookup.Objects[ MaterialLookup.IndexOf(ColKey) ]);
+    Mat.Faces.Add( pointer(I) );
+  end;
+
+  MaterialLookup.Free;
+end;
+
+const
+  MdataChunkId = $3d3d;
+  ObjectChunkId = $4000;
+  TriMeshChunkId = $4100;
+  VerticesChunkId = $4110;
+  FacesChunkId = $4120;
+
+procedure T3dsMesh.WriteTo(Exporter: T3dsExport);
+var
+  Stream : TStream;
+  ObjectChunk,MeshChunk,Chunk,FacesChunk,MatChunk : pointer;
+  W : word;
+  I,J : integer;
+  Mat : T3dsMaterial;
+begin
+  Stream := Exporter.Stream;
+
+  ObjectChunk := Exporter.MakeChunk(ObjectChunkId);
+
+  //Mesh name
+  W := 0;
+  Stream.Write(W,1);
+
+  MeshChunk := Exporter.MakeChunk(TriMeshChunkId);
+
+  Chunk := Exporter.MakeChunk(VerticesChunkId);
+  W := Self.NVertices;
+  Stream.Write(W,2);
+  Stream.Write(Self.Vertices[0],NVertices * SizeOf(Vertices[0]));
+  Exporter.CloseChunk(Chunk);
+
+  FacesChunk := Exporter.MakeChunk(FacesChunkId);
+  W := Self.NFaces;
+  Stream.Write(W,2);
+  Stream.Write(Self.Faces[0],NFaces * SizeOf(Faces[0]));
+
+  for I := 0 to Exporter.Materials.Count-1 do
+  begin
+    Mat := T3dsMaterial(Exporter.Materials[I]);
+    if Mat.Faces.Count=0 then
+      Continue;
+    MatChunk := Exporter.MakeChunk($4130);
+    Exporter.WriteString(Mat.Name);
+    W := Mat.Faces.Count;
+    Stream.Write(W,2);
+    for J := 0 to Mat.Faces.Count - 1 do
+    begin
+      W := integer(Mat.Faces[J]);
+       Stream.Write(W,2);
+    end;
+    Exporter.CloseChunk(MatChunk);
+  end;
+
+  Exporter.CloseChunk(FacesChunk);
+
+  Exporter.CloseChunk(MeshChunk);
+  Exporter.CloseChunk(ObjectChunk);
+end;
+
+{ T3dsExport }
+
+procedure T3dsExport.CloseChunk(P: pointer);
+var
+  L : longword;
+  OldP : integer;
+begin
+  L := Stream.Position - integer(P) + 2;
+  OldP := Stream.Position;
+  Stream.Position := integer(P);
+  Stream.Write(L,4);
+  Stream.Position := OldP;
+end;
+
+constructor T3dsExport.Create;
+begin
+  Stream := TMemoryStream.Create;
+  Materials := TObjectList.Create(True);
+end;
+
+destructor T3dsExport.Destroy;
+begin
+  Stream.Free;
+  Materials.Free;
+  inherited;
+end;
+
+procedure T3dsExport.WriteString(const S : string);
+var
+  I : integer;
+  C : AnsiChar;
+begin
+  for I := 1 to Length(S) do
+  begin
+    C := AnsiChar(S[I]);
+    Stream.Write(C,1);
+  end;
+  C := #0;
+  Stream.Write(C,1);
+end;
+
+procedure T3dsExport.WriteMaterials;
+var
+  I : integer;
+  Mat : T3dsMaterial;
+  ColorChunk,DiffuseChunk,MatChunk,NameChunk : pointer;
+  B : byte;
+begin
+  for I := 0 to Materials.Count - 1 do
+  begin
+    Mat := T3dsMaterial(Materials[I]);
+    MatChunk := MakeChunk($AFFF);
+
+    NameChunk := MakeChunk($A000);
+    WriteString(Mat.Name);
+    CloseChunk(NameChunk);
+
+    DiffuseChunk := MakeChunk($A020);
+    ColorChunk := MakeChunk($0011);
+    B := Round(Mat.DiffuseColor.R * 255);
+    Stream.Write(B,1);
+    B := Round(Mat.DiffuseColor.G * 255);
+    Stream.Write(B,1);
+    B := Round(Mat.DiffuseColor.B * 255);
+    Stream.Write(B,1);
+    CloseChunk(ColorChunk);
+    CloseChunk(DiffuseChunk);
+
+    CloseChunk(MatChunk);
+  end;
+end;
+
+procedure T3dsExport.DoExport(M: TMesh; const FileName : string);
+var
+  Mesh3ds : T3dsMesh;
+  MdataChunk,FileChunk : pointer;
+begin
+  Mesh3ds := T3dsMesh.CreateFromMesh(M);
+  try
+    Mesh3ds.CreateMaterials(Materials);
+
+    FileChunk := MakeChunk($4d4d);
+    MdataChunk := MakeChunk(MdataChunkId);
+
+    WriteMaterials;
+    Mesh3ds.WriteTo(Self);
+
+    CloseChunk(MdataChunk);
+    CloseChunk(FileChunk);
+  finally
+    Mesh3ds.Free;
+  end;
+
+  Stream.SaveToFile(FileName);
+end;
+
+function T3dsExport.MakeChunk(Id: word): pointer;
+var
+  I : integer;
+begin
+  Stream.Write(Id,2);
+  Result := pointer(Stream.Position);
+  I := 0;
+  Stream.Write(I,4)
+end;
+
+{ T3dsMaterial }
+
+constructor T3dsMaterial.Create;
+begin
+  Faces := TList.Create;
+end;
+
+destructor T3dsMaterial.Destroy;
+begin
+  Faces.Free;
+  inherited;
+end;
 
 end.

@@ -103,6 +103,8 @@ begin
   Result := True;
 end;
 
+
+
 function IntersectRect(const R1,R2 : TZRectf) : boolean;
 //Kod utgått ifrån Types.pas
 var
@@ -125,6 +127,46 @@ begin
   VecSub3(PZVector3f(@R1)^,PZVector3f(@R2)^,Tmp);
   L := VecLength3(Tmp);
   Result := L<R1.Area[3]+R2.Area[3];
+end;
+
+//2D circle intersection
+function IntersectCircle(const R1,R2 : TZRectf) : boolean;
+var
+  L : single;
+begin
+  L := Vec2DDistance(PZVector2f(@R1)^,PZVector2f(@R2)^);
+  Result := L<R1.Area[2]+R2.Area[2];
+end;
+
+//http://www.geometrictools.com/LibFoundation/Intersection/Intersection.html
+//http://www.geometrictools.com/LibFoundation/Intersection/Wm4IntrBox3Sphere3.cpp
+function IntersectObbCircle(const A : TOBB_2D; const B : TZRectf) : boolean;
+var
+  kCDiff : TZVector2f;
+  fAx,fAy,fDx,fDy,Radius : single;
+begin
+  VecSub2(PZVector2f(@B)^,A.C,kCDiff);
+
+  fAx := Abs( VecDot2(kCDiff,A.U[0]) );
+  fAy := Abs( VecDot2(kCDiff,A.U[1]) );
+  fDx := fAx - A.E[0];
+  fDy := fAy - A.E[1];
+
+  Radius := B.Area[2];
+
+  if fAx <= A.E[0] then
+  begin
+    if fAy <= A.E[1] then
+      Result := True
+    else
+      Result := fDy <= Radius;
+  end else
+  begin
+    if fAy <= A.E[1] then
+      Result := fDx<=Radius
+    else
+      Result := (fDx * fDx) + (fDy * fDy) <= (Radius * Radius);
+  end;
 end;
 
 function IntersectBoxSphere(const Box : TZBox3D; const Sphere : TZRectf) : boolean;
@@ -238,6 +280,7 @@ var
         Continue;
       Tmp:=Act1.Position[I];
       Act1.Position[I]:=StartV[I];
+      Act1.CollisionCoordinatesUpdatedTime := 0;
       if not InTestAll then
       begin
         ProblemAxis := I;
@@ -368,12 +411,13 @@ end;
 
 function TCollisionChecks.Test(const Act1, Act2: TModel): boolean;
 type
-  TCollMethod = (Unknown,Rect2D_vs_Rect2D,Sphere_vs_Sphere,Box_vs_Sphere,Box_vs_Box,Obb_vs_Obb);
+  TCollMethod = (Unknown,Rect2D_vs_Rect2D,Sphere_vs_Sphere,Box_vs_Sphere,
+    Box_vs_Box,Obb_vs_Obb,Circle_Vs_Circle,Obb_Vs_Circle);
 var
   RedAct,BlueAct : TModel;
   Style : TCollMethod;
   SwapAct : boolean;
-  RedB,BlueB : TCollisionBounds;
+  RedB,BlueB : PCollisionCoordinates;
 
 const
   HitMap : packed array[TCollisionStyle,TCollisionStyle] of
@@ -381,11 +425,12 @@ const
       M : TCollMethod;
       Swap : boolean;
     end = (
-                //(csRect2D,csSphere3D,csBox3D,csRect2D_OBB)
-{csRect2D}     ((M:Rect2D_vs_Rect2D; Swap:False; ),(M:Unknown; Swap:False; ),         (M:Unknown; Swap:False) ,     (M:Unknown; Swap:False)),
-{csSphere3D}   ((M:Unknown; Swap:False; ),         (M:Sphere_vs_Sphere; Swap:False; ),(M:Box_vs_Sphere; Swap:True) ,(M:Unknown; Swap:False)),
-{csBox3D}      ((M:Unknown; Swap:False; ),         (M:Box_vs_Sphere; Swap:False; ),   (M:Box_Vs_Box; Swap:False),   (M:Unknown; Swap:False)),
-{csRect2D_OBB} ((M:Unknown; Swap:False; ),         (M:Unknown; Swap:False; ),         (M:Unknown; Swap:False),      (M:Obb_Vs_Obb; Swap:False))
+                //(csRect2D,csSphere3D,csBox3D,csRect2D_OBB,csCircle2D)
+{csRect2D}     ((M:Rect2D_vs_Rect2D; Swap:False; ),(M:Unknown; Swap:False; ),         (M:Unknown; Swap:False) ,     (M:Unknown; Swap:False),   (M:Unknown; Swap:False)),
+{csSphere3D}   ((M:Unknown; Swap:False; ),         (M:Sphere_vs_Sphere; Swap:False; ),(M:Box_vs_Sphere; Swap:True) ,(M:Unknown; Swap:False),   (M:Unknown; Swap:False)),
+{csBox3D}      ((M:Unknown; Swap:False; ),         (M:Box_vs_Sphere; Swap:False; ),   (M:Box_Vs_Box; Swap:False),   (M:Unknown; Swap:False),   (M:Unknown; Swap:False)),
+{csRect2D_OBB} ((M:Unknown; Swap:False; ),         (M:Unknown; Swap:False; ),         (M:Unknown; Swap:False),      (M:Obb_Vs_Obb; Swap:False),(M:Obb_Vs_Circle; Swap:False)),
+{csCircle2D}   ((M:Unknown; Swap:False; ),         (M:Unknown; Swap:False; ),         (M:Unknown; Swap:False),      (M:Obb_Vs_Circle; Swap:True),(M:Circle_Vs_Circle; Swap:False))
 );
 
 
@@ -399,7 +444,7 @@ begin
   begin
     //Unsupported collision style
     {$ifndef minimal}
-    ZLog.GetLog(Self.ClassName).Write('Collision combination not supported: ' + IntToStr(Ord(Act1.CollisionStyle)) + ' ' + IntToStr(Ord(Act2.CollisionStyle)));
+    ZLog.GetLog(Self.ClassName).Warning('Collision combination not supported: ' + CollisionStyleNames[Ord(Act1.CollisionStyle)] + ' ' + CollisionStyleNames[Ord(Act2.CollisionStyle)]);
     {$endif}
     Exit;
   end;
@@ -415,8 +460,11 @@ begin
     BlueAct := Act2;
   end;
 
-  RedAct.GetCollisionBounds(RedB);
-  BlueAct.GetCollisionBounds(BlueB);
+  RedAct.UpdateCollisionCoordinates;
+  RedB := @RedAct.CollisionCoordinates;
+  BlueAct.UpdateCollisionCoordinates;
+  BlueB := @BlueAct.CollisionCoordinates;
+
   case Style of
     Rect2D_vs_Rect2D :
       begin
@@ -438,6 +486,8 @@ begin
       begin
         Result := IntersectObb(RedB.Obb,BlueB.Obb);
       end;
+    Circle_Vs_Circle : Result := IntersectCircle(RedB.Rect,BlueB.Rect);
+    Obb_vs_Circle : Result := IntersectObbCircle(RedB.Obb,BlueB.Rect);
     {$ifndef minimal}
     else
       Assert(False,'bad collision style');
@@ -452,9 +502,9 @@ end;
 procedure TDefineCollision.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}integer(@Cat1) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}integer(@Cat2) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}integer(@Cat1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}integer(@Cat2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Collision','Stop']);{$endif}
 end;
 

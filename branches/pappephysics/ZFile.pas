@@ -27,13 +27,14 @@ uses ZClasses;
 type
   TZFile = class(TZComponent)
   private
-    WriteFileName : array[0..254] of char;
+    WriteFileName : array[0..254] of AnsiChar;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     FileName : TPropString;
     FileNameFloatRef : TZPropertyRef;
     FileEmbedded : TZBinaryPropValue;
+    FilePosition,FileSize : integer;
     Encoding : (feChar,feBinary);
     OnRead : TZComponentList;
     OnWrite : TZComponentList;
@@ -47,7 +48,7 @@ type
     ZFile : TZFile;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -58,7 +59,7 @@ type
     ZProperty : TZPropertyRef;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -96,13 +97,20 @@ end;
 procedure TZFile.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}integer(@FileName) - integer(Self), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}integer(@FileNameFloatRef) - integer(Self), zptPropertyRef);
-  List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}integer(@FileEmbedded) - integer(Self), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}integer(@FileName), zptString);
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}integer(@FileNameFloatRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}integer(@FileEmbedded), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite), zptComponentList);
+
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@FilePosition), zptInteger);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@FileSize), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 { TFileAction }
@@ -115,21 +123,22 @@ const
 procedure TFileAction.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'File',{$ENDIF}integer(@ZFile) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'File',{$ENDIF}integer(@ZFile), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZFile]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(FileActionNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
 procedure TFileAction.Execute;
 var
-  S : PChar;
-  FloatBuf : array[0..15] of char;
-  NameBuf : array[0..254] of char;
+  S : PAnsiChar;
+  FloatBuf : array[0..15] of ansichar;
+  NameBuf : array[0..254] of ansichar;
 begin
   {$ifndef minimal}
+  ZAssert(ZFile<>nil,'File property not set');
   if CurFileState<>fsNone then
     //Only allow a single file-operation to be active at one time
     ZHalt('FileAction failed. CurFileState<>fsNone.');
@@ -150,15 +159,15 @@ begin
     if ZFile.FileNameFloatRef.Component<>nil then
     begin
       //If ref is set then convert float-value to string
-      ZStrConvertFloat(
-        PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^,
-        PChar(@FloatBuf));
-      ZStrCopy(NameBuf,PChar(ZFile.FileName));
-      ZStrCat(NameBuf,PChar(@FloatBuf));
-      S := PChar(@NameBuf);
+      ZStrConvertInt(
+        Trunc(PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^),
+        PAnsiChar(@FloatBuf));
+      ZStrCopy(NameBuf,PAnsiChar(ZFile.FileName));
+      ZStrCat(NameBuf,PAnsiChar(@FloatBuf));
+      S := PAnsiChar(@NameBuf);
     end
     else
-      S := PChar(ZFile.FileName);
+      S := PAnsiChar(ZFile.FileName);
 
     {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('ZFile Open: ' + S);
@@ -174,6 +183,10 @@ begin
   end;
 
   CurFile := Self.ZFile;
+
+  CurFile.FilePosition := 0;
+  if Action=faRead then
+    CurFile.FileSize := CurInStream.Size;
 
   case Action of
     faRead :
@@ -206,11 +219,11 @@ begin
 end;
 
 {$ifndef minimal}
-function TFileAction.GetDisplayName: String;
+function TFileAction.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Self.ZFile) then
-    Result := Result + '  ' + FileActionNames[ Ord(Action) ] + ' ' + ZFile.Name;
+    Result := Result + '  ' + AnsiString(FileActionNames[ Ord(Action) ]) + ' ' + ZFile.Name;
 end;
 {$endif}
 
@@ -220,7 +233,7 @@ end;
 procedure TFileMoveData.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}integer(@ZProperty) - integer(Self), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}integer(@ZProperty), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
@@ -240,6 +253,7 @@ begin
   case CurFileState of
     fsReading :
       begin
+        CurInStream.Position := CurFile.FilePosition;
         case CurFile.Encoding of
           feChar :
             begin
@@ -250,6 +264,7 @@ begin
             CurInStream.Read(V,SizeOf(V));
         end;
         PropValuePtr^ := V;
+        CurFile.FilePosition := CurInStream.Position;
       end;
     fsWriting :
       begin
@@ -272,16 +287,17 @@ begin
             end;
         end;
         Inc(CurWriteBuf.Position);
+        CurFile.FilePosition := CurWriteBuf.ByteSize;
       end;
   end;
 end;
 
 {$ifndef minimal}
-function TFileMoveData.GetDisplayName: String;
+function TFileMoveData.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(ZProperty.Component) then
-    Result := Result + '  ' + ZProperty.Component.Name + '.' + ZProperty.Prop.Name;
+    Result := Result + '  ' + ZProperty.Component.Name + '.' + AnsiString(ZProperty.Prop.Name);
 end;
 {$endif}
 

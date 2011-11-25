@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Render passes demo" RenderPasses="2" ClearColor="1 0.24 0.24 1">
+  <OnUpdate>
+    <Timer Interval="0.31">
+      <OnTimer>
+        <SpawnModel Model="SpinnerModel"/>
+      </OnTimer>
+    </Timer>
+  </OnUpdate>
+  <OnRender>
+    <Condition Expression="return App.CurrentRenderPass==0;">
+      <OnFalse>
+        <UseMaterial Material="RenderTargetSourceMaterial"/>
+        <RenderTransformGroup Scale="3 3 2" Translate="4 0 0">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+        <RenderTransformGroup Scale="3 3 2" Translate="-4 0 0">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+      </OnFalse>
+    </Condition>
+  </OnRender>
+  <OnBeginRenderPass>
+    <Condition Expression="return App.CurrentRenderPass==0;">
+      <OnTrue>
+        <SetRenderTarget RenderTarget="RenderTarget1"/>
+      </OnTrue>
+      <OnFalse>
+        <SetRenderTarget/>
+      </OnFalse>
+    </Condition>
+  </OnBeginRenderPass>
+  <Content>
+    <Group Comment="Spinner">
+      <Children>
+        <Model Name="SpinnerModel" Scale="2 2 1" RotationVelocity="0 0.5 0">
+          <Definitions>
+            <DefineVariable Name="SpinnerTime"/>
+          </Definitions>
+          <OnRender>
+            <Condition Expression="return 1;//App.CurrentRenderPass&gt;=0;">
+              <OnTrue>
+                <UseMaterial Material="SpinnerMaterial"/>
+                <RenderMesh Mesh="SpinnerMesh"/>
+              </OnTrue>
+            </Condition>
+          </OnRender>
+          <OnUpdate>
+            <Condition Expression="return CurrentModel.Position.Y&gt;5.5;">
+              <OnTrue>
+                <RemoveModel/>
+              </OnTrue>
+            </Condition>
+            <ZExpression>
+              <Expression>
+<![CDATA[SpinnerTime+=App.DeltaTime*0.75;
+
+Temp1=-4.5 + SpinnerTime;
+Temp1+=noise2(CurrentModel.Personality,SpinnerTime*0.5) * 1.0;
+Temp1+=noise2((SpinnerTime+App.Time)*0.25,0)*3;
+CurrentModel.Position.Y=Temp1;
+
+Temp1=sin(SpinnerTime*2)*2;
+//Temp1+=App.MousePosition.X*4*(CurrentModel.Personality*0.1);
+//Temp1+=noise2(CurrentModel.Personality,SpinnerTime*1) * 1;
+Temp1+=noise2((SpinnerTime*0.25+App.Time)*0.2,0)*18;
+CurrentModel.Position.X=Temp1;
+
+Temp1=cos(SpinnerTime*2)*2;
+CurrentModel.Position.Z=Temp1;]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+        </Model>
+        <Mesh Name="SpinnerMesh">
+          <Producers>
+            <MeshSphere Scale="0.25 0.25 0.25" ZSamples="8" RadialSamples="8"/>
+          </Producers>
+        </Mesh>
+        <Material Name="SpinnerMaterial" Shading="1" Color="0.5 0 0 1"/>
+      </Children>
+    </Group>
+    <Group Comment="Globals">
+      <Children>
+        <DefineVariable Name="Temp1"/>
+        <DefineVariable Name="Temp2"/>
+        <DefineVariable Name="Temp3"/>
+      </Children>
+    </Group>
+    <Group Comment="Render target">
+      <Children>
+        <RenderTarget Name="RenderTarget1" ClearColor="0.502 0.502 0.502 1"/>
+        <Material Name="RenderTargetSourceMaterial">
+          <Textures>
+            <MaterialTexture RenderTarget="RenderTarget1" TexCoords="1"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group>
+  </Content>
+</ZApplication>

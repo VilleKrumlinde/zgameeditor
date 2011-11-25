@@ -22,23 +22,11 @@ unit ZApplication;
 
 interface
 
-uses ZClasses,Meshes,Collision,Commands,Renderer{Tfont},AudioComponents,PAPPE;
+uses ZClasses,Meshes,Collision,Commands,AudioComponents,PAPPE
+  {$ifndef minimal},Generics.Collections,uSymTab,Contnrs{$endif}
+;
 
 type
-
-  TSliceCallback = procedure of object;
-  TClock = class
-  protected
-    LastTime : single;
-    procedure Slice(Callback : TSliceCallback);
-  public
-    Time : single;    //1.0 = 1 second
-    AccumulatedTime : single;
-    DeltaTime : single;
-    FrameLoss : boolean;  //sätts till true ifall vi tappar frames
-    procedure UpdateTime;
-  end;
-
   //Application states
   TAppState = class(TStateBase)
   private
@@ -49,21 +37,48 @@ type
     CollisionsEnabled : boolean;
   end;
 
-  TZApplication = class(TZComponent)
+  TZApplication = class;
+
+  {$ifdef zgeviz}
+  TAppCallback = procedure(App : TZApplication) of object;
+  {$endif}
+
+  TCamera = class(TZComponent)
   private
+    procedure ApplyTransform(App : TZApplication);
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (catPerspective,catOrthograpic);
+    Position : TZVector3f;
+    Rotation : TZVector3f;
+    ClipNear,ClipFar,OrthoZoom,FOV : single;
+  end;
+
+  TZApplication = class(TZComponent)
+  strict private
+    DepthList : TZArrayList;
+    ConstantPool : TZComponentList;
+    {$ifndef minimal}
+    ConstantMap : TDictionary<AnsiString,TObject>;
+    {$endif}
+    OldCaption : pointer;
     FpsFrames : integer;
     FpsCounter,FpsTime : single;
-    CurrentState : TAppState;
     HasShutdown : boolean;
     TargetFrameRate : integer;
     NextFrameTime : single;
     Physics: TPhysics;
     PhysicsCollide:TPhysicsCollide;
+	LastTime : single;
+    procedure RenderModels;
+    procedure ApplyCameraTransform;
+    procedure MainSlice;
     procedure Init;
     procedure Shutdown;
-    procedure MainSlice;
     procedure UpdateScreen;
-    procedure UpdateViewport;
+  private
+    CurrentState : TAppState;
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
@@ -77,22 +92,19 @@ type
     Collisions : TCollisionChecks;
     States : TZComponentList;
     OnLoaded : TZComponentList;
+    OnClose : TZComponentList;
     OnUpdate : TZComponentList;
     OnRender : TZComponentList;
+    OnBeginRenderPass : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
-    Font : TFont;
     CurrentMusic : TMusic;
     Caption : TPropString;
-    EventState : //Global variables reachable from zc event-code
-      record
-        CollidedCategory : single;  //should be int
-        MousePosition : TZVector3f;
-        ClearScreenMode : single;  //should be int
-      end;
+    MousePosition : TZVector3f;
+    ClearScreenMode : integer;
     ClearColor : TZColorf;
     Fullscreen : boolean;
-    ScreenMode : (vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
+    ScreenMode : (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
     ShowOptionsDialog : boolean;
     CustomScreenWidth,CustomScreenHeight : integer;
     CameraPosition : TZVector3f;
@@ -101,19 +113,52 @@ type
     CustomViewportRatio,FOV,ClipNear,ClipFar : single;
     ViewportRatio : (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
     ActualViewportRatio : single;
-    Icon : TZBinaryPropValue;
-    Clock : TClock;
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
+    MouseVisible : boolean;
+    EscapeToQuit : boolean;
+    CurrentRenderPass,RenderPasses : integer;
+    WindowHandle : integer;
+    ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
+    MouseWheelDelta : integer;
+    Camera : TCamera;
+    NoSound : boolean;
+    FrameLoss : boolean;  //sätts till true ifall vi tappar frames
+    ScreenWidth : integer;
+    ScreenHeight : integer;
+    {$ifndef minimal}
+    Icon : TZBinaryPropValue;
+    PreviewClearColor : TZColorf;
+    DesignerIsRunning : boolean;
+    //Zc-parsing
+    SymTab : TSymbolTable;
+    ZcGlobalNames : TObjectList;
+    {$endif}
+    {$ifdef zgeviz}
+    ZgeVizCameraRotation : TZVector3f;
+    ZgeVizTime : single;
+    ZgeVizRenderPassOverride : integer;
+    ZgeVizCameraCallback,ZgeVizViewportCallback : TAppCallback;
+    procedure ViewportChanged;
+    {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
     procedure Run;
-    procedure Terminate;
     procedure AddModel(Model : TModel);
     procedure Update; override;
+    procedure UpdateViewport; overload;
+    procedure UpdateViewport(const W,H : integer); overload;
     {$ifndef minimal}
+    procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer);
     procedure DesignerStop;
+    procedure DesignerSetUpView;
+    function AddToConstantPool(const Value : string) : TObject;
+    procedure ClearConstantPool;
+    procedure RefreshSymbolTable;
+    procedure Compile;
+    procedure CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -125,7 +170,7 @@ type
     State : TAppState;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -138,16 +183,13 @@ const
 
 var
   ZApp : TZApplication;
-  ScreenWidth : integer{$ifndef minimal}=800{$endif};
-  ScreenHeight : integer{$ifndef minimal}=600{$endif};
-  NoSound : boolean;
 
 
 implementation
 
-uses ZPlatform,ZOpenGL,ZLog,AudioPlayer
+uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
   {$ifndef minimal}
-  ,SysUtils
+  ,ZExpressions,SysUtils,Zc_Ops,Classes,Compiler
   {$endif}
   ;
 
@@ -156,24 +198,25 @@ uses ZPlatform,ZOpenGL,ZLog,AudioPlayer
 constructor TZApplication.Create(OwnerList: TZComponentList);
 begin
   inherited;
-  //todo: font ska kanske skapas vid laddning? inline-komponent?
-  Font := TFont.Create(nil);
-  Clock := TClock.Create;
-
   PhysicsInit(Physics);
   PhysicsInstance:=@Physics;
-//  PhysicsInstance^.SweepAndPruneWorkMode:=sapwmOFF;
+//PhysicsInstance^.SweepAndPruneWorkMode:=sapwmOFF;
   PhysicsCollideInit(PhysicsCollide);
-
   Models := TModels.Create;
 
   Collisions := TCollisionChecks.Create(Models);
+  DepthList := TZArrayList.CreateReferenced;
+
+  {$ifndef minimal}
+  ConstantMap := TDictionary<AnsiString,TObject>.Create;
+  SymTab := TSymbolTable.Create;
+  ZcGlobalNames := TObjectList.Create(True);
+  {$endif}
 end;
 
 destructor TZApplication.Destroy;
 begin
   Terminating := True;
-  Clock.Free;
 
   //ev problem med models.free, borde göra models.removeall vid terminate först
   //annars kan models referera modeller som redan har gjorts free på
@@ -183,9 +226,15 @@ begin
   PhysicsDone(Physics);
 
   Collisions.Free;
-  Font.Free;
+  DepthList.Free;
   if not HasShutdown then
     Shutdown;
+
+  {$ifndef minimal}
+  ConstantMap.Free;
+  SymTab.Free;
+  ZcGlobalNames.Free;
+  {$endif}
   inherited;
 end;
 
@@ -195,10 +244,13 @@ var
   I : integer;
 {$endif}
 begin
+  {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
+  {$endif}
 
   {$ifndef minimal}
     //no init if inside designer tool
+    UpdateViewport;
   {$else}
     if Platform_CommandLine('f') then
       Self.FullScreen := True;
@@ -222,19 +274,15 @@ begin
       ScreenHeight := ScreenModes[ I ].H;
     end;
 
-    Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PChar(Self.Caption) );
+    Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption) );
+    Platform_ShowMouse(MouseVisible);
     Renderer.InitRenderer;
     UpdateViewport;
 
-    case FrameRateStyle of
-      frsSyncedWithMonitor: TargetFrameRate := Platform_GetDisplayRefreshRate;
-      frsFree: ;
-      frsFixed: TargetFrameRate := Self.FixedFrameRate;
-    end;
-    if (TargetFrameRate<10) or (TargetFrameRate>200) then
-      TargetFrameRate := 60;
+    TargetFrameRate := Platform_GetDisplayRefreshRate;
 
-    NoSound := Platform_CommandLine('s');
+    if Platform_CommandLine('s') then
+      NoSound := True;
     if not NoSound then
       Platform_InitAudio;
   {$endif}
@@ -243,6 +291,7 @@ end;
 procedure TZApplication.Shutdown;
 begin
   {$ifdef minimal}
+  OnClose.ExecuteCommands;
   Platform_ShutdownScreen;
   if not NoSound then
     Platform_ShutdownAudio;
@@ -256,11 +305,35 @@ begin
 end;
 
 procedure TZApplication.UpdateTime;
+const
+  //Maximum time step for update and collision=1/10 second
+  MaxUpdateStep = 1.0 / 10;
 begin
-  Clock.UpdateTime;
-  //Copy deltatime so it can be read as a property from zexpressions
-  DeltaTime := Clock.DeltaTime;
-  Time := Clock.Time;
+  {$ifdef zgeviz}
+  Time := Self.ZgeVizTime;
+  {$else}
+  Time := Platform_GetTime;
+  {$endif}
+  DeltaTime := Time - LastTime;
+
+  //Avoid too high steps such as when grabbing win-caption with mouse
+  if DeltaTime>MaxUpdateStep then
+  begin
+    DeltaTime := MaxUpdateStep;
+    Self.FrameLoss := True;
+  end
+  else
+    Self.FrameLoss := False;
+    //todo: om deltatime är för hög, öka LostTime, och justera Time och Accumulated med den
+
+  if DeltaTime<0 then
+    //Apparantly deltatime can become negative in multicore processors
+    DeltaTime := 0;
+
+  //Also see this discussion
+  //http://www.yakyak.org/viewtopic.php?t=48231&highlight=&sid=7a0084f72cfc50768c1ed4ce3fe0ae8c
+
+  LastTime := Time;
 end;
 
 procedure TZApplication.UpdateStateVars;
@@ -268,10 +341,23 @@ var
   P : TZPointi;
 begin
   P := Platform_GetMousePos;
+
+  //Clip coord to current viewport
+  Dec(P.X,ViewportX);
+  Dec(P.Y,ViewportY);
+  if P.X<0 then
+    P.X := 0;
+  if P.X>=ViewportWidth then
+    P.X := ViewportWidth-1;
+  if P.Y<0 then
+    P.Y := 0;
+  if P.Y>=ViewportHeight then
+    P.Y := ViewportHeight-1;
+
   //-1 .. 1, 0 är center
-  EventState.MousePosition[0] := (P.X / ScreenWidth) * 2 - 1;
+  MousePosition[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
-  EventState.MousePosition[1] := (((ScreenHeight-P.Y) / ScreenHeight) * 2 - 1);
+  MousePosition[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
 end;
 
 function TZApplication.Main : boolean;
@@ -280,7 +366,7 @@ var
   Remaining : integer;
 {$endif}
 
-  {$ifndef minimal}
+  {$if not (defined(minimal) or defined(ZgeViz))}
   procedure InDumpDebugInfo;
   var
     I,J : integer;
@@ -288,9 +374,10 @@ var
     J := 0;
     for I := 0 to Models.Cats.Count - 1 do
       Inc(J,Models.Get(I).Count);
-    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) );
+    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + ManagedHeap_GetStatus );
   end;
- {$endif}
+  {$ifend}
+
 begin
 
   {$ifdef xminimal} //**
@@ -299,16 +386,19 @@ begin
   {$endif}
   begin
     if FrameRateStyle<>frsFree then
+    begin
+      if FrameRateStyle=frsFixed then
+        TargetFrameRate := Self.FixedFrameRate;
+      if (TargetFrameRate<1) or (TargetFrameRate>200) then
+        TargetFrameRate := 60;
       NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
+    end;
 
     UpdateTime;
 
     UpdateStateVars;
 
-    //Dela upp tiden.
-    //MainSlice anropas för varje movementfactor 1, detta så att collision sker
-    //för varje enskilt movement.
-    Clock.Slice(Self.MainSlice);
+    Self.MainSlice;
 
     //Draw all
     UpdateScreen;
@@ -319,10 +409,13 @@ begin
       FpsCounter := FpsFrames / (Time-FpsTime);
       FpsFrames := 0;
       FpsTime := Time;
-      {$ifndef minimal}
+      {$if not (defined(minimal) or defined(ZgeViz))}
       InDumpDebugInfo;
-      {$endif}
+      {$ifend}
     end;
+
+    if ManagedHeap_GetAllocCount>0 then
+      ManagedHeap_GarbageCollect(False);
 
     {$ifdef minimal}
     if FrameRateStyle<>frsFree then
@@ -365,6 +458,19 @@ begin
   //Emit sounds queued by models and music
   if not NoSound then
     AudioPlayer.EmitSoundsInEmitList;
+
+  //Notify that net-data has been read
+  if Commands.NetResultList.Count>0 then
+    TWebOpen.FlushResultList;
+
+  //Update window caption
+  if pointer(Self.Caption)<>Self.OldCaption then
+  begin
+    Self.OldCaption := Self.Caption;
+    Platform_SetWindowCaption(Self.Caption);
+  end;
+  //Reset wheel delta (it is set from platform)
+  MouseWheelDelta := 0;
 end;
 
 procedure TZApplication.Run;
@@ -376,21 +482,30 @@ begin
   Platform_Run(Self.Main);
 end;
 
+{$ifndef minimal}
 procedure TZApplication.Terminate;
 begin
   Terminating := True;
   Shutdown;
 end;
+{$endif}
+
+procedure TZApplication.UpdateViewport;
+begin
+  UpdateViewport(ScreenWidth,ScreenHeight);
+end;
 
 //Update ActualViewportRatio which is the ratio that is used
-procedure TZApplication.UpdateViewport;
-var
-  ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
+procedure TZApplication.UpdateViewport(const W,H : integer);
 begin
   if Self.ViewportRatio=vprFullWindow then
   begin
-    ActualViewportRatio := ScreenWidth/ScreenHeight;
-    glViewport(0,0,ScreenWidth,ScreenHeight);
+    ActualViewportRatio := W/H;
+    glViewport(0,0,W,H);
+    ViewportWidth := W;
+    ViewportHeight := H;
+    ViewportX := 0;
+    ViewportY := 0;
   end
   else
   begin
@@ -398,91 +513,194 @@ begin
       vprCustom : ActualViewportRatio := Self.CustomViewportRatio;
       vpr4_3 : ActualViewportRatio := 4/3;
       vpr16_9 : ActualViewportRatio := 16/9;
-    {$ifndef zminimal}
+    {$ifndef minimal}
     else
       ;
     {$endif}
     end;
-    if ScreenWidth/ScreenHeight > ActualViewportRatio then
+    if W/H > ActualViewportRatio then
     begin
-      ViewportWidth := Trunc(ScreenHeight*ActualViewportRatio);
-      ViewportHeight := ScreenHeight;
-      ViewportX := Trunc((ScreenWidth-ScreenHeight*ActualViewportRatio)*0.5);
+      ViewportWidth := Round(H*ActualViewportRatio);
+      ViewportHeight := H;
+      ViewportX := Round((W-H*ActualViewportRatio)*0.5);
       ViewportY := 0;
     end
     else
     begin
-      ViewportWidth := ScreenWidth;
-      ViewportHeight := Trunc(ScreenWidth/ActualViewportRatio);
+      ViewportWidth := W;
+      ViewportHeight := Round(W/ActualViewportRatio);
       ViewportX := 0;
-      ViewportY := Trunc((ScreenHeight-ScreenWidth/ActualViewportRatio)*0.5);
+      ViewportY := Round((H-W/ActualViewportRatio)*0.5);
     end;
     glViewport(ViewportX, ViewportY, ViewportWidth, ViewportHeight);
   end;
+  {$ifdef zgeviz}
+  ViewportChanged;
+  {$endif}
 end;
 
+{$ifdef zgeviz}
+procedure TZApplication.ViewportChanged;
+begin
+  if Assigned(Self.ZgeVizViewportCallback) then
+    Self.ZgeVizViewportCallback(Self);
+end;
+{$endif}
 
-procedure TZApplication.UpdateScreen;
+procedure SortModels(List : TZArrayList);
+//http://en.wikipedia.org/wiki/Cocktail_sort
+//http://www.algorithm-code.com/wiki/Cocktail_sort
+var
+  First,Last,I,Shift : integer;
+begin
+  Shift := 0;
+  First := 0;
+  Last := List.Count-1;
+  while First<Last do
+  begin
+    for I := First+1 to Last do
+    begin
+      if TModel(List[I]).SortKey<TModel(List[I-1]).SortKey then
+      begin
+        List.Swap(I,I-1);
+        Shift := I;
+      end;
+    end;
+    Last := Shift;
+    for I := Last downto First+1 do
+    begin
+      if TModel(List[I]).SortKey<TModel(List[I-1]).SortKey then
+      begin
+        List.Swap(I,I-1);
+        Shift := I;
+      end;
+    end;
+    First := Shift;
+  end;
+end;
+
+procedure TZApplication.RenderModels;
 var
   I,J : integer;
   Model : TModel;
   List : TZArrayList;
+  Matrix,TmpM : TZMatrix4f;
+  V : TZVector3f;
 begin
-  {$ifdef zminimal}
-  //always update in designer because user may have changed the ViewportRatio dropdown
-  if ViewportRation=vprCustom then
-  {$endif}
-     UpdateViewport;
+  DepthList.Clear;
 
-  //Setup view and camera
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
+  glGetFloatv(GL_PROJECTION_MATRIX, @Matrix);
+  glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
+  Matrix := MatrixMultiply(TmpM,Matrix);
 
-  //we'll use a perspective matrix to view our scene
-  gluPerspective(Self.FOV, ActualViewportRatio , Self.ClipNear, Self.ClipFar);
-//  glOrtho(-1,1,-1,1,-100,100);
-//  glFrustum(-1, 1, -1, 1, 9, 100);
-
-  //Använd sedan property CameraPosition
-  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  ApplyRotation(CameraRotation);
-  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
-
-  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
-
-  if EventState.ClearScreenMode=0 then
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-  glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
-
-  Renderer.Render_Begin;
-
-  //Render models
   for I := 0 to Models.Cats.Count-1 do
   begin
     List := Models.Get(I);
     for J := 0 to List.Count-1 do
     begin
       Model := TModel(List[J]);
-      Meshes.CurrentModel := Model;
-      Renderer.RenderModel(Model);
+      if Model.RenderOrder=roDepthsorted then
+      begin
+        //Get screen Z-position
+        VectorTransform(Model.Position,Matrix,V);
+        Model.SortKey := V[2];
+        DepthList.Add(Model)
+      end
+      else
+        Renderer.RenderModel(Model);
     end;
   end;
+
+  SortModels(DepthList);
+
+  for I := DepthList.Count-1 downto 0 do
+  begin
+    Model := TModel(DepthList[I]);
+    Renderer.RenderModel(Model);
+  end;
+
   Meshes.CurrentModel := nil;
+end;
 
-  //Render application
-  glPushMatrix;
-  if Self.OnRender.Count>0 then
-    Self.OnRender.ExecuteCommands;
-  if Self.CurrentState<>nil then
-    Self.CurrentState.OnRender.ExecuteCommands;
-  glPopMatrix;
+procedure TZApplication.ApplyCameraTransform;
+begin
+  {$ifdef zgeviz}
+  if Assigned(Self.ZgeVizCameraCallback) then
+    Self.ZgeVizCameraCallback(Self)
+  else
+  begin
+  {$endif}
+    //Setup view and camera
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
+    gluPerspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
+  {$ifdef zgeviz}
+  end;
+  {$endif}
 
-  Renderer.Render_End;
+  {$ifdef zgeviz}
+  glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
+  {$endif}
+
+  //Reverse order to make XYZ-rotation
+  glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
+  glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
+  glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
+  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+end;
+
+procedure TZApplication.UpdateScreen;
+var
+  I : integer;
+begin
+
+  for I := 0 to Self.RenderPasses-1 do
+  begin
+    Self.CurrentRenderPass := I;
+    {$ifdef zgeviz}
+    if ZgeVizRenderPassOverride<>0 then
+      Self.CurrentRenderPass := ZgeVizRenderPassOverride-1;
+    {$endif}
+
+    if Self.OnBeginRenderPass.Count>0 then
+      Self.OnBeginRenderPass.ExecuteCommands;
+
+    {$ifndef zgeviz}
+    if {$ifdef minimal}(ViewportRatio=vprCustom) and {$endif}
+      (CurrentRenderTarget=nil) then
+      UpdateViewport;
+    {$endif}
+
+    //Use custom camera or default
+    if Camera<>nil then
+      Camera.ApplyTransform(Self)
+    else
+      ApplyCameraTransform;
+
+    if (ClearScreenMode=0) and (CurrentRenderTarget=nil) then
+    begin
+      glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    end;
+
+    glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+
+    Renderer.Render_Begin;
+      RenderModels;
+
+      //Render application
+      glPushMatrix;
+      if Self.OnRender.Count>0 then
+        Self.OnRender.ExecuteCommands;
+      if Self.CurrentState<>nil then
+        Self.CurrentState.OnRender.ExecuteCommands;
+      glPopMatrix;
+    Renderer.Render_End;
+  end;
 
   //End frame
   glFlush;
@@ -491,6 +709,190 @@ begin
   Platform_SwapBuffers;
   {$endif}
 end;
+
+{$ifndef minimal}
+procedure TZApplication.DesignerFreeResources;
+var
+  I,J : integer;
+  Model : TModel;
+  List : TZArrayList;
+begin
+  inherited;
+
+  //Instanced models are not part of the project tree if they have been spawned
+  //using clone so they need to be handled separately.
+  for I := 0 to Models.Cats.Count-1 do
+  begin
+    List := Models.Get(I);
+    for J := 0 to List.Count-1 do
+    begin
+      Model := TModel(List[J]);
+      Model.DesignerFreeResources;
+    end;
+  end;
+end;
+
+procedure TZApplication.DesignerSetUpView;
+begin
+  //Used for previewing app-state in designer
+  UpdateViewport;
+
+  if Camera<>nil then
+    Camera.ApplyTransform(Self)
+  else
+    Self.ApplyCameraTransform;
+
+  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+end;
+
+function TZApplication.AddToConstantPool(const Value : string) : TObject;
+var
+  Key : AnsiString;
+  Con : TExpStringConstant;
+begin
+  Key := AnsiString(Value);
+  if not ConstantMap.TryGetValue(Key,Result) then
+  begin
+    Con := TExpStringConstant.Create(ConstantPool);
+    Con.SetString('Value',Key);
+    ConstantMap.Add(Key,Con);
+    Result := Con;
+  end;
+end;
+
+procedure TZApplication.ClearConstantPool;
+begin
+  ConstantPool.Clear;
+  ConstantMap.Clear;
+end;
+
+procedure TZApplication.RefreshSymbolTable;
+var
+  List : TStringList;
+  I : integer;
+  Con : TDefineConstant;
+  BuiltInFunctions,BuiltInConstants : TObjectList;
+  Func : TZcOpFunctionBuiltIn;
+begin
+  ZcGlobalNames.Clear;
+  SymTab.ClearAll;
+
+  //Scope 0: global constants and built-in functions
+  BuiltInConstants := Zc_Ops.GetBuiltInConstants;
+  for I := 0 to BuiltInConstants.Count - 1 do
+  begin
+    Con := TDefineConstant(BuiltInConstants[I]);
+    SymTab.Add(String(Con.Name),Con);
+  end;
+
+  BuiltInFunctions := Zc_Ops.GetBuiltInFunctions;
+  for I := 0 to BuiltInFunctions.Count - 1 do
+  begin
+    Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
+    SymTab.Add(Func.Id,Func);
+  end;
+
+  //Scope 1: object names
+  SymTab.PushScope;
+  List := TStringList.Create;
+  try
+    GetObjectNames(Self,List);
+    for I := 0 to List.Count-1 do
+      SymTab.Add( List[I], List.Objects[I] );
+  finally
+    List.Free;
+  end;
+end;
+
+procedure TZApplication.Compile;
+var
+  I,J: integer;
+  C : TZComponent;
+  Prop : TZProperty;
+  PropValue : TZPropertyValue;
+  PropList : TZPropertyList;
+  List : TObjectList;
+begin
+
+  for I := 0 to ZcGlobalNames.Count - 1 do
+  begin
+    //Remove user function names from symtab
+    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
+      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id)
+    else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
+      //Also remove inline constants
+      SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name));
+  end;
+  ZcGlobalNames.Clear;
+
+  //Remove stringconstants
+  ClearConstantPool;
+
+  List := TObjectList.Create(False);
+  try
+    Self.GetAllChildren(List,False);
+
+    for I := 0 to List.Count - 1 do
+    begin
+      C := List[I] as TZComponent;
+      PropList := C.GetProperties;
+      for J := 0 to PropList.Count-1 do
+      begin
+        Prop := TZProperty(PropList[J]);
+        if Prop.PropertyType=zptExpression then
+        begin
+          C.GetProperty(Prop,PropValue);
+          CompileProperty(C,PropValue,Prop);
+        end;
+      end;
+    end;
+  finally
+    List.Free;
+  end;
+end;
+
+procedure TZApplication.CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+var
+  CurParent: TZComponent;
+  Model : TZComponent;
+begin
+  if Prop.IsDefaultValue(Expr) then
+  begin
+    //Generate no code for an empty expression
+    Expr.ExpressionValue.Code.Clear;
+    Exit;
+  end;
+
+  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
+  //så att den kan användas i uttryck.
+  CurParent := C.GetOwner;
+  Model := nil;
+  while CurParent <> nil do
+  begin
+    if CurParent is TModel then
+    begin
+      Model := CurParent as TModel;
+      Break;
+    end;
+    CurParent := CurParent.GetOwner;
+  end;
+  if Assigned(Model) then
+    SymTab.Add('CurrentModel',Model);
+
+  SymTab.Add('this',C);
+  try
+    Compiler.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
+  finally
+    if Assigned(Model) then
+      SymTab.Remove('CurrentModel');
+    SymTab.Remove('this');
+  end;
+end;
+{$endif}
 
 procedure TZApplication.AddModel(Model: TModel);
 begin
@@ -502,69 +904,121 @@ end;
 procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}integer(@OnLoaded), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}integer(@OnClose), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}integer(@OnLoaded) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderCommand]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption) - integer(Self), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}integer(@OnBeginRenderPass), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption), zptString);
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}integer(@Time) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}integer(@Time), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}integer(@FpsCounter) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}integer(@FpsCounter), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedCategory',{$ENDIF}integer(@EventState.CollidedCategory) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@EventState.MousePosition) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@MousePosition), zptVector3f);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@EventState.ClearScreenMode) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}integer(@MouseWheelDelta), zptInteger);
     List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@ClearScreenMode), zptInteger);
+    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}integer(@RenderPasses), zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'WindowHandle',{$ENDIF}integer(@WindowHandle), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
 
-  List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}integer(@FrameRateStyle) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}integer(@FrameRateStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['SyncedWithMonitor','Free','Fixed']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}integer(@FixedFrameRate) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}integer(@FixedFrameRate), zptInteger);
 
-  List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
-    List.GetLast.DefaultValue.ByteValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}integer(@ShowOptionsDialog) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Use Desktop resolution','640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    List.GetLast.DefaultValue.ByteValue := 2;
+  List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}integer(@ShowOptionsDialog), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}integer(@CustomScreenWidth) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenHeight',{$ENDIF}integer(@CustomScreenHeight) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}integer(@CustomScreenWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenHeight',{$ENDIF}integer(@CustomScreenHeight), zptInteger);
 
-  List.AddProperty({$IFNDEF MINIMAL}'CameraPosition',{$ENDIF}integer(@CameraPosition) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'CameraPosition',{$ENDIF}integer(@CameraPosition), zptVector3f);
     //Camera default is z 10
     List.GetLast.DefaultValue.Vector3fValue[2] := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'CameraRotation',{$ENDIF}integer(@CameraRotation) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}integer(@LightPosition) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'CameraRotation',{$ENDIF}integer(@CameraRotation), zptVector3f);
+
+  List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}integer(@Camera), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCamera]);{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}integer(@LightPosition), zptVector3f);
     //Light default is down the Z axis
     List.GetLast.DefaultValue.Vector3fValue[2] := 1;
 
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportRatio',{$ENDIF}integer(@ViewportRatio) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportRatio',{$ENDIF}integer(@ViewportRatio), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Full window','Custom','4:3','16:9']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CustomViewportRatio',{$ENDIF}integer(@CustomViewportRatio) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomViewportRatio',{$ENDIF}integer(@CustomViewportRatio), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
-  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 0.1;
-  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
+  List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}integer(@EscapeToQuit), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}integer(@ViewportX), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}integer(@ViewportX), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportWidth',{$ENDIF}integer(@ViewportWidth), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportHeight',{$ENDIF}integer(@ViewportHeight), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenHeight',{$ENDIF}integer(@ScreenHeight), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 600;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenWidth',{$ENDIF}integer(@ScreenWidth), zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 800;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}integer(@NoSound), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
-  List.AddProperty('Icon',integer(@Icon) - integer(Self), zptBinary);
+  List.AddProperty('Icon',integer(@Icon), zptBinary);
+    List.SetDesignerProperty;
+  List.AddProperty('PreviewClearColor',integer(@PreviewClearColor), zptColorf);
+    List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.5,0.5,0.5,0);
     List.SetDesignerProperty;
   {$ENDIF}
 end;
@@ -579,58 +1033,26 @@ begin
 
   Self.Time := 0;
   Self.DeltaTime := 0;
-  Self.Clock.LastTime := 0;
+  Self.LastTime := 0;
+  Self.FpsTime := 0;
 
-  //Uppdatera träd initialt
+  //Initial tree update
   Content.Update;
   OnLoaded.ExecuteCommands;
+  DesignerIsRunning := True;
 end;
 
 procedure TZApplication.DesignerStop;
 begin
+  DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;
-  Collisions.ClearAll
+  Collisions.ClearAll;
+  OnClose.ExecuteCommands;
+  Renderer.DesignerRenderStop;
 end;
 {$endif}
 
-{ TClock }
-
-procedure TClock.Slice(Callback : TSliceCallback);
-begin
-  //Skip slicing now, detlatime is maxed out directly in updatetime instead
-  Callback;
-end;
-
-procedure TClock.UpdateTime;
-const
-  //Maximum time step for update and collision=1/10 second
-  MaxUpdateStep = 1.0 / 10;
-begin
-  Time := Platform_GetTime;
-  DeltaTime := Time - LastTime;
-
-  //Avoid too high steps, for instance when grabbing win-caption with mouse
-  if DeltaTime>MaxUpdateStep then
-  begin
-    DeltaTime := MaxUpdateStep;
-    Self.FrameLoss := True;
-  end
-  else
-    Self.FrameLoss := False;
-    //todo: om deltatime är för hög, öka LostTime, och justera Time och Accumulated med den
-
-  if DeltaTime<0 then
-    //Apparantly deltatime can become negative in multicore processors
-    DeltaTime := 0;
-
-  //Also see this discussion
-  //http://www.yakyak.org/viewtopic.php?t=48231&highlight=&sid=7a0084f72cfc50768c1ed4ce3fe0ae8c
-
-  LastTime := Time;
-
-  AccumulatedTime := Time;
-end;
 
 /////////////////////////////
 
@@ -645,9 +1067,9 @@ end;
 procedure TAppState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ModelUpdatesEnabled',{$ENDIF}integer(@ModelUpdatesEnabled) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ModelUpdatesEnabled',{$ENDIF}integer(@ModelUpdatesEnabled), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionsEnabled',{$ENDIF}integer(@CollisionsEnabled) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'CollisionsEnabled',{$ENDIF}integer(@CollisionsEnabled), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
 end;
 
@@ -657,7 +1079,7 @@ end;
 procedure TSetAppState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}integer(@State) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}integer(@State), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
 end;
 
@@ -665,22 +1087,81 @@ procedure TSetAppState.Execute;
 var
   OldState : TStateBase;
 begin
-  {$ifndef minimal}if state=nil then exit;{$endif}
   OldState := ZApp.CurrentState;
   ZApp.CurrentState := State;
   if OldState<>nil then
     OldState.OnLeave.ExecuteCommands;
-  State.OnStart.ExecuteCommands;
+  if State<>nil then
+    State.OnStart.ExecuteCommands;
 end;
 
 {$ifndef minimal}
-function TSetAppState.GetDisplayName: string;
+function TSetAppState.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(State) then
     Result := Result + '  ' + State.Name;
 end;
 {$endif}
+
+{ TCamera }
+
+procedure TCamera.ApplyTransform(App : TZApplication);
+var
+  W,H : single;
+begin
+  //Setup view and camera
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  case Self.Kind of
+    catPerspective :
+      begin
+        gluPerspective(Self.FOV, App.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+      end;
+  else
+    begin
+      //Ortho
+      {$ifndef minimal}
+      if Abs(Self.OrthoZoom)>0.000001 then
+      begin //Avoid divide by zero
+      {$endif}
+      H := (1.0/Self.OrthoZoom);
+      W := App.ActualViewportRatio * H;
+      glOrtho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
+      {$ifndef minimal}
+      end;
+      {$endif}
+    end;
+  end;
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+
+  //Reverse order to make XYZ-rotation
+  glRotatef( (Rotation[0]*360) , 1, 0, 0);
+  glRotatef( (Rotation[1]*360) , 0, 1, 0);
+  glRotatef( (Rotation[2]*360) , 0, 0, 1);
+  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+  glTranslatef(-Position[0], -Position[1], -Position[2]);
+end;
+
+procedure TCamera.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Perspective','Orthographic']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 0.1;
+  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 100;
+  List.AddProperty({$IFNDEF MINIMAL}'OrthoZoom',{$ENDIF}integer(@OrthoZoom), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 45;
+end;
 
 initialization
 
@@ -691,6 +1172,9 @@ initialization
   ZClasses.Register(TAppState,AppStateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoTopLevelCreate:=True;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName:=True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=20;{$endif}
   ZClasses.Register(TSetAppState,SetAppStateClassId);
+  ZClasses.Register(TCamera,CameraClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
 
 end.

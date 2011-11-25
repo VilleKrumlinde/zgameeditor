@@ -25,36 +25,45 @@ unit ZClasses;
 interface
 
 {$ifndef minimal}
-uses uSymTab;
+uses uSymTab,Contnrs,Classes;
 {$endif}
 
 type
-  //Baseclasse for all central koncepts in ZGE
+  //Baseclasses for all central concepts in ZGE
+
   //List with unique ClassIDs
   TZClassIds = (
  LogicalGroupClassId,ZBitmapClassId,
  BitmapRectClassId,BitmapZoomRotateClassId,BitmapExpressionClassId,BitmapFromFileClassId,BitmapBlurClassId,
- BitmapLoadClassId,BitmapCombineClassId,
- MeshClassId,ModelClassId,MaterialClassId,SpawnModelClassId,RemoveModelClassId,
- MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,RemoveAllModelsClassId,
+ BitmapLoadClassId,BitmapCombineClassId,BitmapCellsClassId,BitmapDistortClassId,BitmapPixelsClassId,
+ BitmapConvolutionClassId,BitmapNoiseClassId,
+ MeshClassId,ModelClassId,MaterialClassId,MaterialTextureClassId,SpawnModelClassId,RemoveModelClassId,
+ MeshBoxClassId,MeshSphereClassId,MeshNoiseClassId,MeshExpressionClassId,
+ MeshCombineClassId,MeshLoadClassId,MeshTransformClassId,MeshLoopClassId,
+ RemoveAllModelsClassId,
  MeshImplicitClassId,ImplicitPrimitiveClassId,ImplicitExpressionClassId,ImplicitCombineClassId,
  ImplicitWarpClassId,MeshImportClassId,
  FontClassId,ModelStateClassId,SetModelStateClassId,
  AnimatorGroupClassId,AnimatorSimpleClassId,MouseModelControllerClassId,
- StartAnimatorClassId,
+ StartAnimatorClassId, {CurvePointClassId, CurveClassId, AnimatorCurveClassId,}
  UseMaterialClassId,RenderMeshClassId,RenderTransformClassId,RenderSpriteClassId,
  RenderBeamsClassId,RenderTransformGroupClassId,RenderTextClassId,RenderSetColorClassId,RenderNetClassId,
  RenderParticlesClassId,ShaderClassId,ShaderVariableClassId,
- RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,
- ApplicationClassId,AppStateClassId,SetAppStateClassId,
- ZExpressionClassId,ExpConstantClassId,ExpOpBinaryClassId,ExpPropValueClassId,
- ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,
+ RenderTargetClassId,SetRenderTargetClassId,
+ RepeatClassId,ConditionClassId,KeyPressClassId,RefreshContentClassId,ZTimerClassId,WebOpenClassId,
+ ApplicationClassId,AppStateClassId,SetAppStateClassId,CallComponentClassId,CameraClassId,
+ ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
+ ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,
+ ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
- ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,
- DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,
+ ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
+ ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
+ ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
+ DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
  MusicClassId,MusicControlClassId,
+ SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId
 );
@@ -63,8 +72,14 @@ type
   TZComponentClass = class of TZComponent;
   TZProperty = class;
 
+  //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
+  TPropString = PAnsiChar;
+  PPropString = ^TPropString;
+
   PObjectArray = ^TObjectArray;
   TObjectArray = array[0..100000] of TObject;
+
+  PPAnsiChar = ^PAnsiChar;
 
   TBytes = array[0..100000] of byte;
   PBytes = ^TBytes;
@@ -147,6 +162,9 @@ type
     procedure Grow;
     function GetItem(Index: Integer): TObject;
     procedure SetItem(Index: Integer; const Value: TObject);
+    {$ifndef minimal}
+    procedure CheckValidIndex(Index: Integer);
+    {$endif}
   public
     ReferenceOnly : boolean;
     constructor CreateReferenced;
@@ -157,13 +175,14 @@ type
     function Last : TObject;
     procedure Remove(Item : TObject);
     procedure SwapRemoveAt(Index : integer);
+    procedure SwapRemove(Item: TObject);
     procedure Clear;
     property Items[Index: Integer]: TObject read GetItem write SetItem; default;
     property Count : integer read FCount;
     procedure Push(Item : TObject);
     function Pop : TObject;
-    function PopFloat : single;
     function GetPtrToItem(Index: Integer): pointer;
+    procedure Swap(Index1,Index2 : integer);
   end;
 
   //Används som property i komponenter för att hålla children-komponenter
@@ -171,7 +190,7 @@ type
   //Obs, äger sina componenter trots att TZArrayList ReferenceOnly=true
   TZComponentList = class(TZArrayList)
   private
-    Owner : TZComponent;
+    {$ifndef minimal}public{$endif} Owner : TZComponent;
   public
     IsChanged : boolean;
     constructor Create; overload;
@@ -187,6 +206,7 @@ type
     procedure ExecuteCommands;
     {$ifndef minimal}
     procedure DesignerReset;
+    procedure InsertComponent(Component: TZComponent; Index : integer);
     {$endif}
   end;
 
@@ -215,7 +235,13 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataType = (zctVoid,zctFloat);
+  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull);
+  TZcDataType = record
+    Kind : TZcDataTypeKind;
+    {$ifndef minimal}
+    ReferenceClassId : TZClassIds;
+    {$endif}
+  end;
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -226,16 +252,16 @@ type
   TZPropertyValue = record
     {$IFNDEF MINIMAL}
     //String-props kan ej ligga i case-switch för designer
-    StringValue : string;
     ExpressionValue : TZExpressionPropValue;
+    StringValue : AnsiString;
     {$ENDIF}
     case integer of
       0 : (FloatValue : single);
       2 : (RectfValue : TZRectf);
       3 : (ColorfValue : TZColorf);
       4 : (IntegerValue : integer);
-      5 : (ComponentValue : TZComponent); //även inlinecomponent
-      {$IFDEF MINIMAL}6 : (StringValue : PChar);{$ENDIF}
+      5 : (ComponentValue : TZComponent);
+      {$ifdef minimal}6 : (StringValue : PAnsiChar);{$endif}
       7 : (PropertyValue : TZPropertyRef);
       8 : (Vector3fValue : TZVector3f);
       9 : (ComponentListValue : TZComponentList);
@@ -250,7 +276,7 @@ type
 
   //zptScalar = float with 0..1 range
   TZPropertyType = (zptFloat,zptScalar,zptRectf,zptColorf,zptString,zptComponentRef,zptInteger,
-    zptPropertyRef,zptVector3f,zptComponentList,zptByte,zptInlineComponent,zptBoolean,
+    zptPropertyRef,zptVector3f,zptComponentList,zptByte,zptBoolean,
     zptExpression,zptBinary);
 
   TZProperty = class
@@ -258,20 +284,21 @@ type
     DefaultValue : TZPropertyValue;
     NeverPersist : boolean;
     DontClone : boolean;
+    IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
+    Offset : integer;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
-    Offset : integer;
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
     ExcludeFromBinary : boolean;  //Ta inte med denna prop i binärström (designer only)
     ExcludeFromXml : boolean; //Spara ej i xml-fil
+    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
     NeedRefreshNodeName : boolean;//True för propertys som kräver refresh i nodträd vid ändring av prop
     ChildClasses :               //För componentlists: krav på vilka klasser som kan ligga i listan
       array of TZComponentClass; //För componentref: krav på vilka klasser som går att referera till
     Options : array of string;  //För bytes: Valbara alternativ
     HideInGui : boolean;        //Visa inte denna prop i gui
-    IsReadOnly : boolean;       //Prop kan ej tilldelas i expressions
     ReturnType : TZcDataType;      //For expresssions: return type of expression
     function IsDefaultValue(const Value : TZPropertyValue) : boolean;
     procedure SetChildClasses(const C : array of TZComponentClass);
@@ -282,8 +309,9 @@ type
   TZPropertyList = class(TZArrayList)
   private
     NextId : integer;
+    TheSelf : integer;
   public
-    procedure AddProperty({$IFNDEF MINIMAL}Name : string; {$ENDIF} Offset : integer; PropType : TZPropertyType);
+    procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
     function GetByName(Name : string) : TZProperty;
@@ -292,10 +320,6 @@ type
     function GetLast : TZProperty;
     function GetById(PropId : integer) : TZProperty;
   end;
-
-  //Datatyp som  zptString-properties ska deklareras som i components (se app.caption)
-  TPropString = {$IFNDEF MINIMAL}string{$else}PChar{$ENDIF};
-  PPropString = ^TPropString;
 
   //Baskomponentklass för allt som ska kunna redigeras i tool
   TZComponent = class
@@ -306,7 +330,10 @@ type
     IsChanged : boolean;
     procedure DefineProperties(List : TZPropertyList); virtual;
   public
-    {$IFNDEF MINIMAL} Name,Comment : string; {$ENDIF}
+    {$ifndef minimal}
+    Name,Comment : TPropString;
+    DesignDisable : boolean;
+    {$endif}
     OwnerList : TZComponentList;
     constructor Create(OwnerList: TZComponentList); virtual;
     destructor Destroy; override;
@@ -318,9 +345,12 @@ type
     procedure Change;
     function Clone : TZComponent;
     {$ifndef minimal}
-    function GetDisplayName : string; virtual;
+    function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
+    procedure DesignerFreeResources; virtual; //Free resources such as GL-handles
     function GetOwner : TZComponent;
+    procedure SetString(const PropName : string; const Value : AnsiString);
+    procedure GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
     {$endif}
   end;
 
@@ -342,19 +372,17 @@ type
     Children : TZComponentList;
     procedure Update; override;
     procedure Execute; override;
-    {$ifndef minimal}
-    procedure DesignerReset; override;
-    {$endif}
   end;
 
 
 
   //Info about one componentclass
   TZComponentInfo = class
+  private
+    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     ZClass : TZComponentClass;
     ClassId : TZClassIds;
-    Properties : TZPropertyList;
     {$IFNDEF MINIMAL}
     ZClassName : string;  //Klassnamn utan 'T'
     NoUserCreate : boolean;
@@ -365,11 +393,13 @@ type
     NeedParentComp : string;
     NeedParentList : string;
     AutoName : boolean;  //Give name automatically when inserted in designer
+    ParamCount : integer; //Parameter count for contentproducers
     {$ENDIF}
-    {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
-    public
+    {$ifndef MINIMAL}
+  public
     HasGlobalData : boolean; //See audiomixer. Do not cache property-list.
-    {$ifend}
+    function GetProperties : TZPropertyList;
+    {$endif}
   end;
 
 
@@ -381,27 +411,25 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
-    constructor Create;
-    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
-  {$IFNDEF MINIMAL}
-    function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
-  {$ENDIF}
     procedure Register(C : TZComponentClass; ClassId : TZClassIds);
     function GetProperties(Component : TZComponent) : TZPropertyList;
     {$ifndef minimal}public
     destructor Destroy; override;{$else}private{$endif}
     function GetInfo(Component : TZComponent) : TZComponentInfo;
+    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
     {$ifend}
   {$IFNDEF MINIMAL}
+    function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
     function SaveBinaryToStream(Component : TZComponent) : TObject;
     function LoadXmlFromFile(FileName : string) : TZComponent;
     function LoadXmlFromString(const XmlData : string; SymTab : TSymbolTable) : TZComponent;
     procedure SaveXml(Component : TZComponent; FileName : string);
     function SaveXmlToStream(Component: TZComponent) : TObject;
     function GetAllInfos : PComponentInfoArray;
+    function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
   {$ENDIF}
     function LoadBinary : TZComponent;
   end;
@@ -460,7 +488,7 @@ type
     procedure Read(p,count)
   }
     Size,Position : integer;
-    constructor CreateFromFile(FileName : PChar; IsRelative : Boolean);
+    constructor CreateFromFile(FileName : PAnsiChar; IsRelative : Boolean);
     constructor CreateFromMemory(M : pointer; Size : integer);
     destructor Destroy; override;
     procedure Read(var Buf; Count : integer);
@@ -471,7 +499,7 @@ type
   end;
 
 
-function GetPropertyRef(const Prop : TZPropertyRef) : PFloat;
+function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
 function MakeColorf(const R,G,B,A : single) : TZColorf;
 
 {.$IFNDEF MINIMAL}
@@ -482,10 +510,25 @@ function ComponentManager : TZComponentManager;
 procedure Register(C : TZComponentClass; ClassId : TZClassIds);
 
 //String functions
-function ZStrLength(P : PChar) : integer;
-procedure ZStrCopy(P : PChar; const Src : PChar);
-procedure ZStrCat(P : PChar; const Src : PChar);
-procedure ZStrConvertFloat(const S : single; Dest : PChar);
+function ZStrLength(P : PAnsiChar) : integer;
+procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
+procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
+procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
+function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
+function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
+procedure ZStrSubString(const Str,Dest : PAnsiChar; const StartPos,NChars : integer);
+function ZStrToInt(const Str : PAnsiChar) : integer;
+
+//Garbage collected managed heap
+function ManagedHeap_Alloc(const Size : integer) : pointer;
+function ManagedHeap_GetAllocCount : integer;
+procedure ManagedHeap_GarbageCollect(Full : boolean);
+procedure ManagedHeap_AddTarget(const P : pointer);
+procedure ManagedHeap_RemoveTarget(const P : pointer);
+{$ifndef minimal}
+function ManagedHeap_GetStatus : string;
+{$endif}
+
 
 {$ifndef minimal}
 const
@@ -493,12 +536,22 @@ const
   FloatTextDecimals = 4;  //Nr of fraction digits when presenting float-values as text
 
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
+procedure GetAllObjects(C : TZComponent; List : TObjectList);
+procedure GetObjectNames(C : TZComponent; List : TStringList);
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
+
+var
+  DesignerPreviewProducer : TZComponent;
 {$endif}
 
 implementation
 
 uses ZMath,ZLog,ZPlatform
-  {$IFNDEF MINIMAL},Classes,LibXmlParser,SysUtils,Contnrs,Math,zlib{$ENDIF}
+  {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib, ZApplication,
+  Generics.Collections,Zc_Ops
+  {$endif}
   ;
 
 
@@ -584,7 +637,7 @@ type
 
   TZXmlReader = class(TZReader)
   private
-    Xml : LibXmlParser.TXmlParser;
+    MainXml : LibXmlParser.TXmlParser;
     FixUps : TZArrayList;
     SymTab : TSymbolTable;
     OldSeparator : char;
@@ -594,13 +647,139 @@ type
     procedure LoadFromFile(const FileName: string);
     procedure LoadFromString(const XmlData: string; SymTab : TSymbolTable);
     function DoReadComponent(OwnerList : TZComponentList) : TZComponent; override;
+    function XmlDoReadComponent(Xml : TXmlParser; OwnerList : TZComponentList) : TZComponent;
     procedure OnDocumentStart; override;
     procedure OnDocumentEnd; override;
   end;
 {$ENDIF}
 
 const
-  TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression,zptInlineComponent];
+  TBinaryNested : set of TZPropertyType = [zptComponentList,zptExpression];
+
+{$ifndef MINIMAL}
+//Manage memory for strings set in designer
+var
+  StringCache : TDictionary<AnsiString,AnsiString>;
+{$endif}
+
+
+//Managed Heap
+var
+  mh_Targets,mh_Allocations,mh_Values : TZArrayList;
+  mh_LastCount : integer;
+
+const
+  NilString : AnsiChar = #0;
+
+procedure ManagedHeap_Create;
+begin
+  mh_Targets := TZArrayList.CreateReferenced;
+  mh_Allocations := TZArrayList.CreateReferenced;
+  mh_Values := TZArrayList.CreateReferenced;
+end;
+
+procedure ManagedHeap_FreeMem(const P : pointer);
+begin
+  mh_Allocations.SwapRemove(P);
+  FreeMem(P);
+end;
+
+procedure ManagedHeap_Destroy;
+begin
+  while mh_Allocations.Count>0 do
+    ManagedHeap_FreeMem( pointer(mh_Allocations[mh_Allocations.Count-1]) );
+  mh_Targets.Free;
+  mh_Allocations.Free;
+  mh_Values.Free;
+end;
+
+function ManagedHeap_Alloc(const Size : integer) : pointer;
+begin
+  {$ifndef minimal}
+  ZAssert(Size>=0,'Alloc called with size <=0');
+  ZAssert(Size<1024*1024*128,'Alloc called with size > 128mb');
+  {$endif}
+  GetMem(Result,Size);
+  mh_Allocations.Add(Result);
+end;
+
+procedure ManagedHeap_AddTarget(const P : pointer);
+begin
+  {$ifndef minimal}
+  if mh_Targets.IndexOf(P)>-1 then
+  begin
+    GetLog('MH').Warning('Add target already in list');
+    Exit;
+  end;
+  {$endif}
+  mh_Targets.Add(P);
+end;
+
+procedure ManagedHeap_RemoveTarget(const P : pointer);
+begin
+  {$ifndef minimal}
+  if mh_Targets.IndexOf(P)=-1 then
+  begin
+    GetLog('MH').Warning('Remove target not found');
+    Exit;
+  end;
+  {$endif}
+  mh_Targets.SwapRemove(P);
+end;
+
+function ManagedHeap_GetAllocCount : integer;
+begin
+  Result := mh_Allocations.Count;
+end;
+
+{$ifndef minimal}
+function ManagedHeap_GetStatus : string;
+begin
+  Result := IntToStr(mh_Allocations.Count) + ' (t: ' + IntToStr(mh_Targets.Count) + ')';
+end;
+{$endif}
+
+procedure ManagedHeap_GarbageCollect(Full : boolean);
+var
+  I,J : integer;
+  PP : PPointer;
+  P : pointer;
+begin
+  if mh_Allocations.Count=mh_LastCount then
+    //Heap is stable since last call, no point in collecting
+    Exit;
+  mh_LastCount := mh_Allocations.Count;
+
+  //Fill a list with all the current values of all variables that can hold a allocated pointer
+  mh_Values.Clear;
+  for I := 0 to mh_Targets.Count - 1 do
+  begin
+    PP := PPointer(mh_Targets[I]);
+    P := PP^;
+    if (P<>nil) and (P<>@NilString) then
+      mh_Values.Add(P);
+  end;
+
+  I := 0;
+  while I<mh_Allocations.Count do
+  begin
+    P := Pointer(mh_Allocations[I]);
+    J := mh_Values.IndexOf(P);
+    if J=-1 then
+    begin
+      //Pointer is no longer used
+      FreeMem(P);
+      mh_Allocations.SwapRemoveAt(I);
+    end
+    else
+    begin
+      //Pointer is used, remove this value to keep mh_Values as short as possible
+      mh_Values.SwapRemoveAt(J);
+      Inc(I);
+    end;
+  end;
+end;
+
 
 //Accessfunctions for componentmanager
 var
@@ -619,6 +798,141 @@ begin
 end;
 
 
+
+//Utility
+
+{$ifndef minimal}
+procedure GetAllObjects(C : TZComponent; List : TObjectList);
+//Returns all objects
+begin
+  C.GetAllChildren(List,True);
+end;
+
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+//Returns all objects that refers to component Target
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+  All : TObjectList;
+  C : TZComponent;
+begin
+  All := TObjectList.Create(False);
+  try
+    GetAllObjects(Root,All);
+    for I := 0 to All.Count-1 do
+    begin
+      C := TZComponent(All[I]);
+      if C.DesignDisable then
+        Continue;
+      PropList := C.GetProperties;
+      for J := 0 to PropList.Count-1 do
+      begin
+        Prop := TZProperty(PropList[J]);
+        case Prop.PropertyType of
+          zptComponentRef :
+            begin
+              C.GetProperty(Prop,Value);
+              if Value.ComponentValue=Target then
+                List.Add(C);
+            end;
+          zptPropertyRef :
+            begin
+              C.GetProperty(Prop,Value);
+              if Value.PropertyValue.Component=Target then
+                List.Add(C);
+            end;
+        end;
+      end;
+    end;
+  finally
+    All.Free;
+  end;
+end;
+
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
+var
+  TargetList,List : TObjectList;
+  I,J : integer;
+  C : TZComponent;
+begin
+  TargetList:= TObjectList.Create(False);
+  List:=TObjectList.Create(False);
+  try
+    //Hämta alla barnen till Target
+    if Deep then
+      GetAllObjects(Target,TargetList)
+    else
+      TargetList.Add(Target);
+    for I := 0 to TargetList.Count-1 do
+    begin
+      //Kolla alla barnen om det finns referens som är utanför targetlist
+      C := TargetList[I] as TZComponent;
+      List.Clear;
+      GetReferersTo(Root,C,List);
+      for J := 0 to List.Count-1 do
+      begin
+        if TargetList.IndexOf(List[J])=-1 then
+        begin
+          Result := True;
+          Exit;
+        end;
+      end;
+    end;
+    Result := False;
+  finally
+    List.Free;
+    TargetList.Free;
+  end;
+end;
+
+procedure GetObjectNames(C : TZComponent; List : TStringList);
+//Returns all objectnames
+//Hoppar över objekt som ej har namn tilldelat
+var
+  I : integer;
+  ObList : TObjectList;
+  S : string;
+begin
+  ObList := TObjectList.Create(False);
+  try
+    GetAllObjects(C,ObList);
+    for I := 0 to ObList.Count-1 do
+    begin
+      S := String(TZComponent(ObList[I]).Name);
+      if Length(S)>0 then
+        List.AddObject(S , TZComponent(ObList[I]) );
+    end;
+  finally
+    ObList.Free;
+  end;
+end;
+
+function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
+var
+  I : integer;
+  ObList : TObjectList;
+begin
+  Result := nil;
+  ObList := TObjectList.Create(False);
+  try
+    GetAllObjects(C,ObList);
+    for I := 0 to ObList.Count-1 do
+    begin
+      if TZComponent(ObList[I]) is Zc then
+      begin
+        Result := TZComponent(ObList[I]);
+        Break;
+      end;
+    end;
+  finally
+    ObList.Free;
+  end;
+end;
+{$endif}
+
+
 { TZComponent }
 
 constructor TZComponent.Create(OwnerList: TZComponentList);
@@ -627,6 +941,7 @@ var
   Prop : TZProperty;
   I : integer;
   List : TZComponentList;
+  P : Pointer;
 begin
   PropList := GetProperties;
   for I := 0 to PropList.Count-1 do
@@ -643,6 +958,13 @@ begin
         begin
           List := TZComponentList.Create;
           PZExpressionPropValue(GetPropertyPtr(Prop,0))^.Code := List;
+        end;
+      zptString :
+        begin
+          P := GetPropertyPtr(Prop,0);
+          if Prop.IsStringTarget then
+            ManagedHeap_AddTarget(P);
+          PPointer(P)^ := @NilString;
         end;
     end;
     //Set defaultvalue for property
@@ -689,12 +1011,12 @@ begin
           GetProperty(Prop,Value);
           Value.ExpressionValue.Code.Free;
         end;
-      zptInlineComponent :
+      zptString :
         begin
-          GetProperty(Prop,Value);
-          Value.ComponentValue.Free;
+          if Prop.IsStringTarget then
+            ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));
         end;
-      {$ifndef zminimal}
+      {$ifndef minimal}
       zptBinary :
         begin
           //Frigör binary mem enbart i designer.
@@ -712,14 +1034,17 @@ end;
 procedure TZComponent.DefineProperties(List: TZPropertyList);
 begin
   {$IFNDEF MINIMAL}
-  List.AddProperty('Name', integer(@Name) - integer(Self), zptString);
+  List.AddProperty('Name', integer(@Name), zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('Comment', integer(@Comment) - integer(Self), zptString);
+  List.AddProperty('Comment', integer(@Comment), zptString);
+    List.SetDesignerProperty;
+    List.GetLast.NeedRefreshNodeName := True;
+  List.AddProperty('DesignDisable', integer(@DesignDisable), zptBoolean);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   {$ENDIF}
-  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}integer(@ObjId) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}integer(@ObjId), zptInteger);
     {$IFNDEF MINIMAL}
     List.GetLast.ExcludeFromXml := True;
     List.GetLast.IsReadOnly := True;
@@ -731,17 +1056,17 @@ procedure TZComponent.GetProperty(Prop: TZProperty; var Value: TZPropertyValue);
 var
   P : pointer;
 begin
-  P := pointer(integer(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       Value.FloatValue := PFloat(P)^;
     zptString :
       {$IFDEF MINIMAL}
-      Value.StringValue := PChar(PPointer(P)^);
+      Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ELSE}
-      Value.StringValue := PString(P)^;
+      Value.StringValue := PAnsiChar(PPointer(P)^);
       {$ENDIF}
-    zptComponentRef,zptInlineComponent :
+    zptComponentRef :
       Value.ComponentValue := TZComponent(PPointer(P)^);
     zptInteger :
       Value.IntegerValue := PInteger(P)^;
@@ -767,25 +1092,35 @@ begin
       {$endif}
     zptBinary :
       Value.BinaryValue := PZBinaryPropValue(P)^;
+    {$ifdef minimal}
     else
       ZHalt('GetProperty no handler');
+    {$endif}
   end;
 end;
 
 procedure TZComponent.SetProperty(Prop: TZProperty; const Value: TZPropertyValue);
 var
   P : pointer;
+  {$ifndef MINIMAL}
+  S : ansistring;
+  {$endif}
 begin
-  P := pointer(integer(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       PFloat(P)^ := Value.FloatValue;
     zptString :
       {$IFDEF MINIMAL}
-      //todo copy characters? nix, string ska vara immutable.
-      PPChar(P)^ := Value.StringValue;
+      //string ska vara immutable.
+      PPAnsiChar(P)^ := Value.StringValue;
       {$ELSE}
-      PString(P)^ := Value.StringValue;
+      begin
+        S := Value.StringValue + #0;
+        if not StringCache.ContainsKey(S) then
+          StringCache.Add(S,S);
+        PPointer(P)^ := @StringCache[S][1];
+      end;
       {$ENDIF}
     zptComponentRef :
       PPointer(P)^ := pointer(Value.ComponentValue);
@@ -801,12 +1136,6 @@ begin
       PZPropertyRef(P)^ := Value.PropertyValue;
     zptVector3f :
       PZVector3f(P)^ := Value.Vector3fValue;
-    zptInlineComponent :
-      begin
-        if (PPointer(P)^<>nil) and (PPointer(P)^<>Value.ComponentValue) then
-          TZComponent(PPointer(P)^).Free;
-        PPointer(P)^ := pointer(Value.ComponentValue);
-      end;
     zptComponentList :
       begin
         {$IFNDEF MINIMAL}
@@ -833,8 +1162,10 @@ begin
         {$endif}
         PZBinaryPropValue(P)^ := Value.BinaryValue;
       end
+    {$ifdef minimal}
     else
       ZHalt('SetProperty no handler');
+    {$endif}
   end;
   Change;
 end;
@@ -850,9 +1181,9 @@ end;
 //Används för att hitta target för propertyrefs
 function TZComponent.GetPropertyPtr(Prop: TZProperty; Index: integer): pointer;
 begin
-  Result := pointer(integer(Self) + Prop.Offset);
+  Result := pointer(NativeInt(Self) + Prop.Offset);
   if Index>0 then
-    Result := pointer(integer(Result) + Index*4);
+    Result := pointer(NativeInt(Result) + Index*4);
 end;
 
 procedure TZComponent.Change;
@@ -895,11 +1226,6 @@ begin
           C.GetProperty(Prop,Value);
           for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
             CloneAssignObjectIds(TZComponent(Value.ExpressionValue.Code[J]),ObjIds,CleanUps);
-        end;
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          CloneAssignObjectIds(Value.ComponentValue,ObjIds,CleanUps);
         end;
     end;
   end;
@@ -974,22 +1300,17 @@ begin
       Continue; //Skip properties like: objid, model.personality
     GetProperty(Prop,Value);
     case Prop.PropertyType of
-      zptInlineComponent :
-        begin
-          Value.ComponentValue := Value.ComponentValue.DoClone(ObjIds,FixUps);
-          Result.SetProperty(Prop,Value);
-        end;
       zptComponentRef :
         begin
           Result.SetProperty(Prop,Value);
           if (Value.ComponentValue<>nil) and (Value.ComponentValue.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(integer(Result) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
         end;
       zptPropertyRef :
         begin
           Result.SetProperty(Prop,Value);
           if (Value.PropertyValue.Component<>nil) and (Value.PropertyValue.Component.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(integer(Result) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
         end;
       zptComponentList :
         begin
@@ -1006,7 +1327,7 @@ begin
           Result.SetProperty(Prop,Tmp);
           {$endif}
         end;
-      {$ifndef zminimal}
+      {$ifndef minimal}
       zptBinary :
         begin
           //Kopiera binary mem enbart i designer.
@@ -1024,17 +1345,27 @@ begin
 end;
 
 {$ifndef minimal}
-function TZComponent.GetDisplayName: string;
+function TZComponent.GetDisplayName: AnsiString;
 var
-  S,Cn : string;
+  S,Cn : AnsiString;
 begin
   S := Self.Name;
-  Cn := ComponentManager.GetInfo(Self).ZClassName;
+  Cn := AnsiString(ComponentManager.GetInfo(Self).ZClassName);
   if Length(S)=0 then
     S := Cn
   else
     S := S + ' : ' + Cn;
   Result := S;
+end;
+
+procedure TZComponent.SetString(const PropName : string; const Value : AnsiString);
+var
+  P : TZProperty;
+  Pv : TZPropertyValue;
+begin
+  P := Self.GetProperties.GetByName(PropName);
+  Pv.StringValue := Value;
+  Self.SetProperty(P,Pv);
 end;
 
 procedure TZComponent.DesignerReset;
@@ -1060,6 +1391,29 @@ begin
   end;
 end;
 
+procedure TZComponent.DesignerFreeResources;
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+begin
+  PropList := GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    case Prop.PropertyType of
+      zptComponentList :
+        begin
+          GetProperty(Prop,Value);
+          for J := 0 to Value.ComponentListValue.Count - 1 do
+            (Value.ComponentListValue[J] as TZComponent).DesignerFreeResources;
+        end;
+    end;
+  end;
+end;
+
+
 function TZComponent.GetOwner : TZComponent;
 begin
   if Assigned(OwnerList) then
@@ -1068,6 +1422,38 @@ begin
     Result := nil;
 end;
 
+procedure TZComponent.GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
+//Returns all objects
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+begin
+  List.Add(Self);
+  PropList := Self.GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    case Prop.PropertyType of
+      zptComponentList :
+        begin
+          Self.GetProperty(Prop,Value);
+          for J := 0 to Value.ComponentListValue.ComponentCount-1 do
+            TZComponent(Value.ComponentListValue[J]).GetAllChildren(List,IncludeExpressions);
+        end;
+      zptExpression :
+        begin
+          if IncludeExpressions then
+          begin
+            Self.GetProperty(Prop,Value);
+            for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
+              TZComponent(Value.ExpressionValue.Code[J]).GetAllChildren(List,IncludeExpressions);
+          end;
+        end;
+    end;
+  end;
+end;
 {$endif}
 
 function MakeColorf(const R,G,B,A : single) : TZColorf;
@@ -1109,26 +1495,38 @@ begin
   inherited;
 end;
 
-function TZArrayList.GetItem(Index: Integer): TObject;
+{$ifndef minimal}
+procedure TZArrayList.CheckValidIndex(Index: Integer);
 begin
   if (Index < 0) or (Index >= FCount) then
     ZHalt('ZArrayList bad index');
+end;
+{$endif}
+
+function TZArrayList.GetItem(Index: Integer): TObject;
+begin
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Result := List^[Index];
 end;
 
 function TZArrayList.GetPtrToItem(Index: Integer): pointer;
 begin
-  {$IFNDEF MINIMAL}
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
-  {$ENDIF}
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Result := @List^[Index];
+end;
+
+procedure TZArrayList.Swap(Index1,Index2 : integer);
+var
+  Tmp : TObject;
+begin
+  Tmp := List^[Index1];
+  List^[Index1] := List^[Index2];
+  List^[Index2] := Tmp;
 end;
 
 procedure TZArrayList.SetItem(Index: Integer; const Value: TObject);
 begin
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   List^[Index] := Value;
 end;
 
@@ -1160,8 +1558,7 @@ procedure TZArrayList.RemoveAt(Index: integer);
 var
   Temp: TObject;
 begin
-  if (Index < 0) or (Index >= FCount) then
-    ZHalt('ZArrayList bad index');
+  {$ifndef minimal}CheckValidIndex(Index);{$endif}
   Temp := List^[Index];
   Dec(FCount);
   if Index < FCount then
@@ -1182,6 +1579,11 @@ begin
   RemoveAt( IndexOf(Item) );
 end;
 
+procedure TZArrayList.SwapRemove(Item: TObject);
+begin
+  SwapRemoveAt( IndexOf(Item) );
+end;
+
 procedure TZArrayList.SwapRemoveAt(Index: integer);
 var
   Temp: TObject;
@@ -1198,7 +1600,6 @@ end;
 
 function TZArrayList.Pop: TObject;
 begin
-  {$ifndef minimal}Assert(Count>0);{$endif}
   Result := Last;
   RemoveAt(Count-1);
 end;
@@ -1208,16 +1609,6 @@ begin
   Add(Item);
 end;
 
-function TZArrayList.PopFloat: single;
-var
-  T : TObject;
-begin
-  //FPC har en bug så att man inte kan skriva: f:=single(stack.pop)
-  T:=Last;
-  Result := single(T);
-  RemoveAt(Count-1);
-end;
-
 constructor TZArrayList.CreateReferenced;
 begin
   ReferenceOnly := True;
@@ -1225,10 +1616,6 @@ end;
 
 
 { TZComponentManager }
-
-constructor TZComponentManager.Create;
-begin
-end;
 
 function TZComponentManager.GetInfo(Component: TZComponent) : TZComponentInfo;
 var
@@ -1285,6 +1672,25 @@ begin
     end;
   end;
   raise Exception.Create('Class not found: ' + ZClassName);
+end;
+
+function TZComponentManager.GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
+var
+  I : TZClassIds;
+  Ci : TZComponentInfo;
+begin
+  for I := Low(ComponentInfos) to High(ComponentInfos) do
+  begin
+    Ci := ComponentInfos[I];
+    if Ci=nil then
+      Continue;
+    if Ci.ZClass=C then
+    begin
+      Result := Ci;
+      Exit;
+    end;
+  end;
+  raise Exception.Create('Class not found: ' + C.ClassName);
 end;
 {$ENDIF}
 
@@ -1409,7 +1815,7 @@ var
 
   function InLoadPiggyback : TZInputStream;
   var
-    FileName : PChar;
+    FileName : PAnsiChar;
     DataSize,Magic : integer;
     Stream : TZInputStream;
   begin
@@ -1464,6 +1870,7 @@ begin
   if Result=nil then
   begin
     Result := TZPropertyList.Create;
+    Result.TheSelf := integer(Component);
     Component.DefineProperties(Result);
     Ci.Properties := Result;
   end
@@ -1472,6 +1879,7 @@ begin
   begin
     //Components that use global variables must be single instance
     //and redefines their properties each time (AudioMixer).
+    Result.TheSelf := integer(Component);
     Result.Clear;
     Result.NextId := 0;
     Component.DefineProperties(Result);
@@ -1492,6 +1900,7 @@ procedure TZPropertyList.SetDesignerProperty;
 begin
   //Sätt senaste prop till bara ska användas i designer (t.ex. Name)
   GetLast.ExcludeFromBinary := True;
+  GetLast.IsReadOnly := True;
   //Avallokera senaste id, dessa måste vara konstanta för alla binärprops
   Dec(NextId);
 end;
@@ -1537,21 +1946,22 @@ begin
   Result := nil;
 end;
 
-procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}Name: string;{$ENDIF} Offset: integer; PropType : TZPropertyType);
+procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Offset: integer; const PropType : TZPropertyType);
 var
   P : TZProperty;
 begin
   P := TZProperty.Create;
   P.PropertyType := PropType;
-  P.Offset := Offset;
+  P.Offset := Offset-Self.TheSelf;
+
   P.PropId := NextId;
   Inc(NextId);
   {$IFNDEF MINIMAL}
   P.Name := Name;
+  Assert( ((P.Offset>=0) and (P.Offset<4096)) or (TObject(Self.TheSelf).ClassName='TAudioMixer') );
   {$ENDIF}
   Self.Add(P);
 end;
-
 
 //No writers are included in minimal runtime binary
 
@@ -1741,7 +2151,7 @@ begin
         PStream.Write(Value.ByteValue,SizeOf(byte));
       zptBoolean :
         PStream.Write(Value.BooleanValue,SizeOf(ByteBool));
-      zptInlineComponent,zptComponentList,zptExpression :
+      zptComponentList,zptExpression :
         AfterList.Add(Prop);
       zptBinary :
         begin
@@ -1761,8 +2171,6 @@ begin
     Prop := TZProperty(AfterList[I]);
     C.GetProperty(Prop,Value);
     case Prop.PropertyType of
-      zptInlineComponent :
-        DoWriteComponent(Value.ComponentValue);
       zptComponentList :
         InWriteList(Value.ComponentListValue);
       zptExpression :
@@ -1841,11 +2249,6 @@ var
             C.GetProperty(Prop,Value);
             InGiveOne(Value.ComponentValue);
           end;
-        zptInlineComponent :
-          begin
-            C.GetProperty(Prop,Value);
-            InGiveObjIds(Value.ComponentValue);
-          end;
         zptPropertyRef :
           begin
             C.GetProperty(Prop,Value);
@@ -1915,9 +2318,9 @@ var
     Result := Trim(S);
   end;
 
-  function InAttrValue(const S : string) : string;
+  function InAttrValue(const S : ansistring) : string;
   begin
-    Result := S;
+    Result := String(S);
     Result := StringReplace(Result,'&','&amp;',[rfReplaceAll]);
     Result := StringReplace(Result,'"','&quot;',[rfReplaceAll]);
     Result := StringReplace(Result,'<','&lt;',[rfReplaceAll]);
@@ -1940,10 +2343,21 @@ var
       end;
       Mem.Position:=0;
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PChar(Mem.Memory),PChar(Result),Mem.Size);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),PChar(Result),Mem.Size);
     finally
       Mem.Free;
     end;
+  end;
+
+  function SafeCdata(const S : ansistring) : string;
+  begin
+    Result := String(S);
+    //Cdata cannot contain ']]>' string
+    if Pos(']]>',Result)>0 then
+      //As recommended here: http://en.wikipedia.org/wiki/CDATA
+      //Result := StringReplace(S,']]>',']]]]><![CDATA[>',[rfReplaceAll])
+      //This is simpler to parse
+      Result := StringReplace(Result,']]>',']] >',[rfReplaceAll])
   end;
 
 begin
@@ -1963,13 +2377,13 @@ begin
         Continue;
       case Prop.PropertyType of
         zptString :
-          if (Pos(#13,Value.StringValue)=0) {and
+          if (AnsiStrings.AnsiPos(#13,Value.StringValue)=0) {and
             (Pos('<',Value.StringValue)=0) and
             (Pos('>',Value.StringValue)=0)} then
             NormalProps.Add(Prop)
           else
             NestedProps.Add(Prop);
-        zptInlineComponent,zptComponentList :
+        zptComponentList :
           NestedProps.Add(Prop);
         zptBinary :
           if Value.BinaryValue.Size>0 then
@@ -1992,21 +2406,28 @@ begin
       C.GetProperty(Prop,Value);
       case Prop.PropertyType of
         zptString : V := InAttrValue( Value.StringValue );
-        zptFloat,zptScalar : V := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
+        zptFloat,zptScalar :
+          if IsNan(Value.FloatValue) then
+          begin
+            ZLog.GetLog(Self.ClassName).Warning('NaN value for property: ' + Prop.Name);
+            V := '0';
+          end
+          else
+            V := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
         zptRectf : V := InArray(Value.RectfValue.Area);
         zptColorf : V := InArray(Value.ColorfValue.V);
         zptInteger : V := IntToStr(Value.IntegerValue);
-        zptComponentRef : V := Value.ComponentValue.Name;
+        zptComponentRef : V := String(Value.ComponentValue.Name);
         zptPropertyRef :
           begin
-            V := Value.PropertyValue.Component.Name + ' ' + Value.PropertyValue.Prop.Name;
+            V := String(Value.PropertyValue.Component.Name) + ' ' + Value.PropertyValue.Prop.Name;
             if Value.PropertyValue.Index>0 then
               V := V + ' ' + IntToStr(Value.PropertyValue.Index);
           end;
         zptVector3f : V := InArray(Value.Vector3fValue);
         zptByte : V := IntToStr(Value.ByteValue);
         zptBoolean : V := IntToStr( byte(Value.BooleanValue) );
-        zptExpression : V := InAttrValue( Value.ExpressionValue.Source );
+        zptExpression : V := InAttrValue( AnsiString(Value.ExpressionValue.Source) );
       else
         raise Exception.Create('TZXmlWriter: No writehandler ' + Prop.Name);
       end;
@@ -2030,15 +2451,9 @@ begin
         WriteLine('<' + Prop.Name + '>');
         case Prop.PropertyType of
           zptString :
-            WriteString('<![CDATA[' + Value.StringValue + ']]>'#13#10);
+            WriteString('<![CDATA[' + SafeCdata(Value.StringValue) + ']]>'#13#10);
           zptExpression :
-            WriteString('<![CDATA[' + Value.ExpressionValue.Source + ']]>'#13#10);
-          zptInlineComponent :
-            begin
-              LevelDown;
-              DoWriteComponent(Value.ComponentValue);
-              LevelUp;
-            end;
+            WriteString('<![CDATA[' + SafeCdata( AnsiString(Value.ExpressionValue.Source) ) + ']]>'#13#10);
           zptComponentList :
             begin
               LevelDown;
@@ -2059,7 +2474,7 @@ begin
       end;
       S := '</' + Ci.ZClassName + '>';
       if (C is TLogicalGroup) and (C.Name<>'') then
-        S := S + ' <!-- ' + C.Name + ' -->'#13#10;
+        S := S + ' <!-- ' + String(C.Name) + ' -->'#13#10;
       WriteLine(S);
     end;
 
@@ -2081,31 +2496,36 @@ end;
 
 procedure TZXmlWriter.OnDocumentEnd;
 begin
-  SysUtils.DecimalSeparator := Self.OldSeparator;
+  FormatSettings.DecimalSeparator := Self.OldSeparator;
 end;
 
 procedure TZXmlWriter.OnDocumentStart;
 begin
   WriteLine('<?xml version="1.0" encoding="iso-8859-1" ?>');
-  Self.OldSeparator := SysUtils.DecimalSeparator;
-  SysUtils.DecimalSeparator := '.';
+  Self.OldSeparator := FormatSettings.DecimalSeparator;
+  FormatSettings.DecimalSeparator := '.';
 end;
 
 procedure TZXmlWriter.WriteString(const S: string);
+var
+  A : ansistring;
 begin
-  Write(S[1],Length(S));
+  A := AnsiString(S);
+  Write(A[1],Length(A));
 end;
 
 procedure TZXmlWriter.WriteLine(const S: string);
 var
   Spaces : string;
+  I : integer;
 begin
   if Length(S)>0 then
   begin
     if IndentLevel>0 then
     begin
       SetLength(Spaces,IndentLevel*2);
-      FillChar(Spaces[1],Length(Spaces),' ');
+      for I := 1 to Length(Spaces) do
+        Spaces[I] := ' ';
       WriteString(Spaces);
     end;
     WriteString(S);
@@ -2168,7 +2588,7 @@ end;
 
 { TZInputStream }
 
-constructor TZInputStream.CreateFromFile(FileName: PChar; IsRelative : Boolean);
+constructor TZInputStream.CreateFromFile(FileName: PAnsiChar; IsRelative : Boolean);
 begin
   Platform_ReadFile(FileName,pointer(Memory),Size,IsRelative);
   OwnsMemory := True;
@@ -2196,7 +2616,7 @@ procedure TZInputStream.Read(var Buf; Count: integer);
 begin
   if Position+Count>Size then
   begin
-    {$ifdef zlog} 
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('Read beyond EOF attempted');
     {$endif}
     Exit;
@@ -2338,7 +2758,7 @@ begin
       zptString :
         begin
           //String is null-terminated
-          Temp := ZStrLength(PChar(PStream.GetMemory));
+          Temp := ZStrLength(PAnsiChar(PStream.GetMemory));
           if Temp>0 then
           begin
             {$IFDEF MINIMAL}
@@ -2381,7 +2801,7 @@ begin
         begin
           PStream.Read(Value.ComponentValue,4);
           if Value.ComponentValue<>nil then
-            FixUps.Add( TObject(PPointer(integer(C) + Prop.Offset)) );
+            FixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
         end;
       zptPropertyRef :
         begin
@@ -2391,11 +2811,11 @@ begin
           PStream.Read(B,1);
           Value.PropertyValue.Index := B;
           if Value.PropertyValue.Component<>nil then
-            PropFixUps.Add( TObject(PPointer(integer(C) + Prop.Offset)) );
+            PropFixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
         end;
       zptVector3f :
         PStream.Read(Value.Vector3fValue,SizeOf(TZVector3f));
-      zptInlineComponent,zptComponentList,zptExpression :
+      zptComponentList,zptExpression :
         begin
           AfterList.Add(Prop);
           Continue;
@@ -2423,8 +2843,6 @@ begin
   begin
     Prop := TZProperty(AfterList[I]);
     case Prop.PropertyType of
-      zptInlineComponent :
-        Value.ComponentValue := DoReadComponent(nil);
       zptComponentList :
         begin
           //läs först så att vi får samma pekare (listan ägs av komponenten)
@@ -2535,10 +2953,10 @@ end;
 {$IFNDEF MINIMAL}
 constructor TZXmlReader.Create;
 begin
-  Xml := TXmlParser.Create;
+  MainXml := TXmlParser.Create;
   FixUps := TZArrayList.Create;
-  Self.OldSeparator := SysUtils.DecimalSeparator;
-  SysUtils.DecimalSeparator := '.';
+  Self.OldSeparator := FormatSettings.DecimalSeparator;
+  FormatSettings.DecimalSeparator := '.';
 end;
 
 procedure TZXmlReader.LoadFromFile(const FileName: string);
@@ -2546,7 +2964,7 @@ begin
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
   ExternalSymTab := False;
   SymTab := TSymbolTable.Create;
-  Xml.LoadFromFile(FileName);
+  MainXml.LoadFromFile(ansistring(FileName));
 end;
 
 procedure TZXmlReader.LoadFromString(const XmlData: string; SymTab : TSymbolTable);
@@ -2556,13 +2974,13 @@ begin
   //Use the global symbol table
   //Let the locals be defines in a local scope
   SymTab.PushScope;
-  Xml.LoadFromBuffer(PChar(XmlData));;
+  MainXml.LoadFromBuffer(PAnsiChar(AnsiString(XmlData)));;
 end;
 
 destructor TZXmlReader.Destroy;
 begin
-  SysUtils.DecimalSeparator := Self.OldSeparator;
-  Xml.Free;
+  FormatSettings.DecimalSeparator := Self.OldSeparator;
+  MainXml.Free;
   FixUps.Free;
   if ExternalSymTab then
     SymTab.PopScope
@@ -2572,6 +2990,11 @@ begin
 end;
 
 function TZXmlReader.DoReadComponent(OwnerList: TZComponentList): TZComponent;
+begin
+  Result := XmlDoReadComponent(MainXml,OwnerList);
+end;
+
+function TZXmlReader.XmlDoReadComponent(Xml : TXmlParser; OwnerList: TZComponentList): TZComponent;
 var
   ZClassName : string;
   C : TZComponent;
@@ -2580,15 +3003,17 @@ var
   PropList : TZPropertyList;
   Value : TZPropertyValue;
   Prop,NestedProp : TZProperty;
-  S : string;
-  L : TStringList;
+  S : ansistring;
+  L,NotFounds : TStringList;
   Fix : TZXmlFixUp;
+  Found : boolean;
+  SaveMainXml : TXmlParser;
 
   procedure InDecodeBinary(const HexS : string; var BinaryValue : TZBinaryPropValue);
   var
     CompMem,DecompMem : TMemoryStream;
     Zs : zlib.TDecompressionStream;
-    S : string;
+    S : ansistring;
     Buf : array[0..1023] of byte;
     I : integer;
   begin
@@ -2596,7 +3021,7 @@ var
     DecompMem := TMemoryStream.Create;
     try
       SetLength(S,Length(HexS) div 2);
-      Classes.HexToBin(PChar(HexS),PChar(S),Length(S));
+      Classes.HexToBin(PChar(HexS),PAnsiChar(S),Length(S));
 
       CompMem.Write(S[1],Length(S));
       CompMem.Position := 0;
@@ -2622,13 +3047,108 @@ var
     end;
   end;
 
+  procedure PatchMaterialTextures;
+  //Translate old-style texture settings to new MaterialTexture-component
+  var
+    S : ansistring;
+    OtherXml : TXmlParser;
+    procedure InFixTex(const Name : string);
+    begin
+      if NotFounds.Values[Name]<>'' then
+        S := S + ansistring(Name) + '="' + ansistring(NotFounds.Values[Name]) + '" '
+    end;
+  begin
+    if NotFounds.Values['Texture']='' then
+      Exit;
+    Prop := PropList.GetByName('Textures');
+    C.GetProperty(Prop,Value);
+    S := '<MaterialTexture Texture="' + ansistring(NotFounds.Values['Texture']) + '" ';
+    InFixTex('TextureScale');
+    InFixTex('TextureX');
+    InFixTex('TextureY');
+    InFixTex('TextureRotate');
+    InFixTex('TextureWrapMode');
+    InFixTex('TexCoords');
+    S := S + '/>';
+    OtherXml := TXmlParser.Create;
+
+    OtherXml.LoadFromBuffer(PAnsiChar(S));
+    OtherXml.Scan;
+    XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+
+    if NotFounds.Values['Texture2']<>'' then
+    begin
+      OtherXml.LoadFromBuffer( PAnsiChar( AnsiString('<MaterialTexture Texture="' + NotFounds.Values['Texture2'] + '"/>') ));
+      OtherXml.StartScan;
+      OtherXml.Scan;
+      XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+    end;
+    if NotFounds.Values['Texture3']<>'' then
+    begin
+      OtherXml.LoadFromBuffer( PAnsiChar( AnsiString('<MaterialTexture Texture="' + NotFounds.Values['Texture3'] + '"/>') ));
+      OtherXml.StartScan;
+      OtherXml.Scan;
+      XmlDoReadComponent(OtherXml,Value.ComponentListValue);
+    end;
+
+    OtherXml.Free;
+  end;
+
+  procedure PatchSoundSample;
+  var
+    S,SampleDataString : ansistring;
+    OtherXml : TXmlParser;
+    SampleFormat,SampleName : string;
+  begin
+    Xml.Scan;
+    Assert(Xml.CurName='SampleData');
+    Xml.Scan;
+    SampleDataString := Xml.CurContent;
+    Xml.Scan;
+    Assert(Xml.CurName='SampleData');
+    Xml.Scan;
+
+    SampleName := Self.SymTab.MakeUnique('Sample');
+
+    SampleFormat := NotFounds.Values['SampleFormat'];
+    if SampleFormat='' then
+      SampleFormat := '0';
+
+    S := '<Sample Name="' + AnsiString(SampleName) + '">' +
+      '<Producers>' +
+      '<SampleImport SampleRate="' + AnsiString(NotFounds.Values['SampleRate']) + '" ' +
+         'SampleFormat="' + AnsiString(SampleFormat) + '">' +
+      '<SampleData>' +
+      '<![CDATA[' + SampleDataString + ']]>' +
+      '</SampleData>' +
+      '</SampleImport>' +
+      '</Producers>' +
+      '</Sample>';
+
+    Prop := PropList.GetByName('Sample');
+    C.GetProperty(Prop,Value);
+
+    OtherXml := TXmlParser.Create;
+    OtherXml.LoadFromBuffer(PAnsiChar(S));
+    OtherXml.Scan;
+    Value.ComponentValue := XmlDoReadComponent(OtherXml,OwnerList);
+
+    C.SetProperty(Prop,Value);
+
+    OtherXml.Free;
+  end;
+
 begin
-  ZClassName := Xml.CurName;
+  ZClassName := string(Xml.CurName);
+
+  SaveMainXml := Self.MainXml;
+  Self.MainXml := Xml;
 
   Ci := ComponentManager.GetInfoFromName(ZClassName);
   C := Ci.ZClass.Create(OwnerList);
 
   L := TStringList.Create;
+  NotFounds := TStringList.Create;
   try
     L.Delimiter := ' ';
     //read properties
@@ -2637,20 +3157,22 @@ begin
     for I := 0 to Xml.CurAttr.Count-1 do
     begin
       S:=Xml.CurAttr.Name(I);
+      Found := False;
       for J := 0 to PropList.Count-1 do
       begin
         Prop := TZProperty(PropList[J]);
-        if SameText(Prop.Name,S) then
+        if SameText(Prop.Name,String(S)) then
         begin
           S := Xml.CurAttr.Value(I);
+          Found := True;
           case Prop.PropertyType of
             zptString :
               Value.StringValue := S;
             zptFloat,zptScalar :
-              Value.FloatValue := StrToFloat(S);
+              Value.FloatValue := StrToFloat( String(S) );
             zptRectf :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.RectfValue.Area[0] := StrToFloat(L[0]);
                 Value.RectfValue.Area[1] := StrToFloat(L[1]);
                 Value.RectfValue.Area[2] := StrToFloat(L[2]);
@@ -2658,7 +3180,7 @@ begin
               end;
             zptColorf :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.ColorfValue.V[0] := StrToFloat(L[0]);
                 Value.ColorfValue.V[1] := StrToFloat(L[1]);
                 Value.ColorfValue.V[2] := StrToFloat(L[2]);
@@ -2666,7 +3188,7 @@ begin
               end;
             zptVector3f :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 Value.Vector3fValue[0] := StrToFloat(L[0]);
                 //Allow a single value to be specified, this is copied to all three elements
                 //Used when switching type from float to vector3d (material.texturescale)
@@ -2680,35 +3202,37 @@ begin
                   Value.Vector3fValue[2] := Value.Vector3fValue[0];
               end;
             zptInteger :
-              Value.IntegerValue := StrToInt(S);
+              Value.IntegerValue := StrToInt(String(S));
             zptByte :
-              Value.ByteValue := StrToInt(S);
+              Value.ByteValue := StrToInt(String(S));
             zptBoolean :
-              Value.BooleanValue := ByteBool(StrToInt(S));
+              Value.BooleanValue := ByteBool(StrToInt(String(S)));
             zptComponentRef :
               begin
                 Fix := TZXmlFixUp.Create;
-                Fix.Name := LowerCase(S);
+                Fix.Name := String(LowerCase(S));
                 Fix.Prop := Prop;
                 Fix.Obj := C;
                 FixUps.Add( Fix );
               end;
             zptPropertyRef :
               begin
-                L.DelimitedText := S;
+                L.DelimitedText := String(S);
                 if L.Count<2 then
-                  raise Exception.Create('TZXmlReader: Bad property ref ' + S);
+                  raise Exception.Create('TZXmlReader: Bad property ref ' + String(S));
                 Fix := TZXmlFixUp.Create;
-                Fix.Name := LowerCase(L[0]);
-                Fix.PropName := LowerCase(L[1]);
+                Fix.Name := String(LowerCase(L[0]));
+                Fix.PropName := String(LowerCase(L[1]));
                 if L.Count>2 then
-                  Value.PropertyValue.Index := StrToIntDef(L[2],0);
+                  Value.PropertyValue.Index := StrToIntDef(L[2],0)
+                else
+                  Value.PropertyValue.Index := 0;
                 Fix.Prop := Prop;
                 Fix.Obj := C;
                 FixUps.Add( Fix );
               end;
             zptExpression :
-              Value.ExpressionValue.Source := S;
+              Value.ExpressionValue.Source := String(S);
           else
             ZHalt('TZXmlReader: No readhandler');
           end;
@@ -2717,76 +3241,82 @@ begin
           Break;
         end;
       end;
+      if not Found then
+        NotFounds.Values[String(S)] := String(Xml.CurAttr.Value(I));
     end;
 
-  if Xml.CurPartType=ptStartTag then
-  begin
-    while Xml.Scan do
-      case Xml.CurPartType of
-        ptStartTag :
-          begin
-            //Hantera nästlade komponnenter
-            //Det gäller componentlists och inlinecomponent
-            S := Xml.CurName;
-            NestedProp:=nil;
-            for I := 0 to PropList.Count-1 do
+    if (NotFounds.Count>0) and (ZClassName='Material') then
+      PatchMaterialTextures;
+
+    if (NotFounds.Count>0) and (ZClassName='Sound') and (Xml.CurPartType=ptStartTag) then
+      PatchSoundSample;
+
+    if Xml.CurPartType=ptStartTag then
+    begin
+      while Xml.Scan do
+        case Xml.CurPartType of
+          ptStartTag :
             begin
-              Prop := TZProperty(PropList[I]);
-              if SameText(Prop.Name,Xml.CurName) and
-                (Prop.PropertyType in [zptComponentList,zptInlineComponent,zptString,zptExpression,zptBinary]) then
+              //Hantera nästlade komponnenter
+              //Det gäller componentlists
+              S := Xml.CurName;
+              NestedProp:=nil;
+              for I := 0 to PropList.Count-1 do
               begin
-                NestedProp := Prop;
-                Break;
+                Prop := TZProperty(PropList[I]);
+                if SameText(Prop.Name,String(Xml.CurName)) and
+                  (Prop.PropertyType in [zptComponentList,zptString,zptExpression,zptBinary]) then
+                begin
+                  NestedProp := Prop;
+                  Break;
+                end;
               end;
-            end;
-            if NestedProp=nil then
-              raise Exception.Create('TZXmlReader: Unknown nested property ' + Xml.CurName);
-            C.GetProperty(NestedProp,Value);
-            while Xml.Scan do
-              case Xml.CurPartType of
-                ptStartTag,ptEmptyTag,ptCData  :
-                  case NestedProp.PropertyType of
-                    zptComponentList : DoReadComponent(Value.ComponentListValue);
-                    zptInlineComponent :
-                      begin
-                        Value.ComponentValue := DoReadComponent(nil);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptString :
-                      begin
-                        Value.StringValue := Trim(Xml.CurContent);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptExpression :
-                      begin
-                        Value.ExpressionValue.Source := Trim(Xml.CurContent);
-                        C.SetProperty(NestedProp,Value);
-                      end;
-                    zptBinary :
-                      begin
-                        try
-                          InDecodeBinary(Xml.CurContent,Value.BinaryValue);
+              if NestedProp=nil then
+                raise Exception.Create('TZXmlReader: Unknown nested property ' + String(Xml.CurName));
+              C.GetProperty(NestedProp,Value);
+              while Xml.Scan do
+                case Xml.CurPartType of
+                  ptStartTag,ptEmptyTag,ptCData  :
+                    case NestedProp.PropertyType of
+                      zptComponentList : DoReadComponent(Value.ComponentListValue);
+                      zptString :
+                        begin
+                          Value.StringValue := Trim(Xml.CurContent);
                           C.SetProperty(NestedProp,Value);
-                        except
-                          ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + C.Name);
                         end;
-                      end;
-                  end;
-                ptEndTag :
-                  if SameText(NestedProp.Name,Xml.CurName) then
-                    Break;
-              end;
-          end;
-        ptEndTag : Break;
-      end;
-  end;
+                      zptExpression :
+                        begin
+                          Value.ExpressionValue.Source := String(Trim(Xml.CurContent));
+                          C.SetProperty(NestedProp,Value);
+                        end;
+                      zptBinary :
+                        begin
+                          try
+                            InDecodeBinary(String(Xml.CurContent),Value.BinaryValue);
+                            C.SetProperty(NestedProp,Value);
+                          except
+                            ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + String(C.Name));
+                          end;
+                        end;
+                    end;
+                  ptEndTag :
+                    if SameText(NestedProp.Name,String(Xml.CurName)) then
+                      Break;
+                end;
+            end;
+          ptEndTag : Break;
+        end;
+    end;
 
   finally
     L.Free;
+    NotFounds.Free;
   end;
 
   if C.Name<>'' then
-    SymTab.Add(LowerCase(C.Name),C);
+    SymTab.Add(String(LowerCase(C.Name)),C);
+
+  Self.MainXml := SaveMainXml;
 
   Result := C;
 end;
@@ -2833,8 +3363,8 @@ end;
 
 procedure TZXmlReader.OnDocumentStart;
 begin
-  while Xml.Scan do
-    if Xml.CurPartType in [ptStartTag,ptEmptyTag] then
+  while MainXml.Scan do
+    if MainXml.CurPartType in [ptStartTag,ptEmptyTag] then
       Break;
 end;
 {$ENDIF}
@@ -2880,11 +3410,20 @@ begin
   for I := 0 to Count-1 do
   begin
     C := TZComponent(Self[I]);
+    {$ifndef minimal}
+    if C.DesignDisable then
+      Continue;
+    {$endif}
     if C is TCommand then
       TCommand(C).Execute
     else
-      //Anropa Update på allt som inte är kommandon (expressions)
+      //Call update on everything that isn't commands (expressions)
       C.Update;
+    {$ifndef minimal}
+    //Break after the producer that is marked as preview (in bitmap graph)
+    if C=DesignerPreviewProducer then
+      Break;
+    {$endif}
   end;
 end;
 
@@ -2909,9 +3448,17 @@ end;
 procedure TZComponentList.Update;
 var
   I : integer;
+  C : TZComponent;
 begin
   for I := 0 to Count-1 do
-    TZComponent(Self[I]).Update;
+  begin
+    C := TZComponent(Self[I]);
+    {$ifndef minimal}
+    if C.DesignDisable then
+      Continue;
+    {$endif}
+    C.Update;
+  end;
 end;
 
 procedure TZComponentList.Clear;
@@ -2935,6 +3482,23 @@ begin
   for I := 0 to Count-1 do
     TZComponent(Self[I]).DesignerReset;
 end;
+
+procedure TZComponentList.InsertComponent(Component: TZComponent; Index : integer);
+var
+  I : integer;
+begin
+  Component.OwnerList := Self;
+
+  Add(nil);
+  I := Count-1;
+  while I>Index do
+  begin
+    Items[I] := Items[I-1];
+    Dec(I);
+  end;
+
+  Items[ Index ] := Component;
+end;
 {$endif}
 
 
@@ -2944,16 +3508,8 @@ end;
 procedure TLogicalGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
 end;
-
-{$ifndef minimal}
-procedure TLogicalGroup.DesignerReset;
-begin
-  inherited;
-  Children.DesignerReset;
-end;
-{$endif}
 
 procedure TLogicalGroup.Execute;
 begin
@@ -2972,7 +3528,7 @@ end;
 procedure TContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers), zptComponentList);
 end;
 
 type
@@ -2984,21 +3540,27 @@ type
 
 var
   GlobalContent : TGlobalContent;
-
+  {$ifndef minimal}
+  RefreshDepth : integer;
+  {$endif}
 
 procedure TContent.RefreshFromProducers;
 var
   Stack : TZArrayList;
   Save : TGlobalContent;
 begin
-  {$ifdef zlog}
+  {$ifndef minimal}
   if Producers.Count>0 then
-    ZLog.GetLog(Self.ClassName).Write('Refresh: ' + GetDisplayName);
+    ZLog.GetLog(Self.ClassName).BeginTimer;
   {$endif}
 
   Save := GlobalContent;
 
   Stack := TZArrayList.Create;
+  {$ifndef minimal}
+  try
+    Inc(RefreshDepth);
+  {$endif}
     Stack.ReferenceOnly := True;
 
     GlobalContent.Content := Self;
@@ -3012,19 +3574,31 @@ begin
       CopyAndDestroy(TContent(Stack.Pop));
     while(Stack.Count>0) do
       Stack.Pop().Free;
+  {$ifndef minimal}
+  finally
+    Dec(RefreshDepth);
+  {$endif}
     IsChanged := False;
     Producers.IsChanged := False;
   Stack.Free;
+  {$ifndef minimal}
+  end;
+  {$endif}
 
 //  FillChar(GlobalContent,SizeOf(GlobalContent),0);
   GlobalContent := Save;
+
+  {$ifndef minimal}
+  if (Producers.Count>0) and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
+    ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
+  {$endif}
 end;
 
 ///////////////////
 
-function GetPropertyRef(const Prop : TZPropertyRef) : PFloat;
+function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
 begin
-  Result := PFloat(Prop.Component.GetPropertyPtr(Prop.Prop,Prop.Index));
+  Result := Prop.Component.GetPropertyPtr(Prop.Prop,Prop.Index);
 end;
 
 { TZOutputStream }
@@ -3069,28 +3643,28 @@ end;
 procedure TStateBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}integer(@OnLeave) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}integer(@OnLeave), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptComponentList);
 end;
 
 
 //String functions
 
-function ZStrFindEnd(P : PChar) : PChar;
+function ZStrFindEnd(P : PAnsiChar) : PAnsiChar;
 begin
   while P^<>#0 do Inc(P);
   Result := P;
 end;
 
-function ZStrLength(P : PChar) : integer;
+function ZStrLength(P : PAnsiChar) : integer;
 begin
   Result := ZStrFindEnd(P) - P;
 end;
 
-procedure ZStrCopy(P : PChar; const Src : PChar);
+procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
 var
   Len : integer;
 begin
@@ -3098,29 +3672,29 @@ begin
   System.Move(Src^,P^,Len+1);
 end;
 
-procedure ZStrCat(P : PChar; const Src : PChar);
+procedure ZStrCat(P : PAnsiChar; const Src : PAnsiChar);
 begin
   P := ZStrFindEnd(P);
   ZStrCopy(P,Src);
 end;
 
-procedure ZStrConvertFloat(const S : single; Dest : PChar);
+procedure ZStrConvertInt(const S : integer; Dest : PAnsiChar);
 var
   Value : integer;
-  Tmp : PChar;
-  Buf : array[0..15] of char;
+  Tmp : PAnsiChar;
+  Buf : array[0..15] of ansichar;
 begin
-  Value := Abs(Trunc(S));
+  Value := Abs(S);
   Tmp := @Buf[High(Buf)];
   Tmp^ := #0;
   Dec(Tmp);
   while (Value>9) and (Tmp>@Buf) do
   begin
-    Tmp^:=Chr(Value mod 10 + 48);
+    Tmp^:=AnsiChar(Value mod 10 + 48);
     Dec(Tmp);
     Value := Value div 10;
   end;
-  Tmp^ := Chr(Value + 48);
+  Tmp^ := AnsiChar(Value + 48);
   if S<0 then
   begin
     Dec(Tmp);
@@ -3129,10 +3703,74 @@ begin
   ZStrCopy(Dest,Tmp);
 end;
 
+function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
+var
+  P,P1,SaveP : PAnsiChar;
+begin
+  Result := -1;
+  {$ifndef minimal}
+  ZAssert(StartPos<=ZStrLength(Str),'StrPos called with startpos>length');
+  {$endif}
+  P := Str + StartPos;
+  while P^<>#0 do
+  begin
+    P1 := SubStr;
+    if P^=P1^ then
+    begin
+      SaveP := P;
+      repeat
+        Inc(P); Inc(P1);
+      until (P^<>P1^) or (P^=#0) or (P1^=#0);
+      if P1^=#0 then
+      begin
+        Result := integer(SaveP) - integer(Str);
+        Break;
+      end;
+    end else
+      Inc(P);
+  end;
+end;
+
+function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
+begin
+  while (P1^=P2^) and (P1^<>#0) and (P2^<>#0) do
+  begin
+    Inc(P1); Inc(P2);
+  end;
+  Result := (P1^=#0) and (P2^=#0);
+end;
+
+procedure ZStrSubString(const Str,Dest : PAnsiChar; const StartPos,NChars : integer);
+var
+  P : PAnsiChar;
+begin
+  {$ifndef minimal}
+  ZAssert(StartPos+NChars<=ZStrLength(Str),'SubString called with startpos+NChars>length');
+  {$endif}
+  P := Str + StartPos;
+  Move(P^,Dest^,NChars);
+  Dest[NChars] := #0;
+end;
+
+function ZStrToInt(const Str : PAnsiChar) : integer;
+var
+  P : PAnsiChar;
+begin
+  Result := 0;
+  P := Str;
+  while P^<>#0 do
+  begin
+    Result := Result * 10 + byte(P^)-48;
+    Inc(P);
+  end;
+end;
+
+
+
 {$ifndef minimal}
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
 begin
-  Result := PRef.Component.Name + '.' + PRef.Prop.Name;
+  Result := String(PRef.Component.Name) + '.' + PRef.Prop.Name;
   case PRef.Component.GetProperties.GetByName(PRef.Prop.Name).PropertyType of
     zptColorf : Result := Result + '.' + Copy('RGBA',PRef.Index+1,1);
     zptVector3f : Result := Result + '.' + Copy('XYZ',PRef.Index+1,1);
@@ -3155,7 +3793,30 @@ begin
   Self.ProduceOutput(GlobalContent.Content,GlobalContent.Stack);
 end;
 
+
+{ TZComponentInfo }
+
+{$ifndef minimal}
+function TZComponentInfo.GetProperties: TZPropertyList;
+var
+  C : TZComponent;
+begin
+  Result := Self.Properties;
+  if Result=nil then
+  begin
+    C := Self.ZClass.Create(nil);
+    Result := TZPropertyList.Create;
+    Result.TheSelf := integer(C);
+    C.DefineProperties(Result);
+    Self.Properties := Result;
+    C.Free;
+  end;
+end;
+{$endif}
+
 initialization
+
+  ManagedHeap_Create;
 
   //todo really need to register TLogicalGroup?
   Register(TLogicalGroup,LogicalGroupClassId);
@@ -3163,10 +3824,18 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Group';{$endif}
 
 {$ifndef minimal}
+  StringCache := TDictionary<AnsiString,AnsiString>.Create;
+
 finalization
 
+  Zc_Ops.CleanUp;
   if Assigned(_ComponentManager) then
-    _ComponentManager.Free;
+    FreeAndNil(_ComponentManager);
+
+  ManagedHeap_Destroy;
+
+  StringCache.Free;
+
 {$endif}
 
 end.

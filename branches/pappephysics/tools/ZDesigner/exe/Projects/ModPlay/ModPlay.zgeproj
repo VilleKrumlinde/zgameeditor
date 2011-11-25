@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Music is playing!" CustomScreenWidth="400" CustomScreenHeight="400" MouseVisible="255">
+  <Comment>
+<![CDATA[This application demonstrates calling external DLL-files.
+Music is played using the bass.dll and the main window is made transparent by calling Windows API-functions.]]>
+  </Comment>
+  <OnLoaded>
+    <ZExternalLibrary ModuleName="bass.dll">
+      <Source>
+<![CDATA[//BASS-dll from http://www.un4seen.com/
+int BASS_GetVersion() { }
+
+int BASS_ErrorGetCode() { }
+
+int BASS_Free() { }
+int BASS_Stop() { }
+
+int BASS_Init(int device, int freq, int flags, int win, int clsid) { }
+
+int BASS_MusicLoad(int mem, string filename, int of1, int of2, int length, int flags, int freq) { }
+
+int BASS_ChannelPlay(int handle, int restart) { }
+int BASS_ChannelGetLevel(int handle) { }]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZExternalLibrary ModuleName="user32.dll">
+      <Source>
+<![CDATA[//Windows API functions
+int SetWindowTextA(int hWnd,string lpString) { }
+
+int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { }
+
+int SetLayeredWindowAttributes(int hWnd, int crKey, int bAlpha, int dwFlags) { }]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZExpression Comment="Init music">
+      <Expression>
+<![CDATA[int ok;
+
+//Start music
+ok=BASS_Init(-1, 44100, 0, 0, 0);
+if(!ok) {
+  App.Caption="Error init: " + intToStr(BASS_ErrorGetCode());
+  return;
+}
+
+//Music downloaded from http://modarchive.org/
+string musicFile = "4-mat_-_rose.xm";
+int musicId = BASS_MusicLoad(0,musicFile,0,0,0,0,0);
+if(!musicId) {
+  App.Caption="Error load music: " + intToStr(BASS_ErrorGetCode());
+  return;
+}
+MusicHandle=musicid;
+
+if(!BASS_ChannelPlay(musicId, 0)) {
+  App.Caption="Error play music: " + intToStr(BASS_ErrorGetCode());
+  return;
+}
+
+App.Caption="Music is playing!";]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Make window transparent">
+      <Expression>
+<![CDATA[//Uncomment lines below to make window transparent (does not work on all graphics cards)
+//SetWindowLongA(App.WindowHandle,-20,0x80000);
+//SetLayeredWindowAttributes(App.WindowHandle, 0, 180, 2);]]>
+      </Expression>
+    </ZExpression>
+    <DefineVariable Name="MusicHandle" Type="1"/>
+  </OnLoaded>
+  <OnClose>
+    <ZExpression>
+      <Expression>
+<![CDATA[//BASS_Stop();
+BASS_Free();]]>
+      </Expression>
+    </ZExpression>
+  </OnClose>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[string s;
+
+int level=BASS_ChannelGetLevel(MusicHandle);
+
+int left=level >> 16;
+int right=level & 0xffff;
+
+s=intToStr( left );
+Rtext1.Text=s;
+
+Rbeams1.Length = (left/32768.0) * 20;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <RenderText Name="RText1"/>
+    <UseMaterial Material="Material1"/>
+    <RenderBeams Name="Rbeams1" Count="10" Length="0.2856" Width="0.1"/>
+  </OnRender>
+  <Content>
+    <Material Name="Material1"/>
+  </Content>
+</ZApplication>

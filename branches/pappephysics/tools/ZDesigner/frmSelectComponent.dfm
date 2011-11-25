@@ -3,7 +3,7 @@ object SelectComponentForm: TSelectComponentForm
   Top = 88
   Caption = 'Select component to add'
   ClientHeight = 481
-  ClientWidth = 636
+  ClientWidth = 785
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,14 +15,14 @@ object SelectComponentForm: TSelectComponentForm
   ShowHint = True
   OnCreate = FormCreate
   DesignSize = (
-    636
+    785
     481)
   PixelsPerInch = 96
   TextHeight = 13
   object CompListView: TListView
     Left = 8
     Top = 8
-    Width = 619
+    Width = 768
     Height = 427
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <>
@@ -39,7 +39,7 @@ object SelectComponentForm: TSelectComponentForm
     OnSelectItem = CompListViewSelectItem
   end
   object OkButton: TButton
-    Left = 469
+    Left = 618
     Top = 443
     Width = 75
     Height = 25
@@ -51,7 +51,7 @@ object SelectComponentForm: TSelectComponentForm
     TabOrder = 1
   end
   object Button2: TButton
-    Left = 552
+    Left = 701
     Top = 443
     Width = 75
     Height = 25

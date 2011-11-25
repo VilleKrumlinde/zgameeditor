@@ -15,6 +15,10 @@ inherited SoundEditFrame: TSoundEditFrame
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Sound'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         793
         569)
@@ -83,17 +87,6 @@ inherited SoundEditFrame: TSoundEditFrame
         AutoSize = False
         Caption = 'Note nr'
       end
-      object SoundGraphPaintBox: TPaintBox
-        Left = 415
-        Top = 63
-        Width = 375
-        Height = 169
-        Anchors = [akLeft, akTop, akRight]
-        Color = clBtnFace
-        Constraints.MinWidth = 100
-        ParentColor = False
-        OnPaint = SoundGraphPaintBoxPaint
-      end
       object Label16: TLabel
         Left = 320
         Top = 38
@@ -108,12 +101,39 @@ inherited SoundEditFrame: TSoundEditFrame
         Height = 13
         Caption = 'Pan'
       end
+      object Panel1: TPanel
+        Left = 415
+        Top = 63
+        Width = 375
+        Height = 169
+        Anchors = [akLeft, akTop, akRight]
+        BevelOuter = bvNone
+        Constraints.MinWidth = 100
+        FullRepaint = False
+        ParentBackground = False
+        TabOrder = 15
+        object SoundGraphPaintBox: TPaintBox
+          Left = 0
+          Top = 0
+          Width = 375
+          Height = 169
+          Align = alClient
+          Color = clBtnFace
+          ParentColor = False
+          OnPaint = SoundGraphPaintBoxPaint
+          ExplicitWidth = 105
+          ExplicitHeight = 105
+        end
+      end
       object ModulationsParent: TScrollBox
         Left = 8
         Top = 256
         Width = 521
         Height = 113
         VertScrollBar.Visible = False
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
         TabOrder = 0
       end
       object OctaveEdit: TEdit
@@ -137,6 +157,9 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 61
         VertScrollBar.Visible = False
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
         TabOrder = 3
       end
       object GroupBox4: TGroupBox
@@ -165,12 +188,12 @@ inherited SoundEditFrame: TSoundEditFrame
           Top = 16
           Width = 113
           Height = 21
-          ItemHeight = 13
           ItemIndex = 0
           TabOrder = 0
-          Text = 'aasaadaafaagaahaajaak'
+          Text = 'k dfh fda afk hfd  fh k f a a   '
           OnKeyPress = NotesEditKeyPress
           Items.Strings = (
+            'k dfh fda afk hfd  fh k f a a   '
             'aasaadaafaagaahaajaak')
         end
         object AutoPlayCheckBox: TCheckBox
@@ -206,14 +229,12 @@ inherited SoundEditFrame: TSoundEditFrame
           Width = 82
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
-          ItemIndex = 0
           TabOrder = 0
-          Text = 'Square'
           Items.Strings = (
             'Square'
             'Saw'
-            'Noise')
+            'Noise'
+            'Sine')
         end
         object Osc1PWTrackBar: TTrackBar
           Left = 95
@@ -320,7 +341,6 @@ inherited SoundEditFrame: TSoundEditFrame
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
           ItemIndex = 0
           TabOrder = 2
           Text = 'Square'
@@ -353,6 +373,11 @@ inherited SoundEditFrame: TSoundEditFrame
         Top = 468
         Width = 640
         Height = 69
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Ctl3D = True
+        ParentCtl3D = False
         TabOrder = 8
       end
       object ChannelEdit: TEdit
@@ -366,9 +391,9 @@ inherited SoundEditFrame: TSoundEditFrame
       object DumpButton: TButton
         Left = 544
         Top = 256
-        Width = 177
+        Width = 104
         Height = 25
-        Caption = 'Dump to raw c:\temp\dump.dat'
+        Caption = 'Save as raw-file'
         TabOrder = 10
         OnClick = DumpButtonClick
       end
@@ -462,6 +487,7 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 777
         Height = 265
         Anchors = [akLeft, akTop, akRight]
+        BorderStyle = bsNone
         TabOrder = 0
       end
       object GlobalLfosParent: TScrollBox
@@ -470,6 +496,7 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 61
         VertScrollBar.Visible = False
+        BorderStyle = bsNone
         TabOrder = 1
       end
       object HelpMixerButton: TButton

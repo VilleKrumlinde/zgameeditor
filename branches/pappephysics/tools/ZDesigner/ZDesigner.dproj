@@ -1,300 +1,299 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <ProjectGuid>{b410a785-0552-4d55-820f-510dfc7ab4d8}</ProjectGuid>
-    <MainSource>ZDesigner.dpr</MainSource>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-    <DCC_DependencyCheckOutputName>exe\ZDesigner.exe</DCC_DependencyCheckOutputName>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Version>7.0</Version>
-    <DCC_DebugInformation>False</DCC_DebugInformation>
-    <DCC_WriteableConstants>True</DCC_WriteableConstants>
-    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
-    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
-    <DCC_ExeOutput>.\exe</DCC_ExeOutput>
-    <DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty</DCC_ResourcePath>
-    <DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty</DCC_ObjPath>
-    <DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty</DCC_IncludePath>
-    <DCC_Define>zdebug;zlog;RELEASE</DCC_Define>
-    <DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
-    <DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <Version>7.0</Version>
-    <DCC_WriteableConstants>True</DCC_WriteableConstants>
-    <DCC_ExeOutput>.\exe</DCC_ExeOutput>
-    <DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty</DCC_ResourcePath>
-    <DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty</DCC_ObjPath>
-    <DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty</DCC_IncludePath>
-    <DCC_Define>zdebug;zlog;DEBUG</DCC_Define>
-    <DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
-    <DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
-  </PropertyGroup>
-  <ProjectExtensions>
-    <Borland.Personality>Delphi.Personality</Borland.Personality>
-    <Borland.ProjectType>VCLApplication</Borland.ProjectType>
-    <BorlandProject>
-<BorlandProject><Delphi.Personality><Parameters><Parameters Name="DebugSourceDirs">C:\DATA\Delphi32\ZzDC\</Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1053</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIntraweb_80_100.bpl">Intraweb 8.0 Design Package for Borland Development Studio 2006</Excluded_Packages>
-      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIndyCore100.bpl">Indy 10 Core Design Time</Excluded_Packages>
-      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclsmp100.bpl">Borland Sample Components</Excluded_Packages>
-      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dclIndyProtocols100.bpl">Indy 10 Protocols Design Time</Excluded_Packages>
-      <Excluded_Packages Name="c:\program files\borland\bds\4.0\Bin\dcltee100.bpl">TeeChart Components</Excluded_Packages>
-    </Excluded_Packages><Source><Source Name="MainSource">ZDesigner.dpr</Source></Source></Delphi.Personality><ModelSupport>False</ModelSupport></BorlandProject></BorlandProject>
-  </ProjectExtensions>
-  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
-  <ItemGroup>
-    <DelphiCompile Include="ZDesigner.dpr">
-      <MainSource>MainSource</MainSource>
-    </DelphiCompile>
-    <DCCReference Include="..\..\Animators.pas" />
-    <DCCReference Include="..\..\AudioComponents.pas" />
-    <DCCReference Include="..\..\AudioPlayer.pas" />
-    <DCCReference Include="..\..\BitmapProducers.pas" />
-    <DCCReference Include="..\..\Collision.pas" />
-    <DCCReference Include="..\..\Commands.pas" />
-    <DCCReference Include="..\..\ImplicitMeshes.pas" />
-    <DCCReference Include="..\..\Meshes.pas" />
-    <DCCReference Include="..\..\PAPPE.pas" />
-    <DCCReference Include="..\..\Steering.pas" />
-    <DCCReference Include="..\..\ZApplication.pas" />
-    <DCCReference Include="..\..\ZBitmap.pas" />
-    <DCCReference Include="..\..\ZClasses.pas" />
-    <DCCReference Include="..\..\ZExpressions.pas" />
-    <DCCReference Include="..\..\ZFile.pas" />
-    <DCCReference Include="3rdparty\unitEXIcon.pas" />
-    <DCCReference Include="3rdparty\unitPEFile.pas" />
-    <DCCReference Include="3rdparty\unitResourceDetails.pas" />
-    <DCCReference Include="3rdparty\unitResourceGraphics.pas" />
-    <DCCReference Include="3rdparty\unitResourceRCData.pas" />
-    <DCCReference Include="3rdparty\uTinyGif.pas" />
-    <DCCReference Include="DesignerGui.pas" />
-    <DCCReference Include="dmCommon.pas">
-      <Form>CommonModule</Form>
-      <DesignClass>TDataModule</DesignClass>
-    </DCCReference>
-    <DCCReference Include="ExprEdit.pas" />
-    <DCCReference Include="expr\CocoBase.pas" />
-    <DCCReference Include="expr\mwStringHashList.pas" />
-    <DCCReference Include="expr\Zc.PAS" />
-    <DCCReference Include="expr\Zc_Ops.pas" />
-    <DCCReference Include="frm3dsImportOptions.pas">
-      <Form>Import3dsForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmAbout.pas">
-      <Form>AboutForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmChannelFrame.pas">
-      <Form>ChannelFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmCompEditBase.pas">
-      <Form>CompEditFrameBase</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmEditor.pas">
-      <Form>EditorForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmEnvelopeFrame.pas">
-      <Form>EnvelopeFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmLfoFrame.pas">
-      <Form>LfoFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmMemoEdit.pas">
-      <Form>MemoEditForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmModulationFrame.pas">
-      <Form>ModulationFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmMusicEdit.pas">
-      <Form>MusicEditFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmRawAudioImportOptions.pas">
-      <Form>ImportRawAudioForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmSelectComponent.pas">
-      <Form>SelectComponentForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmSettings.pas">
-      <Form>SettingsForm</Form>
-    </DCCReference>
-    <DCCReference Include="frmSoundEdit.pas">
-      <Form>SoundEditFrame</Form>
-      <DesignClass>TFrame</DesignClass>
-    </DCCReference>
-    <DCCReference Include="frmToolMissing.pas">
-      <Form>ToolMissingForm</Form>
-    </DCCReference>
-    <DCCReference Include="GLPanel.pas" />
-    <DCCReference Include="OpenGL12.pas" />
-    <DCCReference Include="u3dsFile.pas" />
-    <DCCReference Include="uHelp.pas" />
-    <DCCReference Include="uMidiFile.pas" />
-    <DCCReference Include="uSymTab.pas" />
-  </ItemGroup>
-</Project>
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{b410a785-0552-4d55-820f-510dfc7ab4d8}</ProjectGuid>
+			<MainSource>ZDesigner.dpr</MainSource>
+			<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<DCC_DependencyCheckOutputName>exe\ZDesigner.exe</DCC_DependencyCheckOutputName>
+			<ProjectVersion>13.4</ProjectVersion>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<FrameworkType>VCL</FrameworkType>
+			<Base>True</Base>
+			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<TargetedPlatforms>3</TargetedPlatforms>
+			<AppType>Application</AppType>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
+			<Base_Win64>true</Base_Win64>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+			<Base_Win32>true</Base_Win32>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+			<Cfg_1_Win32>true</Cfg_1_Win32>
+			<CfgParent>Cfg_1</CfgParent>
+			<Cfg_1>true</Cfg_1>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+			<Cfg_2_Win64>true</Cfg_2_Win64>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+			<Cfg_2_Win32>true</Cfg_2_Win32>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;System.Win;$(DCC_Namespace)</DCC_Namespace>
+			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Locale>1053</VerInfo_Locale>
+			<DCC_UsePackage>vcl;rtl;vclx;vclimg;vclactnband;dbrtl;vcldb;vcldbx;bdertl;vcltouch;xmlrtl;dsnap;dsnapcon;TeeUI;TeeDB;Tee;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_100_140;Intraweb_100_140;VclSmp;vclie;inetdb;webdsnap;websnap;inetdbbde;inetdbxpress;soaprtl;DbxCommonDriver;DbxClientDriver;DBXInterBaseDriver;DBXMySQLDriver;dbexpress;dbxcds;$(DCC_UsePackage)</DCC_UsePackage>
+			<DCC_StringChecks>off</DCC_StringChecks>
+			<DCC_DependencyCheckOutputName>ZDesigner.exe</DCC_DependencyCheckOutputName>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base_Win64)'!=''">
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
+			<VerInfo_Locale>1033</VerInfo_Locale>
+			<Icon_MainIcon>ZDesigner_Icon.ico</Icon_MainIcon>
+			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base_Win32)'!=''">
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<Icon_MainIcon>ZDesigner_Icon.ico</Icon_MainIcon>
+			<DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Locale>1033</VerInfo_Locale>
+			<Debugger_DebugSourcePath>C:\DATA\Delphi32\ZzDC\;$(Debugger_DebugSourcePath)</Debugger_DebugSourcePath>
+			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DependencyCheckOutputName>exe\ZDesigner.exe</DCC_DependencyCheckOutputName>
+			<Version>7.0</Version>
+			<DCC_DebugInformation>False</DCC_DebugInformation>
+			<DCC_WriteableConstants>True</DCC_WriteableConstants>
+			<DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_ExeOutput>.\exe</DCC_ExeOutput>
+			<DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_ResourcePath)</DCC_ResourcePath>
+			<DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_ObjPath)</DCC_ObjPath>
+			<DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_IncludePath)</DCC_IncludePath>
+			<DCC_Define>zdebug;zlog;RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
+			<DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<VerInfo_Locale>1033</VerInfo_Locale>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_DependencyCheckOutputName>exe\ZDesigner.exe</DCC_DependencyCheckOutputName>
+			<Version>7.0</Version>
+			<DCC_WriteableConstants>True</DCC_WriteableConstants>
+			<DCC_ExeOutput>.\exe</DCC_ExeOutput>
+			<DCC_UnitSearchPath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ResourcePath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_ResourcePath)</DCC_ResourcePath>
+			<DCC_ObjPath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_ObjPath)</DCC_ObjPath>
+			<DCC_IncludePath>..\..;..\..\3rdparty;.\3rdparty;$(DCC_IncludePath)</DCC_IncludePath>
+			<DCC_Define>zdebug;zlog;DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_SYMBOL_PLATFORM>False</DCC_SYMBOL_PLATFORM>
+			<DCC_UNIT_PLATFORM>False</DCC_UNIT_PLATFORM>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+			<DCC_RemoteDebug>true</DCC_RemoteDebug>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<VerInfo_Locale>1033</VerInfo_Locale>
+		</PropertyGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Parameters>
+						<Parameters Name="DebugSourceDirs">C:\DATA\Delphi32\ZzDC\</Parameters>
+						<Parameters Name="UseLauncher">False</Parameters>
+						<Parameters Name="LoadAllSymbols">True</Parameters>
+						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
+					</Parameters>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1053</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k160.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp160.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+					</Excluded_Packages>
+					<Source>
+						<Source Name="MainSource">ZDesigner.dpr</Source>
+					</Source>
+				</Delphi.Personality>
+				<ModelSupport>False</ModelSupport>
+				<Platforms>
+					<Platform value="Win64">True</Platform>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+		<ItemGroup>
+			<DelphiCompile Include="$(MainSource)">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="..\..\ZLog.pas"/>
+			<DCCReference Include="DesignerGui.pas"/>
+			<DCCReference Include="..\..\ZClasses.pas"/>
+			<DCCReference Include="..\..\ZBitmap.pas"/>
+			<DCCReference Include="..\..\BitmapProducers.pas"/>
+			<DCCReference Include="GLPanel.pas"/>
+			<DCCReference Include="OpenGL12.pas"/>
+			<DCCReference Include="frmEditor.pas">
+				<Form>EditorForm</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\Animators.pas"/>
+			<DCCReference Include="..\..\Meshes.pas"/>
+			<DCCReference Include="..\..\ZApplication.pas"/>
+			<DCCReference Include="..\..\Commands.pas"/>
+			<DCCReference Include="..\..\ZExpressions.pas"/>
+			<DCCReference Include="Compiler\Compiler.pas"/>
+			<DCCReference Include="..\..\Collision.pas"/>
+			<DCCReference Include="Compiler\Zc.PAS"/>
+			<DCCReference Include="frmSelectComponent.pas">
+				<Form>SelectComponentForm</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\Steering.pas"/>
+			<DCCReference Include="frmCompEditBase.pas">
+				<Form>CompEditFrameBase</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\uSymTab.pas"/>
+			<DCCReference Include="dmCommon.pas">
+				<Form>CommonModule</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\AudioPlayer.pas"/>
+			<DCCReference Include="..\..\AudioComponents.pas"/>
+			<DCCReference Include="frmChannelFrame.pas">
+				<Form>ChannelFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmEnvelopeFrame.pas">
+				<Form>EnvelopeFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmLfoFrame.pas">
+				<Form>LfoFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmModulationFrame.pas">
+				<Form>ModulationFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmSoundEdit.pas">
+				<Form>SoundEditFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmMusicEdit.pas">
+				<Form>MusicEditFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="..\..\ImplicitMeshes.pas"/>
+			<DCCReference Include="frmAbout.pas">
+				<Form>AboutForm</Form>
+			</DCCReference>
+			<DCCReference Include="uHelp.pas"/>
+			<DCCReference Include="frmToolMissing.pas">
+				<Form>ToolMissingForm</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\ZFile.pas"/>
+			<DCCReference Include="3rdparty\unitPEFile.pas"/>
+			<DCCReference Include="3rdparty\unitResourceDetails.pas"/>
+			<DCCReference Include="3rdparty\unitResourceRCData.pas"/>
+			<DCCReference Include="frmMemoEdit.pas">
+				<Form>MemoEditForm</Form>
+			</DCCReference>
+			<DCCReference Include="uMidiFile.pas"/>
+			<DCCReference Include="3rdparty\uTinyGif.pas"/>
+			<DCCReference Include="u3dsFile.pas"/>
+			<DCCReference Include="frm3dsImportOptions.pas">
+				<Form>Import3dsForm</Form>
+			</DCCReference>
+			<DCCReference Include="frmRawAudioImportOptions.pas">
+				<Form>ImportRawAudioForm</Form>
+			</DCCReference>
+			<DCCReference Include="frmSettings.pas">
+				<Form>SettingsForm</Form>
+			</DCCReference>
+			<DCCReference Include="3rdparty\unitResourceGraphics.pas"/>
+			<DCCReference Include="3rdparty\unitEXIcon.pas"/>
+			<DCCReference Include="Compiler\Zc_Ops.pas"/>
+			<DCCReference Include="..\..\PAPPE.pas"/>
+			<DCCReference Include="frmBitmapEdit.pas">
+				<Form>BitmapEditFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="3rdparty\SugiyamaLayout.pas"/>
+			<DCCReference Include="frmMeshEdit.pas">
+				<Form>MeshEditFrame</Form>
+				<DesignClass>TFrame</DesignClass>
+			</DCCReference>
+			<DCCReference Include="frmArrayEdit.pas">
+				<Form>ArrayEditForm</Form>
+			</DCCReference>
+			<DCCReference Include="..\..\ZPlatform.pas"/>
+			<DCCReference Include="frmXmlEdit.pas">
+				<Form>XmlEditForm</Form>
+			</DCCReference>
+			<DCCReference Include="Compiler\CocoAncestor.pas"/>
+			<DCCReference Include="Compiler\CocoSets.pas"/>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+	</Project>
