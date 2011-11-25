@@ -1,25 +1,26 @@
 
 Listing
 -------
-0 errors and 36 warnings
-*****  Warning: LL1 warning in ZcFuncBody:"string" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"int" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"const" is start & successor of deletable structure
+0 errors and 37 warnings
 *****  Warning: LL1 warning in ZcFuncBody:"model" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"float" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"Camera" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"Mesh" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"Sample" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"string" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"if" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"const" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"int" is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:"Font" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"Camera" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"float" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"Sample" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"@" is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:"return" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"continue" is start & successor of deletable structure
 *****  Warning: LL1 warning in EmbeddedStatement:"else" is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:"null" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"break" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"switch" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"if" is start & successor of deletable structure
-*****  Warning: LL1 warning in ZcFuncBody:"for" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"continue" is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:"while" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"switch" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"break" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"for" is start & successor of deletable structure
+*****  Warning: LL1 warning in ZcFuncBody:"Mesh" is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:dec is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:ident is start & successor of deletable structure
 *****  Warning: LL1 warning in ZcFuncBody:lbrace is start & successor of deletable structure
@@ -54,7 +55,7 @@ Listing
    15      procedure CheckHomograph(var sym: Integer); override;
    16  .)
    17  private = (.
-   18      IsInIdent : boolean;
+   18      IsInIdent,IsInInvokeArg : boolean;
    19      CurrentFunction : TZcOpFunctionUserDefined;
    20      procedure CleanUp;
    21      procedure ZError(const S : string);
@@ -87,7 +88,7 @@ Listing
    48  begin
    49    //Only Homographs are name of component datatypes
    50    //If inside identifier "x.y.z" then let it refer to identifier instead
-   51    if IsInIdent then
+   51    if IsInIdent or IsInInvokeArg then
    52      sym := identSym;
    53  end;
    54  
@@ -187,7 +188,7 @@ Listing
   148            }
   149                  '"'.
   150  
-  151          ident = ['@'] letter { letter | digit }.
+  151          ident = letter { letter | digit }.
   152  
   153  
   154          /*----- operators and special characters needed in LL(1) resolvers --------------*/
@@ -451,7 +452,7 @@ Listing
   410     Cns.SetString('Name',AnsiString(CnsName));
   411     GlobalNames.Add(Cns);
   412  
-  413     case Typ of
+  413     case Typ.Kind of
   414       zctInt:
   415         begin
   416           Cns._Type := dvbInt;
@@ -815,89 +816,131 @@ Listing
   774         end;
   775      .)
   776  .
-  777  /*------------------------------------------------------------------------*/
-  778  Primary<var OutOp : TZcOp>
-  779  (. var Op : TZcOp; S : string; V : single;
-  780       Typ : TZcDataType;
-  781  .)
-  782  =            (. OutOp := nil; .)
-  783    (
-  784      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
-  785    | Literal<Typ>  (.
-  786          if Typ.Kind in [zctString,zctNull] then
-  787            OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
-  788          else
-  789          begin
-  790            try
-  791              S := LexString;
-  792              V := ZcStrToFloat(S);
-  793              OutOp := TZcOpLiteral.Create(Typ.Kind,V)
-  794            except on EConvertError do
-  795              SynError(200);
-  796            end;
-  797          end;
-  798       .)
-  799    | "(" Expr<OutOp> ")"
-  800  /*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" 
-  801      | "float"  | "int"    | "long" | "object"  | "sbyte"
-  802      | "short"  | "string" | "uint" | "ulong"   | "ushort"
-  803      ) "." ident */
-  804    )
+  777  
+  778  
+  779  
+  780  /*------------------------------------------------------------------------*/
+  781  InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
+  782  (.
+  783    var
+  784      Op : TZcOp;
+  785      Prop : TZProperty;
+  786  .)
+  787  = (. OutOp := nil; Op := nil; .)
+  788    ident (.
+  789      Prop := Ci.GetProperties.GetByName(LexString);
+  790      if Prop=nil then
+  791        ZError(LexString + ' is not a property of ' + Ci.ZClassName);
+  792      if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
+  793        ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
+  794      OutOp := MakeOp(zcIdentifier);
+  795      OutOp.Id := LexString;
+  796    .)
+  797    ":" Expr<Op>
+  798    (. if Op=nil then
+  799         ZError('Missing argument');
+  800       Op := MakeCompatible(Op, PropTypeToZType(Prop.PropertyType));
+  801       OutOp.Children.Add(Op);
+  802    .)
+  803  .
+  804  
   805  
-  806    {
-  807    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
-  808    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
-  809  
-  810  /*  | "->" ident */
-  811  
-  812    | "." (. IsInIdent := True; .) ident (.
-  813  
-  814        
-  815  
-  816        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
-  817          ZError('Invalid use of "."');
-  818  
-  819        Op := MakeOp(zcSelect,LexString);
-  820        Op.Children.Add(OutOp);
-  821  
-  822        OutOp := CheckPrimary(Op);
-  823  
-  824        IsInIdent := False;
-  825  
-  826      .)
-  827  
-  828    | "(" (. Assert(OutOp.Kind=zcIdentifier);
-  829             OutOp.Kind:=zcFuncCall;
-  830           .)
-  831          [Argument<Op> (. OutOp.Children.Add(Op); .)
-  832            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
-  833            }
-  834          ]
-  835          (.
-  836             if not VerifyFunctionCall(OutOp,S) then
-  837               ZError(S);
-  838          .)
-  839      ")"
-  840  
-  841    | "[" (. Assert(OutOp.Kind=zcIdentifier);
-  842             OutOp.Kind:=zcArrayAccess;
-  843           .)
-  844      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
-  845        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
-  846      "]"
-  847  
-  848    }
-  849  .
-  850  /*------------------------------------------------------------------------*/
-  851  Literal<var Typ : TZcDataType>
-  852  = intCon (. Typ.Kind :=zctInt; .) |
-  853    realCon (. Typ.Kind := zctFloat; .) |
-  854    stringCon (. Typ.Kind := zctString; .)
-  855    | "null" (. Typ.Kind := zctNull; .)
-  856    /* | "true" | "false"  */
-  857  .
-  858  
-  859  END Zc.
+  806  
+  807  /*------------------------------------------------------------------------*/
+  808  Primary<var OutOp : TZcOp>
+  809  (. var Op : TZcOp; S : string; V : single;
+  810       Typ : TZcDataType;
+  811       Ci : TZComponentInfo;
+  812  .)
+  813  =            (. OutOp := nil; .)
+  814    (
+  815      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
+  816    | "@" ident (.
+  817         Ci := ComponentManager.GetInfoFromName(LexString);
+  818         if not Ci.ZClass.InheritsFrom(TCommand) then
+  819           ZError('Class must inherit TCommand: ' + LexString);
+  820         OutOp := TZcOpInvokeComponent.Create(nil);
+  821         OutOp.Id := LexString;
+  822      .)
+  823      "(" (. IsInInvokeArg := True; .)
+  824          [InvokeArgument<Op,Ci>       (. OutOp.Children.Add(Op); .)
+  825            {"," InvokeArgument<Op,Ci> (. OutOp.Children.Add(Op); .)
+  826            }
+  827          ]
+  828      ")" (. IsInInvokeArg := False; .)
+  829    | Literal<Typ>  (.
+  830          if Typ.Kind in [zctString,zctNull] then
+  831            OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
+  832          else
+  833          begin
+  834            try
+  835              S := LexString;
+  836              V := ZcStrToFloat(S);
+  837              OutOp := TZcOpLiteral.Create(Typ.Kind,V)
+  838            except on EConvertError do
+  839              SynError(200);
+  840            end;
+  841          end;
+  842       .)
+  843    | "(" Expr<OutOp> ")"
+  844  /*  | ( "bool"   | "byte"   | "char" | "decimal" | "double"
+  845      | "float"  | "int"    | "long" | "object"  | "sbyte"
+  846      | "short"  | "string" | "uint" | "ulong"   | "ushort"
+  847      ) "." ident */
+  848    )
+  849  
+  850    {
+  851    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
+  852    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+  853  
+  854  /*  | "->" ident */
+  855  
+  856    | "." (. IsInIdent := True; .) ident (.
+  857  
+  858        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
+  859          ZError('Invalid use of "."');
+  860  
+  861        Op := MakeOp(zcSelect,LexString);
+  862        Op.Children.Add(OutOp);
+  863  
+  864        OutOp := CheckPrimary(Op);
+  865  
+  866        IsInIdent := False;
+  867  
+  868      .)
+  869  
+  870    | "(" (. Assert(OutOp.Kind=zcIdentifier);
+  871             OutOp.Kind:=zcFuncCall;
+  872           .)
+  873          [Argument<Op> (. OutOp.Children.Add(Op); .)
+  874            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+  875            }
+  876          ]
+  877          (.
+  878             if not VerifyFunctionCall(OutOp,S) then
+  879               ZError(S);
+  880          .)
+  881      ")"
+  882  
+  883    | "[" (. Assert(OutOp.Kind=zcIdentifier);
+  884             OutOp.Kind:=zcArrayAccess;
+  885           .)
+  886      Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
+  887        {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
+  888      "]"
+  889  
+  890    }
+  891  .
+  892  /*------------------------------------------------------------------------*/
+  893  Literal<var Typ : TZcDataType>
+  894  = intCon (. Typ.Kind :=zctInt; .) |
+  895    realCon (. Typ.Kind := zctFloat; .) |
+  896    stringCon (. Typ.Kind := zctString; .)
+  897    | "null" (. Typ.Kind := zctNull; .)
+  898    /* | "true" | "false"  */
+  899  .
+  900  
+  901  END Zc.
 
 
 

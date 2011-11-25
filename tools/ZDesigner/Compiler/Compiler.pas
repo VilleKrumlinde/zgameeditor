@@ -817,6 +817,27 @@ var
     RestoreBreak;
   end;
 
+  procedure DoGenInvoke(Op : TZcOpInvokeComponent);
+  var
+    Inv : TExpInvokeComponent;
+    Ci : TZComponentInfo;
+    Arg : TZcOp;
+    Prop : TZProperty;
+  begin
+    Ci := ComponentManager.GetInfoFromName(Op.Id);
+    for Arg in Op.Children do
+    begin
+      Prop := Ci.GetProperties.GetByName(Arg.Id);
+      Assert(Prop<>nil);
+      GenValue(Arg.Children.First);
+      with TExpConstantInt.Create(Target) do
+        Constant := Prop.PropId;
+    end;
+    Inv := TExpInvokeComponent.Create(Target);
+    Inv.InvokeClassId := integer( Ci.ClassId );
+    Inv.InvokeArgCount := Op.Children.Count;
+  end;
+
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -841,6 +862,7 @@ begin
       else
         raise ECodeGenError.Create('Continue can only be used in loops');
     zcSwitch : DoGenSwitch(Op as TZcOpSwitch);
+    zcInvokeComponent : DoGenInvoke(Op as TZcOpInvokeComponent);
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;

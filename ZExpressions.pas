@@ -216,7 +216,7 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,fcPlaySound);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -390,6 +390,19 @@ type
   protected
     procedure Execute; override;
   end;
+
+  TExpInvokeComponent = class(TExpBase)
+  strict private
+    InvokeC : TZComponent;
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    InvokeClassId : integer;
+    InvokeArgCount : integer;
+    destructor Destroy; override;
+  end;
+
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -936,18 +949,6 @@ begin
         {$ifndef minimal}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
-      end;
-    fcPlaySound :
-      begin
-        HasReturnValue := False;
-        StackPopTo(I1);
-        StackPopTo(A1);
-        StackPopToPointer(P1);
-        {$ifndef minimal}
-        ZAssert(TObject(P1) is TSound,'playSound function: first parameter is not a Sound');
-        {$endif}
-        if not ZApp.NoSound then
-          AudioPlayer.AddNoteToEmitList(@TSound(P1).Voice, A1, I1, 0, 1.0);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
@@ -1850,6 +1851,60 @@ begin
   StackPushPointer(P);
 end;
 
+{ TExpInvokeComponent }
+
+procedure TExpInvokeComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'InvokeClassId',{$ENDIF}integer(@InvokeClassId), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'InvokeArgCount',{$ENDIF}integer(@InvokeArgCount), zptInteger);
+end;
+
+destructor TExpInvokeComponent.Destroy;
+begin
+  Self.InvokeC.Free;
+  inherited;
+end;
+
+procedure TExpInvokeComponent.Execute;
+var
+  Ci : TZComponentInfo;
+  I,PropId,RawValue : integer;
+  Prop : TZProperty;
+  V : TZPropertyValue;
+begin
+
+  if InvokeC=nil then
+  begin
+    Ci := ComponentManager.GetInfoFromId(TZClassIds(Self.InvokeClassId));
+    Self.InvokeC := Ci.ZClass.Create(nil);
+  end;
+
+  for I := 0 to InvokeArgCount-1 do
+  begin
+    StackPopTo(PropId);
+    StackPopTo(RawValue);
+    Prop := InvokeC.GetProperties.GetById(PropId);
+    //todo: Pointer properties need separate treatment for 64-bit compilation
+    case Prop.PropertyType of
+      zptFloat: V.FloatValue := PFloat(@RawValue)^;
+      zptInteger: V.IntegerValue := RawValue;
+      zptByte: V.ByteValue := RawValue;
+      zptBoolean: V.BooleanValue := ByteBool(RawValue);
+      zptComponentRef : V.ComponentValue := TZComponent(RawValue);
+      zptString : V.StringValue := PAnsiChar(RawValue);
+    {$ifndef minimal}
+    else
+      ZHalt(ClassName + ' invalid datatype for argument');
+    {$endif}
+    end;
+
+    Self.InvokeC.SetProperty(Prop,V);
+  end;
+
+  TCommand(InvokeC).Execute;
+end;
+
 initialization
 
   ZcStackPtr := ZcStackBegin;
@@ -1918,6 +1973,8 @@ initialization
   ZClasses.Register(TExpLoadModelDefined,ExpLoadModelDefinedClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAddToPointer,ExpAddToPointerClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpInvokeComponent,ExpInvokeComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

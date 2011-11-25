@@ -59,6 +59,7 @@ type
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
+ ExpInvokeComponentClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -286,8 +287,8 @@ type
     DontClone : boolean;
     IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
     Offset : integer;
-    {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropertyType : TZPropertyType;
+    {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropId : integer;             //Ordningsnr på denna property för en klass
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
@@ -314,7 +315,7 @@ type
     procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
-    function GetByName(Name : string) : TZProperty;
+    function GetByName(const Name : string) : TZProperty;
     function GetByType(Kind : TZPropertyType) : TZProperty;
     {$ENDIF}
     function GetLast : TZProperty;
@@ -381,7 +382,6 @@ type
   private
     Properties : TZPropertyList;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
-    ZClass : TZComponentClass;
     ClassId : TZClassIds;
     {$IFNDEF MINIMAL}
     ZClassName : string;  //Klassnamn utan 'T'
@@ -395,8 +395,9 @@ type
     AutoName : boolean;  //Give name automatically when inserted in designer
     ParamCount : integer; //Parameter count for contentproducers
     {$ENDIF}
-    {$ifndef MINIMAL}
   public
+    ZClass : TZComponentClass;
+    {$ifndef MINIMAL}
     HasGlobalData : boolean; //See audiomixer. Do not cache property-list.
     function GetProperties : TZPropertyList;
     {$endif}
@@ -416,11 +417,11 @@ type
     {$ifndef minimal}public
     destructor Destroy; override;{$else}private{$endif}
     function GetInfo(Component : TZComponent) : TZComponentInfo;
-    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
     {$ifend}
+    function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
     function SaveBinaryToStream(Component : TZComponent) : TObject;
@@ -1721,8 +1722,7 @@ begin
     Ci := ComponentInfos[I];
     if (Ci=nil) then
       Continue;
-    if (Ci.Properties<>nil) then
-      Ci.Properties.Free;
+    Ci.Properties.Free;
     Ci.Free;
   end;
   inherited;
@@ -1905,7 +1905,7 @@ begin
   Dec(NextId);
 end;
 
-function TZPropertyList.GetByName(Name: string): TZProperty;
+function TZPropertyList.GetByName(const Name: string): TZProperty;
 var
   I : integer;
 begin
@@ -3804,12 +3804,19 @@ begin
   Result := Self.Properties;
   if Result=nil then
   begin
-    C := Self.ZClass.Create(nil);
     Result := TZPropertyList.Create;
+    //ZComponent constructor call GetProperties to iterate and initiate properties
+    //When C.Create is called the list will be empty
+    Self.Properties := Result;
+    C := Self.ZClass.Create(nil);
     Result.TheSelf := integer(C);
     C.DefineProperties(Result);
-    Self.Properties := Result;
+    //ZComponent destroy also calls GetProperties
+    //Give it an empty list to iterate too to keep in sync with constructor
+    Self.Properties := TZPropertyList.Create;
     C.Free;
+    Self.Properties.Free;
+    Self.Properties := Result;
   end;
 end;
 {$endif}
