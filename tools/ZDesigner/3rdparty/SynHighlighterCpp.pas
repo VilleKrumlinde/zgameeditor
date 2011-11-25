@@ -12,6 +12,7 @@ The Original Code is: SynHighlighterCpp.pas, released 2000-04-10.
 The Original Code is based on the dcjCppSyn.pas file from the
 mwEdit component suite by Martin Waldenburg and other developers, the Initial
 Author of this file is Michael Trier.
+Unicode translation by Maël Hörz.
 All Rights Reserved.
 
 Contributors to the SynEdit and mwEdit projects are listed in the
@@ -27,7 +28,7 @@ replace them with the notice and other provisions required by the GPL.
 If you do not delete the provisions above, a recipient may use your version
 of this file under either the MPL or the GPL.
 
-$Id: SynHighlighterCpp.pas,v 1.15 2002/01/10 15:23:13 drbrno Exp $
+$Id: SynHighlighterCpp.pas,v 1.22.2.9 2008/09/14 16:25:00 maelh Exp $
 
 You may retrieve the latest version of this file at the SynEdit home page,
 located at http://SynEdit.SourceForge.net
@@ -42,30 +43,34 @@ Known Issues:
 The SynHighlighterCpp unit provides SynEdit with a C++ syntax highlighter.
 Thanks to Martin Waldenburg.
 }
+
+{$IFNDEF QSYNHIGHLIGHTERCPP}
 unit SynHighlighterCpp;
+{$ENDIF}
 
 {$I SynEdit.inc}
 
 interface
 
 uses
-  SysUtils,
-  Classes,
 {$IFDEF SYN_CLX}
-  QControls,
   QGraphics,
+  QSynEditTypes,
+  QSynEditHighlighter,
+  QSynUnicode,
 {$ELSE}
-  Windows,
-  Controls,
   Graphics,
-{$ENDIF}
   SynEditTypes,
-  SynEditHighlighter;
+  SynEditHighlighter,
+  SynUnicode,
+{$ENDIF}
+  SysUtils,
+  Classes;
 
 type
   TtkTokenKind = (tkAsm, tkComment, tkDirective, tkIdentifier, tkKey, tkNull,
     tkNumber, tkSpace, tkString, tkSymbol, tkUnknown,
-    tkChar, tkFloat, tkHex, tkOctal); // dj
+    tkChar, tkFloat, tkHex, tkOctal);
 
   TxtkTokenKind = (
     xtkAdd, xtkAddAssign, xtkAnd, xtkAndAssign, xtkArrow, xtkAssign,
@@ -81,27 +86,18 @@ type
 
   TRangeState = (rsUnknown, rsAnsiC, rsAnsiCAsm, rsAnsiCAsmBlock, rsAsm,
     rsAsmBlock, rsDirective, rsDirectiveComment, rsString34, rsString39,
-    rsMultiLineString, rsMultiLineDirective); //dj
-
-  TProcTableProc = procedure of object;
+    rsMultiLineString, rsMultiLineDirective);
 
   PIdentFuncTableFunc = ^TIdentFuncTableFunc;
-  TIdentFuncTableFunc = function: TtkTokenKind of object;
+  TIdentFuncTableFunc = function (Index: Integer): TtkTokenKind of object;
 
   TSynCppSyn = class(TSynCustomHighlighter)
   private
     fAsmStart: Boolean;
     fRange: TRangeState;
-    fLine: PChar;
-    fProcTable: array[#0..#255] of TProcTableProc;
-    Run: LongInt;
-    fStringLen: Integer;
-    fToIdent: PChar;
-    fTokenPos: Integer;
     FTokenID: TtkTokenKind;
     FExtTokenID: TxtkTokenKind;
-    fLineNumber: Integer;
-    fIdentFuncTable: array[0..206] of TIdentFuncTableFunc;
+    fIdentFuncTable: array[0..342] of TIdentFuncTableFunc;
     fAsmAttri: TSynHighlighterAttributes;
     fCommentAttri: TSynHighlighterAttributes;
     fDirecAttri: TSynHighlighterAttributes;
@@ -116,62 +112,12 @@ type
     fStringAttri: TSynHighlighterAttributes;
     fCharAttri: TSynHighlighterAttributes;
     fSymbolAttri: TSynHighlighterAttributes;
-    function KeyHash(ToHash: PChar): Integer;
-    function KeyComp(const aKey: String): Boolean;
-    function Func17: TtkTokenKind;
-    function Func21: TtkTokenKind;
-    function Func32: TtkTokenKind;
-    function Func34: TtkTokenKind;
-    function Func36: TtkTokenKind;
-    function Func40: TtkTokenKind;
-    function Func42: TtkTokenKind;
-    function Func45: TtkTokenKind;
-    function Func46: TtkTokenKind;
-    function Func48: TtkTokenKind;
-    function Func52: TtkTokenKind;
-    function Func54: TtkTokenKind;
-    function Func57: TtkTokenKind;
-    function Func58: TtkTokenKind;
-    function Func59: TtkTokenKind;
-    function Func60: TtkTokenKind;
-    function Func61: TtkTokenKind;
-    function Func62: TtkTokenKind;
-    function Func64: TtkTokenKind;
-    function Func65: TtkTokenKind;
-    function Func66: TtkTokenKind;
-    function Func67: TtkTokenKind;
-    function Func68: TtkTokenKind;
-    function Func69: TtkTokenKind;
-    function Func71: TtkTokenKind;
-    function Func74: TtkTokenKind;
-    function Func75: TtkTokenKind;
-    function Func76: TtkTokenKind;
-    function Func78: TtkTokenKind;
-    function Func79: TtkTokenKind;
-    function Func81: TtkTokenKind;
-    function Func82: TtkTokenKind;
-    function Func85: TtkTokenKind;
-    function Func86: TtkTokenKind;
-    function Func88: TtkTokenKind;
-    function Func89: TtkTokenKind;
-    function Func92: TtkTokenKind;
-    function Func97: TtkTokenKind;
-    function Func98: TtkTokenKind;
-    function Func100: TtkTokenKind;
-    function Func101: TtkTokenKind;
-    function Func102: TtkTokenKind;
-    function Func104: TtkTokenKind;
-    function Func105: TtkTokenKind;
-    function Func106: TtkTokenKind;
-    function Func107: TtkTokenKind;
-    function Func109: TtkTokenKind;
-    function Func110: TtkTokenKind;
-    function Func115: TtkTokenKind;
-    function Func116: TtkTokenKind;
-    function Func123: TtkTokenKind;
-    function Func125: TtkTokenKind;
-    function Func141: TtkTokenKind;
-    function Func206: TtkTokenKind;
+    function AltFunc(Index: Integer): TtkTokenKind;
+    function KeyWordFunc(Index: Integer): TtkTokenKind;
+    function FuncAsm(Index: Integer): TtkTokenKind;
+    function HashKey(Str: PWideChar): Cardinal;
+    function IdentKind(MayBe: PWideChar): TtkTokenKind;
+    procedure InitIdent;
     procedure AnsiCProc;
     procedure AndSymbolProc;
     procedure AsciiCharProc;
@@ -182,7 +128,7 @@ type
     procedure ColonProc;
     procedure CommaProc;
     procedure DirectiveProc;
-    procedure DirectiveEndProc; //dj
+    procedure DirectiveEndProc;
     procedure EqualProc;
     procedure GreaterProc;
     procedure IdentProc;
@@ -209,20 +155,15 @@ type
     procedure TildeProc;
     procedure XOrSymbolProc;
     procedure UnknownProc;
-    function AltFunc: TtkTokenKind;
-    procedure InitIdent;
-    function IdentKind(MayBe: PChar): TtkTokenKind;
-    procedure MakeMethodTables;
     procedure StringEndProc;
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetExtTokenID: TxtkTokenKind;
-    function GetSampleSource: string; override;
+    function GetSampleSource: UnicodeString; override;
+    function IsFilterStored: Boolean; override;
   public
-    {$IFNDEF SYN_CPPB_1} class {$ENDIF}                                         //mh 2000-07-14
-    function GetCapabilities: TSynHighlighterCapabilities; override;
-    {$IFNDEF SYN_CPPB_1} class {$ENDIF}                                         //mh 2000-07-14
-    function GetLanguageName: string; override;
+    class function GetCapabilities: TSynHighlighterCapabilities; override;
+    class function GetLanguageName: string; override;
+    class function GetFriendlyLanguageName: UnicodeString; override;
   public
     constructor Create(AOwner: TComponent); override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
@@ -230,11 +171,8 @@ type
     function GetEol: Boolean; override;
     function GetRange: Pointer; override;
     function GetTokenID: TtkTokenKind;
-    procedure SetLine(NewValue: String; LineNumber:Integer); override;
-    function GetToken: String; override;
     function GetTokenAttribute: TSynHighlighterAttributes; override;
     function GetTokenKind: integer; override;
-    function GetTokenPos: Integer; override;
     procedure Next; override;
     procedure SetRange(Value: Pointer); override;
     procedure ResetRange; override;
@@ -273,555 +211,164 @@ type
 implementation
 
 uses
+{$IFDEF SYN_CLX}
+  QSynEditStrConst;
+{$ELSE}
+  Windows,
   SynEditStrConst;
+{$ENDIF}
 
-var
-  Identifiers: array[#0..#255] of ByteBool;
-  mHashTable: array[#0..#255] of Integer;
+const
+  KeyWords: array[0..94] of UnicodeString = (
+    '__asm', '__automated', '__cdecl', '__classid', '__closure', '__declspec', 
+    '__dispid', '__except', '__export', '__fastcall', '__finally', '__import', 
+    '__int16', '__int32', '__int64', '__int8', '__pascal', '__property', 
+    '__published', '__rtti', '__stdcall', '__thread', '__try', '_asm', '_cdecl', 
+    '_export', '_fastcall', '_import', '_pascal', '_stdcall', 'asm', 'auto', 
+    'bool', 'break', 'case', 'catch', 'cdecl', 'char', 'class', 'const', 
+    'const_cast', 'continue', 'default', 'delete', 'do', 'double', 
+    'dynamic_cast', 'else', 'enum', 'explicit', 'extern', 'false', 'float', 
+    'for', 'friend', 'goto', 'if', 'inline', 'int', 'interface', 'long', 
+    'mutable', 'namespace', 'new', 'operator', 'pascal', 'private', 'protected', 
+    'public', 'register', 'reinterpret_cast', 'return', 'short', 'signed', 
+    'sizeof', 'static', 'static_cast', 'struct', 'switch', 'template', 'this', 
+    'throw', 'true', 'try', 'typedef', 'typeid', 'typename', 'union', 
+    'unsigned', 'using', 'virtual', 'void', 'volatile', 'wchar_t', 'while' 
+  );
 
-procedure MakeIdentTable;
-var
-  I: Char;
+  KeyIndices: array[0..342] of Integer = (
+    -1, 34, -1, -1, 57, 72, -1, 39, -1, 9, -1, 86, -1, -1, -1, -1, -1, -1, -1, 
+    -1, -1, 88, -1, 12, 66, -1, -1, -1, -1, -1, 42, -1, -1, -1, -1, -1, 56, 51, 
+    40, 87, 77, -1, -1, -1, -1, 64, -1, -1, -1, -1, -1, -1, -1, -1, -1, 28, 41, 
+    -1, 63, 6, -1, -1, -1, -1, -1, -1, -1, -1, 55, 65, 0, -1, -1, -1, -1, -1, 
+    -1, 26, 83, -1, 38, 92, -1, -1, 93, 33, -1, -1, -1, -1, -1, -1, -1, 35, -1, 
+    -1, -1, -1, -1, -1, -1, 79, 27, -1, -1, -1, 43, -1, -1, 20, -1, -1, 31, -1, 
+    -1, -1, -1, -1, 89, -1, -1, -1, -1, 59, -1, 58, -1, -1, 46, -1, -1, 3, -1, 
+    -1, 17, -1, 54, -1, 45, -1, -1, -1, -1, -1, -1, 53, -1, -1, -1, 1, -1, -1, 
+    -1, -1, 44, 90, 32, -1, -1, -1, -1, -1, -1, 91, 13, -1, -1, -1, 60, -1, -1, 
+    -1, -1, -1, 49, -1, -1, -1, -1, -1, -1, 75, -1, -1, 76, -1, -1, -1, -1, 30, 
+    68, 23, 82, -1, 15, -1, -1, 2, -1, 70, -1, -1, -1, 73, 18, -1, -1, -1, -1, 
+    -1, 47, 24, 52, 14, 84, -1, -1, -1, -1, -1, 25, -1, -1, -1, 80, 69, -1, -1, 
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 21, -1, 19, -1, -1, -1, 
+    -1, -1, -1, 74, -1, -1, -1, 29, -1, -1, -1, 67, -1, 7, -1, -1, -1, 50, 61, 
+    -1, -1, -1, 4, -1, 94, 85, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+    81, -1, -1, -1, -1, -1, 10, 16, -1, -1, 36, 37, -1, -1, -1, 8, -1, 22, -1, 
+    -1, -1, -1, 78, 62, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+    -1, -1, -1, -1, 71, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1, 11, -1, 48, 
+    -1 
+  );
+
+{$Q-}
+function TSynCppSyn.HashKey(Str: PWideChar): Cardinal;
 begin
-  for I := #0 to #255 do
+  Result := 0;
+  while IsIdentChar(Str^) do
   begin
-    Case I of
-      '_', '0'..'9', 'a'..'z', 'A'..'Z': Identifiers[I] := True;
-    else Identifiers[I] := False;
-    end;
-    Case I in['_', 'a'..'z', 'A'..'Z'] of
-      True:
-        begin
-          if (I > #64) and (I < #91) then mHashTable[I] := Ord(I) - 64 else
-            if (I > #96) then mHashTable[I] := Ord(I) - 95;
-        end;
-    else mHashTable[I] := 0;
-    end;
+    Result := Result * 179 + Ord(Str^) * 44;
+    inc(Str);
   end;
+  Result := Result mod 343;
+  fStringLen := Str - fToIdent;
+end;
+{$Q+}
+
+function TSynCppSyn.IdentKind(MayBe: PWideChar): TtkTokenKind;
+var
+  Key: Cardinal;
+begin
+  fToIdent := MayBe;
+  Key := HashKey(MayBe);
+  if Key <= High(fIdentFuncTable) then
+    Result := fIdentFuncTable[Key](KeyIndices[Key])
+  else
+    Result := tkIdentifier;
 end;
 
 procedure TSynCppSyn.InitIdent;
 var
-  I: Integer;
-  pF: PIdentFuncTableFunc;
+  i: Integer;
 begin
-  pF := PIdentFuncTableFunc(@fIdentFuncTable);
-  for I := Low(fIdentFuncTable) to High(fIdentFuncTable) do begin
-    pF^ := AltFunc;
-    Inc(pF);
-  end;
-  fIdentFuncTable[17] := Func17;
-  fIdentFuncTable[21] := Func21;
-  fIdentFuncTable[32] := Func32;
-  fIdentFuncTable[34] := Func34;
-  fIdentFuncTable[36] := Func36;
-  fIdentFuncTable[40] := Func40;
-  fIdentFuncTable[42] := Func42;
-  fIdentFuncTable[45] := Func45;
-  fIdentFuncTable[46] := Func46;
-  fIdentFuncTable[48] := Func48;
-  fIdentFuncTable[52] := Func52;
-  fIdentFuncTable[54] := Func54;
-  fIdentFuncTable[57] := Func57;
-  fIdentFuncTable[58] := Func58;
-  fIdentFuncTable[59] := Func59;
-  fIdentFuncTable[60] := Func60;
-  fIdentFuncTable[61] := Func61;
-  fIdentFuncTable[62] := Func62;
-  fIdentFuncTable[64] := Func64;
-  fIdentFuncTable[65] := Func65;
-  fIdentFuncTable[66] := Func66;
-  fIdentFuncTable[67] := Func67;
-  fIdentFuncTable[68] := Func68;
-  fIdentFuncTable[69] := Func69;
-  fIdentFuncTable[71] := Func71;
-  fIdentFuncTable[74] := Func74;
-  fIdentFuncTable[75] := Func75;
-  fIdentFuncTable[76] := Func76;
-  fIdentFuncTable[78] := Func78;
-  fIdentFuncTable[79] := Func79;
-  fIdentFuncTable[81] := Func81;
-  fIdentFuncTable[82] := Func82;
-  fIdentFuncTable[85] := Func85;
-  fIdentFuncTable[86] := Func86;
-  fIdentFuncTable[88] := Func88;
-  fIdentFuncTable[89] := Func89;
-  fIdentFuncTable[92] := Func92;
-  fIdentFuncTable[97] := Func97;
-  fIdentFuncTable[98] := Func98;
-  fIdentFuncTable[100] := Func100;
-  fIdentFuncTable[101] := Func101;
-  fIdentFuncTable[102] := Func102;
-  fIdentFuncTable[104] := Func104;
-  fIdentFuncTable[105] := Func105;
-  fIdentFuncTable[106] := Func106;
-  fIdentFuncTable[107] := Func107;
-  fIdentFuncTable[109] := Func109;
-  fIdentFuncTable[110] := Func110;
-  fIdentFuncTable[115] := Func115;
-  fIdentFuncTable[116] := Func116;
-  fIdentFuncTable[123] := Func123;
-  fIdentFuncTable[125] := Func125;
-  fIdentFuncTable[141] := Func141;
-  fIdentFuncTable[206] := Func206;
+  for i := Low(fIdentFuncTable) to High(fIdentFuncTable) do
+    if KeyIndices[i] = -1 then
+      fIdentFuncTable[i] := AltFunc;
+
+  fIdentFuncTable[70] := FuncAsm;
+  fIdentFuncTable[191] := FuncAsm;
+  fIdentFuncTable[189] := FuncAsm;
+
+  for i := Low(fIdentFuncTable) to High(fIdentFuncTable) do
+    if @fIdentFuncTable[i] = nil then
+      fIdentFuncTable[i] := KeyWordFunc;
 end;
 
-function TSynCppSyn.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, mHashTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
-end; { KeyHash }
-
-function TSynCppSyn.KeyComp(const aKey: String): Boolean;
-var
-  I: Integer;
-  Temp: PChar;
-begin
-  Temp := fToIdent;
-  if Length(aKey) = fStringLen then
-  begin
-    Result := True;
-    for i := 1 to fStringLen do
-    begin
-      if Temp^ <> aKey[i] then
-      begin
-        Result := False;
-        break;
-      end;
-      inc(Temp);
-    end;
-  end else Result := False;
-end; { KeyComp }
-
-function TSynCppSyn.Func17: TtkTokenKind;
-begin
-  if KeyComp('if') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func21: TtkTokenKind;
-begin
-  if KeyComp('do') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func32: TtkTokenKind;
-begin
-  if KeyComp('cdecl') then Result := tkKey else
-    if KeyComp('case') then Result := tkKey else
-      if KeyComp('_cdecl') then Result := tkKey else
-        if KeyComp('__cdecl') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func34: TtkTokenKind;
-begin
-  if KeyComp('char') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func36: TtkTokenKind;
-begin
-  if KeyComp('asm') or KeyComp('_asm') or KeyComp('__asm') then
-  begin
-    Result := tkKey;
-    fRange := rsAsm;
-    fAsmStart := True;
-  end else
-    Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func40: TtkTokenKind;
-begin
-  if KeyComp('catch') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func42: TtkTokenKind;
-begin
-  if KeyComp('for') then Result := tkKey else
-    if KeyComp('break') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func45: TtkTokenKind;
-begin
-  if KeyComp('else') then Result := tkKey else
-    if KeyComp('new') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func46: TtkTokenKind;
-begin
-  if KeyComp('__int8') then Result := tkKey else
-    if KeyComp('__int16') then Result := tkKey else
-      if KeyComp('int') then Result := tkKey else
-        if KeyComp('__int32') then Result := tkKey else
-          if KeyComp('__int64') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func48: TtkTokenKind;
-begin
-  if KeyComp('false') then Result := tkKey else
-    if KeyComp('bool') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func52: TtkTokenKind;
-begin
-  if KeyComp('long') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func54: TtkTokenKind;
-begin
-  if KeyComp('void') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func57: TtkTokenKind;
-begin
-  if KeyComp('enum') then Result := tkKey else
-    if KeyComp('delete') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func58: TtkTokenKind;
-begin
-  if KeyComp('_pascal') then Result := tkKey else
-    if KeyComp('__pascal') then Result := tkKey else
-      if KeyComp('pascal') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func59: TtkTokenKind;
-begin
-  if KeyComp('class') then Result := tkKey else
-    if KeyComp('float') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func60: TtkTokenKind;
-begin
-  if KeyComp('this') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func61: TtkTokenKind;
-begin
-  if KeyComp('goto') then Result := tkKey else
-    if KeyComp('auto') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func62: TtkTokenKind;
-begin
-  if KeyComp('__thread') then Result := tkKey else
-    if KeyComp('while') then Result := tkKey else
-      if KeyComp('friend') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func64: TtkTokenKind;
-begin
-  if KeyComp('signed') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func65: TtkTokenKind;
-begin
-  if KeyComp('double') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func66: TtkTokenKind;
-begin
-  if KeyComp('__try') then Result := tkKey else
-    if KeyComp('try') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func67: TtkTokenKind;
-begin
-  if KeyComp('__dispid') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func68: TtkTokenKind;
-begin
-  if KeyComp('true') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func69: TtkTokenKind;
-begin
-  if KeyComp('public') then Result := tkKey else
-    if KeyComp('inline') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func71: TtkTokenKind;
-begin
-  if KeyComp('__rtti') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func74: TtkTokenKind;
-begin
-  if KeyComp('__classid') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func75: TtkTokenKind;
-begin
-  if KeyComp('__declspec') then Result := tkKey else
-    if KeyComp('using') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func76: TtkTokenKind;
-begin
-  if KeyComp('const') then Result := tkKey else
-    if KeyComp('default') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func78: TtkTokenKind;
-begin
-  if KeyComp('_stdcall') then Result := tkKey else
-    if KeyComp('union') then Result := tkKey else
-      if KeyComp('__stdcall') then Result := tkKey else
-        if KeyComp('static') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func79: TtkTokenKind;
-begin
-  if KeyComp('__except') then Result := tkKey else
-    if KeyComp('wchar_t') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func81: TtkTokenKind;
-begin
-  if KeyComp('mutable') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func82: TtkTokenKind;
-begin
-  if KeyComp('_fastcall') then Result := tkKey else
-    if KeyComp('__fastcall') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func85: TtkTokenKind;
-begin
-  if KeyComp('short') then Result := tkKey else
-    if KeyComp('typeid') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func86: TtkTokenKind;
-begin
-  if KeyComp('sizeof') then Result := tkKey else
-    if KeyComp('__finally') then Result := tkKey else
-      if KeyComp('namespace') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func88: TtkTokenKind;
-begin
-  if KeyComp('switch') then Result := tkKey else
-    if KeyComp('typedef') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func89: TtkTokenKind;
-begin
-  if KeyComp('throw') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func92: TtkTokenKind;
-begin
-  if KeyComp('extern') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func97: TtkTokenKind;
-begin
-  if KeyComp('__import') then Result := tkKey else
-    if KeyComp('_import') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func98: TtkTokenKind;
-begin
-  if KeyComp('private') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func100: TtkTokenKind;
-begin
-  if KeyComp('template') then Result := tkKey else
-    if KeyComp('__closure') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func101: TtkTokenKind;
-begin
-  if KeyComp('unsigned') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func102: TtkTokenKind;
-begin
-  if KeyComp('return') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func104: TtkTokenKind;
-begin
-  if KeyComp('volatile') then Result := tkKey else
-    if KeyComp('_export') then Result := tkKey else
-      if KeyComp('__export') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func105: TtkTokenKind;
-begin
-  if KeyComp('__published') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func106: TtkTokenKind;
-begin
-  if KeyComp('explicit') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func107: TtkTokenKind;
-begin
-  if KeyComp('typename') then Result := tkKey else
-    if KeyComp('struct') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func109: TtkTokenKind;
-begin
-  if KeyComp('register') then Result := tkKey else
-    if KeyComp('continue') then Result := tkKey else
-      if KeyComp('__automated') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func110: TtkTokenKind;
-begin
-  if KeyComp('virtual') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func115: TtkTokenKind;
-begin
-  if KeyComp('protected') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func116: TtkTokenKind;
-begin
-  if KeyComp('operator') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func123: TtkTokenKind;
-begin
-  if KeyComp('dynamic_cast') then Result := tkKey else
-    if KeyComp('const_cast') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func125: TtkTokenKind;
-begin
-  if KeyComp('static_cast') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func141: TtkTokenKind;
-begin
-  if KeyComp('__property') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.Func206: TtkTokenKind;
-begin
-  if KeyComp('reinterpret_cast') then Result := tkKey else Result := tkIdentifier;
-end;
-
-function TSynCppSyn.AltFunc: TtkTokenKind;
+function TSynCppSyn.AltFunc(Index: Integer): TtkTokenKind;
 begin
   Result := tkIdentifier;
 end;
 
-function TSynCppSyn.IdentKind(MayBe: PChar): TtkTokenKind;
-var
-  HashKey: Integer;
+function TSynCppSyn.KeyWordFunc(Index: Integer): TtkTokenKind;
 begin
-  fToIdent := MayBe;
-  HashKey := KeyHash(MayBe);
-  if HashKey < 207 then Result := fIdentFuncTable[HashKey] else Result := tkIdentifier;
+  if IsCurrentToken(KeyWords[Index]) then
+    Result := tkKey
+  else
+    Result := tkIdentifier
 end;
 
-procedure TSynCppSyn.MakeMethodTables;
-var
-  I: Char;
+function TSynCppSyn.FuncAsm(Index: Integer): TtkTokenKind;
 begin
-  for I := #0 to #255 do
-    case I of
-      '&': fProcTable[I] := AndSymbolProc;
-      #39: fProcTable[I] := AsciiCharProc;
-      '@': fProcTable[I] := AtSymbolProc;
-      '}': fProcTable[I] := BraceCloseProc;
-      '{': fProcTable[I] := BraceOpenProc;
-      #13: fProcTable[I] := CRProc;
-      ':': fProcTable[I] := ColonProc;
-      ',': fProcTable[I] := CommaProc;
-      '#': fProcTable[I] := DirectiveProc;
-      '=': fProcTable[I] := EqualProc;
-      '>': fProcTable[I] := GreaterProc;
-      '?': fProcTable[I] := QuestionProc;
-      'A'..'Z', 'a'..'z', '_': fProcTable[I] := IdentProc;
-      #10: fProcTable[I] := LFProc;
-      '<': fProcTable[I] := LowerProc;
-      '-': fProcTable[I] := MinusProc;
-      '%': fProcTable[I] := ModSymbolProc;
-      '!': fProcTable[I] := NotSymbolProc;
-      #0: fProcTable[I] := NullProc;
-      '0'..'9': fProcTable[I] := NumberProc;
-      '|': fProcTable[I] := OrSymbolProc;
-      '+': fProcTable[I] := PlusProc;
-      '.': fProcTable[I] := PointProc;
-      ')': fProcTable[I] := RoundCloseProc;
-      '(': fProcTable[I] := RoundOpenProc;
-      ';': fProcTable[I] := SemiColonProc;
-      '/': fProcTable[I] := SlashProc;
-      #1..#9, #11, #12, #14..#32: fProcTable[I] := SpaceProc;
-      ']': fProcTable[I] := SquareCloseProc;
-      '[': fProcTable[I] := SquareOpenProc;
-      '*': fProcTable[I] := StarProc;
-      #34: fProcTable[I] := StringProc;
-      '~': fProcTable[I] := TildeProc;
-      '^': fProcTable[I] := XOrSymbolProc;
-      else fProcTable[I] := UnknownProc;
-    end;
+  if IsCurrentToken(KeyWords[Index]) then
+  begin
+    Result := tkKey;
+    fRange := rsAsm;
+    fAsmStart := True;
+  end
+  else
+    Result := tkIdentifier
 end;
 
 constructor TSynCppSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  fAsmAttri := TSynHighlighterAttributes.Create(SYNS_AttrAssembler);
+
+  fCaseSensitive := True;
+
+  fAsmAttri := TSynHighlighterAttributes.Create(SYNS_AttrAssembler, SYNS_FriendlyAttrAssembler);
   AddAttribute(fAsmAttri);
-  fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
+  fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment, SYNS_FriendlyAttrComment);
   fCommentAttri.Style:= [fsItalic];
   fCommentAttri.Foreground := clBlue;
   AddAttribute(fCommentAttri);
-  fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
+  fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier, SYNS_FriendlyAttrIdentifier);
   AddAttribute(fIdentifierAttri);
-  fInvalidAttri := TSynHighlighterAttributes.Create(SYNS_AttrIllegalChar);
+  fInvalidAttri := TSynHighlighterAttributes.Create(SYNS_AttrIllegalChar, SYNS_FriendlyAttrIllegalChar);
   AddAttribute(fInvalidAttri);
-  fKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
+  fKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord, SYNS_FriendlyAttrReservedWord);
   fKeyAttri.Style:= [fsBold];
   AddAttribute(fKeyAttri);
-  fNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
-  fNumberAttri.Foreground := clBlue;
+  fNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber, SYNS_FriendlyAttrNumber);
   AddAttribute(fNumberAttri);
-  fCharAttri := TSynHighlighterAttributes.Create(SYNS_AttrCharacter);
+  fCharAttri := TSynHighlighterAttributes.Create(SYNS_AttrCharacter, SYNS_FriendlyAttrCharacter);
   AddAttribute(fCharAttri);
-  fFloatAttri := TSynHighlighterAttributes.Create(SYNS_AttrFloat);
-  fFloatAttri.Foreground := clBlue;
+  fFloatAttri := TSynHighlighterAttributes.Create(SYNS_AttrFloat, SYNS_FriendlyAttrFloat);
   AddAttribute(fFloatAttri);
-  fHexAttri := TSynHighlighterAttributes.Create(SYNS_AttrHexadecimal);
+  fHexAttri := TSynHighlighterAttributes.Create(SYNS_AttrHexadecimal, SYNS_FriendlyAttrHexadecimal);
   AddAttribute(fHexAttri);
-  fOctalAttri := TSynHighlighterAttributes.Create(SYNS_AttrOctal);
+  fOctalAttri := TSynHighlighterAttributes.Create(SYNS_AttrOctal, SYNS_FriendlyAttrOctal);
   AddAttribute(fOctalAttri);
-  fSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  fSpaceAttri.Foreground := clWindow;
+  fSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace, SYNS_FriendlyAttrSpace);
   AddAttribute(fSpaceAttri);
-  fStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
+  fStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString, SYNS_FriendlyAttrString);
   AddAttribute(fStringAttri);
-  fSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
+  fSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol, SYNS_FriendlyAttrSymbol);
   AddAttribute(fSymbolAttri);
-  fDirecAttri := TSynHighlighterAttributes.Create(SYNS_AttrPreprocessor);
+  fDirecAttri := TSynHighlighterAttributes.Create(SYNS_AttrPreprocessor, SYNS_FriendlyAttrPreprocessor);
   AddAttribute(fDirecAttri);
   SetAttributesOnChange(DefHighlightChange);
   InitIdent;
-  MakeMethodTables;
   fRange := rsUnknown;
   fAsmStart := False;
   fDefaultFilter := SYNS_FilterCPP;
-end; { Create }
-
-procedure TSynCppSyn.SetLine(NewValue: String; LineNumber:Integer);
-begin
-  fLine := PChar(NewValue);
-  Run := 0;
-  fLineNumber := LineNumber;
-  Next;
-end; { SetLine }
+end;
 
 procedure TSynCppSyn.AnsiCProc;
 begin
@@ -855,8 +402,8 @@ begin
           else if fRange = rsAnsiCAsmBlock then
             fRange := rsAsmBlock
           else if (fRange = rsDirectiveComment) and
-            not (fLine[Run] in [#0, #13, #10]) then
-              fRange := rsMultiLineDirective //dj
+            not IsLineEnd(Run) then
+              fRange := rsMultiLineDirective
           else
             fRange := rsUnKnown;
           break;
@@ -895,11 +442,11 @@ begin
   fTokenID := tkChar;
   repeat
     if fLine[Run] = '\' then begin
-      if fLine[Run + 1] in [#39, '\'] then                                      //ek 2000-04-26
+      if CharInSet(fLine[Run + 1], [#39, '\']) then
         inc(Run);
     end;
     inc(Run);
-  until fLine[Run] in [#0, #10, #13, #39];
+  until IsLineEnd(Run) or (fLine[Run] = #39);
   if fLine[Run] = #39 then
     inc(Run);
 end;
@@ -940,7 +487,7 @@ end;
 procedure TSynCppSyn.ColonProc;
 begin
   fTokenID := tkSymbol;
-  Case FLine[Run + 1] of
+  case FLine[Run + 1] of
     ':':                               {scope resolution operator}
       begin
         inc(Run, 2);
@@ -961,9 +508,9 @@ begin
   FExtTokenID := xtkComma;
 end;
 
-procedure TSynCppSyn.DirectiveProc; // dj, rewritten to support multiline directives properly
+procedure TSynCppSyn.DirectiveProc;
 begin
-  if Trim(fLine)[1] <> '#' then // '#' is not first char on the line, treat it as an invalid char
+  if WideTrim(fLine)[1] <> '#' then // '#' is not first char on the line, treat it as an invalid char
   begin
     fTokenID := tkUnknown;
     Inc(Run);
@@ -975,7 +522,7 @@ begin
     begin
       if fLine[Run + 1] = '/' then // is end of directive as well
       begin
-        fRange := rsUnknown;                                              //ek 2000-04-25
+        fRange := rsUnknown;
         Exit;
       end
       else
@@ -992,10 +539,10 @@ begin
       Exit;
     end;
     Inc(Run);
-  until fLine[Run] in [#0, #10, #13];
+  until IsLineEnd(Run)
 end;
 
-procedure TSynCppSyn.DirectiveEndProc; // dj, added to support multiline directives properly
+procedure TSynCppSyn.DirectiveEndProc;
 begin
   fTokenID := tkDirective;
   case FLine[Run] of
@@ -1024,7 +571,7 @@ begin
           case fLine[Run + 1] of
             '/': // is end of directive as well
               begin
-                fRange := rsUnknown;                                              //ek 2000-04-25
+                fRange := rsUnknown;
                 Exit;
               end;
             '*': // might be embedded only
@@ -1045,7 +592,7 @@ begin
         end;
     end;
     Inc(Run);
-  until fLine[Run] in [#0, #10, #13];
+  until IsLineEnd(Run);
 end;
 
 procedure TSynCppSyn.EqualProc;
@@ -1068,7 +615,7 @@ end;
 procedure TSynCppSyn.GreaterProc;
 begin
   fTokenID := tkSymbol;
-  Case FLine[Run + 1] of
+  case FLine[Run + 1] of
     '=':                               {greater than or equal to}
       begin
         inc(Run, 2);
@@ -1106,7 +653,7 @@ procedure TSynCppSyn.IdentProc;
 begin
   fTokenID := IdentKind((fLine + Run));
   inc(Run, fStringLen);
-  while Identifiers[fLine[Run]] do inc(Run);
+  while IsIdentChar(fLine[Run]) do inc(Run);
 end;
 
 procedure TSynCppSyn.LFProc;
@@ -1209,9 +756,51 @@ end;
 procedure TSynCppSyn.NullProc;
 begin
   fTokenID := tkNull;
+  inc(Run);
 end;
 
 procedure TSynCppSyn.NumberProc;
+
+  function IsNumberChar(Run: Integer): Boolean;
+  begin
+    case fLine[Run] of
+      '0'..'9', 'A'..'F', 'a'..'f', '.', 'u', 'U', 'l', 'L', 'x', 'X', '-', '+':
+        Result := True;
+      else
+        Result := False;
+    end;
+  end;
+
+  function IsDigitPlusMinusChar(Run: Integer): Boolean;
+  begin
+    case fLine[Run] of
+      '0'..'9', '+', '-':
+        Result := True;
+      else
+        Result := False;
+    end;
+  end;
+
+  function IsHexDigit(Run: Integer): Boolean;
+  begin
+    case fLine[Run] of
+      '0'..'9', 'a'..'f', 'A'..'F':
+        Result := True;
+      else
+        Result := False;
+    end;
+  end;
+
+  function IsAlphaUncerscore(Run: Integer): Boolean;
+  begin
+    case fLine[Run] of
+      'A'..'Z', 'a'..'z', '_':
+        Result := True;
+      else
+        Result := False;
+    end;
+  end;
+
 var
   idx1: Integer; // token[1]
   i: Integer;
@@ -1219,8 +808,7 @@ begin
   idx1 := Run;
   Inc(Run);
   fTokenID := tkNumber;
-  while FLine[Run] in
-    ['0'..'9', 'A'..'F', 'a'..'f', '.', 'u', 'U', 'l', 'L', 'x', 'X', '-', '+'] do
+  while IsNumberChar(Run) do
   begin
     case FLine[Run] of
       '.':
@@ -1238,9 +826,9 @@ begin
         begin
           if fTokenID <> tkFloat then // number <> float. an arithmetic operator
             Exit;
-          if not (FLine[Pred(Run)] in ['e', 'E']) then
+          if not CharInSet(FLine[Pred(Run)], ['e', 'E']) then
             Exit; // number = float, but no exponent. an arithmetic operator
-          if not (FLine[Succ(Run)] in ['0'..'9', '+', '-']) then // invalid
+          if not IsDigitPlusMinusChar(Succ(Run)) then // invalid
           begin
             Inc(Run);
             fTokenID := tkUnknown;
@@ -1259,16 +847,15 @@ begin
           Break;
       'e', 'E':
         if (fTokenID <> tkHex) then
-          if FLine[Pred(Run)] in ['0'..'9'] then // exponent
+          if CharInSet(FLine[Pred(Run)], ['0'..'9']) then // exponent
           begin
             for i := idx1 to Pred(Run) do
-              if FLine[i] in ['e', 'E'] then // too many exponents
+              if CharInSet(FLine[i], ['e', 'E']) then // too many exponents
               begin
-                //Run := i;
                 fTokenID := tkUnknown;
                 Exit;
               end;
-            if not (FLine[Succ(Run)] in ['0'..'9', '+', '-']) then
+            if not IsDigitPlusMinusChar(Succ(Run)) then
               Break
             else
               fTokenID := tkFloat
@@ -1279,14 +866,14 @@ begin
         if fTokenID <> tkHex then
         begin
           for i := idx1 to Pred(Run) do
-            if FLine[i] in ['f', 'F'] then // declaration syntax error
+            if CharInSet(FLine[i], ['f', 'F']) then // declaration syntax error
             begin
               fTokenID := tkUnknown;
               Exit;
             end;
           if fTokenID = tkFloat then
           begin
-            if fLine[Pred(Run)] in ['l', 'L'] then // can't mix
+            if CharInSet(fLine[Pred(Run)], ['l', 'L']) then // can't mix
               Break;
           end
           else
@@ -1294,14 +881,14 @@ begin
         end;
       'l', 'L':
         begin
-          for i := idx1 to Pred(Run) do
-            if FLine[i] in ['l', 'L'] then // declaration syntax error
+          for i := idx1 to Run - 2 do
+            if CharInSet(FLine[i], ['l', 'L']) then // declaration syntax error
             begin
               fTokenID := tkUnknown;
               Exit;
             end;
           if fTokenID = tkFloat then
-            if fLine[Pred(Run)] in ['f', 'F'] then // can't mix
+            if CharInSet(fLine[Pred(Run)], ['f', 'F']) then // can't mix
               Break;
         end;
       'u', 'U':
@@ -1309,7 +896,7 @@ begin
           Break
         else
           for i := idx1 to Pred(Run) do
-            if FLine[i] in ['u', 'U'] then // declaration syntax error
+            if CharInSet(FLine[i], ['u', 'U']) then // declaration syntax error
             begin
               fTokenID := tkUnknown;
               Exit;
@@ -1317,12 +904,12 @@ begin
       'x', 'X':
         if (Run = Succ(idx1)) and   // 0x... 'x' must be second char
            (FLine[idx1] = '0') and  // 0x...
-           (FLine[Succ(Run)] in ['0'..'9', 'a'..'f', 'A'..'F']) then // 0x... must be continued with a number
+           IsHexDigit(Succ(Run)) then // 0x... must be continued with a number
              fTokenID := tkHex
            else // invalid char
            begin
-             if (not Identifiers[fLine[Succ(Run)]]) and
-                (FLine[Succ(idx1)] in ['x', 'X']) then
+             if not IsIdentChar(fLine[Succ(Run)]) and
+                CharInSet(FLine[Succ(idx1)], ['x', 'X']) then
              begin
                Inc(Run); // highlight 'x' too
                fTokenID := tkUnknown;
@@ -1332,8 +919,8 @@ begin
     end; // case
     Inc(Run);
   end; // while
-  if FLine[Run] in ['A'..'Z', 'a'..'z', '_'] then
-    fTokenID := tkUnknown;
+  if IsAlphaUncerscore(Run) then
+    fTokenID := tkUnknown;   
 end;
 
 procedure TSynCppSyn.OrSymbolProc;
@@ -1389,7 +976,7 @@ begin
       FExtTokenID := xtkEllipse;
     end
   else
-    if FLine[Run + 1] in ['0'..'9'] then // float
+    if CharInSet(FLine[Run + 1], ['0'..'9']) then // float
     begin
       Dec(Run); // numberproc must see the point
       NumberProc;
@@ -1430,7 +1017,7 @@ begin
       begin
         fTokenID := tkComment;
         inc(Run, 2);
-        while not (fLine[Run] in [#0, #10, #13]) do Inc(Run);
+        while not IsLineEnd(Run) do Inc(Run);
       end;
     '*':                               {c style comments}
       begin
@@ -1439,7 +1026,7 @@ begin
           fRange := rsAnsiCAsm
         else if fRange = rsAsmBlock then
           fRange := rsAnsiCAsmBlock
-        else if fRange <> rsDirectiveComment then                          
+        else if fRange <> rsDirectiveComment then
           fRange := rsAnsiC;
         inc(Run, 2);
         while fLine[Run] <> #0 do
@@ -1449,7 +1036,7 @@ begin
               begin
                 inc(Run, 2);
                 if fRange = rsDirectiveComment then
-                  fRange := rsMultiLineDirective //dj
+                  fRange := rsMultiLineDirective
                 else if fRange = rsAnsiCAsm then
                   fRange := rsAsm
                 else
@@ -1489,7 +1076,7 @@ procedure TSynCppSyn.SpaceProc;
 begin
   inc(Run);
   fTokenID := tkSpace;
-  while FLine[Run] in [#1..#9, #11, #12, #14..#32] do inc(Run);
+  while (FLine[Run] <= #32) and not IsLineEnd(Run) do inc(Run);
 end;
 
 procedure TSynCppSyn.SquareCloseProc;
@@ -1540,7 +1127,7 @@ begin
       end;
     end;
     inc(Run);
-  until fLine[Run] in [#0, #10, #13, #34];
+  until IsLineEnd(Run) or (fLine[Run] = #34);
   if FLine[Run] = #34 then
     inc(Run);
 end;
@@ -1588,7 +1175,7 @@ begin
       #34: Break;
     end;
     inc(Run);
-  until fLine[Run] in [#0, #10, #13, #34];
+  until IsLineEnd(Run) or (fLine[Run] = #34);
   if FLine[Run] = #34 then
     inc(Run);
 end;
@@ -1603,7 +1190,7 @@ end;
 procedure TSynCppSyn.XOrSymbolProc;
 begin
   fTokenID := tkSymbol;
-  Case FLine[Run + 1] of
+  case FLine[Run + 1] of
   	'=':                               {xor assign}
       begin
         inc(Run, 2);
@@ -1619,11 +1206,6 @@ end;
 
 procedure TSynCppSyn.UnknownProc;
 begin
-{$IFDEF SYN_MBCSSUPPORT}
-  if FLine[Run] in LeadBytes then // if FLine[Run] is the leadbyte of MBCS char,then jump 2 chars.
-    Inc(Run,2)
-  else
-{$ENDIF}
   Inc(Run);
   fTokenID := tkUnknown;
 end;
@@ -1635,14 +1217,50 @@ begin
   case fRange of
     rsAnsiC, rsAnsiCAsm,
     rsAnsiCAsmBlock, rsDirectiveComment: AnsiCProc;
-    rsMultiLineDirective: DirectiveEndProc; // dj
-    rsMultilineString: StringEndProc;                                           //ek 2001-08-02
+    rsMultiLineDirective: DirectiveEndProc;
+    rsMultilineString: StringEndProc;
   else
     begin
-      fRange := rsUnknown;
-      fProcTable[fLine[Run]];
+      case fLine[Run] of
+        '&': AndSymbolProc;
+        #39: AsciiCharProc;
+        '@': AtSymbolProc;
+        '}': BraceCloseProc;
+        '{': BraceOpenProc;
+        #13: CRProc;
+        ':': ColonProc;
+        ',': CommaProc;
+        '#': DirectiveProc;
+        '=': EqualProc;
+        '>': GreaterProc;
+        '?': QuestionProc;
+        'A'..'Z', 'a'..'z', '_': IdentProc;
+        #10: LFProc;
+        '<': LowerProc;
+        '-': MinusProc;
+        '%': ModSymbolProc;
+        '!': NotSymbolProc;
+        #0: NullProc;
+        '0'..'9': NumberProc;
+        '|': OrSymbolProc;
+        '+': PlusProc;
+        '.': PointProc;
+        ')': RoundCloseProc;
+        '(': RoundOpenProc;
+        ';': SemiColonProc;
+        '/': SlashProc;
+        #1..#9, #11, #12, #14..#32: SpaceProc;
+        ']': SquareCloseProc;
+        '[': SquareOpenProc;
+        '*': StarProc;
+        #34: StringProc;
+        '~': TildeProc;
+        '^': XOrSymbolProc;
+        else UnknownProc;
+      end;
     end;
   end;
+  inherited;
 end;
 
 function TSynCppSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
@@ -1661,20 +1279,12 @@ end;
 
 function TSynCppSyn.GetEol: Boolean;
 begin
-  Result := fTokenID = tkNull;
+  Result := Run = fLineLen + 1;
 end;
 
 function TSynCppSyn.GetRange: Pointer;
 begin
   Result := Pointer(fRange);
-end;
-
-function TSynCppSyn.GetToken: String;
-var
-  Len: LongInt;
-begin
-  Len := Run - fTokenPos;
-  SetString(Result, (FLine + fTokenPos), Len);
 end;
 
 function TSynCppSyn.GetTokenID: TtkTokenKind;
@@ -1693,6 +1303,7 @@ end;
 
 function TSynCppSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
+  fTokenID := GetTokenID;
   case fTokenID of
     tkAsm: Result := fAsmAttri;
     tkComment: Result := fCommentAttri;
@@ -1717,12 +1328,7 @@ begin
   Result := Ord(GetTokenID);
 end;
 
-function TSynCppSyn.GetTokenPos: Integer;
-begin
-  Result := fTokenPos;
-end;
-
-procedure TSynCppSyn.ReSetRange;
+procedure TSynCppSyn.ResetRange;
 begin
   fRange:= rsUnknown;
 end;
@@ -1816,20 +1422,20 @@ function TSynCppSyn.UseUserSettings(settingIndex: integer): boolean;
       EnumUserSettings(s);
       if settingIndex >= s.Count then Result := false
       else begin
-        tmpStringAttri    := TSynHighlighterAttributes.Create('');
-        tmpCharAttri      := TSynHighlighterAttributes.Create('');
-        tmpNumberAttri    := TSynHighlighterAttributes.Create('');
-        tmpFloatAttri     := TSynHighlighterAttributes.Create('');
-        tmpHexAttri       := TSynHighlighterAttributes.Create('');
-        tmpOctalAttri     := TSynHighlighterAttributes.Create('');
-        tmpKeyAttri       := TSynHighlighterAttributes.Create('');
-        tmpSymbolAttri    := TSynHighlighterAttributes.Create('');
-        tmpAsmAttri       := TSynHighlighterAttributes.Create('');
-        tmpCommentAttri   := TSynHighlighterAttributes.Create('');
-        tmpIdentifierAttri:= TSynHighlighterAttributes.Create('');
-        tmpInvalidAttri   := TSynHighlighterAttributes.Create('');
-        tmpSpaceAttri     := TSynHighlighterAttributes.Create('');
-        tmpDirecAttri     := TSynHighlighterAttributes.Create('');
+        tmpStringAttri    := TSynHighlighterAttributes.Create('', '');
+        tmpCharAttri      := TSynHighlighterAttributes.Create('', '');
+        tmpNumberAttri    := TSynHighlighterAttributes.Create('', '');
+        tmpFloatAttri     := TSynHighlighterAttributes.Create('', '');
+        tmpHexAttri       := TSynHighlighterAttributes.Create('', '');
+        tmpOctalAttri     := TSynHighlighterAttributes.Create('', '');
+        tmpKeyAttri       := TSynHighlighterAttributes.Create('', '');
+        tmpSymbolAttri    := TSynHighlighterAttributes.Create('', '');
+        tmpAsmAttri       := TSynHighlighterAttributes.Create('', '');
+        tmpCommentAttri   := TSynHighlighterAttributes.Create('', '');
+        tmpIdentifierAttri:= TSynHighlighterAttributes.Create('', '');
+        tmpInvalidAttri   := TSynHighlighterAttributes.Create('', '');
+        tmpSpaceAttri     := TSynHighlighterAttributes.Create('', '');
+        tmpDirecAttri     := TSynHighlighterAttributes.Create('', '');
         tmpStringAttri    .Assign(fStringAttri);
         tmpCharAttri      .Assign(fCharAttri);
         tmpNumberAttri    .Assign(fNumberAttri);
@@ -1904,24 +1510,22 @@ begin
   {$ENDIF}
 end; { TSynCppSyn.UseUserSettings }
 
-function TSynCppSyn.GetIdentChars: TSynIdentChars;
+function TSynCppSyn.IsFilterStored: Boolean;
 begin
-  Result := TSynValidStringChars;
+  Result := fDefaultFilter <> SYNS_FilterCPP;
 end;
 
-{$IFNDEF SYN_CPPB_1} class {$ENDIF}                                             //mh 2000-07-14
-function TSynCppSyn.GetLanguageName: string;
+class function TSynCppSyn.GetLanguageName: string;
 begin
   Result := SYNS_LangCPP;
 end;
 
-{$IFNDEF SYN_CPPB_1} class {$ENDIF}                                             //mh 2000-07-14
-function TSynCppSyn.GetCapabilities: TSynHighlighterCapabilities;
+class function TSynCppSyn.GetCapabilities: TSynHighlighterCapabilities;
 begin
   Result := inherited GetCapabilities + [hcUserSettings];
 end;
 
-function TSynCppSyn.GetSampleSource: string;
+function TSynCppSyn.GetSampleSource: UnicodeString;
 begin
   Result := '// Syntax Highlighting'#13#10+
             'void __fastcall TForm1::Button1Click(TObject *Sender)'#13#10+
@@ -1947,10 +1551,13 @@ begin
 
 end;
 
+class function TSynCppSyn.GetFriendlyLanguageName: UnicodeString;
+begin
+  Result := SYNS_FriendlyLangCPP;
+end;
+
 initialization
-  MakeIdentTable;
-{$IFNDEF SYN_CPPB_1}                                                            //mh 2000-07-14
+{$IFNDEF SYN_CPPB_1}
   RegisterPlaceableHighlighter(TSynCppSyn);
 {$ENDIF}
 end.
-

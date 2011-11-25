@@ -7,7 +7,7 @@
     <UseMaterial Material="FontMaterial2"/>
     <RenderText Name="rt1" X="-0.53" Y="0.79" Scale="0.52">
       <Text>
-<![CDATA[THIS IS FONT ONE
+<![CDATA[THIS IS FONT TWO
 ONLY LETTERS]]>
       </Text>
       <RenderCharExpression>
@@ -55,7 +55,11 @@ ALL CHARACTERS!]]>
             </BitmapFromFile>
           </Producers>
         </Bitmap>
-        <Material Name="FontMaterial1" Texture="FontBitmap1" Blend="1" TexCoords="1" Font="Font1"/>
+        <Material Name="FontMaterial1" Blend="1" Font="Font1">
+          <Textures>
+            <MaterialTexture Texture="FontBitmap1" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- Font1Group -->
 
@@ -71,7 +75,11 @@ ALL CHARACTERS!]]>
           </Producers>
         </Bitmap>
         <Font Name="Font2" Bitmap="FontBitmap2" FirstChar="65" CharPixelWidth="32" CharPixelHeight="24" BorderPixels="1"/>
-        <Material Name="FontMaterial2" Texture="FontBitmap2" Blend="1" TexCoords="1" Font="Font2"/>
+        <Material Name="FontMaterial2" Blend="1" Font="Font2">
+          <Textures>
+            <MaterialTexture Texture="FontBitmap2" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- Font2Group -->
 
@@ -87,7 +95,11 @@ ALL CHARACTERS!]]>
           </Producers>
         </Bitmap>
         <Font Name="Font3" Bitmap="FontBitmap3" FirstChar="33" CharPixelWidth="8" CharPixelHeight="8" BorderPixels="1"/>
-        <Material Name="FontMaterial3" Texture="FontBitmap3" Blend="1" TexCoords="1" Font="Font3"/>
+        <Material Name="FontMaterial3" Blend="1" Font="Font3">
+          <Textures>
+            <MaterialTexture Texture="FontBitmap3" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- Font3Group -->
 
@@ -103,20 +115,14 @@ ALL CHARACTERS!]]>
           </Producers>
         </Bitmap>
         <Font Name="Font4" Bitmap="FontBitmap4" FirstChar="33" CharPixelWidth="31" CharPixelHeight="31" BorderPixels="1"/>
-        <Material Name="FontMaterial4" Texture="FontBitmap4" Blend="1" TexCoords="1" Font="Font4"/>
+        <Material Name="FontMaterial4" Blend="1" Font="Font4"/>
       </Children>
     </Group> <!-- Font4Group -->
 
     <Model Name="Model1" Position="0 2 0" Scale="8 8 1">
       <OnRender>
         <UseMaterial Material="FontMaterial4"/>
-        <RenderText UseModelSpace="255">
-          <Text>
-<![CDATA[ABCDEFGHPQ
-RSTWXYZ
-0123456789]]>
-          </Text>
-        </RenderText>
+        <RenderText Text="HELLO"/>
       </OnRender>
     </Model>
   </Content>

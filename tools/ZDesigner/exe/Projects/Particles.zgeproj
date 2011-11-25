@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="Particle Toy   0.03   www.emix8.org">
+<ZApplication Name="App" Caption="Particle Toy   0.03   www.emix8.org" ScreenMode="0">
   <OnLoaded>
     <SpawnModel Model="ScreenFadeOutModel" Position="0 -100 0" SpawnStyle="1"/>
     <SpawnModel Model="GuiModel"/>
@@ -210,7 +210,11 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
 
     <Group Name="FeedbackGroup">
       <Children>
-        <Material Name="ScreenFadeMaterial" Texture="ScreenFadeBitmap" TextureX="1.5" TextureY="1.5" Color="-1.4974 -1.4974 -1.4974 1" Light="0" Blend="1" ZBuffer="0"/>
+        <Material Name="ScreenFadeMaterial" Color="-1.4974 -1.4974 -1.4974 1" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="ScreenFadeBitmap" TextureX="1.5" TextureY="1.5"/>
+          </Textures>
+        </Material>
         <Model Name="ScreenFadeOutModel" Position="-0.0245 -0.0601 0" Rotation="0 0 0.9359" Scale="16 16 1">
           <OnRender>
             <UseMaterial Material="ScreenFadeMaterial"/>
@@ -897,10 +901,26 @@ this.PColor.B+=Temp1;
         <Sound Name="CursorHitCursorSound" Length="0.05" Volume="0.35" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.61" FilterQ="0.83" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.05" Lfo0Active="1" Lfo0Speed="0.02"/>
         <Group Name="CursorMaterialGroup">
           <Children>
-            <Material Name="CursorMaterial1" Texture="BeamBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
-            <Material Name="CursorMaterial2" Texture="AbsNoiseBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
-            <Material Name="CursorMaterial3" Texture="RingBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
-            <Material Name="CursorMaterial4" Texture="SpaceRingBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
+            <Material Name="CursorMaterial1" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial2" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="AbsNoiseBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial3" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="RingBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Material Name="CursorMaterial4" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="SpaceRingBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
           </Children>
         </Group> <!-- CursorMaterialGroup -->
 

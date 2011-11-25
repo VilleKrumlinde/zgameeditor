@@ -3,7 +3,7 @@ object Import3dsForm: TImport3dsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = '3DS import'
-  ClientHeight = 239
+  ClientHeight = 256
   ClientWidth = 450
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,7 +16,7 @@ object Import3dsForm: TImport3dsForm
   ShowHint = True
   DesignSize = (
     450
-    239)
+    256)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -56,7 +56,7 @@ object Import3dsForm: TImport3dsForm
   end
   object DownloadURLLabel: TLabel
     Left = 8
-    Top = 220
+    Top = 237
     Width = 140
     Height = 13
     Anchors = [akLeft, akBottom]
@@ -72,7 +72,7 @@ object Import3dsForm: TImport3dsForm
   end
   object Button1: TButton
     Left = 286
-    Top = 206
+    Top = 223
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -80,12 +80,11 @@ object Import3dsForm: TImport3dsForm
     Default = True
     ModalResult = 1
     TabOrder = 0
-    ExplicitLeft = 264
-    ExplicitTop = 185
+    ExplicitTop = 206
   end
   object Button2: TButton
     Left = 367
-    Top = 206
+    Top = 223
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -93,8 +92,7 @@ object Import3dsForm: TImport3dsForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
-    ExplicitLeft = 345
-    ExplicitTop = 185
+    ExplicitTop = 206
   end
   object NamePrefixEdit: TEdit
     Left = 72
@@ -174,5 +172,16 @@ object Import3dsForm: TImport3dsForm
     Height = 17
     Caption = 'Import texture coordinates'
     TabOrder = 9
+  end
+  object SingleMeshCheckBox: TCheckBox
+    Left = 8
+    Top = 199
+    Width = 153
+    Height = 17
+    Hint = 
+      'Make a single Mesh-component even if the 3ds-file contains sever' +
+      'al meshes'
+    Caption = 'Single mesh'
+    TabOrder = 10
   end
 end

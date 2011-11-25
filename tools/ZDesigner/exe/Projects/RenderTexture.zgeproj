@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Render to texture demo" ClearColor="0 0 0 1" ScreenMode="1" CameraPosition="0 0 6.11">
+  <OnRender>
+    <Group Comment="Generate texture">
+      <Children>
+        <SetRenderTarget RenderTarget="RenderTarget1"/>
+        <UseMaterial Material="MeshMaterial"/>
+        <ZExpression>
+          <Expression>
+<![CDATA[Rt1.Translate.Y = sin(App.Time*2);
+Rt1.Rotate.Y = App.Time*0.1;]]>
+          </Expression>
+        </ZExpression>
+        <RenderTransformGroup Name="Rt1" Translate="0 0.9667 0" Rotate="0 0.0915 0">
+          <Children>
+            <RenderMesh Mesh="Mesh1"/>
+          </Children>
+        </RenderTransformGroup>
+        <SetRenderTarget/>
+      </Children>
+    </Group>
+    <Group Comment="Use generated texture">
+      <Children>
+        <UseMaterial Material="TexMaterial"/>
+        <ZExpression>
+          <Expression>
+<![CDATA[Rt2.Rotate.Y = App.Time*0.15;
+Rt2.Rotate.X = 0.05;]]>
+          </Expression>
+        </ZExpression>
+        <RenderTransformGroup Name="Rt2" Rotate="0.05 0.1372 0">
+          <Children>
+            <RenderMesh Mesh="Mesh2"/>
+          </Children>
+        </RenderTransformGroup>
+      </Children>
+    </Group>
+  </OnRender>
+  <Content>
+    <RenderTarget Name="RenderTarget1" ClearColor="0 0.251 0 1"/>
+    <Material Name="TexMaterial" Color="1 1 1 1" ZBuffer="0">
+      <Textures>
+        <MaterialTexture RenderTarget="RenderTarget1" TextureWrapMode="2" TexCoords="1"/>
+      </Textures>
+    </Material>
+    <Mesh Name="Mesh1">
+      <Producers>
+        <MeshSphere ZSamples="12" RadialSamples="12"/>
+      </Producers>
+    </Mesh>
+    <Material Name="MeshMaterial" Shading="1" Color="1 0.502 0.251 1">
+      <Textures>
+        <MaterialTexture TextureScale="0.9 2.38 1" TextureX="1.38" TextureWrapMode="2"/>
+      </Textures>
+    </Material>
+    <Mesh Name="Mesh2">
+      <Producers>
+        <MeshBox/>
+      </Producers>
+    </Mesh>
+  </Content>
+</ZApplication>

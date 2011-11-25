@@ -1,0 +1,2488 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="0 0 2.5">
+  <Content>
+    <Group Comment="Bitmaps">
+      <Children>
+        <Bitmap Comment="Anti-Aliased Circle">
+          <Producers>
+            <BitmapExpression UseBlankSource="1">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+int BitmapSize = 64;
+float AAWidth = 2;
+
+// Default Pixel values
+
+this.Pixel.R = 1;
+this.Pixel.G = 1;
+this.Pixel.B = 1;
+this.Pixel.A = 0;
+
+// Calculate the radius of the current Pixel from the center
+
+float Radius = sqrt(pow(0.5-X-0.5/BitmapSize,2)+pow(0.5-Y-0.5/BitmapSize,2));
+
+// Function for Pixels that are in the Anti-Aliased outer circle
+
+if(Radius<0.5 && Radius>=0.5-AAWidth/BitmapSize){
+  this.Pixel.A = (0.5-Radius)*BitmapSize/AAWidth;
+}
+
+// Aliased inner circle
+
+if(Radius<0.5-AAWidth/BitmapSize){
+  this.Pixel.A = 1;
+}
+
+this.Pixel.R *= this.Pixel.A;
+this.Pixel.G *= this.Pixel.A;
+this.Pixel.B *= this.Pixel.A;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Anti-Aliased Polygon">
+          <Producers>
+            <BitmapExpression UseBlankSource="1">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+// bitmap variables
+
+int width = 128;
+float aawidth = 2;
+
+// algo variables
+
+int sprockets = 7;
+int centeroffset = 1;
+
+// default color
+
+this.pixel.r = 1;
+this.Pixel.g = 1;
+this.pixel.b = 1;
+this.Pixel.A = 0;
+
+//
+
+// other variables
+
+float this_angle;
+int this_sprocket;
+float normalx, normaly;
+float distance;
+
+float aadist = aawidth / width;
+float angle =( 2 * PI )/ sprockets;
+float maxdist = cos( angle / 2.0 )* 0.5;
+float center = 0.5 -( 1.0 * centeroffset / width );
+
+//
+
+// determine angle of current pixel to center
+if( this.x - 0.5 >= 0 )
+  this_angle = atan2(( this.x - 0.5 ),( this.y - center ));
+else
+  this_angle = PI + atan2(( 0.5 - this.x ),( center - this.y  ));
+
+// determine sprocket of current pixel
+this_sprocket = (( this_angle )/ angle );
+
+// calculate normal of current sprocket
+normalx = sin(( angle * this_sprocket )+( angle / 2.0 ));
+normaly = cos(( angle * this_sprocket )+( angle / 2.0 ));
+
+// calculate distance of current pixel by dot product with normal
+distance =(( this.x - 0.5 )* normalx )+(( this.Y - center )* normaly );
+
+// set alpha accordingly
+if( distance < maxdist ) this.pixel.a = ( maxdist - distance )/ aadist;
+
+this.Pixel.R *= this.Pixel.A;
+this.Pixel.G *= this.Pixel.A;
+this.Pixel.B *= this.Pixel.A;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Bricks" Width="4" Height="4" Filter="2">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+float X1, Y1;
+
+if (Y>0.5) {
+ Y1 = Y*4-3; X1 = (X- 0.5)*2;
+}
+else {
+ Y1 = Y*4-1; X1 = (abs(X-0.5)*2-1)*((X-0.5)*2+0.01)/abs((X-0.5)*2+0.01);
+}
+this.Pixel.B = pow(X1,8) + pow(Y1,8);
+if (X1 > Y1) this.Pixel.G=1;]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapZoomRotate Zoom="-4.5"/>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+float Temp=0, Down = 0;
+
+Temp = this.Pixel.B - pow(sin(X*pi),0.33)*noise2(X*3+768,Y+187)*1;
+if (this.Pixel.G > 0.5) Down = 1;
+this.Pixel = 0;
+if (Temp < 0.7) {
+    this.Pixel.G = clamp(pow(sin(X*pi),0.3),0,0.5) * noise2(X*15+500,Y*12+170);
+    this.Pixel.R = 0.8 + noise2(X*35+350,Y*35)/3;
+    if (noise2(X*35+350,Y*35) < -0.2) this.Pixel.R -= 0.1;
+   if (noise2(X*35+350,Y*35) < -0.25) this.Pixel.R -= 0.3;
+}
+if (Temp < 0.7 && Temp > 0.45) {
+    if (Down == 1) this.Pixel.R -= 0.3;
+    else this.Pixel.R += 0.2;
+}
+
+if (Temp >= 0.7) {this.Pixel = 0.3 + noise2(X*130+2463,Y*130+374)/2;}
+/*
+if (this.Pixel.R > 0.2) {
+    this.Pixel.R -= 0.2 + noise2(Y*12+2015,X*12+1021)/3;}
+
+if (this.Pixel.G > 0.2) {
+    this.Pixel.G = 0.1 + noise2(Y*12+715,X*12+321)/4;}
+
+if (this.Pixel.B > 0.2) {
+    this.Pixel.R += 0.1;
+    this.Pixel.G += 0.2 + noise2(Y*12+203,X*12+821)/3;
+    this.Pixel.B = 0;
+}
+
+if (this.Pixel.A > 0.2) {
+    this.Pixel.R -= 0.3 + noise2(Y*12+2015,X*12+1021)/4;
+    this.Pixel.A = 0;
+
+}
+
+if (this.Pixel.R < 0.2) {
+    this.Pixel = 0.3 + noise2(Y*130+374,X*130+2463)/2;}]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapZoomRotate Zoom="-1.5"/>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Dithering">
+          <Producers>
+            <BitmapExpression UseBlankSource="1">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+float C, F, S, R, G, B;
+
+C = 9/16-X/8; // Low contrast gradient ( less colors available then preferable )
+
+R = C;
+G = C;
+B = C;
+
+F = frac(C*255);
+S = 1/255; // 1-bit offset ( on a 8-bit value )
+
+if(frac(F) < 0.25)R += S;
+if(frac(F) < 0.50)G += S;
+if(frac(F) < 0.75)B += S;
+
+this.Pixel.R = R;
+this.Pixel.G = G;
+this.Pixel.B = B;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Superformula" Width="4" Height="4">
+          <Producers>
+            <BitmapExpression Comment="2D Superformula">
+              <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+
+//Parameters
+float VarM = 3;
+float VarN1 = 5;
+float VarN2 = 18;
+float VarN3 = 18;
+
+//Variables
+float VarR, VarT, VarX, VarY, VarTemp;
+
+
+if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2x2)
+    VarX = (this.X-0.5)*7;  //Use the constant multiplying the expression
+    VarY = (this.Y-0.5)*7;  //to scale your image (zoom in and out) ;)
+    VarT = atan2(VarY,VarX);
+    VarR = sqrt(VarX*VarX + VarY*VarY);
+    VarTemp = VarR - pow(
+        pow(abs(cos(VarM*VarT/4)/1),VarN2) +
+        pow(abs(sin(VarM*VarT/4)/1),VarN3),
+        -1/VarN1);
+
+    if (VarTemp < 0) { //If it does belong to the figure
+            this.Pixel.G = VarTemp*(-2.5);
+            //The higher the multiplyer is,
+            //the sharper the image :)
+            //If you need a very sharp image just use:
+            //this.Pixel.G = 1;
+            }
+}   // X or Y different by zero
+    //Else is not needed since X or Y will be never equal to zero. if it happens, just add them]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+      </Children>
+    </Group>
+    <Group Comment="Meshes">
+      <Children>
+        <Mesh Comment="Improved Sphere">
+          <Producers>
+            <MeshBox Scale="1 0.5 1" XCount="31" YCount="15" Grid2DOnly="255"/>
+            <MeshExpression AutoNormals="0">
+              <Expression>
+        <![CDATA[//
+
+        float E, A, C, X, Y, Z;
+
+        // Convert range to radians
+
+        E = this.V.Y*PI; // Elevation
+        A = this.V.X*PI; // Azimuth
+
+        // Convert spherical coordinates into cartesian
+
+        C = cos(E);
+
+        X = sin(A)*C;
+        Y = sin(E);
+        Z = cos(A)*C;
+
+        // Assign coordinates
+
+        this.V.X = X/2;
+        this.V.Y = Y/2;
+        this.V.Z = Z/2;
+
+        this.N.X = X;
+        this.N.Y = Y;
+        this.N.Z = Z;]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Capsule">
+          <Producers>
+            <MeshBox Scale="0.5 0.5 1" XCount="15" Grid2DOnly="255"/>
+            <MeshExpression AutoNormals="0">
+              <Expression>
+<![CDATA[float RX, SX, CX;
+
+RX = this.V.X*PI*2;
+
+SX = sin(RX); CX = cos(RX);
+
+this.V.X = SX/2;
+this.V.Z = CX/2;
+
+this.N.X = this.V.X;
+this.N.Y = 0;
+this.N.Z = this.V.Z;]]>
+              </Expression>
+            </MeshExpression>
+            <MeshBox Scale="0.5 0.5 1" XCount="15" YCount="3" Grid2DOnly="255"/>
+            <MeshExpression AutoNormals="0">
+              <Expression>
+<![CDATA[float RX, SX, CX,
+      RY, SY, CY;
+
+RX = this.V.X*PI*2;
+RY = this.V.Y*PI/2-PI/4;
+
+SX = sin(RX); CX = cos(RX);
+SY = sin(RY); CY = cos(RY);
+
+this.V.X = SX*CY/2;
+this.V.Y = SY/2;
+this.V.Z = CX*CY/2;
+
+this.N.X = this.V.X;
+this.N.Y = this.V.Y;
+this.N.Z = this.V.Z;
+
+this.V.Y -= 0.5;]]>
+              </Expression>
+            </MeshExpression>
+            <MeshCombine/>
+            <MeshBox Scale="0.5 0.5 1" XCount="15" YCount="3" Grid2DOnly="255"/>
+            <MeshExpression AutoNormals="0">
+              <Expression>
+<![CDATA[float RX, SX, CX,
+      RY, SY, CY;
+
+RX = this.V.X*PI*2;
+RY = this.V.Y*PI/2+PI/4;
+
+SX = sin(RX); CX = cos(RX);
+SY = sin(RY); CY = cos(RY);
+
+this.V.X = SX*CY/2;
+this.V.Y = SY/2;
+this.V.Z = CX*CY/2;
+
+this.N.X = this.V.X;
+this.N.Y = this.V.Y;
+this.N.Z = this.V.Z;
+
+this.V.Y += 0.5;]]>
+              </Expression>
+            </MeshExpression>
+            <MeshCombine/>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Cylinder">
+          <Producers>
+            <MeshSphere Name="OrigSphere"/>
+            <MeshExpression AutoNormals="0">
+              <Expression>
+<![CDATA[//V : current vertex
+//VarP is set to the number of Z samples;
+//VarQ is the number of circonferences wanted in the upper and lower faces
+float VarP;
+int VarQ = 1;
+float Psi;
+
+VarP = OrigSphere.ZSamples;
+if (this.V.Y != 0 || this.V.X != 0) {
+    Psi = atan2(this.V.Y,this.V.X);
+    this.V.X = cos(Psi); //*pow(1-abs(this.V.Z),2);
+    this.V.Y = sin(Psi);
+    //Normals
+    //this.N.X = cos(Psi);
+    //this.N.Y = sin(Psi);
+    
+    if (VarQ == 0) {
+        this.V.Z /= 1 - 2/(VarP-1);
+        }
+    else { //VarQ != 0
+        this.V.Z /= 1 - (VarQ+1)*2/(VarP-1);
+        if (abs(this.V.Z)>1.001) {   //this is because we are using floating point precision
+                                     //it is better to avoid stuff like "Z > 1" due to truncament errors
+
+            //remember: tallest's high: (1/(1 - (VarQ+1)*2/(VarP-1));
+            this.V.X *= 1 - (abs(this.V.Z)-1)/(1/(1 - (VarQ+1)*2/(VarP-1))-1);
+            this.V.Y *= 1 - (abs(this.V.Z)-1)/(1/(1 - (VarQ+1)*2/(VarP-1))-1);
+
+            this.V.Z = this.V.Z/(abs(this.V.Z));
+
+        }
+    } //ELSE
+
+    //Normals
+    if (abs(this.V.Z) < 0.999) {
+        this.N.Z = 0; //lateral surface
+        }
+    else {
+        if (pow(this.V.X,2) + pow(this.V.Y,2) < 0.999) {
+               this.N.X = 0;  //Upper surface
+               this.N.Y = 0;
+               }
+        else {
+                 //Edges normals, you can decide what to use.
+        }
+    }  // End of normals section
+    
+    //soft edges      Work In Progress
+    /*
+    if (abs(this.V.Z) > 0.7 && pow(this.V.X,2) + pow(this.V.Y,2) > 0.7) {
+        this.V.Z *= 0.9;
+        this.V.Y *= 0.9;
+        this.V.X *= 0.9;
+        }
+    // */
+
+} //OUTER IF]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Perycicloid">
+          <Producers>
+            <MeshBox XCount="15" YCount="400" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarM = -4/3;
+float VarP = this.V.X*PI;
+float VarQ = this.V.Y*PI;
+
+//this.V.X = 0.5*cos(VarP);
+
+VarQ = this.V.X*PI;
+VarP = this.V.Y*PI*3;
+//this.V.X = (2 + 0.5*cos(VarQ))*cos(VarP);
+//this.V.Y = (2 + 0.5*cos(VarQ))*sin(VarP);
+this.V.Z = (0.1*sin(VarQ));
+this.V.X = ((2)*(1 + VarM)*cos(VarM*VarP)-(2 + 0.1*cos(VarQ))*(VarM)*cos(VarP + VarM*VarP));
+this.V.Y = ((2)*(1 + VarM)*sin(VarM*VarP)-(2 + 0.1*cos(VarQ))*(VarM)*sin(VarP + VarM*VarP));
+
+/*         0.1*cos(VarP) +
+           0.1*sin(VarP) +]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Pillow">
+          <Producers>
+            <MeshBox XCount="16" YCount="16" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+this.V.X = cos(U);
+this.V.Y = cos(V);
+this.V.Z = 0-((sin(U)*sin(V))/Pi*2);]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Teardrop">
+          <Producers>
+            <MeshBox XCount="16" YCount="16" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+this.V.X = 0.5*(1-cos(U))*sin(U)*cos(V);
+this.V.Y = 0.5*(1-cos(U))*sin(U)*sin(V);
+this.V.Z = cos(U);]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Throcoid">
+          <Producers>
+            <MeshBox XCount="15" YCount="500" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarM = 5/4;
+float VarP = this.V.X*PI;
+float VarQ = this.V.Y*PI;
+
+//this.V.X = 0.5*cos(VarP);
+
+VarQ = this.V.X*PI;
+VarP = this.V.Y*PI*4;
+//this.V.X = (2 + 0.5*cos(VarQ))*cos(VarP);
+//this.V.Y = (2 + 0.5*cos(VarQ))*sin(VarP);
+this.V.Z = 0-(0.1 * sin(VarQ));
+this.V.X = ((2)*(1 + VarM)*cos(VarM*VarP)-(2+0.07*cos(VarQ))*(1 + VarM)*cos(VarP + VarM*VarP));
+this.V.Y = ((2)*(1 + VarM)*sin(VarM*VarP)-(2+0.07*cos(VarQ))*(1 + VarM)*sin(VarP + VarM*VarP));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Torus">
+          <Producers>
+            <MeshBox XCount="17" YCount="26" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+this.V.Z = 0;
+               //HERE SHOULD BE 2*PI but the grid ranges between -1 and 1
+float VarU = this.V.Y*PI;
+float VarV = this.V.X*PI;
+this.V.X = (2 + 0.5*cos(VarV))*cos(VarU);
+this.V.Y = (2 + 0.5*cos(VarV))*sin(VarU);
+this.V.Z = 0-(0.5*sin(VarV));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Spring">
+          <Producers>
+            <MeshBox XCount="16" YCount="40" Grid2DOnly="255"/>
+            <MeshExpression>
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+float V = this.V.X*PI;
+float U = this.V.Y*PI;
+
+float Radius=1;
+float Length=4;
+float Period=2;
+
+this.V.X = (Pi+Radius*cos(V))*cos(U*Length);
+this.V.Y = (Pi+Radius*cos(V))*sin(U*Length);
+this.V.Z = 0-(Radius*(sin(V)+Period*U*Length/Pi));]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+        <Mesh Comment="Superformula">
+          <Producers>
+            <MeshSphere ZSamples="8" RadialSamples="60"/>
+            <MeshExpression Comment="3D Superformula">
+              <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+//Parameters
+float VarM = 3;
+float VarN1 = 5;
+float VarN2 = 18;
+float VarN3 = 18;
+
+//Variables
+float VarR, VarT, VarX, VarY, VarTemp;
+
+if (this.V.X!=0 || this.V.Y!=0) { //this is always true (textures are multiples of 2x2)
+    VarT = atan2(this.V.Y,this.V.X);
+    VarR = pow(
+        pow(abs(cos(VarM*VarT/4)/1),VarN2) +
+        pow(abs(sin(VarM*VarT/4)/1),VarN3),
+        -1/VarN1);
+
+    VarR *= 0.5; //SCALING
+    this.V.Y *= VarR;
+    this.V.X *= VarR;
+
+/* also, try doing something like:
+    this.V.Y /= VarR;
+    this.V.X /= VarR;
+    */
+    
+}   // X or Y different by zero
+
+this.V.Z *= 0.3;]]>
+              </Expression>
+            </MeshExpression>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+    <Group Comment="Models">
+      <Children>
+        <Model Comment="Ring from Cubes" Scale="0.1 0.1 0.1">
+          <Definitions>
+            <Mesh Name="Mesh_Box">
+              <Producers>
+                <MeshBox/>
+              </Producers>
+            </Mesh>
+          </Definitions>
+          <OnRender>
+            <Repeat Count="100">
+              <OnIteration>
+                <RenderTransform Rotate="0 0 0.01"/>
+                <RenderTransformGroup Comment="Translate.X determines Ring Size" Translate="0 30 0">
+                  <Children>
+                    <RenderMesh Mesh="Mesh_Box"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnIteration>
+            </Repeat>
+          </OnRender>
+        </Model>
+        <Model Comment="Zwidget">
+          <Definitions>
+            <Bitmap Name="zWidgetXbmp" Width="4">
+              <Producers>
+                <BitmapFromFile Comment="Imported from X.gif">
+                  <BitmapFile>
+<![CDATA[78DAED9D416EC3300C0485222F28720CFAFF7714F9577B2DD2D6B025924B8AB3D03151627136B2649119C34B5FE383463369A39A2A7E67044EC08F800AF81168013F0230E0476006FC08D8801F811CF023C0037ED41C3FE0476D2D00FCA8AD05801FB5B54073F86F6FB7B40D0B003FFC6301E0877F2C00FCF08F05847D2EE62FE44C7F80FFFC81B66566FDBA267A489BFEF393B7E7E7F3777325FCF813E5FCE709B4556F2BFD4C67B1654E7F83FF2A815EEFD0A487C561C97CFF0FFF92409F7FCBE2AFB7646492273ECF21FAE28BB917FC67AEC7C723C3FA372CD0573F45BB82B834C7E54FFC4FC87F92FD9FB0405F7DD744FF92912951F502FEE5819EBB65126E9F9E9CEC4A947C99BE639FE6BFD6FE7F40A0A7670D15FC67AEBA4ABDA39328DEDFEF3DF90F08F4CAC4A182FF78D62B54EFCB64C7E6522BCDBF47A017E70E09FC07975FABD81DFCCB03BD6E1F09FC7F0E42B94A8FF02F0FB4898324F01F8FCCA82073BC0D0D926DAC9C026D65A2F38B62F322BD756BFCC27F4CA0034A464F3CA7837FF8DF867FDB6F02FFF05F8E7F0978A5FFE300FEE581365C47B0FE75E57FEE18E7558BB1FE2DB405F4320ED5F73FE13F3ED0B6FB9F9116D8EFF917FCC707DAFCF9578C05B63CFFC0FD7F7CA03DCE3F045860CBF36FF01F1F68A7F36FAE16D8F5FC33FCC707DAEFFCB393053AE4BFC0FFD822FFC5DC024DF21F85D893FFE801B3EDA38AEDF3DF9BF31F19E880FC772B0BEC5DFF04FE93075A5B02C8EA745009FE6D13018AD63F4C15686D0938AB350EFC27E73F67A0E5BD691F73C07FFE1F7FBF406728015DEE6027FCEFF133C55F00E4E49FFAFFA5E1C702F0DF1C7E2C00FFCDE1C702A839FC580035871F0BA0E6F06301D41C7E2C80000F0B2090C302A8396C580035C70C0BA0E6806101D41C2D2C809A43850550739C16EB57D368019905DF2332FEF5]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="zWidgetXmat" Light="0" Blend="2" ZBuffer="0" DrawBackFace="255">
+              <Textures>
+                <MaterialTexture Texture="zWidgetXbmp" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Bitmap Name="zWidgetYbmp" Height="4">
+              <Producers>
+                <BitmapFromFile Comment="Imported from Y.gif">
+                  <BitmapFile>
+<![CDATA[78DAEDDD5D6EC230104651ABEA0A2A1EABEE7F1D15FBFAFA8A68098E3DBFF446514521E0331609633BD28CE1B6E9E66FBB4D0F1EB7C3B70B41279F6F816F11828C8E298B2F1B829C8F2F852F158292DE9B8E4F0F41C53E27B15175C60787A0869F1CD6843AE35D5B51E7F3EB202536D95D43D0E14B4E7EAB109EE6F37EFEFD102AA458EA8C5F96541B62A833FE94AAF2105B9DF1331773F3B614F563EA94122B24D9F64B99E49F8FB9E6F3F21F2FF4F50FFFFEC18F1F3F7EFCF8F1E3C78F1FFF7FF04FCE70D6F49F9AA4ADE65F9867AEE3FF0D760D41D62B1D7F52FD4290E932FA01D22904D92DD3CCAC07998720A37B302661E621C8628DE914C936046DDFC0B380310C417B0B64CB0CAB10B471F7D726C02404ADAEEE19F6DE7E27ECB46B78ED8AF7A7A7D96A7B7F3B7EFCF8F1E3C78F1F3F7EFCF8F1E3C78F1F3F7EFCF8F1E3C78F1F3F7EFCF8F1E3C78F1F3FFEAAFEF7B7F7B23B7EFCF8E7FDD7EFEBEFDD5578DC22FE5EFEF926EEE25A3BE051E77C7E7DB6F677EF7FD7EBE7BE3FE5FA7FF9B8B4F63FFD26CCEFF85FD8BFCF330C103F7EFC86FEB534F26C17E17F553FE72FFEC9FC07FF7E5E87BFAFDF76205070FE133F7EE6FFF16FFA59FFC58F1F3F7EFCF8F1E3C78F1F3F7EFCF8F1E3C78F1F3F7EFCF8F1E3AFE85748E7E0C78F1F3F7EFCF8F1E3C78F1F3F7EFCF8F7F11DEB878615DF1CFEF52B7BD50F0D2EBE3942EA57B6A81F9A527C7304D6AF2C5B3F34B1F8E6082F2058AA7E687AF1CD91547D32BD7E6891E29BA340E9D2F8FAA1758A6F6EFA2BA4D9ACDFE1C78FFF25FD4DC7EFF8E73FFFEE4123BF0EFF2DEED7F49305FD5A7AA9885FDB0724FA657A587CA6ED7470805F3EDF34ABDDA93355C02FCF8B95B73FEBBB6735B61D19E7BE893FF257CFDC1F933239F9BDF36D577FC060506EFEB091AC1CFCC1C37099FA53E61064E44F9C00D1B63F7DF64649EF4D0FA1D4BC993AE3177E176A6EEA8C9FBC22D5DFD419FF88DA6E965E9DF1B76C67FC0FE5192B06]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="zWidgetYmat" Light="0" Blend="2" ZBuffer="0" DrawBackFace="255">
+              <Textures>
+                <MaterialTexture Texture="zWidgetYbmp" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+            <Bitmap Name="zWidgetZbmp" Width="4">
+              <Producers>
+                <BitmapFromFile Comment="Imported from Z.gif">
+                  <BitmapFile>
+<![CDATA[78DAED9D416EC3300C0485A22F28720CFAFF7714F9177B6FDAC291457A579C858E8114786761DAA1943152150CC6E9612ADF6F8E0009F81138013F022AE047A005FC08C0801F8119F02360037E0472C08FDA8207FCA82D7EC08FDA4600F851DB08F485FFFDED5D761001E0877F2220B9CA269DB1F02FEC6908470CFEE1BFC0D350BDBFC03FFCD7781A7AF03F5FAE1DEAFFC7D7E379A412FEFF8A1755DD829E86EA6CF61180FF661188B46B15F0BF1DFF71C5BA79E8C64697ABA8FEFF15D11FB998FBC05FE1BA7FDEAF7EFF7989A747960B31F8ED2320C8BFC6FBFF7A4F0FAE1562F07B3F08C0BF8CA7C7D70A31F88D23305DB14FF36FF5FB6FA5A72F2D1462F0BB56410751BC7DDCDAF31F4AFC8F9C3B45BB082C7963F3D270EBFF29F37462895082DF3202F02FE3E9DCFCA104BFDF8300FCCB783A3D7F28C16F1681E5782F0C88D8A5CAF6F4CCE4A104BF531504FF329E9E9C398EC15FD6CBE71101F82FF434BBA13492BFC3867701F82FF4B4A0A13A94F81FF0BF1DFF4398FF387C17E0597886FFB936CE5723E6B0FF37C3D325F5FFD08B80741504FF329EAE7AFF4304E0DFD1D385EFFF8900F5BF9DA76B7FFF158F00FC6FC0FFB89A7FC11638B308C0BF8CA719FD9F6A1190AB82F2FA7C5AF21F55FC6B6E81F18B800EFFCEE71F2EF1346FFF1711807F7D4F53F7FF2A4700FE37E07F94F0AF7CA0A26504D61EDD73BEE7DFFCFCE725DD62D9E82E3FFCD0F5F04FF8F7F1546D36F887FF324F058FC0857FF8AFF154F608F41DC4F9E7F20F14D6F3C33FFC8BC3C9FF7FC17F5BF889006A0E3F1140CDE12702A839FC440035879F0820C0230208E488006A0E1B1140CD312302A83960440035478B08A0E6501101D41CA76030C4F77A7C03E998D25E]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="zWidgetZmat" Light="0" Blend="2" ZBuffer="0" DrawBackFace="255">
+              <Textures>
+                <MaterialTexture Texture="zWidgetZbmp" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Definitions>
+          <OnRender>
+            <UseMaterial Material="zWidgetXmat"/>
+            <RenderTransform Scale="4 1 1"/>
+            <RenderSprite/>
+            <UseMaterial Material="zWidgetYmat"/>
+            <RenderTransform Scale="0.25 4 1"/>
+            <RenderSprite/>
+            <UseMaterial Material="zWidgetZmat"/>
+            <RenderTransform Scale="4 0.25 1" Rotate="0 0.75 0"/>
+            <RenderSprite/>
+          </OnRender>
+        </Model>
+      </Children>
+    </Group>
+    <Group Comment="Examples">
+      <Children>
+        <AppState Comment="2D Culling">
+          <OnStart>
+            <SpawnModel Model="Camera" SpawnStyle="1"/>
+            <Repeat Comment="X">
+              <OnIteration>
+                <Repeat Comment="Y">
+                  <OnIteration>
+                    <SpawnModel Name="Spawn" Model="Building" Position="8 8 0"/>
+                  </OnIteration>
+                  <WhileExp>
+<![CDATA[//
+
+Spawn.Position.Y = this.Iteration;
+
+//
+
+return this.Iteration < 8;]]>
+                  </WhileExp>
+                </Repeat>
+              </OnIteration>
+              <WhileExp>
+<![CDATA[//
+
+Spawn.Position.X = this.Iteration;
+
+//
+
+return this.Iteration < 8;]]>
+              </WhileExp>
+            </Repeat>
+          </OnStart>
+          <OnUpdate>
+            <Group Comment="kbInput">
+              <Children>
+                <Group Comment="Reset">
+                  <Children>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//
+
+for(int U=0; U<kbInput.SizeDim1; ++U)
+{
+  kbInput[U] = 0;
+}]]>
+                      </Expression>
+                    </ZExpression>
+                  </Children>
+                </Group>
+                <Group Comment="Press">
+                  <Children>
+                    <KeyPress Comment="Right" Keys="&gt;">
+                      <OnPressed>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[//
+
+kbInput[0] += 1;]]>
+                          </Expression>
+                        </ZExpression>
+                      </OnPressed>
+                    </KeyPress>
+                    <KeyPress Comment="Left" Keys="&lt;">
+                      <OnPressed>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[//
+
+kbInput[0] -= 1;]]>
+                          </Expression>
+                        </ZExpression>
+                      </OnPressed>
+                    </KeyPress>
+                    <KeyPress Comment="Up" Keys="^">
+                      <OnPressed>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[//
+
+kbInput[1] += 1;]]>
+                          </Expression>
+                        </ZExpression>
+                      </OnPressed>
+                    </KeyPress>
+                    <KeyPress Comment="Down" Keys="_">
+                      <OnPressed>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[//
+
+kbInput[1] -= 1;]]>
+                          </Expression>
+                        </ZExpression>
+                      </OnPressed>
+                    </KeyPress>
+                  </Children>
+                </Group>
+              </Children>
+            </Group>
+          </OnUpdate>
+          <OnRender>
+            <Group Comment="Bounds">
+              <Children>
+                <UseMaterial Material="DefaultMaterial"/>
+                <RenderTransformGroup Scale="8 8 1" Translate="3.5 3.5 0">
+                  <Children>
+                    <RenderSprite/>
+                  </Children>
+                </RenderTransformGroup>
+              </Children>
+            </Group>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="kbInput" Type="1" SizeDim1="2"/>
+            <DefineArray Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
+            <Model Name="Camera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
+              <OnRender>
+                <UseMaterial Material="DefaultMaterial"/>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+if(this.Vertex.Y < 0)
+{
+  this.Vertex = 0;
+}
+else
+{
+  this.Vertex.X *= 2;
+  this.Vertex.Y *= 4;
+}]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </OnRender>
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+CurrentModel.Rotation.Z += kbInput[0]*App.DeltaTime*-1;
+
+//
+
+if(CurrentModel.Rotation.Z < 0)CurrentModel.Rotation.Z += 1;
+if(CurrentModel.Rotation.Z > 1)CurrentModel.Rotation.Z -= 1;
+
+//
+
+float Angle = 0.125;
+
+//
+
+float Index = CurrentModel.Rotation.Z;
+
+Culling[0,0] = 0;
+Culling[1,0] = 0;
+Culling[0,1] = 0;
+Culling[1,1] = 0;
+
+if(Index >= 0          && Index < 0.25+Angle)Culling[0,0] = 1;
+if(Index >= 0.25-Angle && Index < 0.5 +Angle)Culling[0,1] = 1;
+if(Index >= 0.5 -Angle && Index < 0.75+Angle)Culling[1,1] = 1;
+if(Index >= 0.75-Angle && Index < 1         )Culling[1,0] = 1;
+
+if(Index >= 1   -Angle && Index < 1         )Culling[0,0] = 1;
+if(Index >= 0          && Index < Angle     )Culling[1,0] = 1;
+
+//
+
+CurrentModel.Velocity.X = sin(CurrentModel.Rotation.Z*Pi*2)*kbInput[1]*-1;
+CurrentModel.Velocity.Y = cos(CurrentModel.Rotation.Z*Pi*2)*kbInput[1];
+
+//
+
+App.CameraPosition.X = CurrentModel.Position.X;
+App.CameraPosition.Y = CurrentModel.Position.Y;]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+            </Model>
+            <Model Name="Building">
+              <OnRender>
+                <Condition>
+                  <Expression>
+<![CDATA[//
+
+int   U, V;
+float X, Y;
+
+//
+
+X = CurrentModel.Position.X-Camera.Position.X;
+Y = CurrentModel.Position.Y-Camera.Position.Y;
+
+//
+
+if(X < 0)U = 0; else U = 1;
+if(Y > 0)V = 0; else V = 1;
+
+//
+
+if(abs(X) < 1 && abs(Y) < 1)return 1;
+else return Culling[U,V];]]>
+                  </Expression>
+                  <OnTrue>
+                    <RenderSprite/>
+                  </OnTrue>
+                </Condition>
+              </OnRender>
+            </Model>
+            <Material Name="DefaultMaterial" WireframeWidth="1" Shading="2" Light="0"/>
+          </Definitions>
+        </AppState>
+        <AppState Comment="GLSL Fog">
+          <OnStart>
+            <SpawnModel Model="o_test"/>
+          </OnStart>
+          <OnUpdate>
+            <AnimatorSimple Duration="3" AutoStart="255" Target="App CameraPosition 2" FromValue="30" ToValue="130" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+          </OnUpdate>
+          <Definitions>
+            <Bitmap Name="b_cells">
+              <Producers>
+                <BitmapCells CellStyle="4" RandomSeed="46"/>
+              </Producers>
+            </Bitmap>
+            <Shader Name="glsl_fog" Comment="this the shader codes">
+              <VertexShaderSource>
+<![CDATA[varying float Distance;
+void main()
+{
+gl_TexCoord[0] = gl_MultiTexCoord0;
+gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+Distance = clamp(gl_Position.z,0.0,100.0);
+}]]>
+              </VertexShaderSource>
+              <FragmentShaderSource>
+<![CDATA[varying float Distance;
+uniform sampler2D TheTexture;
+void main (void)
+{
+vec4 color= texture2D(TheTexture, gl_TexCoord[0].st);
+gl_FragColor = mix(color, vec4(0,0,0,1), Distance/100.0); 
+//fog color in line above; vec4(r,g,b,a)
+// fog fades from camera to 100 in Z direction,. . 
+}]]>
+              </FragmentShaderSource>
+            </Shader>
+            <Material Name="m_fog" Color="1 1 1 1" Light="0" Blend="1" Shader="glsl_fog">
+              <Textures>
+                <MaterialTexture Texture="b_cells"/>
+              </Textures>
+            </Material>
+            <Mesh Name="g_box">
+              <Producers>
+                <MeshBox/>
+              </Producers>
+            </Mesh>
+            <Model Name="o_test" Rotation="0 0.25 0" RotationVelocity="0 0 0.1">
+              <OnRender>
+                <UseMaterial Material="m_fog"/>
+                <Repeat Comment="some model,. ." Count="10">
+                  <OnIteration>
+                    <RenderTransform Rotate="0 0 0.1"/>
+                    <RenderTransformGroup Scale="10 1 1" Translate="8 0 0" Rotate="0.123 -0.25 0">
+                      <Children>
+                        <RenderMesh Mesh="g_box"/>
+                      </Children>
+                    </RenderTransformGroup>
+                  </OnIteration>
+                </Repeat>
+              </OnRender>
+            </Model>
+          </Definitions>
+        </AppState>
+        <AppState Comment="HSV ColorExample Library Example">
+          <OnStart>
+            <ZLibrary Comment="HSV Library">
+              <Source>
+<![CDATA[//
+
+float angle(float X)
+{
+  if(X >= 0 && X < 360)return X;
+  if(X > 360)return X-floor(X/360)* 360;
+  if(X <   0)return X+floor(X/360)*-360;
+}
+
+//
+
+void hsv(float H, float S, float V)
+{
+  float R,G,B,I,F,P,Q,T;
+  
+  H = angle(H);
+  S = clamp(S,0,100);
+  V = clamp(V,0,100);
+
+  H /= 60;
+  S /= 100;
+  V /= 100;
+  
+  if(S == 0)
+  {
+    ColorExample[0] = V;
+    ColorExample[1] = V;
+    ColorExample[2] = V;
+    return;
+  }
+
+  I = floor(H);
+  F = H-I;
+
+  P = V*(1-S);
+  Q = V*(1-S*F);
+  T = V*(1-S*(1-F));
+
+  if(I == 0){R = V; G = T; B = P;}
+  if(I == 1){R = Q; G = V; B = P;}
+  if(I == 2){R = P; G = V; B = T;}
+  if(I == 3){R = P; G = Q; B = V;}
+  if(I == 4){R = T; G = P; B = V;}
+  if(I == 5){R = V; G = P; B = Q;}
+  
+  ColorExample[0] = R;
+  ColorExample[1] = G;
+  ColorExample[2] = B;
+}]]>
+              </Source>
+            </ZLibrary>
+          </OnStart>
+          <OnRender>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+hsv(720-App.Time*90,(sin(App.Time*3)+1)*50,(cos(App.Time*7)+1)*50);
+
+//
+
+DebugHSV.Color.R = ColorExample[0];
+DebugHSV.Color.G = ColorExample[1];
+DebugHSV.Color.B = ColorExample[2];]]>
+              </Expression>
+            </ZExpression>
+            <UseMaterial Material="DefaultMaterialHSV"/>
+            <RenderSetColor Name="DebugHSV" Color="1 0.5 0.5 0"/>
+            <RenderSprite/>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="ColorExample" SizeDim1="3"/>
+            <Material Name="DefaultMaterialHSV" Shading="1" Light="0" ZBuffer="0"/>
+          </Definitions>
+        </AppState>
+        <AppState Comment="MatrixExample Library Example">
+          <OnStart>
+            <ZLibrary Comment="MatrixExample Library">
+              <Source>
+<![CDATA[//
+
+void RotationMatrixX(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  MatrixExample[K,0,0] = 1;
+  MatrixExample[K,0,1] = 0;
+  MatrixExample[K,0,2] = 0;
+
+  MatrixExample[K,1,0] = 0;
+  MatrixExample[K,1,1] = C;
+  MatrixExample[K,1,2] = S*-1;
+
+  MatrixExample[K,2,0] = 0;
+  MatrixExample[K,2,1] = S;
+  MatrixExample[K,2,2] = C;
+}
+
+void RotationMatrixY(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  MatrixExample[K,0,0] = C;
+  MatrixExample[K,0,1] = 0;
+  MatrixExample[K,0,2] = S;
+
+  MatrixExample[K,1,0] = 0;
+  MatrixExample[K,1,1] = 1;
+  MatrixExample[K,1,2] = 0;
+
+  MatrixExample[K,2,0] = S*-1;
+  MatrixExample[K,2,1] = 0;
+  MatrixExample[K,2,2] = C;
+}
+
+void RotationMatrixZ(int K, float Angle)
+{
+  float C, S;
+  
+  C = cos(Angle);
+  S = sin(Angle);
+  
+  MatrixExample[K,0,0] = C;
+  MatrixExample[K,0,1] = S*-1;
+  MatrixExample[K,0,2] = 0;
+  
+  MatrixExample[K,1,0] = S;
+  MatrixExample[K,1,1] = C;
+  MatrixExample[K,1,2] = 0;
+  
+  MatrixExample[K,2,0] = 0;
+  MatrixExample[K,2,1] = 0;
+  MatrixExample[K,2,2] = 1;
+}
+
+//
+
+void MultiplyMatrix(int K, int A, int B)
+{
+  MatrixExample[K,0,0] = MatrixExample[A,0,0]*MatrixExample[B,0,0]+MatrixExample[A,0,1]*MatrixExample[B,1,0]+MatrixExample[A,0,2]*MatrixExample[B,2,0];
+  MatrixExample[K,0,1] = MatrixExample[A,0,0]*MatrixExample[B,0,1]+MatrixExample[A,0,1]*MatrixExample[B,1,1]+MatrixExample[A,0,2]*MatrixExample[B,2,1];
+  MatrixExample[K,0,2] = MatrixExample[A,0,0]*MatrixExample[B,0,2]+MatrixExample[A,0,1]*MatrixExample[B,1,2]+MatrixExample[A,0,2]*MatrixExample[B,2,2];
+  
+  MatrixExample[K,1,0] = MatrixExample[A,1,0]*MatrixExample[B,0,0]+MatrixExample[A,1,1]*MatrixExample[B,1,0]+MatrixExample[A,1,2]*MatrixExample[B,2,0];
+  MatrixExample[K,1,1] = MatrixExample[A,1,0]*MatrixExample[B,0,1]+MatrixExample[A,1,1]*MatrixExample[B,1,1]+MatrixExample[A,1,2]*MatrixExample[B,2,1];
+  MatrixExample[K,1,2] = MatrixExample[A,1,0]*MatrixExample[B,0,2]+MatrixExample[A,1,1]*MatrixExample[B,1,2]+MatrixExample[A,1,2]*MatrixExample[B,2,2];
+
+  MatrixExample[K,2,0] = MatrixExample[A,2,0]*MatrixExample[B,0,0]+MatrixExample[A,2,1]*MatrixExample[B,1,0]+MatrixExample[A,2,2]*MatrixExample[B,2,0];
+  MatrixExample[K,2,1] = MatrixExample[A,2,0]*MatrixExample[B,0,1]+MatrixExample[A,2,1]*MatrixExample[B,1,1]+MatrixExample[A,2,2]*MatrixExample[B,2,1];
+  MatrixExample[K,2,2] = MatrixExample[A,2,0]*MatrixExample[B,0,2]+MatrixExample[A,2,1]*MatrixExample[B,1,2]+MatrixExample[A,2,2]*MatrixExample[B,2,2];
+}
+
+//
+
+void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
+{
+  RotationMatrixX(1,AX);
+  RotationMatrixY(2,AY);
+  RotationMatrixZ(3,AZ);
+  
+  MultiplyMatrix(4,1,2);
+  MultiplyMatrix(5,4,3);
+  
+  MatrixExample[0,0,0] = VX*MatrixExample[5,0,0]+VY*MatrixExample[5,0,1]+VZ*MatrixExample[5,0,2];
+  MatrixExample[0,1,0] = VX*MatrixExample[5,1,0]+VY*MatrixExample[5,1,1]+VZ*MatrixExample[5,1,2];
+  MatrixExample[0,2,0] = VX*MatrixExample[5,2,0]+VY*MatrixExample[5,2,1]+VZ*MatrixExample[5,2,2];
+}]]>
+              </Source>
+            </ZLibrary>
+          </OnStart>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+Sprite.Rotate.X = App.Time/4;
+Sprite.Rotate.Y = App.Time/4;
+Sprite.Rotate.Z = App.Time/4;
+
+//
+
+Rotate(0.5,0.5,0,Sprite.Rotate.X*Pi*2,Sprite.Rotate.Y*Pi*2, Sprite.Rotate.Z*Pi*2);
+
+//
+
+Debug.Translate.X = MatrixExample[0,0,0];
+Debug.Translate.Y = MatrixExample[0,1,0];
+Debug.Translate.Z = MatrixExample[0,2,0];]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnRender>
+            <UseMaterial Material="MatrixMaterial"/>
+            <RenderTransformGroup Name="Sprite">
+              <Children>
+                <RenderSetColor Color="1 1 1 1"/>
+                <RenderSprite/>
+              </Children>
+            </RenderTransformGroup>
+            <RenderTransformGroup Name="Debug" Scale="0.25 0.25 1" Translate="0.5 0.5 0">
+              <Children>
+                <RenderSetColor Color="1 0 0.502 1"/>
+                <RenderSprite/>
+              </Children>
+            </RenderTransformGroup>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="MatrixExample" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+            <Material Name="MatrixMaterial" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
+          </Definitions>
+        </AppState>
+        <AppState Comment="Proportional Type">
+          <OnRender>
+            <Group Comment="Text">
+              <Children>
+                <UseMaterial Material="ArialMaterial"/>
+                <RenderText TextArray="String" X="-1.175" Align="1" UseModelSpace="255">
+                  <RenderCharExpression>
+<![CDATA[//
+
+if(CharI != 0)
+{
+  float L = Letter[String[CharI-1]];
+  CharX -= 1-L;
+}]]>
+                  </RenderCharExpression>
+                </RenderText>
+              </Children>
+            </Group>
+          </OnRender>
+          <Definitions>
+            <Group Comment="Arial">
+              <Children>
+                <Font Name="Arial" Bitmap="ArialBitmap" FirstChar="32" CharPixelWidth="24" CharPixelHeight="24"/>
+                <Bitmap Name="ArialBitmap" Width="4" Height="4">
+                  <Producers>
+                    <BitmapFromFile Transparency="2" HasAlphaLayer="1">
+                      <BitmapFile>
+<![CDATA[78DAED5D4D96A33AACAE2D863D244B6007F4069205F0E6C53C8C611CA6C93419C2344CFD6E9D875FABDC3618901C7E3ECEF9CEBD5D5D6D8CADCF966449564A7D29000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080E9D00FC6020096894290A792FCD7CF0D73088CC4F93FB49DFCD4FFE1B8D37128D5EF678DFC57DD7740AEB78587202FCF86FCD43B1D63BD06262BD5FF13D8189B45FA1FEE013910C13E5FA5FD0FFE6F5B3EA5DF7113DE03E7EAB6AE07FC5F37FF43CCAF46D4D9480D69FF47BF8E27B69709F737E4BCEA6FC9C07FF07F217B1BE7F79C05E4E8DBE0CB9AF91F77EFB9ABE5D9E525F47FF09FC93F521AFEB4D37FA816CCFFD073D12EA83F47B2061482EFF8795E2BE7E6BB7BC711FC77EE2367019D794BFC6F16E8033C91F99338E3BE05B07B42F0FFBAD2380069FE6BBDBF12E8FB7787ADF07F893E40530F7809F0F2BA11DD3C1778D7D971265533D966D2FCAF04657A6BFBFF127D8014AFAE7F4F263D776BFCBF0ABC8BEACD319903FA540BE57F33E0F36BC07FAB0FF0B1E03EBE889F82630DD0B17FF9CAF99F0BF94AEF0EDEC44417500BDEFF25C77E6BFCD7DFF05E781FE91A30D7577108E0F70CC17FC9F8AD82F0DEA61B5E56BAFFCFD501B6C87F3D668795C4001C57C04F9CFF7D6EFFBFC3FE9FC5B3FBC2F98FF37FF07F287E1EFEFF6976DE5E62CAC1FF7D9CFF5FB0FF6FC20728C59DB5E6FFC588FFEFC585B457743125F46CF936D16FB245FED33939ED84FF8F15E770D0073540FC6A5DD89EC344FED79DEE7CDF10FF6DB640BC71F9A856CE7F70DF2FFF2F336218EE33F6B9A8E305C516F970DF01FF0100000000000000000000000000D85E6CCE16636A00C017F5406E07F80F1901B6BFBFD2F828F01FFC07F68558C9DF8301FE03C072A1EBFFD40BE5FF83F42F13F8F6C6C87DE0E07F883524517F6BB72992EF1633B5AD6D44A91A09A9F18E5268ECB47C9F05BE21EADA366B49E533E2671B629B9B7F570AE435460B8CFDD7CFD362AB70E5289596B69F2BE17F32903F335797AB495B12FCFF76F45BE23ED6B7E0FEA66BAF99F52975AC71395127579635EB28341F344F2A5D18FF5BB286C6642EE7E6749E1DEDB72BE17FEDE079CA24EBFA91AA2BDE58F891308EBF4DB639E4C69563AC7AFC6B73749646C9D734A917984FE2DAC7CE4CFD7C38E4215909FFA5DF2DDD7FFD98F9B77F98DFDD907976E9D473F790D290D50BD1D1E7ECA90FA20348D5338989FEB224BF575F5FA4E57B6DFC8FBBFDE2AE7EDFEBBED6DA285CEFBE189C2966D8E4363CBBF52432CED00AB2B6D533E622EAE6B3E9FE2B61BF14647DBC338F0FF82FEFB7B5E5B6B70C7E9C2DF0DF94676D3F73D4B6D36DE5C65AA0758E9AC10F48ED3909FF6564F81332872F13FC5F1E7F7283EF45272BB15A8E0DF1C9F177DD6BF960DAE30AC33F42794ED785E3CCF89A57B79E348AFFAEBACCE8EBC9E1CBFC24FF2F0E9B6BEE1AFE70ACA96766FE4BD7164BD5727D089FE4BFCB57C655E74E9F157D59740B737D79397C1DBE6B7C4AF400CEBD59FBFD0E167FE652FDFF2D93DCA781FCFF4F25539BDF350E29939F6BCDFC3F0E8C413D918FE618A78E39691DBF9F4DD05FDA8E9F11699F43C73B3BD6C14AE89C64AA7CE416FB964B3FB1DD699533F3FF2114633D74AFFD85A1EF4A701D90E47F31602F5F669CCDD33305573C49E9F8A67AC2DE7C769C597F31E9BFAEF3B5422DC7FED7E3FA56FCF75C95645DCD05ECFFC8125FC81903743774A58AC1E6583BFF7DB8364707709D3F273DEB8E8ED3FCE3D1FEADE7ACEFC6700E18F5E8478705C60203C881000000FC0700401E6FF01F00769F178A7100000000000000000000000000000000D6E8DFA6F5BE6AB5BC3AC89F3AFB7F2AB9DA3F00F069E43DB1F32DF83F3BC61400D620E3A911177D9F991BB2059C10FF07EC7C6D78610CC07F60F33248F3FF5E2A4CFD4FE9F6D75CFF2367CA95FC54FFC7FEFC53F243F37D691EFC53C9DC93B0C4397CAAFE07FC0FDB3EAD7B1F81FFE2FC2F7A64BFDC38FF750D88B7B2DF2F00FE876F5FEF43F98AF597B5F0FF427CDDD40796127DF8B261FEBBEAFF9FC1FF8FB49F319FBD80FF7EF29F5AFE2E65B2C1963C879FE427F8FFF739ABDFF7CF65E0FF22E46709FE5FF07FFBFCD771573F4FA3D66DBF80FFE03FF83FAE7D7A076B02FE83FF81FA700F64FF9B321D81FFFFB4AFFDD0C50AFB9F387E7E64E2BF94FCDC3DECFFFB86F91FEAFEDFD698C38229BE686BFEBF92F9DC2954FFE9FD0ED9C0CF5B06F929996C252AFF6783FB6FE29BF924EF39CFE36DB0D5FFAF98F95F39BE2503FFFF699F730D08D57F5B1EC9D9215BC584F61B21F9F9326CAF397D5D2BFFCDF8BF52C8BEA2F774368AE7CEAEADC6FF954C7B4FC8FEE7642FCD1DFC2AD43CFBE84DE487B32EE365C7F17FE8FB76C707E3BF1D193942BEC17F8CFFEEF030F4FF07E41BED83FFBB4164F8CFEEE03FDA07FF010000000000000000000000000000801131866BEEFBD083F90600F01F00009C13030000FE03C01A62007F9E1AFCDF1CAE242FF2E7BF37F57FB9EE3143BCB7993F67CBCFE340A6FED62F6B157FDD6C3A468580CC9AB9CA4DF70DD1426444D72229C1FF4D21F7F05B240CF37AB3B4CB1547FE72F49BEBEEA8BBA5ED1BA3CCF6E5FFFFAC39A705C8C98D4116C0FFE5DA5DA9B11749D45FB2D5779A9BE36EBB3FE267CF7C1A7BF59C7DB9AFFF8AB1FFFF63E8DBF982F26D5AE489ECCAEF1233F33F71C8FDDC5CD287631D89086F39F67EB3FD3F4CE3D357FF7F29D0F7D03EC1FFCDA1247E9D9FFFFFEEB87A60E6BFD49C7F327F710DFDE7C077D7C71CFCDF246E82710BE03F4F0CC912EA7FC4E0FFA6CF77D24EDF7DA8DFF52EC1FF7DF33F441F24DEA1FDC2B46ED931802D83988C7FDBB838ECFFB9BEADFB80FD5F33B5EFF25F2826DDEBD073E6FE49FF5F12A80F12FCD7679657CB79570A7E3BFDFF749CDEC2FEFFB9F340FDF309E1CD8BC9FF9F0AFBFF1372569918FED717D31909C7F970BA521D43C752E83FD7B033BCCF9E397C3EF4AC5FEA7CFED573762ED5FE9D51668B9EF12F3F2C1FFADB4F2BE57F45FA7F24B11BE0FEEFBDE666EC695CF5ED5DF17FDC729D193CBD31C7CE154AE67E0AAAC73C8DB5F1BC10FDB055EBF53124641FCB856398807DF975B7EEB3BE04DC2F25C7B2EDF6B326D05A26B18635E008BE2D308A00FE8710E71C57467BF653B1973938826F0B0C7D061CAD9CFF27D2FE69657350ADB4DFE03F00000000000000000000000000000000007B8F8FC259020080FF181300407C340000E0FF5AFAD8CCCC573C74F1C666AEE54DFD5B3B6289E31D75DFDE18F9A795E2AB9B7434C6E624A88BFAFE5E5F6C684972D986DEFD64CC77E59AE35A8D7BF6CA7F5A23614AACF0C5636C1F0BE6FFD9A3FF1C6BD8D568933327C09C8364209F5279E686F8EC0B3ACFA459D81CE7E0BF571F755EF4947C715A67DAB6579E890C650BE4FFC9E0E3C9D8AFBFC9DFCFD5031AC2394EBED0BDFA31B0B6E835E8EEB95F1F07D68A8B803EC335C75127DBAD82FEAF06D6C8A963547970FB34F31D92E3AD7973F5D8DF2A06DDBF3674D32373AE576CBC67E8F77CE6C4A51FFEFCFFBBFBBB74A19C8A47D8307BE33F5DDBD3996D4781C6897BBC1B0F1E0E716A8CEE9F3BFECCA1C3D4862D1E597C34940BCD8835A8B2F0E8C5B02E869863BD7E15E0FF2FBC986DF3106B30F778FBB637F7BDB5A1231F19D61453BE4B43A74B1D7E8EEBC0EFB940F7FA9451A70BC1A992D18FB305FEEBF993AAA37DE8C6BAF0F0496D9DFF4787BDCF650398773B26E4ECC5C601F3F7AA91EBF89DF80F6201B9F1D529C7E2C96C73AD8DFFB6479F7171F86E924EC65ACB3B92858E7708FEE70E5D9FCB06B0F5CDB637B78EDF1BF35D19F9379980ACD2F363EEBD49C21FB876FEEBE73D735D34EB43DF3BF98817AE6F85E0BF6B9F3F31D8002EDBCADC9F4F0E5B6FECDD5031E379886B6DB99235937B8D8999D796B5FBFF4F4406A6D6092D880C261FFC9625F2FF3870D637D706D09CF9367EFE6DF02775D8FAD9489EB55D9FB9F7D1A345676905F4756E7FE056E2FFD61203B136FE0FE9F8F94C1BE0E9D88BCD7BD21E0E2E8DD90F2B12079032FBFE5F9671F816F45171F903C1FF617FCD61C1E7FFD2FC6F06626386F4039F7EB503FEFA31BF37B467DACEFFE69EFDE73D3C7F0AC44A9AFD3FEE98FF1159D7AB996BA94DFF4F14DF5D6E6BE3BFEF19DFD01AF13510CB7B1BD8AFCB81F1AF06CE678E8E183F1A3B399543F1401B47417FC3A15B13DF0AFEBFB9E3FB1A68FB29D8EF10B6CB9477F8EAF653CF01CA81FDD7CC6BB84CB487EB1E1FC1F74CFDC527363C9DE127F57D72266EAD91FF77A6B5F5DBB20E3C18620BD7CA7FDFF8BAA936403D607745C6F84403F1834DCF1AF3F458FBC7E6FE5523E2CFEE137554DFA7DE30FF0100000000000000000000000000000000000000000000000000E0C159C9D421FB647EBB74EC5362C41572D6E4F7ED7F3D31C6CD37068DBBEF2F4BBECE94F9F2F9DD8C49060E5D1C6E63C4E55DD5BC5A40A162F3A28EDB66FF8B2EF6BA21F1B6E0FFF8FC10CE7C8531FDBFCDC861F804FF87E27E39F9AF6BEACCFD0E9F3B18D205F3FFE239CF59607D63EDFCB7E526EA98F45B8031D27B5BABA6E7B8498E8FADED94EC3336DE70F2FFC1B08E51EE94C6381FC97C4F5D03A4F97F36FA7FB2E48069193A81FF93DA3E29997A027DFD4F18F69E4FF0FF45F67D9BDEC2C57FBDCE5C677C23D555CE1E1C9B724795E4F853FDE7E2C859BA93B16AC0FF517838DAE67CA7ADAD1399D72AD01C70B41D197DD6B6CB8199FF5AEEEB99DFA8F7471F9F98D603F2058D7FD6E3178A0D1BB5F458E7C0FFF0EF5496F5FB49FC375F2BE27F6A7CCBC5A2BF70F0BF327C3053BFF135C297A37D418F05EE4F92FD07FFC3F05FF3E6E6B03BD6C0FF97E55DA60D3097FFB67B03A67EE3D87F37E53D7DCF53F5DFFDB684FE87A8FD03FEF3F99B3FC5FFC861AF54C639C05CFEDB6AFFAE95FF6AA62F09FCDF96FEAF986CFE4FF03F75D89767633D9BC37F57ADC035F07F28B6A4D830FFA1FFFBB595339CF77D8AFF3F72ECAA65D9121B602AFFFBEE0B9BFA8D63EE114B26C6CF0CF5ED34C3373FA5FF4FF07FB1FCA73E9D6645FC8F06F6B0C2F8BD29FC6F7ACEDF42FAFF3381F19FDAFF2CC0F905F81FFEFCEFD9133FBB44FEA70EBDDCDC7BD289FC1FBA2B78EA371E3CCFFF2F82E7FF73E249E8F9BF4FFF95E2BFD714FC973DFFBFAF80FF2F0FF96DC9BA3696FF43E75673BEB12F7ECE8CFF3B338FFF918CC9D4BC9CB4277EF164F4FF1BF13FABE0BF997B502C9CFFAE18149BFE3985FFAD1143C4FD8DA9876FFAC230467DFEFF48B8FFA163FFC17FBE18571F7E7D627C5AF5F7AEE5217FE5A9FBBDFB085DD7F72C94E31BA36E8C69FE5CD3ADBD11D31A693E4DF74E0E9D5CAAFF0000000000000000000000000000007BC1CFB9DC95F8B1CD33EA5C85AFB30200803CEF1BE5FFDC316600B0099C8D588DB28B693D58D6889FB3EA5A208F070080F0F833310627638AED0200E073B16EAD1183FBB39FDF08B73383EFAAFBFB98E45DD862D7DF23E2E05AE5CEAD9D137FF662CC078BBBEF6E8DF633A63975D95867C1F6D58498E54FC6A7A616BF949EE323F83F1A9ABFB525DFCAE491EDE9934D9D139B28BFBCED4250BEE7D6322E3DE25C8F82FD7FEE9CFF89432ECDA70ACCC7BBE2BD2B27342A23F7A3207C8F886FC0BC8382FEECDCB35FFAF05A732B1690BF58CDCF3FCB0D5D28326CA7C6584339FBCF71AF8D343FA5DB3F1BE74F89656D2819D7FA29DFBED675E0DDF53F326C01D39E3F92BF3B19FCEE1BEF5AF9E5CD3682F2779C2117B49E47DFFEDECCC841F3E14F3B638D5C3BFF5DF5FFFB6A1D843C332B03AE03DCDF67B6D7D77E66C9552B06E43E1FB001B4EE2F5D2376EAB8E59E7ED164860EE0D3B76C827F760BFC4F89BF69A9B9B27A9FC8C85AF5105A0774FB07A1B973EDFF742F2C2C3ABEAB8ECFC9D3EE3C0ACADF501FFB30A6FEFC79E2BCF8C86C3CC30FB066FE3F3C7D489FE67F9FCDC6B90E94336D5997DE7A30FC0169CFF8D623C7BCF6F09D49D6176847CA506879F27DC7D4BEAC99FF7D6D73FB31B99109F4E740E4B96468EF66F8F0FA6C7A6A0B4723E63F75AC59E5C05AC3E5DF7E09F916D7C67F25C499106DAF89FF92FBBFD6A96BA635E06C39BFAF2CBC898C33C08BA1DFD71E3EB456C896197A72B55CDF16F8BF7C7DDED7FEFF0E60FF533C67F89C877CCBAEF3FEC258777CFD522F43074F66D8E4BE327250D36B5A9BFDFEB44FF708FB7FB13933C587CE0123A6F3CE94B47334EC9786D8E80999EF86C8A40F3F4C1BA060D2FD7DE46FCE18F9FAFFA34E56A5CEFFC6D4C1DFA2FFDF27F641C7AD865C2B54207FFF71C01EE78863D23CF1BD6B75ECFDDD94872DA3CCF8F07FEABB0E9E671495303F71FE3F1C075D31E9C363F513C9FDBE247A72629C37BF2CB63B873DA1DBBC187EBEA87BEFC3F0AD8D8D352C9963355DF2179177CDC955A67EDC6F631D3892EF1AAAE13D853F09F1F53C16CACF90F17F3747FCDFE303B17FA1F0EAF1ABB48AB716C7F7087FD158BFDAC5F8F71766F9938A2F30D700DBF39E310F3ECF4B787CE67058DABFA8656728FE7FCBB9E8DFC6FEDC28D97BCED26E4DB5D5FFC9D4F47CDF56609DEE93871BA34C687DE269F05232FFEF11E07C740DFCD7B658466C55EA73CB36CA7B00000000000000000000000000000000000000B0C5A8611C00609F4855F8BA9800002C070A63107CBC39C73C53BFEBE83C98F39C746D7B1A5F982D783C6C797AB5118F5B32C5FEE9B83F1ABB582AB91A6C6B8BCF0764C7FCD91353C95107EC22DCFE97FA9B472C119FFD1C88018E6672FF2D9C7B01FE83FF2E1464BFA7FBCD89C87D3253BEB52C27465E9BCE3B3A337C87CE91FBC33CCE25C90B8B1DE35330B4FF24E31FA9BFF71F3490F541BDF20EFECFCE7DB6E99ABA864E35536F565D7E91AB7D8EF94B27E60CFA8E8F547D94BE7AC839E3FAB845DE3F76A07B84CA7D925A67EE03FF9E33774B09EC972A50FFBF7AD6C71BF8FECF7E4FEDC778C5FCDA3AFF43F2E729E003A87BF667BDFF73D418A4773BD4C437AA6D03F0FEEF7EFFEEF4C9C306F8E56B1FA61FF0B91C893CCE1DDFB3634EE7B66FF33316027BF0CBF0C551FFC5DC7392A15AA80ABCFF7F39B9EC700CB47C9C04F8DF38FC6654BE3306FEBF8DB9E36ADFF53D07E635C076C7C84BCDAFCD9691B6A8DE62BB1375CF7EEE3DD7DFD077663F05FDFFAEE7C5347F8550FB2E1DA0646EF76A39A7CB19D72BDB3A7206FFFFD9FFF7EA0B4D0CB9E6928B0B39FFA3F5B86BA635F745FA49DB6F955C7DB1478FCDCE7586A1F7EDAB92F5AF70CCF316CEFFE93A60BB277DABF63FC537B1A5B9FDE652754D2B261B798ADF82EB5CD87506C8316E3EFCBF83FFCE73BF72E3FE7FDB791AB75D28193B77E991E14870EDC91C7E534EF9E698833E1F62C2A463E0FC7F5B6898BF9BF3AE9CBE33B4D4E1FF2B84DE6BF39BCEB1276CFAFFDCBDF9EC111F1981EF83EBC09EBEF9C4CCFF8BB0EE7352EEDAEA5CFA73DFF3669031D773625C7F6D0F62FF80BE7D83EB7C41DAF63974726EE6B8ADC57F63EA9B95E2BD172533F4BA4A85BBE71100000000000000000000000000000000000000C6C62C621C00609F4815EAC303C09EA1300600B0EB1A0EE8BF7CAD923E1DEC41E22FB9EF5F901AAF50F19DE6FD172FC45E83FFC2FD2F85F3AEA8FFC5F53C163E5E5500FEBF7ADA2DC05540081CF5D57D6B21B4EA77FDB50BD105E205CB90AE7DD52A99FCF46BD7D7A7A187C5EA6F3DD90CFC0704C7BB156C3FEF91615D4F265FB80C9DC81AC05D47A6EFFE8598D84AE03F2059A3E028ACFBC73DF27D5F890C551FD88FF7C687357DAF942F2824AEC232DD0E8C8984FE21390F5A9F2903CC4D14403F5B2A87D6C0A92DF05F6A0FF6E5A2C49849CFC325C01A705032F5E9C17F20245FB6C87FBA0614CC6BF153FDAEF39243168140E77309F83F0A378171530BE37E6EE8860F255B0F16FCFF4C7CB4129AD77700FBFFF221193A92581DCE764F0B3AFB3B135B47C78B5CC0FF4DE144CEA043FAFFBF987C0FFA8CECF2011992B69DDE1F948BA89BB71BF9CE9F33903F4AAE2634F8FF19B442E37EED89313C33ED71F4EEE28A5986FAC62566D05FFAEE77FE34179E645FA83BBC84741EE0B3B809E976B123FE8FDE2FCA55C7B812F0199744DE8F46EC64CB700E90118E9D88EFBF123E97F1D50B23B24E3D895E7004673685B360BC79C8F8FF5460DFEC8BCF7F31EEB3E6D32E8867D0CBB70D7D0F632DD4BE79BFC053FDBECF4822AF89BBFF741DA899FDA5B9FA7D376DA170EF120000000000000000000000000000000084C045F1D74AAA84E3690100E08B91E6AE95AACF5D114F03F8C661601CC2E3A5E4F2FD4BC4D302E0FFE26323A5F6E86380BC3AE4FCCBE6CD4423725EA7C84749DED5767FE68E0F8B07625ACF2446AD5132F5029688462837D2D42F1AF07F75D0B55A921139AF637330DB9EF870A9D859F3EE89C4C875292CDFBD45E8EFBE0ABF27DFC9786E0D9925873563CA6BA5396D0FF5B71E644462D1B96D525AEFDE96A31291DFDB431E68A8752E119A4F20CCBCDD2D3FBB09D817CAE09F840EF06D59BF6C3ADA1E72C29E427E7FDBBABB87F5744BFAFFD887DBFF27396EE6DD807BE57FC86FDC6B8E2DF83F9DFF523E235DDFB652BF73E00F3BDBAFC07F7CB7AF8D7EB2F8004F026375547FEBF57C0B7E17F563BAFC7F7F209BE0C1CEBF5BFBFBD2819FCDB50F73439FB833EEF5B673BD93A163FC7C4BBDB3F3BF97E57C17F63FF8FF35E0EFE3F4015E0DDE3F18F75D735F2F0D7F77A83BC297EEFF8F85DFA3632F0AF01FF6BFE55CB8253A85C4FE66DAF54FE30CA2DD29FF13C6B35C1F1D3201FFD9E3594AE3CFC58AF8DF1AB1A72AC0D89B3F93BAA79B6B7F963E33AF03E8E588FF93F36199F71749D454AE7AE200FF308E0DF7F9BFEFB95E13C80E9E3BBF124885BF3DDAB98D25C97F15E8CC5C2A0EF045EC421AFFF7648A1733E35B0E0E3F54C2EC735C9BED2899FF5704C82F00FF65DF1513DF1C2767E21E7B82C3264F0CBF535FBCEB23902F6C89FC3F09E9009161DF81FFEBE4FF97859307269EEAF37E33FFEFC0A8DF6AFDBEEEF1419DC8EFECD1777C56FCF795DC15EAFF00C8FF070000001680FF05605FF452]]>
+                      </BitmapFile>
+                    </BitmapFromFile>
+                  </Producers>
+                </Bitmap>
+                <Material Name="ArialMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0" Font="Arial"/>
+                <DefineArray Name="Letter" SizeDim1="128" Persistent="255">
+                  <Values>
+<![CDATA[78DA6360185870F6CC193BF2F4F9D851CB0DB3664ADA0F703080ED4F4B7B660765037103980D12333636B643F7B7B1F167B83C44BCC70E22D600536B0FD4876C2E560000B8961A6B]]>
+                  </Values>
+                </DefineArray>
+              </Children>
+            </Group>
+            <Group Comment="String">
+              <Children>
+                <DefineArray Name="String" Type="1" SizeDim1="64" Persistent="255">
+                  <Values>
+<![CDATA[78DA758DED0980300C44334A27700747113F6A41ACD4A2B8BD577801FF587890EBE52EBD99057188223273465791D0BB18C446A6790FFBB358F0477460F66CC54FE8939D48A777AD1F2FD3DBE68B7C61D77B22FECDDFC42DEFE9ECFFBD563C1628]]>
+                  </Values>
+                </DefineArray>
+              </Children>
+            </Group>
+          </Definitions>
+        </AppState>
+        <AppState Comment="Input">
+          <OnStart>
+            <ZExpression>
+              <Expression>
+<![CDATA[App.CameraPosition.X = 4;
+App.CameraPosition.Y = -1.5;
+App.CameraPosition.Z = 10;]]>
+              </Expression>
+            </ZExpression>
+          </OnStart>
+          <OnUpdate>
+            <Group Comment="Input">
+              <Children>
+                <ZExpression Comment="Reset">
+                  <Expression>
+<![CDATA[for(int U=0; U<Input.SizeDim1; ++U)
+{
+  for(int V=0; V<Input.SizeDim2; ++V)
+  {
+    Input[U,V,Input.SizeDim3-1] = Input[U,V,0];
+    for(int W=0; W<Input.SizeDim3-1; ++W)
+    {
+       Input[U,V,W] = 0;
+    }
+  }
+}]]>
+                  </Expression>
+                </ZExpression>
+                <Group Comment="Keys">
+                  <Children>
+                    <Group Comment="P1">
+                      <Children>
+                        <KeyPress Comment="Right" Keys="&gt;">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[0,0,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Left" Keys="&lt;">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[0,1,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Up" Keys="^">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[0,2,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Down" Keys="_">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[0,3,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                      </Children>
+                    </Group>
+                    <Group Comment="P2">
+                      <Children>
+                        <KeyPress Comment="Right" Keys="D">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[1,0,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Left" Keys="A">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[1,1,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Up" Keys="W">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[1,2,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                        <KeyPress Comment="Down" Keys="S">
+                          <OnPressed>
+                            <ZExpression>
+                              <Expression>
+<![CDATA[//
+
+Input[1,3,0] = 1;]]>
+                              </Expression>
+                            </ZExpression>
+                          </OnPressed>
+                        </KeyPress>
+                      </Children>
+                    </Group>
+                  </Children>
+                </Group>
+                <ZExpression Comment="Events">
+                  <Expression>
+<![CDATA[// the Events are:
+// [x, x, 0 ] : Key Down
+// [x, x, 1 ] : Key Pressed (in this frame)
+// [x, x, 2 ] : Key Released (in this frame)
+
+for(int U=0; U<Input.SizeDim1; ++U)
+{
+  for(int V=0; V<Input.SizeDim2; ++V)
+  {
+    if(Input[U,V,0] == 1 && Input[U,V,Input.SizeDim3-1] == 0){Input[U,V,1] = 1;}
+    if(Input[U,V,0] == 0 && Input[U,V,Input.SizeDim3-1] == 1){Input[U,V,2] = 1;}
+  }
+}]]>
+                  </Expression>
+                </ZExpression>
+              </Children>
+            </Group>
+          </OnUpdate>
+          <OnRender>
+            <Repeat Name="Slots">
+              <OnIteration>
+                <Repeat Name="Keys">
+                  <OnIteration>
+                    <Repeat Name="Events">
+                      <OnIteration>
+                        <ZExpression>
+                          <Expression>
+<![CDATA[//
+
+int U = Slots.iteration;
+int V = Keys.iteration;
+int W = Events.iteration;
+
+SpriteRTG.Translate.X = U*( Input.SizeDim2+1 )+V;
+SpriteRTG.Translate.Y = W*-1;
+SpriteRTG.Translate.Z = Input[U,V,W]*-1;]]>
+                          </Expression>
+                        </ZExpression>
+                        <RenderTransformGroup Name="SpriteRTG" Scale="0.75 0.75 1" Translate="8 -3 0">
+                          <Children>
+                            <RenderSprite/>
+                          </Children>
+                        </RenderTransformGroup>
+                      </OnIteration>
+                      <WhileExp>
+<![CDATA[//
+
+return this.iteration < Input.SizeDim3;]]>
+                      </WhileExp>
+                    </Repeat>
+                  </OnIteration>
+                  <WhileExp>
+<![CDATA[//
+
+return this.iteration < Input.SizeDim2;]]>
+                  </WhileExp>
+                </Repeat>
+              </OnIteration>
+              <WhileExp>
+<![CDATA[//
+
+return this.iteration < Input.SizeDim1;]]>
+              </WhileExp>
+            </Repeat>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="Input" Dimensions="2" SizeDim1="2" SizeDim2="4" SizeDim3="4"/>
+          </Definitions>
+        </AppState>
+        <AppState Comment="RayCast">
+          <OnStart>
+            <ZLibrary Comment="RayCast Library">
+              <Source>
+<![CDATA[//
+
+void Sub(int K,
+         float X1, float Y1, float Z1,
+         float X2, float Y2, float Z2)
+{
+  RCVector[K,0] = X1-X2;
+  RCVector[K,1] = Y1-Y2;
+  RCVector[K,2] = Z1-Z2;
+}
+
+//
+
+void Cross(int K,
+           float X1, float Y1, float Z1,
+           float X2, float Y2, float Z2)
+{
+  RCVector[K,0] = Y1*Z2-Z1*Y2;
+  RCVector[K,1] = Z1*X2-X1*Z2;
+  RCVector[K,2] = X1*Y2-Y1*X2;
+}
+
+//
+
+float Dot(float X1, float Y1, float Z1,
+          float X2, float Y2, float Z2)
+{
+  return X1*X2+Y1*Y2+Z1*Z2;
+}
+
+//
+
+int RayTriangle(float OX, float OY, float OZ,
+                float DX, float DY, float DZ,
+                float X1, float Y1, float Z1,
+                float X2, float Y2, float Z2,
+                float X3, float Y3, float Z3)
+{
+  float R, S, T, U, V;
+
+  Sub(1,X2,Y2,Z2,X1,Y1,Z1);
+  Sub(2,X3,Y3,Z3,X1,Y1,Z1);
+  
+  Cross(3,DX,DY,DZ,RCVector[2,0],RCVector[2,1],RCVector[2,2]);
+
+  R = Dot(RCVector[1,0],RCVector[1,1],RCVector[1,2],RCVector[3,0],RCVector[3,1],RCVector[3,2]);
+
+  Sub(4,OX,OY,OZ,X1,Y1,Z1);
+  S = 1/R;
+  
+  Cross(5,RCVector[4,0],RCVector[4,1],RCVector[4,2],RCVector[1,0],RCVector[1,1],RCVector[1,2]);
+  
+  if(R <= Epsilon && R >= Epsilon*-1)
+  {
+    return 0;
+  }
+  else
+  {
+    if(R > Epsilon)
+    {
+      DebugVar = U;
+      U = Dot(RCVector[4,0],RCVector[4,1],RCVector[4,2],RCVector[3,0],RCVector[3,1],RCVector[3,2]);
+      if(U < 0 || U > R)
+      {
+        return 0;
+      }
+
+      V = Dot(DX,DY,DZ,RCVector[5,0],RCVector[5,1],RCVector[5,2]);
+      if(V < 0 || U+V > R)
+      {
+        return 0;
+      }
+    }
+
+    if(R < Epsilon*-1)
+    {
+      U = Dot(RCVector[4,0],RCVector[4,1],RCVector[4,2],RCVector[3,0],RCVector[3,1],RCVector[3,2]);
+      if(U > 0 || U < R)
+      {
+        return 0;
+      }
+
+      V = Dot(DX,DY,DZ,RCVector[5,0],RCVector[5,1],RCVector[5,2]);
+      if(V > 0 || U+V < R)
+      {
+        return 0;
+      }
+    }
+  }
+  
+  T = Dot(RCVector[2,0],RCVector[2,1],RCVector[2,2],RCVector[5,0],RCVector[5,1],RCVector[5,2]);
+  U *= S;
+  V *= S;
+  
+  return 1;
+}]]>
+              </Source>
+            </ZLibrary>
+          </OnStart>
+          <OnRender>
+            <UseMaterial Material="Wireframe"/>
+            <Condition>
+              <Expression>
+<![CDATA[//
+
+return RayTriangle(sin(App.Time)*2,0,0,
+                   0,1,0,
+                   1,1,0,
+                   -0.5,1,1,
+                   -0.5,1,-1);]]>
+              </Expression>
+              <OnTrue>
+                <RenderSetColor Color="1 0 0 1"/>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+this.Vertex.Y += 0.5;
+
+//
+
+this.Vertex.X = sin(App.Time)*2;]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </OnTrue>
+              <OnFalse>
+                <RenderSetColor Color="1 1 1 1"/>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+this.Vertex.Y += 0.5;
+
+//
+
+this.Vertex.X = sin(App.Time)*2;
+this.Vertex.Y *= 8;]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </OnFalse>
+            </Condition>
+            <RenderTransformGroup Translate="0 1 0" Rotate="0.25 0 0">
+              <Children>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+if(this.Vertex.X > 0)
+{
+  this.Vertex.X = 1;
+  this.Vertex.Y = 0;
+}]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </Children>
+            </RenderTransformGroup>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="RCVector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
+            <DefineConstant Name="Epsilon" Value="0.001"/>
+            <Material Name="Wireframe" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
+            <DefineVariable Name="DebugVar"/>
+          </Definitions>
+        </AppState>
+        <AppState Comment="Trail">
+          <OnStart>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+int U, V;
+
+for(U=0; U<Mouse.SizeDim1; ++U)
+{
+  for(V=2; V<Mouse.SizeDim2; ++V)
+  {
+    Mouse[U,V] = 0;
+  }
+  
+  Mouse[U,0] = App.MousePosition.X*16;
+  Mouse[U,1] = App.MousePosition.Y*9;
+}
+
+//
+
+MouseIndex = 0;]]>
+              </Expression>
+            </ZExpression>
+          </OnStart>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+float TrailAngle;
+
+//
+
+Trail.YCount = Mouse.SizeDim1-2;
+
+//
+
+MouseIndexLast = MouseIndex;
+
+++ MouseIndex;
+
+if(MouseIndex > Mouse.SizeDim1-1) MouseIndex -= Mouse.SizeDim1;
+
+//
+
+Mouse[MouseIndex,0] = App.MousePosition.X*8;
+Mouse[MouseIndex,1] = App.MousePosition.Y*6;
+
+//
+
+TrailAngle = atan2(Mouse[MouseIndexLast,1]-Mouse[MouseIndex,1],Mouse[MouseIndexLast,0]-Mouse[MouseIndex,0]);
+
+Mouse[MouseIndex,2] = sin(TrailAngle)*-1;
+Mouse[MouseIndex,3] = cos(TrailAngle);]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnRender>
+            <UseMaterial Material="TrailMaterial"/>
+            <RenderNet Name="Trail" YCount="62">
+              <RenderVertexExpression>
+<![CDATA[//
+
+int TrailIndex;
+float TrailWidth;
+
+//
+
+this.Vertex.Y += 0.5;
+this.Vertex.Y *= Trail.YCount;
+
+//
+
+TrailIndex = MouseIndex-(Trail.YCount-this.Vertex.Y);
+
+if(TrailIndex > Mouse.SizeDim1-1) TrailIndex -= Mouse.SizeDim1-1;
+if(TrailIndex < 0) TrailIndex += Mouse.SizeDim1-1;
+
+//
+
+TrailWidth = this.Vertex.Y/Trail.YCount;
+
+//
+
+if(this.Vertex.X > 0)
+{
+  this.Vertex.X = Mouse[TrailIndex,0]+Mouse[TrailIndex,2]*TrailWidth;
+  this.Vertex.Y = Mouse[TrailIndex,1]+Mouse[TrailIndex,3]*TrailWidth;
+}
+else
+{
+  this.Vertex.X = Mouse[TrailIndex,0]-Mouse[TrailIndex,2]*TrailWidth;
+  this.Vertex.Y = Mouse[TrailIndex,1]-Mouse[TrailIndex,3]*TrailWidth;
+}]]>
+              </RenderVertexExpression>
+            </RenderNet>
+          </OnRender>
+          <Definitions>
+            <DefineArray Name="Mouse" Dimensions="1" SizeDim1="64" SizeDim2="4"/>
+            <DefineVariable Name="MouseIndex" Type="1"/>
+            <DefineVariable Name="MouseIndexLast" Type="1"/>
+            <Bitmap Name="Bitmap" Width="0" Height="4">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+this.Pixel = Y;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="TrailMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="Bitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Definitions>
+        </AppState>
+        <AppState Comment="ViewFrustrum Culling">
+          <OnStart>
+            <Group Comment="VFCMatrix Lib">
+              <Children>
+                <DefineArray Name="VFCMatrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+                <ZLibrary Comment="VFCMatrix">
+                  <Source>
+<![CDATA[// ================================================================
+// MATRIX LIBRARY by kjell
+// ================================================================
+
+void RotationMatrixX(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  VFCMatrix[K,0,0] = 1;
+  VFCMatrix[K,0,1] = 0;
+  VFCMatrix[K,0,2] = 0;
+
+  VFCMatrix[K,1,0] = 0;
+  VFCMatrix[K,1,1] = C;
+  VFCMatrix[K,1,2] = S*-1;
+
+  VFCMatrix[K,2,0] = 0;
+  VFCMatrix[K,2,1] = S;
+  VFCMatrix[K,2,2] = C;
+}
+
+void RotationMatrixY(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  VFCMatrix[K,0,0] = C;
+  VFCMatrix[K,0,1] = 0;
+  VFCMatrix[K,0,2] = S;
+
+  VFCMatrix[K,1,0] = 0;
+  VFCMatrix[K,1,1] = 1;
+  VFCMatrix[K,1,2] = 0;
+
+  VFCMatrix[K,2,0] = S*-1;
+  VFCMatrix[K,2,1] = 0;
+  VFCMatrix[K,2,2] = C;
+}
+
+void RotationMatrixZ(int K, float Angle)
+{
+  float C, S;
+ 
+  C = cos(Angle);
+  S = sin(Angle);
+ 
+  VFCMatrix[K,0,0] = C;
+  VFCMatrix[K,0,1] = S*-1;
+  VFCMatrix[K,0,2] = 0;
+ 
+  VFCMatrix[K,1,0] = S;
+  VFCMatrix[K,1,1] = C;
+  VFCMatrix[K,1,2] = 0;
+ 
+  VFCMatrix[K,2,0] = 0;
+  VFCMatrix[K,2,1] = 0;
+  VFCMatrix[K,2,2] = 1;
+}
+
+//
+
+void MultiplyMatrix(int K, int A, int B)
+{
+  VFCMatrix[K,0,0] = VFCMatrix[A,0,0]*VFCMatrix[B,0,0]+VFCMatrix[A,0,1]*VFCMatrix[B,1,0]+VFCMatrix[A,0,2]*VFCMatrix[B,2,0];
+  VFCMatrix[K,0,1] = VFCMatrix[A,0,0]*VFCMatrix[B,0,1]+VFCMatrix[A,0,1]*VFCMatrix[B,1,1]+VFCMatrix[A,0,2]*VFCMatrix[B,2,1];
+  VFCMatrix[K,0,2] = VFCMatrix[A,0,0]*VFCMatrix[B,0,2]+VFCMatrix[A,0,1]*VFCMatrix[B,1,2]+VFCMatrix[A,0,2]*VFCMatrix[B,2,2];
+ 
+  VFCMatrix[K,1,0] = VFCMatrix[A,1,0]*VFCMatrix[B,0,0]+VFCMatrix[A,1,1]*VFCMatrix[B,1,0]+VFCMatrix[A,1,2]*VFCMatrix[B,2,0];
+  VFCMatrix[K,1,1] = VFCMatrix[A,1,0]*VFCMatrix[B,0,1]+VFCMatrix[A,1,1]*VFCMatrix[B,1,1]+VFCMatrix[A,1,2]*VFCMatrix[B,2,1];
+  VFCMatrix[K,1,2] = VFCMatrix[A,1,0]*VFCMatrix[B,0,2]+VFCMatrix[A,1,1]*VFCMatrix[B,1,2]+VFCMatrix[A,1,2]*VFCMatrix[B,2,2];
+
+  VFCMatrix[K,2,0] = VFCMatrix[A,2,0]*VFCMatrix[B,0,0]+VFCMatrix[A,2,1]*VFCMatrix[B,1,0]+VFCMatrix[A,2,2]*VFCMatrix[B,2,0];
+  VFCMatrix[K,2,1] = VFCMatrix[A,2,0]*VFCMatrix[B,0,1]+VFCMatrix[A,2,1]*VFCMatrix[B,1,1]+VFCMatrix[A,2,2]*VFCMatrix[B,2,1];
+  VFCMatrix[K,2,2] = VFCMatrix[A,2,0]*VFCMatrix[B,0,2]+VFCMatrix[A,2,1]*VFCMatrix[B,1,2]+VFCMatrix[A,2,2]*VFCMatrix[B,2,2];
+}
+
+//
+
+void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
+{
+  RotationMatrixX(1,AX);
+  RotationMatrixY(2,AY);
+  RotationMatrixZ(3,AZ);
+ 
+  MultiplyMatrix(4,1,2);
+  MultiplyMatrix(5,4,3);
+ 
+  VFCMatrix[0,0,0] = VX*VFCMatrix[5,0,0]+VY*VFCMatrix[5,0,1]+VZ*VFCMatrix[5,0,2];
+  VFCMatrix[0,1,0] = VX*VFCMatrix[5,1,0]+VY*VFCMatrix[5,1,1]+VZ*VFCMatrix[5,1,2];
+  VFCMatrix[0,2,0] = VX*VFCMatrix[5,2,0]+VY*VFCMatrix[5,2,1]+VZ*VFCMatrix[5,2,2];
+}]]>
+                  </Source>
+                </ZLibrary>
+                <ZLibrary Comment="VFCMatrix Addon">
+                  <Source>
+<![CDATA[// ================================================================
+// MATRIX LIBRARY AddOn
+// ================================================================
+
+// rotate in succession, first x, then y. no z.
+void successiveRotation( float VX, float VY, float VZ, float AX, float AY ){
+  Rotate( VX, VY, VZ, AX, 0, 0 );
+  Rotate( VFCMatrix[ 0, 0, 0 ], VFCMatrix[ 0, 1, 0 ], VFCMatrix[ 0, 2, 0 ], 0,  AY, 0 );
+}
+// rotate in succession using the current view frustrum rotation as angles
+void successiveViewRotation( float VX, float VY, float VZ ){
+  successiveRotation( VX, VY, VZ, viewRotation[ 1 ] * Pi * 2, viewRotation[ 0 ] * Pi * 2 );
+}]]>
+                  </Source>
+                </ZLibrary>
+                <ZLibrary Comment="Vector (Dot Product)">
+                  <Source>
+<![CDATA[// ================================================================
+// parts of VECTOR LIBRARY by kjell
+// ================================================================
+
+float Dot(float X1, float Y1, float Z1,
+          float X2, float Y2, float Z2)
+{
+  return X1*X2+Y1*Y2+Z1*Z2;
+}
+float shortDot( int c, int n ){
+  return  Dot( cubePositions[ c, 0 ],
+               cubePositions[ c, 1 ],
+               cubePositions[ c, 2 ],
+               aFrustrumNormalsTransformed[ n, 0 ],
+               aFrustrumNormalsTransformed[ n, 1 ],
+               aFrustrumNormalsTransformed[ n, 2 ]);
+}]]>
+                  </Source>
+                </ZLibrary>
+              </Children>
+            </Group>
+            <Group Comment="View">
+              <Children>
+                <DefineVariable Name="viewAngle"/>
+                <DefineVariable Name="viewRatio"/>
+                <DefineArray Name="viewRotation" SizeDim1="2"/>
+                <DefineArray Name="camRotation" SizeDim1="2"/>
+                <DefineArray Name="aFrustrumNormals" Dimensions="1" SizeDim1="4" SizeDim2="3" Persistent="255">
+                  <Values>
+<![CDATA[78DA636068D8CF000620BAC11EC1868BC1D8F608360200005C1F08F9]]>
+                  </Values>
+                </DefineArray>
+                <DefineArray Name="aFrustrumNormalsTransformed" Dimensions="1" SizeDim1="4" SizeDim2="3"/>
+                <ZExpression Comment="init">
+                  <Expression>
+<![CDATA[viewAngle = 0.125; // don't touch - this is not dynamic yet, sorry!
+viewRatio = tan( viewAngle * 2 * PI );]]>
+                  </Expression>
+                </ZExpression>
+              </Children>
+            </Group>
+            <DefineArray Name="cubePositions" Dimensions="1" SizeDim1="1000" SizeDim2="3"/>
+            <Repeat Comment="fill Cubes">
+              <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+int i = this.iteration;
+
+if( i < 1000 ){
+  cubePositions[ i, 0 ] =( i -( floor( i / 10.0 )* 10 ))/5 - 1; 
+  cubePositions[ i, 1 ] =( floor( i / 10.0 )-( floor( i / 100.0 )*10 ))/5 - 1;
+  cubePositions[ i, 2 ] =( floor( i / 100.0 ))/5 - 1;
+  return 1; }
+else return 0;]]>
+              </WhileExp>
+            </Repeat>
+            <ZExpression Comment="center mouse" Expression="//centerMouse();"/>
+            <SpawnModel Model="modelFrustum" SpawnStyle="1"/>
+          </OnStart>
+          <OnUpdate>
+            <ZExpression Comment="update camera">
+              <Expression>
+<![CDATA[camRotation[ 0 ] += App.MousePosition.X / 4;
+camRotation[ 1 ] += App.MousePosition.Y / 4;
+//centerMouse();
+
+float dist = 2.5;
+App.CameraPosition.X = sin( camRotation[ 0 ] * 2 * PI ) * cos( camRotation[ 1 ] * 2 * PI ) * dist;
+App.CameraPosition.Z = cos( camRotation[ 0 ] * 2 * PI ) * cos( camRotation[ 1 ] * 2 * PI ) * dist;
+App.CameraPosition.Y = sin( camRotation[ 1 ] * 2 * PI ) * dist;
+App.CameraRotation.Y = -1 * camRotation[ 0 ];
+App.CameraRotation.X = camRotation[ 1 ];]]>
+              </Expression>
+            </ZExpression>
+            <Group Comment="Keys">
+              <Children>
+                <KeyPress Comment="Left" Keys="&lt;">
+                  <OnPressed>
+                    <ZExpression Expression="viewRotation[ 0 ] += App.DeltaTime / 4;"/>
+                  </OnPressed>
+                </KeyPress>
+                <KeyPress Comment="Right" Keys="&gt;">
+                  <OnPressed>
+                    <ZExpression Expression="viewRotation[ 0 ] -= App.DeltaTime / 4;"/>
+                  </OnPressed>
+                </KeyPress>
+                <KeyPress Comment="Up" Keys="^">
+                  <OnPressed>
+                    <ZExpression Expression="viewRotation[ 1 ] -= App.DeltaTime / 4;"/>
+                  </OnPressed>
+                </KeyPress>
+                <KeyPress Comment="Down" Keys="_">
+                  <OnPressed>
+                    <ZExpression Expression="viewRotation[ 1 ] += App.DeltaTime / 4;"/>
+                  </OnPressed>
+                </KeyPress>
+              </Children>
+            </Group>
+          </OnUpdate>
+          <OnRender>
+            <UseMaterial Material="matSmooth"/>
+            <ZExpression Comment="transform frustrum normals">
+              <Expression>
+<![CDATA[// Rotate the frustrum plane normals.
+for( int i = 0; i < aFrustrumNormals.SizeDim1; ++i ){
+  successiveViewRotation( aFrustrumNormals[ i, 0 ], aFrustrumNormals[ i, 1 ], aFrustrumNormals[ i, 2 ]);
+  aFrustrumNormalsTransformed[ i, 0 ] = VFCMatrix[ 0, 0, 0 ];
+  aFrustrumNormalsTransformed[ i, 1 ] = VFCMatrix[ 0, 1, 0 ];
+  aFrustrumNormalsTransformed[ i, 2 ] = VFCMatrix[ 0, 2, 0 ];
+}]]>
+              </Expression>
+            </ZExpression>
+            <Repeat Name="rpt_Cubes">
+              <OnIteration>
+                <Condition Comment="culling">
+                  <Expression>
+<![CDATA[int c = rpt_Cubes.iteration;
+int temp = 0;
+
+// check for all four frustrum planes (no far & near plane for now...)
+for( int n = 0; n < 4; ++n )
+  temp +=( shortDot( c, n ) <= 0 );  
+// transfer properties if cube lies in view frustrum  
+if( temp == 4 ){  
+  rtg_Cube.Translate.X = cubePositions[ c, 0 ];
+  rtg_Cube.Translate.Y = cubePositions[ c, 1 ];
+  rtg_Cube.Translate.Z = cubePositions[ c, 2 ];
+  return 1;
+}
+else return 0;]]>
+                  </Expression>
+                  <OnTrue>
+                    <RenderTransformGroup Name="rtg_Cube" Scale="0.08 0.08 0.08">
+                      <Children>
+                        <RenderMesh Mesh="meshBox"/>
+                      </Children>
+                    </RenderTransformGroup>
+                  </OnTrue>
+                </Condition>
+              </OnIteration>
+              <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+if( this.Iteration < cubePositions.SizeDim1 ) return 1;
+else return 0;]]>
+              </WhileExp>
+            </Repeat>
+            <ZExpression Comment="test box">
+              <Expression>
+<![CDATA[successiveViewRotation( 0, 0, 1.5 );
+rtg_TestBox.Translate.X = VFCMatrix[ 0, 0, 0 ];
+rtg_TestBox.Translate.Y = VFCMatrix[ 0, 1, 0 ];
+rtg_TestBox.Translate.Z = VFCMatrix[ 0, 2, 0 ];]]>
+              </Expression>
+            </ZExpression>
+            <RenderTransformGroup Name="rtg_TestBox" Scale="0.02 0.02 0.02">
+              <Children>
+                <RenderSetColor Color="1 0 0 1"/>
+                <RenderMesh Mesh="meshBox"/>
+              </Children>
+            </RenderTransformGroup>
+            <UseMaterial Material="matSmooth"/>
+            <RenderText TextFloatRef="App FpsCounter" X="-1" Y="0.95" Align="1"/>
+          </OnRender>
+          <Definitions>
+            <Mesh Name="meshFrustrum">
+              <Producers>
+                <MeshBox/>
+                <MeshExpression>
+                  <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+if( this.V.Z < 0 ){
+  this.V.Z = 0;
+  this.V.X = 0;
+  this.V.Y = 0;
+  //this.C = 1;
+  }
+
+if( this.V.Z > 0 ){
+  // float ratio = tan( viewAngle * 2 * PI );
+  this.V.Z = 1;
+  this.V.X *= viewRatio;
+  this.V.Y *= viewRatio;
+  // this.C = .5;
+  // this.C.B = 0;
+  }]]>
+                  </Expression>
+                </MeshExpression>
+              </Producers>
+            </Mesh>
+            <Mesh Name="meshBox">
+              <Producers>
+                <MeshBox/>
+              </Producers>
+            </Mesh>
+            <Model Name="modelFrustum">
+              <OnRender>
+                <ZExpression Comment="update rotation">
+                  <Expression>
+<![CDATA[rtg_FrustrumX.Rotate.Y = viewRotation[ 0 ];
+rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
+                  </Expression>
+                </ZExpression>
+                <RenderTransformGroup Name="rtg_FrustrumX">
+                  <Children>
+                    <RenderTransformGroup Name="rtg_FrustrumY">
+                      <Children>
+                        <UseMaterial Material="matWireframe"/>
+                        <RenderSetColor Color="0 0 1 1"/>
+                        <RenderMesh Mesh="meshFrustrum"/>
+                      </Children>
+                    </RenderTransformGroup>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
+            </Model>
+            <Material Name="matWireframe" WireframeWidth="1" Shading="2" Color="1 1 1 1" Light="0" DrawBackFace="255"/>
+            <Material Name="matSmooth" Color="0.7529 0.7529 0.7529 1"/>
+          </Definitions>
+        </AppState>
+      </Children>
+    </Group>
+    <Group Comment="Libraries">
+      <Children>
+        <Group Comment="Bit Library" Name="BitLibraryGroup">
+          <Children>
+            <DefineArray Name="Bit" Type="1" SizeDim1="8"/>
+            <ZLibrary Comment="Bit Library">
+              <Source>
+<![CDATA[/*
+Small library for converting a bit field into a integer and back.
+Convenient for saving memory when dealing with large amounts of booleans and / or 4D boolean Arrays.
+Requires a 1D Array called "Bit" to return the values to. Function arguments and results are in big-endian ..
+*/
+
+int bit4(int A, int B, int C, int D)
+{
+  return A*1+
+         B*2+
+         C*4+
+         D*8;
+}
+
+int bit8(int A, int B, int C, int D,
+         int E, int F, int G, int H)
+{
+  return A*  1+
+         B*  2+
+         C*  4+
+         D*  8+
+         E* 16+
+         F* 32+
+         G* 64+
+         H*128;
+}
+
+int bitX(int B)
+{
+  int V = 0;
+
+  for(--B; B>=0; --B)
+  {
+    V += Bit[B]*pow(2,B);
+  }
+
+  return V;
+}
+
+void bitField(int X, int B)
+{
+  for(--B; B>=0; --B)
+  {
+    int V = pow(2,B);
+
+    if(X >= V)
+    {
+      Bit[B] = 1;
+      X -= V;
+    }
+    else Bit[B] = 0;
+  }
+}]]>
+              </Source>
+            </ZLibrary>
+          </Children>
+        </Group>
+        <Group Comment="HSV Color Library" Name="HsvColorGroup">
+          <Children>
+            <DefineArray Name="Color" SizeDim1="3"/>
+            <ZLibrary Comment="HSV Library">
+              <Source>
+<![CDATA[//
+
+float angle(float X)
+{
+  if(X >= 0 && X < 360)return X;
+  if(X > 360)return X-floor(X/360)* 360;
+  if(X <   0)return X+floor(X/360)*-360;
+}
+
+//
+
+void hsv(float H, float S, float V)
+{
+  float R,G,B,I,F,P,Q,T;
+  
+  H = angle(H);
+  S = clamp(S,0,100);
+  V = clamp(V,0,100);
+
+  H /= 60;
+  S /= 100;
+  V /= 100;
+  
+  if(S == 0)
+  {
+    Color[0] = V;
+    Color[1] = V;
+    Color[2] = V;
+    return;
+  }
+
+  I = floor(H);
+  F = H-I;
+
+  P = V*(1-S);
+  Q = V*(1-S*F);
+  T = V*(1-S*(1-F));
+
+  if(I == 0){R = V; G = T; B = P;}
+  if(I == 1){R = Q; G = V; B = P;}
+  if(I == 2){R = P; G = V; B = T;}
+  if(I == 3){R = P; G = Q; B = V;}
+  if(I == 4){R = T; G = P; B = V;}
+  if(I == 5){R = V; G = P; B = Q;}
+  
+  Color[0] = R;
+  Color[1] = G;
+  Color[2] = B;
+}]]>
+              </Source>
+            </ZLibrary>
+          </Children>
+        </Group>
+        <Group Comment="Matrix Library" Name="MatrixLibraryGroup">
+          <Children>
+            <DefineArray Name="Matrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+            <ZLibrary Comment="Matrix Library">
+              <Source>
+<![CDATA[//
+
+void RotationMatrixX(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  Matrix[K,0,0] = 1;
+  Matrix[K,0,1] = 0;
+  Matrix[K,0,2] = 0;
+
+  Matrix[K,1,0] = 0;
+  Matrix[K,1,1] = C;
+  Matrix[K,1,2] = S*-1;
+
+  Matrix[K,2,0] = 0;
+  Matrix[K,2,1] = S;
+  Matrix[K,2,2] = C;
+}
+
+void RotationMatrixY(int K, float Angle)
+{
+  float C, S;
+
+  C = cos(Angle);
+  S = sin(Angle);
+
+  Matrix[K,0,0] = C;
+  Matrix[K,0,1] = 0;
+  Matrix[K,0,2] = S;
+
+  Matrix[K,1,0] = 0;
+  Matrix[K,1,1] = 1;
+  Matrix[K,1,2] = 0;
+
+  Matrix[K,2,0] = S*-1;
+  Matrix[K,2,1] = 0;
+  Matrix[K,2,2] = C;
+}
+
+void RotationMatrixZ(int K, float Angle)
+{
+  float C, S;
+  
+  C = cos(Angle);
+  S = sin(Angle);
+  
+  Matrix[K,0,0] = C;
+  Matrix[K,0,1] = S*-1;
+  Matrix[K,0,2] = 0;
+  
+  Matrix[K,1,0] = S;
+  Matrix[K,1,1] = C;
+  Matrix[K,1,2] = 0;
+  
+  Matrix[K,2,0] = 0;
+  Matrix[K,2,1] = 0;
+  Matrix[K,2,2] = 1;
+}
+
+//
+
+void MultiplyMatrix(int K, int A, int B)
+{
+  Matrix[K,0,0] = Matrix[A,0,0]*Matrix[B,0,0]+Matrix[A,0,1]*Matrix[B,1,0]+Matrix[A,0,2]*Matrix[B,2,0];
+  Matrix[K,0,1] = Matrix[A,0,0]*Matrix[B,0,1]+Matrix[A,0,1]*Matrix[B,1,1]+Matrix[A,0,2]*Matrix[B,2,1];
+  Matrix[K,0,2] = Matrix[A,0,0]*Matrix[B,0,2]+Matrix[A,0,1]*Matrix[B,1,2]+Matrix[A,0,2]*Matrix[B,2,2];
+  
+  Matrix[K,1,0] = Matrix[A,1,0]*Matrix[B,0,0]+Matrix[A,1,1]*Matrix[B,1,0]+Matrix[A,1,2]*Matrix[B,2,0];
+  Matrix[K,1,1] = Matrix[A,1,0]*Matrix[B,0,1]+Matrix[A,1,1]*Matrix[B,1,1]+Matrix[A,1,2]*Matrix[B,2,1];
+  Matrix[K,1,2] = Matrix[A,1,0]*Matrix[B,0,2]+Matrix[A,1,1]*Matrix[B,1,2]+Matrix[A,1,2]*Matrix[B,2,2];
+
+  Matrix[K,2,0] = Matrix[A,2,0]*Matrix[B,0,0]+Matrix[A,2,1]*Matrix[B,1,0]+Matrix[A,2,2]*Matrix[B,2,0];
+  Matrix[K,2,1] = Matrix[A,2,0]*Matrix[B,0,1]+Matrix[A,2,1]*Matrix[B,1,1]+Matrix[A,2,2]*Matrix[B,2,1];
+  Matrix[K,2,2] = Matrix[A,2,0]*Matrix[B,0,2]+Matrix[A,2,1]*Matrix[B,1,2]+Matrix[A,2,2]*Matrix[B,2,2];
+}
+
+//
+
+void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
+{
+  RotationMatrixX(1,AX);
+  RotationMatrixY(2,AY);
+  RotationMatrixZ(3,AZ);
+  
+  MultiplyMatrix(4,1,2);
+  MultiplyMatrix(5,4,3);
+  
+  Matrix[0,0,0] = VX*Matrix[5,0,0]+VY*Matrix[5,0,1]+VZ*Matrix[5,0,2];
+  Matrix[0,1,0] = VX*Matrix[5,1,0]+VY*Matrix[5,1,1]+VZ*Matrix[5,1,2];
+  Matrix[0,2,0] = VX*Matrix[5,2,0]+VY*Matrix[5,2,1]+VZ*Matrix[5,2,2];
+}]]>
+              </Source>
+            </ZLibrary>
+          </Children>
+        </Group>
+        <Group Comment="Vector Library" Name="VectorLibraryGroup">
+          <Children>
+            <DefineArray Name="Vector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
+            <ZLibrary Comment="Vector Library">
+              <Source>
+<![CDATA[//
+
+void Sub(int K,
+         float X1, float Y1, float Z1,
+         float X2, float Y2, float Z2)
+{
+  Vector[K,0] = X1-X2;
+  Vector[K,1] = Y1-Y2;
+  Vector[K,2] = Z1-Z2;
+}
+
+//
+
+void Cross(int K,
+           float X1, float Y1, float Z1,
+           float X2, float Y2, float Z2)
+{
+  Vector[K,0] = Y1*Z2-Z1*Y2;
+  Vector[K,1] = Z1*X2-X1*Z2;
+  Vector[K,2] = X1*Y2-Y1*X2;
+}
+
+//
+
+float Dot(float X1, float Y1, float Z1,
+          float X2, float Y2, float Z2)
+{
+  return X1*X2+Y1*Y2+Z1*Z2;
+}
+
+//
+
+float getLength( float X, float Y, float Z ){
+  float length = sqrt( pow( X, 2 ) + pow( Y, 2 ) + pow( Z, 2 ));
+  return length;
+}
+
+// normalize
+void Normalize( int K,
+                float X, float Y, float Z ){
+  float length = getLength( X, Y, Z );
+  if( length == 0 ) return;
+  Vector[ K, 0 ] = X / length;
+  Vector[ K, 1 ] = Y / length;
+  Vector[ K, 2 ] = Z / length;
+  }]]>
+              </Source>
+            </ZLibrary>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
+    <Group Comment="External libraries">
+      <Children>
+        <ZExternalLibrary Comment="Bass music player" ModuleName="bass.dll">
+          <Source>
+<![CDATA[//BASS-dll from http://www.un4seen.com/
+int BASS_GetVersion() { }
+
+int BASS_ErrorGetCode() { }
+
+int BASS_Free() { }
+int BASS_Stop() { }
+
+int BASS_Init(int device, int freq, int flags, int win, int clsid) { }
+
+int BASS_MusicLoad(int mem, string filename, int of1, int of2, int length, int flags, int freq) { }
+
+int BASS_ChannelPlay(int handle, int restart) { }
+int BASS_ChannelGetLevel(int handle) { }]]>
+          </Source>
+        </ZExternalLibrary>
+        <ZExternalLibrary Comment="Box2D physics" ModuleName="Box2DZGE.dll">
+          <Source>
+<![CDATA[//Box2D physics integration
+//Get the DLL from here:
+//
+//   http://www.emix8.org/forum/viewtopic.php?t=586
+
+// ================== WORLD
+// init the world
+void b2dll_InitWorld( float aabbxl, float aabbxh, // bounding box x limits
+                      float aabbyl, float aabbyh, // bounding box y limits
+                      float gx, float gy, // gravity vector (default [ 0, -10 ])
+                      int doSleep ){ } // turn off simulation of resting bodies (default on)
+// advance the simulation
+void b2dll_Step( float timestep, int iterations ){ }
+// count bodies
+int b2dll_GetBodyCount( ){ }
+
+// ================== BODIES
+// create a static box (e.g. ground)
+int b2dll_CreateStaticBox( float x, float y,
+                           float width, float height ){ }
+// create a dynamic box
+int b2dll_CreateDynamicBox( float x, float y, // position
+                            float width, float height ){ } // dimension
+// getters
+float b2dll_GetPositionX( int body ){ }
+float b2dll_GetPositionY( int body ){ }
+float b2dll_GetAngle( int body ){ }]]>
+          </Source>
+        </ZExternalLibrary>
+        <ZExternalLibrary Comment="OpenGL graphics" ModuleName="opengl32">
+          <Source>
+<![CDATA[//OpenGL definitions
+
+void glColor3f(float r,float g,float b) { }
+void glColor4f(float r,float g,float b,float a) { }
+void glColorMaterial(int face,int mode) { }
+void glCullFace(int mode) { }
+void glClear(int mask) { }
+void glDisable(int cap) { }
+void glDepthFunc(int func) { }
+void glBegin(int mode) { }
+void glEnable(int cap) { }
+void glEnd() { }
+void glFrontFace(int mode) { }
+void glLineWidth(float width) { }
+void glLoadIdentity() { }
+void glMaterialf(int face, int pname, float param) { }
+void glNormal3f(float nx,float ny,float nz) { }
+void glPopAttrib() { }
+void glPopMatrix() { }
+void glPushAttrib(int mask) { }
+void glPushMatrix() { }
+void glRotatef(float angle, float x, float y, float z) { }
+void glScalef(float x, float y, float z) { }
+void glShadeModel(int mode) { }
+void glTexCoord2f(float s, float t) { }
+void glTranslatef(float x,float y,float z) { }
+void glViewport(int x,int y,int width,int height) { }
+void glVertex2f(float x,float y) { }
+void glVertex3f(float x,float y,float z) { }]]>
+          </Source>
+        </ZExternalLibrary>
+      </Children>
+    </Group>
+    <Group Comment="Fonts">
+      <Children>
+        <Group Name="DinaFontGroup" Comment="Dina">
+          <Children>
+            <Font Name="DinaFont" Bitmap="DinaBitmap" FirstChar="32" CharPixelWidth="8" CharPixelHeight="16"/>
+            <Bitmap Name="DinaBitmap" Comment="Font from http://www.donationcoder.com/Software/Jibz/Dina/index.html" Width="3" Height="3" Filter="1">
+              <Producers>
+                <BitmapFromFile Transparency="1">
+                  <BitmapFile>
+<![CDATA[78DAED5DDB96E3200CE3FF7F7AF66DCF9C6930B27C011AF969A64D49A2185F844DC69048241289E42DF2F34BC0837FFF810FFEF91364846628F69EF1FFBF8F57F2F9EDF282ED038EC21F57C29EC7F1792538EC20C8E7E03F9BA48FF3F76722E9F6C7981DAE93CE0E93FEBB9493B03FCBD14E7B04D583FFB9EB6AFB8F18B7D3BC7027FE5BE29FA5A1FB02908DF97E9497CFB263F6C1C1994BF8115BC93FCD4EB5E90323AB443FCED9D88DDA58743D360E2ECD37F09F6994EBABB7E5DDEF71BE1289E48BED18EE2C246D79AB2B2E92D0544C1CFF59724A8CEF4A7E0745A6E1F11B411212D444B5FED7E16F2F88C42968EF1C8FD3B915B4460A7F9BA27B89CA530DDAD5F82FCF5884FF2DFACFADBC18A11AB838FB6709A6E81164017894FE0F3FF1D5B0049912FF544FA52CFF8B78D8A0816AB0EA9D2705D785B3F0C7EB19885BDB5EDDD1A0FF5CF07C54FC7F35FE83E2759BD75FFA53E966FBCF39C7E6F517C999CCCFB1DE3CD1950BFF2B6E53F86FC71FA94B4CF4B0C2BFCDEFBBF29DD95776F18F51D7EA4AA9F038D3F87776FD447D7E29FEAEB411BC129CD705D352BBBE6579523026BC177F6F5ABA7C5E46F15204FF41D5E75F813FC7EBC6F1B727858BF6897FEEE5AB8BEC0F8DFFA3A2DAD5A45EFD373C05E1BE677E0D9C2004FECB7B8FD81F64F014FC47C6BAFFAEF86779BCD728D1F873FA734EFCF3E6DCF304FF2BFC85BFF097ECE27F24122254131AF229C23F328984E15EFD3FFF1120FC39629F91922A90325AAE47CC4E8D132048C083B73947FAEEB3F27DD7E72033839717562C5810F8D37577DCF8DE719078FB55F87BE73B81BF8B076BC0DF360EFDF877EAFF39F6E73BF097FDCFB53FCB602631FEF1AE472CEB2E1092875E2F8BE3D31936A7971B55575C77E60B445C2AFC9B33CAB6063170AAD207B80CF217F70BEC9AD4A28024128944C2C5E79DEB716FF05674F84D34A51A5BB3CEB23C246DA7F97CFC368375B606EF57877F303C23EAEA693EA701FFEA54A2223CF6F24811FCED1D6BC1FE0B425DAFC31FD7A514FC87A7FF221DFFA2B72A80C630B2FE5B8DFF58EDBF9D62C641FC830E258BCFA7F1AFE8BF08CE0BD7DD7D37FEF66DBA0C51A26B8EECB37DF27A16DD7FC1297C965FF6E2EFB2E759C7EFC29F88FF89B848E46A5628C82565C23F8BFFE1FAFD2512894422915CE4F7BDFDE3AEF8DF3829BDBF8777FF1FEF38E075D2EB2359FCB3972F0D76DAD2F59FCD75F5F8E7C1E75B5166BC0BFF7EFD8CD7F1DE823FC2639C807F90CFF1DA557C7CD77E6E2EFC233BA2180072F66724EDAB56A4FFA07921F4DF85BF519FC0BD7758F8BBECCF0CFFACBE0C6EDFA493E31F047F504F1EF704E3F607C3FB471AE2FF94B8DD7BA90D7D6DE24B2512894422919C268A4C4E7804BB9E3BD76FEE8A6F893E77049FE538B8AA2FA740B01FD64BCF8EBC82F3B1A38FC0F815817FBC453A8EFFA8E91349E7F3D30D4BD1FB37973432DDF1B4B45717E1EFEA63F2CEC4E16F61589AE2A5CD89BC6733B8EF4A9B5376191357E5B0EB2B57EF4CF0A5E134AFBBFC3C45FF6D83F3F855CA0B6B3E870A1A8A745E7DE97F73ED7F1BFF8F3B1A6E0A14EDF75514FF2C4DB177EA8171FBD2FE2F437722EFA8E0DB7BB6BB9174E6B912894422915CEDDDD2399F6552702F383DE3B7ED4E59340297F4E13C7C967635E0EF852225E08FE3FFB86F06B26340D6456665BE41FCAB8D00B29FBC412E75E24F90BD771961702B98D97E4A0DFA8F932D7B1F41B5FD6FA0C5B8BAD3E07CEFC7DFEE53B3DFE7DE89FF5EFD1F65EB9888FF9D1DD96C7F76D9FFEDF8DF1BFFEC7A04F624F56E31140FFBBFE3FDB0CDF837E4A1D76D329F32DFFBEF2E52DAF42A424682C83F99AF58DD]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="DinaMaterial" Shading="1" Light="0" Font="DinaFont"/>
+          </Children>
+        </Group> <!-- DinaFontGroup -->
+
+      </Children>
+    </Group>
+    <ZExpression Comment="Authors and Credits">
+      <Expression>
+<![CDATA[/*
+
+Authors:
+Kjell         (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=55)
+jph_wacheski  (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=54)
+Kattle87      (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=47)
+y offs et     (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=80)
+diki          (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=67)
+
+Code:
+Bitmaps
+  Anti-Aliased Circle (http://www.emix8.org/forum/viewtopic.php?t=137) Kjell
+  Bricks (http://www.emix8.org/forum/viewtopic.php?t=347) Kattle87
+  Dithering (http://www.emix8.org/forum/viewtopic.php?t=541) Kjell
+  Polygon Bitmap (http://www.emix8.org/forum/viewtopic.php?t=561) diki
+Meshes
+  Better looking Spheres (http://www.emix8.org/forum/viewtopic.php?t=204) Kattle87
+  Capsule (http://www.emix8.org/forum/viewtopic.php?p=2966#2966) Kjell
+  Cylinder (http://www.emix8.org/forum/viewtopic.php?p=1629#1629) Kattle87
+Models
+  Ring from Cubes (http://www.emix8.org/forum/viewtopic.php?t=205) jph_wacheski
+  Zwidget (http://www.emix8.org/forum/viewtopic.php?t=576) y offs et
+Examples
+  2D Culling (http://www.emix8.org/forum/viewtopic.php?t=491) Kjell
+  GLSL Fog (http://www.emix8.org/forum/viewtopic.php?t=412) jph_wacheski
+  Input Method (http://www.emix8.org/forum/viewtopic.php?t=331) Kjell
+  Proportional Font (http://www.emix8.org/forum/viewtopic.php?t=551) Kjell
+  RayCast (http://www.emix8.org/forum/viewtopic.php?t=392) Kjell
+  Trails (http://www.emix8.org/forum/viewtopic.php?t=348) Kjell
+  View Frustrum Culling (http://www.emix8.org/forum/viewtopic.php?t=513) diki
+Libraries
+  Bit Library (http://www.emix8.org/forum/viewtopic.php?t=532) Kjell
+  HSV Color Library (http://www.emix8.org/forum/viewtopic.php?t=557) Kjell
+  Matrix Library (http://www.emix8.org/forum/viewtopic.php?t=389) Kjell
+  Vector Library (http://www.emix8.org/forum/viewtopic.php?t=392) Kjell
+
+*/]]>
+      </Expression>
+    </ZExpression>
+  </Content>
+</ZApplication>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FullScreen="255" ScreenMode="4" CameraPosition="0 8 25" CameraRotation="0.04 0 0" LightPosition="1 4 8">
+  <OnLoaded>
+    <DefineVariable Name="SpawnType"/>
+    <SpawnModel Model="o_floor"/>
+    <SpawnModel Model="o_mouse" SpawnStyle="1"/>
+  </OnLoaded>
+  <Content>
+    <Group Comment="mesh">
+      <Children>
+        <Material Name="m_plain" Color="1 1 1 1" Blend="1"/>
+        <Mesh Name="g_floor">
+          <Producers>
+            <MeshBox Scale="20 20 20"/>
+          </Producers>
+        </Mesh>
+        <Mesh Name="g_box">
+          <Producers>
+            <MeshBox/>
+          </Producers>
+        </Mesh>
+        <Mesh Name="g_ball">
+          <Producers>
+            <MeshSphere ZSamples="32" RadialSamples="32"/>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+    <Model Name="o_mouse" Category="1">
+      <OnRender>
+        <UseMaterial Material="m_plain"/>
+        <RenderSetColor Color="1 0.749 0.8745 0.5"/>
+        <RenderTransformGroup Scale="1.1 1.1 1.1">
+          <Children>
+            <Condition Comment="box" Expression="return SpawnType==0;">
+              <OnTrue>
+                <RenderMesh Mesh="g_box"/>
+              </OnTrue>
+            </Condition>
+            <Condition Comment="ball" Expression="return SpawnType==1;">
+              <OnTrue>
+                <RenderMesh Mesh="g_ball"/>
+              </OnTrue>
+            </Condition>
+            <Condition Comment="box_r" Expression="return SpawnType==2;">
+              <OnTrue>
+                <RenderTransformGroup Scale="0.5 0.5 0.5">
+                  <Children>
+                    <RenderMesh Mesh="g_box"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnTrue>
+            </Condition>
+          </Children>
+        </RenderTransformGroup>
+      </OnRender>
+      <OnUpdate>
+        <ZExpression>
+          <Expression>
+<![CDATA[CurrentModel.Position.Y=-4 + clamp(App.MousePosition.Y * 16,0,16);
+CurrentModel.Position.X=App.MousePosition.X * 12;]]>
+          </Expression>
+        </ZExpression>
+        <KeyPress Comment="RMB" Keys="}" RepeatDelay="0.25">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[SpawnType+=1;
+if(round(SpawnType)==3)
+  SpawnType=0;]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Comment="LMB" Keys="{ " RepeatDelay="0.25">
+          <OnPressed>
+            <Condition Comment="box" Expression="return SpawnType==0;">
+              <OnTrue>
+                <SpawnModel Model="o_box"/>
+              </OnTrue>
+            </Condition>
+            <Condition Comment="ball" Expression="return SpawnType==1;">
+              <OnTrue>
+                <SpawnModel Model="o_ball"/>
+              </OnTrue>
+            </Condition>
+            <Condition Comment="box_r" Expression="return SpawnType==2;">
+              <OnTrue>
+                <SpawnModel Model="o_box_rigid"/>
+              </OnTrue>
+            </Condition>
+          </OnPressed>
+        </KeyPress>
+      </OnUpdate>
+    </Model>
+    <Model Name="o_floor" Position="0 -26 -15" UsePhysics="255" PhysicsIsRigid="0" PhysicsSize="40 40 40">
+      <OnRender>
+        <RenderSetColor Color="0.3294 0.349 0.3725 1"/>
+        <RenderMesh Mesh="g_floor"/>
+      </OnRender>
+    </Model>
+    <Model Name="o_box" Velocity="0 0.1 0" UsePhysics="255" PhysicsMass="10" PhysicsSize="2 2 2">
+      <OnRender>
+        <UseMaterial Material="m_plain"/>
+        <RenderSetColor Color="0.7765 0.8745 0.9843 1"/>
+        <RenderMesh Mesh="g_box"/>
+      </OnRender>
+      <OnUpdate>
+        <Condition Expression="return 1; //currentmodel.position.y&gt;-5;">
+          <OnFalse>
+            <RemoveModel/>
+          </OnFalse>
+        </Condition>
+      </OnUpdate>
+      <OnSpawn>
+        <ZExpression>
+          <Expression>
+<![CDATA[CurrentModel.Position.Y=o_mouse.Position.Y;
+CurrentModel.Position.X=o_mouse.Position.x;]]>
+          </Expression>
+        </ZExpression>
+      </OnSpawn>
+    </Model>
+    <Model Name="o_ball" Velocity="0 0.2 0" UsePhysics="255" PhysicsMass="2" PhysicsSize="1 20 0" PhysicsGeoStyle="1">
+      <OnRender>
+        <RenderSetColor Color="0.8039 0.9098 0.9961 1"/>
+        <RenderMesh Mesh="g_ball"/>
+      </OnRender>
+      <OnUpdate>
+        <Condition Expression="return 1; //currentmodel.position.y&gt;-5;">
+          <OnFalse>
+            <RemoveModel/>
+          </OnFalse>
+        </Condition>
+        <ZExpression Expression="//currentModel.position.z=0;      //2d plane"/>
+      </OnUpdate>
+      <OnSpawn>
+        <ZExpression>
+          <Expression>
+<![CDATA[CurrentModel.Position.Y=o_mouse.Position.Y;
+CurrentModel.Position.X=o_mouse.Position.x;]]>
+          </Expression>
+        </ZExpression>
+      </OnSpawn>
+    </Model>
+    <Model Name="o_box_rigid" Velocity="0 0.1 0" UsePhysics="255" PhysicsIsRigid="0" PhysicsMass="10" PhysicsSize="2 2 2">
+      <OnRender>
+        <UseMaterial Material="m_plain"/>
+        <RenderSetColor Color="0.9451 0.9882 0.8118 1"/>
+        <RenderMesh Mesh="g_box"/>
+      </OnRender>
+      <OnUpdate>
+        <Condition Expression="return 1; //currentmodel.position.y&gt;-5;">
+          <OnFalse>
+            <RemoveModel/>
+          </OnFalse>
+        </Condition>
+      </OnUpdate>
+      <OnSpawn>
+        <ZExpression>
+          <Expression>
+<![CDATA[CurrentModel.Position.Y=o_mouse.Position.Y;
+CurrentModel.Position.X=o_mouse.Position.x;]]>
+          </Expression>
+        </ZExpression>
+      </OnSpawn>
+    </Model>
+  </Content>
+</ZApplication>

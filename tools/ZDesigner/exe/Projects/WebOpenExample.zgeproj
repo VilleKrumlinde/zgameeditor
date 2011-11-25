@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application">
+  <OnLoaded>
+    <ZExpression Expression="Color1.Color=1;"/>
+    <WebOpen Url="http://www.emix8.org/" ResultArray="Ar1">
+      <OnResult>
+        <ZExpression>
+          <Expression>
+<![CDATA[Color1.Color.R=1;
+Color1.Color.G=rnd();
+Color1.Color.B=rnd();]]>
+          </Expression>
+        </ZExpression>
+      </OnResult>
+    </WebOpen>
+  </OnLoaded>
+  <OnUpdate>
+    <AnimatorSimple Duration="1" AutoStart="255" Target="Rt1 Translate" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+  </OnUpdate>
+  <OnRender>
+    <RenderText TextArray="Ar1" X="-0.94" Y="0.9" Scale="0.18" Align="1"/>
+    <RenderTransformGroup Name="Rt1" Scale="0.25 0.25 0.25" Translate="4 -3.4 0">
+      <Children>
+        <RenderSetColor Name="Color1" Color="1 0.1344 0.2525 0"/>
+        <RenderSprite/>
+      </Children>
+    </RenderTransformGroup>
+  </OnRender>
+  <Content>
+    <DefineArray Name="Ar1" Type="1" SizeDim1="16384"/>
+  </Content>
+</ZApplication>

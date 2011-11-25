@@ -44,6 +44,7 @@ type
     DownloadURLLabel: TLabel;
     InvertNormalsCheckBox: TCheckBox;
     TexCoordsCheckBox: TCheckBox;
+    SingleMeshCheckBox: TCheckBox;
     procedure NamePrefixEditChange(Sender: TObject);
     procedure AutoScaleCheckBoxClick(Sender: TObject);
     procedure DownloadURLLabelClick(Sender: TObject);
@@ -78,12 +79,12 @@ var
   I : integer;
 begin
   Result := LowerCase(Trim(S));
-  while (Length(Result)>0) and (Result[1] in ['0'..'9']) do
+  while (Length(Result)>0) and CharInSet(Result[1],['0'..'9']) do
     Delete(Result,1,1);
   I := 1;
   while I<=Length(Result) do
   begin
-    if Result[I] in ['a'..'z','0'..'9','_'] then
+    if CharInSet(Result[I],['a'..'z','0'..'9','_']) then
       Inc(I)
     else
       Delete(Result,I,1);   

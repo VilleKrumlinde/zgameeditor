@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="1 2 3" PreviewClearColor="0.5961 0.2902 0.7098 1">
+  <OnLoaded>
+    <ZLibrary Name="Lib1">
+      <Source>
+<![CDATA[void f1() {
+  App.ClearColor.R=1.0;
+}
+
+void f2() {
+  App.ClearColor.G=1.0;
+}
+
+float f3() {
+  return 0.5;
+}
+
+float f4() {
+  float x1;
+  x1=0.5;
+  return noise2(app.time*x1,app.time * 4);
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Name="Lib2">
+      <Source>
+<![CDATA[float g1(float x,float y,float z) {
+  if( (x==1) && (y==2) && (z==3) )
+    return 42;
+  else
+    return 0;
+}
+
+int intMultiply(int x,int y) {
+  return x*y;
+}
+
+const int Lib2X = 42;
+
+void assignGlobal(float x) {
+  GlobalFloat=x;
+}
+
+const int Lib2Y = 88;]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[Error=0;
+
+float x,y,z;
+
+x=0.9f;
+y=0.5;
+z=0.1;
+
+if( (x==0.9) && (y==0.5) && (z==0.1) ) {
+  App.ClearColor.R=x;
+  App.ClearColor.G=y;
+  App.ClearColor.B=z;
+} else
+  Error=1;
+
+app.clearcolor.r=f3();
+
+if(f3()!=0.5)
+  Error=1;
+  
+if(g1(1,2,3)!=42)
+  Error=1;
+  
+GlobalFloat=0;
+assignGlobal(2);
+if(GlobalFloat!=2)
+  Error=2;
+  
+x=0;
+
+int i=42;
+GlobalFloat=i*i+42f+20;
+x=round(i*i+42f+20);
+if(GlobalFloat!=x)
+  Error=8;
+
+i=2;
+switch(i) {
+  case 0 :
+    break;
+  case 1 :
+  case 2 :
+    i=42;
+    break;
+  case 3 :
+    break;
+}
+if(i!=42)
+  Error=9;
+
+i=3;
+switch(i) {
+  case 0 : break;
+  default : i=42;
+}
+if(i!=42)
+  Error=10;
+
+switch(0){case 0:float bug1;}]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Int tests">
+      <Expression>
+<![CDATA[int x=42;
+float y;
+int i,j;
+
+if(1==1) {
+  float xx=22+22;
+}
+
+y=x;
+x=y;
+
+if((x!=y) || (x!=42))
+  Error=2;
+
+//Assign int property
+MeshBox1.XCount=50;
+if(MeshBox1.XCount!=50)
+  Error=3;
+  
+x=x*2;
+x+=1;
+if(x!=85)
+  Error=4;
+  
+x=intMultiply(5,5);
+if(x!=25)
+  Error=5;
+  
+x=-10;
+if(x>0)
+  Error=6;
+if(x<-11)
+  Error=7;
+if(x!=-10)
+  Error=8;
+
+//binary operators
+i=1; j=2;
+if( ((1 | 2) != 3) && ((i | j) !=3 ) )
+  Error=9;
+if((3 & 1) != 1)
+  Error=10;
+i=3; j=1;
+if((i & j) != 1)
+  Error=10;
+if( (0x0f | 0xf0) != 0xff)
+  Error=11;
+i=0x0f; j=0xf0;
+if( (i | j) != 0xff)
+  Error=11;
+if( (0x0f | 0xf0 | 0xf00) != 0xfff)
+  Error=12;
+if( (1<<2) != 4)
+  Error=13;
+i=1; j=2;
+if( (i<<j) != 4)
+  Error=13;
+if( (4>>2) != 1)
+  Error=14;
+i=4; j=2;
+if( (i>>j) != 1)
+  Error=14;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="byte tests">
+      <Expression>
+<![CDATA[int x;
+float y;
+
+Material1.Blend=0;
+if(Material1.Blend!=0)
+  Error=10;
+
+x=Material1.Blend+1;
+Material1.Blend=x;
+if(Material1.Blend!=1)
+  Error=11;
+
+x=Material1.Blend+1;
+if(x!=2)
+  Error=12;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="For-loops">
+      <Expression>
+<![CDATA[int sum=0;
+
+for(int i=0; i<10; i++) {
+  sum+=10;
+}
+
+if(sum!=100)
+  Error=100;
+
+for(int i=0, k=0; i<10; i++,k++) {
+  sum+=10;
+  if(i!=k)
+    Error=101;
+}
+
+//break
+for(int i=0; i<10; i++) {
+  sum=i;
+  if(i==5)
+    break;
+}
+if(sum!=5)
+  Error=102;
+
+//continue
+for(int i=0; i<10; i++) {
+  if(i>6)
+    continue;
+  sum=i;
+}
+if(sum!=6)
+  Error=102;
+
+sum=0;
+for(int i=0; i<10; i++) {
+  for(int j=0; j<10; j++) {
+    sum++;
+    if(j==5)
+      break;
+    else
+      continue;
+  }
+  if(i==5)
+    break;
+  else
+    continue;
+}
+if(sum!=36)
+  Error=103;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Assignment as value">
+      <Expression>
+<![CDATA[int x,y,z;
+
+x=y=z=1;
+
+if((x!=1) || (y!=1) || (z!=1))
+  Error=201;
+  
+if( (x=2) != 2 )
+  Error=201;
+
+//Conditional
+x= (1==1) ? 10 : 20;
+if(x!=10)
+  Error=202;
+
+x=0 ? 11 : 21;
+if(x!=21)
+  Error=203;
+
+x=1;
+if( (x==0) ? 1 : 0)
+  Error=204;
+
+float w=10;
+x=(1.42) ? (w+2) : (w+1);
+if(x!=12)
+  Error=205;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Pre/post inc/dec">
+      <Expression>
+<![CDATA[int x,y,z;
+
+x=1;
+y= ++x;
+if( (y!=2) || (x!=2) )
+  Error=300;
+  
+++x;
+if( (x!=3) )
+  Error=301;
+
+int sum=0;
+for(int i=0; i<10; ++i)
+  sum+=10;
+if( (sum!=100) )
+  Error=302;
+  
+x=1;
+x++;
+if(x!=2)
+  Error=303;
+
+y=x++;
+if( (y!=2) || (x!=3) )
+  Error=304;
+  
+sum=0;
+for(int i=10; i>0; --i)
+  sum+=10;
+if( (sum!=100) )
+  Error=305;
+  
+Global1=10;
+Global1++;
+if( (Global1++ !=11) )
+  Error=306;
+if( (++Global1 !=13) )
+  Error=307;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Boolean values">
+      <Expression>
+<![CDATA[int i;
+float f;
+
+//Boolean values
+//True = 1
+//False = 0
+
+i=1<2;
+if(i!=1)
+  Error=1;
+  
+i=1>2;
+if(i!=0)
+  Error=2;
+  
+f=1f<2f;
+if(f!=1)
+  Error=3;
+
+f=1f>2f;
+if(f!=0)
+  Error=4;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="String values">
+      <Expression>
+<![CDATA[int i;
+string s;
+
+//length : returns length of string
+i = length("1234"); //4
+if(i!=4)
+  Error=1001;
+
+//indexOf(substr,str,startpos) : returns position of substring in string from a start position
+i = indexOf("lo","hello",0); //3
+if(i!=3)
+  Error=1002;
+
+//convert from/to integer
+s = intToStr(42);
+if(s!="42")
+  Error=1003;
+
+i = strToInt("42");
+if(i!=42)
+  Error=1004;
+
+//subStr(source,startpos,length) : return substring
+s = subStr("hello",0,2);  //"he"
+if(s!="he")
+  Error=1005;
+
+//Assign properties
+s=App.Caption;
+App.Caption = "hello";
+if(App.Caption!="hello")
+  Error=1006;
+App.Caption = s;
+if(App.Caption!=s)
+  Error=1007;
+
+//NOT syntax
+if(!("hello"=="hello"))
+  Error=1008;
+if(!((1==1) && (2==2)))
+  Error=1009;
+
+//Constants
+if(ConS!="String")
+  Error=1010;
+if(ConI!=1)
+  Error=1011;
+if(ConF!=1.0)
+  Error=1012;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Model values">
+      <Expression>
+<![CDATA[model m;
+
+m=Model1;
+m.Position=0;
+
+App.CameraPosition.X=1;
+App.CameraPosition.Y=2;
+App.CameraPosition.Z=3;
+
+m.Position=App.CameraPosition;
+
+if( (abs(m.Position.X-1)>0.1) &&
+  (abs(m.Position.Y-2)>0.1) &&
+  (abs(m.Position.Z-3)>0.1))
+  Error=1101;
+
+//Model DefineVariable
+m=Model1;
+VarM=m;
+m.Category=4;
+if(m.Category!=VarM.Category)
+  Error=1102;
+
+//Model DefineArray
+m.Category=5;
+ModelArray[0]=m;
+if(m.Category!=ModelArray[0].Category)
+  Error=1103;
+
+//Equality
+model m2=m;
+if( (m2!=m) || (ModelArray[0]!=m) || (m!=VarM) || (VarM!=m))
+  Error=1104;
+
+//Null
+if(m==null)
+  Error=1105;
+m=null;
+if(m!=null)
+  Error=1106;
+ModelArray[0]=m;
+if(ModelArray[0]!=null)
+  Error=1107;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Model defines">
+      <Expression>
+<![CDATA[model m=createModel(Model1);
+
+m.Defined1=10;
+if(m.Defined1!=10)
+  Error=1201;
+
+m.Defined2=20;
+if(m.Defined2!=20)
+  Error=1202;
+
+Defined1=10;
+if(Defined1!=10)
+  Error=1203;
+
+Model1.Defined2=42;
+if(Defined2!=42)
+  Error=1204;
+
+m.Defined3="Hej";
+if(m.Defined3!="Hej")
+  Error=1205;]]>
+      </Expression>
+    </ZExpression>
+    <SpawnModel Model="Model1"/>
+    <ZExpression Comment="Material and Sound datatypes">
+      <Expression>
+<![CDATA[Material mat=Material1;
+
+mat.Shading = 0;
+if(mat.Shading!=0)
+  Error=1201;
+
+mat.Shading = 1;
+if(mat.Shading!=1)
+  Error=1202;
+
+//Sound snd = Sound1;
+playSound(Sound1,55,0);]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Compares">
+      <Expression>
+<![CDATA[model m=Model1;
+int i= m==Model1;
+float f= m==Model1;
+
+if(i==0)
+  Error=1301;
+
+if(f==0)
+  Error=1302;
+
+i= m!=Model1;
+f= m!=Model1;
+
+if(i!=0)
+  Error=1303;
+
+if(f!=0)
+  Error=1304;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Script defined constants">
+      <Expression>
+<![CDATA[const int x=1;
+if(x!=1)
+  Error=1401;
+
+const float f=1.5;
+if(f!=1.5)
+  Error=1402;
+
+const string s="hej";
+if(s!="hej")
+  Error=1403;
+
+const int xx=x*x+1;
+if(xx!=2)
+  Error=1404;
+
+const string ss=s + "hej";
+if(ss!="hejhej")
+  Error=1405;
+
+const float ff=f + 1;
+if(ff!=2.5)
+  Error=1406;
+
+if(Lib2X!=42)
+  Error=1407;
+
+if(Lib2X+Lib2Y+2!=132)
+  Error=1408;]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[if(Error==0)
+  App.ClearColor.R=0;
+else
+  App.ClearColor.R=1;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <RenderText TextFloatRef="Error Value"/>
+  </OnRender>
+  <Content>
+    <Model Name="Model1" Position="1 2 3" Category="5">
+      <Definitions>
+        <DefineVariable Name="Defined1"/>
+        <DefineVariable Name="Defined2"/>
+        <DefineVariable Name="Defined3" Type="2"/>
+      </Definitions>
+      <OnRender>
+        <RenderSprite/>
+      </OnRender>
+      <OnUpdate>
+        <ZExpression Expression="currentmodel.position.x=f4()*8;"/>
+      </OnUpdate>
+    </Model>
+    <DefineVariable Name="Error"/>
+    <Mesh Name="Mesh1">
+      <Producers>
+        <MeshBox Name="MeshBox1" XCount="50"/>
+        <MeshExpression VertexColors="255">
+          <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+//TexCoord : current texture coordinate (turn on HasTexCoords)
+
+this.C.R=0.5;
+this.C.G=0.7;
+
+this.V.X*=1.5;
+V.X*=0.5;]]>
+          </Expression>
+        </MeshExpression>
+      </Producers>
+    </Mesh>
+    <Material Name="Material1" Shading="1" Blend="1"/>
+    <DefineVariable Name="Global1" Type="1"/>
+    <DefineVariable Name="GlobalFloat"/>
+    <DefineConstant Name="ConS" Type="2" StringValue="String"/>
+    <DefineConstant Name="ConI" Type="1" IntValue="1"/>
+    <DefineConstant Name="ConF" Value="1"/>
+    <DefineVariable Name="VarM" Type="3"/>
+    <DefineArray Name="ModelArray" Type="3" SizeDim1="4"/>
+    <DefineVariable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
+    <Sound Name="Sound1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="2.56"/>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.14" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
+  </Content>
+</ZApplication>

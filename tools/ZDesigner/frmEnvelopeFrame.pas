@@ -115,17 +115,20 @@ begin
 
   //Time length of graph. Adjust to envelope total time.
   TimeW := Math.Ceil( (Envelope.AttackTime+Envelope.DecayTime+Envelope.ReleaseTime)/2 ) * 2;
-  //Time length of each pixel.
-  PSize := W / TimeW;
 
   C.Brush.Color := clBlack;
   C.FillRect( Rect(0,0,W, H) );
 
-  C.Pen.Color := clGreen;
-  C.MoveTo(0,H);
-  C.LineTo( Round(Envelope.AttackTime*PSize) ,0);
-  C.LineTo( C.PenPos.X + Round(Envelope.DecayTime*PSize) ,H-(Round(Envelope.SustainLevel*H)));
-  C.LineTo( C.PenPos.X + Round(Envelope.ReleaseTime*PSize) ,H);
+  //Time length of each pixel.
+  if TimeW>0.00001 then
+  begin
+    PSize := W / TimeW;
+    C.Pen.Color := clGreen;
+    C.MoveTo(0,H);
+    C.LineTo( Round(Envelope.AttackTime*PSize) ,0);
+    C.LineTo( C.PenPos.X + Round(Envelope.DecayTime*PSize) ,H-(Round(Envelope.SustainLevel*H)));
+    C.LineTo( C.PenPos.X + Round(Envelope.ReleaseTime*PSize) ,H);
+  end;
 end;
 
 procedure TEnvelopeFrame.ReleaseTrackBarChange(Sender: TObject);

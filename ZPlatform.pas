@@ -29,30 +29,33 @@ type
 
 procedure Platform_InitGlobals;
 
-//W and H is desired rez, returns actual rez.
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+//W and H is desired rez, returns actual rez + window handle.
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 function Platform_GetDisplayRefreshRate : integer;
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
 
 procedure Platform_ShutdownScreen;
 procedure Platform_SwapBuffers;
 procedure Platform_Run(Callback : TRunCallback);
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 
 //Return time in seonds since program start
 function Platform_GetTime : single;
+function Platform_GetSystemTime : integer;
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 
 function Platform_GetMousePos : TZPointi;
 procedure Platform_SetMousePos(const X,Y : integer);
+procedure Platform_ShowMouse(Visible : boolean);
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 
-procedure Platform_Error(ErrorMessage : PChar);
-//procedure Platform_SimpleText(Scale,X,Y : single; Msg : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
+//procedure Platform_SimpleText(Scale,X,Y : single; Msg : PAnsiChar);
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 
 procedure Platform_InitAudio;
 procedure Platform_ShutdownAudio;
@@ -67,15 +70,26 @@ function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : 
 //function Platform_GenerateFontTexture(Char : integer) : integer;
 
 function Platform_LoadLinkedResource : TZInputStream;
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 
 function Platform_ShowOptionDialog : boolean;
+
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+function Platform_GetJoystickPOV(JoyId : integer) : single;
+
+
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 
 {$ifndef minimal}
 type
   TDesignerAudioCallback = procedure(P : pointer; Count : integer);
 procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
-procedure Platform_DesignerSetFilePath(const P : string);
+procedure Platform_DesignerSetFilePath(const P : AnsiString);
 {$endif}
 
 const
@@ -88,10 +102,11 @@ const
 type
   TScreenMode =
     packed record
-      W,H : word;
+      W,H : smallint;
     end;
 const
-  ScreenModes : packed array[0..4] of TScreenMode = (
+  ScreenModes : packed array[0..5] of TScreenMode = (
+(W:-1; H:-1),  //Fullscreen with desktop resolution
 (W:640; H:480),
 (W:800; H:600),
 (W:1024; H:768),
@@ -102,7 +117,5 @@ const
 {$IFDEF ZZDC_SDL}
   {$INCLUDE ZPlatform_SDL.inc}
 {$ELSE}
-  {$IFDEF win32}
-    {$INCLUDE ZPlatform_Win32.inc}
-  {$ENDIF}
+  {$INCLUDE ZPlatform_Win32.inc}
 {$ENDIF}

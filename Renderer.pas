@@ -22,13 +22,14 @@ unit Renderer;
 
 interface
 
-uses Meshes,ZClasses,ZBitmap;
+uses Meshes,ZClasses,ZBitmap,ZExpressions;
 
 type
   TRenderCommand = class(TCommand);
 
   TFont = class;
   TShader = class;
+  TRenderTarget = class;
 
   TMaterialShading = (msSmooth,msFlat,msWireframe);
   TMaterialTexCoords = (tcGenerated,tcModelDefined);
@@ -36,16 +37,11 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Textures : array[0..2] of TZBitmap;
-    TextureScale : TZVector3f;
-    TextureX,TextureY : single;
-    TextureRotate : single;
-    TextureWrapMode : (tmMirror,tmTile,tmClamp);
+    Textures : TZComponentList;
     Shading : TMaterialShading;
     Color : TZColorf;
     Light : boolean;
     Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1);
-    TexCoords : TMaterialTexCoords;
     ZBuffer : boolean;
     DrawBackFace : boolean;
     Font : TFont;
@@ -53,26 +49,49 @@ type
     WireframeWidth : single;
   end;
 
+  TMaterialTexture = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Texture : TZBitmap;
+    RenderTarget : TRenderTarget;
+    TextureScale : TZVector3f;
+    TextureX,TextureY : single;
+    TextureRotate : single;
+    TextureWrapMode : (tmMirror,tmTile,tmClamp);
+    TexCoords : TMaterialTexCoords;
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+  end;
+
   TShaderVariable = class(TZComponent)
   private
     Location : integer;
+    TextureHandle : integer;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     VariableName : TPropString;
     Value : single;
     ValuePropRef : TZPropertyRef;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    ValueArrayRef : TDefineArray;
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    procedure DesignerFreeResources; override;
+    {$endif}
+    destructor Destroy; override;
   end;
 
   TShader = class(TZComponent)
   strict private
     ProgHandle,VShaderHandle,FShaderHandle : cardinal;
     LastVariableUpdate : single;
+    TexCount,FirstTexIndex : integer;
     procedure ReInit;
     procedure CleanUp;
     procedure UpdateVariableLocations;
     procedure UpdateVariableValues;
+  private
+    procedure DetachArrayVariables;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure UseShader;
@@ -80,7 +99,11 @@ type
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
     UniformVariables : TZComponentList;
+    UpdateVarsOnEachUse : boolean;
     destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
   //Render-commands
@@ -90,7 +113,7 @@ type
   public
     Material : TMaterial;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRenderMesh = class(TRenderCommand)
@@ -99,7 +122,7 @@ type
   public
     Mesh : TMesh;
     procedure Execute; override;
-    {$ifndef minimal}function GetDisplayName: String; override;{$endif}
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRenderTransform = class(TRenderCommand)
@@ -176,18 +199,21 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Text : TPropString;                     //Text att printa
+    Text : TPropString;               //Text att printa
     TextFloatRef : TZPropertyRef;     //Propvalue att printa, en av dessa gäller
+    TextArrayRef : pointer;           //DefineArray to print
     X,Y,Scale : single;
     Align : (alCenter,alLeft);
-    CharX,CharY,CharI,CharRotate,CharScale : single;
+    CharX,CharY,CharRotate,CharScale : single;
+    CharI : integer;
     RenderCharExpression : TZExpressionPropValue;
     FloatMultiply : single;  //Multiplicera floatref innan print, för att visa decimaltal
     UseModelSpace : boolean;
     StretchY : single;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: String; override;
+    function GetDisplayName: AnsiString; override;
+    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -249,6 +275,38 @@ type
     {$endif}
   end;
 
+  TRenderTarget = class(TZComponent)
+  strict private
+    TexId,RboId,FboId : integer;
+    {$ifndef minimal}
+    LastW,LastH : integer;
+    {$endif}
+    procedure CleanUp;
+  protected
+    procedure Activate;
+    procedure UseTextureBegin;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    ClearBeforeUse : boolean;
+    AutoPowerOfTwo : boolean;
+    ClearColor : TZColorf;
+    Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
+    CustomWidth,CustomHeight : integer;
+    destructor Destroy; override;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
+  end;
+
+  TSetRenderTarget = class(TRenderCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    RenderTarget : TRenderTarget;
+    procedure Execute; override;
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+  end;
+
 procedure InitRenderer;
 procedure RenderMesh(Mesh : TMesh);
 
@@ -257,48 +315,55 @@ procedure RenderModel(Model : TModel);
 procedure Render_End;
 procedure ApplyRotation(const Rotate : TZVector3f);
 
+procedure RenderUnitQuad;
 
 {$ifndef minimal}
 procedure CleanUp;
 procedure AssertNotRenderMode;
+procedure DesignerRenderStop;
 
 var
   IsRendering : boolean;
   NormalsVisible : boolean;
+  CollisionBoundsVisible : boolean;
 {$endif}
+
+var
+  CurrentRenderTarget : TRenderTarget;
+
 
 implementation
 
-uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZExpressions
+uses ZOpenGL, ZMath, ZApplication, ZPlatform
   {$ifdef zlog},ZLog,SysUtils{$endif};
 
 var
   DefaultMaterial : TMaterial;
+  DefaultMaterialTexture : TMaterialTexture;
+  DefaultFont : TFont;
+
+const
+  {$if SizeOf(TMeshVertexIndex)=2}
+  TMeshVertexIndex_GL = GL_UNSIGNED_SHORT;
+  {$ifend}
+  {$if SizeOf(TMeshVertexIndex)=4}
+  TMeshVertexIndex_GL = GL_UNSIGNED_INT;
+  {$ifend}
+
+
 
 procedure EnableMaterial(OldM,NewM : TMaterial); forward;
-
-{$ifndef minimal}
-procedure CheckGLError;
-var
-  Error : GLenum;
-begin
-  Error := glGetError;
-  if Error<>0 then
-  begin
-    ZLog.GetLog('GL').Write( 'GL ERROR: ' + IntToStr(Error) );
-  end;
-end;
-{$endif}
 
 procedure ApplyRotation(const Rotate : TZVector3f);
 begin
   //*180/PI
-  if Rotate[0]<>0 then
-    glRotatef( (Rotate[0]*360) , 1, 0, 0);
-  if Rotate[1]<>0 then
-    glRotatef( (Rotate[1]*360) , 0, 1, 0);
+  //Reverse order to make XYZ-rotation
   if Rotate[2]<>0 then
     glRotatef( (Rotate[2]*360) , 0, 0, 1);
+  if Rotate[1]<>0 then
+    glRotatef( (Rotate[1]*360) , 0, 1, 0);
+  if Rotate[0]<>0 then
+    glRotatef( (Rotate[0]*360) , 1, 0, 0);
 end;
 
 { TRenderer }
@@ -317,60 +382,154 @@ begin
   // loop through all verts
   for I := 0 to Mesh.VerticesCount-1 do
   begin
-    glVertex3fv(@Mesh.Vertices^[I]);                  // from the vertex point...
+    glVertex3f(Mesh.Vertices^[I][0],Mesh.Vertices^[I][1],Mesh.Vertices^[I][2]);                  // from the vertex point...
     EndPoint := VecAdd3(Mesh.Vertices^[I],Mesh.Normals^[I]); // to the vertex plus the normal
-    glVertex3fv(@EndPoint);
+    glVertex3f(EndPoint[0],EndPoint[1],EndPoint[2]);
   end;
   glEnd();
   glEnable(GL_LIGHTING);
 end;
+
+//Draw area around collision bounds
+//Code originally in Z-script by Kjell
+procedure RenderCollisionBounds(const Style : integer;
+   const Rx,Ry,Rz : single;
+   const Sx,Sy,Sz : single;
+   const Bx,By,Bz : single;
+   const Ox,Oy,Oz : single);
+
+  procedure renderRect(const W,H : single);
+  begin
+    glBegin(2);
+    glVertex2f(W   ,H   );
+    glVertex2f(W*-1,H   );
+    glVertex2f(W*-1,H*-1);
+    glVertex2f(W   ,H*-1);
+    glEnd();
+  end;
+
+  procedure renderCircle(const S : single);
+  var
+    X,R : single;
+    I : integer;
+  begin
+    glBegin(2);
+    X := 0;
+    for I := 0 to 31 do
+    begin
+      R := X*PI*2;
+      glVertex2f(sin(R)*S,cos(R)*S);
+      X := X + 1/32;
+    end;
+    glEnd();
+  end;
+
+
+begin
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  glColor3f(1,0,0);
+  glLineWidth(1);
+
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_BLEND);
+  glPushMatrix();
+
+  glScalef(1/SX,1/SY,1/SZ);
+  glRotatef(RZ*360,0,0,-1);
+  glRotatef(RY*360,0,-1,0);
+  glRotatef(RX*360,-1,0,0);
+  glTranslatef(OX,OY,OZ);
+
+  case Style of
+    0: // Rect2D
+      renderRect(BX*0.5,BY*0.5);
+
+    1: // Sphere3D
+      begin
+        renderCircle(BX);
+        glRotatef(90,1,0,0);
+        renderCircle(BX);
+        glRotatef(90,0,1,0);
+        renderCircle(BX);
+      end;
+
+    2: // Box3D
+      begin
+        glTranslatef(0,0,BZ);
+        renderRect(BX,BY);
+        glTranslatef(0,0,BZ*-2);
+        renderRect(BX,BY);
+        glBegin(1);
+        glVertex3f(BX   ,BY   ,0   );
+        glVertex3f(BX   ,BY   ,BZ*2);
+        glVertex3f(BX*-1,BY   ,0   );
+        glVertex3f(BX*-1,BY   ,BZ*2);
+        glVertex3f(BX*-1,BY*-1,0   );
+        glVertex3f(BX*-1,BY*-1,BZ*2);
+        glVertex3f(BX   ,BY*-1,0   );
+        glVertex3f(BX   ,BY*-1,BZ*2);
+        glEnd();
+      end;
+
+    3: // Rect2D_OBB
+      begin
+        glRotatef(RZ*360,0,0,1);
+        glScalef(SX,SY,0);
+        renderRect(BX*0.5,BY*0.5);
+      end;
+
+    4: // Circle2D
+      renderCircle(BX);
+  end;
+
+  glPopMatrix();
+  glPopAttrib;
+end;
 {$endif}
 
 procedure RenderMesh(Mesh: TMesh);
-{$DEFINE USE_VERTEX_ARRAYS}
-{$ifndef USE_VERTEX_ARRAYS}
-var
-  I : integer;
-{$endif}
 begin
   Mesh.BeforeRender;
+
   case Mesh.Style of
     msTris :
       begin
-{$ifdef USE_VERTEX_ARRAYS}
-        //Rita med vertex arrayer
-        //Verticedata ligger kvar i arbetsminnet
-        //Använd vertex buffer objects extension för att kopiera till grafikkortet
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT,0,Mesh.Normals);
-        if Mesh.TexCoords<>nil then
+        if VbosSupported and (not Mesh.IsDynamic) then
         begin
-          glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-          glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
-        end;
-        if Mesh.Colors<>nil then
+          //Use vertex buffer objects
+          //vbo is prepared in Mesh.BeforeRender
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
+
+          glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+          glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+        end else
         begin
-          glEnableClientState(GL_COLOR_ARRAY);
-          glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
+          //Use vertex arrays
+          glEnableClientState(GL_VERTEX_ARRAY);
+          glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
+          glEnableClientState(GL_NORMAL_ARRAY);
+          glNormalPointer(GL_FLOAT,0,Mesh.Normals);
+          if Mesh.TexCoords<>nil then
+          begin
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
+          end;
+          if Mesh.Colors<>nil then
+          begin
+            glEnableClientState(GL_COLOR_ARRAY);
+            glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
+          end;
+          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,Mesh.Indices);
         end;
-        glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,GL_UNSIGNED_SHORT,Mesh.Indices);
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
-{$else}
-        glBegin(GL_TRIANGLES);
-        for I := 0 to Mesh.IndicesCount-1 do
-        begin
-          glNormal3fv( @Mesh.Normals^[ Mesh.Indices^[I] ] );
-          glVertex3fv( @Mesh.Vertices^[ Mesh.Indices^[I] ] );
-        end;
-        glEnd;
-{$endif}
       end;
   end;
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_COLOR_ARRAY);
 
   {$ifndef minimal}
   //Display normals for debugging
@@ -402,7 +561,8 @@ const
   TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
 var
   NilOld : boolean;
-  Tmp,I,StartI : integer;
+  Tmp,I,TexCount : integer;
+  Tex : TMaterialTexture;
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -411,11 +571,7 @@ begin
   if (NewM=nil) then
     Exit;
 
-  if (not VecIsNull4(NewM.Color.V)) then
-    glColor4fv(@NewM.Color)
-  else
-    //default color, alpha is set to 1 by default
-    glColor3fv(@ZMath.UNIT_XYZ3);
+  glColor4fv(@NewM.Color);
 
   //Test for equal material after setting color
   //This is because rendersetcolor may have been called so we need reset material.color
@@ -429,7 +585,7 @@ begin
   if NilOld or (NewM.Shading<>OldM.Shading) then
   begin
     if (not NilOld) and (OldM.Shading=msWireframe) then
-    begin //todo: bökigt... slopa wireframe?
+    begin
       glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
       glLineWidth(1.0);
     end;
@@ -439,13 +595,13 @@ begin
       msFlat :
         glShadeModel(GL_FLAT);
       msWireframe :
-        begin
-          //Wireframe
-          glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-          glLineWidth(NewM.WireframeWidth);
-        end;
+        //Wireframe
+        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
     end;
   end;
+
+  if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
+    glLineWidth(NewM.WireframeWidth);
 
   if NilOld or (NewM.Light<>OldM.Light) then
   begin
@@ -494,48 +650,46 @@ begin
     end;
   end;
 
-  if MultiTextureSupported then
-    StartI := High(NewM.Textures)
-  else
-    StartI := 0;
-  for I := StartI downto 0 do
+  TexCount := NewM.Textures.Count;
+  if (not NilOld) and (OldM.Textures.Count>TexCount) then
+    TexCount := OldM.Textures.Count;
+  //Count backwards so that activetexture is zero on loop exit
+  for I := TexCount-1 downto 0 do
   begin
-    if NilOld or (NewM.Textures[I]<>OldM.Textures[I]) then
-    begin
-      if MultiTextureSupported then
-        glActiveTexture($84C0 + I);
-      if NewM.Textures[I]<>nil then
-      begin
-        glEnable(GL_TEXTURE_2D);
-        NewM.Textures[I].UseTextureBegin;
-      end
-      else
-        glDisable(GL_TEXTURE_2D);
-    end;
-  end;
+    if MultiTextureSupported then
+      glActiveTexture($84C0 + I)
+    else if I>0 then
+      Continue;
 
-  if NilOld or
-    (NewM.TextureScale[0]<>OldM.TextureScale[0]) or
-    (NewM.TextureScale[1]<>OldM.TextureScale[1]) or
-    (NewM.TextureX<>OldM.TextureX) or
-    (NewM.TextureY<>OldM.TextureY) or
-    (NewM.TextureRotate<>OldM.TextureRotate) then
-  begin
+    if I<NewM.Textures.Count then
+      Tex := TMaterialTexture(NewM.Textures[I])
+    else
+      Tex := DefaultMaterialTexture;
+
+    if Tex.Texture<>nil then
+    begin
+      glEnable(GL_TEXTURE_2D);
+      Tex.Texture.UseTextureBegin;
+    end else if Tex.RenderTarget<>nil then
+    begin
+      glEnable(GL_TEXTURE_2D);
+      Tex.RenderTarget.UseTextureBegin;
+    end else
+    begin
+      glDisable(GL_TEXTURE_2D);
+    end;
+
     //Texture matrix
     //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
-      glTranslatef(NewM.TextureX+0.5,NewM.TextureY+0.5,0);
-      glScalef(NewM.TextureScale[0],NewM.TextureScale[1],1);
-      glRotatef(NewM.TextureRotate*360,0,0,1);
+      glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+      glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
+      glRotatef(Tex.TextureRotate*360,0,0,1);
       glTranslatef(-0.5,-0.5,0);
     glMatrixMode(GL_MODELVIEW);
-  end;
 
-  if NilOld or (NewM.TexCoords<>OldM.TexCoords) then
-  begin
-    //Tex coord generation
-    if NewM.TexCoords=tcGenerated then
+    if Tex.TexCoords=tcGenerated then
     begin
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -547,17 +701,17 @@ begin
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
     end;
-  end;
 
-  if NilOld or (NewM.TextureWrapMode<>OldM.TextureWrapMode) then
-  begin
-    Tmp := TexWrapModes[Ord(NewM.TextureWrapMode)];
+    //This is a local parameter for every texture
+    Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
   end;
 
   if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
   begin
+    if (not NilOld) and (OldM.Shader<>nil) then
+      OldM.Shader.DetachArrayVariables;
     if NewM.Shader<>nil then
       NewM.Shader.UseShader
     else
@@ -594,6 +748,22 @@ begin
   if not VecIsIdentity3(Model.Scale) then
     glScalef(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
   Model.RunRenderCommands;
+  {$ifndef minimal}
+  if CollisionBoundsVisible then
+    RenderCollisionBounds( Ord(Model.CollisionStyle),
+             Model.Rotation[0],
+             Model.Rotation[1],
+             Model.Rotation[2],
+             Model.Scale[0],
+             Model.Scale[1],
+             Model.Scale[2],
+             Model.CollisionBounds.Area[0],
+             Model.CollisionBounds.Area[1],
+             Model.CollisionBounds.Area[2],
+             Model.CollisionOffset[0],
+             Model.CollisionOffset[1],
+             Model.CollisionOffset[2]);
+  {$endif}
   glPopMatrix();
 end;
 
@@ -632,10 +802,15 @@ const
   no_shininess = 0;
   low_shininess = 5;
   high_shininess = 100;
-var
-  I : integer;
+//var
+//  I : integer;
 //  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
+  {$ifndef minimal}if DefaultMaterial=nil then{$endif}
+    DefaultMaterial := TMaterial.Create(nil);
+  {$ifndef minimal}if DefaultMaterialTexture=nil then{$endif}
+    DefaultMaterialTexture := TMaterialTexture.Create(nil);
+
   glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
 
   glEnable(GL_DEPTH_TEST);
@@ -669,17 +844,6 @@ begin
   LoadOpenGLExtensions;
 //_ShaderTest;
 
-  //Initialize autmatic coords for other textures
-  if MultiTextureSupported then
-    for I := 2 downto 0 do
-    begin
-      glActiveTexture($84C0 + I);
-      glEnable(GL_TEXTURE_GEN_S);
-      glEnable(GL_TEXTURE_GEN_T);
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    end;
-
   //Set other default properties using the material-handler
   {$ifndef minimal}IsRendering := True;{$endif}
      EnableMaterial(nil,DefaultMaterial);
@@ -691,37 +855,24 @@ end;
 procedure TMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Textures[0]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Texture2',{$ENDIF}integer(@Textures[1]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Texture3',{$ENDIF}integer(@Textures[2]) - integer(Self), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-
-  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale) - integer(Self), zptVector3f);
-    List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}integer(@TextureWrapMode) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}integer(@WireframeWidth) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Textures',{$ENDIF}integer(@Textures), zptComponentList);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TMaterialTexture]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}integer(@WireframeWidth), zptFloat);
     List.GetLast.DefaultValue.FloatValue:=4.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}integer(@Light) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+    List.GetLast.DefaultValue.ColorfValue := TZColorf(Vector4f(1,1,1,1));
+  List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}integer(@Light), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}integer(@ZBuffer) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}integer(@ZBuffer), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}integer(@DrawBackFace) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Font',{$ENDIF}integer(@Font) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}integer(@DrawBackFace), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Font',{$ENDIF}integer(@Font), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TFont]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Shader',{$ENDIF}integer(@Shader) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Shader',{$ENDIF}integer(@Shader), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShader]);{$endif}
 end;
 
@@ -731,8 +882,9 @@ end;
 procedure TUseMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Material',{$ENDIF}integer(@Material) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Material',{$ENDIF}integer(@Material), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMaterial]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
 procedure TUseMaterial.Execute;
@@ -741,7 +893,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TUseMaterial.GetDisplayName: String;
+function TUseMaterial.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Material) then
@@ -754,7 +906,7 @@ end;
 procedure TRenderMesh.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}integer(@Mesh) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}integer(@Mesh), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -770,7 +922,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TRenderMesh.GetDisplayName: String;
+function TRenderMesh.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Mesh) then
@@ -783,10 +935,10 @@ end;
 procedure TRenderTransform.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate), zptVector3f);
 end;
 
 procedure TRenderTransform.Execute;
@@ -803,12 +955,11 @@ end;
 procedure TRenderTransformGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
 end;
 
 procedure TRenderTransformGroup.Execute;
@@ -830,10 +981,12 @@ end;
 
 { TRenderSprite }
 
-procedure RenderUnitQuad(const X,Y : single);
+procedure RenderUnitQuad;
 const
   Width = 1;
   Height = 1;
+  X = 0;
+  Y = 0;
 var
   W,H : single;
 begin
@@ -884,7 +1037,7 @@ begin
     Z-Buffer on/off (depth)
     DrawBackFace on/off
   }
-  RenderUnitQuad(0,0);
+  RenderUnitQuad;
 end;
 
 { TRenderBeams }
@@ -912,10 +1065,10 @@ end;
 procedure TRenderBeams.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}integer(@Length) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}integer(@Length), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 2;
 end;
 
@@ -998,17 +1151,21 @@ end;
 procedure TRenderText.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}integer(@Text) - integer(Self), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}integer(@Text), zptString);
+    List.GetLast.IsStringTarget := True;
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef) - integer(Self), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextArray',{$ENDIF}integer(@TextArrayRef), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'Align',{$ENDIF}integer(@Align) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Align',{$ENDIF}integer(@Align), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Center','Left']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RenderCharExpression',{$ENDIF}integer(@RenderCharExpression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderCharExpression',{$ENDIF}integer(@RenderCharExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Modify current character before render.'#13#10 +
@@ -1017,22 +1174,22 @@ begin
       '//CharRotate : current character rotation in radians'#13#10 +
       '//CharScale : current character scale';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FloatMultiply',{$ENDIF}integer(@FloatMultiply) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FloatMultiply',{$ENDIF}integer(@FloatMultiply), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'UseModelSpace',{$ENDIF}integer(@UseModelSpace) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'StretchY',{$ENDIF}integer(@StretchY) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'UseModelSpace',{$ENDIF}integer(@UseModelSpace), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'StretchY',{$ENDIF}integer(@StretchY), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
 
-  List.AddProperty({$IFNDEF MINIMAL}'CharX',{$ENDIF}integer(@CharX) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharX',{$ENDIF}integer(@CharX), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharY',{$ENDIF}integer(@CharY) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharY',{$ENDIF}integer(@CharY), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}integer(@CharI) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}integer(@CharI), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CharRotate',{$ENDIF}integer(@CharRotate) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharRotate',{$ENDIF}integer(@CharRotate), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharScale',{$ENDIF}integer(@CharScale) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharScale',{$ENDIF}integer(@CharScale), zptFloat);
     List.GetLast.NeverPersist:=True;
 end;
 
@@ -1041,22 +1198,22 @@ const
   BuiltInSpacing = -0.18; //Slight overlap to put chars closer to each other (for built-in font)
   CharsScreen = 20; //Scale 1 = 20 characters on screen
 var
-  CurChar,CharLen : integer;
+  CurChar,CharLen,I,ArrayLimit : integer;
   P : PByte;
   XStep,StartX : single;
   Spacing,YScaleFactor : single;
+  ArrayRef : TDefineArray;
+  PInt : ^integer;
   TheText : PByte;
   FontSize : integer;
-  FloatBuf : array[0..19] of char;
-  TextBuf : array[0..254] of char;
   CurFont : TFont;
   UseBuiltInFont : boolean;
+  FloatBuf : array[0..19] of ansichar;
+  TextBuf : array[0..(8*1024-1)] of ansichar;
 begin
   {$ifndef minimal}
   AssertRenderMode;
   {$endif}
-
-  //builtin font måste init innan rendering börjar
 
   UseBuiltInFont := (CurrentMaterial=nil) or (CurrentMaterial.Font=nil);
 
@@ -1067,7 +1224,9 @@ begin
   end
   else
   begin
-    CurFont := ZApp.Font;
+    if DefaultFont=nil then
+      DefaultFont := TFont.Create(nil);
+    CurFont := DefaultFont;
     Spacing := BuiltInSpacing;
   end;
   CurFont.Prepare;
@@ -1075,15 +1234,31 @@ begin
   if TextFloatRef.Component<>nil then
   begin
     //If textref is set then convert float-value to string
-    ZStrConvertFloat(
-      PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
-      * Self.FloatMultiply,
-      PChar(@FloatBuf));
+    ZStrConvertInt(
+      Trunc(
+        PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
+        * Self.FloatMultiply
+      ),
+      PAnsiChar(@FloatBuf));
     if pointer(Self.Text)<>nil then
-      ZStrCopy(TextBuf,PChar(Self.Text))
+      ZStrCopy(TextBuf,PAnsiChar(Self.Text))
     else
       TextBuf[0]:=#0;
-    ZStrCat(TextBuf,PChar(@FloatBuf));
+    ZStrCat(TextBuf,PAnsiChar(@FloatBuf));
+    TheText := @TextBuf;
+  end else if TextArrayRef<>nil then
+  begin
+    ArrayRef := TDefineArray(TextArrayRef);
+    ArrayLimit := ArrayRef.CalcLimit;
+    PInt := pointer(ArrayRef.GetData);
+    I := 0;
+    while (I<High(TextBuf)-1) and (I<ArrayLimit) and (PInt^<>0) do
+    begin
+      TextBuf[I] := AnsiChar(PInt^);
+      Inc(PInt);
+      Inc(I);
+    end;
+    TextBuf[I] := #0;
     TheText := @TextBuf;
   end
   else
@@ -1112,19 +1287,12 @@ begin
   end;
 
 
-//glEnable(GL_BLEND);
-//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//glDisable(GL_DEPTH_TEST);
-
-
   glPushAttrib(GL_TEXTURE_BIT);
 
   glEnable(GL_TEXTURE_2D);
   //Force disable automatic tex-coords
   glDisable(GL_TEXTURE_GEN_S);
   glDisable(GL_TEXTURE_GEN_T);
-
-// glColor3f(1,1,1);
 
   glTranslatef(Self.X,Self.Y,0);
   //Scale 1 = 20 characters width on screen
@@ -1134,7 +1302,7 @@ begin
 
   //Font pixel size
   if not Self.UseModelSpace then
-    FontSize := Round(Scale * (ScreenWidth / CharsScreen))
+    FontSize := Round(Scale * (ZApp.ScreenWidth / CharsScreen))
   else
     FontSize := 16;
 
@@ -1160,11 +1328,14 @@ begin
   P := pointer(TheText);
   while (P^<>0) do
   begin
-    while P^=13 do
+    if P^=13 then
     begin
       CharX := StartX;
       CharY := CharY - 1.0;
-      Inc(P,2); //skip LF
+      Inc(P,1);
+      if P^=10 then
+        Inc(P);
+      Continue;
     end;
 
     CurChar := P^;
@@ -1180,7 +1351,7 @@ begin
 
     CharX := CharX + XStep;
 
-    CharI := CharI + 1;
+    Inc(CharI);
     Inc(P);
   end;
 
@@ -1199,13 +1370,19 @@ begin
 end;
 
 {$ifndef minimal}
-function TRenderText.GetDisplayName: String;
+function TRenderText.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Text<>'' then
     Result := Result + '  ' + Text;
   if TextFloatRef.Component<>nil then
-    Result := Result + '  ' + GetPropRefAsString(TextFloatRef);
+    Result := Result + '  ' + AnsiString(GetPropRefAsString(TextFloatRef));
+end;
+
+procedure TRenderText.DesignerFreeResources;
+begin
+  if Assigned(DefaultFont) then
+    FreeAndNil(DefaultFont);
 end;
 {$endif}
 
@@ -1219,12 +1396,12 @@ const
 procedure TFont.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FirstChar',{$ENDIF}integer(@FirstChar) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CharPixelWidth',{$ENDIF}integer(@CharPixelWidth) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CharPixelHeight',{$ENDIF}integer(@CharPixelHeight) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'FirstChar',{$ENDIF}integer(@FirstChar), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharPixelWidth',{$ENDIF}integer(@CharPixelWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharPixelHeight',{$ENDIF}integer(@CharPixelHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels), zptInteger);
 end;
 
 destructor TFont.Destroy;
@@ -1295,7 +1472,7 @@ begin
     begin
       B := TZBitmap(Characters[Char]);
       B.UseTextureBegin;
-      RenderUnitQuad(0,0);
+      RenderUnitQuad;
       //B.UseTextureEnd;
     end;
   end else
@@ -1312,7 +1489,7 @@ begin
       glScalef(BmStruct.ScaleX,BmStruct.ScaleY,1);
       glMatrixMode(GL_MODELVIEW);
         Bitmap.UseTextureBegin;
-        RenderUnitQuad(0,0);
+        RenderUnitQuad;
         //Bitmap.UseTextureEnd;
       glMatrixMode(GL_TEXTURE);
       glPopMatrix();
@@ -1362,12 +1539,6 @@ begin
       glClearColor(0,0,0,0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
-  //    glColor4f(0.5,0,0,1);
-  //    RenderUnitQuad(0,0);
-  //    glColor4f(0,0.5,0,0.5);
-   //   RenderUnitQuad(0.2,0.2);
-  //     glColor4f(1,1,1,1);
-
       //Draw each letter twice to get letter width
       glColor3f(1,1,1);
 
@@ -1380,45 +1551,16 @@ begin
       glRasterPos2f( Clamp(0 - CharWidth,-1,1),-0.7);
 
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-  {  glColor3f(0.5,0.1,0.1);
-    glRasterPos2f(0,0);
-
-    glCallList(LargerLists + I);
-    glColor3f(1,1,1);
-    glRasterPos2f(0 - RasterPos[0]/FontSize,-0.7);}
-  //glDisable(GL_BLEND);
 
       glCallList(Lists + I);
 
-  {  glColor4f(1,1,1,0.5);
-    RenderUnitQuad(-0.5,-0.5);
-    glColor3f(1,1,1);}
-
       B.RenderTargetEnd;
-
-  {    B.RenderTargetBegin;
-      B.UseTextureBegin;
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_TEXTURE_2D);
-        glScalef(2,2,0);
-        glColor3f(0.6,0.6,0.6);
-        RenderUnitQuad(0,0);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
-        glScalef(1,1,0);
-        glColor3f(1,1,1);
-        RenderUnitQuad(0.05,0.05);
-
-      B.UseTextureEnd;
-      B.RenderTargetEnd;}
     end;
 
     glDeleteLists(Lists,CharCount);
     Inc(CurSize1);
     Inc(CurSize2,CurSize2);
   end;
-  //glDeleteLists(LargerLists,CharCount);
 end;
 
 { TRenderSetColor }
@@ -1426,7 +1568,7 @@ end;
 procedure TRenderSetColor.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
 end;
 
 procedure TRenderSetColor.Execute;
@@ -1439,9 +1581,9 @@ end;
 procedure TRenderNet.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}integer(@XCount) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}integer(@YCount) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'RenderVertexExpression',{$ENDIF}integer(@RenderVertexExpression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}integer(@XCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}integer(@YCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderVertexExpression',{$ENDIF}integer(@RenderVertexExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Update each vertex.'#13#10 +
@@ -1449,12 +1591,12 @@ begin
       '//TexCoord : current texture coordinate'#13#10 +
       '//Color : current vertex color';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors) - integer(Self), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Vertex',{$ENDIF}integer(@Vertex) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Vertex',{$ENDIF}integer(@Vertex), zptVector3f);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord) - integer(Self), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord), zptVector3f);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -1470,20 +1612,23 @@ var
   I : integer;
   P : PZVector3f;
   Tex : PZVector2f;
-  PColor : PInteger;
+  PColor : PMeshVertexColor;
 begin
   {$ifndef minimal}
   AssertRenderMode;
   {$endif}
 
   if (Mesh=nil) then
+  begin
     Mesh := TMesh.Create(nil);
+  end;
 
   Mesh.MakeNet(XCount,YCount);
+  Mesh.IsDynamic := True;
 
   if VertexColors and (Mesh.Colors=nil) then
     GetMem(Mesh.Colors,Mesh.VerticesCount * 4);
-  PColor := Mesh.Colors;
+  PColor := PMeshVertexColor(Mesh.Colors);
 
   if (RenderVertexExpression.Code<>nil) then
   begin
@@ -1735,7 +1880,7 @@ var
   ScaledGravity : TZVector2f;
   UseGravity : boolean;
 begin
-  if ZApp.Clock.FrameLoss and (System.Random<0.5) then
+  if ZApp.FrameLoss and (System.Random<0.5) then
     Exit; //If we are losing frames then randomly skip update for trying to catch up
 
   //Copy to local for making the loop faster
@@ -1795,31 +1940,31 @@ end;
 procedure TRenderParticles.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ParticlesPerSecond',{$ENDIF}integer(@ParticlesPerSecond) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Direction',{$ENDIF}integer(@Direction) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Spread',{$ENDIF}integer(@Spread) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleWidth',{$ENDIF}integer(@ParticleWidth) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleHeight',{$ENDIF}integer(@ParticleHeight) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'SpeedRange',{$ENDIF}integer(@SpeedRange) - integer(Self), zptScalar);
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}integer(@ParticleLifetime) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}integer(@AnimateAlpha) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}integer(@OnEmitExpression) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticlesPerSecond',{$ENDIF}integer(@ParticlesPerSecond), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Direction',{$ENDIF}integer(@Direction), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Spread',{$ENDIF}integer(@Spread), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleWidth',{$ENDIF}integer(@ParticleWidth), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleHeight',{$ENDIF}integer(@ParticleHeight), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'SpeedRange',{$ENDIF}integer(@SpeedRange), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}integer(@ParticleLifetime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}integer(@AnimateAlpha), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}integer(@OnEmitExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Emit particle.'#13#10 +
       '//PColor : particle color, PAngle : particle angle'#13#10 +
       '';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Gravity',{$ENDIF}integer(@Gravity) - integer(Self), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'FollowModel',{$ENDIF}integer(@FollowModel) - integer(Self), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Gravity',{$ENDIF}integer(@Gravity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'FollowModel',{$ENDIF}integer(@FollowModel), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'PColor',{$ENDIF}integer(@PColor) - integer(Self), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'PColor',{$ENDIF}integer(@PColor), zptColorf);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'PAngle',{$ENDIF}integer(@PAngle) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'PAngle',{$ENDIF}integer(@PAngle), zptFloat);
     List.GetLast.NeverPersist:=True;
 end;
 
@@ -1829,10 +1974,11 @@ end;
 procedure TShader.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'VertexShaderSource',{$ENDIF}integer(@VertexShaderSource) - integer(Self), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}integer(@FragmentShaderSource) - integer(Self), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}integer(@UniformVariables) - integer(Self), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'VertexShaderSource',{$ENDIF}integer(@VertexShaderSource), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}integer(@FragmentShaderSource), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}integer(@UniformVariables), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}integer(@UpdateVarsOnEachUse), zptBoolean);
 end;
 
 destructor TShader.Destroy;
@@ -1842,16 +1988,23 @@ begin
 end;
 
 procedure TShader.ReInit;
-const
-  TexVar : array[0..4] of char = 'tex'#0#0;
-var
-  I,J : integer;
-
   {$ifndef minimal}
+  procedure InDumpProgramLog(Prog : GLuint);
+  var
+    GlMess : array[0..511] of ansichar;
+    MessLen : integer;
+  begin
+    glGetProgramInfoLog(Prog,SizeOf(GlMess),@MessLen,@GlMess);
+    if MessLen>0 then
+      ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
+  end;
+
   function InCheckShaderValid(Shader : PGLuint; Kind: GLEnum) : boolean;
   var
     Status : GLUInt;
     S : string;
+    GlMess : array[0..511] of ansichar;
+    MessLen : integer;
   begin
     glGetShaderiv(Shader^,GL_COMPILE_STATUS,@Status);
     if Kind=GL_VERTEX_SHADER then
@@ -1860,12 +2013,15 @@ var
       S := 'Fragment';
     if Status=GL_TRUE then
     begin
-      ZLog.GetLog(Self.ClassName).Write( S + ' shader compiled OK' );
+      //ZLog.GetLog(Self.ClassName).Write( S + ' shader compiled OK' );
       Result := True
     end
     else
     begin
-      ZLog.GetLog(Self.ClassName).Write( 'Error in ' + S + ' shader compilation' );
+      ZLog.GetLog(Self.ClassName).Warning( 'Error in ' + S + ' shader compilation' );
+      glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
+      if MessLen>0 then
+        ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
@@ -1879,18 +2035,24 @@ var
   begin
     glGetProgramiv(ProgHandle,GL_LINK_STATUS,@Status);
     if Status=GL_FALSE then
-      ZLog.GetLog(Self.ClassName).Write( 'Error when linking shader program' );
+    begin
+      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      InDumpProgramLog(ProgHandle);
+    end;
     glValidateProgram(ProgHandle);
     glGetProgramiv(ProgHandle,GL_VALIDATE_STATUS,@Status);
     if Status=GL_FALSE then
-      ZLog.GetLog(Self.ClassName).Write( 'Error when linking shader program' );
+    begin
+      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      InDumpProgramLog(ProgHandle);
+    end;
   end;
   {$endif}
 
   function InCreate(const Source : TPropString; const Kind: GLEnum) : cardinal;
   begin
     Result := 0;
-    if (pointer(Source)=nil) or (ZStrLength(PChar(Source))=0) then
+    if (pointer(Source)=nil) or (ZStrLength(PAnsiChar(Source))=0) then
       Exit;
     Result := glCreateShader(Kind);
     glShaderSource(Result,1,@Source,nil);
@@ -1902,6 +2064,10 @@ var
     {$ifndef minimal}CheckGLError;{$endif}
   end;
 
+const
+  TexVar : array[0..4] of ansichar = 'tex'#0#0;
+var
+  I,J : integer;
 begin
   CleanUp;
 
@@ -1913,15 +2079,16 @@ begin
   glLinkProgram(ProgHandle);
   {$ifndef minimal}InCheckProgramStatus;{$endif}
 
-  //Initialize uniform variables for accessing textures 0-2
+  //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
-  for I := 0 to 2 do
-  begin
-    TexVar[3]:=char(ord('1') + I);
-    J := glGetUniformLocation(ProgHandle,pchar(@TexVar));
-    if J>-1 then
-      glUniform1i(J,I);
-  end;
+  if CurrentMaterial<>nil then
+    for I := 0 to CurrentMaterial.Textures.Count-1 do
+    begin
+      TexVar[3]:=ansichar(ord('1') + I);
+      J := glGetUniformLocation(ProgHandle,pansichar(@TexVar));
+      if J>-1 then
+        glUniform1i(J,I);
+    end;
 
   IsChanged := False;
 end;
@@ -1931,7 +2098,40 @@ var
   I : integer;
   Sv : TShaderVariable;
   V : single;
+
+  procedure UpdateArrayVar;
+  var
+    Count : integer;
+    P : pointer;
+  begin
+    Count := Sv.ValueArrayRef.CalcLimit;
+    P := Sv.ValueArrayRef.GetData;
+    glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
+    glEnable(GL_TEXTURE_1D);
+    if Sv.TextureHandle=0 then
+    begin
+      glGenTextures(1, @Sv.TextureHandle);
+      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+      glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    end else
+    begin
+      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+      glTexSubImage1D(GL_TEXTURE_1D, 0, 0, Count, GL_RED, GL_FLOAT, P);
+    end;
+    glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
+    Inc(Self.TexCount);
+  end;
+
 begin
+  //Arrays are passed as sampler1d so update with the index of the texture
+  if CurrentMaterial<>nil then
+    Self.FirstTexIndex := CurrentMaterial.Textures.Count
+  else
+    FirstTexIndex := 0;
+  Self.TexCount := 0;
+
   for I := 0 to UniformVariables.Count - 1 do
   begin
     Sv := TShaderVariable(UniformVariables[I]);
@@ -1939,12 +2139,16 @@ begin
     if Sv.Location=-1 then Continue;
     {$endif}
 
-    if Sv.ValuePropRef.Component<>nil then
-      V := PFloat(Sv.ValuePropRef.Component.GetPropertyPtr(Sv.ValuePropRef.Prop,Sv.ValuePropRef.Index))^
+    if Sv.ValueArrayRef<>nil then
+      UpdateArrayVar
     else
-      V := Sv.Value;
-
-    glUniform1f(Sv.Location,V);
+    begin
+      if Sv.ValuePropRef.Component<>nil then
+        V := PFloat(Sv.ValuePropRef.Component.GetPropertyPtr(Sv.ValuePropRef.Prop,Sv.ValuePropRef.Index))^
+      else
+        V := Sv.Value;
+      glUniform1f(Sv.Location,V);
+    end;
   end;
 end;
 
@@ -1957,13 +2161,29 @@ begin
   begin
     Sv := TShaderVariable(UniformVariables[I]);
     {$ifndef minimal}
-    if Length(Sv.VariableName)=0 then Continue;
+    if Length(Sv.VariableName)=0 then
+    begin
+      if Length(Sv.Name)>0 then
+        ZLog.GetLog(Self.ClassName).Warning( 'Ignoring shader variable because VariableName property not set: ' + String(Sv.Name) );
+      Continue;
+    end;
     {$endif}
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
     {$ifndef minimal}
     if Sv.Location=-1 then
-      ZLog.GetLog(Self.ClassName).Write( 'Shader variable error: ' + Sv.VariableName );
+      ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + String(Sv.VariableName) );
     {$endif}
+  end;
+end;
+
+procedure TShader.DetachArrayVariables;
+var
+  I : integer;
+begin
+  for I := Self.TexCount downto 0 do
+  begin
+    glActiveTexture($84C0 + Self.FirstTexIndex + I);
+    glDisable(GL_TEXTURE_1D);
   end;
 end;
 
@@ -1982,9 +2202,8 @@ begin
   glUseProgram(ProgHandle);
 
   //Update uniform variables once each frame
-  if (UniformVariables.Count>0)
-    //Time is not moving in designer, need to update anyway
-    {$ifdef minimal}and (LastVariableUpdate<>ZApp.Time){$endif}
+  if (UniformVariables.Count>0) and
+    ((LastVariableUpdate=0) or (LastVariableUpdate<>ZApp.Time) or Self.UpdateVarsOnEachUse)
     then
   begin
     if ReinitDone then
@@ -2017,37 +2236,309 @@ begin
   ProgHandle := 0;
 end;
 
+{$ifndef minimal}
+procedure TShader.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
+
 { TShaderVariable }
 
 procedure TShaderVariable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'VariableName',{$ENDIF}integer(@VariableName) - integer(Self), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'VariableName',{$ENDIF}integer(@VariableName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}integer(@ValuePropRef) - integer(Self), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}integer(@ValuePropRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}integer(@ValueArrayRef), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
 end;
 
 {$ifndef minimal}
-function TShaderVariable.GetDisplayName: String;
+function TShaderVariable.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   Result := Result + '  ' + VariableName;
+  if Length(VariableName)=0 then
+    Result := Result + '*VariableName not set*';
+end;
+
+procedure TShaderVariable.DesignerFreeResources;
+begin
+  if TextureHandle<>0 then
+  begin
+    glDeleteTextures(1, @TextureHandle);
+    TextureHandle := 0;
+  end;
 end;
 {$endif}
+
+destructor TShaderVariable.Destroy;
+begin
+  if TextureHandle<>0 then
+    glDeleteTextures(1, @TextureHandle);
+  inherited;
+end;
 
 {$ifndef minimal}
 procedure CleanUp;
 begin
   DefaultMaterial.Free;
+  DefaultMaterialTexture.Free;
+  if DefaultFont<>nil then
+    DefaultFont.Free;
+end;
+
+procedure DesignerRenderStop;
+begin
+  //Make sure primary render buffer is restored
+  if FbosSupported then
+  begin
+    if CurrentRenderTarget<>nil then
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  end;
+  CurrentRenderTarget := nil;
 end;
 {$endif}
 
+{ TMaterialTexture }
+
+procedure TMaterialTexture.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale), zptVector3f);
+    List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
+  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}integer(@TextureWrapMode), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
+end;
+
+{$ifndef minimal}
+function TMaterialTexture.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(RenderTarget) then
+    Result := Result + '  ' + RenderTarget.Name
+  else if Assigned(Texture) then
+    Result := Result + '  ' + Texture.Name;
+end;
+{$endif}
+
+{ TRenderTarget }
+
+function NextPowerOfTwo(const I : integer) : integer;
+begin
+  Result := 1;
+  while I>Result do
+    Result := Result shl 1;
+end;
+
+procedure TRenderTarget.Activate;
+var
+  W,H : integer;
+  ActualW,ActualH : integer;
+begin
+  if not FbosSupported then
+    Exit;
+
+  W := Self.CustomWidth;
+  if W=0 then
+  begin
+    if Self.Width>=rts128 then
+      W := 128 shl (Ord(Self.Width)-Ord(rts128))
+    else
+      W := ZApp.ViewportWidth shr Ord(Self.Width);
+  end;
+  H := Self.CustomHeight;
+  if H=0 then
+  begin
+    if Self.Height>=rts128 then
+      H := 128 shl (Ord(Self.Height)-Ord(rts128))
+    else
+      H := ZApp.ViewportHeight shr Ord(Self.Height);
+  end;
+
+  if Self.AutoPowerOfTwo then
+  begin
+    ActualW := NextPowerOfTwo(W);
+    ActualH := NextPowerOfTwo(H);
+  end
+  else
+  begin
+    ActualW := W;
+    ActualH := H;
+  end;
+
+  {$ifndef minimal}
+  if (LastW<>W) or (LastH<>H) then
+    CleanUp;
+  LastW := W; LastH := H;
+  {$endif}
+
+  if TexId=0 then
+  begin
+    //http://www.songho.ca/opengl/gl_fbo.html
+    // create a texture object
+    glGenTextures(1, @TexId);
+    glBindTexture(GL_TEXTURE_2D, TexId);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // create a renderbuffer object to store depth info
+    glGenRenderbuffersEXT(1, @RboId);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, RboId);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,ActualW, ActualH);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+
+    // create a framebuffer object
+    glGenFramebuffersEXT(1, @FboId);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+
+    // attach the texture to FBO color attachment point
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
+
+    // attach the renderbuffer to depth attachment point
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
+
+    // check FBO status
+    {$ifndef minimal}
+    if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+    begin
+      ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) );
+    end;
+    {$endif}
+  end else
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+
+  //Cannot call updataviewport here because it updates app.viewportwidth which is used above
+//  ZApp.UpdateViewport(W, H);
+  glViewport(0,0,W,H);
+  ZApp.ActualViewportRatio := W/H;
+  {$ifdef zgeviz}
+  ZApp.ViewportChanged;
+  {$endif}
+
+  if Self.ClearBeforeUse then
+  begin
+    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  end;
+end;
+
+procedure TRenderTarget.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width','128','256','512']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := 4;
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@Height), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height','128','256','512']);{$endif}
+    List.GetLast.DefaultValue.ByteValue := 4;
+  List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}integer(@CustomWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'AutoPowerOfTwo',{$ENDIF}integer(@AutoPowerOfTwo), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
+end;
+
+procedure TRenderTarget.CleanUp;
+begin
+  if FbosSupported and (TexId<>0) then
+  begin
+    glDeleteTextures(1, @TexId);
+    glDeleteFramebuffersEXT(1, @FboId);
+    glDeleteRenderbuffersEXT(1, @RboId);
+    {$ifndef minimal}
+    TexId := 0;
+    {$endif}
+  end;
+end;
+
+destructor TRenderTarget.Destroy;
+begin
+  CleanUp;
+  inherited;
+end;
+
+procedure TRenderTarget.UseTextureBegin;
+begin
+  glBindTexture(GL_TEXTURE_2D, TexId);
+end;
+
+{$ifndef minimal}
+procedure TRenderTarget.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
+
+{ TSetRenderTarget }
+
+procedure TSetRenderTarget.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+end;
+
+procedure TSetRenderTarget.Execute;
+begin
+  if FbosSupported then
+  begin
+    if Self.RenderTarget=nil then
+    begin
+      if CurrentRenderTarget<>nil then
+      begin
+        //Restore main framebuffer, disable current rendertarget and update texture mipmap
+        CurrentRenderTarget.UseTextureBegin;
+        glGenerateMipmapEXT(GL_TEXTURE_2D);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        CurrentRenderTarget := nil;
+        ZApp.UpdateViewport;
+      end;
+    end
+    else
+    begin
+      //CurrentRenderTarget must be set before viewport-change because of zgeviz-onviewcallback
+      CurrentRenderTarget := Self.RenderTarget;
+      CurrentRenderTarget.Activate;
+    end;
+  end;
+end;
+
+{$ifndef minimal}
+function TSetRenderTarget.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(RenderTarget) then
+    Result := Result + '  ' + RenderTarget.Name;
+end;
+{$endif}
 
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TMaterialTexture,MaterialTextureClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Material';{$endif}
   ZClasses.Register(TShader,ShaderClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TShaderVariable,ShaderVariableClassId);
@@ -2082,6 +2573,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Simple 2D particlesystem';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
-  DefaultMaterial := TMaterial.Create(nil);
+  ZClasses.Register(TRenderTarget,RenderTargetClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TSetRenderTarget,SetRenderTargetClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
 end.

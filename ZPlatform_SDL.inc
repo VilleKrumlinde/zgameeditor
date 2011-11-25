@@ -7,29 +7,41 @@ implementation
   {$linklib SDLMain.o}
 {$endif}
 
+{$i-}  //No io-test on files, code tests ioresult
+
 uses SDL, ZLog, AudioPlayer,ZApplication
-  {$IFDEF LINUX},libc{$ENDIF}
+  {$ifdef linux},libc{$endif}
+  {$ifdef darwin},dl{$endif}
   ;
 
 var
   //Current mouse pos, written to in eventhandling
   SdlMousePos : TZPointi;
   Keys : array[0..511] of boolean;
-  KeyMap : array[char] of word;
+  KeyMap : array[AnsiChar] of word;
 
-procedure Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PChar);
+procedure Platform_ShowMouse(Visible : boolean);
+const vals : array[boolean] of integer = (0,1);
+begin
+  SDL_ShowCursor(vals[Visible]);
+end;
+
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
 begin
   if UseFullScreen then
-  begin
-    flags := SDL_OPENGL or SDL_FULLSCREEN;
-    //Stäng av mus
-    SDL_ShowCursor(0);
-  end
+    flags := SDL_OPENGL or SDL_FULLSCREEN
   else
     flags := SDL_OPENGL or SDL_RESIZABLE;
+
+  if Width=-1 then
+  begin
+    //Todo: support "current desktop resolution" on sdl
+    Width := 800;
+    Height := 600;
+  end;
 
   SDL_WM_SetCaption(Title, nil);
 
@@ -46,6 +58,13 @@ begin
   //Returnera actual res
   Width := Mode.W;
   Height := Mode.H;
+
+  Result := 0;
+end;
+
+procedure Platform_SetWindowCaption(Title : PAnsiChar);
+begin
+  SDL_WM_SetCaption(Title, nil);
 end;
 
 procedure Platform_ShutdownScreen;
@@ -79,7 +98,7 @@ begin
         SDL_KEYUP :
           begin
             {$ifdef minimal}
-            if E.Key.keysym.sym=SDLK_ESCAPE then
+            if (E.Key.keysym.sym=SDLK_ESCAPE) and ZApp.EscapeToQuit then
               Finished := True;
             {$endif}
             Keys[ E.Key.keysym.sym mod 512 ] := False;
@@ -91,11 +110,17 @@ begin
           end;
         SDL_MOUSEBUTTONDOWN,SDL_MOUSEBUTTONUP :
           begin
-            //Use '{' as key for left mouse button
-            if E.Button.button=1 then
-              Keys[ Ord('{') ] := E.type_=SDL_MOUSEBUTTONDOWN
-            else
-              Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+            //Button 1: Left mouse button
+            //Button 2: Middle mouse button
+            //Button 3: Right mouse button
+            //4=wheel up, 5=wheel down
+            case E.Button.button of
+              1 : Keys[ Ord('{') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+              2 : Keys[ Ord('|') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+              3 : Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN;
+              4 : ZApp.MouseWheelDelta := 1;
+              5 : ZApp.MouseWheelDelta := -1;
+            end;
           end;
       end;
     end;
@@ -110,12 +135,12 @@ begin
   Result := SDL_GetTicks/1000.0;
 end;
 
-function Platform_IsKeyPressed(C : char) : boolean;
+function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
   Result := Keys[ KeyMap[C] ];
 end;
 
-function Platform_CommandLine(Switch : PChar) : boolean;
+function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 var
   P : string;
   I : integer;
@@ -134,7 +159,7 @@ begin
   end;
 end;
 
-procedure Platform_Error(ErrorMessage : PChar);
+procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
   WriteLn(ErrorMessage);
 end;
@@ -149,13 +174,13 @@ begin
   SDL_WarpMouse(X,Y);
 end;
 
-function Platform_GetExeFileName : PChar;
+function Platform_GetExeFileName : PAnsiChar;
 {$ifdef fpc}
 var
   S : string;
   I : integer;
 begin
-  //In Fpc paramstr returns shortstring, must manually copy to pchar
+  //In Fpc paramstr returns shortstring, must manually copy to PAnsiChar
   S := System.ParamStr(0);
   I := Length(S);
   if I=0 then
@@ -171,14 +196,14 @@ begin
   end;
 {$else}
 begin
-  Result := PChar(System.ParamStr(0));
+  Result := PAnsiChar(System.ParamStr(0));
 {$endif}
 end;
 
-procedure MakeFullPath(FileName : PChar; var Buf : array of char);
+procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
 var
   I : integer;
-  Tmp : PChar;
+  Tmp : PAnsiChar;
 begin
   Tmp := @Buf;
   ZStrCopy(Tmp,Platform_GetExeFileName);
@@ -191,9 +216,9 @@ begin
   ZStrCat(Tmp,FileName);
 end;
 
-procedure Platform_WriteFile(FileName : PChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
-  Buf : array[0..511] of char;
+  Buf : array[0..511] of AnsiChar;
   Written : longint;
   F : file;
 begin
@@ -211,15 +236,23 @@ begin
   else
     System.Rewrite(F,1);
 
+  if IOResult<>0 then
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog('Platform').Write('File could not be created: ' + FileName);
+    {$endif}
+    Exit;
+  end;
+
   System.BlockWrite(F,Memory^,Size,Written);
 
   System.Close(F);
 end;
 
-procedure Platform_ReadFile(FileName : PChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   F : file;
-  Buf : array[0..511] of char;
+  Buf : array[0..511] of AnsiChar;
 begin
   //Open file relative to path of exe-file
   if IsRelative then
@@ -230,6 +263,8 @@ begin
 
   System.FileMode := 0;
   System.Assign(F,FileName);
+
+  System.Reset(F,1);
   if IOResult<>0 then
   begin
     {$ifdef zlog}
@@ -237,8 +272,6 @@ begin
     {$endif}
     Exit;
   end;
-
-  System.Reset(F,1);
 
   Size := System.FileSize(F);
 
@@ -368,16 +401,16 @@ end;
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 begin
   //todo
-  result := 0;
+  Result := 0;
 end;
 
 function Platform_LoadLinkedResource : TZInputStream;
 begin
   //todo
-  result := nil;
+  Result := nil;
 end;
 
-function Platform_GLLoadProc(const P : PChar) : pointer;
+function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := SDL_GL_GetProcAddress(P);
 end;
@@ -390,8 +423,8 @@ const
   xcom = ','#0;
 var
   I : integer;
-  Tmp1 : array[0..10] of char;
-  Str : array[0..511] of char;
+  Tmp1 : array[0..10] of AnsiChar;
+  Str : array[0..511] of AnsiChar;
 begin
   Str[0]:=#0;
   ZStrCat(Str,Xdef);
@@ -399,10 +432,10 @@ begin
   for I := 0 to High(ScreenModes) do
   begin
     //inttofloat conversion
-    ZStrConvertFloat(ScreenModes[I].W, PChar(@Tmp1));
+    ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     ZStrCat(Str,xstr);
-    ZStrConvertFloat(ScreenModes[I].H, PChar(@Tmp1));
+    ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
     ZStrCat(Str,Tmp1);
     if I<High(ScreenModes) then
       ZStrCat(Str,xcom);
@@ -433,6 +466,58 @@ end;
 procedure Platform_Sleep(time : integer);
 begin
   SDL_Delay(time);
+end;
+
+function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
+begin
+  //TODO: joystick support
+  Result := 0;
+end;
+
+function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
+begin
+  //TODO: joystick support
+  Result := False;
+end;
+
+function Platform_GetJoystickPOV(JoyId : integer) : single;
+begin
+  //TODO: joystick support
+  Result := -1;
+end;
+
+function Platform_LoadModule(const Name : PAnsiChar) : integer;
+begin
+  {$if Defined(Linux) or Defined(Darwin)}
+  Result := Integer(dlopen( Name, RTLD_NOW));
+  {$else}
+  Result := 0;
+  {$endif}
+end;
+
+function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+begin
+  {$if Defined(Linux) or Defined(Darwin)}
+  Result := dlsym(Pointer(Module), Name );
+  {$else}
+  Result := 0;
+  {$endif}
+end;
+
+function Platform_GetSystemTime : integer;
+begin
+  //TODO: System time support
+  Result := 0;
+end;
+
+procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+begin
+  //TODO: Net support
+end;
+
+procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+begin
+  //TODO: Net support
 end;
 
 initialization

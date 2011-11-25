@@ -34,7 +34,7 @@ type
     Count : integer;                   //Set for a fixed nr of iterations
     OnIteration : TZComponentList;
     WhileExp : TZExpressionPropValue;  //Set to use a expression to test against
-    Iteration : single;                //current iteration, todo: should be integer but ZC only supports float
+    Iteration : integer;
     procedure Execute; override;
     procedure Update; override;
   end;
@@ -58,7 +58,7 @@ type
     Keys : TPropString;
     RepeatDelay : single;
     OnPressed : TZComponentList;
-    KeyIndex : single;
+    KeyIndex : integer;
     CharCode : word;
     procedure Execute; override;
   end;
@@ -71,7 +71,7 @@ type
     Component : TZComponent;
     procedure Execute; override;
     {$ifndef minimal}
-    function GetDisplayName: string; override;
+    function GetDisplayName: AnsiString; override;
     {$endif}
   end;
 
@@ -88,9 +88,50 @@ type
     RepeatCount : integer;
     procedure Execute; override;
     {$ifndef minimal}
-    procedure DesignerReset; override; 
+    procedure DesignerReset; override;
     {$endif}
   end;
+
+  TWebOpen = class(TCommand)
+  strict private
+    Buffer : pointer;
+    BufferSize : integer;
+    IsWaiting : boolean;
+  private
+    procedure AddToResultList;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Url : TPropString;
+    ParamArray,ResultArray : TDefineArray;
+    ResultString : TPropString;
+    OnResult : TZComponentList;
+    InBrowser : boolean;
+    Handle : pointer;
+    class procedure FlushResultList;
+    procedure Execute; override;
+    procedure StartReading;
+    destructor Destroy; override;
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    {$endif}
+  end;
+
+  TCallComponent = class(TCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Component : TCommand;
+    procedure Execute; override;
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    {$endif}
+  end;
+
+var
+  //Should be class-vars in TWebOpen but fpc does not support class-vars yet
+  NetMutex : pointer;
+  NetResultList : TZArrayList;
 
 implementation
 
@@ -103,14 +144,14 @@ uses ZPlatform,ZApplication
 procedure TRepeat.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count) - integer(Self), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'WhileExp',{$ENDIF}integer(@WhileExp) - integer(Self), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'WhileExp',{$ENDIF}integer(@WhileExp), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source:='//this.Iteration=current iteration nr. Return false to end loop.';
-    List.GetLast.ReturnType := zctFloat;
+    List.GetLast.ReturnType.Kind := zctFloat;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -130,7 +171,7 @@ begin
       if ZExpressions.gReturnValue=0 then
         Break;
       OnIteration.ExecuteCommands;
-      Iteration := Iteration + 1;
+      Inc(Iteration);
       {$ifndef minimal}
       if (Platform_GetTime>BailoutTime) and (Iteration>1) then
         ZHalt('Repeat-loop timeout. Check your repeat-components for infinite loops.');
@@ -141,7 +182,7 @@ begin
     for I := 0 to Count-1 do
     begin
       OnIteration.ExecuteCommands;
-      Iteration := Iteration + 1;
+      Inc(Iteration);
     end;
 end;
 
@@ -156,12 +197,12 @@ end;
 procedure TCondition.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression) - integer(Self), zptExpression);
-    {$ifndef minimal}List.GetLast.ReturnType := zctFloat;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}integer(@OnTrue) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}integer(@OnFalse) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
+    {$ifndef minimal}List.GetLast.ReturnType.Kind := zctFloat;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}integer(@OnTrue), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}integer(@OnFalse), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
 end;
 
 procedure TCondition.Execute;
@@ -185,11 +226,12 @@ end;
 procedure TKeyPress.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}integer(@Keys) - integer(Self), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}integer(@CharCode) - integer(Self), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}integer(@RepeatDelay) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}integer(@OnPressed) - integer(Self), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}integer(@KeyIndex) - integer(Self), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}integer(@Keys), zptString);
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}integer(@CharCode), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}integer(@RepeatDelay), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}integer(@OnPressed), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}integer(@KeyIndex), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -199,7 +241,7 @@ var
   P : PBytes;
   Index : integer;
 begin
-  if pointer(Keys)=nil then
+  if Keys^=#0 then
     //Charcode is byte-sized but declared as word so it is zero-terminated
     P := @CharCode
   else
@@ -215,9 +257,8 @@ begin
   Index := 0;
   while P^[Index]<>0 do
   begin
-    if Platform_IsKeyPressed(char(P^[Index])) then
+    if Platform_IsKeyPressed(AnsiChar(P^[Index])) then
     begin
-      //todo keyindex borde vara en byte, nu sker intToFloat conversion
       Self.KeyIndex := Index;
       OnPressed.ExecuteCommands;
       LastPressedAt := ZApp.Time;
@@ -232,7 +273,7 @@ end;
 procedure TRefreshContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component) - integer(Self), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
 end;
 
 procedure TRefreshContent.Execute;
@@ -245,7 +286,7 @@ begin
 end;
 
 {$ifndef minimal}
-function TRefreshContent.GetDisplayName: string;
+function TRefreshContent.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Component) then
@@ -258,10 +299,10 @@ end;
 procedure TZTimer.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnTimer',{$ENDIF}integer(@OnTimer) - integer(Self), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand,TZExpression]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}integer(@Interval) - integer(Self), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount) - integer(Self), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OnTimer',{$ENDIF}integer(@OnTimer), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}integer(@Interval), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := -1;
 end;
 
@@ -293,6 +334,165 @@ begin
   end;
 end;
 
+
+{ TWebOpen }
+
+procedure TWebOpen.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url), zptString);
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}integer(@ResultString), zptString);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.IsStringTarget := True;
+  List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}integer(@ParamArray), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}integer(@InBrowser), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}integer(@OnResult), zptComponentList);
+end;
+
+destructor TWebOpen.Destroy;
+begin
+  FreeMem(Buffer);
+  inherited;
+end;
+
+procedure TWebOpen.Execute;
+var
+  Ps : PInteger;
+  Pd : PByte;
+  I,Limit : integer;
+  Buf : array[0..1024-1] of byte;
+begin
+  if not Self.IsWaiting then
+  begin
+    if not Self.InBrowser then
+      IsWaiting := True;
+
+    Pd := @Buf;
+    ZStrCopy(@Buf,PAnsiChar(Self.Url));
+    Inc(Pd,ZStrLength(@Buf));
+
+    if ParamArray<>nil then
+    begin
+      {$ifndef minimal}
+      if ParamArray._Type<>dvbInt then
+        GetLog(Self.ClassName).Warning('ParamArray must be of int-type');
+      {$endif}
+      Limit := ParamArray.CalcLimit;
+      Ps := PInteger(ParamArray.GetData);
+      I := 0;
+      while (I<Limit) and (I<High(Buf)-1) and (Ps^<>0) do
+      begin
+        Pd^ := Ps^;
+        Inc(Pd);
+        Inc(Ps);
+        Inc(I);
+      end;
+      Pd^ := 0;
+    end;
+
+    Platform_NetOpen(PAnsiChar(@Buf),Self.InBrowser,Self);
+  end;
+end;
+
+class procedure TWebOpen.FlushResultList;
+var
+  I : integer;
+begin
+  Platform_EnterMutex(NetMutex);
+    for I := 0 to NetResultList.Count - 1 do
+    begin
+      TWebOpen(NetResultList[I]).OnResult.ExecuteCommands;
+    end;
+    NetResultList.Clear;
+  Platform_LeaveMutex(NetMutex);
+end;
+
+{$ifndef minimal}
+function TWebOpen.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  Result := Result + '  ' + Url;
+end;
+{$endif}
+
+procedure TWebOpen.StartReading;
+var
+  Pd : PInteger;
+  Ps : PByte;
+  I : integer;
+begin
+  if not Self.IsWaiting then
+    Exit;
+  Self.IsWaiting := False;
+
+  if ResultArray<>nil then
+    BufferSize := ResultArray.CalcLimit
+  else
+    BufferSize := 512 * 1024;
+
+  ReAllocMem(Buffer,BufferSize);
+  Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
+
+  if ResultArray<>nil then
+  begin
+    {$ifndef minimal}
+    if ResultArray._Type<>dvbInt then
+      GetLog(Self.ClassName).Warning('ResultArray must be of int-type');
+    {$endif}
+    Ps := Buffer;
+    Pd := PInteger(ResultArray.GetData);
+    I := BufferSize;
+    while I>0 do
+    begin
+      Pd^ := Ps^;
+      Inc(Pd);
+      Inc(Ps);
+      Dec(I);
+    end;
+  end else
+  begin
+    I := ZStrLength( PAnsiChar(Self.Buffer) );
+    Self.ResultString := ManagedHeap_Alloc(I+1);
+    ZStrCopy(Self.ResultString,PAnsiChar(Self.Buffer));
+  end;
+  AddToResultList;
+end;
+
+procedure TWebOpen.AddToResultList;
+begin
+  Platform_EnterMutex(NetMutex);
+    NetResultList.Add(Self);
+  Platform_LeaveMutex(NetMutex);
+end;
+
+{ TCallComponent }
+
+procedure TCallComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TCommand]);{$endif}
+end;
+
+procedure TCallComponent.Execute;
+begin
+  if Component<>nil then
+    Component.Execute;
+end;
+
+{$ifndef minimal}
+function TCallComponent.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Component<>nil then
+    Result := Result + '  ' + Component.Name;
+end;
+{$endif}
+
 initialization
 
   ZClasses.Register(TRepeat,RepeatClassId);
@@ -305,5 +505,15 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Timer';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
+  ZClasses.Register(TWebOpen,WebOpenClassId);
+  ZClasses.Register(TCallComponent,CallComponentClassId);
+
+  NetResultList := TZArrayList.CreateReferenced;
+  NetMutex := Platform_CreateMutex;
+{$ifndef minimal}
+finalization
+  NetResultList.Free;
+  Platform_FreeMutex( NetMutex );
+{$endif}
 
 end.

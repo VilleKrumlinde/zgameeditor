@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="0 0 25" CameraRotation="0.01 0 0">
+  <OnLoaded>
+    <DefineVariable Name="SpawnType"/>
+    <SpawnModel Model="FloorModel"/>
+  </OnLoaded>
+  <OnUpdate>
+    <KeyPress Keys="{ " RepeatDelay="0.25">
+      <OnPressed>
+        <Condition Expression="return SpawnType==0;">
+          <OnTrue>
+            <SpawnModel Model="Model1"/>
+          </OnTrue>
+          <OnFalse>
+            <SpawnModel Model="Model2"/>
+          </OnFalse>
+        </Condition>
+      </OnPressed>
+    </KeyPress>
+    <KeyPress Keys="}" RepeatDelay="0.25">
+      <OnPressed>
+        <ZExpression>
+          <Expression>
+<![CDATA[SpawnType+=1;
+if(round(SpawnType)==2)
+  SpawnType=0;]]>
+          </Expression>
+        </ZExpression>
+      </OnPressed>
+    </KeyPress>
+  </OnUpdate>
+  <Content>
+    <Group Comment="Floor">
+      <Children>
+        <Model Name="FloorModel" Position="0 -26 -15" UsePhysics="255" PhysicsIsRigid="0" PhysicsSize="40 40 40">
+          <OnRender>
+            <RenderSetColor Color="0.8196 0.851 0.2588 1"/>
+            <RenderMesh Mesh="FloorMesh"/>
+          </OnRender>
+        </Model>
+        <Mesh Name="FloorMesh">
+          <Producers>
+            <MeshBox Scale="20 20 20"/>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+    <Group Comment="Box">
+      <Children>
+        <Model Name="Model1" Velocity="0 2 0" UsePhysics="255" PhysicsMass="10" PhysicsSize="2 2 2">
+          <OnRender>
+            <RenderSetColor Color="0.502 0 0 1"/>
+            <RenderMesh Mesh="Mesh1"/>
+          </OnRender>
+          <OnUpdate>
+            <Condition Expression="return 1; //currentmodel.position.y&gt;-5;">
+              <OnFalse>
+                <RemoveModel/>
+              </OnFalse>
+            </Condition>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Position.Y=-4 + clamp(App.MousePosition.Y * 8,0,8);
+
+CurrentModel.Position.X=App.MousePosition.X * 12;
+
+CurrentModel.Velocity.Y=random(5,2);
+//CurrentModel.Rotation.Z=rnd();
+
+//CurrentModel.Position.Z=rnd()*0.25;
+
+CurrentModel.PhysicsMass = random(30,15);]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+        <Mesh Name="Mesh1">
+          <Producers>
+            <MeshBox/>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+    <Group Comment="Sphere">
+      <Children>
+        <Model Name="Model2" Velocity="0 2 0" UsePhysics="255" PhysicsMass="10" PhysicsSize="1 20 0" PhysicsGeoStyle="1">
+          <OnRender>
+            <RenderSetColor Color="0.1569 0.4353 0.0667 1"/>
+            <RenderMesh Mesh="Mesh2"/>
+          </OnRender>
+          <OnUpdate>
+            <Condition Expression="return 1; //currentmodel.position.y&gt;-5;">
+              <OnFalse>
+                <RemoveModel/>
+              </OnFalse>
+            </Condition>
+          </OnUpdate>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Position.Y=-4 + clamp(App.MousePosition.Y * 8,0,8);
+
+CurrentModel.Position.X=App.MousePosition.X * 12;
+
+CurrentModel.Velocity.Y=random(5,2);
+//CurrentModel.Rotation.Z=rnd();
+
+//CurrentModel.Position.Z=rnd()*0.25;
+
+CurrentModel.PhysicsMass = random(30,15);]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+        </Model>
+        <Mesh Name="Mesh2">
+          <Producers>
+            <MeshSphere ZSamples="12" RadialSamples="12"/>
+          </Producers>
+        </Mesh>
+      </Children>
+    </Group>
+  </Content>
+</ZApplication>

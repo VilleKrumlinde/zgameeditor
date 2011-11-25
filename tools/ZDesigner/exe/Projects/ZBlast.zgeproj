@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="ZBlastApp" Caption="ZBlast - www.emix8.org  Version 0.02">
+  <OnLoaded>
+    <DefineVariable Name="TargetsCount" Comment="todo: should be int. Nr of targets to hit before end of level"/>
+    <DefineVariable Name="ShipShotDir"/>
+    <DefineVariable Name="LevelNr" Comment="Current level nr"/>
+    <DefineVariable Name="Temp1"/>
+    <DefineVariable Name="Temp2"/>
+    <DefineVariable Name="Temp3"/>
+    <DefineConstant Name="EdgeL" Comment="Left screen edge" Value="-5.5"/>
+    <DefineConstant Name="EdgeR" Value="5.5"/>
+    <DefineConstant Name="EdgeT" Comment="Top screen edge" Value="4"/>
+    <DefineConstant Name="EdgeB" Value="-4"/>
+    <DefineCollision Comment="Asteroids vs shipshots" Cat1="1" Cat2="2"/>
+    <DefineVariable Name="LevelTime" Comment="Time since current level started"/>
+    <SetAppState State="TitleState"/>
+    <DefineCollision Comment="Enemies vs ship" Cat1="1" Cat2="3"/>
+    <DefineVariable Name="PlayerScore"/>
+    <DefineVariable Name="LevelGruntCount" Comment="Nr of grunts for current level"/>
+    <DefineVariable Name="LevelAsteroidLargeCount"/>
+    <DefineVariable Name="LevelAsteroidMediumCount"/>
+    <DefineVariable Name="LevelAsteroidSmallCount"/>
+    <DefineVariable Name="LevelShooterCount"/>
+    <DefineVariable Name="LevelSpikeCount"/>
+    <DefineVariable Name="LevelSkullCount"/>
+    <DefineVariable Name="Temp4"/>
+    <DefineConstant Name="AsteroidBaseSpeed" Value="3"/>
+    <DefineConstant Name="SafeZone" Comment="Radius för del runt ship där enemies ej spawnas" Value="2"/>
+    <DefineVariable Name="PlayerShipCount" Comment="Nr of lifes left"/>
+  </OnLoaded>
   <States>
     <AppState Name="TitleState" Comment="Display title screen">
       <OnStart>
@@ -194,34 +222,6 @@ return Iteration<LevelShooterCount;]]>
       </OnUpdate>
     </AppState>
   </States>
-  <OnLoaded>
-    <DefineVariable Name="TargetsCount" Comment="todo: should be int. Nr of targets to hit before end of level"/>
-    <DefineVariable Name="ShipShotDir"/>
-    <DefineVariable Name="LevelNr" Comment="Current level nr"/>
-    <DefineVariable Name="Temp1"/>
-    <DefineVariable Name="Temp2"/>
-    <DefineVariable Name="Temp3"/>
-    <DefineConstant Name="EdgeL" Comment="Left screen edge" Value="-5.5"/>
-    <DefineConstant Name="EdgeR" Value="5.5"/>
-    <DefineConstant Name="EdgeT" Comment="Top screen edge" Value="4"/>
-    <DefineConstant Name="EdgeB" Value="-4"/>
-    <DefineCollision Comment="Asteroids vs shipshots" Cat1="1" Cat2="2"/>
-    <DefineVariable Name="LevelTime" Comment="Time since current level started"/>
-    <SetAppState State="TitleState"/>
-    <DefineCollision Comment="Enemies vs ship" Cat1="1" Cat2="3"/>
-    <DefineVariable Name="PlayerScore"/>
-    <DefineVariable Name="LevelGruntCount" Comment="Nr of grunts for current level"/>
-    <DefineVariable Name="LevelAsteroidLargeCount"/>
-    <DefineVariable Name="LevelAsteroidMediumCount"/>
-    <DefineVariable Name="LevelAsteroidSmallCount"/>
-    <DefineVariable Name="LevelShooterCount"/>
-    <DefineVariable Name="LevelSpikeCount"/>
-    <DefineVariable Name="LevelSkullCount"/>
-    <DefineVariable Name="Temp4"/>
-    <DefineConstant Name="AsteroidBaseSpeed" Value="3"/>
-    <DefineConstant Name="SafeZone" Comment="Radius för del runt ship där enemies ej spawnas" Value="2"/>
-    <DefineVariable Name="PlayerShipCount" Comment="Nr of lifes left"/>
-  </OnLoaded>
   <Content>
     <AudioMixer Ch0Active="1" Ch0Volume="0.36" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.36" Ch1UseDelay="1" Ch1DelayLength="0.14" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
     <Group Name="Materials">
@@ -234,7 +234,11 @@ return Iteration<LevelShooterCount;]]>
         <Material Name="AsteroidSmallMaterial" Shading="1" Color="0.26 0.67 0.16 1"/>
         <Material Name="ShipMaterial" Color="0.6 0.58 0.88 1"/>
         <Material Name="ShipShotMaterial" Color="0.74 0.79 0.71 1"/>
-        <Material Name="ExplosionMaterial" Texture="ExplosionBitmap" Color="1 1 1 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
+        <Material Name="ExplosionMaterial" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="ExplosionBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Bitmap Name="ExplosionBitmap">
           <Producers>
             <BitmapExpression>
@@ -367,7 +371,7 @@ if( frac(AsteroidLargeLife/4)==0 )
   AsteroidLargeHurt=0.6;]]>
               </Expression>
             </ZExpression>
-            <Condition Expression="return AsteroidLargeLife.Value==0;">
+            <Condition Expression="return AsteroidLargeLife==0;">
               <OnTrue>
                 <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
                 <SpawnModel Model="AsteroidMediumModel" UseSpawnerPosition="255"/>
@@ -619,7 +623,11 @@ PlayerScore+=100;]]>
                 <StartAnimator Animator="BackgroundAnimators"/>
               </OnSpawn>
             </Model>
-            <Material Name="BackgroundMaterial" Texture="BackgroundBitmap" TextureScale="2 2 2" TextureX="1.5" TextureY="1.5" Light="0" TexCoords="1" ZBuffer="0"/>
+            <Material Name="BackgroundMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BackgroundBitmap" TextureScale="2 2 2" TextureX="1.5" TextureY="1.5" TexCoords="1"/>
+              </Textures>
+            </Material>
             <Bitmap Name="BackgroundBitmap">
               <Producers>
                 <BitmapExpression>
@@ -716,7 +724,11 @@ this.Pixel.A=0.2-Temp1*0.2;
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="_BackgroundDiscMaterial" Texture="_BackgroundDiscBitmap" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+            <Material Name="_BackgroundDiscMaterial" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="_BackgroundDiscBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
           </Children>
         </Group> <!-- BackgroundGroup -->
 
@@ -735,7 +747,7 @@ this.Pixel.A=0.2-Temp1*0.2;
             <MouseModelController ScaleX="5.5" ScaleY="4"/>
             <KeyPress Name="ShootKeys" Keys="AWDS" RepeatDelay="0.07">
               <OnPressed>
-                <ZExpression Expression="ShipShotDir.Value=ShootKeys.KeyIndex+1;"/>
+                <ZExpression Expression="ShipShotDir=ShootKeys.KeyIndex+1;"/>
                 <SpawnModel Model="ShipShotModel" UseSpawnerPosition="255"/>
                 <PlaySound Sound="ShipShotSound" NoteNr="60"/>
               </OnPressed>
@@ -800,24 +812,24 @@ ShipShotModel.Rotation.Z+=0.001*60 * ZBlastApp.DeltaTime;
 <![CDATA[Temp1=random(0,0.1);
 //ShipShotModel.Scale.X=random(1,0.5);
 //ShipShotModel.Scale.Y=random(1,0.5);
-if(ShipShotDir.Value==1) {
+if(ShipShotDir==1) {
   //Left
   ShipShotModel.Velocity.X=-ShipShotSpeed;
   ShipShotModel.Rotation.Z=-0.25;
 //  ShipShotModel.Position.Y+=Temp1;
-} else if(ShipShotDir.Value==2) {
+} else if(ShipShotDir==2) {
   //Up
   ShipShotModel.Velocity.Y=ShipShotSpeed;
-} else if(ShipShotDir.Value==3) {
+} else if(ShipShotDir==3) {
   //Right
   ShipShotModel.Velocity.X=ShipShotSpeed;
   ShipShotModel.Rotation.Z=0.25;
-} else if(ShipShotDir.Value==4) {
+} else if(ShipShotDir==4) {
   //Down
   ShipShotModel.Velocity.Y=-ShipShotSpeed;
 }
 
-ShipShotDir.Value=0;]]>
+ShipShotDir=0;]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
@@ -1198,7 +1210,11 @@ ShooterShotTimeState=0.5;]]>
                     <RemoveModel/>
                   </OnCollision>
                 </Model>
-                <Material Name="ShooterShotMaterial" Texture="ShooterShotBitmap" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+                <Material Name="ShooterShotMaterial" Light="0" Blend="1" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="ShooterShotBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
                 <Bitmap Name="ShooterShotBitmap">
                   <Producers>
                     <BitmapExpression>
@@ -1489,7 +1505,11 @@ TailParticles.ParticleLifeTime=Temp2;]]>
                     </ZExpression>
                   </OnSpawn>
                 </Model>
-                <Material Name="SkullTailMaterial" Texture="DebrisBitmap" Blend="2" TexCoords="1"/>
+                <Material Name="SkullTailMaterial" Blend="2">
+                  <Textures>
+                    <MaterialTexture Texture="DebrisBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
                 <Model Name="SkullShotModel" Scale="0.3 0.3 1" Category="1" CollisionBounds="0.3 0.3 0 0">
                   <OnRender>
                     <UseMaterial Material="SkullShotMaterial"/>
@@ -1542,7 +1562,11 @@ SkullShotParticles.Direction=(3.14*1.5) - Temp3;]]>
                     <RemoveModel/>
                   </OnCollision>
                 </Model>
-                <Material Name="SkullEyeBeamMaterial" Texture="BeamBitmap" Color="1 0.31 0.31 1" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
+                <Material Name="SkullEyeBeamMaterial" Color="1 0.31 0.31 1" Light="0" Blend="2" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
                 <Bitmap Name="SkullShotBitmap">
                   <Producers>
                     <BitmapExpression>
@@ -1581,7 +1605,11 @@ if(0) { //Temp1<0.1) {
                     </BitmapExpression>
                   </Producers>
                 </Bitmap>
-                <Material Name="SkullShotMaterial" Texture="SkullShotBitmap" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
+                <Material Name="SkullShotMaterial" Light="0" Blend="2" ZBuffer="0">
+                  <Textures>
+                    <MaterialTexture Texture="SkullShotBitmap" TexCoords="1"/>
+                  </Textures>
+                </Material>
                 <Sound Name="SkullShotSound" Comment="note 61" Volume="1" UseFilter="1" FilterCutoff="0.07" FilterQ="0.57" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="9" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.45" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.18"/>
               </Children>
             </Group> <!-- SkullGroup -->
@@ -1659,7 +1687,11 @@ this.Pixel.B=0;//Temp1*1.4;]]>
                     </BitmapExpression>
                   </Producers>
                 </Bitmap>
-                <Material Name="SpikesMaterial" Texture="SpikesBitmap"/>
+                <Material Name="SpikesMaterial">
+                  <Textures>
+                    <MaterialTexture Texture="SpikesBitmap"/>
+                  </Textures>
+                </Material>
                 <Mesh Name="SpikesMesh">
                   <Producers>
                     <MeshSphere ZSamples="20" RadialSamples="20"/>
@@ -1791,7 +1823,11 @@ this.Pixel.G=this.Pixel.B*0.2;]]>
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="TitleBackgroundMaterial" Texture="TitleBackgroundBitmap" Light="0" TexCoords="1" ZBuffer="0"/>
+            <Material Name="TitleBackgroundMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="TitleBackgroundBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
           </Children>
         </Group> <!-- TitleGroup -->
 
@@ -1896,7 +1932,11 @@ if(this.V.Y>0.4) {
             <RenderMesh Mesh="NoiseMesh"/>
           </OnRender>
         </Model>
-        <Material Name="NoiseMaterial" Texture="SpikesBitmap" TexCoords="1"/>
+        <Material Name="NoiseMaterial">
+          <Textures>
+            <MaterialTexture Texture="SpikesBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Bitmap Name="NoiseBitmap">
           <Producers>
             <BitmapExpression>
@@ -2034,7 +2074,11 @@ this.Pixel.A=Temp1;]]>
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="BeamMaterial" Texture="BeamBitmap" Light="0" Blend="2" TexCoords="1" ZBuffer="0"/>
+            <Material Name="BeamMaterial" Light="0" Blend="2" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
           </Children>
         </Group> <!-- BeamGroup -->
 
@@ -2155,7 +2199,11 @@ else
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="DebrisMaterial" Texture="DebrisBitmap" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+        <Material Name="DebrisMaterial" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="DebrisBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- ExplosionGroup -->
 
@@ -2251,7 +2299,11 @@ this.Pixel.B=Temp1*1.2;//Temp1*1.4;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="GameOverBackgroundMaterial" Texture="GameOverBackgroundBitmap" Light="0" TexCoords="1" ZBuffer="0"/>
+        <Material Name="GameOverBackgroundMaterial" Light="0" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="GameOverBackgroundBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
       </Children>
     </Group> <!-- GameOverGroup -->
 

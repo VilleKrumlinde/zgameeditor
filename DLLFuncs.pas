@@ -48,13 +48,9 @@ const
   // Value designating an unassigned TModuleHandle od a failed loading
   INVALID_MODULEHANDLE_VALUE = TModuleHandle(0);
 
-function LoadModule(var Module: TModuleHandle; FileName: PChar): Boolean;
-function LoadModuleEx(var Module: TModuleHandle; FileName: PChar; Flags: Cardinal): Boolean;
+function LoadModule(var Module: TModuleHandle; const FileName: PAnsiChar): Boolean;
 procedure UnloadModule(var Module: TModuleHandle);
-function GetModuleSymbol(Module: TModuleHandle; SymbolName: PChar): Pointer;
-function GetModuleSymbolEx(Module: TModuleHandle; SymbolName: PChar; var Accu: Boolean): Pointer;
-function ReadModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
-function WriteModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
+function GetModuleSymbol(Module: TModuleHandle; const SymbolName: PAnsiChar): Pointer;
 
 implementation
 
@@ -65,21 +61,10 @@ implementation
 // Warning: if Module has any other value than INVALID_MODULEHANDLE_VALUE
 // on entry the function will do nothing but returning success.
 
-function LoadModule(var Module: TModuleHandle; FileName: PChar): Boolean;
+function LoadModule(var Module: TModuleHandle; const FileName: PAnsiChar): Boolean;
 begin
   if Module = INVALID_MODULEHANDLE_VALUE then
-    Module := LoadLibrary( FileName );
-  Result := Module <> INVALID_MODULEHANDLE_VALUE;
-end;
-
-// load the DLL file FileName
-// LoadLibraryEx is used to get better control of the loading
-// for the allowed values for flags see LoadLibraryEx documentation.
-
-function LoadModuleEx(var Module: TModuleHandle; FileName: PChar; Flags: Cardinal): Boolean;
-begin
-  if Module = INVALID_MODULEHANDLE_VALUE then
-    Module := LoadLibraryEx( FileName, 0, Flags);
+    Module := LoadLibraryA( FileName );
   Result := Module <> INVALID_MODULEHANDLE_VALUE;
 end;
 
@@ -90,73 +75,18 @@ end;
 
 procedure UnloadModule(var Module: TModuleHandle);
 begin
-  if Module <> INVALID_MODULEHANDLE_VALUE then
-    FreeLibrary(Module);
-  Module := INVALID_MODULEHANDLE_VALUE;
+  FreeLibrary(Module);
 end;
 
 // returns the pointer to the symbol named SymbolName
 // if it is exported from the DLL Module
 // nil is returned if the symbol is not available
 
-function GetModuleSymbol(Module: TModuleHandle; SymbolName: PChar): Pointer;
+function GetModuleSymbol(Module: TModuleHandle; const SymbolName: PAnsiChar): Pointer;
 begin
-  Result := nil;
-  if Module <> INVALID_MODULEHANDLE_VALUE then
-    Result := GetProcAddress(Module, SymbolName );
+  Result := GetProcAddress(Module, SymbolName );
 end;
 
-// returns the pointer to the symbol named SymbolName
-// if it is exported from the DLL Module
-// nil is returned if the symbol is not available.
-// as an extra the boolean variable Accu is updated
-// by anding in the success of the function.
-// This is very handy for rendering a global result
-// when accessing a long list of symbols.
-
-function GetModuleSymbolEx(Module: TModuleHandle; SymbolName: PChar; var Accu: Boolean): Pointer;
-begin
-  Result := nil;
-  if Module <> INVALID_MODULEHANDLE_VALUE then
-    Result := GetProcAddress(Module, SymbolName );
-  Accu := Accu and (Result <> nil);
-end;
-
-// get the value of variables exported from a DLL Module
-// Delphi cannot access variables in a DLL directly, so
-// this function allows to copy the data from the DLL.
-// Beware! You are accessing the DLL memory image directly.
-// Be sure to access a variable not a function and be sure
-// to read the correct amount of data.
-
-function ReadModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
-var
-  Sym: Pointer;
-begin
-  Result := True;
-  Sym := GetModuleSymbolEx(Module, SymbolName, Result);
-  if Result then
-    Move(Sym^, Buffer, Size);
-end;
-
-// set the value of variables exported from a DLL Module
-// Delphi cannot access variables in a DLL directly, so
-// this function allows to copy the data to the DLL!
-// BEWARE! You are accessing the DLL memory image directly.
-// Be sure to access a variable not a function and be sure
-// to write the correct amount of data.
-// The changes are not persistent. They get lost when the
-// DLL is unloaded.
-
-function WriteModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
-var
-  Sym: Pointer;
-begin
-  Result := True;
-  Sym := GetModuleSymbolEx(Module, SymbolName, Result);
-  if Result then
-    Move(Buffer, Sym^, Size);
-end;
 
 {$ENDIF}
 
@@ -180,13 +110,9 @@ const
   // Value designating an unassigned TModuleHandle od a failed loading
   INVALID_MODULEHANDLE_VALUE = TModuleHandle(nil);
 
-function LoadModule(var Module: TModuleHandle; FileName: PChar): Boolean;
-function LoadModuleEx(var Module: TModuleHandle; FileName: PChar; Flags: Cardinal): Boolean;
+function LoadModule(var Module: TModuleHandle; FileName: PAnsiChar): Boolean;
 procedure UnloadModule(var Module: TModuleHandle);
-function GetModuleSymbol(Module: TModuleHandle; SymbolName: PChar): Pointer;
-function GetModuleSymbolEx(Module: TModuleHandle; SymbolName: PChar; var Accu: Boolean): Pointer;
-function ReadModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
-function WriteModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
+function GetModuleSymbol(Module: TModuleHandle; SymbolName: PAnsiChar): Pointer;
 
 implementation
 
@@ -197,7 +123,7 @@ implementation
 // Warning: if Module has any other value than INVALID_MODULEHANDLE_VALUE
 // on entry the function will do nothing but returning success.
 
-function LoadModule(var Module: TModuleHandle; FileName: PChar): Boolean;
+function LoadModule(var Module: TModuleHandle; FileName: PAnsiChar): Boolean;
 begin
   if Module = INVALID_MODULEHANDLE_VALUE then
     Module := dlopen( FileName, RTLD_NOW);
@@ -208,7 +134,7 @@ end;
 // dlopen() with flags is used to get better control of the loading
 // for the allowed values for flags see "man dlopen".
 
-function LoadModuleEx(var Module: TModuleHandle; FileName: PChar; Flags: Cardinal): Boolean;
+function LoadModuleEx(var Module: TModuleHandle; FileName: PAnsiChar; Flags: Cardinal): Boolean;
 begin
   if Module = INVALID_MODULEHANDLE_VALUE then
     Module := dlopen( FileName, Flags);
@@ -231,7 +157,7 @@ end;
 // if it is exported from the .so Module
 // nil is returned if the symbol is not available
 
-function GetModuleSymbol(Module: TModuleHandle; SymbolName: PChar): Pointer;
+function GetModuleSymbol(Module: TModuleHandle; SymbolName: PAnsiChar): Pointer;
 begin
   Result := nil;
   if Module <> INVALID_MODULEHANDLE_VALUE then
@@ -246,7 +172,7 @@ end;
 // This is very handy for rendering a global result
 // when accessing a long list of symbols.
 
-function GetModuleSymbolEx(Module: TModuleHandle; SymbolName: PChar; var Accu: Boolean): Pointer;
+function GetModuleSymbolEx(Module: TModuleHandle; SymbolName: PAnsiChar; var Accu: Boolean): Pointer;
 begin
   Result := nil;
   if Module <> INVALID_MODULEHANDLE_VALUE then
@@ -261,7 +187,7 @@ end;
 // Be sure to access a variable not a function and be sure
 // to read the correct amount of data.
 
-function ReadModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
+function ReadModuleData(Module: TModuleHandle; SymbolName: PAnsiChar; var Buffer; Size: Cardinal): Boolean;
 var
   Sym: Pointer;
 begin
@@ -280,7 +206,7 @@ end;
 // The changes are not persistent. They get lost when the
 // .so is unloaded.
 
-function WriteModuleData(Module: TModuleHandle; SymbolName: PChar; var Buffer; Size: Cardinal): Boolean;
+function WriteModuleData(Module: TModuleHandle; SymbolName: PAnsiChar; var Buffer; Size: Cardinal): Boolean;
 var
   Sym: Pointer;
 begin

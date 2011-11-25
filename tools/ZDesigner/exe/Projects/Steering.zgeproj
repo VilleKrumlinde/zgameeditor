@@ -65,8 +65,7 @@
           <OnUpdate>
             <ZExpression>
               <Expression>
-<![CDATA[
-//Rotate model
+<![CDATA[//Rotate model
 CurrentModel.Rotation.Y-=App.DeltaTime*0.25;
 CurrentModel.Rotation.X-=App.DeltaTime*0.15;
 CursorTg1.Rotate.X+=App.DeltaTime*0.35;
@@ -83,8 +82,7 @@ CurrentModel.Velocity.Y*=Temp1;]]>
                 <SteeringBehaviour Kind="5" TargetCategory="3" Weight="10"/>
                 <SteeringBehaviour Kind="4">
                   <Expression>
-<![CDATA[
-//OutVector : result steer vector
+<![CDATA[//OutVector : result steer vector
 this.OutVector.X=(App.MousePosition.X*5) - CurrentModel.Position.X;
 this.OutVector.Y=(App.MousePosition.Y*4) - CurrentModel.Position.Y;
 //this.OutVector.Y=0;]]>
@@ -107,8 +105,7 @@ this.OutVector.Y=(App.MousePosition.Y*4) - CurrentModel.Position.Y;
                 <MeshSphere Scale="0.2 0.2 0.2" RadialSamples="50"/>
                 <MeshExpression>
                   <Expression>
-<![CDATA[
-//V : current vertex
+<![CDATA[//V : current vertex
 if(this.V.Y> (0+CurrentModel.Personality*0.1) ) {
   this.V.X*=0.7 - CurrentModel.Personality*0.3;
   this.V.Y*=1 + CurrentModel.Personality;
@@ -158,8 +155,7 @@ if(CurrentModel.Personality>0.1) {
                 </SteeringController>
                 <Condition>
                   <Expression>
-<![CDATA[
-return
+<![CDATA[return
   (BoidModel.Position.X<-5) || (BoidModel.Position.X>5) ||
   (BoidModel.Position.Y<-5) || (BoidModel.Position.Y>5);]]>
                   </Expression>
@@ -176,8 +172,7 @@ return
               <OnStart>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-CurrentModel.Scale.X=0.1;
+<![CDATA[CurrentModel.Scale.X=0.1;
 CurrentModel.Scale.Y=0.1;]]>
                   </Expression>
                 </ZExpression>
@@ -185,8 +180,7 @@ CurrentModel.Scale.Y=0.1;]]>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
-<![CDATA[
-CurrentModel.Scale.X=clamp(CurrentModel.Scale.X+2*App.DeltaTime,0,1);
+<![CDATA[CurrentModel.Scale.X=clamp(CurrentModel.Scale.X+2*App.DeltaTime,0,1);
 CurrentModel.Scale.Y=clamp(CurrentModel.Scale.Y+2*App.DeltaTime,0,1);
 CurrentModel.Rotation.Z+=App.DeltaTime*4;]]>
                   </Expression>
@@ -207,8 +201,7 @@ CurrentModel.Rotation.Z+=App.DeltaTime*4;]]>
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-BoidModel.Position.X = random(0,3);
+<![CDATA[BoidModel.Position.X = random(0,3);
 BoidModel.Position.Y = random(0,3);
 
 //Lite olika maxspeed, annars formar de en boll
@@ -230,7 +223,7 @@ PlayBoidCollide.ReplayDelay = random(2,1.5);]]>
             <SetModelState State="BoidStateAppear"/>
           </OnSpawn>
           <OnCollision>
-            <Condition Expression="return App.CollidedCategory==CursorCategory;">
+            <Condition Expression="return CurrentModel.CollidedWith.Category==CursorCategory;">
               <OnTrue>
                 <Condition Expression="return FleeWhenClose &amp;&amp; BoidIsSeeking;">
                   <OnTrue>
@@ -289,8 +282,7 @@ PlayBoidCollide.ReplayDelay = random(2,1.5);]]>
             </SteeringController>
             <ZExpression>
               <Expression>
-<![CDATA[
-//DAmpen velocity set by steeringcontroller
+<![CDATA[//DAmpen velocity set by steeringcontroller
 CurrentModel.Velocity.X *= (1.0 - App.DeltaTime);
 CurrentModel.Velocity.Y *= (1.0 - App.DeltaTime);]]>
               </Expression>
@@ -299,8 +291,7 @@ CurrentModel.Velocity.Y *= (1.0 - App.DeltaTime);]]>
           <OnSpawn>
             <ZExpression>
               <Expression>
-<![CDATA[
-CurrentModel.Position.X = random(0,3);
+<![CDATA[CurrentModel.Position.X = random(0,3);
 CurrentModel.Position.Y = random(0,3);
 
 Temp1=random(1,0.3);

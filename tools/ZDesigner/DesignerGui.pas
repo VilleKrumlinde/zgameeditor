@@ -22,7 +22,7 @@ unit DesignerGui;
 
 interface
 
-uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -30,13 +30,16 @@ type
   TZPropertyEditor =  class(TScrollBox)
   private
     C : TZComponent;
+    LastWidth : integer;
     procedure RebuildGui;
     procedure OnPropEditValueChanged;
+    procedure MyOnResize(Sender: TObject);
   public
     RootComponent : TZComponent;
     OnPropValueChanged : TPropValueChangedEvent;
     WantsFocus : TWinControl;
     procedure SetComponent(C : TZComponent);
+    constructor Create(Owner : TComponent); override;
   end;
 
   TZComponentTreeNode = class(TTreeNode)
@@ -49,7 +52,7 @@ type
   end;
 
   TZComponentTreeView = class(TTreeView)
-  private
+  strict private
     RootComponent : TZComponent;
     procedure RebuildGui;
     procedure MyCustomDrawItem(Sender: TCustomTreeView; Node: TTreeNode; State: TCustomDrawState; var DefaultDraw: Boolean);
@@ -60,11 +63,13 @@ type
   public
     ShowOpCodes : boolean;
     LockShowNode : TTreeNode;
-    function AddNode(C : TZComponent; Parent : TTreenode) : TTreeNode;
+    function AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
     procedure SetRootComponent(C : TZComponent);
     function FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;
+    function FindNodeForComponent(C: TZComponent): TZComponentTreeNode;
     procedure RefreshNode(Node : TTreeNode; C : TZComponent);
     function ZSelected : TZComponentTreeNode;
+    function SortSelections : TObjectList;
     constructor Create(AOwner: TComponent); override;
     property OnChange;
     property Items;
@@ -75,15 +80,20 @@ type
 
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
-function HasReferers(Root, Target : TZComponent) : boolean;
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
+function DesignerFormatFloat(V : single) : string;
+function ZColorToColor(C : TZColorf) : TColor;
+function ColorToZColor(C : TColor) : TZColorf;
 
 implementation
 
-uses StdCtrls,SysUtils,Math,Dialogs,Graphics,frmEditor,ExprEdit,ZLog,ZBitmap,
+uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
-  frmRawAudioImportOptions,ZFile,BitmapProducers;
+  frmRawAudioImportOptions,ZFile,BitmapProducers,
+  frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes,
+  Jpeg;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -135,9 +145,11 @@ type
   TZPropertyComponentEdit = class(TZPropertyEditBase)
   private
     Cb : TComboBox;
+    FocusButton : TButton;
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
     procedure OnDropDown(Sender : TObject);
     procedure OnChange(Sender : TObject);
+    procedure DoFindComponent(Sender: TObject);
   end;
 
   TZPropertyIntegerEdit = class(TZPropertyEditBase)
@@ -168,6 +180,7 @@ type
   private
     Cb : TComboBox;
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
+    procedure OnCbDropDown(Sender : TObject);
     procedure OnChange(Sender : TObject);
   end;
 
@@ -207,6 +220,12 @@ begin
 end;
 
 
+function DesignerFormatFloat(V : single) : string;
+const F : array[1..FloatTextDecimals+2] of char = ('0','.','0','#','#','#');
+begin
+  Result := FormatFloat(F, V);
+end;
+
 
 { TZPropertyEditor }
 
@@ -214,6 +233,21 @@ procedure TZPropertyEditor.SetComponent(C: TZComponent);
 begin
   Self.C := C;
   RebuildGui;
+end;
+
+constructor TZPropertyEditor.Create(Owner: TComponent);
+begin
+  inherited Create(Owner);
+  Self.OnResize := MyOnResize;
+  ParentBackground := True;
+  Self.BorderStyle := bsNone;
+end;
+
+procedure TZPropertyEditor.MyOnResize(Sender : TObject);
+begin
+  if Visible and (Self.Width<>LastWidth) then
+    RebuildGUI;
+  LastWidth := Self.Width;
 end;
 
 procedure TZPropertyEditor.RebuildGui;
@@ -231,7 +265,7 @@ begin
   if C = nil then
     Exit;
 
-  //Important: otherwise vertscrollbars appears that crash if clicked upon  
+  //Important: otherwise vertscrollbars appears that crash if clicked upon
   Self.DisableAutoRange;
 
   PEditor := nil;
@@ -257,7 +291,7 @@ begin
     else
       Continue;
     end;
-    PEditor.IsReadOnlyProp := Prop.NeverPersist or Prop.IsReadOnly;
+    PEditor.IsReadOnlyProp := Prop.NeverPersist;// or Prop.IsReadOnly;
     PEditor.Height := 20;
     PEditor.Parent := Self;
     PEditor.SetProp(C,Prop);
@@ -266,7 +300,8 @@ begin
     PEditor.OnPropValueChanged := Self.OnPropEditValueChanged;
     //Autofocus viktiga propertys
     //'Name' får focus
-    if (Prop.NeedRefreshNodeName) or (Prop.PropertyType=zptExpression) then
+    //NeedRefreshNodeName causes focus-error if adding new rendermesh-component, skip for now
+    if {(Prop.NeedRefreshNodeName) or }(Prop.PropertyType=zptExpression) then
       WantsFocus := PEditor;
   end;
 
@@ -290,6 +325,8 @@ constructor TZPropertyEditBase.Create(AOwner: TComponent);
 begin
   inherited;
   Self.PropEditor := AOwner as TZPropertyEditor;
+  Self.BorderStyle := bsNone;
+  Self.BevelOuter := bvNone;
 end;
 
 destructor TZPropertyEditBase.Destroy;
@@ -331,10 +368,8 @@ begin
 
   NamePanel := TPanel.Create(Self);
   NamePanel.Align := alLeft;
-//  NamePanel.Caption := Prop.Name;
-//  NamePanel.Alignment := taLeftJustify;
   NamePanel.BevelOuter := bvNone;
-  NamePanel.Width := 140;
+  NamePanel.Width := Max(120, (Owner as TWinControl).Width div 3);
   NamePanel.Parent := Self;
   NamePanel.Alignment := taLeftJustify;
 
@@ -348,6 +383,7 @@ begin
   NameLabel.Caption := Prop.Name;
   NameLabel.Parent := NamePanel;}
   NamePanel.Caption := ' ' + Prop.Name;
+  NamePanel.Hint := Prop.Name;
 
   if IsReadOnlyProp then
     NamePanel.Font.Color := clGrayText
@@ -365,7 +401,7 @@ var
 begin
   IsName := Prop.Name='Name';
   if IsName then
-    (PropEditor.Owner as TEditorForm).ValidateNewName(OldValue.StringValue,Value.StringValue);
+    (PropEditor.Owner as TEditorForm).ValidateNewName(String(OldValue.StringValue),String(Value.StringValue));
   //Skriver nytt värde till prop och notifierar event
   Component.SetProperty(Prop,Value);
   OnPropValueChanged;
@@ -395,7 +431,7 @@ begin
     Edit.Tag:=100;
   end
   else
-    Edit.Text := Value.StringValue;
+    Edit.Text := String( Value.StringValue );
 
   if  (Prop.Name='VertexShaderSource') or
     (Prop.Name='FragmentShaderSource') then
@@ -406,7 +442,7 @@ begin
   Edit.Enabled := not IsReadOnlyProp;
   Edit.Parent := ValuePanel;
 
-  if (Prop.Name='Text') then
+  if (Prop.Name='Text') or (Prop.Name='Comment') or (Prop.Name='StringValue') then
   begin
     B := TButton.Create(Self);
     B.Align := alRight;
@@ -416,6 +452,7 @@ begin
     B.Hint := 'Edit multi-line text';
     B.OnClick := OnMemoEdit;
     B.Parent := ValuePanel;
+    B.Enabled := not IsReadOnlyProp;
   end;
 
 //  NamePanel.FocusControl := Edit;
@@ -429,7 +466,7 @@ begin
   if MemoEditForm=nil then
     MemoEditForm := TMemoEditForm.Create(Application);
   MemoEditForm.Caption := 'Editing ' + Self.Prop.Name;
-  MemoEditForm.Memo1.Text := Value.StringValue;
+  MemoEditForm.Memo1.Text := String( Value.StringValue );
   if MemoEditForm.ShowModal=mrOK then
   begin
     Edit.Text := MemoEditForm.Memo1.Text;
@@ -446,8 +483,8 @@ begin
   S := TEdit(Sender).Text;
   if Prop.PropertyType=zptString then
   begin
-    IsChanged := Value.StringValue<>S;
-    Value.StringValue := S
+    IsChanged := Value.StringValue<>AnsiString(S);
+    Value.StringValue := AnsiString(S);
   end
   else if Prop.PropertyType=zptExpression then
   begin
@@ -474,11 +511,11 @@ begin
   inherited;
   Edit := TEdit.Create(Self);
   Edit.Align := alClient;
-  Edit.Text := FloatToStr( RoundTo(Value.FloatValue,-FloatTextDecimals) );
+  Edit.Text := DesignerFormatFloat(Value.FloatValue);
   Edit.OnChange := OnEditChange;
   Edit.OnEnter := OnFocusControl;
   Edit.OnExit := OnEditExit;
-  if Self.Prop.NeverPersist then
+  if (Self.Prop.NeverPersist and (not Self.Prop.IsReadOnly)) then
   begin
     //Tillåt ändra nevepersist floats: detta gör att man kan ändra
     //DefineVariable.Value i editor vilket är bra vid felsök.
@@ -522,7 +559,7 @@ begin
   else
   begin
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + S);
-    Edit.Undo;
+    //Edit.Undo;
   end;
   Edit.Color := clWhite;
 end;
@@ -537,7 +574,7 @@ var
   Add : single;
 begin
   Add := 0.01 * (1-(ord(Button=btPrev)*2));
-  Edit.Text := FloatToStr( RoundTo(StrToFloatDef(Edit.Text,0) + Add,-FloatTextDecimals) );
+  Edit.Text := DesignerFormatFloat(StrToFloatDef(Edit.Text,0) + Add);
 end;
 
 { TZPropertyColorEdit }
@@ -594,11 +631,23 @@ end;
 
 procedure TZPropertyComponentEdit.SetProp(C: TZComponent;
   Prop: TZProperty);
+var
+  B : TButton;
 begin
   inherited;
+  B := TButton.Create(Self);
+  B.OnClick := DoFindComponent;
+  B.Caption:='>';
+  B.Hint := 'Click to focus selected component in project tree';
+  B.Width := 16;
+  B.Enabled := Assigned(Value.ComponentValue);
+  B.Align := alRight;
+  B.Parent := ValuePanel;
+  Self.FocusButton := B;
+
   Cb := TComboBox.Create(Self);
   if Value.ComponentValue<>nil then
-    Cb.Text := Value.ComponentValue.Name;
+    Cb.Text := String(Value.ComponentValue.Name);
   Cb.Style := csDropDown;
   Cb.Sorted := True;
   Cb.OnDropDown := Self.OnDropDown;
@@ -607,6 +656,11 @@ begin
   Cb.Align := alClient;
   Cb.OnEnter := OnFocusControl;
   Cb.Parent := ValuePanel;
+end;
+
+procedure TZPropertyComponentEdit.DoFindComponent(Sender: TObject);
+begin
+  (PropEditor.Owner as TEditorForm).FindComponentAndFocusInTree(Cb.Text);
 end;
 
 procedure TZPropertyComponentEdit.OnDropDown(Sender: TObject);
@@ -663,6 +717,7 @@ begin
     //Componentref kan påverka nodnamnet, gör refresh
     (PropEditor.Owner as TEditorForm).Tree.ZSelected.RefreshNodeName;
   end;
+  FocusButton.Enabled := Cb.ItemIndex>0;
 end;
 
 { TZPropertyIntegerEdit }
@@ -726,12 +781,17 @@ begin
   end;
 end;
 
-function TZComponentTreeView.AddNode(C : TZComponent; Parent : TTreenode) : TTreeNode;
+function TZComponentTreeView.AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
 var
   Node : TZComponentTreeNode;
 begin
   Assert(C<>nil);
-  Node := Items.AddChild(Parent,'') as TZComponentTreeNode;
+
+  if Index=-1 then
+    Node := Items.AddChild(Parent,'') as TZComponentTreeNode
+  else
+    Node := Items.Insert(Parent.Item[Index],'') as TZComponentTreeNode;
+
   Node.Component := C;
   Node.ImageIndex := ComponentManager.GetInfo(C).ImageIndex;
   Node.SelectedIndex := Node.ImageIndex;
@@ -742,31 +802,24 @@ end;
 
 procedure TZComponentTreeView.RefreshNode(Node: TTreeNode; C: TZComponent);
 var
-  I,J{,NestedCount} : integer;
+  I,J : integer;
   NestedNode : TZComponentTreeNode;
   PropList : TZPropertyList;
   Prop : TZProperty;
   Value : TZPropertyValue;
 begin
+  Self.Items.BeginUpdate;
+
   if Node.HasChildren then
     Node.DeleteChildren;
   PropList := C.GetProperties;
 
-  //Kolla om det finns flera props som ska visas som child-noder
-{  NestedCount:=0;
-  for I := 0 to PropList.Count-1 do
-    if TZProperty(PropList[I]).PropertyType in [zptInlineComponent,zptComponentList] then
-      Inc(NestedCount);}
-
   for I := 0 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
+    if Prop.HideInGui then
+      Continue;
     case Prop.PropertyType of
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          AddNode(Value.ComponentValue,Node).Text := Prop.Name;
-        end;
       zptExpression :
         begin
           //Expression-nodes visas ska bara visas för debug, tillåt ej ändringar
@@ -804,12 +857,40 @@ begin
         end;
     end;
   end;
+  Self.Items.EndUpdate;
 end;
 
 procedure TZComponentTreeView.SetRootComponent(C: TZComponent);
 begin
   RootComponent := C;
   RebuildGui;
+end;
+
+function SortNodes(P1,P2 : pointer) : integer;
+var
+  N1,N2 : TTreeNode;
+  I1,I2 : integer;
+begin
+  N1 := TTreeNode(P1); N2 := TTreeNode(P2);
+  I1 := N1.Parent.IndexOf(N1);
+  I2 := N2.Parent.IndexOf(N2);
+  if I1=I2 then
+    Result := 0
+  else if I1<I2 then
+    Result := -1
+  else
+    Result := 1;
+end;
+
+function TZComponentTreeView.SortSelections : TObjectList;
+var
+  I : integer;
+begin
+  //Sort selected sibling-nodes in their child-order to the parent 
+  Result := TObjectList.Create(False);
+  for I := 0 to Self.SelectionCount-1 do
+    Result.Add(Self.Selections[I]);
+  Result.Sort(SortNodes);
 end;
 
 constructor TZComponentTreeView.Create(AOwner: TComponent);
@@ -827,6 +908,8 @@ procedure TZComponentTreeView.MyCustomDrawItem(Sender: TCustomTreeView;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
+  else if Assigned((Node as TZComponentTreeNode).Component) and (Node as TZComponentTreeNode).Component.DesignDisable then
+    Canvas.Font.Style := [fsStrikeOut]
   else
     Canvas.Font.Style := [];
   DefaultDraw:=True;
@@ -847,6 +930,23 @@ begin
   begin
     Item := Items[I] as TZComponentTreeNode;
     if Item.ComponentList=L then
+    begin
+      Result := Item;
+      Break;
+    end;
+  end;
+end;
+
+function TZComponentTreeView.FindNodeForComponent(C: TZComponent): TZComponentTreeNode;
+var
+  I : integer;
+  Item : TZComponentTreeNode;
+begin
+  Result := nil;
+  for I := 0 to Items.Count - 1 do
+  begin
+    Item := Items[I] as TZComponentTreeNode;
+    if Item.Component=C then
     begin
       Result := Item;
       Break;
@@ -912,7 +1012,7 @@ begin
   else
   begin
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + Edit.Text);
-    Edit.Undo;
+    //Edit.Undo;
   end;
   Edit.Color := clWhite;
 end;
@@ -950,7 +1050,7 @@ begin
     Edit.Tag := I;
     Edit.Width := 40;
     Edit.Align := alLeft;
-    Edit.Text := FloatToStr( RoundTo(FloatP^[I],-FloatTextDecimals) );
+    Edit.Text := DesignerFormatFloat(FloatP^[I]);
     Edit.OnChange := OnEditChange;
     Edit.OnEnter := OnFocusControl;
     Edit.OnExit := OnEditExit;
@@ -963,37 +1063,8 @@ end;
 
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 //Returns all objects
-var
-  PropList : TZPropertyList;
-  Prop : TZProperty;
-  Value : TZPropertyValue;
-  I,J : integer;
 begin
-  List.Add(C);
-  PropList := C.GetProperties;
-  for I := 0 to PropList.Count-1 do
-  begin
-    Prop := TZProperty(PropList[I]);
-    case Prop.PropertyType of
-      zptComponentList :
-        begin
-          C.GetProperty(Prop,Value);
-          for J := 0 to Value.ComponentListValue.ComponentCount-1 do
-            GetAllObjects(TZComponent(Value.ComponentListValue[J]),List);
-        end;
-      zptExpression :
-        begin
-          C.GetProperty(Prop,Value);
-          for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
-            GetAllObjects(TZComponent(Value.ExpressionValue.Code[J]),List);
-        end;
-      zptInlineComponent :
-        begin
-          C.GetProperty(Prop,Value);
-          GetAllObjects(Value.ComponentValue,List);
-        end;
-    end;
-  end;
+  C.GetAllChildren(List,True);
 end;
 
 procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
@@ -1012,6 +1083,8 @@ begin
     for I := 0 to All.Count-1 do
     begin
       C := TZComponent(All[I]);
+      if C.DesignDisable then
+        Continue;
       PropList := C.GetProperties;
       for J := 0 to PropList.Count-1 do
       begin
@@ -1037,7 +1110,7 @@ begin
   end;
 end;
 
-function HasReferers(Root, Target : TZComponent) : boolean;
+function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
 var
   TargetList,List : TObjectList;
   I,J : integer;
@@ -1047,7 +1120,10 @@ begin
   List:=TObjectList.Create(False);
   try
     //Hämta alla barnen till Target
-    GetAllObjects(Target,TargetList);
+    if Deep then
+      GetAllObjects(Target,TargetList)
+    else
+      TargetList.Add(Target);
     for I := 0 to TargetList.Count-1 do
     begin
       //Kolla alla barnen om det finns referens som är utanför targetlist
@@ -1083,7 +1159,7 @@ begin
     GetAllObjects(C,ObList);
     for I := 0 to ObList.Count-1 do
     begin
-      S := TZComponent(ObList[I]).Name;
+      S := String(TZComponent(ObList[I]).Name);
       if Length(S)>0 then
         List.AddObject(S , TZComponent(ObList[I]) );
     end;
@@ -1138,8 +1214,24 @@ end;
 
 procedure TZPropertyByteEdit.OnChange(Sender: TObject);
 begin
-  Value.ByteValue := Cb.ItemIndex;
+  if Cb.Style=csDropDownList then
+    Value.ByteValue := Cb.ItemIndex
+  else
+    Value.ByteValue := StrToIntDef(Cb.Text,Value.ByteValue);
   UpdateProp;
+end;
+
+procedure TZPropertyByteEdit.OnCbDropDown(Sender: TObject);
+var
+  I : integer;
+begin
+  if Cb.Items.Count=0 then
+  begin
+    Cb.Items.BeginUpdate;
+    for I := 0 to 255 do
+      Cb.Items.Add( IntToStr(I) );
+    Cb.Items.EndUpdate;
+  end;
 end;
 
 procedure TZPropertyByteEdit.SetProp(C: TZComponent; Prop: TZProperty);
@@ -1150,27 +1242,26 @@ begin
   Cb := TComboBox.Create(Self);
 
   Cb.Align := alClient;
-  Cb.Style := csDropDownList;
-//  Cb.Sorted := True;
   Cb.OnChange := Self.OnChange;
   Cb.OnEnter := OnFocusControl;
   Cb.Enabled := not IsReadOnlyProp;
   Cb.Parent := ValuePanel;
 
-  Cb.Items.BeginUpdate;
   if Length(Prop.Options)>0 then
   begin
+    Cb.Style := csDropDownList;
+    Cb.Items.BeginUpdate;
     for I := 0 to High(Prop.Options) do
-      Cb.Items.Add( Prop.Options[I] )
+      Cb.Items.Add( Prop.Options[I] );
+    Cb.Items.EndUpdate;
+    Cb.ItemIndex := Value.ByteValue;
   end
   else
   begin
-    for I := 0 to 32 do
-      Cb.Items.Add( IntToStr(I) );
+    Cb.OnDropDown := Self.OnCbDropDown;
+    Cb.Style := csDropDown;
+    Cb.Text := IntToStr(Value.ByteValue);
   end;
-  Cb.Items.EndUpdate;
-
-  Cb.ItemIndex := Value.ByteValue;
 end;
 
 { TZPropertyPropRefEdit }
@@ -1205,7 +1296,7 @@ begin
     Value.PropertyValue.Component := nil
   else
   begin
-    if not ParsePropRef((PropEditor.Owner as TEditorForm).SymTab,nil,S,Value.PropertyValue) then
+    if not ParsePropRef(ZApp.SymTab,nil,S,Value.PropertyValue) then
     begin
       ShowMessage('Invalid propname: ' + S);
       Exit;
@@ -1224,29 +1315,37 @@ end;
 
 procedure TZComponentTreeNode.RefreshNodeName;
 begin
-  Text := Component.GetDisplayName;
+  Text := String(Component.GetDisplayName);
   if Component.Comment<>'' then
-    Text := Text + ' "' + Component.Comment + '"';
+    Text := Text + ' "' + String(Component.Comment) + '"';
+  if Component.DesignDisable then
+    Text := Text + ' (disabled)';
 end;
 
 { TZBinaryPropEdit }
 
-procedure GraphicToBitmap(Pic :TPicture);
+function GraphicToBitmap(Pic :TPicture) : Graphics.TBitmap;
 var
   Bmp: Graphics.TBitmap;
 begin
   Bmp := Graphics.TBitmap.Create;
-  Bmp.PixelFormat := pf24bit;
-  Bmp.Width := Pic.Graphic.Width;
-  Bmp.Height := Pic.Graphic.Height;
-  Bmp.Canvas.Draw(0,0,Pic.Graphic);
-  Pic.Assign(Bmp);
-  Bmp.Free;
+  if Pic.Graphic is TPngImage then
+    (Pic.Graphic as TPngImage).AssignTo(Bmp)
+  else
+  begin
+    Bmp.PixelFormat := pf24bit;
+    Bmp.Width := Pic.Graphic.Width;
+    Bmp.Height := Pic.Graphic.Height;
+    Bmp.Canvas.Draw(0,0,Pic.Graphic);
+  end;
+  //Pic.Assign(Bmp);
+  Result := Bmp;
 end;
 
 procedure TZBinaryPropEdit.GetPictureStream(const Filename : string; Stream : TMemoryStream);
 var
   Pic : TPicture;
+  OwnBm : boolean;
   Bm : Graphics.TBitmap;
   X,Y : integer;
   R,G,B,A : byte;
@@ -1255,16 +1354,21 @@ var
   UseAlpha : boolean;
 begin
   Pic:=TPicture.Create;
-//  Bm := TBitmap.Create;
+  OwnBm := False;
+  Bm := nil;
   try
     Pic.LoadFromFile(FileName);
 
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
-//    if Pic.Graphic is TOleGraphic then
     if not (Pic.Graphic is Graphics.TBitmap) then
-      GraphicToBitmap(Pic);
-
-    Bm := Pic.Bitmap;
+    begin
+      Bm := GraphicToBitmap(Pic);
+      OwnBm := True;
+    end
+    else
+    begin
+      Bm := Pic.Bitmap;
+    end;
 
     if (Self.Component.GetOwner is TZBitmap) then
     begin
@@ -1281,7 +1385,17 @@ begin
       end;
     end;
 
+    (Self.Component as TBitmapFromFile).IsJpegEncoded := Pic.Graphic is TJpegImage;
+    if (Self.Component as TBitmapFromFile).IsJpegEncoded  then
+    begin
+      Stream.LoadFromFile(FileName);
+      Exit;
+    end;
+
     UseAlpha := Bm.PixelFormat=pf32bit;
+
+    if not (Bm.PixelFormat in [pf24Bit,pf32Bit]) then
+      Bm.PixelFormat := pf24Bit;
 
     if UseAlpha then
       ZLog.GetLog(Self.ClassName).Write('Alpha-channel present');
@@ -1299,10 +1413,10 @@ begin
         G := PPixel.rgbGreen;
         R := PPixel.rgbRed;
 
-        if UseAlpha then
+        if Bm.PixelFormat=pf32bit then
           Inc(PPixel)
         else
-          Inc(integer(PPixel),3);
+          Inc(NativeInt(PPixel),3);
 
         Stream.Write(R,1);
         Stream.Write(G,1);
@@ -1312,14 +1426,17 @@ begin
       end;
     end;
 
-    Self.Component.Comment := 'Imported from ' + ExtractFileName(FileName);
+    Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(FileName)) );
+
+    (Self.Component as TBitmapFromFile).HasAlphaLayer := UseAlpha;
     if UseAlpha then
-    begin
-      (Self.Component as TBitmapFromFile).HasAlphaLayer := True;
-      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer;
-    end;
+      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer
+    else
+      (Self.Component as TBitmapFromFile).Transparency := btNone;
+
   finally
-//    Bm.Free;
+    if OwnBm then
+      Bm.Free;
     Pic.Free;
   end;
 end;
@@ -1371,7 +1488,7 @@ var
       Midi := TMidiFile.Create(D.FileName);
       try
         Midi.WriteZzdcResource(Self.Component as TMusic,M);
-        Self.Component.Comment := 'Imported from ' + ExtractFileName(D.FileName);
+        Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
         //Music-instruments har ändrats, refresh treenode
         (PropEditor.Owner as TEditorForm).Tree.RefreshNode((PropEditor.Owner as TEditorForm).Tree.ZSelected,Self.Component);
         (PropEditor.Owner as TEditorForm).Tree.ZSelected.Expand(True);
@@ -1403,10 +1520,9 @@ var
       if ImportRawAudioForm.ShowModal=mrCancel then
         Exit;
 
-      Self.Component.Comment := 'Imported from ' + ExtractFileName(D.FileName);
-      (Self.Component as TSound).Voice.BaseNoteNr := 60;
-      (Self.Component as TSound).Voice.SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
-      PByte(@(Self.Component as TSound).Voice.SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
+      Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
+      (Self.Component as TSampleImport).SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
+      PByte(@(Self.Component as TSampleImport).SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
       M.LoadFromFile(D.FileName);
       Result := True;
     finally
@@ -1426,7 +1542,7 @@ var
       if not D.Execute then
         Exit;
       M.LoadFromFile(D.FileName);
-      Self.Component.Comment := 'Imported from ' + ExtractFileName(D.FileName);
+      Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
       Result := True;
     finally
       D.Free;
@@ -1452,6 +1568,51 @@ var
     end;
   end;
 
+  procedure InEditArray;
+  var
+    A : TDefineArray;
+  begin
+    A := Component as TDefineArray;
+    if not A.Persistent then
+    begin
+      ShowMessage('Set "Persistent" before editing arrays');
+      Exit;
+    end;
+    if A._Type in [dvbString,dvbModel] then
+    begin
+      ShowMessage('Persistent arrays only supported for numeric data types');
+      Exit;
+    end;
+    if ArrayEditForm=nil then
+      Application.CreateForm(TArrayEditForm,ArrayEditForm);
+    ArrayEditForm.SetArray(A);
+    ArrayEditForm.Show;
+  end;
+
+  procedure InGetMeshImport;
+  var
+    D : TOpenDialog;
+    Imp : T3dsImport;
+  begin
+    D := TOpenDialog.Create(Self);
+    try
+      D.Filter := '3D-studio files (*.3ds)|*.3ds';
+      D.DefaultExt := '*.3ds';
+      if not D.Execute then
+        Exit;
+      Imp := T3dsImport.Create(D.FileName);
+      try
+        Imp.MeshImpToUpdate := Component as TMeshImport;
+        Imp.Import;
+        Component.Change;
+      finally
+        Imp.Free;
+      end;
+    finally
+      D.Free;
+    end;
+  end;
+
 begin
   M := TMemoryStream.Create;
   try
@@ -1462,7 +1623,7 @@ begin
       MusicClassId :
         if not InGetMusic then
           Exit;
-      SoundClassId :
+      SampleImportClassId :
         if not InGetSound then
           Exit;
       ZFileClassId :
@@ -1471,14 +1632,21 @@ begin
       ApplicationClassId :
         if not InGetIcon then
           Exit;
+      MeshImportClassId :
+        InGetMeshImport;
+      DefineArrayClassId :
+        InEditArray;
     else
       raise Exception.Create('Unknown binary property');
     end;
 
-    Value.BinaryValue.Size := M.Size;
-    GetMem(Value.BinaryValue.Data,M.Size);
-    Move(M.Memory^,Value.BinaryValue.Data^,M.Size);
-    UpdateProp;
+    if M.Size>0 then
+    begin
+      Value.BinaryValue.Size := M.Size;
+      GetMem(Value.BinaryValue.Data,M.Size);
+      Move(M.Memory^,Value.BinaryValue.Data^,M.Size);
+      UpdateProp;
+    end;
     DataChanged;
 
   finally
@@ -1495,8 +1663,13 @@ end;
 procedure TZBinaryPropEdit.SetProp(C: TZComponent; Prop: TZProperty);
 var
   B : TButton;
+  IsEnabled : boolean;
 begin
   inherited;
+
+//  if not IsReadOnlyProp then
+//    IsReadOnlyProp := (ComponentManager.GetInfo(C).ClassId=MeshImportClassId);
+  IsEnabled := (not Self.IsReadOnlyProp);
 
   ValuePanel.Alignment := taLeftJustify;
 
@@ -1507,17 +1680,24 @@ begin
   ClearButton.Hint := 'Clear the current content';
   ClearButton.OnClick := OnClearValue;
   ClearButton.Parent := ValuePanel;
-  ClearButton.Enabled := not Self.IsReadOnlyProp;
+  ClearButton.Enabled := IsEnabled;
 
   B := TButton.Create(Self);
   B.Align := alRight;
   B.Left := 1000;
   B.Width := 60;
-  B.Caption := 'Import...';
-  B.Hint := 'Select a file to import';
+  if (ComponentManager.GetInfo(C).ClassId=DefineArrayClassId) then
+  begin
+    B.Caption := 'Edit...';
+  end
+  else
+  begin
+    B.Caption := 'Import...';
+    B.Hint := 'Select a file to import';
+  end;
   B.OnClick := OnStoreValue;
   B.Parent := ValuePanel;
-  B.Enabled := not Self.IsReadOnlyProp;
+  B.Enabled := IsEnabled;
 
   DataChanged;
 end;

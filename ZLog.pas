@@ -29,17 +29,26 @@ uses SysUtils;
 {$endif}
 
 type
-  TLogString = {$ifdef zlog}string{$else}PChar{$endif};
+  TLogString = {$ifdef zlog}string{$else}PAnsiChar{$endif};
 
   {$ifdef zlog}
+  TLogLevel = (lleNormal,lleWarning,lleError,lleUserTrace);
+
   TLog = class
+  private
+    LastTime : single;
   public
     ID : integer;
     Name : TLogString;
-    procedure Write(S : TLogString);
+    procedure Write(S : TLogString); overload;
+    procedure Write(S : TLogString; Level : TLogLevel); overload;
+    procedure Warning(S : TLogString);
+    procedure Error(S : TLogString);
+    procedure BeginTimer;
+    procedure EndTimer(S: TLogString);
   end;
 
-  TLogReceiverFunc = procedure(Log : TLog; Mess : TLogString) of object;
+  TLogReceiverFunc = procedure(Log : TLog; Mess : TLogString; Level : TLogLevel) of object;
   {$endif}
 
   {$ifndef minimal}
@@ -66,7 +75,7 @@ uses ZPlatform
 procedure ZHalt(ErrorMessage : TLogString);
 begin
  {$ifdef minimal}
-  Platform_Error(PChar(ErrorMessage));
+  Platform_Error(PAnsiChar(ErrorMessage));
   System.Halt;
  {$else}
   raise EZHalted.Create(ErrorMessage);
@@ -85,6 +94,14 @@ var
   LogLookup : TStringList;
   ReceiverFunc : TLogReceiverFunc;
 
+procedure InitLog;
+begin
+  Logs := TObjectList.Create(True);
+  LogLookup := TStringList.Create;
+  LogLookup.Sorted := True;
+end;
+
+
 procedure SetReceiverFunc(F : TLogReceiverFunc);
 begin
   Assert( not Assigned(ReceiverFunc) );
@@ -96,6 +113,8 @@ var
   I,J,LogId : integer;
   Log : TLog;
 begin
+  if LogLookup=nil then
+    InitLog;
   I := LogLookup.IndexOf(LogName);
   if I=-1 then
   begin
@@ -117,19 +136,42 @@ end;
 
 procedure TLog.Write(S: TLogString);
 begin
+  Write(S,lleNormal);
+end;
+
+procedure TLog.Write(S : TLogString; Level : TLogLevel);
+begin
   if Assigned(ReceiverFunc) then
-    ReceiverFunc(Self,S);
+    ReceiverFunc(Self,S,Level);
+end;
+
+procedure TLog.Warning(S: TLogString);
+begin
+  Write(S,lleWarning);
+end;
+
+procedure TLog.Error(S: TLogString);
+begin
+  Write(S,lleError);
+end;
+
+procedure TLog.BeginTimer;
+begin
+  LastTime := Platform_GetTime;
+end;
+
+procedure TLog.EndTimer(S: TLogString);
+begin
+  {$ifndef minimal}
+  Write( S + ': ' + SysUtils.FormatFloat('0.0###',Platform_GetTime - LastTime) );
+  {$endif}
 end;
 
 {$endif}
 
 
 initialization
-  {$ifdef zlog}
-  Logs := TObjectList.Create(True);
-  LogLookup := TStringList.Create;
-  LogLookup.Sorted := True;
-  {$endif}
+
 finalization
   {$ifdef zlog}
   Logs.Free;

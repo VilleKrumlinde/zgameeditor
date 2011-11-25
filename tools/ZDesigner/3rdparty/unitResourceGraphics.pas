@@ -48,10 +48,10 @@ type
     procedure InternalSetImage (s : TStream; image : TPicture);
 
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
     procedure GetImage (picture : TPicture); override;
     procedure SetImage (image : TPicture); override;
-    procedure LoadImage (const FileName : string);
+    procedure LoadImage (const FileName : ansistring);
   end;
 
 //------------------------------------------------------------------------
@@ -66,7 +66,7 @@ type
     class function SupportsData (Size : Integer; data : Pointer) : Boolean; override;
     procedure InitNew; override;
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
     procedure GetImage (picture : TPicture); override;
     procedure SetImage (image : TPicture); override;
   end;
@@ -99,7 +99,7 @@ type
 
   TIconGroupResourceDetails = class (TIconCursorGroupResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -107,7 +107,7 @@ type
 
   TCursorGroupResourceDetails = class (TIconCursorGroupResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -134,7 +134,7 @@ type
 
   TIconResourceDetails = class (TIconCursorResourceDetails)
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 //------------------------------------------------------------------------
@@ -143,7 +143,7 @@ type
   TCursorResourceDetails = class (TIconCursorResourceDetails)
   protected
   public
-    class function GetBaseType : string; override;
+    class function GetBaseType : ansistring; override;
   end;
 
 const
@@ -180,9 +180,9 @@ resourcestring
 (*----------------------------------------------------------------------*
  | TBitmapResourceDetails.GetBaseType                                   |
  *----------------------------------------------------------------------*)
-class function TBitmapResourceDetails.GetBaseType: string;
+class function TBitmapResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_BITMAP));
+  result := AnsiString( IntToStr (Integer (RT_BITMAP)) );
 end;
 
 (*----------------------------------------------------------------------*
@@ -242,7 +242,7 @@ procedure TBitmapResourceDetails.InitNew;
 var
   bi : TBitmapInfoHeader;
   imageSize : DWORD;
-  bits : PChar;
+  bits : PAnsiChar;
 begin
   bi.biSize := SizeOf (bi);
   bi.biWidth := DefaultBitmapWidth;
@@ -367,15 +367,15 @@ end;
 (*----------------------------------------------------------------------*
  | TBitmapResourceDetails.SetImage                                      |
  *----------------------------------------------------------------------*)
-procedure TBitmapResourceDetails.LoadImage(const FileName: string);
+procedure TBitmapResourceDetails.LoadImage(const FileName: ansistring);
 var
   s : TMemoryStream;
 begin
   s := TMemoryStream.Create;
   try
-    s.LoadFromFile(FileName);
+    s.LoadFromFile(String(FileName));
     data.Clear;
-    data.Write ((PChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
+    data.Write ((PAnsiChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
   finally
     s.Free;
   end
@@ -389,7 +389,7 @@ begin
   try
     InternalSetImage (s, image);
     data.Clear;
-    data.Write ((PChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
+    data.Write ((PAnsiChar (s.Memory) + sizeof (TBitmapFileHeader))^, s.Size - sizeof (TBitmapFileHeader));
   finally
     s.Free;
   end
@@ -400,9 +400,9 @@ end;
 (*----------------------------------------------------------------------*
  | TIconGroupResourceDetails.GetBaseType                                |
  *----------------------------------------------------------------------*)
-class function TIconGroupResourceDetails.GetBaseType: string;
+class function TIconGroupResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_GROUP_ICON));
+  result := AnsiString( IntToStr (Integer (RT_GROUP_ICON)) );
 end;
 
 { TCursorGroupResourceDetails }
@@ -410,9 +410,9 @@ end;
 (*----------------------------------------------------------------------*
  | TCursorGroupResourceDetails.GetBaseType                              |
  *----------------------------------------------------------------------*)
-class function TCursorGroupResourceDetails.GetBaseType: string;
+class function TCursorGroupResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_GROUP_CURSOR));
+  result := AnsiString( IntToStr (Integer (RT_GROUP_CURSOR)) );
 end;
 
 { TIconResourceDetails }
@@ -420,9 +420,9 @@ end;
 (*----------------------------------------------------------------------*
  | TIconResourceDetails.GetBaseType                                     |
  *----------------------------------------------------------------------*)
-class function TIconResourceDetails.GetBaseType: string;
+class function TIconResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_ICON));
+  result := AnsiString( IntToStr (Integer (RT_ICON)) );
 end;
 
 { TCursorResourceDetails }
@@ -430,9 +430,9 @@ end;
 (*----------------------------------------------------------------------*
  | TCursorResourceDetails.GetBaseType                                   |
  *----------------------------------------------------------------------*)
-class function TCursorResourceDetails.GetBaseType: string;
+class function TCursorResourceDetails.GetBaseType: ansistring;
 begin
-  result := IntToStr (Integer (RT_CURSOR));
+  result := AnsiString( IntToStr (Integer (RT_CURSOR)) );
 end;
 
 { TGraphicsResourceDetails }
@@ -448,9 +448,9 @@ var
   infoHeader : PBitmapInfoHeader;
 begin
   if self is TCursorResourceDetails then        // Not very 'OOP'.  Sorry
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory) + sizeof (DWORD))
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory) + sizeof (DWORD))
   else
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory));
 
   result := infoHeader.biHeight div 2
 end;
@@ -473,13 +473,13 @@ begin
   if self is TCursorResourceDetails then
   begin
     hdr.wType := 2;
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory) + sizeof (DWORD));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory) + sizeof (DWORD));
     iconCursor := TExCursor.Create
   end
   else
   begin
     hdr.wType := 1;
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory));
     iconCursor := TExIcon.Create
   end;
 
@@ -534,9 +534,9 @@ var
   infoHeader : PBitmapInfoHeader;
 begin
   if self is TCursorResourceDetails then
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory) + sizeof (DWORD))
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory) + sizeof (DWORD))
   else
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory));
 
   result := GetBitmapInfoPixelFormat (infoHeader^);
 end;
@@ -549,9 +549,9 @@ var
   infoHeader : PBitmapInfoHeader;
 begin
   if self is TCursorResourceDetails then
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory) + sizeof (DWORD))
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory) + sizeof (DWORD))
   else
-    infoHeader := PBitmapInfoHeader (PChar (data.Memory));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (data.Memory));
 
   result := infoHeader.biWidth
 end;
@@ -570,16 +570,16 @@ var
   cc : Integer;
 begin
   data.Size := Data.Size + sizeof (TResourceDirectory);
-  attributes := PResourceDirectory (PChar (Data.Memory) + sizeof (TIconHeader));
+  attributes := PResourceDirectory (PAnsiChar (Data.Memory) + sizeof (TIconHeader));
 
   Inc (Attributes, PIconHeader (data.Memory)^.wCount);
 
-  attributes^.wNameOrdinal :=  StrToInt (details.ResourceName);
+  attributes^.wNameOrdinal :=  StrToInt (String(details.ResourceName));
   attributes^.lBytesInRes := details.Data.Size;
 
   if details is TIconResourceDetails then
   begin
-    infoHeader := PBitmapInfoHeader (PChar (details.data.Memory));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (details.data.Memory));
     attributes^.details.iconWidth := infoHeader^.biWidth;
     attributes^.details.iconHeight := infoHeader^.biHeight div 2;
     cc := GetBitmapInfoNumColors (infoHeader^);
@@ -591,7 +591,7 @@ begin
   end
   else
   begin
-    infoHeader := PBitmapInfoHeader (PChar (details.data.Memory) + sizeof (DWORD));
+    infoHeader := PBitmapInfoHeader (PAnsiChar (details.data.Memory) + sizeof (DWORD));
     attributes^.details.cursorWidth := infoHeader^.biWidth;
     attributes^.details.cursorHeight := infoHeader^.biHeight div 2
   end;
@@ -625,7 +625,7 @@ begin
   Result := False;
   if ResourceNameToInt (details.ResourceType) = ResourceNameToInt (ResourceType) - DIFFERENCE then
   begin
-    attributes := PResourceDirectory (PChar (Data.Memory) + sizeof (TIconHeader));
+    attributes := PResourceDirectory (PAnsiChar (Data.Memory) + sizeof (TIconHeader));
     id := ResourceNameToInt (details.ResourceName);
 
     for i := 0 to PIconHeader (Data.Memory)^.wCount - 1 do
@@ -677,7 +677,7 @@ begin
 
     for i := 0 to ResourceCount - 1 do
     begin
-      infoHeader := PBitmapInfoHeader (PChar (ResourceDetails [i].Data.Memory) + hdrOffset);
+      infoHeader := PBitmapInfoHeader (PAnsiChar (ResourceDetails [i].Data.Memory) + hdrOffset);
       dirEntry.bWidth := infoHeader^.biWidth;
       dirEntry.bHeight := infoHeader^.biHeight div 2;
       dirEntry.wPlanes := infoHeader^.biPlanes;
@@ -693,7 +693,7 @@ begin
     for i := 0 to ResourceCount - 1 do
     begin
       imgOffset := strm.Position;
-      pDirEntry := PIconDirEntry (PChar (strm.Memory) + SizeOf (TIconHeader) + i * SizeOf (TIconDirEntry));
+      pDirEntry := PIconDirEntry (PAnsiChar (strm.Memory) + SizeOf (TIconHeader) + i * SizeOf (TIconDirEntry));
       pDirEntry^.dwImageOffset := imgOffset;
 
       strm.CopyFrom (ResourceDetails [i].Data, 0);
@@ -730,16 +730,16 @@ var
   i : Integer;
   res : TResourceDetails;
   attributes : PResourceDirectory;
-  iconCursorResourceType : string;
+  iconCursorResourceType : ansistring;
 begin
   result := Nil;
-  attributes := PResourceDirectory (PChar (Data.Memory) + sizeof (TIconHeader));
+  attributes := PResourceDirectory (PAnsiChar (Data.Memory) + sizeof (TIconHeader));
   Inc (attributes, idx);
 
   // DIFFERENCE (from Windows.pas) is 11.  It's the difference between a 'group
   // resource' and the resource itself.  They called it 'DIFFERENCE' to be annoying.
 
-  iconCursorResourceType := IntToStr (ResourceNameToInt (ResourceType) - DIFFERENCE);
+  iconCursorResourceType := AnsiString( IntToStr (ResourceNameToInt (ResourceType) - DIFFERENCE) );
   for i := 0 to Parent.ResourceCount - 1 do
   begin
     res := Parent.ResourceDetails [i];
@@ -759,7 +759,7 @@ var
   imageResource : TIconCursorResourceDetails;
   iconHeader : TIconHeader;
   dir : TResourceDirectory;
-  nm : string;
+  nm : ansistring;
 
 begin
   iconHeader.wCount := 1;
@@ -816,7 +816,7 @@ begin
   for i := 0 to Parent.ResourceCount - 1 do
   begin
     details := Parent.ResourceDetails [i];
-    if (details.ResourceType = IntToStr (ResourceNameToInt (ResourceType) + DIFFERENCE)) then
+    if (details.ResourceType = AnsiString(IntToStr (ResourceNameToInt (ResourceType) + DIFFERENCE))) then
     begin
       resGroup := details as TIconCursorGroupResourceDetails;
       if resGroup.Contains (Self) then
@@ -836,7 +836,7 @@ var
   i : Integer;
   dirEntry : TResourceDirectory;
   res : TIconCursorResourceDetails;
-  resTp : string;
+  resTp : ansistring;
 begin
   BeforeDelete;         // Make source there are no existing image resources
 
@@ -906,7 +906,7 @@ var
 begin
   if ResourceNametoInt (details.ResourceType) = ResourceNameToInt (ResourceType) - DIFFERENCE then
   begin
-    attributes := PResourceDirectory (PChar (Data.Memory) + sizeof (TIconHeader));
+    attributes := PResourceDirectory (PAnsiChar (Data.Memory) + sizeof (TIconHeader));
     id := ResourceNametoInt (details.ResourceName);
 
     Count := PIconHeader (Data.Memory)^.wCount;
@@ -942,7 +942,7 @@ var
   pal : HPALETTE;
   entries : PPALETTEENTRY;
   w : DWORD;
-  p : PChar;
+  p : PAnsiChar;
 
 begin
   if Self is TCursorResourceDetails then
@@ -1024,7 +1024,7 @@ end;
 
 { TDIBResourceDetails }
 
-class function TDIBResourceDetails.GetBaseType: string;
+class function TDIBResourceDetails.GetBaseType: ansistring;
 begin
   Result := 'DIB';
 end;
@@ -1063,7 +1063,7 @@ begin
   p := PBitmapFileHeader (data);
   if (p^.bfType = $4d42) and (p^.bfReserved1 = 0) and (p^.bfReserved2 = 0) then
   begin
-    hdrSize := PDWORD (PChar (data) + SizeOf (TBitmapFileHeader))^;
+    hdrSize := PDWORD (PAnsiChar (data) + SizeOf (TBitmapFileHeader))^;
 
     case hdrSize of
       SizeOf (TBitmapInfoHeader) : Result := True;

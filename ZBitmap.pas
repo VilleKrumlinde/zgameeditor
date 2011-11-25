@@ -25,12 +25,11 @@ interface
 uses ZOpenGL, ZClasses;
 
 type
-  TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024);
+  TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024,bs2048);
 
   //32 bits per pixel image
   TZBitmap = class(TContent)
-  private
-    TexObject: GLuint;
+  strict private
     IsInitialized : boolean;
     Memory : pointer;
     MemFormat,MemType : GLuint;
@@ -40,6 +39,7 @@ type
     procedure CopyAndDestroy(Source : TContent); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    Handle: GLuint;
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     PropWidth,PropHeight : TBitmapSize;
     Filter : (bmfLinear,bmfNearest,bmfMipmap);
@@ -54,12 +54,16 @@ type
     function PixelWidth : integer;
     function PixelHeight : integer;
     function GetCopyAsFloats : pointer;
+    function GetCopyAs3f: pointer;
+    {$ifndef minimal}
+    procedure DesignerFreeResources; override;
+    {$endif}
   end;
 
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers;
+uses BitmapProducers,ZApplication,ZLog,SysUtils;
 {$endif}
 
 { TZBitmap }
@@ -78,14 +82,57 @@ begin
   inherited;
 end;
 
+//The call to glGetTexImage crashes on some ati radeon cards
+{.$define atibughunt}
+
+{$ifdef atibughunt}
+procedure TestOK(B : TZBitmap);
+const GL_TEXTURE_2D_BINDING = $8069;
+var
+  I : integer;
+begin
+  Assert( glIsEnabled(GL_TEXTURE_2D), 'no texture enabled' );
+
+  glGetIntegerv(GL_TEXTURE_2D_BINDING,@I);
+  Assert((I=B.Handle) and (I>0), 'Invalid handle: i' + IntToStr(I) + ' b:' + IntToStr(B.Handle));
+
+  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,@I);
+  Assert((I=B.PixelWidth) and (I>0), 'Texture width mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelWidth));
+
+  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,@I);
+  Assert((I=B.PixelHeight) and (I>0), 'Texture height mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelHeight));
+
+  glPixelStorei(GL_PACK_ALIGNMENT,1);
+  glFlush;
+end;
+{$endif}
 
 function TZBitmap.GetCopyAsFloats: pointer;
 var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
+    {$ifdef atibughunt}glActiveTexture($84C0);{$endif} //**
   UseTextureBegin;
+  {$ifdef atibughunt}
+    TestOk(Self); //**
+    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$endif}
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
+  Result := P;
+end;
+
+function TZBitmap.GetCopyAs3f: pointer;
+var
+  P : PFloat;
+begin
+  GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
+  UseTextureBegin;
+  {$ifdef atibughunt}
+    TestOk(Self); //**
+    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$endif}
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_FLOAT,P);
   Result := P;
 end;
 
@@ -94,7 +141,7 @@ begin
   if IsInitialized then
   begin
     IsInitialized := False;
-    glDeleteTextures(1, @TexObject);
+    glDeleteTextures(1, @Handle);
   end;
 end;
 
@@ -104,7 +151,7 @@ var
 begin
   CleanUp;
   B := TZBitmap(Source);
-  Self.TexObject := B.TexObject;
+  Self.Handle := B.Handle;
   Self.IsInitialized := B.IsInitialized;
   Self.PropHeight := B.PropHeight;
   Self.PropWidth := B.PropWidth;
@@ -112,7 +159,7 @@ begin
   Self.MemFormat := B.MemFormat;
   Self.MemType := B.MemType;
   Self.Filter := B.Filter;
-  B.TexObject := 0;
+  B.Handle := 0;
   B.IsInitialized := False;
   B.Free;
 end;
@@ -135,9 +182,8 @@ begin
   else
   begin
     //Create as a texgen buffer
-    //todo: create pbuffers ifall available
-    glGenTextures(1, @TexObject);
-    glBindTexture(GL_TEXTURE_2D, TexObject);
+    glGenTextures(1, @Handle);
+    glBindTexture(GL_TEXTURE_2D, Handle);
 
     W := PixelWidth;
     H := PixelHeight;
@@ -155,7 +201,7 @@ begin
       //Must be set to something, otherwise copy from framebuffer won't work
       Size := H*W*4;
       GetMem(P, Size);
-      FillChar(P^,Size,0);
+      FillChar(P^,Size,$ff);
       glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
       FreeMem(P);
     end;
@@ -166,19 +212,6 @@ begin
       I := FilterTypes[Ord(Self.Filter)];
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
-
-    //Gör setup-anrop som behövs varje gång bitmap ska användas som rendertarget
-    {glMatrixMode(GL_PROJECTION);
-    glPushMatrix;
-
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    DynTex.BeginSetup;
-    DynTex.EndSetup;
-    glPopAttrib();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix;
-    glMatrixMode(GL_MODELVIEW);}
   end;
   IsChanged := False;
   Producers.IsChanged := False;
@@ -191,9 +224,6 @@ begin
   if not IsInitialized then
     ReInit;
 
-//  glMatrixMode(GL_PROJECTION);
-//  glPushMatrix;
-
   glPushAttrib(GL_ALL_ATTRIB_BITS);
     //Skippa perspektiv och sätt upp -1.0 .. 1.0 upplösning
     glMatrixMode(GL_PROJECTION);
@@ -204,28 +234,49 @@ begin
     glDisable(GL_LIGHTING);
     glDisable(GL_CULL_FACE);
     //Clear
-    //glClearColor(1,0,0,0);
-    //glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    {$ifndef minimal}
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    {$endif}
     glViewport(0, 0, PixelWidth, PixelHeight);
+    {$ifdef zgeviz}
+    ZApp.ViewportChanged;
+    {$endif}
 end;
 
 procedure TZBitmap.RenderTargetEnd;
+var
+  P : pointer;
 begin
-    glBindTexture(GL_TEXTURE_2D, TexObject);
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);
-  glPopAttrib;
+    glBindTexture(GL_TEXTURE_2D, Handle);
 
-//  glMatrixMode(GL_PROJECTION);
-//  glPopMatrix;
-//  glMatrixMode(GL_MODELVIEW);
+    {
+      glCopyTexSubImage2D cannot be used here because the combination of calling
+      glCopyTexSubImage2D and then later glGetTexImage on the same texture causes
+      a crash in atioglxx.dll on ATI Radeon X1650 and X1550.
+      Instead we copy to the main memory first and then update.
+    }
+    //    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, PixelWidth, PixelHeight);  //**
+    GetMem(P, PixelWidth * PixelHeight * 4);
+    glReadPixels(0, 0, PixelWidth, PixelHeight, GL_RGBA, GL_UNSIGNED_BYTE, P);
+    SetMemory(P,GL_RGBA,GL_UNSIGNED_BYTE);
+    ReInit;
+    FreeMem(P);
+
+  glPopAttrib;
+  {$ifdef zgeviz}
+  ZApp.ViewportChanged;
+  {$endif}
 end;
 
 //Set this bitmap as current opengl texture
 procedure TZBitmap.UseTextureBegin;
 begin
-  if not IsInitialized then
+  if (not IsInitialized)
+   {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
     ReInit;
-  glBindTexture(GL_TEXTURE_2D, TexObject);
+
+  glBindTexture(GL_TEXTURE_2D, Handle);
 end;
 
 procedure TZBitmap.Update;
@@ -252,20 +303,27 @@ begin
   Result := 16 shl ord(PropWidth);
 end;
 
+{$ifndef minimal}
+procedure TZBitmap.DesignerFreeResources;
+begin
+  CleanUp;
+  inherited;
+end;
+{$endif}
 
 procedure TZBitmap.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   {$ifndef minimal}
-  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
+//  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@PropWidth), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
-  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight) - integer(Self), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@PropHeight), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048']);{$endif}
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
-  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter) - integer(Self), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}integer(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
 end;
 

@@ -69,7 +69,7 @@ begin
   //Must use winexec or createproces because shellexecute cannot start
   //programs that doesn't end with '.exe'.
   //Process is closed automatically when its parent window is destroyed.
-  WinExec(PAnsiChar(Prog + ' ' + ProgParam), SW_SHOWNORMAL);
+  WinExec(PAnsiChar(AnsiString(Prog + ' ' + ProgParam)), SW_SHOWNORMAL);
 
   NameLabel.Caption := frmEditor.AppName;
   VersionLabel.Caption := frmEditor.AppVersion;

@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="TripleE - version 0.1">
+  <OnLoaded>
+    <ZExpression Expression="BaseDifficulty=DefaultDifficulty;"/>
+    <DefineCollision Name="PlayerShotsVsEnemies" Cat1="1" Cat2="2"/>
+    <DefineCollision Name="PlayerShotVsEnemyShots" Cat1="1" Cat2="3"/>
+    <DefineCollision Name="PlayerVsEnemies" Cat1="4" Cat2="2"/>
+    <DefineCollision Name="PlayerVsEnemyShots" Cat1="4" Cat2="3"/>
+    <SetAppState State="AppState_TitleScreen"/>
+  </OnLoaded>
   <States>
     <AppState Name="AppState_TitleScreen">
       <OnStart>
@@ -29,14 +37,6 @@ PlayerLives=3;]]>
       </OnStart>
     </AppState>
   </States>
-  <OnLoaded>
-    <ZExpression Expression="BaseDifficulty=DefaultDifficulty;"/>
-    <DefineCollision Name="PlayerShotsVsEnemies" Cat1="1" Cat2="2"/>
-    <DefineCollision Name="PlayerShotVsEnemyShots" Cat1="1" Cat2="3"/>
-    <DefineCollision Name="PlayerVsEnemies" Cat1="4" Cat2="2"/>
-    <DefineCollision Name="PlayerVsEnemyShots" Cat1="4" Cat2="3"/>
-    <SetAppState State="AppState_TitleScreen"/>
-  </OnLoaded>
   <Content>
     <AudioMixer Ch0Active="1" Ch0Volume="0.31" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.38" Ch1UseDelay="1" Ch1DelayLength="0.26" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
     <Group Name="Globals">
@@ -84,7 +84,7 @@ this.V.Y*=1+Temp1;]]>
             </MeshExpression>
           </Producers>
         </Mesh>
-        <Model Name="PlayerModel" Position="-3.55 4 0" Velocity="0 0.01 0" Category="4" CollisionBounds="0.1 0.4 0 0">
+        <Model Name="PlayerModel" Position="-3.9142 3.9932 0" Velocity="0.0183 0.0685 0" Category="4" CollisionBounds="0.1 0.4 0 0">
           <Definitions>
             <DefineVariable Name="PlayerAngle"/>
             <DefineVariable Name="PlayerShieldTime"/>
@@ -219,7 +219,11 @@ PlayerModel.Rotation.Z=0;]]>
             <BitmapRect Color="1 1 1 1" Size="-0.5 -0.5 0.5 0.5"/>
           </Producers>
         </Bitmap>
-        <Material Name="PlayerShotMaterial" Texture="PlayerShotBitmap" TexCoords="1"/>
+        <Material Name="PlayerShotMaterial">
+          <Textures>
+            <MaterialTexture Texture="PlayerShotBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Model Name="PlayerShotModel" Scale="1.5 1 1" Category="1" CollisionBounds="0.1 0.1 0 0">
           <Definitions>
             <DefineVariable Name="PlayerShotPersonality"/>
@@ -467,7 +471,7 @@ LevelNo+=1;]]>
             </RenderTransformGroup>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
-            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.9"/>
+            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.9059"/>
             <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
             <RenderText TextFloatRef="PlayerLives Value" X="-0.51" Y="0.92" Scale="0.66"/>
             <RenderText Text="FPS " TextFloatRef="App FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
@@ -476,7 +480,7 @@ LevelNo+=1;]]>
             <ZExpression>
               <Expression>
 <![CDATA[//Move paper-background
-PaperMaterial.TextureX+= (1/LevelTg1.Scale.X)*ScrollSpeed * App.DeltaTime;
+PaperMaterialTexture.TextureX+= (1/LevelTg1.Scale.X)*ScrollSpeed * App.DeltaTime;
 
 
 Temp1=clamp((PlayerScore-LevelLastScore)*0.001,0,0.5);
@@ -508,7 +512,11 @@ this.Pixel.B=Temp1*0.98;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="PaperMaterial" Texture="PaperBitmap" TextureX="42.48" Light="0" ZBuffer="0"/>
+        <Material Name="PaperMaterial" Light="0" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Name="PaperMaterialTexture" Texture="PaperBitmap" TextureX="52.0247"/>
+          </Textures>
+        </Material>
         <Bitmap Name="SunBitmap">
           <Producers>
             <BitmapExpression>
@@ -546,7 +554,11 @@ this.Pixel.B=Temp1;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Material Name="SunMaterial" Texture="SunBitmap" Color="1 1 0 1" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+        <Material Name="SunMaterial" Color="1 1 0 1" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Texture="SunBitmap" TexCoords="1"/>
+          </Textures>
+        </Material>
         <Model Name="SunModel" Scale="4 4 1">
           <OnRender>
             <UseMaterial Material="SunMaterial"/>
@@ -649,7 +661,11 @@ if(abs(this.V.X)>0.3)
               </Producers>
             </Mesh>
             <DefineVariable Name="CaveDecorBaseY"/>
-            <Material Name="CaveDecorMaterial" Texture="CaveDecorBitmap" Color="1 1 1 1"/>
+            <Material Name="CaveDecorMaterial" Color="1 1 1 1">
+              <Textures>
+                <MaterialTexture Name="CaveDecorMaterialTexture" Texture="CaveDecorBitmap"/>
+              </Textures>
+            </Material>
           </Definitions>
           <OnRender>
             <UseMaterial Material="CaveDecorMaterial"/>
@@ -696,9 +712,9 @@ CurrentModel.Rotation.Z+=random(0,0.01);
 CurrentModel.Scale.X=3+(CurrentModel.Personality*1.5);
 CurrentModel.Scale.Y=3+(CurrentModel.Personality*1.5);
 
-CaveDecorMaterial.TextureScale = random(1,0.3);
-CaveDecorMaterial.TextureX = random(1,0.3);
-CaveDecorMaterial.TextureY = random(1,0.3);]]>
+CaveDecorMaterialTexture.TextureScale = random(1,0.3);
+CaveDecorMaterialTexture.TextureX = random(1,0.3);
+CaveDecorMaterialTexture.TextureY = random(1,0.3);]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
@@ -1325,7 +1341,11 @@ this.Pixel.A=Temp1;]]>
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="SmokeMaterial" Texture="SmokeBitmap" Blend="1" TexCoords="1" ZBuffer="0"/>
+            <Material Name="SmokeMaterial" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="SmokeBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
             <Model Name="SmokeModel">
               <Definitions>
                 <DefineVariable Name="SmokeLife"/>
@@ -1378,7 +1398,11 @@ this.Pixel.A=Temp1;]]>
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="DebrisMaterial" Texture="DebrisBitmap" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+            <Material Name="DebrisMaterial" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="DebrisBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
             <Model Name="CocunutHitModel">
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
@@ -1501,7 +1525,11 @@ this.Pixel.A=Temp1;]]>
                 </BitmapExpression>
               </Producers>
             </Bitmap>
-            <Material Name="BeamMaterial" Texture="BeamBitmap" Light="0" Blend="2" TexCoords="1"/>
+            <Material Name="BeamMaterial" Light="0" Blend="2">
+              <Textures>
+                <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
           </Children>
         </Group> <!-- BeamGroup -->
 
@@ -1537,7 +1565,7 @@ this.Pixel.A=Temp1;]]>
 
 Temp1=cos(App.Time*(6+CurrentModel.Personality*8))*(0.06-CurrentModel.Personality*0.03);
 EyeTg1.Rotate.Z=-0.21 + Temp1;
-EyeTg2.Rotate.Z=-0.21 + Temp1;]]>
+EyeTg2.Rotate.Z=0.21 - Temp1;]]>
                       </Expression>
                     </ZExpression>
                     <Condition Expression="return (CurrentModel.Position.X&lt;LeftEdge);">
@@ -1603,7 +1631,7 @@ if(CurrentModel.Velocity.Y>0) {
   //Vifta med vingar när den flyger uppåt
   Temp1=cos(App.Time*(6+CurrentModel.Personality*8))*(0.06-CurrentModel.Personality*0.03);
   EyeTg1.Rotate.Z=-0.21 + Temp1;
-  EyeTg2.Rotate.Z=-0.21 + Temp1;
+  EyeTg2.Rotate.Z=0.21 - Temp1;
 }
 
 EyeStrafeTimeout-=App.DeltaTime;
@@ -1643,7 +1671,7 @@ EyeStrafeShootTimeout-=App.DeltaTime;]]>
                     <RenderMesh Mesh="EyeWingMesh"/>
                   </Children>
                 </RenderTransformGroup>
-                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 -0.21">
+                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 0.21">
                   <Children>
                     <RenderMesh Mesh="EyeWingMesh"/>
                   </Children>
@@ -1753,7 +1781,11 @@ EyeExplodeP1.Speed*=random(1,0.3);*/]]>
                 <BitmapRect Color="1 0.78 0 1" Size="1 1 0.6 0.6"/>
               </Producers>
             </Bitmap>
-            <Material Name="EyeWormMaterial" Texture="EyeWormBitmap" TextureScale="4" TextureX="0.5" TextureY="0.5" Blend="1"/>
+            <Material Name="EyeWormMaterial" Blend="1">
+              <Textures>
+                <MaterialTexture Texture="EyeWormBitmap" TextureScale="4 4 4" TextureX="0.5" TextureY="0.5"/>
+              </Textures>
+            </Material>
             <Model Name="EyeWormModel" Scale="1.4 1.4 1" Category="3" CollisionBounds="0.2 0.2 0 0">
               <Definitions>
                 <Model Name="EyeWormTailModel" Scale="0.6 0.6 1">
@@ -2479,7 +2511,11 @@ if(rnd()<0.5) {
               </OnSpawn>
             </Model>
             <Sound Name="BossExpandingSound" Comment="36" Length="5" UseOsc2="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.05" Mod2Active="1" Mod2Source="4" Mod2Destination="2" Mod2Amount="0.04" Env0Active="1" Env0ReleaseTime="5" Lfo0Active="1" Lfo0Speed="0.08"/>
-            <Material Name="BossDebrisMaterial" Texture="BossDebrisBitmap" Light="0" Blend="1" TexCoords="1" ZBuffer="0"/>
+            <Material Name="BossDebrisMaterial" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="BossDebrisBitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
             <Bitmap Name="BossDebrisBitmap">
               <Producers>
                 <BitmapExpression>
@@ -2704,7 +2740,7 @@ return
             <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
           </OnSpawn>
         </Model>
-        <Model Name="TitleMouseCursor" Position="-3.32 0.38 0">
+        <Model Name="TitleMouseCursor" Position="-2.6302 -1.3677 0" Velocity="0.0036 -0.0003 0">
           <Definitions>
             <Mesh Name="TitleMouseMesh1">
               <Producers>

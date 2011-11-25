@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="Test av typsnitt">
   <OnLoaded>
-    <SpawnModel Model="TextModel"/>
+    <SpawnModel Model="TextModel" SpawnStyle="1"/>
   </OnLoaded>
   <Content>
     <Model Name="TextModel">
@@ -13,7 +13,7 @@
         <RenderText Text="01234567890123456789" Y="-0.18" Scale="0.5" Align="1"/>
         <RenderText Text="AV WV O0 _+" Y="-0.41"/>
         <RenderText Text="01234567890123456789" X="-1" Y="-0.25" Scale="0.5" Align="1"/>
-        <RenderText Text="STORT AV" Y="-0.71" Font="TestFont2">
+        <RenderText Text="STORT AV" Y="-0.71">
           <RenderCharExpression>
 <![CDATA[//Modify current character before render.
 //CharX,CharY : current coordinate
@@ -28,15 +28,24 @@ this.CharScale = 0.1 + abs(sin(App.Time-CharI*0.1))*2.8;]]>
             <RenderText Text="ABCDAV" X="-1" Y="0.9" Scale="0.4" Align="1"/>
             <RenderText Text="ABCDAV" X="-1" Y="0.83" Scale="0.8" Align="1"/>
             <RenderText Text="ABCDAV" X="-1" Y="0.7" Scale="1.6" Align="1"/>
-            <RenderText Text="ABCDAV" X="-1" Y="0.46" Scale="3.2" Align="1" Font="TestFont2"/>
+            <RenderText Text="ABCDAV" X="-1" Y="0.46" Scale="3.2" Align="1"/>
           </Children>
         </RenderTransformGroup>
-        <RenderText Text="ABCDEFGHIJKLM" X="-1" Y="-0.84" Align="1" Font="TestFont2"/>
+        <RenderText TextArray="Ar1" X="-1" Y="-0.84" Align="1"/>
       </OnRender>
+      <OnUpdate>
+        <ZExpression>
+          <Expression>
+<![CDATA[Ar1[0] = 65 + abs(noise2(App.Time,0.1) * 10);
+Ar1[1]= 66;
+Ar1[4]= 66;]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
     </Model>
     <Material Name="TextMaterial" Light="0" Blend="1"/>
     <Font Name="TestFont1" Bitmap="TestFontBitmap1" FirstChar="65" CharPixelWidth="32" CharPixelHeight="32"/>
-    <Bitmap Name="TestFontBitmap1" Height="1" Width="6">
+    <Bitmap Name="TestFontBitmap1" Width="6" Height="1">
       <Producers>
         <BitmapFromFile Transparency="1">
           <BitmapFile>
@@ -55,5 +64,10 @@ this.CharScale = 0.1 + abs(sin(App.Time-CharI*0.1))*2.8;]]>
         </BitmapFromFile>
       </Producers>
     </Bitmap>
+    <DefineArray Name="Ar1" Type="1" SizeDim1="10" Persistent="255">
+      <Values>
+<![CDATA[78DA7364606070026267207681B241343A00002EE80191]]>
+      </Values>
+    </DefineArray>
   </Content>
 </ZApplication>
