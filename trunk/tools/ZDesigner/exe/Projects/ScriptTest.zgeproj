@@ -483,7 +483,7 @@ if(mat.Shading!=1)
   Error=1202;
 
 //Sound snd = Sound1;
-playSound(Sound1,55,0);]]>
+@PlaySound(Sound : Sound1, NoteNr: 55, Channel : 0);]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Compares">

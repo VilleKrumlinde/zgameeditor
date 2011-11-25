@@ -14,7 +14,7 @@ type
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
-          zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect);
+          zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -129,6 +129,13 @@ type
     function Optimize : TZcOp; override;
   end;
 
+  TZcOpInvokeComponent = class(TZcOp)
+  public
+    constructor Create(Owner : TObjectList); override;
+    destructor Destroy; override;
+    function ToString : string; override;
+  end;
+
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
@@ -145,6 +152,7 @@ function CheckPrimary(Op : TZcOp) : TZcOp;
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : single;
+function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
 
 function GetBuiltInFunctions : TObjectList;
 function GetBuiltInConstants : TObjectList;
@@ -183,7 +191,7 @@ begin
     Result := ZcTypeNames[Typ.Kind];
 end;
 
-function PropTypeToZType(PTyp : TZPropertyType) : TZcDataType;
+function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
 begin
   FillChar(Result,SizeOf(Result),0);
   Result.Kind := zctVoid;
@@ -193,6 +201,7 @@ begin
     case PTyp of
       zptInteger,zptByte,zptBoolean : Result.Kind := zctInt;
       zptString : Result.Kind := zctString;
+      zptComponentRef : Result.Kind := zctNull;
     end;
 end;
 
@@ -1110,7 +1119,6 @@ begin
   MakeOne('ord',fcOrd,'IS');
   MakeOne('createModel',fcCreateModel,'MM');
   MakeOne('trace',fcTrace,'VS');
-  MakeOne('playSound',fcPlaySound,'VR{Sound}FI');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
@@ -1210,6 +1218,33 @@ begin
   FreeAndNil(BuiltInFunctions);
   FreeAndNil(BuiltInConstants);
   FreeAndNil(BuiltInCleanUps);
+end;
+
+{ TZcOpInvokeComponent }
+
+constructor TZcOpInvokeComponent.Create(Owner: TObjectList);
+begin
+  inherited;
+  Self.Kind := zcInvokeComponent;
+end;
+
+destructor TZcOpInvokeComponent.Destroy;
+begin
+  inherited;
+end;
+
+function TZcOpInvokeComponent.ToString: string;
+var
+  Op : TZcOp;
+begin
+  Result := '@' + Id + '(';
+  for Op in Children do
+  begin
+    Result := Result + Op.Id + ' : ' + Op.Children.First.ToString;
+    if Op<>Children.Last then
+      Result := Result + ', ';
+  end;
+  Result := Result + ')';
 end;
 
 initialization

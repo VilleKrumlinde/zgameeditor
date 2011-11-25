@@ -15,7 +15,7 @@ public = (.
     procedure CheckHomograph(var sym: Integer); override;
 .)
 private = (.
-    IsInIdent : boolean;
+    IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     procedure ZError(const S : string);
@@ -48,7 +48,7 @@ procedure TZc.CheckHomograph(var sym: Integer);
 begin
   //Only Homographs are name of component datatypes
   //If inside identifier "x.y.z" then let it refer to identifier instead
-  if IsInIdent then
+  if IsInIdent or IsInInvokeArg then
     sym := identSym;
 end;
 
@@ -148,7 +148,7 @@ TOKENS
           }
                 '"'.
 
-        ident = ['@'] letter { letter | digit }.
+        ident = letter { letter | digit }.
 
 
         /*----- operators and special characters needed in LL(1) resolvers --------------*/
@@ -774,14 +774,58 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
        end;
     .)
 .
+
+
+
+/*------------------------------------------------------------------------*/
+InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
+(.
+  var
+    Op : TZcOp;
+    Prop : TZProperty;
+.)
+= (. OutOp := nil; Op := nil; .)
+  ident (.
+    Prop := Ci.GetProperties.GetByName(LexString);
+    if Prop=nil then
+      ZError(LexString + ' is not a property of ' + Ci.ZClassName);
+    if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
+      ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
+    OutOp := MakeOp(zcIdentifier);
+    OutOp.Id := LexString;
+  .)
+  ":" Expr<Op>
+  (. if Op=nil then
+       ZError('Missing argument');
+     Op := MakeCompatible(Op, PropTypeToZType(Prop.PropertyType));
+     OutOp.Children.Add(Op);
+  .)
+.
+
+
+
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>
 (. var Op : TZcOp; S : string; V : single;
      Typ : TZcDataType;
+     Ci : TZComponentInfo;
 .)
 =            (. OutOp := nil; .)
   (
     ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
+  | "@" ident (.
+       Ci := ComponentManager.GetInfoFromName(LexString);
+       if not Ci.ZClass.InheritsFrom(TCommand) then
+         ZError('Class must inherit TCommand: ' + LexString);
+       OutOp := TZcOpInvokeComponent.Create(nil);
+       OutOp.Id := LexString;
+    .)
+    "(" (. IsInInvokeArg := True; .)
+        [InvokeArgument<Op,Ci>       (. OutOp.Children.Add(Op); .)
+          {"," InvokeArgument<Op,Ci> (. OutOp.Children.Add(Op); .)
+          }
+        ]
+    ")" (. IsInInvokeArg := False; .)
   | Literal<Typ>  (.
         if Typ.Kind in [zctString,zctNull] then
           OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
@@ -797,7 +841,7 @@ Primary<var OutOp : TZcOp>
         end;
      .)
   | "(" Expr<OutOp> ")"
-/*  | ( "bool"   | "byte"   | "char" | "decimal" | "double" 
+/*  | ( "bool"   | "byte"   | "char" | "decimal" | "double"
     | "float"  | "int"    | "long" | "object"  | "sbyte"
     | "short"  | "string" | "uint" | "ulong"   | "ushort"
     ) "." ident */
@@ -810,8 +854,6 @@ Primary<var OutOp : TZcOp>
 /*  | "->" ident */
 
   | "." (. IsInIdent := True; .) ident (.
-
-      
 
       if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
         ZError('Invalid use of "."');

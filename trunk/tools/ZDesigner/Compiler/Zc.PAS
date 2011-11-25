@@ -23,7 +23,7 @@ type
 
   TZc = class(TCocoRGrammar)
   private             
-    IsInIdent : boolean;
+    IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
     procedure CleanUp;
     procedure ZError(const S : string);
@@ -66,6 +66,7 @@ type
     procedure _AddExpr(InOp : TZcOp; var OutOp : TZcOp);
     procedure _MulExpr(InOp : TZcOp; var OutOp : TZcOp);
     procedure _Primary(var OutOp : TZcOp);
+    procedure _InvokeArgument(var OutOp : TZcOp; Ci : TZComponentInfo);
     procedure _Literal(var Typ : TZcDataType);
 
   public
@@ -106,8 +107,8 @@ const
 	elseSym = 51;	switchSym = 52;	whileSym = 53;	forSym = 54;	breakSym = 55;
 	continueSym = 56;	returnSym = 57;	_plus_equalSym = 58;	_minus_equalSym = 59;	_star_equalSym = 60;
 	_slash_equalSym = 61;	caseSym = 62;	defaultSym = 63;	_querySym = 64;	_bar_barSym = 65;
-	_and_andSym = 66;	nullSym = 67;	_NOSYMB = 68;	_slash_starSym = 69;	_slash_slashSym = 70;
-
+	_and_andSym = 66;	_atSym = 67;	nullSym = 68;	_NOSYMB = 69;	_slash_starSym = 70;
+	_slash_slashSym = 71;
 
 var ZcSymSets: TSetArray;
 
@@ -246,7 +247,7 @@ begin
 		else if (CurrInputCh = '"') then
 		  state := 17
 		else if (CurrInputCh = '\') then
-		  state := 49
+		  state := 48
 		else begin
 		  sym := _NOSYMB;
 		  Exit;
@@ -257,130 +258,123 @@ begin
 		  Exit;
 		end;
 	18:
-		if ((CurrInputCh>='A')and(CurrInputCh<='Z'))or(CurrInputCh='_')or((CurrInputCh>='a')and(CurrInputCh<='z')) then
-		  state := 19
-		else begin
-		  sym := _NOSYMB;
-		  Exit;
-		end;
-	19:
 		if ((CurrInputCh>='0')and(CurrInputCh<='9'))or((CurrInputCh>='A')and(CurrInputCh<='Z'))or(CurrInputCh='_')or((CurrInputCh>='a')and(CurrInputCh<='z')) then
 		else begin
 		  sym := identSym;
 		  CheckLiteral(sym);
 		  Exit;
 		end;
-	20:
+	19:
 		begin
 		  sym := colonSym;
 		  Exit;
 		end;
-	21:
+	20:
 		begin
 		  sym := commaSym;
 		  Exit;
 		end;
-	22:
+	21:
 		begin
 		  sym := decSym;
 		  Exit;
 		end;
-	23:
+	22:
 		begin
 		  sym := eqSym;
 		  Exit;
 		end;
-	24:
+	23:
 		begin
 		  sym := gteSym;
 		  Exit;
 		end;
-	25:
+	24:
 		begin
 		  sym := incSym;
 		  Exit;
 		end;
-	26:
+	25:
 		begin
 		  sym := lbraceSym;
 		  Exit;
 		end;
-	27:
+	26:
 		begin
 		  sym := lbrackSym;
 		  Exit;
 		end;
-	28:
+	27:
 		begin
 		  sym := lparSym;
 		  Exit;
 		end;
-	29:
+	28:
 		begin
 		  sym := lshiftSym;
 		  Exit;
 		end;
-	30:
+	29:
 		begin
 		  sym := lteSym;
 		  Exit;
 		end;
-	31:
+	30:
 		begin
 		  sym := modSym;
 		  Exit;
 		end;
-	32:
+	31:
 		begin
 		  sym := neqSym;
 		  Exit;
 		end;
-	33:
+	32:
 		begin
 		  sym := rbraceSym;
 		  Exit;
 		end;
-	34:
+	33:
 		begin
 		  sym := rbrackSym;
 		  Exit;
 		end;
-	35:
+	34:
 		begin
 		  sym := rparSym;
 		  Exit;
 		end;
-	36:
+	35:
 		begin
 		  sym := rshiftSym;
 		  Exit;
 		end;
-	37:
+	36:
 		begin
 		  sym := scolonSym;
 		  Exit;
 		end;
-	38:
+	37:
 		begin
 		  sym := tildeSym;
 		  Exit;
 		end;
-	39:
+	38:
 		begin
 		  sym := xorSym;
 		  Exit;
 		end;
-	40:
+	39:
 		begin
 		  sym := _slash_starSym;
 		  Exit;
 		end;
-	41:
+	40:
 		begin
 		  sym := _slash_slashSym;
 		  Exit;
 		end;
-	42:
+	41:
 		if ((CurrInputCh>='0')and(CurrInputCh<='9')) then
 		else if (CurrInputCh = '.') then
 		  state := 7
@@ -392,9 +386,9 @@ begin
 		  sym := intConSym;
 		  Exit;
 		end;
-	43:
+	42:
 		if ((CurrInputCh>='0')and(CurrInputCh<='9')) then
-		  state := 42
+		  state := 41
 		else if (CurrInputCh='X')or(CurrInputCh='x') then
 		  state := 1
 		else if (CurrInputCh = '.') then
@@ -407,133 +401,138 @@ begin
 		  sym := intConSym;
 		  Exit;
 		end;
-	44:
+	43:
 		if ((CurrInputCh>='0')and(CurrInputCh<='9')) then
 		  state := 3
 		else begin
 		  sym := dotSym;
 		  Exit;
 		end;
-	45:
+	44:
 		if (CurrInputCh = '=') then
-		  state := 23
+		  state := 22
 		else begin
 		  sym := assgnSym;
 		  Exit;
 		end;
-	46:
+	45:
 		if (CurrInputCh = '=') then
-		  state := 24
+		  state := 23
 		else if (CurrInputCh = '>') then
-		  state := 36
+		  state := 35
 		else begin
 		  sym := gtSym;
 		  Exit;
 		end;
-	47:
+	46:
 		if (CurrInputCh = '<') then
-		  state := 29
+		  state := 28
 		else if (CurrInputCh = '=') then
-		  state := 30
+		  state := 29
 		else begin
 		  sym := ltSym;
 		  Exit;
 		end;
-	48:
+	47:
 		if (CurrInputCh = '=') then
-		  state := 32
+		  state := 31
 		else begin
 		  sym := notSym;
 		  Exit;
 		end;
-	49:
+	48:
 		if (CurrInputCh='"')or(CurrInputCh='''')or(CurrInputCh='\')or(CurrInputCh='n') then
 		  state := 16
 		else begin
 		  sym := _NOSYMB;
 		  Exit;
 		end;
-	50:
+	49:
 		begin
 		  sym := _plus_equalSym;
 		  Exit;
 		end;
-	51:
+	50:
 		begin
 		  sym := _minus_equalSym;
 		  Exit;
 		end;
-	52:
+	51:
 		begin
 		  sym := _star_equalSym;
 		  Exit;
 		end;
-	53:
+	52:
 		begin
 		  sym := _slash_equalSym;
 		  Exit;
 		end;
-	54:
+	53:
 		begin
 		  sym := _querySym;
 		  Exit;
 		end;
-	55:
+	54:
 		begin
 		  sym := _bar_barSym;
 		  Exit;
 		end;
-	56:
+	55:
 		begin
 		  sym := _and_andSym;
 		  Exit;
 		end;
+	56:
+		begin
+		  sym := _atSym;
+		  Exit;
+		end;
 	57:
 		if (CurrInputCh = '&') then
-		  state := 56
+		  state := 55
 		else begin
 		  sym := andSym;
 		  Exit;
 		end;
 	58:
 		if (CurrInputCh = '-') then
-		  state := 22
+		  state := 21
 		else if (CurrInputCh = '=') then
-		  state := 51
+		  state := 50
 		else begin
 		  sym := minusSym;
 		  Exit;
 		end;
 	59:
 		if (CurrInputCh = '*') then
-		  state := 40
+		  state := 39
 		else if (CurrInputCh = '/') then
-		  state := 41
+		  state := 40
 		else if (CurrInputCh = '=') then
-		  state := 53
+		  state := 52
 		else begin
 		  sym := divSym;
 		  Exit;
 		end;
 	60:
 		if (CurrInputCh = '+') then
-		  state := 25
+		  state := 24
 		else if (CurrInputCh = '=') then
-		  state := 50
+		  state := 49
 		else begin
 		  sym := plusSym;
 		  Exit;
 		end;
 	61:
 		if (CurrInputCh = '|') then
-		  state := 55
+		  state := 54
 		else begin
 		  sym := orSym;
 		  Exit;
 		end;
 	62:
 		if (CurrInputCh = '=') then
-		  state := 52
+		  state := 51
 		else begin
 		  sym := timesSym;
 		  Exit;
@@ -584,7 +583,7 @@ procedure TZc.CheckHomograph(var sym: Integer);
 begin
   //Only Homographs are name of component datatypes
   //If inside identifier "x.y.z" then let it refer to identifier instead
-  if IsInIdent then
+  if IsInIdent or IsInInvokeArg then
     sym := identSym;
 end;
 
@@ -1562,6 +1561,7 @@ end;
 procedure TZc._Primary(var OutOp : TZcOp);
  var Op : TZcOp; S : string; V : single;
      Typ : TZcDataType;
+     Ci : TZComponentInfo;
 
 begin
                 OutOp := nil; 
@@ -1569,6 +1569,33 @@ begin
   begin
        Get;
                 OutOp := CheckPrimary( MakeIdentifier(LexString) );  
+  end
+  else if (CurrentInputSymbol=_atSym) then
+  begin
+       Get;
+       Expect(identSym);
+                
+       Ci := ComponentManager.GetInfoFromName(LexString);
+       if not Ci.ZClass.InheritsFrom(TCommand) then
+         ZError('Class must inherit TCommand: ' + LexString);
+       OutOp := TZcOpInvokeComponent.Create(nil);
+       OutOp.Id := LexString;
+    
+       Expect(lparSym);
+           IsInInvokeArg := True; 
+       if (CurrentInputSymbol=identSym) then
+       begin
+         _InvokeArgument(Op,Ci);
+                                        OutOp.Children.Add(Op); 
+         while (CurrentInputSymbol=commaSym) do
+         begin
+           Get;
+           _InvokeArgument(Op,Ci);
+                                        OutOp.Children.Add(Op); 
+         end;
+       end;
+       Expect(rparSym);
+           IsInInvokeArg := False; 
   end
   else if InSet(CurrentInputSymbol,13) then
   begin
@@ -1613,8 +1640,6 @@ begin
            IsInIdent := True; 
          Expect(identSym);
                                          
-
-      
 
       if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
         ZError('Invalid use of "."');
@@ -1671,6 +1696,33 @@ begin
   end;
 end;
 
+procedure TZc._InvokeArgument(var OutOp : TZcOp; Ci : TZComponentInfo);
+
+  var
+    Op : TZcOp;
+    Prop : TZProperty;
+
+begin
+     OutOp := nil; Op := nil; 
+  Expect(identSym);
+          
+    Prop := Ci.GetProperties.GetByName(LexString);
+    if Prop=nil then
+      ZError(LexString + ' is not a property of ' + Ci.ZClassName);
+    if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
+      ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
+    OutOp := MakeOp(zcIdentifier);
+    OutOp.Id := LexString;
+  
+  Expect(colonSym);
+  _Expr(Op);
+     if Op=nil then
+       ZError('Missing argument');
+     Op := MakeCompatible(Op, PropTypeToZType(Prop.PropertyType));
+     OutOp.Children.Add(Op);
+  
+end;
+
 procedure TZc._Literal(var Typ : TZcDataType);
 begin
   if (CurrentInputSymbol=intConSym) then
@@ -1713,7 +1765,7 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'"else"'	,'"switch"'	,'"while"'	,'"for"'	,'"break"'
 	,'"continue"'	,'"return"'	,'"+="'	,'"-="'	,'"*="'
 	,'"/="'	,'"case"'	,'"default"'	,'"?"'	,'"||"'
-	,'"&&"'	,'"null"'  ,'not');
+	,'"&&"'	,'"@"'	,'"null"'  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -1774,13 +1826,13 @@ begin
     ZcST := TStartTable.Create;
     with ZcST do
     begin
-	  FillRange(49, 57, 42);  FillRange(65, 90, 19);  States[95] := 19;  FillRange(97, 122, 19);
-	  States[48] := 43;  States[46] := 44;  States[34] := 16;  States[64] := 18;  States[38] := 57;
-	  States[61] := 45;  States[58] := 20;  States[44] := 21;  States[45] := 58;  States[47] := 59;
-	  States[62] := 46;  States[43] := 60;  States[123] := 26;  States[91] := 27;  States[40] := 28;
-	  States[60] := 47;  States[37] := 31;  States[33] := 48;  States[124] := 61;  States[125] := 33;
-	  States[93] := 34;  States[41] := 35;  States[59] := 37;  States[126] := 38;  States[42] := 62;
-	  States[94] := 39;  States[63] := 54;
+	  FillRange(49, 57, 41);  FillRange(65, 90, 18);  States[95] := 18;  FillRange(97, 122, 18);
+	  States[48] := 42;  States[46] := 43;  States[34] := 16;  States[38] := 57;  States[61] := 44;
+	  States[58] := 19;  States[44] := 20;  States[45] := 58;  States[47] := 59;  States[62] := 45;
+	  States[43] := 60;  States[123] := 25;  States[91] := 26;  States[40] := 27;  States[60] := 46;
+	  States[37] := 30;  States[33] := 47;  States[124] := 61;  States[125] := 32;  States[93] := 33;
+	  States[41] := 34;  States[59] := 36;  States[126] := 37;  States[42] := 62;  States[94] := 38;
+	  States[63] := 53;  States[64] := 56;
     end;
     ZcLiterals := CreateLiterals(True,
 	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','void','float','int','string','model','const'
@@ -1813,13 +1865,13 @@ begin
 	{ 1} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, constSym, -1,
 	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, -1,
 	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, -1,
-	{ 4} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, nullSym, -1,
-	{ 5} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, nullSym, -1,
-	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, nullSym, -1,
+	{ 4} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
+	{ 5} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
+	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
 	{ 7} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{ 8} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, -1,
-	{ 9} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, nullSym, -1,
-	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, nullSym, -1,
+	{ 9} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, _atSym, nullSym, -1,
+	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, _atSym, nullSym, -1,
 	{11} decSym, incSym, minusSym, notSym, -1,
 	{12} gtSym, gteSym, ltSym, lteSym, -1,
 	{13} intConSym, realConSym, stringConSym, nullSym, -1,

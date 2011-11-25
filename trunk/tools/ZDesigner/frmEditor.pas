@@ -486,8 +486,8 @@ begin
   //SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
-  AutoComp.EndOfTokenChr := '+-/*=()[]. ';
-  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.';
+  AutoComp.EndOfTokenChr := '+-/*=()[]. @';
+  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
   AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
@@ -3377,12 +3377,12 @@ var
 
   procedure InAdd(const Items : array of string);
   var
-    I : integer;
+    S : string;
   begin
-    for I := 0 to High(Items) do
+    for S in Items do
     begin
-      Comp.InsertList.Add(Items[I]);
-      Comp.ItemList.Add(Items[I]);
+      Comp.InsertList.Add(S);
+      Comp.ItemList.Add(S);
     end;
   end;
 
@@ -3398,6 +3398,9 @@ var
       Result := ZApp.SymTab.Lookup(S) as TZComponent;
   end;
 
+var
+  Id : TZClassIds;
+  Ci : TZComponentInfo;
 begin
   Comp := Sender as TSynCompletionProposal;
   Comp.ItemList.Clear;
@@ -3453,7 +3456,16 @@ begin
         end;
       end;
     end;
-  end else
+  end else if (I>0) and (Line[I]='@') then
+  begin
+    for Id := Low(TZClassIds) to High(TZClassIds) do
+    begin
+      Ci := ComponentManager.GetInfoFromId(Id);
+      if Ci.ZClass.InheritsFrom(TCommand) and (not Ci.ZClass.InheritsFrom(TContentProducer)) then
+        InAdd([ComponentManager.GetInfoFromId(Id).ZClassName]);
+    end;
+  end
+  else
   begin
     //List global identifiers
     ZApp.SymTab.Iterate(AutoCompAddOne,Comp);
@@ -3632,6 +3644,8 @@ begin
         UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
         if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).IsJpegEncoded) then
           NeedJpeg := True;
+        if (AllObjects[I] is TExpInvokeComponent) then
+          UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName);
       end;
     finally
       AllObjects.Free;
