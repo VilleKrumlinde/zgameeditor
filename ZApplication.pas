@@ -1015,6 +1015,7 @@ end;
 {$ifndef minimal}
 procedure TZApplication.DesignerStart(const ViewW,ViewH : integer);
 begin
+  Assert(ZApp=Self);
   Self.Init;
 
   ScreenWidth := ViewW;
@@ -1033,6 +1034,7 @@ end;
 
 procedure TZApplication.DesignerStop;
 begin
+  Assert(ZApp=Self);
   DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;
