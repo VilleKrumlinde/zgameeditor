@@ -38,7 +38,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, Winapi.Windows, ZApplication, AudioPlayer,Commands
+uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplication, AudioPlayer,Commands
  {$ifndef minimal}
   ,SysUtils
  {$endif}
