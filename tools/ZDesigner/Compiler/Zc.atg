@@ -659,8 +659,12 @@ BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
 .
 
 /*------------------------------------------------------------------------*/
-BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op : TZcOp; .)
-= BitAndExpr<InOp,OutOp> {"^" (. SynError(205); .) Unary<Op> BitAndExpr<InOp,OutOp>}
+BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+= BitAndExpr<InOp,OutOp> (. L := OutOp; .)
+  {"^" Unary<Op> BitAndExpr<Op,R>
+    (. OutOp := MakeOp(zcBinaryXor,[L,R]);
+       L := OutOp; .)
+  }
 .
 
 /*------------------------------------------------------------------------*/

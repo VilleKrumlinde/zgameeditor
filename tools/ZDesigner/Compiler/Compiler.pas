@@ -212,7 +212,7 @@ begin
   case Typ.Kind of
     zctFloat :
       begin
-        if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryShiftLeft,vbkBinaryShiftRight] then
+        if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryXor,vbkBinaryShiftLeft,vbkBinaryShiftRight] then
           raise ECodeGenError.Create('Cannot use this operator on a float-expression');
         Result := TExpOpBinaryFloat.Create(nil,Kind);
       end;
@@ -452,6 +452,7 @@ begin
     zcMinus : DoGenBinary(vbkMinus);
     zcBinaryOr : DoGenBinary(vbkBinaryOr);
     zcBinaryAnd : DoGenBinary(vbkBinaryAnd);
+    zcBinaryXor : DoGenBinary(vbkBinaryXor);
     zcBinaryShiftL : DoGenBinary(vbkBinaryShiftLeft);
     zcBinaryShiftR : DoGenBinary(vbkBinaryShiftRight);
     zcConstLiteral : DoLiteral;

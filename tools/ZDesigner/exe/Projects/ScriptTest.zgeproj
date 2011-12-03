@@ -170,7 +170,14 @@ if( (4>>2) != 1)
   Error=14;
 i=4; j=2;
 if( (i>>j) != 1)
-  Error=14;]]>
+  Error=14;
+
+i=2; j=2;
+if((i^j)!=0)
+  Error=15;
+i=2; j=4;
+if((i^j)!=6)
+  Error=16;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="byte tests">
