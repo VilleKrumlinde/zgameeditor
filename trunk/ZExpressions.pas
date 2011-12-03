@@ -173,7 +173,7 @@ type
   end;
 
   TExpOpBinaryKind = (vbkPlus,vbkMinus,vbkMul,vbkDiv,vbkBinaryOr,vbkBinaryAnd,
-    vbkBinaryShiftLeft,vbkBinaryShiftRight);
+    vbkBinaryShiftLeft,vbkBinaryShiftRight,vbkBinaryXor);
 
   TExpOpBinaryBase = class(TExpBase)
   protected
@@ -693,6 +693,7 @@ begin
     vbkDiv : V := A2 div A1;
     vbkBinaryOr : V := A2 or A1;
     vbkBinaryAnd : V := A2 and A1;
+    vbkBinaryXor : V := A2 xor A1;
     vbkBinaryShiftLeft : V := A2 shl A1;
     vbkBinaryShiftRight : V := A2 shr A1;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}

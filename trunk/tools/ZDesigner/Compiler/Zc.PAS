@@ -1391,15 +1391,17 @@ begin
 end;
 
 procedure TZc._BitXorExpr(InOp : TZcOp; var OutOp : TZcOp);
-                                                       var Op : TZcOp; 
+                                                       var Op,L,R : TZcOp; 
 begin
   _BitAndExpr(InOp,OutOp);
+                            L := OutOp; 
   while (CurrentInputSymbol=xorSym) do
   begin
     Get;
-                                 SynError(205); 
     _Unary(Op);
-    _BitAndExpr(InOp,OutOp);
+    _BitAndExpr(Op,R);
+       OutOp := MakeOp(zcBinaryXor,[L,R]);
+       L := OutOp; 
   end;
 end;
 

@@ -13,7 +13,7 @@ type
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
-          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryShiftL,zcBinaryShiftR,
+          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent);
 
   TZcIdentifierInfo = record
@@ -480,6 +480,7 @@ begin
     zcOr : Result := Child(0).ToString + ' || ' + Child(1).ToString;
     zcBinaryOr : Result := Child(0).ToString + ' | ' + Child(1).ToString;
     zcBinaryAnd : Result := Child(0).ToString + ' & ' + Child(1).ToString;
+    zcBinaryXor : Result := Child(0).ToString + ' ^ ' + Child(1).ToString;
     zcBinaryShiftL : Result := Child(0).ToString + ' << ' + Child(1).ToString;
     zcBinaryShiftR : Result := Child(0).ToString + ' >> ' + Child(1).ToString;
     zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
@@ -600,6 +601,7 @@ begin
         zcMinus : DoConstant(C1.Value - C2.Value);
         zcBinaryOr : DoIntConstant(Trunc(C1.Value) or Trunc(C2.Value));
         zcBinaryAnd : DoIntConstant(Trunc(C1.Value) and Trunc(C2.Value));
+        zcBinaryXor : DoIntConstant(Trunc(C1.Value) xor Trunc(C2.Value));
         zcBinaryShiftL : DoIntConstant(Trunc(C1.Value) shl Trunc(C2.Value));
         zcBinaryShiftR : DoIntConstant(Trunc(C1.Value) shr Trunc(C2.Value));
       end;
