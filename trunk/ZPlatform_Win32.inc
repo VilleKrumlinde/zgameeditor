@@ -1772,14 +1772,14 @@ end;
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
 {$ifndef minimal}
 var
-  S : ansistring;
+  S : AnsiString;
 {$endif}
 begin
   //Open file relative to path of exe-file
   {$ifndef minimal}
   //Inside designer we must provide full path to zgeproj-file
   S := DesignerFilePath + Name;
-  if FileExists(String(DesignerFilePath + Name)) then
+  if FileExists(string(S)) then
     Result := LoadLibraryA(PAnsiChar(S))
   else
     //Not found in zgeproj-path, assume system32-dll such as user32 and load without path
