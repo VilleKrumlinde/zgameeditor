@@ -602,7 +602,7 @@ begin
     TimeStep := S.Length/S.SampleCount;
     for I := 0 to S.SampleCount-1 do
     begin
-      Self.Sample :=  P^;
+      Self.Sample := P^;
       ZExpressions.RunCode(Expression.Code);
       P^ := Clamp(Self.Sample,-1,1);
       Inc(P);
