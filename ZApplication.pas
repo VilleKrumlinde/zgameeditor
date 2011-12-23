@@ -94,6 +94,7 @@ type
     OnUpdate : TZComponentList;
     OnRender : TZComponentList;
     OnBeginRenderPass : TZComponentList;
+    Lights : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
@@ -101,6 +102,7 @@ type
     MousePosition : TZVector3f;
     ClearScreenMode : integer;
     ClearColor : TZColorf;
+    AmbientLightColor : TZColorf;
     Fullscreen : boolean;
     ScreenMode : (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
     ShowOptionsDialog : boolean;
@@ -644,7 +646,7 @@ end;
 
 procedure TZApplication.UpdateScreen;
 var
-  I : integer;
+  I,J : integer;
 begin
 
   for I := 0 to Self.RenderPasses-1 do
@@ -676,7 +678,15 @@ begin
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     end;
 
-    glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, @Self.AmbientLightColor);
+
+    if Lights.Count=0 then
+      glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition)
+    else
+    begin
+      for J := 0 to Lights.Count-1 do
+        TLight(Lights[J]).ApplyLight(J);
+    end;
 
     Renderer.Render_Begin;
       RenderModels;
@@ -689,6 +699,9 @@ begin
         Self.CurrentState.OnRender.ExecuteCommands;
       glPopMatrix;
     Renderer.Render_End;
+
+    for J := 0 to Lights.Count-1 do
+      TLight(Lights[J]).RemoveLight(J);
   end;
 
   //End frame
@@ -901,6 +914,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}integer(@OnBeginRenderPass), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Lights',{$ENDIF}integer(@Lights), zptComponentList);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TLight]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption), zptString);
     List.GetLast.IsStringTarget := True;
@@ -932,6 +947,8 @@ begin
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'AmbientLightColor',{$ENDIF}integer(@AmbientLightColor), zptColorf);
+    List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.4,0.4,0.4,1);
 
   List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen), zptBoolean);
 

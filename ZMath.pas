@@ -114,6 +114,7 @@ function Vec2DDistance(const v1,v2 : TZVector2f) : single;
 const
   UNIT_Z3: TZVector3f = (0,0,1);
   UNIT_XYZ3 : TZVector3f = (1,1,1);
+  UNIT_XYZ4 : TZVector4f = (1,1,1,1);
   IdentityHmgMatrix: TZMatrix4f = ((1, 0, 0, 0),
                                 (0, 1, 0, 0),
                                 (0, 0, 1, 0),
