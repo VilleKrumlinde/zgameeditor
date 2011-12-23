@@ -47,6 +47,8 @@ type
     Font : TFont;
     Shader : TShader;
     WireframeWidth : single;
+    SpecularColor,EmissionColor : TZColorf;
+    Shininess : integer;
   end;
 
   TMaterialTexture = class(TZComponent)
@@ -305,6 +307,16 @@ type
     RenderTarget : TRenderTarget;
     procedure Execute; override;
     {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
+  end;
+
+  TLight = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Position : TZVector4f;
+    DiffuseColor,AmbientColor,SpecularColor : TZColorf;
+    procedure ApplyLight(const LightId : integer);
+    procedure RemoveLight(const LightId : integer);
   end;
 
 procedure InitRenderer;
@@ -582,6 +594,10 @@ begin
 
   CurrentMaterial := NewM;
 
+  glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
+  glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
+  glMateriali(GL_FRONT, GL_SHININESS, NewM.Shininess);
+
   if NilOld or (NewM.Shading<>OldM.Shading) then
   begin
     if (not NilOld) and (OldM.Shading=msWireframe) then
@@ -767,73 +783,38 @@ begin
   glPopMatrix();
 end;
 
-(*procedure _ShaderTest;
-const
-  VertexSource : pchar = 'void main(void){ gl_Position     = ftransform(); }';
-  FragmentSource : pchar = 'void main(void){ gl_FragColor = vec4(1.0,0.5,0.5, 1.0); }';
-var
-  ProgHandle,VShaderHandle,FShaderHandle : GLuint;
-begin
-  VShaderHandle := glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(VShaderHandle,1,@VertexSource,nil);
-  glCompileShader(VShaderHandle);
-
-  FShaderHandle := glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(FShaderHandle,1,@FragmentSource,nil);
-  glCompileShader(FShaderHandle);
-
-  ProgHandle := glCreateProgram;
-  glAttachShader(ProgHandle,VShaderHandle);
-  glAttachShader(ProgHandle,FShaderHandle);
-  glLinkProgram(ProgHandle);
-end;*)
-
-
-//Sätt standardvärden för open gl
+//Set OpenGL defaults
 procedure InitRenderer;
 const
-  AmbientLight : array[0..3] of single = (0.4, 0.4, 0.4, 1.0);
   //exempel från http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
-//  no_mat : array[0..3] of single = (0.0, 0.0, 0.0, 1.0 );
-//  mat_ambient_color : array[0..3] of single = (0.8, 0.8, 0.2, 1.0 );
-//  mat_diffuse : packed array[0..3] of single = ( 0.1, 0.5, 0.8, 1.0 );
   //Specular är färg för highlights i direkt ljus
-  mat_specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
-  no_shininess = 0;
-  low_shininess = 5;
-  high_shininess = 100;
-//var
-//  I : integer;
-//  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
+  Specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
+  LowShininess = 5;
 begin
   {$ifndef minimal}if DefaultMaterial=nil then{$endif}
     DefaultMaterial := TMaterial.Create(nil);
   {$ifndef minimal}if DefaultMaterialTexture=nil then{$endif}
     DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
-  glClearColor(0.0 , 0.0, 0.0, 0.0);       // Black Background
-
   glEnable(GL_DEPTH_TEST);
 
   glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+  glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
   //Light
   //Use default position
-  glLightModelfv( GL_LIGHT_MODEL_AMBIENT, @AmbientLight );
-//  glEnable( GL_LIGHTING );
-  glEnable( GL_LIGHT0 );
+  glEnable(GL_LIGHT0);
 
   //Färg på material följer anrop till glColor. Detta gör att man slipper
   //sätta glMaterial ambient och diffuse separat.
-  glEnable ( GL_COLOR_MATERIAL );
-  glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
+  glEnable(GL_COLOR_MATERIAL);
+  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-  glMaterialfv(GL_FRONT, GL_SPECULAR, @mat_specular);
-  glMateriali(GL_FRONT, GL_SHININESS, low_shininess);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, @Specular);
+  glMateriali(GL_FRONT, GL_SHININESS, LowShininess);
 
   //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 då blir det för ljust
   //Detta p.g.a. gl skalar normals vid glScale
@@ -842,7 +823,6 @@ begin
   //Extensions must be loaded after video-init, shaders are available on a
   //per-context basis in Win32
   LoadOpenGLExtensions;
-//_ShaderTest;
 
   //Set other default properties using the material-handler
   {$ifndef minimal}IsRendering := True;{$endif}
@@ -862,9 +842,12 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
-    List.GetLast.DefaultValue.ColorfValue := TZColorf(Vector4f(1,1,1,1));
+    List.GetLast.DefaultValue.ColorfValue := TZColorf(ZMath.UNIT_XYZ4);
   List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}integer(@Light), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
+  List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}integer(@SpecularColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}integer(@EmissionColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}integer(@Shininess), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}integer(@ZBuffer), zptBoolean);
@@ -2533,6 +2516,43 @@ begin
 end;
 {$endif}
 
+{ TLight }
+
+procedure TLight.ApplyLight(const LightId: integer);
+var
+  Id : integer;
+begin
+  Id := GL_LIGHT0 + LightId;
+  glEnable(Id);
+  glLightfv(Id, GL_POSITION, @Self.Position);
+  glLightfv(Id, GL_DIFFUSE, @Self.DiffuseColor);
+  glLightfv(Id, GL_AMBIENT, @Self.AmbientColor);
+  glLightfv(Id, GL_SPECULAR, @Self.SpecularColor);
+end;
+
+procedure TLight.RemoveLight(const LightId: integer);
+var
+  Id : integer;
+begin
+  //Leave light0 on as this is the default in ZGE
+  //Turn the others off
+  Id := GL_LIGHT0 + LightId;
+  if LightId=0 then
+    //Also restore diffuse color
+    glLightfv(Id, GL_DIFFUSE, @ZMath.UNIT_XYZ4)
+  else
+    glDisable(Id);
+end;
+
+procedure TLight.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'AmbientColor',{$ENDIF}integer(@AmbientColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'DiffuseColor',{$ENDIF}integer(@DiffuseColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}integer(@SpecularColor), zptColorf);
+end;
+
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
@@ -2578,4 +2598,6 @@ initialization
   ZClasses.Register(TSetRenderTarget,SetRenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
 
+  ZClasses.Register(TLight,LightClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'Lights';{$endif}
 end.
