@@ -129,7 +129,7 @@ type
   end;
 
 var
-  //Should be class-vars in TWebOpen but fpc does not support class-vars yet
+  //Used by TWebOpen
   NetMutex : pointer;
   NetResultList : TZArrayList;
 
@@ -139,7 +139,6 @@ uses ZPlatform,ZApplication
   {$ifndef minimal},ZLog{$endif};
 
 { TRepeat }
-
 
 procedure TRepeat.DefineProperties(List: TZPropertyList);
 begin

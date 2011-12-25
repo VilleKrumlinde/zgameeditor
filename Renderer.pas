@@ -314,7 +314,12 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Position : TZVector4f;
-    DiffuseColor,AmbientColor,SpecularColor : TZColorf;
+    Color : TZColorf;
+    Enabled : boolean;
+    Kind : (likDirectional,likPoint,likSpot);
+    SpotDirection : TZVector3f;
+    SpotExponent : single;
+    SpotCutoff : single;
     procedure ApplyLight(const LightId : integer);
     procedure RemoveLight(const LightId : integer);
   end;
@@ -2163,7 +2168,7 @@ procedure TShader.DetachArrayVariables;
 var
   I : integer;
 begin
-  for I := Self.TexCount downto 0 do
+  for I := Self.TexCount-1 downto 0 do
   begin
     glActiveTexture($84C0 + Self.FirstTexIndex + I);
     glDisable(GL_TEXTURE_1D);
@@ -2521,13 +2526,32 @@ end;
 procedure TLight.ApplyLight(const LightId: integer);
 var
   Id : integer;
+  V : single;
 begin
   Id := GL_LIGHT0 + LightId;
-  glEnable(Id);
+  if Self.Enabled then
+    glEnable(Id)
+  else
+    glDisable(Id);
+
+  if Kind=likDirectional then
+    Self.Position[3] := 0
+  else
+  begin
+    Self.Position[3] := 1;
+    if Kind=likPoint then
+      V := 180
+    else
+    begin
+      V := Self.SpotCutoff;
+      glLightfv(Id, GL_SPOT_DIRECTION, @Self.SpotDirection);
+      glLightfv(Id, GL_SPOT_EXPONENT, @Self.SpotExponent);
+    end;
+    glLightfv(Id, GL_SPOT_CUTOFF,@V);
+  end;
   glLightfv(Id, GL_POSITION, @Self.Position);
-  glLightfv(Id, GL_DIFFUSE, @Self.DiffuseColor);
-  glLightfv(Id, GL_AMBIENT, @Self.AmbientColor);
-  glLightfv(Id, GL_SPECULAR, @Self.SpecularColor);
+
+  glLightfv(Id, GL_DIFFUSE, @Self.Color);
 end;
 
 procedure TLight.RemoveLight(const LightId: integer);
@@ -2538,8 +2562,11 @@ begin
   //Turn the others off
   Id := GL_LIGHT0 + LightId;
   if LightId=0 then
+  begin
     //Also restore diffuse color
-    glLightfv(Id, GL_DIFFUSE, @ZMath.UNIT_XYZ4)
+    glLightfv(Id, GL_DIFFUSE, @ZMath.UNIT_XYZ4);
+    glEnable(Id);
+  end
   else
     glDisable(Id);
 end;
@@ -2548,9 +2575,16 @@ procedure TLight.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'AmbientColor',{$ENDIF}integer(@AmbientColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'DiffuseColor',{$ENDIF}integer(@DiffuseColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}integer(@SpecularColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Enabled',{$ENDIF}integer(@Enabled), zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Directional','Point','Spot']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'SpotDirection',{$ENDIF}integer(@SpotDirection), zptVector3f);
+    List.GetLast.DefaultValue.Vector3fValue := Vector3f(0,0,-1);
+  List.AddProperty({$IFNDEF MINIMAL}'SpotExponent',{$ENDIF}integer(@SpotExponent), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'SpotCutoff',{$ENDIF}integer(@SpotCutoff), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 45;
 end;
 
 initialization

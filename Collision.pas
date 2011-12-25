@@ -264,7 +264,7 @@ var
     {Scale,}Tmp : single;
   begin
     VecSub3(Act1.Position,Act1.LastPosition,MoveV);
-//    VecSub3(Act1.Position,MoveV,StartV);
+    //VecSub3(Act1.Position,MoveV,StartV);
     //if VecIsNull3(MoveV) then
     //  Exit;
     //MoveX,MoveY är pixels som act har flyttats i denna frame

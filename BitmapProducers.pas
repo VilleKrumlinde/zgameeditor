@@ -1,9 +1,28 @@
+{Copyright (c) 2008 Ville Krumlinde
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.}
+
 unit BitmapProducers;
 
 interface
 
 uses ZOpenGL, ZClasses, ZExpressions,ZBitmap;
-
 
 type
   TBitmapProducerWithOptionalArgument  = class(TContentProducer)
@@ -177,7 +196,6 @@ begin
     glDisable(GL_TEXTURE_2D);
   end;
 
-//    glColor3f(0.0,1.0,0.0);
   glColor3fv(@Color);
   glBegin(GL_QUADS);
     glVertex2f(Size.Left,Size.Top);
@@ -253,7 +271,6 @@ begin
     glVertex2f(Size,-Size);
   glEnd();
 
-//  SourceB.UseTextureEnd;
   SourceB.Free;
 
   B.RenderTargetEnd;
@@ -345,7 +362,6 @@ begin
 
   //Needed to send the bitmap to opengl
   B.UseTextureBegin;
-//  B.UseTextureEnd;
 
   FreeMem(Pixels);
 
@@ -448,7 +464,6 @@ begin
 
   //Needed to send the bitmap to opengl
   BM.UseTextureBegin;
-//  BM.UseTextureEnd;
 
   Nj.Free;
 
@@ -725,6 +740,7 @@ end;
 { TBitmapCells }
 
 procedure TBitmapCells.ProduceOutput(Content : TContent; Stack : TZArrayList);
+//Code and comments by kattle87
 const
   MaxPoints = 64;
 type
@@ -888,7 +904,7 @@ begin
     end; //For J
   end; //For I
 
-//Now use the pre-calculated values to do something
+  //Now use the pre-calculated values to do something
   Pixel := Pixels;
   Value := ValueBuffer;
   for I := 0 to H-1 do    //I is height (Y)!
@@ -1025,6 +1041,7 @@ end;
 { TBitmapNoise }
 
 procedure TBitmapNoise.ProduceOutput(Content : TContent; Stack : TZArrayList);
+//Code and comments by kattle87
 var
   B : TZBitmap;
   H,W,I,J,K,PixelCount : integer;
@@ -1211,7 +1228,7 @@ begin
       Inc(P2);
     end;
   end;
-//Needed to send the bitmap to opengl
+  //Needed to send the bitmap to opengl
   B.UseTextureBegin;
 
   FreeMem(Data1);
@@ -1425,7 +1442,5 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ParamCount := 1;{$endif}
   ZClasses.Register(TBitmapNoise,BitmapNoiseClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Bitmap';{$endif}
-
-
 
 end.

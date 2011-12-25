@@ -159,7 +159,6 @@ var
   I : integer;
   Modulation : PModulation;
   Lfo : PLfo;
-//  Channel : PChannel;
   Envelope : PEnvelope;
   {$ifndef minimal}
   S : string;
@@ -263,7 +262,6 @@ begin
   if ZApp.NoSound then
     Exit;
 
-  //  Sound.Play;
   if (ReplayDelay>0) then
   begin
     if (LastPlayed>0) and (ZApp.Time<Self.LastPlayed+ReplayDelay) then
