@@ -2552,6 +2552,8 @@ begin
   glLightfv(Id, GL_POSITION, @Self.Position);
 
   glLightfv(Id, GL_DIFFUSE, @Self.Color);
+  glLightfv(Id, GL_AMBIENT, @Self.Color);
+  glLightfv(Id, GL_SPECULAR, @Self.Color);
 end;
 
 procedure TLight.RemoveLight(const LightId: integer);
