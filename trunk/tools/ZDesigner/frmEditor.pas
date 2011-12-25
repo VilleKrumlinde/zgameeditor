@@ -3157,8 +3157,8 @@ begin
   begin
     Glp.MouseCapture := False;
     ShowCursor(True);
-    Glp.SetFocus;
   end;
+  Glp.SetFocus;
 end;
 
 procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;

@@ -21,11 +21,9 @@ THE SOFTWARE.}
 {
   References:
 
-    Kb of Farbrausch
-      http://www.kebby.org/
+    Kb of Farbrausch http://www.kebby.org/
     Quake 3 source code
     DirectX Audio reference
-      http://msdn.microsoft.com/library/default.asp?url=/library/en-us/directx9_c/dx9_directsound_reference.asp
 }
 unit AudioPlayer;
 
