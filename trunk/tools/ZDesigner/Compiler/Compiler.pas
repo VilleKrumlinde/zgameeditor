@@ -309,6 +309,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   procedure DoGenIdentifier;
   var
     L : TExpAccessLocal;
+    E : TExpMisc;
   begin
     if (Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar) then
     begin
@@ -316,6 +317,12 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       L := TExpAccessLocal.Create(Target);
       L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loLoad;
+      if (Op.Ref is TZcOpArgumentVar) and (Op.Ref as TZcOpArgumentVar).Typ.IsPointer then
+      begin //"ref" argument, need to dereference pointer to get value
+        E := TExpMisc.Create(Target);
+        //todo: need attention in 64-bit mode
+        E.Kind := emPtrDeref4;
+      end;
     end else if LowerCase(Op.Id)='currentmodel' then
     begin
       with TExpMisc.Create(Target) do
@@ -498,10 +505,25 @@ end;
 
 procedure TZCodeGen.GenAddress(Op: TZcOp);
 
-{  procedure DoGenIdent;
+  procedure DoGenIdent;
+  var
+    L : TExpAccessLocal;
   begin
-
-  end;}
+    if Assigned(Op.Ref) and (Op.Ref is TZcOpArgumentVar) and (Op.Ref as TZcOpArgumentVar).Typ.IsPointer then
+    begin
+      //The value of a ref-argument is the address to the referenced variable
+      L := TExpAccessLocal.Create(Target);
+      L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
+      L.Kind := loLoad;
+    end else if Assigned(Op.Ref) and (Op.Ref is TZcOpLocalVar) then
+    begin //Get the address to a local variable
+      L := TExpAccessLocal.Create(Target);
+      L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
+      L.Kind := loGetAddress;
+    end
+    else
+      raise ECodeGenError.Create('Invalid address expression: ' + Op.Id);
+  end;
 
   procedure DoGenSelect;
   var
@@ -528,10 +550,10 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
 
 begin
   case Op.Kind of
-//    zcIdentifier : DoGenIdent;
+    zcIdentifier : DoGenIdent;
     zcSelect : DoGenSelect;
   else
-    raise ECodeGenError.Create('Unsupported operator for address expression: ' + IntToStr(ord(Op.Kind)) );
+    raise ECodeGenError.Create('Cannot get address of expression: ' + Op.ToString);
   end;
 end;
 
@@ -556,7 +578,16 @@ begin
   if LeaveValue=alvPre then
     GenValue(LeftOp);
 
-  if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
+  if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpArgumentVar) and
+    (LeftOp.Ref as TZcOpArgumentVar).Typ.IsPointer  then
+  begin
+    //Local "ref" argument
+    GenAddress(LeftOp);
+    GenValue(RightOp);
+    Target.AddComponent( MakeAssignOp(4) ); //todo: need attention in 64-bit mode
+    if LeaveValue=alvPost then
+      GenValue(LeftOp);
+  end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
     ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
   begin
     //Local variable or argument
@@ -1119,8 +1150,14 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
     if Op.Children.Count<>UserFunc.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
+
     for I := 0 to UserFunc.Arguments.Count-1 do
-      GenValue(Op.Child(I));
+    begin
+      if TZcOpArgumentVar(UserFunc.Arguments[I]).Typ.IsPointer then
+        GenAddress(Op.Child(I))
+      else
+        GenValue(Op.Child(I));
+    end;
 
     if UserFunc.IsExternal then
     begin

@@ -269,7 +269,7 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (loLoad,loStore);
+    Kind : (loLoad,loStore,loGetAddress);
     Index : integer;
     {$ifndef minimal}
     function ExpAsText : string; override;
@@ -1225,6 +1225,7 @@ begin
   case Kind of
     loLoad: StackPushPointer(P^);
     loStore: StackPopToPointer(P^);
+    loGetAddress: StackPushPointer(P);
   end;
 end;
 
@@ -1233,8 +1234,10 @@ function TExpAccessLocal.ExpAsText : string;
 begin
   if Kind=loLoad then
     Result := 'Load'
+  else if Kind=loStore then
+    Result := 'Store'
   else
-    Result := 'Store';
+    Result := 'GetAddress';
   Result :=  Result + ' ' + IntToStr(Self.Index) +  ' (local)';
 end;
 {$endif}

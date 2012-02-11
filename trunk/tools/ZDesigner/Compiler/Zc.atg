@@ -282,9 +282,17 @@ FormalParams
 = ( Par ["," FormalParams] )
 .
 /*------------------------------------------------------------------------*/
-Par (. var Typ : TZcDataType; Arg : TZcOpArgumentVar; .)
-= Type<Typ> ident
+Par (.
+var
+  Typ : TZcDataType;
+  Arg : TZcOpArgumentVar;
+  IsPtr : boolean;
+.)
+=  (. IsPtr := False; .)
+  ["ref" (. IsPtr := True; .) ]
+  Type<Typ> ident
      (.
+        Typ.IsPointer := IsPtr;
         if SymTab.ScopeContains(LexString) then
           SynError(201)
         else
@@ -355,7 +363,8 @@ Argument<var OutOp : TZcOp>
 
 
 Type<var Typ : TZcDataType>
-= ( SimpleType<Typ> )
+=  (. FillChar(Typ,SizeOf(Typ),0); .)
+  ( SimpleType<Typ> )
 .
 
 /*------------------------------------------------------------------------*/
@@ -369,7 +378,7 @@ SimpleType<var Typ : TZcDataType>
 
   /* Changes below also must be made in homographs-section */
   | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
-  | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .) 
+  | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .)
   | "Shader" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ShaderClassId; .)
   | "Bitmap" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZBitmapClassId; .)
   | "Mesh" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MeshClassId; .)
@@ -678,7 +687,7 @@ BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
 
 /*------------------------------------------------------------------------*/
 EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
-= RelExpr<InOp,OutOp>   (. L := OutOp; .)
+= RelExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
   {( "!="   (. Kind := zcCompNE; .)
    | "=="   (. Kind := zcCompEQ; .)
    )
@@ -690,7 +699,7 @@ EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : T
 .
 /*------------------------------------------------------------------------*/
 RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind; .)
-= ShiftExpr<InOp,OutOp>         (. L := OutOp; .)
+= ShiftExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
   { ( "<"       (. Kind := zcCompLT; .)
     | ">"       (. Kind := zcCompGT; .)
     | "<="      (. Kind := zcCompLE; .)
@@ -704,7 +713,7 @@ RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
 .
 /*------------------------------------------------------------------------*/
 ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
-= AddExpr<InOp,OutOp> (. L := OutOp; .)
+= AddExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
   { ("<<"  (. Kind := zcBinaryShiftL; .)
     | ">>" (. Kind := zcBinaryShiftR; .)
     )
@@ -715,7 +724,7 @@ ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind :
 .
 /*------------------------------------------------------------------------*/
 AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
-= MulExpr<InOp,OutOp>   (. L := OutOp; .)
+= MulExpr<InOp,OutOp>   (. L := OutOp; Kind := zcNop; .)
     {( "+"    (. Kind := zcPlus; .)
      | "-"    (. Kind := zcMinus; .)
      ) Unary<Op> MulExpr<Op,R>
@@ -729,7 +738,7 @@ AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : 
 .
 /*------------------------------------------------------------------------*/
 MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
-=       (. OutOp := InOp; .)
+= (. OutOp := InOp; Kind := zcNop; .)
   { ("*"      (. Kind := zcMul; .)
     | "/"     (. Kind := zcDiv; .)
   /*  | "%" */

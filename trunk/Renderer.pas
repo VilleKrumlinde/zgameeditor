@@ -324,6 +324,16 @@ type
     procedure RemoveLight(const LightId : integer);
   end;
 
+  TShadowHandler = class
+  strict private
+    shadowMapWidth, shadowMapHeight : integer;
+    depthTextureId, fboId : integer;
+  public
+    procedure Init;
+    procedure SetupShadowMapCreation;
+    procedure Setup3rdPass;
+  end;
+
 procedure InitRenderer;
 procedure RenderMesh(Mesh : TMesh);
 
@@ -2552,7 +2562,6 @@ begin
   glLightfv(Id, GL_POSITION, @Self.Position);
 
   glLightfv(Id, GL_DIFFUSE, @Self.Color);
-  glLightfv(Id, GL_AMBIENT, @Self.Color);
   glLightfv(Id, GL_SPECULAR, @Self.Color);
 end;
 
@@ -2587,6 +2596,134 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'SpotExponent',{$ENDIF}integer(@SpotExponent), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'SpotCutoff',{$ENDIF}integer(@SpotCutoff), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
+end;
+
+{ TShadowHandler }
+
+//NOT YET USED
+//Using code from http://fabiensanglard.net/shadowmapping/index.php
+procedure TShadowHandler.Init;
+begin
+  shadowMapWidth := 512;
+  shadowMapHeight := 512;
+
+	// Try to use a texture depth component
+	glGenTextures(1, @depthTextureId);
+	glBindTexture(GL_TEXTURE_2D, depthTextureId);
+
+  // GL_LINEAR does not make sense for depth texture. However, next tutorial shows usage of GL_LINEAR and PCF
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  // Remove artefact on the edges of the shadowmap
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+
+  // No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nil);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // create a framebuffer object
+  glGenFramebuffersEXT(1, @fboId);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+
+	// Instruct openGL that we won't bind a color texture with the currently binded FBO
+  glDrawBuffer(GL_NONE);
+//	glReadBuffer(GL_NONE);
+
+	// attach the texture to FBO depth attachment point
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D, depthTextureId, 0);
+
+  {$ifndef minimal}
+  if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+    ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) );
+  {$endif}
+
+	// switch back to window-system-provided framebuffer
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+end;
+
+procedure TShadowHandler.Setup3rdPass;
+begin
+  (*
+	//3rd pass
+	//Draw with bright light
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, white);
+
+	//Calculate texture matrix for projection
+	//This matrix takes us from eye space to the light's clip space
+	//It is postmultiplied by the inverse of the current view matrix when specifying texgen
+	static MATRIX4X4 biasMatrix(0.5f, 0.0f, 0.0f, 0.0f,
+								0.0f, 0.5f, 0.0f, 0.0f,
+								0.0f, 0.0f, 0.5f, 0.0f,
+								0.5f, 0.5f, 0.5f, 1.0f);	//bias from [-1, 1] to [0, 1]
+	MATRIX4X4 textureMatrix=biasMatrix*lightProjectionMatrix*lightViewMatrix;
+
+	//Set up texture coordinate generation.
+	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGenfv(GL_S, GL_EYE_PLANE, textureMatrix.GetRow(0));
+	glEnable(GL_TEXTURE_GEN_S);
+
+	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGenfv(GL_T, GL_EYE_PLANE, textureMatrix.GetRow(1));
+	glEnable(GL_TEXTURE_GEN_T);
+
+	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGenfv(GL_R, GL_EYE_PLANE, textureMatrix.GetRow(2));
+	glEnable(GL_TEXTURE_GEN_R);
+
+	glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGenfv(GL_Q, GL_EYE_PLANE, textureMatrix.GetRow(3));
+	glEnable(GL_TEXTURE_GEN_Q);
+
+	//Bind & enable shadow map texture
+	glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
+	glEnable(GL_TEXTURE_2D);
+
+	//Enable shadow comparison
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE);
+
+	//Shadow comparison should be true (ie not in shadow) if r<=texture
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC_ARB, GL_LEQUAL);
+
+	//Shadow comparison should generate an INTENSITY result
+	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_INTENSITY);
+
+	//Set alpha test to discard false comparisons
+	glAlphaFunc(GL_GEQUAL, 0.99f);
+	glEnable(GL_ALPHA_TEST);
+  *)
+end;
+
+procedure TShadowHandler.SetupShadowMapCreation;
+begin
+(*
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fboId);	//Rendering offscreen
+
+	//Using the fixed pipeline to render to the depthbuffer
+	glUseProgram(0);
+
+	// In the case we render the shadowmap to a higher resolution, the viewport must be modified accordingly.
+	glViewport(0,0,shadowMapWidth,shadowMapHeight);
+
+	// Clear previous frame values
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	//Disable color rendering, we only want to write to the Z-Buffer
+//	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+//	setupMatrices(p_light[0],p_light[1],p_light[2],l_light[0],l_light[1],l_light[2]);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45,RENDER_WIDTH/RENDER_HEIGHT,10,40000);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+//**  gluLookAt(position_x,position_y,position_z,lookAt_x,lookAt_y,lookAt_z,0,1,0);
+
+	// Culling switching, rendering only backface, this is done to avoid self-shadowing
+	glCullFace(GL_FRONT);
+*)
 end;
 
 initialization
