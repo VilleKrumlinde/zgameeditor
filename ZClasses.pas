@@ -241,6 +241,7 @@ type
     Kind : TZcDataTypeKind;
     {$ifndef minimal}
     ReferenceClassId : TZClassIds;
+    IsPointer : boolean;  //True for type of argument in f(ref x) function
     {$endif}
   end;
 

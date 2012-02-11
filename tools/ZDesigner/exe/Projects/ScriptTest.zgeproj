@@ -41,7 +41,24 @@ void assignGlobal(float x) {
   GlobalFloat=x;
 }
 
-const int Lib2Y = 88;]]>
+const int Lib2Y = 88;
+
+//Ref arguments
+
+void refg(ref int x) {
+  x=42;
+}
+
+void reff(ref int x, int y) {
+  y=x;
+  if(y==1)
+    refg(x);
+}
+
+void reffs(ref string s) {
+  if(s=="x")
+    s="hello";
+}]]>
       </Source>
     </ZLibrary>
     <ZExpression>
@@ -546,6 +563,24 @@ if(Lib2X!=42)
 
 if(Lib2X+Lib2Y+2!=132)
   Error=1408;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Ref arguments">
+      <Expression>
+<![CDATA[int test=1;
+reff(test,0);
+if(test!=42)
+  Error=1501;
+
+string s="x";
+reffs(s);
+if(s!="hello")
+  Error=1502;
+
+Global1=1;
+reff(Global1,0);
+if(Global1!=42)
+  Error=1503;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
