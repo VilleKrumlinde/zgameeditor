@@ -236,7 +236,7 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull);
+  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,zctXptr);
   TZcDataType = record
     Kind : TZcDataTypeKind;
     {$ifndef minimal}

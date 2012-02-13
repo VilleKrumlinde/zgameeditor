@@ -103,12 +103,12 @@ const
 	rshiftSym = 31;	scolonSym = 32;	tildeSym = 33;	timesSym = 34;	xorSym = 35;
 	MaterialSym = 36;	SoundSym = 37;	ShaderSym = 38;	BitmapSym = 39;	MeshSym = 40;
 	CameraSym = 41;	FontSym = 42;	SampleSym = 43;	voidSym = 44;	refSym = 45;
-	floatSym = 46;	intSym = 47;	stringSym = 48;	modelSym = 49;	constSym = 50;
-	ifSym = 51;	elseSym = 52;	switchSym = 53;	whileSym = 54;	forSym = 55;
-	breakSym = 56;	continueSym = 57;	returnSym = 58;	_plus_equalSym = 59;	_minus_equalSym = 60;
-	_star_equalSym = 61;	_slash_equalSym = 62;	caseSym = 63;	defaultSym = 64;	_querySym = 65;
-	_bar_barSym = 66;	_and_andSym = 67;	_atSym = 68;	nullSym = 69;	_NOSYMB = 70;
-	_slash_starSym = 71;	_slash_slashSym = 72;
+	floatSym = 46;	intSym = 47;	stringSym = 48;	modelSym = 49;	xptrSym = 50;
+	constSym = 51;	ifSym = 52;	elseSym = 53;	switchSym = 54;	whileSym = 55;
+	forSym = 56;	breakSym = 57;	continueSym = 58;	returnSym = 59;	_plus_equalSym = 60;
+	_minus_equalSym = 61;	_star_equalSym = 62;	_slash_equalSym = 63;	caseSym = 64;	defaultSym = 65;
+	_querySym = 66;	_bar_barSym = 67;	_and_andSym = 68;	_atSym = 69;	nullSym = 70;
+	_NOSYMB = 71;	_slash_starSym = 72;	_slash_slashSym = 73;
 
 var ZcSymSets: TSetArray;
 
@@ -961,6 +961,11 @@ begin
        Get;
                Typ.Kind := zctModel; 
   end
+  else if (CurrentInputSymbol=xptrSym) then
+  begin
+       Get;
+              Typ.Kind := zctXptr; 
+  end
   else if (CurrentInputSymbol=MaterialSym) then
   begin
        Get;
@@ -1776,11 +1781,12 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'">>"'	,'";"'	,'"~"'	,'"*"'	,'"^"'
 	,'"Material"'	,'"Sound"'	,'"Shader"'	,'"Bitmap"'	,'"Mesh"'
 	,'"Camera"'	,'"Font"'	,'"Sample"'	,'"void"'	,'"ref"'
-	,'"float"'	,'"int"'	,'"string"'	,'"model"'	,'"const"'
-	,'"if"'	,'"else"'	,'"switch"'	,'"while"'	,'"for"'
-	,'"break"'	,'"continue"'	,'"return"'	,'"+="'	,'"-="'
-	,'"*="'	,'"/="'	,'"case"'	,'"default"'	,'"?"'
-	,'"||"'	,'"&&"'	,'"@"'	,'"null"'  ,'not');
+	,'"float"'	,'"int"'	,'"string"'	,'"model"'	,'"xptr"'
+	,'"const"'	,'"if"'	,'"else"'	,'"switch"'	,'"while"'
+	,'"for"'	,'"break"'	,'"continue"'	,'"return"'	,'"+="'
+	,'"-="'	,'"*="'	,'"/="'	,'"case"'	,'"default"'
+	,'"?"'	,'"||"'	,'"&&"'	,'"@"'	,'"null"'
+  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -1850,11 +1856,11 @@ begin
 	  States[63] := 53;  States[64] := 56;
     end;
     ZcLiterals := CreateLiterals(True,
-	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','void','ref','float','int','string','model','const'
-		,'if','else','switch','while','for','break','continue','return','case','default','null'],
+	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','void','ref','float','int','string','model','xptr'
+		,'const','if','else','switch','while','for','break','continue','return','case','default','null'],
 	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,voidSym,refSym,floatSym,intSym,stringSym
-		,modelSym,constSym,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym,nullSym
-		]
+		,modelSym,xptrSym,constSym,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym
+		,nullSym]
      );
   end;
   with TZcScanner(Result) do
@@ -1877,18 +1883,18 @@ begin
 
   if Length(ZcSymSets)=0 then
   InitSymSets(ZcSymSets,[
-    	{ 0} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, constSym, -1,
-	{ 1} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, constSym, -1,
-	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, -1,
-	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, -1,
-	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, refSym, floatSym, intSym, stringSym, modelSym, -1,
-	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
-	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
+    	{ 0} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, -1,
+	{ 1} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, -1,
+	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
+	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
+	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, refSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
+	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
+	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
 	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
 	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{ 9} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, -1,
 	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, _atSym, nullSym, -1,
-	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, _atSym, nullSym, -1,
+	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, _atSym, nullSym, -1,
 	{12} decSym, incSym, minusSym, notSym, -1,
 	{13} gtSym, gteSym, ltSym, lteSym, -1,
 	{14} intConSym, realConSym, stringConSym, nullSym, -1,

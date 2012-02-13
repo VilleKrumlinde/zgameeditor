@@ -322,7 +322,7 @@ type
     {$endif}
   end;
 
-  TExpConvertKind = (eckFloatToInt,eckIntToFloat);
+  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr);
   TExpConvert = class(TExpBase)
   protected
     procedure Execute; override;
@@ -1425,6 +1425,8 @@ procedure TExpConvert.Execute;
 var
   V : single;
   I : integer;
+  D : TDefineArray;
+  P : pointer;
 begin
   case Kind of
     eckFloatToInt:
@@ -1437,6 +1439,12 @@ begin
         StackPopTo(I);
         V := I;
         StackPush(V);
+      end;
+    eckArrayToXptr :
+      begin
+        StackPopToPointer(D);
+        P := D.GetData;
+        StackPushPointer(P);
       end;
   end;
 end;

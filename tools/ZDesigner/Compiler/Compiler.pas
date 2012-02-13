@@ -252,7 +252,7 @@ begin
     zctNull :
       TExpConstantInt.Create(Target);
     else
-      raise ECodeGenError.Create('Invalid literal');
+      raise ECodeGenError.Create('Invalid literal: ' + FloatToStr(Value));
   end;
 end;
 
@@ -405,12 +405,14 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     C : TExpConvert;
     COp : TZcOpConvert;
     Kind : TExpConvertKind;
+    FromOp : TZcOp;
   begin
     GenValue(Op.Child(0));
     COp := Op As TZcOpConvert;
     Kind := TExpConvertKind(99);
     C := TExpConvert.Create(Target);
-    case Cop.Child(0).GetDataType.Kind of
+    FromOp := Cop.Child(0);
+    case FromOp.GetDataType.Kind of
       zctFloat :
         case Cop.ToType.Kind of
           zctInt: Kind := eckFloatToInt;
@@ -419,9 +421,17 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
         case Cop.ToType.Kind of
           zctFloat: Kind := eckIntToFloat;
         end;
+      zctReference :
+        case Cop.ToType.Kind of
+          zctXptr :
+            begin
+              if Assigned(FromOp.Ref) and (FromOp.Ref is TDefineArray) then
+                Kind := eckArrayToXptr;
+            end;
+        end;
     end;
     if Ord(Kind)=99 then
-      raise ECodeGenError.Create('Invalid conversion operator');
+      raise ECodeGenError.Create('Invalid conversion: ' + Op.ToString);
     C.Kind := Kind;
   end;
 
