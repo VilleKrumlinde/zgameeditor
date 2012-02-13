@@ -181,7 +181,7 @@ var
 
 const
   ZcTypeNames : array[TZcDataTypeKind] of string =
-(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'));
+(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'),('xptr'));
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin

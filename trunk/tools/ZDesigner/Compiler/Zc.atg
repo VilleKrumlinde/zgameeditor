@@ -375,6 +375,7 @@ SimpleType<var Typ : TZcDataType>
   | "int" (. Typ.Kind := zctInt; .)
   | "string" (. Typ.Kind := zctString; .)
   | "model" (. Typ.Kind := zctModel; .)
+  | "xptr" (. Typ.Kind := zctXptr; .)
 
   /* Changes below also must be made in homographs-section */
   | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
