@@ -530,9 +530,7 @@ begin
 
   Platform_InitGlobals;  //Nollställ timer etc
 
-  ReadAppSettingsFromIni;
-
-  RefreshMenuFromMruList;
+  Application.OnException := OnAppException;
 
   SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
@@ -542,10 +540,8 @@ begin
   UndoIndices := TObjectList.Create(False);
 
   BuildStyleMenu;
-
-  Application.OnException := OnAppException;
-
-  Assert(Self.SoundEditFrame1.Osc1WaveformCombo.Items.Count>0,'Dåligt bygge: osc count=0');
+  ReadAppSettingsFromIni;
+  RefreshMenuFromMruList;
 end;
 
 procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
@@ -653,8 +649,12 @@ begin
   //Initial tree update. Must be after compileall.
   //Slows down opening project but without this call the walls in FpsDemo
   //become black when WallModel is selected.
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  Root.Update;
+  if Self.Visible then
+  begin
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    Root.Update;
+    CheckGLError;
+  end;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -3084,7 +3084,6 @@ begin
     CompEditor.OnKeyPress(Key);
 end;
 
-
 var
   LockMouse : TPoint;
 
@@ -3838,7 +3837,10 @@ procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle 
 
 begin
   if StyleHandle=nil then
-    TStyleManager.TrySetStyle( StyleName )
+  begin
+    TStyleManager.TrySetStyle( StyleName );
+    StyleMenuItem.Find(StyleName).Checked := True;
+  end
   else
     TStyleManager.SetStyle( StyleHandle );
   // Force rebuild gui because Treeview gets recreated and it's difficult to
