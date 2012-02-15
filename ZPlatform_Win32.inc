@@ -1778,7 +1778,7 @@ begin
   //Open file relative to path of exe-file
   {$ifndef minimal}
   //Inside designer we must provide full path to zgeproj-file
-  S := DesignerFilePath + Name;
+  S := ChangeFileExt(DesignerFilePath + Name,'.dll');
   if FileExists(string(S)) then
     Result := LoadLibraryA(PAnsiChar(S))
   else
