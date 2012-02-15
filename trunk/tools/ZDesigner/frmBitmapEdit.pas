@@ -389,6 +389,8 @@ begin
       Continue;
     if (Ci.ZClass.InheritsFrom(TMeshProducer)) then
       Continue; //TODO: test for inherits BitmapProducer instead
+    if Copy(Ci.ZClassName,1,6)<>'Bitmap' then
+      Continue;
 
     M := TMenuItem.Create(AddMenuItem);
     M.Caption := Ci.ZClassName;
