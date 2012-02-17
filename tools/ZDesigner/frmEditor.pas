@@ -377,6 +377,7 @@ type
     procedure SaveCurrentEdits;
     procedure BuildStyleMenu;
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
+    procedure OnTreeRecreate(Sender : TObject);
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -444,6 +445,7 @@ begin
   Tree.RightClickSelect := True;
   Tree.MultiSelect := True;
   Tree.MultiSelectStyle := [msControlSelect, msShiftSelect, msSiblingOnly];
+  Tree.OnRecreate := OnTreeRecreate;
 
   //InitAudio needs hwnd of main window to work
   Platform_DesignerSetDC(0,Self.Handle);
@@ -2585,6 +2587,14 @@ begin
     Tree.DragCursor := crDrag;
 end;
 
+procedure TEditorForm.OnTreeRecreate(Sender: TObject);
+begin
+  //With Style-changes (internal delphi style or windows style) the tree gets recreated
+  //Need to rebuild treenodes otherwise state is lost
+  if Self.Root<>nil then
+    Tree.SetRootComponent(Self.Root);
+end;
+
 procedure TEditorForm.OnTreeDragDrop(Sender, Source: TObject; X, Y: Integer);
 var
   FromNode,ToNode : TTreeNode;
@@ -3843,13 +3853,7 @@ begin
   end
   else
     TStyleManager.SetStyle( StyleHandle );
-  // Force rebuild gui because Treeview gets recreated and it's difficult to
-  // keep the state of the custom treenodes.
-  // See here: http://borland.newsgroups.archived.at/public.delphi.nativeapi.win32/200507/0507011801.html
   Application.ProcessMessages;
-  if Self.Root<>nil then
-    Tree.SetRootComponent(Self.Root);
-
   RecolorHighlighter(ExprSynEdit.Highlighter);
   RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
