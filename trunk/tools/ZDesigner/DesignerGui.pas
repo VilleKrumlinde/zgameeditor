@@ -60,9 +60,11 @@ type
   protected
     function CreateNode: TTreeNode; override;
     function GetPopupMenu: TPopupMenu; override;
+    procedure CreateWnd; override;
   public
     ShowOpCodes : boolean;
     LockShowNode : TTreeNode;
+    OnRecreate : TNotifyEvent;
     function AddNode(C : TZComponent; Parent : TTreenode; Index : integer = -1) : TTreeNode;
     procedure SetRootComponent(C : TZComponent);
     function FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;
@@ -918,6 +920,13 @@ end;
 function TZComponentTreeView.CreateNode: TTreeNode;
 begin
   Result := TZComponentTreeNode.Create(Items);
+end;
+
+procedure TZComponentTreeView.CreateWnd;
+begin
+  inherited;
+  if Assigned(OnRecreate) then
+    OnRecreate(Self);
 end;
 
 function TZComponentTreeView.FindNodeForComponentList(L: TZComponentList): TZComponentTreeNode;

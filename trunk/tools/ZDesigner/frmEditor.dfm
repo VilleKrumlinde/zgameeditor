@@ -565,12 +565,10 @@ object EditorForm: TEditorForm
               Width = 505
               Height = 653
               ExplicitWidth = 505
-              ExplicitHeight = 653
+              ExplicitHeight = 654
               inherited TabSheet1: TTabSheet
-                ExplicitLeft = 4
-                ExplicitTop = 24
                 ExplicitWidth = 497
-                ExplicitHeight = 625
+                ExplicitHeight = 626
                 inherited Label8: TLabel
                   Width = 55
                   ExplicitWidth = 55
@@ -651,6 +649,7 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
+          ExplicitHeight = 654
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -660,7 +659,7 @@ object EditorForm: TEditorForm
             TabOrder = 0
             TabStop = True
             ExplicitWidth = 505
-            ExplicitHeight = 653
+            ExplicitHeight = 654
           end
         end
         object ViewerBlankTabSheet: TTabSheet
@@ -1208,7 +1207,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 96
     Bitmap = {
-      494C01010E00080174011000100000000000FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010E00080178011000100000000000FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1893,7 +1892,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 152
     Bitmap = {
-      494C01010B000E00540110001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
+      494C01010B000E00580110001000F3F6F600FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       000000000000000000000000000000000000F6F6F300F6F6F300F6F6F300F6F6
       F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6F300F6F6

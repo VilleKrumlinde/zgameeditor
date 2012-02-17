@@ -1219,8 +1219,8 @@ begin
     for J := 0 to W-1 do
     begin
       P1 := Data1;
-      Inc(P1, GetIncrement(J + Integer(Round(P2.B * Mw)),
-                           I + Integer(Round(P2.G * Mh))  ,
+      Inc(P1, GetIncrement(J + Round(P2.B * Mw),
+                           I + Round(P2.G * Mh),
                            W,H)
           );
       PF^ := P1^;
