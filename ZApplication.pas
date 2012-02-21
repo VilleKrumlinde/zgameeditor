@@ -133,6 +133,7 @@ type
     //Zc-parsing
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
+    OnGetLibraryPath : function : string of object;
     {$endif}
     {$ifdef zgeviz}
     ZgeVizCameraRotation : TZVector3f;
@@ -157,7 +158,7 @@ type
     procedure ClearConstantPool;
     procedure RefreshSymbolTable;
     procedure Compile;
-    procedure CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+    procedure CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
     procedure DesignerFreeResources; override;
     {$endif}
   end;
@@ -857,11 +858,31 @@ begin
   end;
 end;
 
-procedure TZApplication.CompileProperty(C : TZComponent; const Expr : TZPropertyValue; Prop : TZProperty);
+procedure TZApplication.CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
 var
   CurParent: TZComponent;
   Model : TZComponent;
+  S : string;
+  DefContent : TStringList;
 begin
+  //ExternalLibrary can have definitions in separate file
+  if C is TZExternalLibrary then
+  begin
+    S := string( TZExternalLibrary(C).DefinitionsFile );
+    if S<>'' then
+    begin
+      if not Assigned(Self.OnGetLibraryPath) then
+        raise Exception.Create('OnGetLibraryPath not set');
+      S := Self.OnGetLibraryPath + '\' + S;
+      if not FileExists(S) then
+        raise Exception.Create('Definitions file not found: ' + S);
+      DefContent := TStringList.Create;
+      DefContent.LoadFromFile(S);
+      Expr.ExpressionValue.Source := DefContent.Text;
+      DefContent.Free;
+    end;
+  end;
+
   if Prop.IsDefaultValue(Expr) then
   begin
     //Generate no code for an empty expression
