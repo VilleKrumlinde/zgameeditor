@@ -2388,39 +2388,8 @@ float b2dll_GetPositionY( int body ){ }
 float b2dll_GetAngle( int body ){ }]]>
           </Source>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="OpenGL graphics" ModuleName="opengl32">
-          <Source>
-<![CDATA[//OpenGL definitions
-
-void glColor3f(float r,float g,float b) { }
-void glColor4f(float r,float g,float b,float a) { }
-void glColorMaterial(int face,int mode) { }
-void glCullFace(int mode) { }
-void glClear(int mask) { }
-void glDisable(int cap) { }
-void glDepthFunc(int func) { }
-void glBegin(int mode) { }
-void glEnable(int cap) { }
-void glEnd() { }
-void glFrontFace(int mode) { }
-void glLineWidth(float width) { }
-void glLoadIdentity() { }
-void glMaterialf(int face, int pname, float param) { }
-void glNormal3f(float nx,float ny,float nz) { }
-void glPopAttrib() { }
-void glPopMatrix() { }
-void glPushAttrib(int mask) { }
-void glPushMatrix() { }
-void glRotatef(float angle, float x, float y, float z) { }
-void glScalef(float x, float y, float z) { }
-void glShadeModel(int mode) { }
-void glTexCoord2f(float s, float t) { }
-void glTranslatef(float x,float y,float z) { }
-void glViewport(int x,int y,int width,int height) { }
-void glVertex2f(float x,float y) { }
-void glVertex3f(float x,float y,float z) { }]]>
-          </Source>
-        </ZExternalLibrary>
+        <ZExternalLibrary Comment="OpenGL graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt"/>
+        <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
       </Children>
     </Group>
     <Group Comment="Fonts">
