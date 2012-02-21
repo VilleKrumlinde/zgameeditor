@@ -62,6 +62,7 @@ type
     CallingConvention : (ccStdCall,ccCdecl);
     Source : TZExpressionPropValue;
     {$ifndef minimal}
+    DefinitionsFile : TPropString;
     function GetDisplayName: ansistring; override;
     procedure DesignerReset; override;
     {$endif}
@@ -1599,6 +1600,11 @@ begin
 '//  int SetWindowTextA(int hWnd,string lpString) { }';
     List.GetLast.ExcludeFromBinary := True;
     {$endif}
+
+  {$ifndef minimal}
+  List.AddProperty({$IFNDEF MINIMAL}'DefinitionsFile',{$ENDIF}integer(@DefinitionsFile), zptString);
+    List.SetDesignerProperty;
+  {$endif}
 end;
 
 function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
@@ -1614,6 +1620,11 @@ begin
       {$endif}
   end;
   Result := Platform_GetModuleProc(ModuleHandle,P);
+
+  if Result=nil then
+    //OpenGL functions needs to be handled differently (at least on Win32)
+    Result := Platform_GLLoadProc(P);
+
   if Result=nil then
     {$ifndef minimal}
     ZHalt(P + ' not found');

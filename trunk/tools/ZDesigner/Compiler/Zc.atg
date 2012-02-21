@@ -215,7 +215,7 @@ Zc (. var
 =
   IF (. AllowFunctions .)
   {
-    ConstantDeclaration
+    ConstantDeclarationList
     |
     ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (.
           if SymTab.Contains(LexString) then
@@ -395,17 +395,25 @@ SimpleType<var Typ : TZcDataType>
 . */
 
 
-ConstantDeclaration
+ConstantDeclarationList
+(.
+var
+  Typ : TZcDataType;
+.)
+= "const" Type<Typ> ConstantDeclaration<Typ> {"," ConstantDeclaration<Typ> }
+  ";"
+.
+
+ConstantDeclaration<var Typ : TZcDataType>
 (.
 var
   Cns : TDefineConstant;
-  Typ : TZcDataType;
   Op : TZcOp;
   Lit : TZcOpLiteral;
   CnsName : string;
 .)
 =
-"const" Type<Typ> ident (. CnsName := LexString; .)"=" Expr<Op>
+ident (. CnsName := LexString; .) "=" Expr<Op>
   (.
    Op := Op.Optimize;
    if not (Op is TZcOpLiteral) then
@@ -442,7 +450,6 @@ var
    SymTab.Add(CnsName,Cns);
   .)
 /* {"," ident "=" Expr<Op>} */
-  ";"
 .
 
 /*------------------------------------------------------------------------*
@@ -452,7 +459,7 @@ var
 Statement<var OutOp : TZcOp>
 = (. OutOp := nil; .)
 
-ConstantDeclaration
+ConstantDeclarationList
 
 /*IF IsLocalVarDecl THEN
 BEGIN

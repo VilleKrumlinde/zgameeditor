@@ -378,6 +378,7 @@ type
     procedure BuildStyleMenu;
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     procedure OnTreeRecreate(Sender : TObject);
+    function OnGetLibraryPath: string;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -492,7 +493,7 @@ begin
   AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
-  AutoComp.Options := DefaultProposalOptions + [scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
+  AutoComp.Options := DefaultProposalOptions + [scoCaseSensitive,scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
   AutoComp.TimerInterval := 2000;
 
   //SynEdit autocompletion for parameters
@@ -628,11 +629,17 @@ begin
   Tree.Invalidate;
 end;
 
+function TEditorForm.OnGetLibraryPath : string;
+begin
+  Result := Self.ExePath + 'Lib'
+end;
+
 procedure TEditorForm.SetRoot(C : TZComponent);
 begin
   Self.Root := C;
 
   ZApp := Root as TZApplication;
+  ZApp.OnGetLibraryPath := Self.OnGetLibraryPath;
   Ed.RootComponent := Self.Root;
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
@@ -3355,6 +3362,8 @@ var
       Arg := Func.Arguments[I] as TZcOpArgumentVar;
       if I>0 then
         Result := Result + ',';
+      if Arg.Typ.IsPointer then
+        Result := Result + 'ref ';
       Result := Result + GetZcTypeName(Arg.Typ);
     end;
     Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);

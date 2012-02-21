@@ -34,7 +34,7 @@ type
   protected
 
     procedure _Zc;
-    procedure _ConstantDeclaration;
+    procedure _ConstantDeclarationList;
     procedure _Type(var Typ : TZcDataType);
     procedure _FormalParams;
     procedure _ZcFuncBody;
@@ -46,6 +46,7 @@ type
     procedure _Expr(var OutOp : TZcOp);
     procedure _Argument(var OutOp : TZcOp);
     procedure _SimpleType(var Typ : TZcDataType);
+    procedure _ConstantDeclaration(var Typ : TZcDataType);
     procedure _EmbeddedStatement(var OutOp : TZcOp);
     procedure _Block(var OutOp : TZcOp);
     procedure _StatementExpr(var OutOp : TZcOp);
@@ -644,7 +645,7 @@ begin
        begin
          if (CurrentInputSymbol=constSym) then
          begin
-              _ConstantDeclaration;
+              _ConstantDeclarationList;
          end
          else if InSet(CurrentInputSymbol,2) then
          begin
@@ -717,57 +718,20 @@ begin
   else SynError(1);
 end;
 
-procedure TZc._ConstantDeclaration;
+procedure TZc._ConstantDeclarationList;
 
 var
-  Cns : TDefineConstant;
   Typ : TZcDataType;
-  Op : TZcOp;
-  Lit : TZcOpLiteral;
-  CnsName : string;
 
 begin
   Expect(constSym);
   _Type(Typ);
-  Expect(identSym);
-                           CnsName := LexString; 
-  Expect(assgnSym);
-  _Expr(Op);
-    
-   Op := Op.Optimize;
-   if not (Op is TZcOpLiteral) then
-     ZError('Constant expression expected: ' + Op.ToString);
-
-   Lit := Op as TZcOpLiteral;
-
-   if Lit.Typ.Kind<>Typ.Kind then
-     ZError('Constant expression is not of the expected type: ' + Op.ToString);
-
-   Cns := TDefineConstant.Create(nil);
-   Cns.SetString('Name',AnsiString(CnsName));
-   GlobalNames.Add(Cns);
-
-   case Typ.Kind of
-     zctInt:
-       begin
-         Cns._Type := dvbInt;
-         Cns.IntValue := Round(Lit.Value);
-       end;
-     zctFloat:
-       begin
-         Cns._Type := dvbFloat;
-         Cns.Value := Lit.Value;
-       end;
-     zctString:
-       begin
-         Cns._Type := dvbString;
-         Cns.SetString('StringValue',AnsiString(Lit.StringValue));
-       end;
-     else
-       ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
-   end;
-   SymTab.Add(CnsName,Cns);
-  
+  _ConstantDeclaration(Typ);
+  while (CurrentInputSymbol=commaSym) do
+  begin
+    Get;
+    _ConstantDeclaration(Typ);
+  end;
   Expect(scolonSym);
 end;
 
@@ -806,7 +770,7 @@ begin
   if (CurrentInputSymbol=constSym) then
   begin
      OutOp := nil; 
-       _ConstantDeclaration;
+       _ConstantDeclarationList;
   end
   else if InSet(CurrentInputSymbol,3) then
   begin
@@ -1007,6 +971,56 @@ begin
                 Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; 
   end
   else SynError(4);
+end;
+
+procedure TZc._ConstantDeclaration(var Typ : TZcDataType);
+
+var
+  Cns : TDefineConstant;
+  Op : TZcOp;
+  Lit : TZcOpLiteral;
+  CnsName : string;
+
+begin
+  Expect(identSym);
+         CnsName := LexString; 
+  Expect(assgnSym);
+  _Expr(Op);
+    
+   Op := Op.Optimize;
+   if not (Op is TZcOpLiteral) then
+     ZError('Constant expression expected: ' + Op.ToString);
+
+   Lit := Op as TZcOpLiteral;
+
+   if Lit.Typ.Kind<>Typ.Kind then
+     ZError('Constant expression is not of the expected type: ' + Op.ToString);
+
+   Cns := TDefineConstant.Create(nil);
+   Cns.SetString('Name',AnsiString(CnsName));
+   GlobalNames.Add(Cns);
+
+   case Typ.Kind of
+     zctInt:
+       begin
+         Cns._Type := dvbInt;
+         Cns.IntValue := Round(Lit.Value);
+       end;
+     zctFloat:
+       begin
+         Cns._Type := dvbFloat;
+         Cns.Value := Lit.Value;
+       end;
+     zctString:
+       begin
+         Cns._Type := dvbString;
+         Cns.SetString('StringValue',AnsiString(Lit.StringValue));
+       end;
+     else
+       ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
+   end;
+   SymTab.Add(CnsName,Cns);
+  
 end;
 
 procedure TZc._EmbeddedStatement(var OutOp : TZcOp);
