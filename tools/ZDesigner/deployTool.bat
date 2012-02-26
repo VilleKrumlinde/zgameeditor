@@ -34,6 +34,7 @@ copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
 
 copy .\exe\projects\Visualizer\* ..\..\Deploy\%tool%\projects\Visualizer\
 
+copy .\exe\lib\* ..\..\Deploy\%tool%\lib\
 
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini

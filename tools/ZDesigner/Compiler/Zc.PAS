@@ -806,7 +806,7 @@ begin
           SynError(201)
         else
         begin
-          Arg := TZcOpArgumentVar.Create(GlobalNames);
+          Arg := TZcOpArgumentVar.Create;
           Arg.Id := LexString;
           Arg.Typ := Typ;
           CurrentFunction.AddArgument(Arg);
