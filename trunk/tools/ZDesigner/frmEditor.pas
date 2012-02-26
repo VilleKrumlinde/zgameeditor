@@ -3364,7 +3364,7 @@ var
         Result := Result + ',';
       if Arg.Typ.IsPointer then
         Result := Result + 'ref ';
-      Result := Result + GetZcTypeName(Arg.Typ);
+      Result := Result + GetZcTypeName(Arg.Typ) + ' ' + Arg.Id;
     end;
     Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
   end;
@@ -3532,7 +3532,10 @@ begin
               Arg := Func.Arguments[K] as TZcOpArgumentVar;
               if K>0 then
                 Tmp := Tmp + ',';
-              Tmp := Tmp + '"' + GetZcTypeName(Arg.Typ) + ' arg' + IntToStr(K) + '"';
+              Tmp := Tmp + '"';
+              if Arg.Typ.IsPointer then
+                Tmp := Tmp + 'ref ';
+              Tmp := Tmp + GetZcTypeName(Arg.Typ) + ' ' + Arg.Id + '"';
             end;
             Comp.Form.CurrentIndex := PIndex;
             Comp.ItemList.Clear;

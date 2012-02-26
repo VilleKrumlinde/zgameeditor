@@ -22,16 +22,22 @@ unit uSymTab;
 
 interface
 
-uses Classes,Contnrs,ZLog;
+uses Classes,Contnrs,ZLog, Generics.Collections;
 
 type
   TSymTabFunc = reference to procedure(const S : string; Item : TObject; Context : pointer);
 
   TSymbolTable = class
-  private
+  strict private type
+    TSymTabEntry = class
+      Name : string;
+      Value : TObject;
+    end;
+    TSymTabScope = TObjectDictionary<string,TSymTabEntry>;
+  strict private
     Log : TLog;
-    Scopes : TObjectList;
-    function CurrentScope : TStringList;
+    Scopes : TObjectList<TSymTabScope>;
+    function CurrentScope : TSymTabScope;
     //procedure DumpToLog(const Header : string);
   public
     constructor Create;
@@ -57,38 +63,38 @@ uses SysUtils;
 constructor TSymbolTable.Create;
 begin
   Log := GetLog(Self.ClassName);
-  Scopes := TObjectList.Create(True);
+  Scopes := TObjectList<TSymTabScope>.Create(True);
   ClearAll;
 end;
 
-function TSymbolTable.CurrentScope: TStringList;
+function TSymbolTable.CurrentScope: TSymTabScope;
 begin
-  Result := TStringList(Scopes[Scopes.Count-1]);
+  Result := Scopes[Scopes.Count-1];
 end;
 
 procedure TSymbolTable.PushScope;
 var
-  List : TStringList;
+  List : TSymTabScope;
 begin
-//  DumpToLog('pushscope');
-  List := TStringList.Create;
-  List.Sorted := True;
-  List.Duplicates := dupIgnore;
-  List.CaseSensitive := False;
+  List := TSymTabScope.Create([doOwnsValues]);
   Scopes.Add(List);
 end;
 
 procedure TSymbolTable.PopScope;
 begin
-//  DumpToLog('popscope');
-  Assert(Scopes.Count>1);
   Scopes.Delete(Scopes.Count-1);
 end;
 
 procedure TSymbolTable.Add(const Name: string; Value: TObject);
+var
+  Entry : TSymTabEntry;
+  Key : string;
 begin
-  Assert(not ScopeContains(Name),'Symboltable current scope already contains: ' + Name);
-  CurrentScope.AddObject(Name,Value);
+  Key := LowerCase(Name);
+  Entry := TSymTabEntry.Create;
+  Entry.Name := Name;
+  Entry.Value := Value;
+  CurrentScope.Add(Key,Entry);
 end;
 
 procedure TSymbolTable.ClearAll;
@@ -100,21 +106,26 @@ end;
 function TSymbolTable.Contains(const Name: string): boolean;
 var
   I : integer;
-  List : TStringList;
+  List : TSymTabScope;
+  Key : string;
 begin
   Result := False;
+  Key := LowerCase(Name);
   for I := Scopes.Count-1 downto 0 do
   begin
-    List := TStringList(Scopes[I]);
-    Result := List.IndexOf(Name)>-1;
+    List := Scopes[I];
+    Result := List.ContainsKey(Key);
     if Result then
       Break;
   end;
 end;
 
 function TSymbolTable.ScopeContains(const Name: string): boolean;
+var
+  Key : string;
 begin
-  Result := CurrentScope.IndexOf(Name)>-1;
+  Key := LowerCase(Name);
+  Result := CurrentScope.ContainsKey(Key);
 end;
 
 destructor TSymbolTable.Destroy;
@@ -123,32 +134,21 @@ begin
   inherited;
 end;
 
-{procedure TSymbolTable.DumpToLog(const Header : string);
-var
-  I : integer;
-  List : TStringList;
-begin
-  Log.Write(Header);
-  for I := 0 to Scopes.Count-1 do
-  begin
-    List := TStringList(Scopes[I]);
-    Log.Write( IntToStr(I) + ': ' + List.CommaText );
-  end;
-end;}
-
 function TSymbolTable.Lookup(const Name: string): TObject;
 var
-  I,J : integer;
-  List : TStringList;
+  I : integer;
+  List : TSymTabScope;
+  Key : string;
+  Entry : TSymTabEntry;
 begin
+  Key := LowerCase(Name);
   Result := nil;
   for I := Scopes.Count-1 downto 0 do
   begin
-    List := TStringList(Scopes[I]);
-    J := List.IndexOf(Name);
-    if J>-1 then
+    List := Scopes[I];
+    if List.TryGetValue(Key,Entry) then
     begin
-      Result := List.Objects[J];
+      Result := Entry.Value;
       Break;
     end;
   end;
@@ -166,23 +166,24 @@ begin
 end;
 
 procedure TSymbolTable.Remove(const Name: string);
+var
+  Key : string;
 begin
-//  DumpToLog('before remove: ' + Name);
-  Assert(ScopeContains(Name));
-  CurrentScope.Delete(CurrentScope.IndexOf(Name));
-//  DumpToLog('after remove: ' + Name);
+  Key := LowerCase(Name);
+  CurrentScope.Remove(Key);
 end;
 
 procedure TSymbolTable.Iterate(F: TSymTabFunc; Context: pointer);
 var
-  I,J : integer;
-  List : TStringList;
+  I : integer;
+  List : TSymTabScope;
+  Entry : TSymTabEntry;
 begin
   for I := Scopes.Count-1 downto 0 do
   begin
-    List := TStringList(Scopes[I]);
-    for J := 0 to List.Count - 1 do
-      F(List[J],List.Objects[J],Context);
+    List := Scopes[I];
+    for Entry in List.Values do
+      F(Entry.Name,Entry.Value,Context);
   end;
 end;
 

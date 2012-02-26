@@ -35,7 +35,8 @@ type
     Id : string;
     Children : TZcOpList;
     Ref : TObject;
-    constructor Create(Owner : TObjectList); virtual;
+    constructor Create(Owner : TObjectList); overload; virtual;
+    constructor Create; overload;
     destructor Destroy; override;
     function ToString : string; reintroduce; virtual;
     function Child(I : integer) : TZcOp;
@@ -73,7 +74,6 @@ type
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
   end;
-
 
   TZcOpConvert = class(TZcOp)
   public
@@ -223,6 +223,11 @@ begin
   if Owner=nil then
     Owner := FunctionCleanUps;
   Owner.Add(Self);
+  Create;
+end;
+
+constructor TZcOp.Create;
+begin
   Children := TZcOpList.Create(False);
 end;
 
@@ -230,7 +235,6 @@ destructor TZcOp.Destroy;
 begin
   FreeAndNil(Children);
 end;
-
 
 function TZcOp.GetDataType: TZcDataType;
 var
@@ -626,7 +630,7 @@ begin
   Kind := zcFunction;
   Statements := TObjectList.Create(False);
   Locals := TObjectList.Create(False);
-  Arguments := TObjectList.Create(False);
+  Arguments := TObjectList.Create(True);
 end;
 
 destructor TZcOpFunctionBase.Destroy;
@@ -644,7 +648,6 @@ begin
     Inc(Local.Ordinal);
   Locals.Add(Local);
 end;
-
 
 procedure TZcOpFunctionBase.AddArgument(Arg: TZcOpArgumentVar);
 var
@@ -1066,7 +1069,7 @@ var
     I := 2;
     while I<=Length(Sig) do
     begin
-      Arg := TZcOpArgumentVar.Create(BuiltInCleanUps);
+      Arg := TZcOpArgumentVar.Create;
       Arg.Typ := CharToType(Sig[I]);
       if Arg.Typ.Kind=zctReference then
       begin
