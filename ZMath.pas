@@ -802,15 +802,11 @@ begin
 end;
 
 function MatrixMultiply(const M1, M2: TZMatrix4f) : TZMatrix4f;
-var I,J,K : integer;
+var I,J : integer;
 begin
   for I := 0 to 3 do
     for J := 0 to 3 do
-    begin
-      Result[I,J] := 0;
-      for K := 0 to 3 do
-        Result[I,J] := Result[I,J] + M1[I,K]*M2[K,J];
-    end;
+      Result[I,J] := M1[I,0]*M2[0,J] + M1[I,1]*M2[1,J] + M1[I,2]*M2[2,J] + M1[I,3]*M2[3,J];
 end;
 
 function CycleToRad(const Cycles: single): single; { Radians := Cycles * 2PI }

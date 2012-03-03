@@ -3704,6 +3704,25 @@ begin
   ZStrCopy(Dest,Tmp);
 end;
 
+function ZStrToInt(const Str : PAnsiChar) : integer;
+var
+  P : PAnsiChar;
+  Neg : boolean;
+begin
+  Result := 0;
+  P := Str;
+  Neg := P^='-';
+  if Neg then
+    Inc(P);
+  while P^<>#0 do
+  begin
+    Result := Result * 10 + byte(P^)-48;
+    Inc(P);
+  end;
+  if Neg then
+    Result := 0-Result;
+end;
+
 function ZStrPos(const SubStr,Str : PAnsiChar; const StartPos : integer) : integer;
 var
   P,P1,SaveP : PAnsiChar;
@@ -3751,19 +3770,6 @@ begin
   P := Str + StartPos;
   Move(P^,Dest^,NChars);
   Dest[NChars] := #0;
-end;
-
-function ZStrToInt(const Str : PAnsiChar) : integer;
-var
-  P : PAnsiChar;
-begin
-  Result := 0;
-  P := Str;
-  while P^<>#0 do
-  begin
-    Result := Result * 10 + byte(P^)-48;
-    Inc(P);
-  end;
 end;
 
 
