@@ -69,7 +69,8 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Animators : TZComponentList;
-    OnStop : TZComponentList;   //Körs när group har kört färdigt
+    OnStart : TZComponentList;
+    OnStop : TZComponentList;
     procedure UpdateWithTimeStep(DeltaTime: Single); override;
     procedure Start; override;
     procedure Stop; override;
@@ -276,6 +277,7 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Animators',{$ENDIF}integer(@Animators), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAnimatorBase]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnStop',{$ENDIF}integer(@OnStop), zptComponentList);
 end;
 
@@ -284,6 +286,7 @@ var
   I : integer;
 begin
   inherited;
+  OnStart.ExecuteCommands;
   for I := 0 to Animators.Count-1 do
     TAnimatorBase(Animators[I]).Start;
 end;
