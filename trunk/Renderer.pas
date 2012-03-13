@@ -2733,6 +2733,7 @@ initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=32;{$endif}
   ZClasses.Register(TMaterialTexture,MaterialTextureClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Material';{$endif}
   ZClasses.Register(TShader,ShaderClassId);
@@ -2742,6 +2743,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoTopLevelCreate := True;{$endif}
   ZClasses.Register(TUseMaterial,UseMaterialClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=33;{$endif}
   ZClasses.Register(TRenderMesh,RenderMeshClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 10;{$endif}
@@ -2776,4 +2778,6 @@ initialization
 
   ZClasses.Register(TLight,LightClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'Lights';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=25;{$endif}
+
 end.

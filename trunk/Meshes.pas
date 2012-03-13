@@ -1973,6 +1973,7 @@ initialization
 
   ZClasses.Register(TMesh,MeshClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=21;{$endif}
 
   ZClasses.Register(TMeshBox,MeshBoxClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Mesh';{$endif}

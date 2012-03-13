@@ -1931,15 +1931,16 @@ initialization
   ZClasses.Register(TZExpression,ZExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
   ZClasses.Register(TZLibrary,ZLibraryClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=36;{$endif}
   ZClasses.Register(TDefineVariable,DefineVariableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
   ZClasses.Register(TDefineConstant,DefineConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=29;{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=22;{$endif}
   ZClasses.Register(TZExternalLibrary,ExternalLibraryClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=35;{$endif}
 
   ZClasses.Register(TExpConstantFloat,ExpConstantFloatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}

@@ -680,7 +680,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TPlaySound,PlaySoundClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=18;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=19;{$endif}
   ZClasses.Register(TAudioMixer,AudioMixerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Mix audio. Only one in each project.';{$endif}
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
@@ -689,12 +689,12 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=17;{$endif}
 
   ZClasses.Register(TSample,SampleClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=30;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TSampleExpression,SampleExpressionClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=31;{$endif}
   ZClasses.Register(TSampleImport,SampleImportClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=31;{$endif}
 
   ZClasses.Register(TMusic,MusicClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=16;{$endif}
