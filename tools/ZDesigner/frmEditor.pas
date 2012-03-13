@@ -146,9 +146,7 @@ type
     N6: TMenuItem;
     SoundEditFrame1: TSoundEditFrame;
     AppPreviewStartAction: TAction;
-    AppStartButton: TBitBtn;
     AppPreviewStopAction: TAction;
-    AppStopButton: TBitBtn;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
@@ -219,6 +217,8 @@ type
     OpenStyleMenuItem: TMenuItem;
     N15: TMenuItem;
     OpenStyleDialog: TOpenDialog;
+    AppStartButton: TButton;
+    AppStopButton: TButton;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);

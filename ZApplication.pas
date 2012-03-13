@@ -1222,5 +1222,6 @@ initialization
   ZClasses.Register(TSetAppState,SetAppStateClassId);
   ZClasses.Register(TCamera,CameraClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=26;{$endif}
 
 end.

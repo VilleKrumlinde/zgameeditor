@@ -497,15 +497,19 @@ initialization
   ZClasses.Register(TRepeat,RepeatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=7;{$endif}
   ZClasses.Register(TCondition,ConditionClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=27;{$endif}
   ZClasses.Register(TKeyPress,KeyPressClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=34;{$endif}
   ZClasses.Register(TRefreshContent,RefreshContentClassId);
   ZClasses.Register(TZTimer,ZTimerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Timer';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=5;{$endif}
   ZClasses.Register(TWebOpen,WebOpenClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=37;{$endif}
   ZClasses.Register(TCallComponent,CallComponentClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=28;{$endif}
 
   NetResultList := TZArrayList.CreateReferenced;
   NetMutex := Platform_CreateMutex;

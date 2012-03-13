@@ -550,8 +550,8 @@ var
 
 implementation
 
-uses ZMath,ZLog,ZPlatform
-  {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib, ZApplication,
+uses ZMath,ZLog,ZPlatform, ZApplication
+  {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib,
   Generics.Collections,Zc_Ops
   {$endif}
   ;
@@ -1268,6 +1268,8 @@ begin
   for I := 0 to CleanUps.Count-1 do
     PInteger(CleanUps[I])^:=0;
   CleanUps.Free;
+
+  Result._ZApp := Self.ZApp;
 end;
 
 

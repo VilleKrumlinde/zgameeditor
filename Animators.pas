@@ -553,8 +553,10 @@ initialization
 
   ZClasses.Register(TAnimatorGroup,AnimatorGroupClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=23;{$endif}
   ZClasses.Register(TAnimatorSimple,AnimatorSimpleClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=24;{$endif}
 
   ZClasses.Register(TMouseModelController,MouseModelControllerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
