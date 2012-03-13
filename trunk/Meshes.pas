@@ -246,7 +246,7 @@ type
     procedure Update; override;        //anropas ej ifall active=false
     procedure UpdateCollisionCoordinates;
     procedure Collision(Hit : TModel);
-    procedure AddToScene;
+    procedure AddToScene(App : pointer);
     {$ifndef minimal}
     procedure DesignerUpdate;
     {$endif}
@@ -263,6 +263,7 @@ type
     procedure ClearAll;
   public
     Cats : TZArrayList;
+    App : pointer;
     constructor Create;
     destructor Destroy; override;
     procedure Update;
@@ -324,6 +325,12 @@ uses ZMath, ZApplication
 var
   //Declare as "class var" in TModel when fpc supports static class variables
   _NextModelClassId : integer;
+
+type
+TModelsHelper = class helper for TModels
+public
+  function ZApp : TZApplication;
+end;
 
 procedure ExecuteWithCurrentModel(M : TModel; CommandList : TZComponentList);
 var
@@ -748,10 +755,11 @@ end;
 
 { TModel }
 
-procedure TModel.AddToScene;
+procedure TModel.AddToScene(App : pointer);
 begin
   Self.Active:=True;
-  ZApp.AddModel( Self );
+  Self._ZApp := App;
+  TZApplication(App).AddModel( Self );
   ExecuteWithCurrentModel(Self,Self.OnSpawn);
   {$ifndef minimal}
   //Clones should not increase classid
@@ -1296,7 +1304,7 @@ begin
       //same model instance to model-list
     else
     begin
-      Spawned.AddToScene;
+      Spawned.AddToScene(ZApp);
       if SpawnerIsParent then
       begin
         CurrentModel.ChildModelRefs.Add(Spawned);
@@ -1952,6 +1960,13 @@ begin
 
   CombineStack.Free;
   Combiner.Free;
+end;
+
+{ TModelsHelper }
+
+function TModelsHelper.ZApp: TZApplication;
+begin
+  Result := TZApplication(App);
 end;
 
 initialization

@@ -70,6 +70,8 @@ uses
   {$endif}
 {$ifend}
 
+var
+  ZApp : TZApplication;
 begin
 
   ZApp := ZApplication.LoadApplicationComponent;
