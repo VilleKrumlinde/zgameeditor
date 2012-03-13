@@ -649,8 +649,8 @@ begin
   ZLog.GetLog(Self.ClassName).Write( 'Used channels: ' + S );
   if Changed then
   begin
-    if FindInstanceOf(ZApp,TAudioMixer)=nil then
-      ShowMessage('Audio-channels were activated. Add a AudioMixer-component to your project to save mixer settings.');
+//    if FindInstanceOf(ZApp,TAudioMixer)=nil then
+//      ShowMessage('Audio-channels were activated. Add a AudioMixer-component to your project to save mixer settings.');
   end;
 end;
 

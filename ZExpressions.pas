@@ -399,9 +399,9 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    InvokedItemList : TZComponentList;
     InvokeClassId : integer;
     InvokeArgCount : integer;
-    destructor Destroy; override;
   end;
 
 
@@ -1572,7 +1572,7 @@ begin
         SaveExecutionState;
           //AddToScene will call m.OnSpawn which in turn can run expressions
           M := TModel(M.Clone);
-          M.AddToScene;
+          M.AddToScene(ZApp);
         RestoreExecutionState;
         Dest := pointer(M);
       end;
@@ -1881,12 +1881,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'InvokeClassId',{$ENDIF}integer(@InvokeClassId), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'InvokeArgCount',{$ENDIF}integer(@InvokeArgCount), zptInteger);
-end;
-
-destructor TExpInvokeComponent.Destroy;
-begin
-  Self.InvokeC.Free;
-  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'InvokedItemList',{$ENDIF}integer(@InvokedItemList), zptComponentList);
+    List.GetLast.NeverPersist := True;
 end;
 
 procedure TExpInvokeComponent.Execute;
@@ -1900,7 +1896,7 @@ begin
   if InvokeC=nil then
   begin
     Ci := ComponentManager.GetInfoFromId(TZClassIds(Self.InvokeClassId));
-    Self.InvokeC := Ci.ZClass.Create(nil);
+    Self.InvokeC := Ci.ZClass.Create(Self.InvokedItemList);
   end;
 
   for I := 0 to InvokeArgCount-1 do

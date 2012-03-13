@@ -30,7 +30,7 @@ type
 procedure Platform_InitGlobals;
 
 //W and H is desired rez, returns actual rez + window handle.
-function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 function Platform_GetDisplayRefreshRate : integer;
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
 
@@ -72,7 +72,7 @@ function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : 
 function Platform_LoadLinkedResource : TZInputStream;
 function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 
-function Platform_ShowOptionDialog : boolean;
+function Platform_ShowOptionDialog(App : pointer) : boolean;
 
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
 function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;

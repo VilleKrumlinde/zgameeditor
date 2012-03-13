@@ -33,15 +33,17 @@ type
      );
 
   TCollisionChecks = class
-  private
+  strict private
     Checks : TZArrayList;
     Models : TModels;
     HitList : TZArrayList;
     HitListCat : integer;
     function Test(const Act1, Act2: TModel) : boolean;
     procedure PerformActionOnHitList(const Act1 : TModel; const Action : TCollisionAction);
+  private
+    App : pointer;
   public
-    constructor Create(Models : TModels);
+    constructor Create(Models : TModels; App : pointer);
     destructor Destroy; override;
     procedure Add(Cat1,Cat2 : integer; Action : TCollisionAction = caCollision);
     procedure Update;
@@ -72,6 +74,10 @@ type
     Action : TCollisionAction;
   end;
 
+  TCollisionHelper = class helper for TCollisionChecks
+  private
+    function ZApp : TZApplication;
+  end;
 //http://www.gamedev.net/community/forums/topic.asp?topic_id=364789
 
 function GetProjectedRadius(const O : TOBB_2D; const D : TZVector2f) : single;
@@ -209,11 +215,12 @@ begin
 end;
 {$endif}
 
-constructor TCollisionChecks.Create(Models : TModels);
+constructor TCollisionChecks.Create(Models : TModels; App : pointer);
 begin
   Self.Models := Models;
   Checks := TZArrayList.Create;
   HitList := TZArrayList.CreateReferenced;
+  Self.App := App;
 end;
 
 destructor TCollisionChecks.Destroy;
@@ -511,6 +518,13 @@ end;
 procedure TDefineCollision.Execute;
 begin
   ZApp.Collisions.Add(Cat1,Cat2,Action);
+end;
+
+{ TCollisionHelper }
+
+function TCollisionHelper.ZApp: TZApplication;
+begin
+  Result := TZApplication(App);
 end;
 
 initialization

@@ -190,9 +190,8 @@ type
   //samt event-träd med command-komponenter
   //Obs, äger sina componenter trots att TZArrayList ReferenceOnly=true
   TZComponentList = class(TZArrayList)
-  private
-    {$ifndef minimal}public{$endif} Owner : TZComponent;
   public
+    Owner : TZComponent;
     IsChanged : boolean;
     constructor Create; overload;
     constructor Create(OwnerC : TZComponent); overload;
@@ -337,6 +336,7 @@ type
     DesignDisable : boolean;
     {$endif}
     OwnerList : TZComponentList;
+    _ZApp : pointer;
     constructor Create(OwnerList: TZComponentList); virtual;
     destructor Destroy; override;
     function GetProperties : TZPropertyList;
@@ -958,7 +958,7 @@ begin
         end;
       zptExpression :
         begin
-          List := TZComponentList.Create;
+          List := TZComponentList.Create(Self);
           PZExpressionPropValue(GetPropertyPtr(Prop,0))^.Code := List;
         end;
       zptString :

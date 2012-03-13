@@ -121,12 +121,19 @@ type
   end;
 
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
+{$ifdef minimal}
+var
+  ZApp : TZApplication;
+{$endif}
 begin
   Result := 0;
   case Msg of
     WM_CREATE:
       begin
         // Insert stuff you want executed when the program starts
+        {$ifdef minimal}
+        SetWindowLongPtr(hWnd,GWL_USERDATA, NativeInt(PCreateStruct(lParam).lpCreateParams) );
+        {$endif}
       end;
     WM_CLOSE,WM_DESTROY:
       begin
@@ -143,8 +150,12 @@ begin
     WM_KEYUP:         // Set the released key (wparam) to equal false so we can check if its pressed
       begin
         {$ifdef minimal}
-        if (wParam=VK_ESCAPE) and ZApp.EscapeToQuit then
-          PostMessage(hWnd,WM_QUIT,0,0);
+        if (wParam=VK_ESCAPE) then
+        begin
+          ZApp := TZApplication(GetWindowLongPtr(hWnd,GWL_USERDATA));
+          if ZApp.EscapeToQuit then
+            PostMessage(hWnd,WM_QUIT,0,0);
+        end;
         {$endif}
         Keys[Lo(wParam)] := False;
       end;
@@ -166,7 +177,10 @@ begin
       Keys[ Ord('[') ] := True;
     WM_MOUSEWHEEL :
       begin
+        {$ifdef minimal}
+        ZApp := TZApplication(GetWindowLongPtr(hWnd,GWL_USERDATA));
         ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
+        {$endif}
       end;
 {$ifdef minimal}
     else
@@ -263,7 +277,7 @@ begin
   KillWnd(FullScreen);
 end;
 
-function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 var
   wndClass : TWndClassA;         // Window class
   dwStyle : DWORD;              // Window styles
@@ -424,7 +438,7 @@ begin
                               {$ifend}, //Parent window
                             0,              // No menu
                             hInstance,     // Instance
-                            nil);           // Pass nothing to WM_CREATE
+                            ZApp);         // Pass to WM_CREATE
     if h_Wnd = 0 then
       ZHalt('Unable to create window.');
 
@@ -1362,10 +1376,12 @@ const
   ID_COMBOBOX = 100;  // ID number of the sample combobox.
   ID_CHECKBOX = 101;  // ID number of the checkbox.
 
+
 function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint): Bool; stdcall;
 const
   xstr = 'x'#0;
   DesktopStr = 'Use Desktop resolution'#0;
+  App : TZApplication = nil;
 var
   I : integer;
   Tmp1 : array[0..10] of AnsiChar;
@@ -1376,6 +1392,7 @@ begin
   case Message of
     wm_InitDialog:
     begin
+      App := TZApplication(LParam);
       for I := 0 to High(ScreenModes) do
       begin
         if I=0 then
@@ -1389,7 +1406,7 @@ begin
         end;
         SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
       end;
-      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(ZApp.ScreenMode),0);
+      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(App.ScreenMode),0);
 
       //Center on screen
       GetWindowRect(GetDesktopWindow, R);
@@ -1413,14 +1430,14 @@ begin
 
         ID_CHECKBOX:
         begin
-          ZApp.Fullscreen := not ZApp.Fullscreen;
-          SendMessage(LParam, BM_SETCHECK, Ord(ZApp.Fullscreen), 0);
+          App.Fullscreen := not App.Fullscreen;
+          SendMessage(LParam, BM_SETCHECK, Ord(App.Fullscreen), 0);
         end;
 
         ID_COMBOBOX:
         case HiWord(WParam) of
           CBN_SELCHANGE:
-            byte(ZApp.ScreenMode) := SendMessage(LParam,CB_GETCURSEL,0,0);
+            byte(App.ScreenMode) := SendMessage(LParam,CB_GETCURSEL,0,0);
         end;
 
       end;
@@ -1429,9 +1446,9 @@ begin
   Result := False;
 end;
 
-function Platform_ShowOptionDialog : boolean;
+function Platform_ShowOptionDialog(App : pointer) : boolean;
 begin
-  Result := DialogBoxParamA(hInstance, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,0)=ID_OK;
+  Result := DialogBoxParamA(hInstance, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,NativeInt(App))=ID_OK;
 end;
 
 function Platform_GetDisplayRefreshRate : integer;

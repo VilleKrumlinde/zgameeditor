@@ -1305,7 +1305,7 @@ begin
     Value.PropertyValue.Component := nil
   else
   begin
-    if not ParsePropRef(ZApp.SymTab,nil,S,Value.PropertyValue) then
+    if not ParsePropRef( ((Owner as TZPropertyEditor).RootComponent as TZApplication).SymTab,nil,S,Value.PropertyValue) then
     begin
       ShowMessage('Invalid propname: ' + S);
       Exit;

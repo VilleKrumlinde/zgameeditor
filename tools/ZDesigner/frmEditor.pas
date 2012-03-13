@@ -30,7 +30,7 @@ uses
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg, Vcl.Themes;
+  Jpeg, Vcl.Themes, ZApplication;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -317,6 +317,7 @@ type
     SysLibrary : TZComponent;
     AutoComp,ParamComp : TSynCompletionProposal;
     Log : TLog;
+    ZApp : TZApplication;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -409,7 +410,7 @@ implementation
 {$R *.dfm}
 
 uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
-  ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform, ZApplication,
+  ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;

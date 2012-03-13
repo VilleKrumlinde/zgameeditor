@@ -163,6 +163,10 @@ type
     {$endif}
   end;
 
+  TComponentHelper = class helper for TZComponent
+  public
+    function ZApp : TZApplication;
+  end;
 
   TSetAppState = class(TCommand)
   protected
@@ -182,10 +186,6 @@ function LoadApplicationComponent : TZApplication;
 const
   TicksPerSecond = 1000;
 
-var
-  ZApp : TZApplication;
-
-
 implementation
 
 uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
@@ -200,8 +200,9 @@ constructor TZApplication.Create(OwnerList: TZComponentList);
 begin
   inherited;
   Models := TModels.Create;
+  Models.App := Self;
 
-  Collisions := TCollisionChecks.Create(Models);
+  Collisions := TCollisionChecks.Create(Models,Self);
   DepthList := TZArrayList.CreateReferenced;
 
   {$ifndef minimal}
@@ -253,7 +254,7 @@ begin
 
     if ShowOptionsDialog then
     begin
-      if not Platform_ShowOptionDialog then Halt;
+      if not Platform_ShowOptionDialog(Self) then Halt;
     end;
 
     if((CustomScreenWidth > 0) and (CustomScreenHeight > 0)) then
@@ -268,7 +269,7 @@ begin
       ScreenHeight := ScreenModes[ I ].H;
     end;
 
-    Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption) );
+    Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption), Self);
     Platform_ShowMouse(MouseVisible);
     Renderer.InitRenderer;
     UpdateViewport;
@@ -908,7 +909,7 @@ begin
 
   SymTab.Add('this',C);
   try
-    Compiler.Compile(C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
+    Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
@@ -1053,7 +1054,7 @@ end;
 {$ifndef minimal}
 procedure TZApplication.DesignerStart(const ViewW,ViewH : integer);
 begin
-  Assert(ZApp=Self);
+//  Assert(ZApp=Self);
   Self.Init;
 
   ScreenWidth := ViewW;
@@ -1072,7 +1073,7 @@ end;
 
 procedure TZApplication.DesignerStop;
 begin
-  Assert(ZApp=Self);
+//  Assert(ZApp=Self);
   DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;
@@ -1190,6 +1191,22 @@ begin
     List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
+end;
+
+{ TComponentHelper }
+
+function TComponentHelper.ZApp: TZApplication;
+begin
+  //Get the application that this component belongs to
+  //Put in a helper class to avoid circular dependency on ZClasses and ZApplication units
+  if _ZApp=nil then
+  begin
+    if Self is TZApplication then
+      _ZApp := Self
+    else
+      _ZApp := Self.OwnerList.Owner.ZApp;
+  end;
+  Result := _ZApp;
 end;
 
 initialization

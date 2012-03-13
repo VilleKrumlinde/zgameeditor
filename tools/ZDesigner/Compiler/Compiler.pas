@@ -24,7 +24,7 @@ unit Compiler;
 
 interface
 
-uses ZClasses,ZExpressions,Classes,uSymTab,SysUtils,Contnrs;
+uses ZClasses,ZExpressions,Classes,uSymTab,SysUtils,Contnrs,ZApplication;
 
 type
   EZcErrorBase = class(Exception)
@@ -40,7 +40,7 @@ type
   end;
 
 
-procedure Compile(ThisC : TZComponent;
+procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable;
   ReturnType : TZcDataType;
@@ -57,7 +57,7 @@ var
 
 implementation
 
-uses Zc,Zc_Ops, Vcl.Dialogs, ZApplication, Generics.Collections;
+uses Zc,Zc_Ops, Vcl.Dialogs, Generics.Collections;
 
 
 //ThisC = object som är 'this'
@@ -176,6 +176,7 @@ type
   private
     Target : TZComponentList;
     Component : TZComponent;
+    ZApp : TZApplication;
     SymTab : TSymbolTable;
     Labels : TObjectList;
     LReturn : TZCodeLabel;
@@ -1224,7 +1225,7 @@ end;
 
 
 
-procedure Compile(ThisC : TZComponent; const Ze : TZExpressionPropValue;
+procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable; ReturnType : TZcDataType;
   GlobalNames : TObjectList);
 var
@@ -1268,6 +1269,7 @@ begin
       CodeGen.Target := Target;
       CodeGen.Component := ThisC;
       CodeGen.SymTab := SymTab;
+      CodeGen.ZApp := ZApp;
       try
         CodeGen.GenRoot(Compiler.ZFunctions);
       except

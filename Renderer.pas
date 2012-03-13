@@ -1482,8 +1482,11 @@ begin
       glMatrixMode(GL_TEXTURE);
       glPushMatrix();
       glLoadIdentity();
-      glTranslatef( BmStruct.TransX*(Char mod BmStruct.CharsPerRow) ,
-        BmStruct.TopLeftY - (BmStruct.TransY*((Char div BmStruct.CharsPerRow)+1)),0);
+      {$ifndef minimal} //Avoid potential div by zero
+      if BmStruct.CharsPerRow>0 then
+      {$endif}
+        glTranslatef( BmStruct.TransX*(Char mod BmStruct.CharsPerRow) ,
+          BmStruct.TopLeftY - (BmStruct.TransY*((Char div BmStruct.CharsPerRow)+1)),0);
       glScalef(BmStruct.ScaleX,BmStruct.ScaleY,1);
       glMatrixMode(GL_MODELVIEW);
         Bitmap.UseTextureBegin;
