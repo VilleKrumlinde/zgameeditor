@@ -329,6 +329,7 @@ type
   protected
     ObjId : integer;    //only used in streaming
     IsChanged : boolean;
+    _ZApp : pointer;
     procedure DefineProperties(List : TZPropertyList); virtual;
   public
     {$ifndef minimal}
@@ -336,7 +337,6 @@ type
     DesignDisable : boolean;
     {$endif}
     OwnerList : TZComponentList;
-    _ZApp : pointer;
     constructor Create(OwnerList: TZComponentList); virtual;
     destructor Destroy; override;
     function GetProperties : TZPropertyList;

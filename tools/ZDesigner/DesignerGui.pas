@@ -95,7 +95,7 @@ uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
   frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes,
-  Jpeg;
+  Jpeg, Vcl.Themes, Vcl.Styles;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -581,6 +581,9 @@ end;
 
 { TZPropertyColorEdit }
 
+type
+  TColorPanel = class(TPanel);
+
 var
   ColorDialog : TColorDialog;
 
@@ -599,7 +602,7 @@ begin
     if AlphaTemp>0 then
       Value.ColorfValue.V[3] := AlphaTemp;
     UpdateProp;
-    ValuePanel.Color := ColorDialog.Color;
+    (ValuePanel.Controls[0] as TPanel).Color := ColorDialog.Color;
   end;
 end;
 
@@ -617,16 +620,24 @@ begin
 end;
 
 procedure TZPropertyColorEdit.SetProp(C: TZComponent; Prop: TZProperty);
+var
+  P : TColorPanel;
 begin
   inherited;
+
+//  TStyleManager.Engine.RegisterStyleHook(TColorPanel, TStyleHook);
+  P := TColorPanel.Create(Self);
+  P.Parent := ValuePanel;
+  P.Align := alClient;
+
   if not IsReadOnlyProp then
   begin
-    ValuePanel.OnClick := Self.OnClick;
-    ValuePanel.OnMouseDown := Self.OnMouseDown;
+    P.OnClick := Self.OnClick;
+    P.OnMouseDown := Self.OnMouseDown;
   end;
-  ValuePanel.ParentBackground := False;
-  ValuePanel.Color := ZColorToColor( Value.ColorfValue );
-  ValuePanel.Hint := 'Left click to select color, right click to select alpha';
+  P.ParentBackground := False;
+  P.Color := ZColorToColor( Value.ColorfValue );
+  P.Hint := 'Left click to select color, right click to select alpha';
 end;
 
 { TZPropertyComponentEdit }

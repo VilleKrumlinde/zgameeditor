@@ -692,7 +692,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=30;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TSampleExpression,SampleExpressionClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=31;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=38;{$endif}
   ZClasses.Register(TSampleImport,SampleImportClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=31;{$endif}
 
@@ -702,5 +702,6 @@ initialization
 
   ZClasses.Register(TMusicControl,MusicControlClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Start/stop playing of music';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=42;{$endif}
 
 end.

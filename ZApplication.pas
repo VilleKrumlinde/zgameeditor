@@ -1204,7 +1204,12 @@ begin
     if Self is TZApplication then
       _ZApp := Self
     else
+    begin
+      {$ifndef minimal}
+      Assert((Self.OwnerList<>nil) and (Self.OwnerList.Owner<>nil),'Failed to reach ZApp parent');
+      {$endif}
       _ZApp := Self.OwnerList.Owner.ZApp;
+    end;
   end;
   Result := _ZApp;
 end;

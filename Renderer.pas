@@ -2759,7 +2759,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 12;{$endif}
   ZClasses.Register(TFont,FontClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 12;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 40;{$endif}
   ZClasses.Register(TRenderSetColor,RenderSetColorClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Set the current OpenGL color';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}

@@ -3861,7 +3861,9 @@ void glColorMask(int red,int green,int blue,int alpha) { }
 void glDepthMask(int flag) { }
 void glDisable(int cap) { }
 void glEnable(int cap) { }
-void glFinish(int sfactor,int dfactor) { }
+void glFinish() { }
+void glFlush() { }
+void glBlendFunc(int sfactor,int dfactor) { }
 void glLogicOp(int opcode) { }
 void glStencilFunc(int func,int _ref,int mask) { }
 void glStencilOp(int fail,int zfail,int zpass) { }
@@ -3872,7 +3874,8 @@ void glReadBuffer(int mode) { }
 void glReadPixels(int x,int y,int width,int height,int format,int type,xptr pixels) { }
 void glGetBooleanv(int pname,ref int params) { }
 void glGetDoublev(int pname,xptr params) { }
-int glGetError(int pname,xptr params) { }
+int glGetError() { }
+void glGetFloatv(int pname,xptr params) { }
 void glGetIntegerv(int pname,ref int params) { }
 void glGetTexImage(int target,int level,int format,int type,xptr pixels) { }
 void glGetTexParameterfv(int target,int pname,xptr params) { }
@@ -3882,7 +3885,8 @@ void glGetTexLevelParameteriv(int target,int level,int pname,ref int params) { }
 int glIsEnabled(int cap) { }
 void glViewport(int x,int y,int width,int height) { }
 void glNewList(int list,int mode) { }
-void glEndList(int list) { }
+void glEndList() { }
+void glCallList(int list) { }
 void glCallLists(int n,int type,xptr lists) { }
 void glDeleteLists(int list,int range) { }
 int glGenLists(int range) { }
@@ -3915,6 +3919,7 @@ void glColor4uiv(ref int v) { }
 void glColor4usv(xptr v) { }
 void glEdgeFlag(int flag) { }
 void glEdgeFlagv(ref int flag) { }
+void glEnd() { }
 void glIndexdv(xptr c) { }
 void glIndexf(float c) { }
 void glIndexfv(xptr c) { }
@@ -4027,13 +4032,16 @@ void glTexGeniv(int coord,int pname,ref int params) { }
 void glFeedbackBuffer(int size,int type,xptr buffer) { }
 void glSelectBuffer(int size,ref int buffer) { }
 int glRenderMode(int mode) { }
-void glInitNames(int name) { }
+void glInitNames() { }
+void glLoadName(int name) { }
 void glPassThrough(float token) { }
-void glPopName(int name) { }
+void glPopName() { }
+void glPushName(int name) { }
 void glClearAccum(float red,float green,float blue,float alpha) { }
 void glClearIndex(float c) { }
 void glIndexMask(int mask) { }
 void glAccum(int op,float value) { }
+void glPopAttrib() { }
 void glMap1f(int target,float u1,float u2,int stride,int order,xptr points) { }
 void glMap2f(int target,float u1,float u2,int ustride,int uorder,float v1,float v2,int vstride,int vorder,xptr points) { }
 void glMapGrid1f(int un,float u1,float u2) { }
@@ -4074,11 +4082,14 @@ void glGetTexGendv(int coord,int pname,xptr params) { }
 void glGetTexGenfv(int coord,int pname,xptr params) { }
 void glGetTexGeniv(int coord,int pname,ref int params) { }
 int glIsList(int list) { }
-void glLoadIdentity(xptr m) { }
+void glLoadIdentity() { }
+void glLoadMatrixf(xptr m) { }
 void glLoadMatrixd(xptr m) { }
 void glMatrixMode(int mode) { }
 void glMultMatrixf(xptr m) { }
 void glMultMatrixd(xptr m) { }
+void glPopMatrix() { }
+void glPushMatrix() { }
 void glRotatef(float angle,float x,float y,float z) { }
 void glScalef(float x,float y,float z) { }
 void glTranslatef(float x,float y,float z) { }
@@ -4109,6 +4120,7 @@ void glVertexPointer(int size,int type,int stride,xptr pointer) { }
 int glAreTexturesResident(int n,ref int textures,ref int residences) { }
 void glPrioritizeTextures(int n,ref int textures,xptr priorities) { }
 void glIndexubv(xptr c) { }
+void glPopClientAttrib() { }
 void glBlendEquation(int mode) { }
 void glDrawRangeElements(int mode,int start,int end,int count,int type,xptr indices) { }
 void glTexImage3D(int target,int level,int internalformat,int width,int height,int depth,int border,int format,int type,xptr pixels) { }
@@ -4245,7 +4257,8 @@ void glStencilMaskSeparate(int face,int mask) { }
 void glAttachShader(int program,int shader) { }
 void glBindAttribLocation(int program,int index,string name) { }
 void glCompileShader(int shader) { }
-int glCreateProgram(int type) { }
+int glCreateProgram() { }
+int glCreateShader(int type) { }
 void glDeleteProgram(int program) { }
 void glDeleteShader(int shader) { }
 void glDetachShader(int program,int shader) { }
@@ -4333,13 +4346,15 @@ void glEnablei(int target,int index) { }
 void glDisablei(int target,int index) { }
 int glIsEnabledi(int target,int index) { }
 void glBeginTransformFeedback(int primitiveMode) { }
-void glEndTransformFeedback(int target,int index,int buffer,int offset,int size) { }
+void glEndTransformFeedback() { }
+void glBindBufferRange(int target,int index,int buffer,int offset,int size) { }
 void glBindBufferBase(int target,int index,int buffer) { }
 void glTransformFeedbackVaryings(int program,int count,ref string varyings,int bufferMode) { }
 void glGetTransformFeedbackVarying(int program,int index,int bufSize,ref int length,ref int size,ref int type,string name) { }
 void glClampColor(int target,int clamp) { }
 void glBeginConditionalRender(int id,int mode) { }
-void glEndConditionalRender(int index,int size,int type,int stride,xptr pointer) { }
+void glEndConditionalRender() { }
+void glVertexAttribIPointer(int index,int size,int type,int stride,xptr pointer) { }
 void glGetVertexAttribIiv(int index,int pname,ref int params) { }
 void glGetVertexAttribIuiv(int index,int pname,ref int params) { }
 void glVertexAttribI1i(int index,int x) { }
@@ -4692,12 +4707,15 @@ void glBindTransformFeedback(int target,int id) { }
 void glDeleteTransformFeedbacks(int n,ref int ids) { }
 void glGenTransformFeedbacks(int n,ref int ids) { }
 int glIsTransformFeedback(int id) { }
-void glPauseTransformFeedback(int mode,int id) { }
+void glPauseTransformFeedback() { }
+void glResumeTransformFeedback() { }
+void glDrawTransformFeedback(int mode,int id) { }
 void glDrawTransformFeedbackStream(int mode,int id,int stream) { }
 void glBeginQueryIndexed(int target,int index,int id) { }
 void glEndQueryIndexed(int target,int index) { }
 void glGetQueryIndexediv(int target,int index,int pname,ref int params) { }
-void glReleaseShaderCompiler(int count,ref int shaders,int binaryformat,xptr binary,int length) { }
+void glReleaseShaderCompiler() { }
+void glShaderBinary(int count,ref int shaders,int binaryformat,xptr binary,int length) { }
 void glGetShaderPrecisionFormat(int shadertype,int precisiontype,ref int range,ref int precision) { }
 void glGetProgramBinary(int program,int bufSize,ref int length,ref int binaryFormat,xptr binary) { }
 void glProgramBinary(int program,int binaryFormat,xptr binary,int length) { }
@@ -4775,7 +4793,8 @@ void glGetDoublei_v(int target,int index,xptr data) { }
 void glDebugMessageControlARB(int source,int type,int severity,int count,ref int ids,int enabled) { }
 void glDebugMessageInsertARB(int source,int type,int id,int severity,int length,string buf) { }
 int glGetDebugMessageLogARB(int count,int bufsize,ref int sources,ref int types,ref int ids,ref int severities,ref int lengths,string messageLog) { }
-int glGetGraphicsResetStatusARB(int target,int query,int bufSize,xptr v) { }
+int glGetGraphicsResetStatusARB() { }
+void glGetnMapdvARB(int target,int query,int bufSize,xptr v) { }
 void glGetnMapfvARB(int target,int query,int bufSize,xptr v) { }
 void glGetnMapivARB(int target,int query,int bufSize,ref int v) { }
 void glGetnPixelMapfvARB(int map,int bufSize,xptr values) { }
@@ -4888,14 +4907,18 @@ void glPointParameterfEXT(int pname,float param) { }
 void glPointParameterfvEXT(int pname,xptr params) { }
 void glPointParameterfSGIS(int pname,float param) { }
 void glPointParameterfvSGIS(int pname,xptr params) { }
-int glGetInstrumentsSGIX(int size,ref int buffer) { }
+int glGetInstrumentsSGIX() { }
+void glInstrumentsBufferSGIX(int size,ref int buffer) { }
 int glPollInstrumentsSGIX(ref int marker_p) { }
 void glReadInstrumentsSGIX(int marker) { }
-void glStartInstrumentsSGIX(int marker) { }
+void glStartInstrumentsSGIX() { }
+void glStopInstrumentsSGIX(int marker) { }
 void glFrameZoomSGIX(int factor) { }
+void glTagSampleBufferSGIX() { }
 void glDeformationMap3fSGIX(int target,float u1,float u2,int ustride,int uorder,float v1,float v2,int vstride,int vorder,float w1,float w2,int wstride,int worder,xptr points) { }
 void glReferencePlaneSGIX(xptr equation) { }
-void glFlushRasterSGIX(int n,xptr points) { }
+void glFlushRasterSGIX() { }
+void glFogFuncSGIS(int n,xptr points) { }
 void glGetFogFuncSGIS(xptr points) { }
 void glImageTransformParameteriHP(int target,int pname,int param) { }
 void glImageTransformParameterfHP(int target,int pname,float param) { }
@@ -4918,7 +4941,8 @@ void glListParameteriSGIX(int list,int pname,int param) { }
 void glListParameterivSGIX(int list,int pname,ref int params) { }
 void glIndexMaterialEXT(int face,int mode) { }
 void glLockArraysEXT(int first,int count) { }
-void glUnlockArraysEXT(int pname,xptr params) { }
+void glUnlockArraysEXT() { }
+void glCullParameterdvEXT(int pname,xptr params) { }
 void glCullParameterfvEXT(int pname,xptr params) { }
 void glFragmentColorMaterialSGIX(int face,int mode) { }
 void glFragmentLightfSGIX(int light,int pname,float param) { }
@@ -4996,7 +5020,8 @@ void glBinormal3ivEXT(ref int v) { }
 void glBinormal3svEXT(xptr v) { }
 void glTangentPointerEXT(int type,int stride,xptr pointer) { }
 void glBinormalPointerEXT(int type,int stride,xptr pointer) { }
-void glFinishTextureSUNX(int factor) { }
+void glFinishTextureSUNX() { }
+void glGlobalAlphaFactorbSUN(int factor) { }
 void glGlobalAlphaFactoriSUN(int factor) { }
 void glGlobalAlphaFactorfSUN(float factor) { }
 void glGlobalAlphaFactoruiSUN(int factor) { }
@@ -5046,7 +5071,8 @@ void glBlendFuncSeparateINGR(int sfactorRGB,int dfactorRGB,int sfactorAlpha,int 
 void glVertexWeightfEXT(float weight) { }
 void glVertexWeightfvEXT(xptr weight) { }
 void glVertexWeightPointerEXT(int size,int type,int stride,xptr pointer) { }
-void glFlushVertexArrayRangeNV(int length,xptr pointer) { }
+void glFlushVertexArrayRangeNV() { }
+void glVertexArrayRangeNV(int length,xptr pointer) { }
 void glCombinerParameterfvNV(int pname,xptr params) { }
 void glCombinerParameterfNV(int pname,float param) { }
 void glCombinerParameterivNV(int pname,ref int params) { }
@@ -5060,6 +5086,7 @@ void glGetCombinerOutputParameterfvNV(int stage,int portion,int pname,xptr param
 void glGetCombinerOutputParameterivNV(int stage,int portion,int pname,ref int params) { }
 void glGetFinalCombinerInputParameterfvNV(int variable,int pname,xptr params) { }
 void glGetFinalCombinerInputParameterivNV(int variable,int pname,ref int params) { }
+void glResizeBuffersMESA() { }
 void glWindowPos2dvMESA(xptr v) { }
 void glWindowPos2fMESA(float x,float y) { }
 void glWindowPos2fvMESA(xptr v) { }
@@ -5171,7 +5198,9 @@ void glGetTexBumpParameterfvATI(int pname,xptr param) { }
 int glGenFragmentShadersATI(int range) { }
 void glBindFragmentShaderATI(int id) { }
 void glDeleteFragmentShaderATI(int id) { }
-void glBeginFragmentShaderATI(int dst,int coord,int swizzle) { }
+void glBeginFragmentShaderATI() { }
+void glEndFragmentShaderATI() { }
+void glPassTexCoordATI(int dst,int coord,int swizzle) { }
 void glSampleMapATI(int dst,int interp,int swizzle) { }
 void glColorFragmentOp1ATI(int op,int dst,int dstMask,int dstMod,int arg1,int arg1Rep,int arg1Mod) { }
 void glColorFragmentOp2ATI(int op,int dst,int dstMask,int dstMod,int arg1,int arg1Rep,int arg1Mod,int arg2,int arg2Rep,int arg2Mod) { }
@@ -5194,7 +5223,9 @@ void glGetArrayObjectivATI(int array,int pname,ref int params) { }
 void glVariantArrayObjectATI(int id,int type,int stride,int buffer,int offset) { }
 void glGetVariantArrayObjectfvATI(int id,int pname,xptr params) { }
 void glGetVariantArrayObjectivATI(int id,int pname,ref int params) { }
-void glBeginVertexShaderEXT(int id) { }
+void glBeginVertexShaderEXT() { }
+void glEndVertexShaderEXT() { }
+void glBindVertexShaderEXT(int id) { }
 int glGenVertexShadersEXT(int range) { }
 void glDeleteVertexShaderEXT(int id) { }
 void glShaderOp1EXT(int op,int res,int arg1) { }
@@ -5277,7 +5308,8 @@ void glGenOcclusionQueriesNV(int n,ref int ids) { }
 void glDeleteOcclusionQueriesNV(int n,ref int ids) { }
 int glIsOcclusionQueryNV(int id) { }
 void glBeginOcclusionQueryNV(int id) { }
-void glEndOcclusionQueryNV(int id,int pname,ref int params) { }
+void glEndOcclusionQueryNV() { }
+void glGetOcclusionQueryivNV(int id,int pname,ref int params) { }
 void glGetOcclusionQueryuivNV(int id,int pname,ref int params) { }
 void glPointParameteriNV(int pname,int param) { }
 void glPointParameterivNV(int pname,ref int params) { }
@@ -5335,7 +5367,8 @@ void glVertexAttribs3hvNV(int index,int n,xptr v) { }
 void glVertexAttribs4hvNV(int index,int n,xptr v) { }
 void glPixelDataRangeNV(int target,int length,xptr pointer) { }
 void glFlushPixelDataRangeNV(int target) { }
-void glPrimitiveRestartNV(int index) { }
+void glPrimitiveRestartNV() { }
+void glPrimitiveRestartIndexNV(int index) { }
 void glUnmapObjectBufferATI(int buffer) { }
 void glStencilOpSeparateATI(int face,int sfail,int dpfail,int dppass) { }
 void glStencilFuncSeparateATI(int frontfunc,int backfunc,int _ref,int mask) { }
@@ -5438,7 +5471,8 @@ void glEnableIndexedEXT(int target,int index) { }
 void glDisableIndexedEXT(int target,int index) { }
 int glIsEnabledIndexedEXT(int target,int index) { }
 void glBeginTransformFeedbackNV(int primitiveMode) { }
-void glEndTransformFeedbackNV(int count,ref int attribs,int bufferMode) { }
+void glEndTransformFeedbackNV() { }
+void glTransformFeedbackAttribsNV(int count,ref int attribs,int bufferMode) { }
 void glBindBufferRangeNV(int target,int index,int buffer,int offset,int size) { }
 void glBindBufferOffsetNV(int target,int index,int buffer,int offset) { }
 void glBindBufferBaseNV(int target,int index,int buffer) { }
@@ -5457,13 +5491,16 @@ void glGetTexParameterIivEXT(int target,int pname,ref int params) { }
 void glGetTexParameterIuivEXT(int target,int pname,ref int params) { }
 void glClearColorIiEXT(int red,int green,int blue,int alpha) { }
 void glClearColorIuiEXT(int red,int green,int blue,int alpha) { }
-void glFrameTerminatorGREMEDY(int id,int mode) { }
+void glFrameTerminatorGREMEDY() { }
+void glBeginConditionalRenderNV(int id,int mode) { }
+void glEndConditionalRenderNV() { }
 void glGetVideoivNV(int video_slot,int pname,ref int params) { }
 void glGetVideouivNV(int video_slot,int pname,ref int params) { }
 void glGetVideoi64vNV(int video_slot,int pname,xptr params) { }
 void glGetVideoui64vNV(int video_slot,int pname,xptr params) { }
 void glBeginTransformFeedbackEXT(int primitiveMode) { }
-void glEndTransformFeedbackEXT(int target,int index,int buffer,int offset,int size) { }
+void glEndTransformFeedbackEXT() { }
+void glBindBufferRangeEXT(int target,int index,int buffer,int offset,int size) { }
 void glBindBufferOffsetEXT(int target,int index,int buffer,int offset) { }
 void glBindBufferBaseEXT(int target,int index,int buffer) { }
 void glTransformFeedbackVaryingsEXT(int program,int count,ref string varyings,int bufferMode) { }
@@ -5689,7 +5726,9 @@ void glBindTransformFeedbackNV(int target,int id) { }
 void glDeleteTransformFeedbacksNV(int n,ref int ids) { }
 void glGenTransformFeedbacksNV(int n,ref int ids) { }
 int glIsTransformFeedbackNV(int id) { }
-void glPauseTransformFeedbackNV(int mode,int id) { }
+void glPauseTransformFeedbackNV() { }
+void glResumeTransformFeedbackNV() { }
+void glDrawTransformFeedbackNV(int mode,int id) { }
 void glGetPerfMonitorGroupsAMD(ref int numGroups,int groupsSize,ref int groups) { }
 void glGetPerfMonitorCountersAMD(int group,ref int numCounters,ref int maxActiveCounters,int counterSize,ref int counters) { }
 void glGetPerfMonitorGroupStringAMD(int group,int bufSize,ref int length,string groupString) { }
@@ -5755,7 +5794,8 @@ void glFogCoordFormatNV(int type,int stride) { }
 void glVertexAttribFormatNV(int index,int size,int type,int normalized,int stride) { }
 void glVertexAttribIFormatNV(int index,int size,int type,int stride) { }
 void glGetIntegerui64i_vNV(int value,int index,xptr result) { }
-void glTextureBarrierNV(int index,int texture,int level,int layered,int layer,int access,int format) { }
+void glTextureBarrierNV() { }
+void glBindImageTextureEXT(int index,int texture,int level,int layered,int layer,int access,int format) { }
 void glVertexAttribL1dvEXT(int index,xptr v) { }
 void glVertexAttribL2dvEXT(int index,xptr v) { }
 void glVertexAttribL3dvEXT(int index,xptr v) { }
@@ -5799,6 +5839,7 @@ int glIsNameAMD(int identifier,int name) { }
 void glDebugMessageEnableAMD(int category,int severity,int count,ref int ids,int enabled) { }
 void glDebugMessageInsertAMD(int category,int severity,int id,int length,string buf) { }
 int glGetDebugMessageLogAMD(int count,int bufsize,ref int categories,ref int severities,ref int ids,ref int lengths,string message) { }
+void glVDPAUFiniNV() { }
 void glVDPAUMapSurfacesNV(int numSurfaces,xptr surfaces) { }
 void glVDPAUUnmapSurfacesNV(int numSurface,xptr surfaces) { }
 void glTexImage2DMultisampleCoverageNV(int target,int coverageSamples,int colorSamples,int internalFormat,int width,int height,int fixedSampleLocations) { }

@@ -129,30 +129,31 @@ var
                 BadType := True;
             end;
 
-            while Xml.Scan do
-            begin
-              if (Xml.CurPartType=ptEmptyTag) and (Xml.CurName='param') then
+            if Xml.CurPartType=ptStartTag then
+              while Xml.Scan do
               begin
-                P.Name := Xml.CurAttr.Value('name');
-                if (P.Name='string') or (P.Name='ref') then
-                  P.Name := '_' + P.Name;
-                P.Typ := TypeMap[ Xml.CurAttr.Value('type') ];
-                if Xml.CurAttr.Value('kind')='array' then
+                if (Xml.CurPartType=ptEmptyTag) and (Xml.CurName='param') then
                 begin
-                  ToZgeType(P.Typ);
-                  if P.Typ='int' then
-                    P.Typ := 'ref int'
-                  else if (P.Typ='string') or (P.Typ='ref string') then
-                  else
-                    P.Typ := 'xptr';
-                end
-                else if not ToZgeType(P.Typ) then
-                  BadType := True;
-                F.Params.Add(P);
+                  P.Name := Xml.CurAttr.Value('name');
+                  if (P.Name='string') or (P.Name='ref') then
+                    P.Name := '_' + P.Name;
+                  P.Typ := TypeMap[ Xml.CurAttr.Value('type') ];
+                  if Xml.CurAttr.Value('kind')='array' then
+                  begin
+                    ToZgeType(P.Typ);
+                    if P.Typ='int' then
+                      P.Typ := 'ref int'
+                    else if (P.Typ='string') or (P.Typ='ref string') then
+                    else
+                      P.Typ := 'xptr';
+                  end
+                  else if not ToZgeType(P.Typ) then
+                    BadType := True;
+                  F.Params.Add(P);
+                end;
+                if (Xml.CurPartType=ptEndTag) and (Xml.CurName='function') then
+                  Break;
               end;
-              if (Xml.CurPartType=ptEndTag) and (Xml.CurName='function') then
-                Break;
-            end;
 
             if not BadType then
               Funcs.Add(F)

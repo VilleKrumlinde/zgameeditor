@@ -560,6 +560,7 @@ initialization
 
   ZClasses.Register(TMouseModelController,MouseModelControllerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=43;{$endif}
   ZClasses.Register(TStartAnimator,StartAnimatorClassId);
 
 //Remove until we know how to implement correctly

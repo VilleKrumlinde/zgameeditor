@@ -42,9 +42,6 @@ type
     Handle: GLuint;
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     PropWidth,PropHeight : TBitmapSize;
-    {$ifdef zgeviz}
-    OriginalPropWidth,OriginalPropHeight : TBitmapSize;
-    {$endif}
     Filter : (bmfLinear,bmfNearest,bmfMipmap);
     constructor CreateFromBitmap(B : TZBitmap);
     destructor Destroy; override;
@@ -243,7 +240,7 @@ begin
     {$endif}
     glViewport(0, 0, PixelWidth, PixelHeight);
     {$ifdef zgeviz}
-    ZApp.ViewportChanged;
+    //ZApp.ViewportChanged;
     {$endif}
 end;
 
@@ -268,7 +265,7 @@ begin
 
   glPopAttrib;
   {$ifdef zgeviz}
-  ZApp.ViewportChanged;
+  //ZApp.ViewportChanged;
   {$endif}
 end;
 

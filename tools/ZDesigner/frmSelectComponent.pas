@@ -35,7 +35,7 @@ var
 
 implementation
 
-uses dmCommon,uHelp,CommCtrl;
+uses dmCommon,uHelp,CommCtrl, Vcl.Styles, Vcl.Themes, Math;
 
 {$R *.dfm}
 
@@ -69,14 +69,31 @@ begin
   Result := TZComponentInfo(CompListView.Selected.Data);
 end;
 
+//Reference: http://theroadtodelphi.wordpress.com/2012/03/14/vcl-styles-and-owner-draw/
 procedure TSelectComponentForm.CompListViewCustomDrawItem(
   Sender: TCustomListView; Item: TListItem; State: TCustomDrawState;
   var DefaultDraw: Boolean);
+var
+  LStyles   : TCustomStyleServices;
+  LColor    : TColor;
+  Fs : TThemedTreeView;
 begin
+  LStyles:=StyleServices;
+
   if EnabledList[Item.Index] then
-    CompListView.Canvas.Font.Color := clWindowText
+    Fs := ttItemNormal
   else
-    CompListView.Canvas.Font.Color := clGrayText;
+    Fs := ttItemDisabled;
+  if not LStyles.GetElementColor(LStyles.GetElementDetails(Fs), ecTextColor, LColor) or (LColor = clNone) then
+  begin
+    if EnabledList[Item.Index] then
+	    LColor := LStyles.GetSystemColor(clWindowText)
+    else
+	    LColor := LStyles.GetSystemColor(clGrayText);
+  end;
+
+  Sender.Canvas.Font.Color  := LColor;
+  Sender.Canvas.Brush.Color := LStyles.GetStyleColor(scListView);
 end;
 
 procedure TSelectComponentForm.CompListViewDblClick(Sender: TObject);

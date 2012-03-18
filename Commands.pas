@@ -502,6 +502,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=34;{$endif}
   ZClasses.Register(TRefreshContent,RefreshContentClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=39;{$endif}
   ZClasses.Register(TZTimer,ZTimerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Timer';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
