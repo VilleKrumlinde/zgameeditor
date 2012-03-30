@@ -356,10 +356,11 @@ begin
 end;
 
 function TZApplication.Main : boolean;
-{$ifdef minimal}
 var
+{$ifdef minimal}
   Remaining : integer;
 {$endif}
+  Now : single;
 
   {$if not (defined(minimal) or defined(ZgeViz))}
   procedure InDumpDebugInfo;
@@ -375,9 +376,9 @@ var
 
 begin
 
-  {$ifdef xminimal} //**
-  if (not LimitFrameRate) or
-     ( (Platform_GetTime>=NextFrameTime) {or (FpsCounter<TargetFrames)} ) then
+  Now := Platform_GetTime;
+  {$ifdef minimal}
+  if Now>=NextFrameTime then
   {$endif}
   begin
     if FrameRateStyle<>frsFree then
@@ -386,7 +387,9 @@ begin
         TargetFrameRate := Self.FixedFrameRate;
       if (TargetFrameRate<1) or (TargetFrameRate>200) then
         TargetFrameRate := 60;
-      NextFrameTime := Platform_GetTime + (1.0 / TargetFrameRate);
+      if NextFrameTime<Now-1 then
+        NextFrameTime := Now;
+      NextFrameTime := NextFrameTime + (1.0 / TargetFrameRate);
     end;
 
     UpdateTime;

@@ -32,9 +32,8 @@ copy .\exe\projects\RenderTexture.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderPass.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
 
-copy .\exe\projects\Visualizer\* ..\..\Deploy\%tool%\projects\Visualizer\
-
 copy .\exe\lib\* ..\..\Deploy\%tool%\lib\
+copy .\exe\Templates\* ..\..\Deploy\%tool%\Templates\
 
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini

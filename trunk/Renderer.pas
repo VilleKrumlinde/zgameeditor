@@ -2502,26 +2502,28 @@ end;
 
 procedure TSetRenderTarget.Execute;
 begin
-  if FbosSupported then
+  if not FbosSupported then
+    Exit;
+
+  if CurrentRenderTarget<>nil then
   begin
-    if Self.RenderTarget=nil then
-    begin
-      if CurrentRenderTarget<>nil then
-      begin
-        //Restore main framebuffer, disable current rendertarget and update texture mipmap
-        CurrentRenderTarget.UseTextureBegin;
-        glGenerateMipmapEXT(GL_TEXTURE_2D);
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-        CurrentRenderTarget := nil;
-        ZApp.UpdateViewport;
-      end;
-    end
-    else
-    begin
-      //CurrentRenderTarget must be set before viewport-change because of zgeviz-onviewcallback
-      CurrentRenderTarget := Self.RenderTarget;
-      CurrentRenderTarget.Activate;
-    end;
+    //update texture mipmap of current render target
+    CurrentRenderTarget.UseTextureBegin;
+    glGenerateMipmapEXT(GL_TEXTURE_2D);
+  end;
+
+  if Self.RenderTarget=nil then
+  begin
+    //Restore main framebuffer
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    CurrentRenderTarget := nil;
+    ZApp.UpdateViewport;
+  end
+  else
+  begin
+    //CurrentRenderTarget must be set before viewport-change because of zgeviz-onviewcallback
+    CurrentRenderTarget := Self.RenderTarget;
+    CurrentRenderTarget.Activate;
   end;
 end;
 
