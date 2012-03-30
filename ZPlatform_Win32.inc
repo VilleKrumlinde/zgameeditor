@@ -1457,7 +1457,7 @@ var
 begin
   FillChar(dmScreenSettings, SizeOf(dmScreenSettings), 0);
   dmScreenSettings.dmSize       := SizeOf(dmScreenSettings);
-  EnumDisplaySettings(nil,0,dmScreenSettings);
+  EnumDisplaySettings(nil,DWORD(-1),dmScreenSettings);
   Result := dmScreenSettings.dmDisplayFrequency;
 end;
 

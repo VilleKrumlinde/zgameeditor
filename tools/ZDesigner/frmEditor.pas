@@ -99,7 +99,7 @@ type
     MainMenu1: TMainMenu;
     File1: TMenuItem;
     Exit1: TMenuItem;
-    Newproject1: TMenuItem;
+    NewProjectMenuItem: TMenuItem;
     Save1: TMenuItem;
     N3: TMenuItem;
     ToolBar1: TToolBar;
@@ -219,6 +219,8 @@ type
     OpenStyleDialog: TOpenDialog;
     AppStartButton: TButton;
     AppStopButton: TButton;
+    emptyproject1: TMenuItem;
+    N16: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -345,8 +347,8 @@ type
     function InsertAndRenameComponent(InsertC: TZComponent;
       DestTreeNode: TZComponentTreeNode; Index : integer = -1) : TZComponentTreeNode;
     procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString; Level : TLogLevel);
-    procedure OpenProject(const FileName: string);
-    procedure NewProject;
+    procedure OpenProject(const FileName: string; const IsTemplate : boolean = False);
+    procedure NewProject(const FromTemplate : string = '');
     function CloseProject: boolean;
     procedure OnExprChanged(Sender: TObject);
     procedure BuildBinary(const PlayerName, OutputName: string);
@@ -380,6 +382,7 @@ type
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     procedure OnTreeRecreate(Sender : TObject);
     function OnGetLibraryPath: string;
+    procedure FillNewMenuTemplateItems;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -413,7 +416,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils;
 
 { TEditorForm }
 
@@ -546,7 +549,24 @@ begin
   BuildStyleMenu;
   ReadAppSettingsFromIni;
   RefreshMenuFromMruList;
+  FillNewMenuTemplateItems;
 end;
+
+procedure TEditorForm.FillNewMenuTemplateItems;
+var
+  Name : string;
+  Mi : TMenuItem;
+begin
+  for Name in TDirectory.GetFiles(ExePath + 'Templates') do
+  begin
+    Mi := TMenuItem.Create(Self);
+    Mi.Action := NewProjectAction;
+    Mi.Hint := Name;
+    Mi.Caption := TPath.GetFileNameWithoutExtension(Name);
+    NewProjectMenuItem.Add(Mi);
+  end;
+end;
+
 
 procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
 begin
@@ -584,7 +604,7 @@ begin
   ReopenMenuItem.Enabled := ReopenMenuItem.Count>0;
 end;
 
-procedure TEditorForm.OpenProject(const FileName : string);
+procedure TEditorForm.OpenProject(const FileName : string; const IsTemplate : boolean = False);
 var
   C : TZComponent;
 
@@ -618,7 +638,10 @@ begin
           Exit;
         end;
     end;
-    SetCurrentFileName(FileName);
+    if IsTemplate then
+      SetCurrentFileName('')
+    else
+      SetCurrentFileName(FileName);
   end;
 
   //Assign ZApp-global to current application
@@ -2661,18 +2684,18 @@ const
   MruListMax=8;
 begin
   CurrentFileName := F;
-  Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
-  SetCurrentDir( ExtractFilePath(CurrentFileName) );
-  //Add to MRU-list
   if F<>'' then
   begin
+    Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
+    SetCurrentDir( ExtractFilePath(CurrentFileName) );
+    //Add to MRU-list
     if MruList.IndexOf(F)>-1 then
       MruList.Delete(MruList.IndexOf(F));
     MruList.Insert(0,F);
     while MruList.Count>MruListMax do
       MruList.Delete(MruListMax);
-    RefreshMenuFromMruList;
   end;
+  RefreshMenuFromMruList;
 end;
 
 procedure TEditorForm.SetFileChanged(Value: Boolean);
@@ -3063,15 +3086,15 @@ begin
   ZApp := nil;
 end;
 
-procedure TEditorForm.NewProject;
+procedure TEditorForm.NewProject(const FromTemplate : string = '');
 begin
   if CloseProject then
-    OpenProject('');
+    OpenProject(FromTemplate,FromTemplate<>'');
 end;
 
 procedure TEditorForm.NewProjectActionExecute(Sender: TObject);
 begin
-  NewProject;
+  NewProject( ((Sender as TAction).ActionComponent as TMenuItem).Hint);
 end;
 
 procedure TEditorForm.NormalsCheckBoxClick(Sender: TObject);
@@ -3845,20 +3868,21 @@ procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle 
     I : integer;
     A : TSynHighlighterAttributes;
   begin
-    H.WhitespaceAttribute.Background := StyleServices.GetStyleColor(scTreeView);
+    H.WhitespaceAttribute.Background := StyleServices.GetSystemColor(clWindow);
     for I := 0 to H.AttrCount-1 do
     begin
       A := H.Attribute[I];
       if A.Style=[fsBold] then
-        A.Foreground := clHighLight
+        A.Foreground := StyleServices.GetSystemColor(clWindowText)
       else if A.Style=[fsItalic] then
-        A.Foreground := clGrayText
+        A.Foreground := StyleServices.GetSystemColor(clGrayText)
       else
-        A.Foreground := StyleServices.GetStyleFontColor(sfTreeItemTextNormal);
+        A.Foreground := StyleServices.GetSystemColor(clWindowText);
     end;
   end;
 
 begin
+  TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
   if StyleHandle=nil then
   begin
     TStyleManager.TrySetStyle( StyleName );
@@ -3867,8 +3891,8 @@ begin
   else
     TStyleManager.SetStyle( StyleHandle );
   Application.ProcessMessages;
-  RecolorHighlighter(ExprSynEdit.Highlighter);
-  RecolorHighlighter(ShaderSynEdit.Highlighter);
+//  RecolorHighlighter(ExprSynEdit.Highlighter);
+//  RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
 
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
