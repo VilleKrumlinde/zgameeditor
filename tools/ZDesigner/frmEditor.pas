@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2008-2012 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -561,6 +561,7 @@ begin
   begin
     Mi := TMenuItem.Create(Self);
     Mi.Action := NewProjectAction;
+    Mi.ShortCut := 0;
     Mi.Hint := Name;
     Mi.Caption := TPath.GetFileNameWithoutExtension(Name);
     NewProjectMenuItem.Add(Mi);
@@ -1425,43 +1426,15 @@ end;
 
 procedure SetupGLShading;
 const
-{  FlightIntensity=0.5;
-  Light0Diffuse  : array[0..3] of single = (FlightIntensity,FlightIntensity,FlightIntensity,1);
-  FlightSpecularIntensity=0.7;
-  Light0Specular  : array[0..3] of single = (FlightSpecularIntensity,FlightSpecularIntensity,FlightSpecularIntensity,1);}
-
   AmbientLight : array[0..3] of single = (0.4, 0.4, 0.4, 1.0);
-  DiffuseMaterial : array[0..3] of single = (0.5, 0.5, 0.5, 1);
-  LightPos : array[0..3] of single = (0, 0, 1, 0);
   //exempel från http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
-  no_mat : array[0..3] of single = (0.0, 0.0, 0.0, 1.0 );
-  mat_ambient : array[0..3] of single = (0.7, 0.7, 0.7, 1.0 );
-  mat_ambient_color : array[0..3] of single = (0.8, 0.8, 0.2, 1.0 );
-  mat_diffuse : array[0..3] of single = ( 0.1, 0.5, 0.8, 1.0 );
   mat_specular : array[0..3] of single = ( 0.2, 0.2, 0.2, 1.0 );
-  AllOne : array[0..3] of single = ( 1, 1, 1, 1 );
   no_shininess = 0;
   low_shininess = 5;
   high_shininess = 100;
-  mat_emission : array[0..3] of single = (0.3, 0.2, 0.2, 0.0);
 begin
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
-
-  {  http://sjbaker.org/steve/omniv/opengl_lighting.html
-  Set GL_LIGHT_0's position to something like 45 degrees to the 'vertical'. Coordinate (1,1,0) should work nicely in most cases.
-  Set GL_LIGHT_0's Ambient color to 0,0,0,1 (default)
-  Set GL_LIGHT_0's Diffuse color to 1,1,1,1 (default)
-  Set GL_LIGHT_0's Specular color to 1,1,1,1 (default)
-  Set the glLightModel's global ambient to 0.2,0.2,0.2,1 (this is the default).
-  Don't set any other glLight or glLightModel options - just let them default.
-* Enable GL_LIGHTING and GL_LIGHT_0.
-* Enable GL_COLOR_MATERIAL and set glColorMaterial to GL_AMBIENT_AND_DIFFUSE. This means that glMaterial will control the polygon's specular and emission colours and the ambient and diffuse will both be set using glColor.
-* Set the glMaterial's Specular colour to 1,1,1,1
-  Set the glMaterial's Emission colour to 0,0,0,1 (default)
-  Set the glColor to whatever colour you want each polygon to basically appear to be. That sets the Ambient and Diffuse to the same value which is what you generally want.
-  Using Alpha with lighting enabled.
-  }
 
   glLightModelfv( GL_LIGHT_MODEL_AMBIENT, @AmbientLight );
 
@@ -1474,12 +1447,8 @@ begin
   glMaterialfv(GL_FRONT, GL_SPECULAR, @mat_specular);
   glMateriali(GL_FRONT, GL_SHININESS, low_shininess);
 
-//    glMaterialfv(GL_FRONT, GL_EMISSION, @no_mat);
+  glEnable(GL_CULL_FACE);
 
-    glEnable(GL_CULL_FACE);
-
-//    glPolygonMode(GL_FRONT,GL_FILL);
-//    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
   glEnable(GL_NORMALIZE);
 end;
 
@@ -2554,6 +2523,9 @@ begin
   AppPreviewStopAction.Enabled := True;
   Glp.SetFocus;
   IsAppRunning := True;
+  //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
+  AppStartButton.Perform(CM_RECREATEWND, 0, 0);
+  AppStopButton.Perform(CM_RECREATEWND, 0, 0);
 end;
 
 procedure TEditorForm.AppPreviewStopActionExecute(Sender: TObject);
@@ -2566,6 +2538,9 @@ begin
   AppPreviewStartAction.Enabled := True;
   AppPreviewStopAction.Enabled := False;
   IsAppRunning := False;
+  //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
+  AppStartButton.Perform(CM_RECREATEWND, 0, 0);
+  AppStopButton.Perform(CM_RECREATEWND, 0, 0);
 end;
 
 procedure TEditorForm.ResetComponentActionExecute(Sender: TObject);
@@ -3861,6 +3836,36 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
+//http://stackoverflow.com/questions/9978106/vcl-styles-menu-hotkey-inconsistency
+type
+  TFormStyleHookFix= class (TFormStyleHook)
+  procedure CMDialogChar(var Message: TWMKey); message CM_DIALOGCHAR;
+  end;
+
+  TFormStyleHookHelper= class  helper for TFormStyleHook
+  private
+     function CheckHotKeyItem(ACharCode: Word): Boolean;
+  end;
+
+{ TFormStyleHookFix }
+
+procedure TFormStyleHookFix.CMDialogChar(var Message: TWMKey);
+begin
+   if ((Message.KeyData and $20000000) <> 0 ) and (CheckHotKeyItem(Message.CharCode)) then
+    begin
+      Message.Result := 1;
+      Handled := True;
+    end
+end;
+
+{ TFormStyleHookHelper }
+function TFormStyleHookHelper.CheckHotKeyItem(ACharCode: Word): Boolean;
+begin
+  Result:=False;
+  if Self.FMainMenuBarHook<>nil then
+   Result:=Self.FMainMenuBarHook.CheckHotKeyItem(ACharCode);
+end;
+
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
 
   procedure RecolorHighlighter(H : TSynCustomHighlighter);
@@ -3882,11 +3887,13 @@ procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle 
   end;
 
 begin
+  TStyleManager.Engine.RegisterStyleHook(TEditorForm, TFormStyleHookFix);
   TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
   if StyleHandle=nil then
   begin
     TStyleManager.TrySetStyle( StyleName );
-    StyleMenuItem.Find(StyleName).Checked := True;
+    if Assigned(StyleMenuItem.Find(StyleName)) then
+      StyleMenuItem.Find(StyleName).Checked := True;
   end
   else
     TStyleManager.SetStyle( StyleHandle );
@@ -3917,6 +3924,11 @@ var
   M : TMenuItem;
   S : string;
 begin
+  for S in TDirectory.GetFiles(ExePath + 'Styles','*.vsf') do
+  begin
+    TStyleManager.LoadFromFile(S);
+  end;
+
   for S in TStyleManager.StyleNames do
   begin
     M := TMenuItem.Create(Self);

@@ -140,8 +140,8 @@ type
   private
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
     procedure OnClick(Sender : TObject);
-    procedure OnMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure OnMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure OnPaint(Sender : TObject);
   end;
 
   TZPropertyComponentEdit = class(TZPropertyEditBase)
@@ -580,10 +580,6 @@ begin
 end;
 
 { TZPropertyColorEdit }
-
-type
-  TColorPanel = class(TPanel);
-
 var
   ColorDialog : TColorDialog;
 
@@ -602,7 +598,7 @@ begin
     if AlphaTemp>0 then
       Value.ColorfValue.V[3] := AlphaTemp;
     UpdateProp;
-    (ValuePanel.Controls[0] as TPanel).Color := ColorDialog.Color;
+    (ValuePanel.Controls[0] as TPaintBox).Color := ColorDialog.Color;
   end;
 end;
 
@@ -619,23 +615,33 @@ begin
   end;
 end;
 
+procedure TZPropertyColorEdit.OnPaint(Sender: TObject);
+var
+  P : TPaintBox;
+begin
+  P := Sender as TPaintBox;
+  P.Canvas.Brush.Color := P.Color;
+  P.Canvas.FillRect(P.BoundsRect);
+end;
+
 procedure TZPropertyColorEdit.SetProp(C: TZComponent; Prop: TZProperty);
 var
-  P : TColorPanel;
+  P : TPaintBox;
+
 begin
   inherited;
 
-//  TStyleManager.Engine.RegisterStyleHook(TColorPanel, TStyleHook);
-  P := TColorPanel.Create(Self);
+  //Use a paintbox to make it work with vcl-styles
+  P := TPaintBox.Create(Self);
   P.Parent := ValuePanel;
   P.Align := alClient;
+  P.OnPaint := Self.OnPaint;
 
   if not IsReadOnlyProp then
   begin
     P.OnClick := Self.OnClick;
     P.OnMouseDown := Self.OnMouseDown;
   end;
-  P.ParentBackground := False;
   P.Color := ZColorToColor( Value.ColorfValue );
   P.Hint := 'Left click to select color, right click to select alpha';
 end;
