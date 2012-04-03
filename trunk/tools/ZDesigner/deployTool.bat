@@ -32,8 +32,13 @@ copy .\exe\projects\RenderTexture.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderPass.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
 
+copy .\exe\projects\ModPlay\ModPlay.zgeproj ..\..\Deploy\%tool%\projects\ModPlay\
+copy .\exe\projects\ModPlay\bass.dll ..\..\Deploy\%tool%\projects\ModPlay\
+copy .\exe\projects\ModPlay\4-mat_-_rose.xm ..\..\Deploy\%tool%\projects\ModPlay\
+
 copy .\exe\lib\* ..\..\Deploy\%tool%\lib\
 copy .\exe\Templates\* ..\..\Deploy\%tool%\Templates\
+copy .\exe\Styles\readme.txt ..\..\Deploy\%tool%\Styles\
 
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini
