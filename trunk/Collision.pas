@@ -530,5 +530,6 @@ end;
 initialization
 
   ZClasses.Register(TDefineCollision,DefineCollisionClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 60;{$endif}
 
 end.

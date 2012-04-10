@@ -307,9 +307,12 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'File';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'A file on disk for reading and writing of data';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 55;{$endif}
   ZClasses.Register(TFileAction,FileActionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Controls when to read/write from a File';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 57;{$endif}
   ZClasses.Register(TFileMoveData,FileMoveDataClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Move data from/to a File. Use only in File.OnRead or OnWrite.';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 56;{$endif}
 
 end.

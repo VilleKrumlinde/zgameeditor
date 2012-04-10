@@ -993,7 +993,7 @@ begin
 //**************************************************************************
 
    if Selected = nil then
-      exit;
+      Exit;
 
    TreeView_SelectItem( Selected.Handle, Selected.ItemId );
 
