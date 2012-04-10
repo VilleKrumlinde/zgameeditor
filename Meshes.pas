@@ -2017,6 +2017,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=18;{$endif}
   ZClasses.Register(TSetModelState,SetModelStateClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 53;{$endif}
 
 end.
 

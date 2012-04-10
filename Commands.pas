@@ -303,6 +303,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}integer(@Interval), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := -1;
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRelativeTime',{$ENDIF}integer(@Time), zptFloat);
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+    List.GetLast.NeverPersist := True;
 end;
 
 {$ifndef minimal}

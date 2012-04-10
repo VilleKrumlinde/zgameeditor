@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application">
+<ZApplication Name="App" Caption="ZGameEditor application" NoSound="1">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt"/>
   </OnLoaded>
+  <OnRender>
+    <ZExpression>
+      <Expression>
+<![CDATA[//Draw distorted circles using calls to the OpenGL API.
+
+glLineWidth(1);
+int circleCount=10;
+for(int circle=0; circle<circleCount; circle++) {
+  //Set color
+  float col=circle * 0.1;
+  glColor3f(col,col,1-col);
+
+  //Line-loop
+  glBegin(GL_LINE_LOOP);
+  float radius=4 - circle*0.4;
+  int steps=128;
+  for(int i=0; i<steps; i++) {
+    float a=i * (PI*2)/steps;
+    float xshift=noise2(App.Time*0.1,0)*3;
+    float x=xshift+sin(a) * radius;
+    float y=cos(a) * radius;
+    x+=noise3( abs(x),abs(y),App.Time*0.45 + (circle*1.131))*1;
+    y+=noise3( abs(x*0.3),abs(y*0.95),App.Time*0.3 + (circle*1.133441))*1;
+    glVertex2f(x,y);
+  }
+  glEnd();
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnRender>
 </ZApplication>

@@ -2115,7 +2115,8 @@ var
       glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
       glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
       glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+      glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
     end else
     begin
       glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
@@ -2740,6 +2741,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Material';{$endif}
   ZClasses.Register(TShader,ShaderClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 50;{$endif}
   ZClasses.Register(TShaderVariable,ShaderVariableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'UniformVariables';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NoTopLevelCreate := True;{$endif}
@@ -2751,12 +2753,16 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 10;{$endif}
   ZClasses.Register(TRenderTransform,RenderTransformClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 44;{$endif}
   ZClasses.Register(TRenderSprite,RenderSpriteClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 51;{$endif}
   ZClasses.Register(TRenderBeams,RenderBeamsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 52;{$endif}
   ZClasses.Register(TRenderTransformGroup,RenderTransformGroupClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 45;{$endif}
   ZClasses.Register(TRenderText,RenderTextClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 12;{$endif}
@@ -2769,14 +2775,18 @@ initialization
   ZClasses.Register(TRenderNet,RenderNetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Render a 2D net';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 48;{$endif}
   ZClasses.Register(TRenderParticles,RenderParticlesClassId);
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Simple 2D particlesystem';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 49;{$endif}
 
   ZClasses.Register(TRenderTarget,RenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 46;{$endif}
   ZClasses.Register(TSetRenderTarget,SetRenderTargetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnRender';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 47;{$endif}
 
   ZClasses.Register(TLight,LightClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'Lights';{$endif}

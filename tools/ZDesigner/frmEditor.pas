@@ -557,7 +557,7 @@ var
   Name : string;
   Mi : TMenuItem;
 begin
-  for Name in TDirectory.GetFiles(ExePath + 'Templates') do
+  for Name in TDirectory.GetFiles(ExePath + 'Templates','*.zgeproj') do
   begin
     Mi := TMenuItem.Create(Self);
     Mi.Action := NewProjectAction;
@@ -3868,7 +3868,7 @@ end;
 
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
 
-  procedure RecolorHighlighter(H : TSynCustomHighlighter);
+{  procedure RecolorHighlighter(H : TSynCustomHighlighter);
   var
     I : integer;
     A : TSynHighlighterAttributes;
@@ -3884,9 +3884,11 @@ procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle 
       else
         A.Foreground := StyleServices.GetSystemColor(clWindowText);
     end;
-  end;
+  end;}
 
 begin
+  //Make sure we leave the currently selected component because nodes will be recreated
+  Tree.Selected := nil;
   TStyleManager.Engine.RegisterStyleHook(TEditorForm, TFormStyleHookFix);
   TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
   if StyleHandle=nil then

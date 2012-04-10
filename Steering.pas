@@ -544,6 +544,7 @@ end;
 initialization
 
   ZClasses.Register(TSteeringController,SteeringControllerClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 58;{$endif}
   ZClasses.Register(TSteeringBehaviour,SteeringBehaviourClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'SteeringController';{$endif}
 

@@ -562,6 +562,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'OnUpdate';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=43;{$endif}
   ZClasses.Register(TStartAnimator,StartAnimatorClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 59;{$endif}
 
 //Remove until we know how to implement correctly
 //  ZClasses.Register(TCurvePoint,CurvePointClassId);
