@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2012 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ type
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
-    {$if (not defined(minimal))}public{$ifend}
+    {$if (not defined(minimal)) or defined(android)}public{$ifend}
     function Main : boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -375,7 +375,6 @@ var
   {$ifend}
 
 begin
-
   Now := Platform_GetTime;
   {$ifdef minimal}
   if Now>=NextFrameTime then
@@ -585,9 +584,13 @@ var
 begin
   DepthList.Clear;
 
+  {$ifndef android}
   glGetFloatv(GL_PROJECTION_MATRIX, @Matrix);
   glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
   Matrix := MatrixMultiply(TmpM,Matrix);
+  {$else}
+  Matrix := IdentityHmgMatrix;
+  {$endif}
 
   for I := 0 to Models.Cats.Count-1 do
   begin

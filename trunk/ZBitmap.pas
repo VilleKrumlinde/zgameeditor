@@ -65,6 +65,9 @@ implementation
 {$ifndef minimal}
 uses BitmapProducers,ZApplication,ZLog,SysUtils;
 {$endif}
+{$ifdef Android}
+uses ZMath;
+{$endif}
 
 { TZBitmap }
 
@@ -112,12 +115,10 @@ var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
-    {$ifdef atibughunt}glActiveTexture($84C0);{$endif} //**
-  UseTextureBegin;
-  {$ifdef atibughunt}
-    TestOk(Self); //**
-    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$ifdef android}
+    FillChar(P^,PixelHeight * PixelWidth * 4 * SizeOf(single),0);
   {$endif}
+  UseTextureBegin;
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
   Result := P;
 end;
@@ -127,11 +128,10 @@ var
   P : PFloat;
 begin
   GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
-  UseTextureBegin;
-  {$ifdef atibughunt}
-    TestOk(Self); //**
-    Assert(P<>nil,'P is nil, w' + IntToStr(Self.PixelWidth) + ' h' + IntToStr(Self.PixelHeight)); //**
+  {$ifdef android}
+    FillChar(P^,PixelHeight * PixelWidth * 3 * SizeOf(single),0);
   {$endif}
+  UseTextureBegin;
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_FLOAT,P);
   Result := P;
 end;
@@ -171,6 +171,34 @@ const
 var
   Size,W,H,I : integer;
   P : pointer;
+
+  {$ifdef android}
+  NewMemory : pointer;
+  procedure ConvertToByte;
+  var
+    P : PFloat;
+    DP: PByte;
+    I : integer;
+  begin
+    P := Self.Memory;
+    I := W*H;
+    if MemFormat=GL_RGB then
+      I := I * 3
+    else
+      I := I * 4;
+    GetMem(NewMemory,I);
+    DP := NewMemory;
+    while I>0 do
+    begin
+      DP^ := Trunc( Clamp(P^,0,1) * 255 );
+      Inc(P);
+      Inc(DP);
+      Dec(I);
+    end;
+    Self.Memory := NewMemory;
+    Self.MemType := GL_UNSIGNED_BYTE;
+  end;
+  {$endif}
 begin
   CleanUp;
 
@@ -194,15 +222,24 @@ begin
 
     if Memory<>nil then
     begin
-      glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, Self.MemFormat, Self.MemType, Memory);
+      {$ifdef android}
+      if Self.MemType=GL_FLOAT then
+        ConvertToByte
+      else
+        NewMemory := nil;
+      {$endif}
+      glTexImage2D(GL_TEXTURE_2D, 0, Self.MemFormat, W, H, 0, Self.MemFormat, Self.MemType, Memory);
       Memory := nil;
+      {$ifdef android}
+      FreeMem(NewMemory);
+      {$endif}
     end else
     begin
       //Must be set to something, otherwise copy from framebuffer won't work
       Size := H*W*4;
       GetMem(P, Size);
       FillChar(P^,Size,$ff);
-      glTexImage2D(GL_TEXTURE_2D, 0, 4, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
       FreeMem(P);
     end;
 

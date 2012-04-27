@@ -124,9 +124,9 @@ const
 implementation
 
 
-{$if defined(CPUX64)}
-uses System.Math;
-{$ifend}
+{$ifndef CPU386}
+uses Math;
+{$endif}
 
 
 function ColorFtoB(const C : TZColorf) : integer;
@@ -183,14 +183,6 @@ begin
   Result[1] := Y;
   Result[2] := Z;
 end;
-
-
-{function VecMult3(const v1, v2: TZVector3f): TZVector3f;
-begin
-  Result[0] := v1[0] * v2[0];
-  Result[1] := v1[1] * v2[1];
-  Result[2] := v1[2] * v2[2];
-end;}
 
 procedure VecMult3(var v1 : TZVector3f; const v2: TZVector3f); overload;
 begin
@@ -284,7 +276,11 @@ asm
 end;
 {$else}
 begin
+  {$ifdef FPC}
+  Result := Math.Tan(X);
+  {$else}
   Result := System.Tangent(X);
+  {$endif}
 end;
 {$endif}
 
@@ -354,8 +350,7 @@ function VecIsNull3(const V : TZVector3f): boolean;
 begin
   //Noll-test är snabbare och kompaktare att göra med intar
 //  Result := (V[0]=0) and (V[1]=0) and (V[2]=0);
-  Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and
-    (PInteger(@V[2])^=0);
+  Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and (PInteger(@V[2])^=0);
   {$ifndef minimal}
 //  if Result then
 //    ZAssert(((abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON)),'VecIsNull3');
@@ -365,8 +360,7 @@ end;
 function VecIsNull4(const V : TZVector4f): boolean;
 begin
 //  Result := (V[0]=0) and (V[1]=0) and (V[2]=0) and (V[3]=0);
-  Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and
-    (PInteger(@V[2])^=0) and (PInteger(@V[3])^=0);
+  Result := (PInteger(@V[0])^=0) and (PInteger(@V[1])^=0) and (PInteger(@V[2])^=0) and (PInteger(@V[3])^=0);
   {$ifndef minimal}
 //  if Result then
 //    ZAssert(result=(abs(V[0])<EPSILON) and (abs(V[1])<EPSILON) and (abs(V[2])<EPSILON) and (abs(V[3])<EPSILON),'VecIsNull4');
@@ -421,7 +415,7 @@ asm
 end;
 {$else}
 begin
-  Result := System.Math.ArcTan2(Y,X);
+  Result := {$ifndef FPC}System.{$endif}Math.ArcTan2(Y,X);
 end;
 {$endif}
 
@@ -585,7 +579,7 @@ asm
 end;
 {$else}
 begin
-  Result := System.Math.IntPower(Base,Exponent);
+  Result := {$ifndef FPC}System.{$endif}Math.IntPower(Base,Exponent);
 end;
 {$endif}
 
@@ -745,7 +739,11 @@ end;
 var
   S,C : double;
 begin
+  {$ifdef FPC}
+  Math.SinCos(Theta, S, C);
+  {$else}
   System.SineCosine(Theta, S, C);
+  {$endif}
   Sin := S;
   Cos := C;
 end;
@@ -908,7 +906,7 @@ asm
 end;
 {$else}
 begin
-  Result := System.Math.Log2(X);
+  Result := {$ifndef FPC}System.{$endif}Math.Log2(X);
 end;
 {$endif}
 

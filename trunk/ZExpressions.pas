@@ -1921,7 +1921,9 @@ begin
     Self.InvokeC.SetProperty(Prop,V);
   end;
 
-  TCommand(InvokeC).Execute;
+  SaveExecutionState;
+    TCommand(InvokeC).Execute;
+  RestoreExecutionState;
 end;
 
 initialization
