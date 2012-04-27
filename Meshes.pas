@@ -27,7 +27,7 @@ uses ZClasses, ZBitmap, ZExpressions, ZOpenGL;
 
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
-  TMeshVertexIndex = integer; //word,integer
+  TMeshVertexIndex = {$ifdef Android}word{$else}integer{$endif}; //word,integer
   PIndicesArray = ^TIndicesArray;
   TIndicesArray = array[0..10000] of TMeshVertexIndex;
 

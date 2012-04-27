@@ -114,8 +114,10 @@ const
 (W:1280; H:1024)
 );
 
-{$IFDEF ZZDC_SDL}
+{$if Defined(ZZDC_SDL)}
   {$INCLUDE ZPlatform_SDL.inc}
-{$ELSE}
+{$elseif Defined(ANDROID)}
+  {$INCLUDE ZPlatform_Android.inc}
+{$else}
   {$INCLUDE ZPlatform_Win32.inc}
-{$ENDIF}
+{$IFEND}

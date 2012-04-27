@@ -528,7 +528,6 @@ begin
           //Use vertex buffer objects
           //vbo is prepared in Mesh.BeforeRender
           glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
-
           glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
           glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
         end else
@@ -611,7 +610,7 @@ begin
 
   glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
   glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
-  glMateriali(GL_FRONT, GL_SHININESS, NewM.Shininess);
+  glMaterialf(GL_FRONT, GL_SHININESS, NewM.Shininess);
 
   if NilOld or (NewM.Shading<>OldM.Shading) then
   begin
@@ -722,10 +721,12 @@ begin
 
     if Tex.TexCoords=tcGenerated then
     begin
+      {$ifndef Android}
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
       glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
       glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      {$endif}
     end
     else
     begin
@@ -829,7 +830,7 @@ begin
   glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
   glMaterialfv(GL_FRONT, GL_SPECULAR, @Specular);
-  glMateriali(GL_FRONT, GL_SHININESS, LowShininess);
+  glMaterialf(GL_FRONT, GL_SHININESS, LowShininess);
 
   //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 då blir det för ljust
   //Detta p.g.a. gl skalar normals vid glScale
@@ -987,6 +988,8 @@ const
   Y = 0;
 var
   W,H : single;
+  Verts : array[0..3] of TZVector2f;
+  Texc : array[0..3] of TZVector2f;
 begin
   //Y är positivt uppåt
   //Rita i CCW direction för att skapa en front-facing polygon
@@ -994,33 +997,23 @@ begin
 
   //För TexCoords gäller: Y=1 Top, Y=0 Bottom
 
-  glBegin(GL_QUADS);
-    W := Width / 2.0;
-    H := Height / 2.0;
+  W := Width / 2.0;
+  H := Height / 2.0;
 
-    //Normal towards camera
-    glNormal3f(0,0,1);
+  //Normal towards camera
+  glNormal3f(0,0,1);
 
-    //..
-    //x.
-    glTexCoord2f(0.0, 0.0);
-    glVertex2f(X-W,Y-H);
-
-    //..
-    //.x
-    glTexCoord2f(1.0, 0.0);
-    glVertex2f(X+W,Y-H);
-
-    //.x
-    //..
-    glTexCoord2f(1.0, 1.0);
-    glVertex2f(X+W,Y+H);
-
-    //x.
-    //..
-    glTexCoord2f(0.0, 1.0);
-    glVertex2f(X-W,Y+H);
-  glEnd();
+  Verts[0] := Vector2f(X-W,Y-H); Texc[0] := Vector2f(0.0, 0.0);
+  Verts[1] := Vector2f(X+W,Y-H); Texc[1] := Vector2f(1.0, 0.0);
+  Verts[2] := Vector2f(X+W,Y+H); Texc[2] := Vector2f(1.0, 1.0);
+  Verts[3] := Vector2f(X-W,Y+H); Texc[3] := Vector2f(0.0, 1.0);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer(2,GL_FLOAT,0,@Verts);
+  glTexCoordPointer(2,GL_FLOAT,0,@Texc);
+  glDrawArrays(GL_TRIANGLE_FAN,0,4);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 end;
 
 
@@ -1529,7 +1522,10 @@ begin
   begin
     Lists := Platform_GenerateFontDisplayLists(CurSize2,FirstCharBuiltIn,LastChar);
     Characters := TZComponentList.Create;
-    FontSizes[J]:= Characters;
+    FontSizes[J] := Characters;
+    {$ifndef Win32}
+    Continue; //Built-int only work on win32
+    {$endif}
     for I := 0 to CharCount-1 do
     begin
       B:=TZBitmap.Create(Characters);
@@ -1685,7 +1681,9 @@ end;
 
 //Define to use interleaved arrays
 //Not worth the effort on nvidia
-{.$define USE_PARTICLE_ARRAYS}
+{$ifdef Android}
+  {$define USE_PARTICLE_ARRAYS}
+{$endif}
 procedure TRenderParticles.Execute;
 var
   I : integer;
@@ -1693,8 +1691,9 @@ var
   X,Y,W,H : single;
   Tmp : TZVector2f;
   {$ifdef USE_PARTICLE_ARRAYS}
-  Ar,PAr : PFloat;
-  ColorB : integer;
+  Ar,ArV,ArT : PFloat;
+  ArC : PInteger;
+  MemSize,ColorB : integer;
   {$endif}
 begin
   {$ifndef minimal}
@@ -1714,61 +1713,74 @@ begin
   {$ifdef USE_PARTICLE_ARRAYS}
   if Particles.Count>0 then
   begin
-    GetMem(Ar,Particles.Count * 4 * (SizeOf(Single)*6) );
+    //Every particle has 4 vertex. Per vertex: 2 floats coords, 2 float tex coords, 1 integer color
+    MemSize := Particles.Count * 4 * (SizeOf(Single)*4 + SizeOf(Integer));
+    GetMem(Ar,MemSize);
+    ArV := Ar;
+    ArT := Pointer(Integer(ArV) + (Particles.Count*4*SizeOf(Single)*2) );
+    ArC := Pointer(Integer(ArT) + (Particles.Count*4*SizeOf(Single)*2) );
 
-    PAr := Ar;
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(2,GL_FLOAT,0,ArV);
+    glTexCoordPointer(2,GL_FLOAT,0,ArT);
+    glColorPointer(4,GL_UNSIGNED_BYTE,0,ArC);
+
     for I := 0 to Particles.Count-1 do
     begin
       P := TParticle(Particles[I]);
+
+      ColorB := ColorFtoB(P.Color);
 
       X := P.Position[0];
       Y := P.Position[1];
       W := P.Width * 0.5;
       H := P.Height * 0.5;
 
-      //T2F C4UB V3F
-
-      ColorB := ColorFtoB(P.Color);
+      ArC^ := ColorB; Inc(ArC);
+      ArC^ := ColorB; Inc(ArC);
+      ArC^ := ColorB; Inc(ArC);
+      ArC^ := ColorB; Inc(ArC);
 
       //..
       //x.
-      PAr^ := 0.0; Inc(PAr);
-      PAr^ := 0.0; Inc(PAr);
-      PInteger(PAr)^ := ColorB; Inc(PAr);
-      PAr^ := X-W; Inc(PAr);
-      PAr^ := Y-H; Inc(PAr);
-      PAr^ := 0; Inc(PAr);
+      ArT^ := 0.0; Inc(ArT);
+      ArT^ := 0.0; Inc(ArT);
+
+      ArV^ := X-W; Inc(ArV);
+      ArV^ := Y-H; Inc(ArV);
 
       //..
       //.x
-      PAr^ := 1.0; Inc(PAr);
-      PAr^ := 0.0; Inc(PAr);
-      PInteger(PAr)^ := ColorB; Inc(PAr);
-      PAr^ := X+W; Inc(PAr);
-      PAr^ := Y-H; Inc(PAr);
-      PAr^ := 0; Inc(PAr);
+      ArT^ := 1.0; Inc(ArT);
+      ArT^ := 0.0; Inc(ArT);
+
+      ArV^ := X+W; Inc(ArV);
+      ArV^ := Y-H; Inc(ArV);
 
       //.x
       //..
-      PAr^ := 1.0; Inc(PAr);
-      PAr^ := 1.0; Inc(PAr);
-      PInteger(PAr)^ := ColorB; Inc(PAr);
-      PAr^ := X+W; Inc(PAr);
-      PAr^ := Y+H; Inc(PAr);
-      PAr^ := 0; Inc(PAr);
+      ArT^ := 1.0; Inc(ArT);
+      ArT^ := 1.0; Inc(ArT);
+
+      ArV^ := X+W; Inc(ArV);
+      ArV^ := Y+H; Inc(ArV);
 
       //x.
       //..
-      PAr^ := 0.0; Inc(PAr);
-      PAr^ := 1.0; Inc(PAr);
-      PInteger(PAr)^ := ColorB; Inc(PAr);
-      PAr^ := X-W; Inc(PAr);
-      PAr^ := Y+H; Inc(PAr);
-      PAr^ := 0; Inc(PAr);
+      ArT^ := 0.0; Inc(ArT);
+      ArT^ := 1.0; Inc(ArT);
+
+      ArV^ := X-W; Inc(ArV);
+      ArV^ := Y+H; Inc(ArV);
     end;
 
-    glInterleavedArrays(GL_T2F_C4UB_V3F,0,Ar);
-    glDrawArrays(GL_QUADS, 0, Particles.Count*4);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, Particles.Count*4);
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
     FreeMem(Ar);
   end;

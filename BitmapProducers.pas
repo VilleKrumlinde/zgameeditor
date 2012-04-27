@@ -168,6 +168,7 @@ procedure TBitmapRect.ProduceOutput(Content : TContent; Stack : TZArrayList);
 var
   B : TZBitmap;
   HasArg : boolean;
+  Verts : array[0..3] of TZVector2f;
 begin
   //one optional argument
   B := GetOptionalArgument(Stack);
@@ -197,12 +198,16 @@ begin
   end;
 
   glColor3fv(@Color);
-  glBegin(GL_QUADS);
-    glVertex2f(Size.Left,Size.Top);
-    glVertex2f(Size.Left,Size.Bottom);
-    glVertex2f(Size.Right,Size.Bottom);
-    glVertex2f(Size.Right,Size.Top);
-  glEnd();
+
+  Verts[0] := Vector2f(Size.Left,Size.Top);
+  Verts[1] := Vector2f(Size.Left,Size.Bottom);
+  Verts[2] := Vector2f(Size.Right,Size.Bottom);
+  Verts[3] := Vector2f(Size.Right,Size.Top);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glVertexPointer(2,GL_FLOAT,0,@Verts);
+  glDrawArrays(GL_TRIANGLE_FAN,0,4);
+  glDisableClientState(GL_VERTEX_ARRAY);
+
   glColor3f(1.0,1.0,1.0);
 
   B.RenderTargetEnd;
@@ -232,6 +237,8 @@ var
   TexRight : single;
   TexBottom : single;
   Z : single;
+  Verts : array[0..3] of TZVector2f;
+  Texc : array[0..3] of TZVector2f;
 begin
   //one argument required
   if Stack.Count=0 then
@@ -260,16 +267,17 @@ begin
   glDisable(GL_TEXTURE_GEN_T);
 
   glScalef(ScaleX,ScaleY,1);
-  glBegin(GL_QUADS);
-    glTexCoord2f(TexLeft, TexTop);
-    glVertex2f(-Size,-Size);
-    glTexCoord2f(TexLeft, TexBottom);
-    glVertex2f(-Size,Size);
-    glTexCoord2f(TexRight, TexBottom);
-    glVertex2f(Size,Size);
-    glTexCoord2f(TexRight, TexTop);
-    glVertex2f(Size,-Size);
-  glEnd();
+  Verts[0] := Vector2f(-Size,-Size); Texc[0] := Vector2f(TexLeft, TexTop);
+  Verts[1] := Vector2f(-Size,Size); Texc[1] := Vector2f(TexLeft, TexBottom);
+  Verts[2] := Vector2f(Size,Size); Texc[2] := Vector2f(TexRight, TexBottom);
+  Verts[3] := Vector2f(Size,-Size); Texc[3] := Vector2f(TexRight, TexTop);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer(2,GL_FLOAT,0,@Verts);
+  glTexCoordPointer(2,GL_FLOAT,0,@Texc);
+  glDrawArrays(GL_TRIANGLE_FAN,0,4);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
   SourceB.Free;
 

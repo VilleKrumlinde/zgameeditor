@@ -141,9 +141,9 @@ var
                   if Xml.CurAttr.Value('kind')='array' then
                   begin
                     ToZgeType(P.Typ);
-                    if P.Typ='int' then
+                    {if P.Typ='int' then
                       P.Typ := 'ref int'
-                    else if (P.Typ='string') or (P.Typ='ref string') then
+                    else }if (P.Typ='string') or (P.Typ='ref string') then
                     else
                       P.Typ := 'xptr';
                   end
