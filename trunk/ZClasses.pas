@@ -3591,10 +3591,10 @@ begin
 //  FillChar(GlobalContent,SizeOf(GlobalContent),0);
   GlobalContent := Save;
 
-  {$ifndef minimal}
+  {$if (not defined(minimal)) and (not defined(zgeviz))}
   if (Producers.Count>0) and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
-  {$endif}
+  {$ifend}
 end;
 
 ///////////////////

@@ -43,135 +43,135 @@ import android.util.Log;
 
 public class Zge extends GLSurfaceView
 {
-	private native void zglNativeDestroy();
-	private native void zglNativeSurfaceCreated( String HomeDirectory );
-	private native void zglNativeSurfaceChanged( int width, int height );
-	private native void zglNativeDrawFrame();
-	private native void zglNativeActivate( boolean Activate );
-	private native boolean zglNativeCloseQuery();
-	private native void zglNativeTouch( int ID, float X, float Y, float Pressure );
-	private native void zglNativeKeyup(int keycode);
+    private native void zglNativeDestroy();
+    private native void zglNativeSurfaceCreated( String HomeDirectory );
+    private native void zglNativeSurfaceChanged( int width, int height );
+    private native void zglNativeDrawFrame();
+    private native void zglNativeActivate( boolean Activate );
+    private native boolean zglNativeCloseQuery();
+    private native void zglNativeTouch( int ID, float X, float Y, float Pressure );
+    private native void zglNativeKeyup(int keycode);
     private native void zglNativeKeydown(int keycode);
 
-	private boolean IsDestroy;
-	private zglCRenderer Renderer;
-	private String DataDir;
-	private InputMethodManager InputManager;
+    private boolean IsDestroy;
+    private zglCRenderer Renderer;
+    private String DataDir;
+    private InputMethodManager InputManager;
 
-	public Zge(Context context)
-	{
-		super( context );
+    public Zge(Context context)
+    {
+        super( context );
 
         System.loadLibrary("zgeandroid");
 
-		DataDir = context.getFilesDir().getAbsolutePath();
-		Renderer = new zglCRenderer();
-		setRenderer( Renderer );
+        DataDir = context.getFilesDir().getAbsolutePath();
+        Renderer = new zglCRenderer();
+        setRenderer( Renderer );
 
-		setFocusableInTouchMode( true );
-	}
+        setFocusableInTouchMode( true );
+    }
 
-	public Boolean onCloseQuery()
-	{
-		return zglNativeCloseQuery();
-	}
+    public Boolean onCloseQuery()
+    {
+        return zglNativeCloseQuery();
+    }
 
-	@Override
-	public void onPause()
-	{
-		super.onPause();
-		zglNativeActivate( false );
-	}
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+        zglNativeActivate( false );
+    }
 
-	@Override
-	public void onResume()
-	{
-		super.onResume();
-		zglNativeActivate( true );
-	}
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        zglNativeActivate( true );
+    }
 
-	@Override
-	public boolean onTouchEvent( MotionEvent event )
-	{
-		int action = event.getAction();
-		int actionType = action & MotionEvent.ACTION_MASK;
+    @Override
+    public boolean onTouchEvent( MotionEvent event )
+    {
+        int action = event.getAction();
+        int actionType = action & MotionEvent.ACTION_MASK;
 
-		switch ( actionType )
-		{
-			case MotionEvent.ACTION_DOWN:
-			{
-				int count = event.getPointerCount();
-				for ( int i = 0; i < count; i++ )
-				{
-					int pointerID = event.getPointerId( i );
-					zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
-				}
-				break;
-			}
+        switch ( actionType )
+        {
+            case MotionEvent.ACTION_DOWN:
+            {
+                int count = event.getPointerCount();
+                for ( int i = 0; i < count; i++ )
+                {
+                    int pointerID = event.getPointerId( i );
+                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
+                }
+                break;
+            }
 
-			case MotionEvent.ACTION_UP:
-			{
-				int count = event.getPointerCount();
-				for ( int i = 0; i < count; i++ )
-				{
-					int pointerID = event.getPointerId( i );
-					zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), 0 );
-				}
-				break;
-			}
+            case MotionEvent.ACTION_UP:
+            {
+                int count = event.getPointerCount();
+                for ( int i = 0; i < count; i++ )
+                {
+                    int pointerID = event.getPointerId( i );
+                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), 0 );
+                }
+                break;
+            }
 
-			case MotionEvent.ACTION_MOVE:
-			{
-				int count = event.getPointerCount();
-				for ( int i = 0; i < count; i++ )
-				{
-					int pointerID = event.getPointerId( i );
-					zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
-				}
-				break;
-			}
+            case MotionEvent.ACTION_MOVE:
+            {
+                int count = event.getPointerCount();
+                for ( int i = 0; i < count; i++ )
+                {
+                    int pointerID = event.getPointerId( i );
+                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
+                }
+                break;
+            }
 
-			case MotionEvent.ACTION_POINTER_DOWN:
-			{
-				int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
-				int pointerIndex = event.findPointerIndex( pointerID );
-				zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
-				break;
-			}
+            case MotionEvent.ACTION_POINTER_DOWN:
+            {
+                int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
+                int pointerIndex = event.findPointerIndex( pointerID );
+                zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
+                break;
+            }
 
-			case MotionEvent.ACTION_POINTER_UP:
-			{
-				int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
-				int pointerIndex = event.findPointerIndex( pointerID );
-				zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
-				break;
-			}
-		}
+            case MotionEvent.ACTION_POINTER_UP:
+            {
+                int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
+                int pointerIndex = event.findPointerIndex( pointerID );
+                zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
+                break;
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	public void Finish()
-	{
-		zglNativeDestroy();
-		((Activity)getContext()).finish();
-		System.exit( 0 );
-	}
+    public void Finish()
+    {
+        zglNativeDestroy();
+        ((Activity)getContext()).finish();
+        System.exit( 0 );
+    }
 
-	@Override
-	public boolean onKeyDown( int keyCode, KeyEvent event )
-	{
-		if ( keyCode == KeyEvent.KEYCODE_BACK )
-			if ( zglNativeCloseQuery() )
-			{
-				IsDestroy = true;
-				return true;
-			}
+    @Override
+    public boolean onKeyDown( int keyCode, KeyEvent event )
+    {
+        if ( keyCode == KeyEvent.KEYCODE_BACK )
+            if ( zglNativeCloseQuery() )
+            {
+                IsDestroy = true;
+                return true;
+            }
 
         zglNativeKeydown(event.getUnicodeChar());
         Log.i("ZgeAndroid", "Keydown " + event.getUnicodeChar());
-		return super.onKeyDown( keyCode, event );
-	}
+        return super.onKeyDown( keyCode, event );
+    }
 
     @Override
     public boolean onKeyUp( int keyCode, KeyEvent event )
@@ -181,28 +181,28 @@ public class Zge extends GLSurfaceView
         return super.onKeyUp( keyCode, event );
     }
 
-	class zglCRenderer implements Renderer
-	{
-		public void onSurfaceCreated( GL10 gl, EGLConfig config )
-		{
+    class zglCRenderer implements Renderer
+    {
+        public void onSurfaceCreated( GL10 gl, EGLConfig config )
+        {
             Log.i("ZgeAndroid", "SurfaceCreated");
-			zglNativeSurfaceCreated( DataDir );
-		}
+            zglNativeSurfaceCreated( DataDir );
+        }
 
-		public void onSurfaceChanged( GL10 gl, int width, int height )
-		{
+        public void onSurfaceChanged( GL10 gl, int width, int height )
+        {
             Log.i("ZgeAndroid", "SurfaceChanged");
-			zglNativeSurfaceChanged( width, height );
-		}
+            zglNativeSurfaceChanged( width, height );
+        }
 
-		public void onDrawFrame( GL10 gl )
-		{
-			if ( IsDestroy )
-				Finish();
+        public void onDrawFrame( GL10 gl )
+        {
+            if ( IsDestroy )
+                Finish();
 
-			zglNativeDrawFrame();
-		}
-	}
+            zglNativeDrawFrame();
+        }
+    }
 
     class MyGestureDetector extends SimpleOnGestureListener {
         @Override

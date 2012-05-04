@@ -33,17 +33,15 @@ import android.view.WindowManager;
 
 public class ZgeActivity extends Activity
 {
-	private Zge zge;
+    private Zge zge;
 
     public void onCreate( Bundle savedInstanceState )
     {
-    	super.onCreate( savedInstanceState );
+        super.onCreate( savedInstanceState );
 
-    	// set fullscreen mode
         this.requestWindowFeature( Window.FEATURE_NO_TITLE );
         getWindow().setFlags( WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN );
 
-        // create new zglCGLSurfaceView and make it as a current view
         zge = new Zge(this);
         setContentView( zge );
     }

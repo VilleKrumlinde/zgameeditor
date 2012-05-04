@@ -438,7 +438,7 @@ begin
   M.TexCoords :=nil;
   M.Colors :=nil;
   M.Free;
-  {$ifdef zlog}
+  {$if defined(zlog) and (not defined(zgeviz))}
   if CurrentRecursion=0 then
   begin
     if VerticesCount>=High(TMeshVertexIndex) then
@@ -446,7 +446,7 @@ begin
     else if (not ZApp.DesignerIsRunning) then
       ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
   end;
-  {$endif}
+  {$ifend}
 end;
 
 {$ifndef minimal}

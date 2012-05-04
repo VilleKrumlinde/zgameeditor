@@ -1069,37 +1069,55 @@ var
   I : integer;
   B : TBeam;
   Angle,X,Y,C,S : single;
+  Mem : pointer;
+  Vp,Tp : PFloat;
+  procedure Vert(const T1,T2,V1,V2 : single);
+  begin
+    Tp^ := T1; Inc(Tp);
+    Tp^ := T2; Inc(Tp);
+    Vp^ := V1; Inc(Vp);
+    Vp^ := V2; Inc(Vp);
+  end;
 begin
   {$ifndef minimal}
   AssertRenderMode;
   {$endif}
 
-  glBegin(GL_TRIANGLES);
+  GetMem(Mem,Beams.Count * 3 * ((2+2)*SizeOf(single)));
+  Vp := Mem;
+  Tp := pointer(integer(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer(2,GL_FLOAT,0,Vp);
+  glTexCoordPointer(2,GL_FLOAT,0,Tp);
 
   for I := 0 to Beams.Count-1 do
   begin
     B := TBeam(Beams[I]);
-    glTexCoord2f(0.52,0.52);
-    glVertex3f(0,0,0);
+    Vert(0.52,0.52,0,0);
 
     Angle := B.Angle-B.Width/2;
     C := cos(Angle);
     S := sin(Angle);
     X := C * Length;
     Y := S * Length;
-    glTexCoord2f( 0.5 + C/2 , 0.5 + S/2);
-    glVertex3f(X,Y,0);
+    Vert(0.5 + C/2 , 0.5 + S/2, X,Y);
 
     Angle := B.Angle+B.Width/2;
     C := cos(Angle);
     S := sin(Angle);
     X := C * Length;
     Y := S * Length;
-    glTexCoord2f( 0.5 + C/2 , 0.5 + S/2);
-    glVertex3f(X,Y,0);
+    Vert(0.5 + C/2 , 0.5 + S/2, X,Y);
   end;
 
-  glEnd;
+  glDrawArrays(GL_TRIANGLES, 0, Beams.Count*3);
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+  FreeMem(Mem);
 end;
 
 procedure TRenderBeams.Update;
@@ -1694,6 +1712,14 @@ var
   Ar,ArV,ArT : PFloat;
   ArC : PInteger;
   MemSize,ColorB : integer;
+  procedure Vert(const T1,T2,V1,V2 : single);
+  begin
+    ArT^ := T1; Inc(ArT);
+    ArT^ := T2; Inc(ArT);
+    ArV^ := V1; Inc(ArV);
+    ArV^ := V2; Inc(ArV);
+    ArC^ := ColorB; Inc(ArC);
+  end;
   {$endif}
 begin
   {$ifndef minimal}
@@ -1709,16 +1735,15 @@ begin
     end;
   end;
 
-  //Uncomment to use interleaved arrays
   {$ifdef USE_PARTICLE_ARRAYS}
   if Particles.Count>0 then
   begin
-    //Every particle has 4 vertex. Per vertex: 2 floats coords, 2 float tex coords, 1 integer color
-    MemSize := Particles.Count * 4 * (SizeOf(Single)*4 + SizeOf(Integer));
+    //Every particle has 6 vertex (two tris). Per vertex: 2 floats coords, 2 float tex coords, 1 integer color
+    MemSize := Particles.Count * 6 * (SizeOf(Single)*4 + SizeOf(Integer));
     GetMem(Ar,MemSize);
     ArV := Ar;
-    ArT := Pointer(Integer(ArV) + (Particles.Count*4*SizeOf(Single)*2) );
-    ArC := Pointer(Integer(ArT) + (Particles.Count*4*SizeOf(Single)*2) );
+    ArT := Pointer(Integer(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
+    ArC := Pointer(Integer(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
 
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1738,45 +1763,26 @@ begin
       W := P.Width * 0.5;
       H := P.Height * 0.5;
 
-      ArC^ := ColorB; Inc(ArC);
-      ArC^ := ColorB; Inc(ArC);
-      ArC^ := ColorB; Inc(ArC);
-      ArC^ := ColorB; Inc(ArC);
-
+      //Triangle 1
       //..
       //x.
-      ArT^ := 0.0; Inc(ArT);
-      ArT^ := 0.0; Inc(ArT);
-
-      ArV^ := X-W; Inc(ArV);
-      ArV^ := Y-H; Inc(ArV);
-
+      Vert(0,0,X-W,Y-H);
       //..
       //.x
-      ArT^ := 1.0; Inc(ArT);
-      ArT^ := 0.0; Inc(ArT);
-
-      ArV^ := X+W; Inc(ArV);
-      ArV^ := Y-H; Inc(ArV);
-
+      Vert(1,0,X+W,Y-H);
       //.x
       //..
-      ArT^ := 1.0; Inc(ArT);
-      ArT^ := 1.0; Inc(ArT);
+      Vert(1,1,X+W,Y+H);
 
-      ArV^ := X+W; Inc(ArV);
-      ArV^ := Y+H; Inc(ArV);
-
+      //Triangle 2
       //x.
       //..
-      ArT^ := 0.0; Inc(ArT);
-      ArT^ := 1.0; Inc(ArT);
-
-      ArV^ := X-W; Inc(ArV);
-      ArV^ := Y+H; Inc(ArV);
+      Vert(0,1,X-W,Y+H);
+      Vert(0,0,X-W,Y-H);
+      Vert(1,1,X+W,Y+H);
     end;
 
-    glDrawArrays(GL_TRIANGLE_FAN, 0, Particles.Count*4);
+    glDrawArrays(GL_TRIANGLES, 0, Particles.Count*6);
 
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -1866,9 +1872,6 @@ begin
   P.Velocity[0] := Sin(Angle) * Tmp;
   P.Velocity[1] := Cos(Angle) * Tmp;
 
-//  P.Acceleration[0] := Sin(Angle+0.5)*8;
-//  P.Acceleration[1] := Cos(Angle+0.5)*8;
-
   P.Color := Self.PColor;
 
   Result := P;
@@ -1927,7 +1930,6 @@ begin
 
       P.Color.A := Clamp(P.Color.A + DAlpha,0,1);
 
-//      P.Rotation := P.Rotation + P.RotationSpeed * DT;
       Inc(I);
     end;
   end;

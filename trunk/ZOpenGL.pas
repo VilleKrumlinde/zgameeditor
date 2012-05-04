@@ -1708,6 +1708,7 @@ begin
   if SavedAttrib<>nil then
     Platform_Error('Nested attrib push');
   New(A);
+
   glGetIntegerv(GL_VIEWPORT, @A^.Viewport);
   glGetIntegerv(GL_LIGHTING, @A^.Lighting);
   glGetIntegerv(GL_CULL_FACE, @A^.Cullface);
@@ -1721,6 +1722,7 @@ begin
   A := SavedAttrib;
   if A=nil then
     Platform_Error('Pop attrib without push');
+
   glViewport(A.Viewport[0],A.Viewport[1],A.Viewport[2],A.Viewport[3]);
   if A.Lighting=0 then
     glDisable(GL_LIGHTING)
