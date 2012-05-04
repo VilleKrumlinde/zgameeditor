@@ -405,7 +405,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '2.0.1';
+  AppVersion = '3.0.0b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -539,7 +539,7 @@ begin
 
   Application.OnException := OnAppException;
 
-  SaveBinaryMenuItem.Visible := DebugHook<>0;
+  SaveBinaryMenuItem.Visible := True;//DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
   DetailedBuildReportMenuItem.Visible := DebugHook<>0;
 

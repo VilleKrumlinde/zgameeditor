@@ -257,6 +257,7 @@ begin
       if not Platform_ShowOptionDialog(Self) then Halt;
     end;
 
+    {$ifndef android}
     if((CustomScreenWidth > 0) and (CustomScreenHeight > 0)) then
     begin
       ScreenWidth := Self.CustomScreenWidth;
@@ -268,6 +269,7 @@ begin
       ScreenWidth := ScreenModes[ I ].W;
       ScreenHeight := ScreenModes[ I ].H;
     end;
+    {$endif}
 
     Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption), Self);
     Platform_ShowMouse(MouseVisible);
