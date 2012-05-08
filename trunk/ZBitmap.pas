@@ -63,10 +63,10 @@ type
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers,ZApplication,ZLog,SysUtils;
+uses BitmapProducers,ZApplication,ZLog,SysUtils,Renderer;
 {$endif}
 {$ifdef Android}
-uses ZMath;
+uses ZMath,Renderer;
 {$endif}
 
 { TZBitmap }
@@ -85,28 +85,52 @@ begin
   inherited;
 end;
 
-//The call to glGetTexImage crashes on some ati radeon cards
-{.$define atibughunt}
-
-{$ifdef atibughunt}
-procedure TestOK(B : TZBitmap);
-const GL_TEXTURE_2D_BINDING = $8069;
+{$ifdef android}
+//GLES cannot do glGetTexImage so render to framebuffer and copy from there instead
+procedure GLESPixelsFromTexture(B : TZBitmap; P : PFloat; ElementsPerPix : integer);
 var
-  I : integer;
+  Sp,Tp : PByte;
+  Count,I : integer;
 begin
-  Assert( glIsEnabled(GL_TEXTURE_2D), 'no texture enabled' );
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-  glGetIntegerv(GL_TEXTURE_2D_BINDING,@I);
-  Assert((I=B.Handle) and (I>0), 'Invalid handle: i' + IntToStr(I) + ' b:' + IntToStr(B.Handle));
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
+    glOrtho(-1, 1, -1, 1, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
+    glDisable(GL_LIGHTING);
+    glDisable(GL_CULL_FACE);
 
-  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,@I);
-  Assert((I=B.PixelWidth) and (I>0), 'Texture width mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelWidth));
+    glViewport(0, 0, B.PixelWidth, B.PixelHeight);
 
-  glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,@I);
-  Assert((I=B.PixelHeight) and (I>0), 'Texture height mismatch: ' + IntToStr(I) + '<>' + IntToStr(B.PixelHeight));
+    glEnable(GL_TEXTURE_2D);
+    B.UseTextureBegin;
+    glScalef(2,2,2);
+    RenderUnitQuad;
 
-  glPixelStorei(GL_PACK_ALIGNMENT,1);
-  glFlush;
+    Count := B.PixelWidth * B.PixelHeight;
+    GetMem(Tp,Count*4);
+
+    //Only rgba-format seems to work on GLES
+    glReadPixels(0, 0, B.PixelWidth, B.PixelHeight, GL_RGBA, GL_UNSIGNED_BYTE, Tp);
+
+    Sp := Tp;
+    while Count>0 do
+    begin
+      for I := 0 to ElementsPerPix-1 do
+      begin
+        P^ := Sp^ / 255;
+        Inc(P);
+        Inc(Sp);
+      end;
+      if ElementsPerPix=3 then
+        Inc(Sp);
+      Dec(Count);
+    end;
+    FreeMem(Tp);
+
+  glPopAttrib;
 end;
 {$endif}
 
@@ -116,10 +140,11 @@ var
 begin
   GetMem(P,PixelHeight * PixelWidth * 4 * SizeOf(single));
   {$ifdef android}
-    FillChar(P^,PixelHeight * PixelWidth * 4 * SizeOf(single),0);
-  {$endif}
+  GLESPixelsFromTexture(Self,P,4);
+  {$else}
   UseTextureBegin;
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_FLOAT,P);
+  {$endif}
   Result := P;
 end;
 
@@ -129,10 +154,11 @@ var
 begin
   GetMem(P,PixelHeight * PixelWidth * 3 * SizeOf(single));
   {$ifdef android}
-    FillChar(P^,PixelHeight * PixelWidth * 3 * SizeOf(single),0);
-  {$endif}
+  GLESPixelsFromTexture(Self,P,3);
+  {$else}
   UseTextureBegin;
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_FLOAT,P);
+  {$endif}
   Result := P;
 end;
 

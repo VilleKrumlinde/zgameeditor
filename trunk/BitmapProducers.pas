@@ -514,7 +514,6 @@ begin
       P^[0] := P^[0] + Bias;
       P^[1] := P^[1] + Bias;
       P^[2] := P^[2] + Bias;
-
       Inc(P);
     end;  //for J (the I cycle has no begin-end block)
 

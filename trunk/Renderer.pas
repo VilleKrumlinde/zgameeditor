@@ -1466,6 +1466,9 @@ begin
   if IsBuiltIn then
   begin
     //Use builtin truetype font (win32 only)
+    {$ifndef Win32}
+    Exit;
+    {$endif}
     Dec(Char,33);
     //Pick the right font for the size
     FontSize := 0;
