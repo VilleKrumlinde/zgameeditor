@@ -63,8 +63,17 @@ begin
   AppInited := False;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeSurfaceCreated( env : PJNIEnv; thiz : jobject; HomeDirectory : jstring );cdecl;
+procedure Java_org_zgameeditor_Zge_zglNativeSurfaceCreated( env : PJNIEnv; thiz : jobject; ExtPath : jstring );cdecl;
+var
+  P : PAnsiChar;
 begin
+  P := env^.GetStringUTFChars(Env,ExtPath,nil);
+
+  GetMem(AndroidPath,ZStrLength(P)+1);
+  ZStrCopy(AndroidPath,P);
+  Log(AndroidPath);
+
+  env^.ReleaseStringUTFChars(Env,ExtPath,P);
 end;
 
 procedure Java_org_zgameeditor_Zge_zglNativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;

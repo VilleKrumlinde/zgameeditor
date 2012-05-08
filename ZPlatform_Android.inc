@@ -23,6 +23,7 @@ THE SOFTWARE.}
 var
   AndroidCurrentMouse : TZPointi;
   AndroidKeys : array[ansichar] of boolean;
+  AndroidPath : PAnsiChar;
 
 implementation
 
@@ -33,6 +34,7 @@ function gettimeofday( val : PTimeVal; tzp : Pointer ) : Integer; cdecl; externa
 
 var
   TimerStart : single;
+  KeyMap : array[AnsiChar] of AnsiChar;
 
 procedure Platform_ShutdownScreen;
 begin
@@ -62,7 +64,7 @@ end;
 
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
-  Result := AndroidKeys[C];
+  Result := AndroidKeys[ KeyMap[C] ];
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;
@@ -116,8 +118,11 @@ begin
 end;
 
 function Platform_GetSystemTime : integer;
+var
+  timerTimeVal : TimeVal;
 begin
-  Result := 0;
+  gettimeofday( @timerTimeVal, nil );
+  Result := timerTimeVal.tv_sec;
 end;
 
 procedure Platform_DesignerSetDC(DC : longword; HWnd : longword);
@@ -134,7 +139,10 @@ var
 begin
   Result := nil;
   System.FileMode := 0;
-  System.Assign(F,'/sdcard/zzdc.dat');
+
+  ZStrCopy(PAnsiChar(@Buf), AndroidPath);
+  ZStrCat(PAnsiChar(@Buf), '/zzdc.dat');
+  System.Assign(F,PAnsiChar(@Buf));
 
   System.Reset(F,1);
   if IOResult<>0 then
@@ -185,11 +193,17 @@ begin
 end;
 
 procedure Platform_InitGlobals;
+var
+  I : integer;
 begin
   timerStart := Platform_GetTime;
   AndroidCurrentMouse.X := 0;
   AndroidCurrentMouse.Y := 0;
-  Fillchar(AndroidKeys,SizeOf(AndroidKeys),0);
+
+  for I := 0 to 255 do
+    KeyMap[chr(I)] := Chr(I);
+  for I := ord('A') to ord('Z') do
+    KeyMap[chr(I)] := Chr(I + (ord('a')-ord('A')));
 end;
 
 function Platform_ShowOptionDialog(App : pointer) : boolean;

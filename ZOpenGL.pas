@@ -1695,7 +1695,7 @@ type
   TSaveAttribs =
   record
     Viewport : array[0..3] of integer;
-    Lighting,Cullface : integer;
+    Lighting,Cullface,Texture2d : integer;
   end;
 
 const
@@ -1712,6 +1712,8 @@ begin
   glGetIntegerv(GL_VIEWPORT, @A^.Viewport);
   glGetIntegerv(GL_LIGHTING, @A^.Lighting);
   glGetIntegerv(GL_CULL_FACE, @A^.Cullface);
+  glGetIntegerv(GL_TEXTURE_2D, @A^.Texture2d);
+
   SavedAttrib := A;
 end;
 
@@ -1733,6 +1735,11 @@ begin
     glDisable(GL_CULL_FACE)
   else
     glEnable(GL_CULL_FACE);
+
+  if A.Texture2d=0 then
+    glDisable(GL_TEXTURE_2D)
+  else
+    glEnable(GL_TEXTURE_2D);
 
   Dispose(A);
   SavedAttrib := nil;

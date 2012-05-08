@@ -671,7 +671,7 @@ begin
       Self.OnBeginRenderPass.ExecuteCommands;
 
     {$ifndef zgeviz}
-    if {$ifdef minimal}(ViewportRatio=vprCustom) and {$endif}
+    if {$if defined(minimal) and (not defined(android))}(ViewportRatio=vprCustom) and {$ifend}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
     {$endif}

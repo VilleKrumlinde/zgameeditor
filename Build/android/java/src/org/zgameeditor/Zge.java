@@ -28,6 +28,7 @@ package org.zgameeditor;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.os.Environment;
 import android.app.Activity;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
@@ -55,7 +56,6 @@ public class Zge extends GLSurfaceView
 
     private boolean IsDestroy;
     private zglCRenderer Renderer;
-    private String DataDir;
     private InputMethodManager InputManager;
 
     public Zge(Context context)
@@ -64,7 +64,7 @@ public class Zge extends GLSurfaceView
 
         System.loadLibrary("zgeandroid");
 
-        DataDir = context.getFilesDir().getAbsolutePath();
+        //DataDir = context.getFilesDir().getAbsolutePath();
         Renderer = new zglCRenderer();
         setRenderer( Renderer );
 
@@ -169,14 +169,12 @@ public class Zge extends GLSurfaceView
             }
 
         zglNativeKeydown(event.getUnicodeChar());
-        Log.i("ZgeAndroid", "Keydown " + event.getUnicodeChar());
         return super.onKeyDown( keyCode, event );
     }
 
     @Override
     public boolean onKeyUp( int keyCode, KeyEvent event )
     {
-        Log.i("ZgeAndroid", "Keyup " + event.getUnicodeChar());
         zglNativeKeyup(event.getUnicodeChar());
         return super.onKeyUp( keyCode, event );
     }
@@ -185,8 +183,9 @@ public class Zge extends GLSurfaceView
     {
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
-            Log.i("ZgeAndroid", "SurfaceCreated");
-            zglNativeSurfaceCreated( DataDir );
+            String extpath = Environment.getExternalStorageDirectory().getAbsolutePath();
+            Log.i("ZgeAndroid", "SurfaceCreated, root: " + extpath);
+            zglNativeSurfaceCreated( extpath );
         }
 
         public void onSurfaceChanged( GL10 gl, int width, int height )
