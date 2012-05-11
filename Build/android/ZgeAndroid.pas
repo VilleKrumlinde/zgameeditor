@@ -80,6 +80,7 @@ procedure Java_org_zgameeditor_Zge_zglNativeSurfaceChanged( env : PJNIEnv; thiz 
 begin
   if not AppInited then
   begin
+    log('init');
     ZApp := ZApplication.LoadApplicationComponent;
     ZApp.ScreenWidth := Width;
     ZApp.ScreenHeight := Height;
@@ -96,6 +97,7 @@ begin
 //  glClear($00004000);
   if AppInited then
   begin
+//    log('main');
 //    ZApp.ClearColor.V[0] := Random;
     ZApp.Main;
 

@@ -34,6 +34,7 @@ function gettimeofday( val : PTimeVal; tzp : Pointer ) : Integer; cdecl; externa
 
 var
   TimerStart : single;
+  StartTimeVal : TimeVal;
   KeyMap : array[AnsiChar] of AnsiChar;
 
 procedure Platform_ShutdownScreen;
@@ -114,7 +115,8 @@ var
   timerTimeVal : TimeVal;
 begin
   gettimeofday( @timerTimeVal, nil );
-  Result := timerTimeVal.tv_sec + timerTimeVal.tv_usec * 0.000001 - timerStart;
+  timerTimeVal.tv_sec := timerTimeVal.tv_sec - StartTimeVal.tv_sec;
+  Result := timerTimeVal.tv_sec + (timerTimeVal.tv_usec * 0.000001);
 end;
 
 function Platform_GetSystemTime : integer;
@@ -196,7 +198,8 @@ procedure Platform_InitGlobals;
 var
   I : integer;
 begin
-  timerStart := Platform_GetTime;
+  gettimeofday( @StartTimeVal, nil );
+
   AndroidCurrentMouse.X := 0;
   AndroidCurrentMouse.Y := 0;
 
