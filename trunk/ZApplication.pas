@@ -378,6 +378,7 @@ var
 
 begin
   Now := Platform_GetTime;
+
   {$ifdef minimal}
   if Now>=NextFrameTime then
   {$endif}
