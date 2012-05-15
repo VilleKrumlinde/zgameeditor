@@ -148,7 +148,9 @@ exports
   Java_org_zgameeditor_Zge_zglNativeTouch,
   Java_org_zgameeditor_Zge_zglNativeCloseQuery,
   Java_org_zgameeditor_Zge_zglNativeKeydown,
-  Java_org_zgameeditor_Zge_zglNativeKeyup;
+  Java_org_zgameeditor_Zge_zglNativeKeyup,
+
+  JNI_OnLoad;
 
 begin
 end.

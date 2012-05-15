@@ -157,7 +157,7 @@ type
   end;
 
 const
-  AudioRate = 44100;  //44khz
+  AudioRate = {$ifdef android}44100{$else}44100{$endif};  //44khz
 
   OutputBits = SizeOf(TSoundOutputUnit)*8;
 
@@ -181,7 +181,7 @@ const
   //Det blir en fördröjning av nya ljud som är lika med dma-buffer size eftersom denna
   //buffer loopar och man fyller hela tiden på med data precis före playingposition.
   //Bör därför ej vara längre än en tiondels sekund för ljudeffekter.
-  SoundBufferSamplesSize = Round(AudioRate/20);
+  SoundBufferSamplesSize = Round(AudioRate/{$ifdef android}20{$else}20{$endif});
   SoundBufferByteSize = SoundBufferSamplesSize * SizeOf(TSoundOutputUnit) * StereoChannels;
 
   AudioFrameLength = 1.0 / 50;                      //Tid mellan varje uppdatering av modulations

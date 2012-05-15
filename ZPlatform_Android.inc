@@ -27,10 +27,12 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, UnixType;
+uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
 
 function __android_log_write(prio : integer; tag, text : PAnsiChar) : integer; cdecl; external 'liblog.so';
 function gettimeofday( val : PTimeVal; tzp : Pointer ) : Integer; cdecl; external 'libc';
+function select( n : longint; readfds, writefds, exceptfds : Pointer; var timeout : timeVal ) : longint; cdecl; external 'libc';
+function usleep(__useconds:integer):longint;cdecl;external 'libc' name 'usleep';
 
 var
   TimerStart : single;
@@ -70,9 +72,9 @@ end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 begin
-  if Switch='s' then
-    Result := True
-  else
+{  if Switch='s' then
+    Result := True  //Disable audio
+  else}
     Result := False;
 end;
 
@@ -163,30 +165,181 @@ begin
 end;
 
 
-procedure Platform_InitAudio;
+const
+  MixBufferSamplesSize = SoundBufferSamplesSize*8;  //Måste vara lika stor som dma-buffern
+var
+  MixBuffer : packed array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
+  AudioTerminated : boolean;
+
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; SampleCount : integer);
+var
+  I : integer;
+  Val : TSoundMixUnit;
 begin
+  for I := 0 to (SampleCount * StereoChannels)-1 do
+  begin
+    Val := Source^ div (1 shl (MixPBits-OutputBits));
+    if Val>High(TSoundOutputUnit) then
+      Dest^ := High(TSoundOutputUnit)
+    else if Val<Low(TSoundOutputUnit) then
+      Dest^ := Low(TSoundOutputUnit)
+    else
+      Dest^ := Val;
+    Inc(Source);
+    Inc(Dest);
+  end;
 end;
 
+{procedure LogValue(const S : AnsiString; const Value : integer);
+begin
+  platform_error(pansichar(S + ': ' + ansistring(inttostr(Value))));
+end;}
+
+procedure MixAndCopyData(Destination : pointer; len: Integer );
+var
+  BytesToWrite,SamplesToWrite : integer;
+  I : integeR;
+begin
+  BytesToWrite := Len;
+
+  //Todo: test for high limit on buffer
+
+  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
+//  LogValue('SamplesToWrite',SamplesToWrite);
+//  LogValue('SizeOf(MixBuffer)',SizeOf(MixBuffer));
+//  LogValue('High(MixBuffer)',High(MixBuffer));
+
+  FillChar(MixBuffer,SamplesToWrite * SizeOf(TSoundMixUnit) * StereoChannels,0);
+
+  Platform_EnterMutex(VoicesMutex);
+    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
+  Platform_LeaveMutex(VoicesMutex);
+
+  //Flytta paint buffer till dma-soundbuffer
+  ClipAndCopy(@MixBuffer[0],Destination,SamplesToWrite);
+end;
+
+
+function AudioCallback(Data : pointer) : longint;
+var
+  Env : PJNIEnv;
+  cAudioTrack : jclass;
+  mGetMinBufferSize,mAudioTrack,mPlay,mStop,mRelease,mWrite : JMethodID;
+  bufferSizeInBytes : integer;
+  track : jobject;
+  Buffer : jarray;
+  Params : array[0..10] of integer;
+  PBuffer : pointer;
+  IsCopy : JBoolean;
+
+  function C(const args : array of const) : pointer;
+  var
+    I : integer;
+  begin
+     for I := 0 to High(args) do
+       Params[I] := args[I].vinteger;
+     Result := @Params;
+  end;
+
+begin
+  //Write to Java AudioTrack.
+  //Concept from OpenAL: http://repo.or.cz/w/openal-soft/android.git/blob/HEAD:/Alc/backends/android.c
+
+  Result := 0;
+
+  Platform_error('audiocallback started');
+
+  if CurVM^.AttachCurrentThread(CurVM,@Env,nil)<>0 then
+  begin
+    Platform_error('error attach thread');
+    Exit;
+  end;
+
+  env^.PushLocalFrame(env, 2);
+
+  cAudioTrack := env^.FindClass(env, 'android/media/AudioTrack');
+  if cAudioTrack=nil then
+  begin
+    Platform_error('no audiotrack');
+    Exit;
+  end;
+
+  mGetMinBufferSize := env^.GetStaticMethodID(env, cAudioTrack, 'getMinBufferSize', '(III)I');
+  mAudioTrack := env^.GetMethodID(env, cAudioTrack, '<init>', '(IIIIII)V');
+  mPlay := env^.GetMethodID(env, cAudioTrack, 'play', '()V');
+  mStop := env^.GetMethodID(env, cAudioTrack, 'stop', '()V');
+  mRelease := env^.GetMethodID(env, cAudioTrack, 'release', '()V');
+  mWrite := env^.GetMethodID(env, cAudioTrack, 'write', '([BII)I');
+
+  bufferSizeInBytes := Env^.CallStaticIntMethodV(env, cAudioTrack, mGetMinBufferSize, C([AudioPlayer.AudioRate, 3, 2]));
+  //LogValue('BufferSize',bufferSizeInBytes);
+
+  track := env^.NewObjectV(env, cAudioTrack, mAudioTrack, C([3, AudioPlayer.AudioRate, 3, 2, bufferSizeInBytes, 1]));
+  if track=nil then
+    Platform_error('could not create track')
+  else
+  begin
+    env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mPlay);
+
+    buffer := env^.NewByteArray(env, bufferSizeInBytes);
+
+    while not AudioTerminated do
+    begin
+      PBuffer := env^.GetPrimitiveArrayCritical(env, buffer, IsCopy);
+      if PBuffer=nil then
+        Platform_error('could not get buffer')
+      else
+      begin
+        MixAndCopyData(PBuffer,bufferSizeInBytes);
+        env^.ReleasePrimitiveArrayCritical(env, buffer, pBuffer, 0);
+        env^.CallNonvirtualIntMethodV(env, track, cAudioTrack, mWrite, C([buffer, 0, bufferSizeInBytes]));
+      end;
+    end;
+
+    env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mStop);
+    env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mRelease);
+  end;
+
+  env^.PopLocalFrame(env, nil);
+  CurVM^.DetachCurrentThread(CurVM);
+end;
+
+procedure Platform_InitAudio;
+var
+  id : LongWord;
+begin
+  AudioTerminated := False;
+  BeginThread( AudioCallback, nil, id);
+end;
 
 procedure Platform_ShutdownAudio;
 begin
+  AudioTerminated := True;
 end;
 
 function Platform_CreateMutex : pointer;
+var
+  P : PRTLCriticalSection;
 begin
-  Result := nil;
+  P := GetMem(SizeOf(Pointer));
+  InitCriticalSection(P^);
+  Result := P;
 end;
 
 procedure Platform_FreeMutex(P : pointer);
 begin
+  DoneCriticalSection(PRTLCriticalSection(P)^);
+  FreeMem(P);
 end;
 
 procedure Platform_EnterMutex(P : pointer);
 begin
+  EnterCriticalSection(PRTLCriticalSection(P)^);
 end;
 
 procedure Platform_LeaveMutex(P : pointer);
 begin
+  LeaveCriticalSection(PRTLCriticalSection(P)^);
 end;
 
 function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
@@ -221,6 +374,7 @@ end;
 
 procedure Platform_Sleep(time : integer);
 begin
+  usleep(time);
 end;
 
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;

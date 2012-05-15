@@ -507,6 +507,8 @@ function JNI_CreateJavaVM(vm:PPJavaVM;AEnv:PPJNIEnv;p:pointer):jint;{$ifdef mswi
 function JNI_GetCreatedJavaVMs(vm:PPJavaVM;ASize:jsize;p:Pjsize):jint;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}external 'jni' name 'JNI_GetCreatedJavaVMs';
 {$endif}
 
+function JNI_OnLoad(vm:PJavaVM;reserved:pointer):jint;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
+
 (*
  * Prototypes for functions exported by loadable shared libs.  These are
  * called by JNI, not provided by JNI.
