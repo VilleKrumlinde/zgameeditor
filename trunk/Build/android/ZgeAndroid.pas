@@ -86,22 +86,20 @@ begin
     ZApp.ScreenHeight := Height;
     ZApp.Run;
     AppInited := True;
+  end else
+  begin
+    ZApp.ScreenWidth := Width;
+    ZApp.ScreenHeight := Height;
+    ZApp.ResetGpuResources;
+    Renderer.InitRenderer;
   end;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeDrawFrame( env : PJNIEnv; thiz : jobject );cdecl;
-//const
-//  verts : array[0..8] of single = (-0.5,-0.5,0 ,0.5,-0.5,0, 0,0.5,0);
+procedure DrawTestTriangle;
+const
+  verts : array[0..8] of single = (-0.5,-0.5,0 ,0.5,-0.5,0, 0,0.5,0);
 begin
-//  glClearColor(1,0,0,0);
-//  glClear($00004000);
-  if AppInited then
-  begin
-//    log('main');
-//    ZApp.ClearColor.V[0] := Random;
-    ZApp.Main;
-
-(*  glMatrixMode(GL_PROJECTION);
+  glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
@@ -109,8 +107,17 @@ begin
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(3,GL_FLOAT,0,@Verts);
   glDrawArrays(GL_TRIANGLES,0,3);
-  glDisableClientState(GL_VERTEX_ARRAY);*)
+  glDisableClientState(GL_VERTEX_ARRAY);
+end;
 
+procedure Java_org_zgameeditor_Zge_zglNativeDrawFrame( env : PJNIEnv; thiz : jobject );cdecl;
+begin
+  if AppInited then
+  begin
+    ZApp.Main;
+     
+    //Manual mouseup because there is no tap-up message
+    AndroidKeys[ Ansichar(123 and 255) ] := False;
   end;
 end;
 

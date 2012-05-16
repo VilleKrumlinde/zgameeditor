@@ -76,9 +76,9 @@ type
     Value : single;
     ValuePropRef : TZPropertyRef;
     ValueArrayRef : TDefineArray;
+    procedure ResetGpuResources; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
-    procedure DesignerFreeResources; override;
     {$endif}
     destructor Destroy; override;
   end;
@@ -103,9 +103,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     destructor Destroy; override;
-    {$ifndef minimal}
-    procedure DesignerFreeResources; override;
-    {$endif}
+    procedure ResetGpuResources; override;
   end;
 
   //Render-commands
@@ -213,9 +211,9 @@ type
     UseModelSpace : boolean;
     StretchY : single;
     procedure Execute; override;
+    procedure ResetGpuResources; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
-    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -295,9 +293,7 @@ type
     Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
     CustomWidth,CustomHeight : integer;
     destructor Destroy; override;
-    {$ifndef minimal}
-    procedure DesignerFreeResources; override;
-    {$endif}
+    procedure ResetGpuResources; override;
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -365,9 +361,9 @@ uses ZOpenGL, ZMath, ZApplication, ZPlatform
   {$ifdef zlog},ZLog,SysUtils{$endif};
 
 var
-  DefaultMaterial : TMaterial;
-  DefaultMaterialTexture : TMaterialTexture;
-  DefaultFont : TFont;
+  DefaultMaterial : TMaterial = nil;
+  DefaultMaterialTexture : TMaterialTexture = nil;
+  DefaultFont : TFont = nil;
 
 const
   {$if SizeOf(TMeshVertexIndex)=2}
@@ -807,9 +803,9 @@ const
   Specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
   LowShininess = 5;
 begin
-  {$ifndef minimal}if DefaultMaterial=nil then{$endif}
+  if DefaultMaterial=nil then
     DefaultMaterial := TMaterial.Create(nil);
-  {$ifndef minimal}if DefaultMaterialTexture=nil then{$endif}
+  if DefaultMaterialTexture=nil then
     DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
   glEnable(GL_DEPTH_TEST);
@@ -1378,6 +1374,15 @@ begin
 
 end;
 
+procedure TRenderText.ResetGpuResources;
+begin
+  if Assigned(DefaultFont) then
+  begin
+    DefaultFont.Free;
+    DefaultFont := nil;
+  end;
+end;
+
 {$ifndef minimal}
 function TRenderText.GetDisplayName: AnsiString;
 begin
@@ -1386,12 +1391,6 @@ begin
     Result := Result + '  ' + Text;
   if TextFloatRef.Component<>nil then
     Result := Result + '  ' + AnsiString(GetPropRefAsString(TextFloatRef));
-end;
-
-procedure TRenderText.DesignerFreeResources;
-begin
-  if Assigned(DefaultFont) then
-    FreeAndNil(DefaultFont);
 end;
 {$endif}
 
@@ -2255,13 +2254,11 @@ begin
   ProgHandle := 0;
 end;
 
-{$ifndef minimal}
-procedure TShader.DesignerFreeResources;
+procedure TShader.ResetGpuResources;
 begin
   CleanUp;
   inherited;
 end;
-{$endif}
 
 { TShaderVariable }
 
@@ -2284,8 +2281,9 @@ begin
   if Length(VariableName)=0 then
     Result := Result + '*VariableName not set*';
 end;
+{$endif}
 
-procedure TShaderVariable.DesignerFreeResources;
+procedure TShaderVariable.ResetGpuResources;
 begin
   if TextureHandle<>0 then
   begin
@@ -2293,7 +2291,6 @@ begin
     TextureHandle := 0;
   end;
 end;
-{$endif}
 
 destructor TShaderVariable.Destroy;
 begin
@@ -2500,13 +2497,11 @@ begin
   glBindTexture(GL_TEXTURE_2D, TexId);
 end;
 
-{$ifndef minimal}
-procedure TRenderTarget.DesignerFreeResources;
+procedure TRenderTarget.ResetGpuResources;
 begin
   CleanUp;
   inherited;
 end;
-{$endif}
 
 { TSetRenderTarget }
 
