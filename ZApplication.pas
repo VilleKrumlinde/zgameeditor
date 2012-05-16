@@ -149,6 +149,7 @@ type
     procedure Update; override;
     procedure UpdateViewport; overload;
     procedure UpdateViewport(const W,H : integer); overload;
+    procedure ResetGpuResources; override;
     {$ifndef minimal}
     procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer);
@@ -159,7 +160,6 @@ type
     procedure RefreshSymbolTable;
     procedure Compile;
     procedure CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
-    procedure DesignerFreeResources; override;
     {$endif}
   end;
 
@@ -723,8 +723,7 @@ begin
   {$endif}
 end;
 
-{$ifndef minimal}
-procedure TZApplication.DesignerFreeResources;
+procedure TZApplication.ResetGpuResources;
 var
   I,J : integer;
   Model : TModel;
@@ -740,11 +739,12 @@ begin
     for J := 0 to List.Count-1 do
     begin
       Model := TModel(List[J]);
-      Model.DesignerFreeResources;
+      Model.ResetGpuResources;
     end;
   end;
 end;
 
+{$ifndef minimal}
 procedure TZApplication.DesignerSetUpView;
 begin
   //Used for previewing app-state in designer

@@ -57,6 +57,7 @@ public class Zge extends GLSurfaceView
     private boolean IsDestroy;
     private zglCRenderer Renderer;
     private InputMethodManager InputManager;
+    private GestureDetector gestureDetector;
 
     public Zge(Context context)
     {
@@ -69,6 +70,14 @@ public class Zge extends GLSurfaceView
         setRenderer( Renderer );
 
         setFocusableInTouchMode( true );
+
+        gestureDetector = new GestureDetector(new MyGestureDetector());
+        setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                return gestureDetector.onTouchEvent(event);
+            }
+        });
+
     }
 
     public Boolean onCloseQuery()
@@ -206,8 +215,8 @@ public class Zge extends GLSurfaceView
     class MyGestureDetector extends SimpleOnGestureListener {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
-            Log.i("ZgeAndroid", "Tap");
-            zglNativeKeydown(123);
+            //Log.i("ZgeAndroid", "Tap");
+            zglNativeKeydown(123); //Mousedown
             return true;
         }
 

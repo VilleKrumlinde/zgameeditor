@@ -35,7 +35,6 @@ function select( n : longint; readfds, writefds, exceptfds : Pointer; var timeou
 function usleep(__useconds:integer):longint;cdecl;external 'libc' name 'usleep';
 
 var
-  TimerStart : single;
   StartTimeVal : TimeVal;
   KeyMap : array[AnsiChar] of AnsiChar;
 
@@ -198,7 +197,6 @@ end;}
 procedure MixAndCopyData(Destination : pointer; len: Integer );
 var
   BytesToWrite,SamplesToWrite : integer;
-  I : integeR;
 begin
   BytesToWrite := Len;
 

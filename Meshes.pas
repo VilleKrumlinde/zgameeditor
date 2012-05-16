@@ -73,8 +73,8 @@ type
     procedure Scale(const V: TZVector3f);
     procedure BeforeRender;
     destructor Destroy; override;
+    procedure ResetGpuResources; override;
     {$ifndef minimal}
-    procedure DesignerFreeResources; override;
     procedure DesignerCopyFrom(M: TMesh);
     {$endif}
   end;
@@ -523,8 +523,7 @@ begin
   end;
 end;
 
-{$ifndef minimal}
-procedure TMesh.DesignerFreeResources;
+procedure TMesh.ResetGpuResources;
 begin
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
@@ -533,7 +532,6 @@ begin
   end;
   inherited;
 end;
-{$endif}
 
 destructor TMesh.Destroy;
 begin
