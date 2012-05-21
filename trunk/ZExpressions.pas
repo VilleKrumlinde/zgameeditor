@@ -217,7 +217,8 @@ type
      fcSetRandomSeed,fcQuit,
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
-     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace);
+     fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,
+     fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -951,6 +952,25 @@ begin
         {$ifndef minimal}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
+      end;
+    fcTouchGetCount :
+      begin
+        PInteger(@V)^ := Platform_TouchGetCount;
+      end;
+    fcTouchGetX :
+      begin
+        StackPopTo(I1);
+        V := ZApp.NormalizeToScreen( Platform_TouchGetPos(I1) )[0];
+      end;
+    fcTouchGetY :
+      begin
+        StackPopTo(I1);
+        V := ZApp.NormalizeToScreen( Platform_TouchGetPos(I1) )[1];
+      end;
+    fcTouchGetID :
+      begin
+        StackPopTo(I1);
+        PInteger(@V)^ := Platform_TouchGetID(I1);
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;

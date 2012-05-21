@@ -25,6 +25,14 @@ var
   AndroidKeys : array[ansichar] of boolean;
   AndroidPath : PAnsiChar;
 
+  AndroidContentPtr : pointer = nil;
+  AndroidContentSize : integer;
+
+  AndroidTouchCount : integer = 0;
+  AndroidTouch : array[0..10] of record
+    Id,X,Y : integer;
+  end;
+
 implementation
 
 uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
@@ -150,6 +158,8 @@ begin
   System.Reset(F,1);
   if IOResult<>0 then
   begin
+    if AndroidContentPtr<>nil then
+      Exit( TZInputStream.CreateFromMemory(AndroidContentPtr, AndroidContentSize) );
     Platform_Error('File missing zzdc.dat');
     Exit;
   end;
@@ -200,14 +210,13 @@ var
 begin
   BytesToWrite := Len;
 
-  //Todo: test for high limit on buffer
-
   SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
-//  LogValue('SamplesToWrite',SamplesToWrite);
-//  LogValue('SizeOf(MixBuffer)',SizeOf(MixBuffer));
-//  LogValue('High(MixBuffer)',High(MixBuffer));
 
-  FillChar(MixBuffer,SamplesToWrite * SizeOf(TSoundMixUnit) * StereoChannels,0);
+  if SamplesToWrite*StereoChannels>High(MixBuffer) then
+    //test for high limit on buffer
+    Exit;
+
+  FillChar(MixBuffer,SamplesToWrite * StereoChannels * SizeOf(TSoundMixUnit),0);
 
   Platform_EnterMutex(VoicesMutex);
     AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
@@ -407,6 +416,32 @@ end;
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 begin
   Result := nil;
+end;
+
+function Platform_TouchGetCount : integer;
+begin
+  Result := AndroidTouchCount;
+end;
+
+function Platform_TouchGetPos(const TouchIndex : integer) : TZPointi;
+begin
+  if TouchIndex>=AndroidTouchCount then
+  begin
+    Result.X := 0;
+    Result.Y := 0;
+  end
+  else
+  begin
+    Result.X := AndroidTouch[TouchIndex].X;
+    Result.Y := AndroidTouch[TouchIndex].Y;
+  end;
+end;
+
+function Platform_TouchGetId(const TouchIndex : integer) : integer;
+begin
+  Result := 0;
+  if TouchIndex<AndroidTouchCount then
+    Result := AndroidTouch[TouchIndex].Id;
 end;
 
 end.

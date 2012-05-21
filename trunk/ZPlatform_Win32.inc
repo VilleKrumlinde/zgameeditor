@@ -1812,6 +1812,22 @@ begin
   Result := GetProcAddress(Module,Name);
 end;
 
+function Platform_TouchGetCount : integer;
+begin
+  Result := 0;
+end;
+
+function Platform_TouchGetPos(const TouchIndex : integer) : TZPointi;
+begin
+  Result.X := 0;
+  Result.Y := 0;
+end;
+
+function Platform_TouchGetId(const TouchIndex : integer) : integer;
+begin
+  Result := 0;
+end;
+
 {initialization
 
 finalization}

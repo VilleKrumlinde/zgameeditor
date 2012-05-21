@@ -53,6 +53,7 @@ public class Zge extends GLSurfaceView
     private native void zglNativeTouch( int ID, float X, float Y, float Pressure );
     private native void zglNativeKeyup(int keycode);
     private native void zglNativeKeydown(int keycode);
+    private native void zglSetDataContent(byte[] content);
 
     private boolean IsDestroy;
     private zglCRenderer Renderer;
@@ -71,13 +72,19 @@ public class Zge extends GLSurfaceView
 
         setFocusableInTouchMode( true );
 
-        gestureDetector = new GestureDetector(new MyGestureDetector());
-        setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                return gestureDetector.onTouchEvent(event);
-            }
-        });
+        loadEmbeddedData();
 
+    }
+
+    void loadEmbeddedData() {
+        try {
+            java.io.InputStream is = getResources().openRawResource(R.raw.zzdc);
+            byte[] b = new byte[is.available()];
+            is.read(b);
+            zglSetDataContent(b);
+        } catch (Exception e) {
+            Log.i("ZgeAndroid", "Failed to load embedded: " + e.toString());
+        }
     }
 
     public Boolean onCloseQuery()
@@ -104,6 +111,7 @@ public class Zge extends GLSurfaceView
     {
         int action = event.getAction();
         int actionType = action & MotionEvent.ACTION_MASK;
+        //Log.i("ZgeAndroid", "Action: " + action + " actiontype: " + actionType);
 
         switch ( actionType )
         {
@@ -142,17 +150,17 @@ public class Zge extends GLSurfaceView
 
             case MotionEvent.ACTION_POINTER_DOWN:
             {
-                int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
-                int pointerIndex = event.findPointerIndex( pointerID );
-                zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
+                int pointerIndex = ( action & MotionEvent.ACTION_POINTER_INDEX_MASK  ) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+                int pointerId = event.getPointerId( pointerIndex );
+                zglNativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
                 break;
             }
 
             case MotionEvent.ACTION_POINTER_UP:
             {
-                int pointerID = ( action & MotionEvent.ACTION_POINTER_ID_MASK ) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
-                int pointerIndex = event.findPointerIndex( pointerID );
-                zglNativeTouch( pointerID, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
+                int pointerIndex = ( action & MotionEvent.ACTION_POINTER_INDEX_MASK  ) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+                int pointerId = event.getPointerId( pointerIndex );
+                zglNativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
                 break;
             }
         }
@@ -210,16 +218,6 @@ public class Zge extends GLSurfaceView
 
             zglNativeDrawFrame();
         }
-    }
-
-    class MyGestureDetector extends SimpleOnGestureListener {
-        @Override
-        public boolean onSingleTapUp(MotionEvent e) {
-            //Log.i("ZgeAndroid", "Tap");
-            zglNativeKeydown(123); //Mousedown
-            return true;
-        }
-
     }
 
 }

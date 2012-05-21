@@ -1124,6 +1124,10 @@ begin
   MakeOne('ord',fcOrd,'IS');
   MakeOne('createModel',fcCreateModel,'MM');
   MakeOne('trace',fcTrace,'VS');
+  MakeOne('touchGetCount',fcTouchGetCount,'I');
+  MakeOne('touchGetX',fcTouchGetX,'FI');
+  MakeOne('touchGetY',fcTouchGetY,'FI');
+  MakeOne('touchGetID',fcTouchGetID,'II');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
