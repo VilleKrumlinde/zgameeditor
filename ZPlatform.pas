@@ -78,12 +78,15 @@ function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
 function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
 function Platform_GetJoystickPOV(JoyId : integer) : single;
 
-
 procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+
+function Platform_TouchGetCount : integer;
+function Platform_TouchGetPos(const TouchIndex : integer) : TZPointi;
+function Platform_TouchGetId(const TouchIndex : integer) : integer;
 
 {$ifndef minimal}
 type

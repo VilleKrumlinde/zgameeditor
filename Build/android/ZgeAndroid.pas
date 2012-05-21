@@ -131,9 +131,47 @@ begin
 end;
 
 procedure Java_org_zgameeditor_Zge_zglNativeTouch( env : PJNIEnv; thiz : jobject; ID : jint; X, Y, Pressure : jfloat );cdecl;
+var
+  I,Ix,Iy : integer;
+  IsUp,Found : boolean;
+  
 begin
-  AndroidCurrentMouse.X := Trunc(X);
-  AndroidCurrentMouse.Y := Trunc(Y);
+  Ix := Trunc(X);
+  Iy := Trunc(Y);
+  AndroidCurrentMouse.X := Ix;
+  AndroidCurrentMouse.Y := Iy;
+  
+  IsUp := Pressure<0.0001;
+  if IsUp then
+    AndroidKeys[ '{' ] := True;  //Mouse click
+  
+  Found := False;
+  for I := 0 to AndroidTouchCount-1 do
+  begin
+    if AndroidTouch[I].Id=ID then
+    begin
+      if IsUp then
+      begin
+        if I<>AndroidTouchCount-1 then
+          Move(AndroidTouch[I+1],AndroidTouch[I],SizeOf(AndroidTouch[0])*(AndroidTouchCount-I-1));
+        Dec(AndroidTouchCount);
+      end
+      else
+      begin
+        AndroidTouch[I].X := Ix;
+        AndroidTouch[I].Y := Iy;
+      end;
+      Found := True;
+      Break;
+    end;
+  end;
+  if (not Found) and (not IsUp) and (AndroidTouchCount<High(AndroidTouch)) then
+  begin
+    Inc(AndroidTouchCount);
+    AndroidTouch[AndroidTouchCount-1].Id := Id;
+    AndroidTouch[AndroidTouchCount-1].X := Ix;
+    AndroidTouch[AndroidTouchCount-1].Y := Iy;
+  end;
 end;
 
 procedure Java_org_zgameeditor_Zge_zglNativeKeydown( env : PJNIEnv; thiz : jobject; Keycode : jint);cdecl;
@@ -146,6 +184,23 @@ begin
   AndroidKeys[ Ansichar(Keycode and 255) ] := False;
 end;
 
+procedure Java_org_zgameeditor_Zge_zglSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
+var
+  Size :  integer;
+  IsCopy : jboolean;
+  P : pointer;
+begin
+  Size := env^.GetArrayLength(env,Content);
+  P := env^.GetPrimitiveArrayCritical(env, Content, IsCopy);
+  
+  GetMem(AndroidContentPtr,Size);
+  Move(P^,AndroidContentPtr^,Size);
+  AndroidContentSize := Size;
+  
+  env^.ReleasePrimitiveArrayCritical(env, Content, P, 0);
+end;
+
+
 exports
   Java_org_zgameeditor_Zge_zglNativeDestroy,
   Java_org_zgameeditor_Zge_zglNativeSurfaceCreated,
@@ -156,6 +211,7 @@ exports
   Java_org_zgameeditor_Zge_zglNativeCloseQuery,
   Java_org_zgameeditor_Zge_zglNativeKeydown,
   Java_org_zgameeditor_Zge_zglNativeKeyup,
+  Java_org_zgameeditor_Zge_zglSetDataContent,
 
   JNI_OnLoad;
 

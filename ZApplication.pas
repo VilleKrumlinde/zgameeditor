@@ -149,6 +149,7 @@ type
     procedure Update; override;
     procedure UpdateViewport; overload;
     procedure UpdateViewport(const W,H : integer); overload;
+    function NormalizeToScreen(P : TZPointi) : TZVector2f;
     procedure ResetGpuResources; override;
     {$ifndef minimal}
     procedure Terminate;
@@ -333,12 +334,8 @@ begin
   LastTime := Time;
 end;
 
-procedure TZApplication.UpdateStateVars;
-var
-  P : TZPointi;
+function TZApplication.NormalizeToScreen(P : TZPointi) : TZVector2f;
 begin
-  P := Platform_GetMousePos;
-
   //Clip coord to current viewport
   Dec(P.X,ViewportX);
   Dec(P.Y,ViewportY);
@@ -352,9 +349,14 @@ begin
     P.Y := ViewportHeight-1;
 
   //-1 .. 1, 0 är center
-  MousePosition[0] := (P.X / ViewportWidth) * 2 - 1;
+  Result[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
-  MousePosition[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
+  Result[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
+end;
+
+procedure TZApplication.UpdateStateVars;
+begin
+  PZVector2f(@MousePosition)^ := NormalizeToScreen(Platform_GetMousePos);
 end;
 
 function TZApplication.Main : boolean;
