@@ -34,7 +34,7 @@ uses
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
-    bbNormalLinux,bbNormalOsx86);
+    bbNormalLinux,bbNormalOsx86,bbNormalAndroid);
 
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
@@ -221,6 +221,8 @@ type
     AppStopButton: TButton;
     emptyproject1: TMenuItem;
     N16: TMenuItem;
+    GenerateAndroidAction: TAction;
+    BuildAndroidbinaryexperimental1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -292,6 +294,7 @@ type
     procedure DisableFBOCheckBoxClick(Sender: TObject);
     procedure OnChooseStyleMenuItemClick(Sender: TObject);
     procedure OpenStyleMenuItemClick(Sender: TObject);
+    procedure GenerateAndroidActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -539,7 +542,7 @@ begin
 
   Application.OnException := OnAppException;
 
-  SaveBinaryMenuItem.Visible := True;//DebugHook<>0;
+  SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
   DetailedBuildReportMenuItem.Visible := DebugHook<>0;
 
@@ -668,6 +671,9 @@ begin
   Ed.RootComponent := Self.Root;
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
+
+  //Needed for platform wndproc
+  SetWindowLongPtr(Glp.Handle,GWL_USERDATA, NativeInt(ZApp) );
 
   ZApp.RefreshSymbolTable;
 
@@ -1964,6 +1970,11 @@ begin
   Log.Write('File generated: ' + OutputName);
 end;
 
+procedure TEditorForm.GenerateAndroidActionExecute(Sender: TObject);
+begin
+  BuildRelease(bbNormalAndroid);
+end;
+
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
@@ -2199,6 +2210,8 @@ var
     FileClose(Handle);
   end;
 
+var
+  C : TDefineConstant;
 begin
   UsePiggyback := False;
   UseCodeRemoval := False;
@@ -2228,16 +2241,30 @@ begin
       end;
   end;
 
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.' + Ext
+  if Kind=bbNormalAndroid then
+  begin
+    if not SaveDialog.Execute then
+      Exit;
+    OutFile := SaveDialog.FileName;
+  end
   else
-    //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
-    OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
+  begin
+    if CurrentFileName='' then
+      OutFile := ExePath + 'untitled.' + Ext
+    else
+      //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
+      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
+  end;
 
   if FileExists(OutFile) then
     DeleteFile(OutFile);
 
-  if UsePiggyback then
+  C := ZApp.SymTab.Lookup('android') as TDefineConstant;
+  C.Value := IfThen(Kind=bbNormalAndroid, 1, 0);
+
+  if Kind=bbNormalAndroid then
+    BuildBinary('',OutFile)
+  else if UsePiggyback then
   begin
     if not FileExists(ExePath + PlayerName) then
     begin
@@ -2253,6 +2280,8 @@ begin
     ReplaceResource(PlayerName,OutFile,TempFile,UseCodeRemoval);
     DeleteFile(TempFile);
   end;
+
+  C.Value := 0;
 
   //linuxbinärer med piggyback hanteras ej av upx
   if Kind in [bbNormal,bbScreenSaver] then
@@ -2281,6 +2310,10 @@ begin
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+    bbNormalAndroid:
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
   end;
 
   //Return created filename

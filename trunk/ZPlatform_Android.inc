@@ -75,6 +75,9 @@ end;
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
   Result := AndroidKeys[ KeyMap[C] ];
+  if Result and (C='{') then
+    //Manual mouseup because there is no tap-up message
+    AndroidKeys[ '{' ] := False;
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;

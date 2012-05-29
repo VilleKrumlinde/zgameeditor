@@ -586,6 +586,29 @@ begin
 
   Result := Self;
 
+  if (Self.Kind=zcIf) then
+  begin
+    if Child(0).Kind=zcConstLiteral then
+    begin
+      C1 := Child(0) as TZcOpLiteral;
+      if (C1.Typ.Kind in [zctFloat,zctInt]) then
+      begin
+        if (C1.Value=0) then
+        begin
+          //Constant False
+          if (Children.Count=3) and Assigned(Child(2)) then
+            Exit( Child(2) )  //Replace with Else
+          else
+            Exit( MakeOp(zcNop );  //Replace with nop
+        end else
+        begin
+          //Constant True
+          Exit( Child(1) )  //Replace with Then
+        end;
+      end;
+    end;
+  end;
+
   if (Children.Count=2) and (Child(0).Kind=zcConstLiteral) and (Child(1).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
@@ -1133,6 +1156,10 @@ begin
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','PI');
   Con.Value := PI;
+  BuiltInConstants.Add(Con);
+  Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','ANDROID');
+  Con.Value := 0;
   BuiltInConstants.Add(Con);
 end;
 
