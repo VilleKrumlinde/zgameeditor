@@ -121,10 +121,8 @@ type
   end;
 
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
-{$ifdef minimal}
 var
   ZApp : TZApplication;
-{$endif}
 begin
   Result := 0;
   case Msg of
@@ -177,10 +175,9 @@ begin
       Keys[ Ord('[') ] := True;
     WM_MOUSEWHEEL :
       begin
-        {$ifdef minimal}
         ZApp := TZApplication(GetWindowLongPtr(hWnd,GWL_USERDATA));
-        ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
-        {$endif}
+        if ZApp<>nil then
+          ZApp.MouseWheelDelta := shortint(wParam shr 16) div 120;
       end;
 {$ifdef minimal}
     else

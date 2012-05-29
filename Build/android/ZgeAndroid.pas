@@ -115,9 +115,6 @@ begin
   if AppInited then
   begin
     ZApp.Main;
-     
-    //Manual mouseup because there is no tap-up message
-    AndroidKeys[ Ansichar(123 and 255) ] := False;
   end;
 end;
 
