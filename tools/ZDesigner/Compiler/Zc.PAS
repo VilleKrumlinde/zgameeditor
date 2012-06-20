@@ -68,6 +68,7 @@ type
     procedure _MulExpr(InOp : TZcOp; var OutOp : TZcOp);
     procedure _Primary(var OutOp : TZcOp);
     procedure _InvokeArgument(var OutOp : TZcOp; Ci : TZComponentInfo);
+    procedure _ReinterpretCast(var OutOp : TZcOp);
     procedure _Literal(var Typ : TZcDataType);
 
   public
@@ -108,8 +109,8 @@ const
 	constSym = 51;	ifSym = 52;	elseSym = 53;	switchSym = 54;	whileSym = 55;
 	forSym = 56;	breakSym = 57;	continueSym = 58;	returnSym = 59;	_plus_equalSym = 60;
 	_minus_equalSym = 61;	_star_equalSym = 62;	_slash_equalSym = 63;	caseSym = 64;	defaultSym = 65;
-	_querySym = 66;	_bar_barSym = 67;	_and_andSym = 68;	_atSym = 69;	nullSym = 70;
-	_NOSYMB = 71;	_slash_starSym = 72;	_slash_slashSym = 73;
+	_querySym = 66;	_bar_barSym = 67;	_and_andSym = 68;	reinterpret_underscorecastSym = 69;	_atSym = 70;
+	nullSym = 71;	_NOSYMB = 72;	_slash_starSym = 73;	_slash_slashSym = 74;
 
 var ZcSymSets: TSetArray;
 
@@ -883,7 +884,7 @@ begin
             if (OutOp=nil) or (Op1=nil) or (Op2=nil) then
               SynError(205)
             else
-              OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
+              OutOp := MakeOp(zcConditional,[OutOp,Op1, MakeCompatible(Op2,Op1.GetDataType) ]);
          
        end;
   end
@@ -1655,6 +1656,10 @@ begin
        _Expr(OutOp);
        Expect(rparSym);
   end
+  else if (CurrentInputSymbol=reinterpret_underscorecastSym) then
+  begin
+       _ReinterpretCast(OutOp);
+  end
   else SynError(10);
   while InSet(CurrentInputSymbol,15) do
   begin
@@ -1757,6 +1762,27 @@ begin
   
 end;
 
+procedure TZc._ReinterpretCast(var OutOp : TZcOp);
+
+var
+  Op : TZcOp;
+  Typ : TZcDataType;
+
+begin
+  Expect(reinterpret_underscorecastSym);
+  Expect(ltSym);
+  _SimpleType(Typ);
+  Expect(gtSym);
+  Expect(lparSym);
+  _Expr(Op);
+  Expect(rparSym);
+    
+     OutOp := TZcOpReinterpretCast.Create(nil);
+     OutOp.Children.Add(Op);
+     (OutOp as TZcOpReinterpretCast).Typ := Typ;
+  
+end;
+
 procedure TZc._Literal(var Typ : TZcDataType);
 begin
   if (CurrentInputSymbol=intConSym) then
@@ -1799,8 +1825,8 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'"const"'	,'"if"'	,'"else"'	,'"switch"'	,'"while"'
 	,'"for"'	,'"break"'	,'"continue"'	,'"return"'	,'"+="'
 	,'"-="'	,'"*="'	,'"/="'	,'"case"'	,'"default"'
-	,'"?"'	,'"||"'	,'"&&"'	,'"@"'	,'"null"'
-  ,'not');
+	,'"?"'	,'"||"'	,'"&&"'	,'"reinterpret_cast"'	,'"@"'
+	,'"null"'  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -1871,10 +1897,11 @@ begin
     end;
     ZcLiterals := CreateLiterals(True,
 	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','void','ref','float','int','string','model','xptr'
-		,'const','if','else','switch','while','for','break','continue','return','case','default','null'],
+		,'const','if','else','switch','while','for','break','continue','return','case','default','reinterpret_cast','null'
+		],
 	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,voidSym,refSym,floatSym,intSym,stringSym
 		,modelSym,xptrSym,constSym,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym
-		,nullSym]
+		,reinterpret_underscorecastSym,nullSym]
      );
   end;
   with TZcScanner(Result) do
@@ -1902,13 +1929,13 @@ begin
 	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
 	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
 	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, refSym, floatSym, intSym, stringSym, modelSym, xptrSym, -1,
-	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
-	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
-	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, _atSym, nullSym, -1,
+	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{ 9} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, -1,
-	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, _atSym, nullSym, -1,
-	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, _atSym, nullSym, -1,
+	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{12} decSym, incSym, minusSym, notSym, -1,
 	{13} gtSym, gteSym, ltSym, lteSym, -1,
 	{14} intConSym, realConSym, stringConSym, nullSym, -1,

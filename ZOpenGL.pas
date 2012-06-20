@@ -1514,6 +1514,9 @@ uses ZMath,ZLog,ZPlatform
   {$ifndef minimal}
   ,SysUtils
   {$endif}
+  {$ifdef android}
+  ,Math
+  {$endif}
   ;
 
 {$ifndef minimal}
@@ -1781,6 +1784,10 @@ initialization
   Set8087CW($133F);
   {$ENDIF}
   {$ENDIF}
+
+  {$ifdef android}
+//  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
+  {$endif}
 
 end.
 

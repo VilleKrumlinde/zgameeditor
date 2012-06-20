@@ -151,6 +151,11 @@ var
   Memory : pointer;
   Size : integer;
 begin
+  //Prioritize embedded content
+  if AndroidContentPtr<>nil then
+    Exit( TZInputStream.CreateFromMemory(AndroidContentPtr, AndroidContentSize) );
+
+  //If no embedded content then try to load from external storage
   Result := nil;
   System.FileMode := 0;
 
@@ -161,8 +166,6 @@ begin
   System.Reset(F,1);
   if IOResult<>0 then
   begin
-    if AndroidContentPtr<>nil then
-      Exit( TZInputStream.CreateFromMemory(AndroidContentPtr, AndroidContentSize) );
     Platform_Error('File missing zzdc.dat');
     Exit;
   end;

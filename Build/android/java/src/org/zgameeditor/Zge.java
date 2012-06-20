@@ -71,14 +71,11 @@ public class Zge extends GLSurfaceView
         setRenderer( Renderer );
 
         setFocusableInTouchMode( true );
-
-        loadEmbeddedData();
-
     }
 
-    void loadEmbeddedData() {
+    public void loadEmbeddedData(int id) {
         try {
-            java.io.InputStream is = getResources().openRawResource(R.raw.zzdc);
+            java.io.InputStream is = getResources().openRawResource(id);
             byte[] b = new byte[is.available()];
             is.read(b);
             zglSetDataContent(b);
