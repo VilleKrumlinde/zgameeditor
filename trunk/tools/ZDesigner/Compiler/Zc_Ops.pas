@@ -14,7 +14,8 @@ type
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
-          zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent);
+          zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
+          zcReinterpretCast);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -132,8 +133,15 @@ type
   TZcOpInvokeComponent = class(TZcOp)
   public
     constructor Create(Owner : TObjectList); override;
-    destructor Destroy; override;
     function ToString : string; override;
+  end;
+
+  TZcOpReinterpretCast = class(TZcOp)
+  public
+    Typ : TZcDataType;
+    constructor Create(Owner : TObjectList); override;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
   end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
@@ -1264,11 +1272,6 @@ begin
   Self.Kind := zcInvokeComponent;
 end;
 
-destructor TZcOpInvokeComponent.Destroy;
-begin
-  inherited;
-end;
-
 function TZcOpInvokeComponent.ToString: string;
 var
   Op : TZcOp;
@@ -1281,6 +1284,24 @@ begin
       Result := Result + ', ';
   end;
   Result := Result + ')';
+end;
+
+{ TZcOpReinterpretCast }
+
+constructor TZcOpReinterpretCast.Create(Owner: TObjectList);
+begin
+  inherited;
+  Self.Kind := zcReinterpretCast;
+end;
+
+function TZcOpReinterpretCast.GetDataType: TZcDataType;
+begin
+  Result := Typ;
+end;
+
+function TZcOpReinterpretCast.ToString: string;
+begin
+  Result := 'reinterpret_cast<' + GetZcTypeName(Typ) + '>(' + Child(0).ToString + ')';
 end;
 
 initialization

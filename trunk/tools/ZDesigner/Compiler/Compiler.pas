@@ -485,6 +485,7 @@ begin
     zcPostInc,zcPostDec : GenAssign(Op,alvPre);
     zcConditional : DoGenConditional;
     zcSelect : DoGenSelect;
+    zcReinterpretCast : GenValue(Op.Child(0));
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;

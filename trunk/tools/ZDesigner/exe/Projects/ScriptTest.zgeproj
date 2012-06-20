@@ -583,6 +583,17 @@ if(Global1!=42)
   Error=1503;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Reinterpret cast">
+      <Expression>
+<![CDATA[int x=reinterpret_cast<int>(0.12345678f);
+
+float y=reinterpret_cast<float>(x);
+int test=y*100000000;
+
+if(test!=12345678)
+  Error=1601;]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>

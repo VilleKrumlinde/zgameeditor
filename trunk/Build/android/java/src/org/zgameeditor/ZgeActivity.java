@@ -34,7 +34,7 @@ import android.util.Log;
 
 public class ZgeActivity extends Activity
 {
-    private Zge zge;
+    public Zge zge;
 
     public void onCreate( Bundle savedInstanceState )
     {

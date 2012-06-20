@@ -642,7 +642,7 @@ Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
          (. if (OutOp=nil) or (Op1=nil) or (Op2=nil) then
               SynError(205)
             else
-              OutOp := MakeOp(zcConditional,[OutOp,Op1,Op2]);
+              OutOp := MakeOp(zcConditional,[OutOp,Op1, MakeCompatible(Op2,Op1.GetDataType) ]);
          .)
       ]
   | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
@@ -824,6 +824,21 @@ InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
 .
 
 
+/*------------------------------------------------------------------------*/
+ReinterpretCast<var OutOp : TZcOp>
+(.
+var
+  Op : TZcOp;
+  Typ : TZcDataType;
+.)
+= "reinterpret_cast" "<" SimpleType<Typ> ">"
+  "(" Expr<Op> ")"
+  (.
+     OutOp := TZcOpReinterpretCast.Create(nil);
+     OutOp.Children.Add(Op);
+     (OutOp as TZcOpReinterpretCast).Typ := Typ;
+  .)
+.
 
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>
@@ -866,6 +881,7 @@ Primary<var OutOp : TZcOp>
     | "float"  | "int"    | "long" | "object"  | "sbyte"
     | "short"  | "string" | "uint" | "ulong"   | "ushort"
     ) "." ident */
+  | ReinterpretCast<OutOp>
   )
 
   {
