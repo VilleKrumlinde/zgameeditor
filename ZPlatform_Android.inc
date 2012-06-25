@@ -42,6 +42,11 @@ function gettimeofday( val : PTimeVal; tzp : Pointer ) : Integer; cdecl; externa
 function select( n : longint; readfds, writefds, exceptfds : Pointer; var timeout : timeVal ) : longint; cdecl; external 'libc';
 function usleep(__useconds:integer):longint;cdecl;external 'libc' name 'usleep';
 
+function dlopen ( Name : PAnsiChar; Flags : longint) : Pointer; cdecl; external 'dl';
+function dlclose( Lib : Pointer) : Longint; cdecl; external 'dl';
+function dlsym  ( Lib : Pointer; Name : PAnsiChar) : Pointer; cdecl; external 'dl';
+
+
 var
   StartTimeVal : TimeVal;
   KeyMap : array[AnsiChar] of AnsiChar;
@@ -416,12 +421,16 @@ end;
 
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
 begin
-  Result := 0;
+  Result := Integer( dlopen(Name,1) );
+  if Result=0 then
+    Platform_Error('failed to load');
 end;
 
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 begin
-  Result := nil;
+  Result := dlsym(Pointer(Module), Name);
+  if integer(Result)=0 then
+    Platform_Error('failed to getproc');
 end;
 
 function Platform_TouchGetCount : integer;
