@@ -1689,12 +1689,39 @@ begin
 end;
 {$endif}
 
-{$ifndef CPUX86}
+{$ifdef android}
 procedure TExpExternalFuncCall.Execute;
+type
+  TFunc = procedure();
+  PFunc = ^TFunc;
+var
+  Arg1,I,RetVal : integer;
+  TheFunc : PFunc;
+  Args : array[0..31] of integer;
 begin
-  //Not supported
+  if Self.Proc=nil then
+    Self.Proc := Lib.LoadFunction(Self.FuncName);
+  TheFunc := Self.Proc;
+
+  //Transfer arguments from Zc-stack to hardware stack
+  for I := 0 to ArgCount-1 do
+    StackPopTo(Args[ArgCount-I-1]);
+
+  asm
+    ldr r0, Args
+    ldr r1, Args+4
+    ldr r2, Args+8
+    ldr r3, Args+12
+    ldr r4,TheFunc
+    blx r4
+    str r0,RetVal
+  end;
+
+  if Self.ReturnType.Kind<>zctVoid then
+    StackPush(RetVal);
 end;
 {$else}
+
 procedure TExpExternalFuncCall.Execute;
 {.$define darwin}
 type
