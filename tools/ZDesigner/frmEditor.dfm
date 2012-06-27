@@ -1094,8 +1094,12 @@ object EditorForm: TEditorForm
       OnUpdate = DisableComponentActionUpdate
     end
     object GenerateAndroidAction: TAction
-      Caption = 'Build Android binary (experimental)'
+      Caption = 'Android: Build zzdc.dat file'
       OnExecute = GenerateAndroidActionExecute
+    end
+    object AndroidRunAction: TAction
+      Caption = 'Android: Run project'
+      OnExecute = AndroidRunActionExecute
     end
   end
   object TreePopupMenu: TPopupMenu
@@ -1773,8 +1777,14 @@ object EditorForm: TEditorForm
       object BuildMacOSXIntelbinary1: TMenuItem
         Action = GenerateReleaseOsx86Action
       end
+      object N17: TMenuItem
+        Caption = '-'
+      end
       object BuildAndroidbinaryexperimental1: TMenuItem
         Action = GenerateAndroidAction
+      end
+      object AndroidRunproject1: TMenuItem
+        Action = AndroidRunAction
       end
       object N5: TMenuItem
         Caption = '-'

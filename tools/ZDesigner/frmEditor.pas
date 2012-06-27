@@ -223,6 +223,9 @@ type
     N16: TMenuItem;
     GenerateAndroidAction: TAction;
     BuildAndroidbinaryexperimental1: TMenuItem;
+    AndroidRunAction: TAction;
+    AndroidRunproject1: TMenuItem;
+    N17: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -295,6 +298,7 @@ type
     procedure OnChooseStyleMenuItemClick(Sender: TObject);
     procedure OpenStyleMenuItemClick(Sender: TObject);
     procedure GenerateAndroidActionExecute(Sender: TObject);
+    procedure AndroidRunActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -316,6 +320,7 @@ type
     RenderAborted : boolean;
     MruList : TStringList;
     PackerProg,PackerParams : string;
+    AndroidSdkPath,AndroidSdCardPath : string;
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
@@ -553,6 +558,39 @@ begin
   ReadAppSettingsFromIni;
   RefreshMenuFromMruList;
   FillNewMenuTemplateItems;
+end;
+
+procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
+begin
+  GoUrl( (Sender as TTaskDialog).URL );
+end;
+
+procedure ShowMessageWithLink(const S1,S2 : string);
+var
+  D: TTaskDialog;
+  M : TMethod;
+begin
+  if (Win32MajorVersion >= 6) then
+  begin
+    //Display dialog with hyperlinks on Vista or higher
+    D := TTaskDialog.Create(nil);
+    try
+      D.Flags := [tfEnableHyperlinks,tfUseHiconMain];
+      D.Text := S1 + #13#13 + S2;
+      D.CommonButtons := [tcbOk];
+      D.Title := AppName;
+      D.Caption := AppName;
+      D.CustomMainIcon := Application.Icon;
+      M.Data := D;
+      M.Code := @OnTaskdialogHyperlinkClick;
+      D.OnHyperlinkClicked := TNotifyEvent(M);
+      D.Execute;
+    finally
+      D.Free;
+    end;
+  end else
+    //Display without hyperlinks
+    ShowMessage(S1);
 end;
 
 procedure TEditorForm.FillNewMenuTemplateItems;
@@ -825,6 +863,9 @@ begin
 
     Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
     Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
+
+    Self.AndroidSdkPath := Ini.ReadString(Section,'AndroidSdkPath','');
+    Self.AndroidSdCardPath := Ini.ReadString(Section,'AndroidSdCardPath','/sdcard/');
   finally
     Ini.Free;
   end;
@@ -874,6 +915,9 @@ begin
       Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
 
       Ini.WriteString(Section,'Style', TStyleManager.ActiveStyle.Name);
+
+      Ini.WriteString(Section,'AndroidSdkPath',Self.AndroidSdkPath);
+      Ini.WriteString(Section,'AndroidSdCardPath',Self.AndroidSdCardPath);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;
@@ -1793,6 +1837,8 @@ begin
     F.PackerParamsEdit.Text := Self.PackerParams;
     F.GuiLayoutCombo.ItemIndex := Self.GuiLayout;
     F.UpDown1.Position := Self.AutoComp.TimerInterval;
+    F.AndroidSdkPathEdit.Text := Self.AndroidSdkPath;
+    F.AndroidSdCardPathEdit.Text := Self.AndroidSdCardPath;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
@@ -1800,6 +1846,8 @@ begin
       Self.GuiLayout := F.GuiLayoutCombo.ItemIndex;
       Self.AutoComp.TimerInterval := F.UpDown1.Position;
       Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
+      Self.AndroidSdkPath := F.AndroidSdkPathEdit.Text;
+      Self.AndroidSdCardPath := F.AndroidSdCardPathEdit.Text;
     end;
   finally
     F.Free;
@@ -1971,8 +2019,34 @@ begin
 end;
 
 procedure TEditorForm.GenerateAndroidActionExecute(Sender: TObject);
+var
+  OutFile : string;
 begin
-  BuildRelease(bbNormalAndroid);
+  OutFile := BuildRelease(bbNormalAndroid);
+  ShowMessageWithLink('Created file: '#13#13 + OutFile,
+    '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+    'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
+end;
+
+procedure TEditorForm.AndroidRunActionExecute(Sender: TObject);
+var
+  OutFile,BatFile,ApkPath : string;
+begin
+  if Self.AndroidSdkPath='' then
+  begin
+    ShowMessage('AndroidSdkPath not set. Check settings.');
+    Exit;
+  end;
+  OutFile := BuildRelease(bbNormalAndroid);
+
+  ApkPath := ExePath + 'Android\ZGEAndroid-debug.apk';
+
+  SetEnvironmentVariable('ANDROID_SDK_PATH',PWideChar(Self.AndroidSdkPath));
+  SetEnvironmentVariable('ZZDC_PATH',PWideChar(OutFile));
+  SetEnvironmentVariable('APK_PATH',PWideChar(ApkPath));
+
+  BatFile := '/c "' + ExePath + 'Android\r.bat' + '"';
+  ShellExecute(Handle, 'open', 'cmd', PChar(BatFile), nil, SW_SHOWDEFAULT);
 end;
 
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
@@ -2162,39 +2236,6 @@ begin
   end;
 end;
 
-procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
-begin
-  GoUrl( (Sender as TTaskDialog).URL );
-end;
-
-procedure ShowMessageWithLink(const S1,S2 : string);
-var
-  D: TTaskDialog;
-  M : TMethod;
-begin
-  if (Win32MajorVersion >= 6) then
-  begin
-    //Display dialog with hyperlinks on Vista or higher
-    D := TTaskDialog.Create(nil);
-    try
-      D.Flags := [tfEnableHyperlinks,tfUseHiconMain];
-      D.Text := S1 + #13#13 + S2;
-      D.CommonButtons := [tcbOk];
-      D.Title := AppName;
-      D.Caption := AppName;
-      D.CustomMainIcon := Application.Icon;
-      M.Data := D;
-      M.Code := @OnTaskdialogHyperlinkClick;
-      D.OnHyperlinkClicked := TNotifyEvent(M);
-      D.Execute;
-    finally
-      D.Free;
-    end;
-  end else
-    //Display without hyperlinks
-    ShowMessage(S1);
-end;
-
 function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
   OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
@@ -2243,9 +2284,7 @@ begin
 
   if Kind=bbNormalAndroid then
   begin
-    if not SaveDialog.Execute then
-      Exit;
-    OutFile := SaveDialog.FileName;
+    OutFile := ExePath + 'zzdc.dat';
   end
   else
   begin
@@ -2310,10 +2349,6 @@ begin
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
-    bbNormalAndroid:
-      ShowMessageWithLink('Created file: '#13#13 + OutFile,
-        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
-        'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
   end;
 
   //Return created filename

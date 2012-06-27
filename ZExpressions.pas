@@ -1690,6 +1690,11 @@ end;
 {$endif}
 
 {$ifdef android}
+
+procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8 : integer);
+begin
+end;
+
 procedure TExpExternalFuncCall.Execute;
 type
   TFunc = procedure();
@@ -1700,20 +1705,38 @@ var
   Args : array[0..31] of integer;
 begin
   if Self.Proc=nil then
-    Self.Proc := Lib.LoadFunction(Self.FuncName);
+  begin
+    Self.Proc := Lib.LoadFunction(Self.FuncName)
+    //Make sure android generates enough stack space for calling a func with 8 params
+    DummyProc(1,2,3,4,5,6,7,8);
+  end;
   TheFunc := Self.Proc;
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
     StackPopTo(Args[ArgCount-I-1]);
 
+  //http://en.wikipedia.org/wiki/Calling_convention#ARM
+  //First params in r-registers
+  //Then on stack
   asm
     ldr r0, Args
     ldr r1, Args+4
     ldr r2, Args+8
     ldr r3, Args+12
+
+    ldr r4, Args+16
+	  str	r4,[r13]
+    ldr r4, Args+20
+	  str	r4,[r13, #4]
+    ldr r4, Args+24
+	  str	r4,[r13, #8]
+    ldr r4, Args+28
+	  str	r4,[r13, #12]
+
     ldr r4,TheFunc
     blx r4
+
     str r0,RetVal
   end;
 

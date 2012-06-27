@@ -10,24 +10,31 @@ type
   TSettingsForm = class(TForm)
     OkButton: TButton;
     Button2: TButton;
-    PackerEdit: TEdit;
-    PackerParamsEdit: TEdit;
-    PackerPresetCombo: TComboBox;
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
     GroupBox1: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    PackerEdit: TEdit;
+    PackerParamsEdit: TEdit;
+    PackerPresetCombo: TComboBox;
     GroupBox2: TGroupBox;
     ShellCheck: TCheckBox;
     GroupBox3: TGroupBox;
     Label6: TLabel;
     GuiLayoutCombo: TComboBox;
     GroupBox4: TGroupBox;
+    Label7: TLabel;
     UpDown1: TUpDown;
     CompDelayEdit: TEdit;
-    Label7: TLabel;
+    Label8: TLabel;
+    AndroidSdkPathEdit: TEdit;
+    Label9: TLabel;
+    AndroidSdCardPathEdit: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
@@ -59,8 +66,6 @@ begin
       WriteString(ZgeProjExtension, '', ZgeRegName);
       WriteString(ZgeRegName, '', 'ZGameEditor Project');
       WriteString(ZgeRegName + '\DefaultIcon', '', Application.ExeName + ',0');
-//      WriteString(ZgeRegName + '\Shell', '', 'This_Is_Our_Default_Action');
-//      WriteString(ZgeRegName + '\Shell\open', '','This is our first action');
       WriteString(ZgeRegName + '\Shell\open\command', '', '"' + Application.ExeName + '" "%1"');
    finally
       Free;
@@ -91,8 +96,6 @@ begin
       Free;
    end;
 end;
-
-
 
 procedure TSettingsForm.FormCreate(Sender: TObject);
 begin
@@ -126,7 +129,6 @@ const
 (P:'{$toolpath}upx.exe'; A:'--brute {$exename}'),
 (P:'{$toolpath}kkrunchy.exe'; A:'{$exename}'),
 (P:'{$toolpath}kkrunchy.exe'; A:'--best {$exename}')
-//(P:'{$toolpath}apk2.exe'; A:'{$exename}')
 );
 begin
   PackerEdit.Text := PPreset( @Presets[TComboBox(Sender).ItemIndex] )^.P;
