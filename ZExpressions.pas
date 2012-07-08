@@ -61,6 +61,7 @@ type
     ModuleName : TPropString;
     CallingConvention : (ccStdCall,ccCdecl);
     Source : TZExpressionPropValue;
+    BeforeInitExp : TZExpressionPropValue;
     {$ifndef minimal}
     DefinitionsFile : TPropString;
     function GetDisplayName: ansistring; override;
@@ -952,6 +953,9 @@ begin
         {$ifndef minimal}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
+        {$ifdef android}
+        AndroidLog(PAnsiChar(P1));
+        {$endif}
       end;
     fcTouchGetCount :
       begin
@@ -1610,6 +1614,7 @@ begin
     List.GetLast.IsStringTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'CallingConvention',{$ENDIF}integer(@CallingConvention), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Stdcall','Cdecl']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'BeforeInitExp',{$ENDIF}integer(@BeforeInitExp), zptExpression);
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}integer(@Source), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
@@ -1631,6 +1636,7 @@ function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
 begin
   if ModuleHandle=0 then
   begin
+    ZExpressions.RunCode(BeforeInitExp.Code);
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}
@@ -1706,7 +1712,7 @@ var
 begin
   if Self.Proc=nil then
   begin
-    Self.Proc := Lib.LoadFunction(Self.FuncName)
+    Self.Proc := Lib.LoadFunction(Self.FuncName);
     //Make sure android generates enough stack space for calling a func with 8 params
     DummyProc(1,2,3,4,5,6,7,8);
   end;

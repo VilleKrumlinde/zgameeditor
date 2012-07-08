@@ -601,7 +601,7 @@ begin
       C1 := Child(0) as TZcOpLiteral;
       if (C1.Typ.Kind in [zctFloat,zctInt]) then
       begin
-        if (C1.Value=0) then
+        if IsZero(C1.Value) then
         begin
           //Constant False
           if (Children.Count=3) and Assigned(Child(2)) then
@@ -613,6 +613,21 @@ begin
           //Constant True
           Exit( Child(1) )  //Replace with Then
         end;
+      end;
+    end;
+  end;
+
+  if Self.Kind=zcConditional then
+  begin
+    if Child(0).Kind=zcConstLiteral then
+    begin
+      C1 := Child(0) as TZcOpLiteral;
+      if (C1.Typ.Kind in [zctFloat,zctInt]) then
+      begin
+        if IsZero(C1.Value) then
+          Exit( Child(2) )  //Replace with False
+        else
+          Exit( Child(1) );  //Replace with True
       end;
     end;
   end;

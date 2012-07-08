@@ -2,7 +2,7 @@
   Adapter to the ZGEBullet DLL, a wraper of the physics library Bullet.
   http://bulletphysics.org
 
-  Created by Rado1(c)2011
+  Created by Rado1(c)2012
 
   Download DLL from this thread: http://www.emix8.org/forum/viewtopic.php?t=830
 
@@ -25,6 +25,11 @@ const float ROT60 = 0.1666; // 60 degrees
 const float ROT45 = 0.125; // 45 degrees
 const float ROT30 = 0.0833; // 30 degrees
 
+// triangle mesh types
+const int CONVEX_HULL_MESH = 1;
+const int CONCAVE_STATIC_MESH = 2;
+const int CONCAVE_DEFORMABLE_MESH = 3;
+
 // activation states
 const int ACTIVE_TAG = 1;
 const int DISABLE_DEACTIVATION = 4;
@@ -46,17 +51,31 @@ const int AXIS_X_ANGULAR = 3;
 const int AXIS_Y_ANGULAR = 4;
 const int AXIS_Z_ANGULAR = 5;
 
+// raycast vehicle default values
+const float DEFAULT_SUSPENSION_STIFFNESS = 5.88;
+const float DEFAULT_SUSPENSION_COMPRESSION = 0.83;
+const float DEFAULT_SUSPENSION_DAMPING = 0.88;
+const float DEFAULT_MAX_SUSPENSION_TRAVEL_CM = 500.0;
+const float DEFAULT_FRICTION_SLIP = 10.5;
+const float DEFAULT_MAX_SUSPENSION_FORCE = 6000.0;
+const float DEFAULT_ROLL_INFLUENCE = 0.1;
+
 // boolean
 const int FALSE = 0;
 const int TRUE = 1;
 
+// data types for heightfield data
+const int FLOAT = 0;
+const int INTEGER = 1;
+
+
 // World
 
-int zbtCreateWorld(int bComputeCollisions) {}
+int zbtCreateWorld() {}
 
 int zbtDestroyWorld() {}
 
-void zbtSetWorldGravity(float x, float y, float z) {}
+int zbtSetWorldGravity(float x, float y, float z) {}
 
 int zbtStepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep) {}
 
@@ -69,6 +88,8 @@ int zbtCreateBoxShape(float x, float y, float z) {}
 
 int zbtCreateSphereShape(float radius) {}
 
+int zbtCreateScalableSphereShape(float radius) {}
+
 int zbtCreateConeShape(float radius, float height) {}
 
 int zbtCreateCylinderShape(float radius, float height) {}
@@ -77,35 +98,27 @@ int zbtCreateCapsuleShape(float radius, float height) {}
 
 int zbtCreateCompoundShape() {}
 
-int zbtAddChildShape(int compoundId, int childId,
-  float x, float y, float z, float rx, float ry, float rz) {}
+int zbtAddChildShape(int compoundId, int childId, float x, float y, float z,
+  float rx, float ry, float rz) {}
 
 int zbtRemoveChildShape(int compoundId, int childId) {}
 
-int zbtCreateHeightList() {}
+int zbtCreateHeightfieldTerrainShape(xptr heightfieldData, int dataType,
+  int width, int length, float minHeight, float maxHeight, int upAxis,
+  int bFlipQuadEdges) {}
 
-int zbtAddHeight(int heightListId, float height) {}
+int zbtCreateConvexHullShape(xptr points, int numPoints) {}
 
-int zbtAddPoint(int heightListId, float x, float y, float z) {}
-
-int zbtUpdateHeight(int heightListId, int index, float height) {}
-
-int zbtClearHeightList(int heightListId) {}
-
-int zbtClearAllHeightLists() {}
-
-int zbtCreateHeightfieldTerrainShape(int heightListId, int width, int height,
-  float minHeight, float maxHeight, int upAxis, int bFlipQuadEdges,
-  float scalingX, float scalingY, float scalingZ) {}
-
-int zbtCreateConvexHullShape(int heightListId) {}
+int zbtCreateMultiSphereShape(xptr positions, xptr radiuses, int num) {}
 
 int zbtStartTriangleMeshShape() {}
 
 int zbtAddTriangle(float x1,float y1,float z1,
 	float x2,float y2,float z2,float x3,float y3,float z3) {}
 
-int zbtFinishTriangleMeshShape(int bIsStatic) {}
+int zbtFinishTriangleMeshShape(int meshType) {}
+
+int zbtSetShapeLocalScaling(int shapeId, float x, float y, float z) {}
 
 int zbtSetShapeMargin(int shapeId, float margin) {}
 
@@ -122,45 +135,19 @@ int zbtDeleteRigidBody(int rigidBodyId) {}
 
 int zbtSetMass(int rigidBodyId, float mass) {}
 
-int zbtSetFriction(int rigidBodyId, float friction) {}
-
 int zbtSetDamping(int rigidBodyId, float linDamping, float angDamping) {}
 
-int zbtSetRestitution(int rigidBodyId, float restitution) {}
+int zbtSetLinearFactor(int rigidBodyId, float x, float y, float z) {}
 
-int zbtSetHitFraction(int rigidBodyId, float hitFraction ) {}
-
-float zbtGetPositionX(int rigidBodyId) {}
-
-float zbtGetPositionY(int rigidBodyId) {}
-
-float zbtGetPositionZ(int rigidBodyId) {}
-
-int zbtSetPosition(int rigidBodyId, float x, float y, float z) {}
-
-float zbtGetRotationX(int rigidBodyId) {}
-
-float zbtGetRotationY(int rigidBodyId) {}
-
-float zbtGetRotationZ(int rigidBodyId) {}
-
-int zbtSetRotation(int rigidBodyId, float rx, float ry, float rz) {}
+int zbtSetAngularFactor(int rigidBodyId, float x, float y, float z) {}
 
 int zbtSetGravity(int rigidBodyId, float x, float y, float z) {}
 
-float zbtGetLinearVelocityX(int rigidBodyId) {}
-
-float zbtGetLinearVelocityY(int rigidBodyId) {}
-
-float zbtGetLinearVelocityZ(int rigidBodyId) {}
+int zbtGetLinearVelocity(int rigidBodyId, ref float x, ref float y, ref float z) {}
 
 int zbtSetLinearVelocity(int rigidBodyId, float x, float y, float z) {}
 
-float zbtGetAngularVelocityX(int rigidBodyId) {}
-
-float zbtGetAngularVelocityY(int rigidBodyId) {}
-
-float zbtGetAngularVelocityZ(int rigidBodyId) {}
+int zbtGetAngularVelocity(int rigidBodyId, ref float x, ref float y, ref float z) {}
 
 int zbtSetAngularVelocity(int rigidBodyId, float x, float y, float z) {}
 
@@ -171,36 +158,9 @@ int zbtApplyTorqueImpulse(int rigidBodyId, float rx, float ry, float rz) {}
 int zbtApplyImpulse(int rigidBodyId, float x, float y, float z,
   float relX, float relY, float relZ) {}
 
-// Activation and deactivation
-
-int zbtIsActive(int rigidBodyId) {}
-
-int zbtActivate(int rigidBodyId, int bForceActivation) {}
-
-int zbtSetActivationState(int rigidBodyId, int newState) {}
-
-int zbtSetDeactivationTime(int rigidBodyId, float time) {}
-
-int zbtSetDeactivationThresholds(int rigidBodyId, float linear, float angular) {}
-
-// Collision detection
-
-int zbtGetCollisionNum() {}
-
-int zbtGetCollisionObject1(int index) {}
-
-int zbtGetCollisionObject2(int index) {}
-
-int zbtGetCollisionOfNum(int rigidBodyId) {}
-
-int zbtGetCollisionOf(int rigidBodyId, int index) {}
-
 // Constraints and limits
 
 int zbtAreConnected(int rigidBodyAId, int rigidBodyBId) {}
-
-// Bug of Bullet: problem with deleting a constraint if disableCollision == 0
-// http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=6486
 
 int zbtAddPoint2PointConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
@@ -220,7 +180,7 @@ int zbtAddHingeConstraint1(int rigidBodyId,
 	float axisX, float axisY, float axisZ, int bDisableCollision) {}
 
 int zbtSetHingeLimits(int constraintId, float low, float high,
-  float softness, float biasFactor, float relaxationFactor) {}
+	float softness, float biasFactor, float relaxationFactor) {}
 
 int zbtEnableHingeAngularMotor(int constraintId, int bEnableMotor,
   float targetVelocity, float maxMotorImpulse) {}
@@ -235,15 +195,16 @@ int zbtAddConeTwistConstraint1(int rigidBodyId,
 	float pivotX, float pivotY, float pivotZ,
 	float rotX, float rotY, float rotZ, int bDisableCollision) {}
 
-int zbtSetConeTwistLimits(int constraintId, float swingX, float swingY, float swingZ,
+int zbtSetConeTwistLimits(int constraintId,
+  float swingX, float swingY, float swingZ,
 	float softness, float biasFactor, float relaxationFactor) {}
 
 int zbtAddSliderConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
 	float pivotBx, float pivotBy, float pivotBz,
 	float rotAx, float rotAy, float rotAz,
-	float rotBx, float rotBy, float rotBz,
-  int bUseLinearReferenceFrameA, int bDisableCollision) {}
+	float rotBx, float rotBy, float rotBz, int bUseLinearReferenceFrameA,
+  int bDisableCollision) {}
 
 int zbtSetSliderLimits(int constraintId, float linLower, float linUpper,
   float angLower, float angUpper) {}
@@ -257,9 +218,9 @@ int zbtSetSliderRestitution(int constraintId, float dirLin, float dirAng,
 int zbtSetSliderDamping(int constraintId, float dirLin, float dirAng,
   float limLin, float limAng, float orthoLin, float orthoAng) {}
 
-int zbtEnableSliderMotor(int constraintId, int bEnableLinMotor,
-  float targetLinVelocity, float maxLinForce,
-	int bEnableAngMotor, float targetAngVelocity, float maxAngForce) {}
+int zbtEnableSliderMotor(int constraintId,
+  int bEnableLinMotor, float targetLinVelocity, float maxLinForce,
+  int bEnableAngMotor, float targetAngVelocity, float maxAngForce) {}
 
 int zbtAddGeneric6DofConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
@@ -272,7 +233,7 @@ int zbtSetGeneric6DofLimits(int constraintId, int axis, float lo, float hi) {}
 
 int zbtSetGeneric6DofLinearLimits(int constraintId,
   float lowerX, float lowerY, float lowerZ,
-	float upperX, float upperY, float upperZ) {}
+  float upperX, float upperY, float upperZ) {}
 
 int zbtSetGeneric6DofAngularLimits(int constraintId,
   float lowerX, float lowerY, float lowerZ,
@@ -280,19 +241,50 @@ int zbtSetGeneric6DofAngularLimits(int constraintId,
 
 int zbtDeleteConstraint(int constraintId) {}
 
+// Collision objects (in general)
+
+int zbtSetFriction(int collisionObjectId, float friction) {}
+
+int zbtSetRestitution(int collisionObjectId, float restitution) {}
+
+int zbtSetHitFraction(int collisionObjectId, float hitFraction ) {}
+
+int zbtGetPosition(int collisionObjectId, ref float x, ref float y, ref float z) {}
+
+int zbtSetPosition(int collisionObjectId, float x, float y, float z) {}
+
+int zbtGetRotation(int collisionObjectId, ref float rx, ref float ry, ref float rz) {}
+
+int zbtSetRotation(int collisionObjectId, float rx, float ry, float rz) {}
+
+// Activation and deactivation
+
+int zbtIsActive(int collisionObjectId) {}
+
+int zbtActivate(int collisionObjectId, int bForceActivation) {}
+
+int zbtSetActivationState(int collisionObjectId, int newState) {}
+
+int zbtSetDeactivationTime(int collisionObjectId, float time) {}
+
+int zbtSetDeactivationThresholds(int rigidBodyId, float linear, float angular) {}
+
+// Collision detection
+
+int zbtGetCollisionNum() {}
+
+int zbtGetCollisionObjects(int index, ref int collisionObject1,
+  ref int collisionObject2) {}
+
+int zbtGetCollisionOfNum(int collisionObjectId){}
+
+int zbtIsCollidedWith(int collisionObjectId1, int collisionObjectId2) {}
+
 // Raycasting
 
 int zbtRayTest(float fromX, float fromY, float fromZ,
   float toX, float toY, float toZ) {}
 
-float zbtGetRayTestHitPointX() {}
+int zbtGetRayTestHitPoint(ref float x, ref float y, ref float z) {}
 
-float zbtGetRayTestHitPointY() {}
-
-float zbtGetRayTestHitPointZ() {}
-
-float zbtGetRayTestHitNormalX() {}
-
-float zbtGetRayTestHitNormalY() {}
-
-float zbtGetRayTestHitNormalZ() {}
+int zbtGetRayTestHitNormal(ref float x, ref float y, ref float z) {}
