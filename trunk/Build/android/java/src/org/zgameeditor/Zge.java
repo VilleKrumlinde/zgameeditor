@@ -45,7 +45,7 @@ import android.util.Log;
 public class Zge extends GLSurfaceView
 {
     private native void zglNativeDestroy();
-    private native void zglNativeSurfaceCreated( String HomeDirectory );
+    private native void zglNativeSurfaceCreated(String ExtPath, String DataPath, String LibraryPath);
     private native void zglNativeSurfaceChanged( int width, int height );
     private native void zglNativeDrawFrame();
     private native void zglNativeActivate( boolean Activate );
@@ -60,13 +60,18 @@ public class Zge extends GLSurfaceView
     private InputMethodManager InputManager;
     private GestureDetector gestureDetector;
 
+    private String DataPath;
+    private String LibraryPath;
+
     public Zge(Context context)
     {
         super( context );
 
         System.loadLibrary("zgeandroid");
 
-        //DataDir = context.getFilesDir().getAbsolutePath();
+        DataPath = context.getFilesDir().getAbsolutePath() + "/";
+        LibraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+
         Renderer = new zglCRenderer();
         setRenderer( Renderer );
 
@@ -199,7 +204,7 @@ public class Zge extends GLSurfaceView
         {
             String extpath = Environment.getExternalStorageDirectory().getAbsolutePath();
             Log.i("ZgeAndroid", "SurfaceCreated, root: " + extpath);
-            zglNativeSurfaceCreated( extpath );
+            zglNativeSurfaceCreated(extpath,DataPath,LibraryPath);
         }
 
         public void onSurfaceChanged( GL10 gl, int width, int height )

@@ -20,10 +20,12 @@ THE SOFTWARE.}
 
 //This file is INCLUDEd in ZPlatform.pas
 
+procedure AndroidLog(const P : PAnsiChar);
+
 var
   AndroidCurrentMouse : TZPointi;
   AndroidKeys : array[ansichar] of boolean;
-  AndroidPath : PAnsiChar;
+  AndroidPath,AndroidDataPath,AndroidLibraryPath : PAnsiChar;
 
   AndroidContentPtr : pointer = nil;
   AndroidContentSize : integer;
@@ -36,6 +38,8 @@ var
 implementation
 
 uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
+
+{$i-}  //No io-test on files, code tests ioresult
 
 function __android_log_write(prio : integer; tag, text : PAnsiChar) : integer; cdecl; external 'liblog.so';
 function gettimeofday( val : PTimeVal; tzp : Pointer ) : Integer; cdecl; external 'libc';
@@ -50,6 +54,11 @@ function dlsym  ( Lib : Pointer; Name : PAnsiChar) : Pointer; cdecl; external 'd
 var
   StartTimeVal : TimeVal;
   KeyMap : array[AnsiChar] of AnsiChar;
+
+procedure AndroidLog(const P : PAnsiChar);
+begin
+  __android_log_write(6,'ZgeAndroid',P);
+end;
 
 procedure Platform_ShutdownScreen;
 begin
@@ -95,7 +104,7 @@ end;
 
 procedure Platform_Error(ErrorMessage : PAnsiChar);
 begin
-  __android_log_write(6,'ZgeAndroid',ErrorMessage);
+  AndroidLog(ErrorMessage);
 end;
 
 function Platform_GetMousePos : TZPointi;
@@ -112,14 +121,74 @@ begin
   Result := '';
 end;
 
-procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
+procedure MakeFullPath(FileName,Path : PAnsiChar; var Buf : array of AnsiChar);
+var
+  Tmp : PAnsiChar;
 begin
+  Tmp := @Buf;
+  ZStrCopy(Tmp,Path);
+  ZStrCat(Tmp,FileName);
+end;
+
+procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
+var
+  Buf : array[0..511] of AnsiChar;
+  Written : longint;
+  F : file;
+begin
+  MakeFullPath(FileName,AndroidDataPath,Buf);
+  FileName := @Buf;
+
+  System.FileMode := 2;
+  System.Assign(F,FileName);
+
+  if Append then
+  begin
+    System.Reset(F,1);
+    System.Seek(F,System.FileSize(F));
+  end
+  else
+    System.Rewrite(F,1);
+
+  if IOResult<>0 then
+  begin
+    Platform_Error( PAnsiChar('File could not be created: ' + FileName) );
+    Exit;
+  end;
+
+  System.BlockWrite(F,Memory^,Size,Written);
+
+  System.Close(F);
 end;
 
 procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
+var
+  F : file;
+  Buf : array[0..511] of AnsiChar;
 begin
-  Memory := nil;
-  Size := 0;
+  //Open file relative to path of app data dir
+  if IsRelative then
+  begin
+    MakeFullPath(FileName,AndroidDataPath,Buf);
+    FileName := @Buf;
+  end;
+
+  System.FileMode := 0;
+  System.Assign(F,FileName);
+
+  System.Reset(F,1);
+  if IOResult<>0 then
+  begin
+    Platform_Error( PAnsiChar('File missing: ' + FileName) );
+    Exit;
+  end;
+
+  Size := System.FileSize(F);
+
+  GetMem(Memory,Size);
+  System.BlockRead(F,Memory^,Size);
+
+  System.Close(F);
 end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
@@ -148,7 +217,6 @@ procedure Platform_DesignerSetDC(DC : longword; HWnd : longword);
 begin
 end;
 
-{$i-}
 function Platform_LoadLinkedResource : TZInputStream;
 var
   F : file;
@@ -420,10 +488,22 @@ begin
 end;
 
 function Platform_LoadModule(const Name : PAnsiChar) : integer;
+var
+  Buf : array[0..511] of AnsiChar;
+  TheName : PAnsiChar;
 begin
-  Result := Integer( dlopen(Name,1) );
+  if Name^='.' then
+  begin
+    MakeFullPath(Name,AndroidLibraryPath,Buf);
+    TheName := @Buf;
+  end
+  else
+    TheName := Name;
+  Result := Integer( dlopen(TheName,1) );
   if Result=0 then
-    Platform_Error('failed to load');
+  begin
+    Platform_Error( PAnsiChar('failed to load: ' + TheName) );
+  end;
 end;
 
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;

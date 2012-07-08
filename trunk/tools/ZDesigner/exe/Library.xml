@@ -2339,7 +2339,12 @@ void Normalize( int K,
     </Group>
     <Group Comment="External libraries">
       <Children>
-        <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt"/>
+        <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+  <BeforeInitExp>
+<![CDATA[if(ANDROID)
+  this.ModuleName="libGLESv1_CM.so";]]>
+  </BeforeInitExp>
+        </ZExternalLibrary>
         <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
         <ZExternalLibrary Comment="Bass music player" ModuleName="bass.dll">
           <Source>

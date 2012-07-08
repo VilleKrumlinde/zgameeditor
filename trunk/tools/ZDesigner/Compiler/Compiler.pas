@@ -44,7 +44,8 @@ procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable;
   ReturnType : TZcDataType;
-  GlobalNames : TObjectList);
+  GlobalNames : TObjectList;
+  AllowFuncDefs : boolean);
 
 function ParsePropRef(SymTab : TSymbolTable;
   ThisC : TZComponent;
@@ -784,7 +785,7 @@ var
       Func.Lib := Component as TZLibrary;
       Func.LibIndex := Target.Count;
     end;
-    if IsExternalLibrary then
+    if IsExternalLibrary and (Func.Id<>'') then
     begin
       Func.IsExternal := True;
       if Func.Statements.Count>0 then
@@ -1228,18 +1229,15 @@ end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable; ReturnType : TZcDataType;
-  GlobalNames : TObjectList);
+  GlobalNames : TObjectList;
+  AllowFuncDefs : boolean);
 var
   Compiler : TZc;
   CodeGen : TZCodeGen;
   I : integer;
   S : string;
   Target : TZComponentList;
-  AllowFuncDefs : boolean;
 begin
-  //allow function definitions if compiling a library
-  AllowFuncDefs := (ThisC is TZLibrary) or (ThisC is TZExternalLibrary);
-
   S := Ze.Source;
   Target := Ze.Code;
 

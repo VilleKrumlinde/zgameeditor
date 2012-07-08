@@ -40,6 +40,8 @@ copy .\exe\lib\* ..\..\Deploy\%tool%\lib\
 copy .\exe\Templates\* ..\..\Deploy\%tool%\Templates\
 copy .\exe\Styles\readme.txt ..\..\Deploy\%tool%\Styles\
 
+copy .\exe\Android\* ..\..\Deploy\%tool%\Android\
+
 rem Remove any extra files
 rem del ..\..\Deploy\%tool%\%tool%.ini
 rem del ..\..\Deploy\%tool%\projects\*.exe

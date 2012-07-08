@@ -2321,6 +2321,9 @@ begin
   end;
 
   C.Value := 0;
+  if Kind=bbNormalAndroid then
+    //Need to recompile afterwards to remove constant in designer
+    CompileAll;
 
   //linuxbinärer med piggyback hanteras ej av upx
   if Kind in [bbNormal,bbScreenSaver] then
