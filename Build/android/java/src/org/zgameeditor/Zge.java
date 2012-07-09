@@ -19,7 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 /*
-  ZGE for Android is inspired from work by Andrey Kemka and his ZenGL project:
+  Thanks to Andrey Kemka and his ZenGL project for help with Android/Fpc techniques:
     http://zengl.org/
 */
 
@@ -27,12 +27,16 @@ package org.zgameeditor;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import java.io.InputStream;
 
 import android.os.Environment;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.AssetManager;
 import android.opengl.GLSurfaceView;
 import android.text.InputType;
+import android.net.Uri;
 import android.view.*;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
@@ -44,19 +48,20 @@ import android.util.Log;
 
 public class Zge extends GLSurfaceView
 {
-    private native void zglNativeDestroy();
-    private native void zglNativeSurfaceCreated(String ExtPath, String DataPath, String LibraryPath);
-    private native void zglNativeSurfaceChanged( int width, int height );
-    private native void zglNativeDrawFrame();
-    private native void zglNativeActivate( boolean Activate );
-    private native boolean zglNativeCloseQuery();
-    private native void zglNativeTouch( int ID, float X, float Y, float Pressure );
-    private native void zglNativeKeyup(int keycode);
-    private native void zglNativeKeydown(int keycode);
-    private native void zglSetDataContent(byte[] content);
+    private native void NativeInit(String ExtPath, String DataPath, String LibraryPath);
+    private native void NativeDestroy();
+    private native void NativeSurfaceCreated();
+    private native void NativeSurfaceChanged( int width, int height );
+    private native void NativeDrawFrame();
+    private native void NativeActivate( boolean Activate );
+    private native boolean NativeCloseQuery();
+    private native void NativeTouch( int ID, float X, float Y, float Pressure );
+    private native void NativeKeyup(int keycode);
+    private native void NativeKeydown(int keycode);
+    private native void NativeSetDataContent(byte[] content);
 
     private boolean IsDestroy;
-    private zglCRenderer Renderer;
+    private CRenderer Renderer;
     private InputMethodManager InputManager;
     private GestureDetector gestureDetector;
 
@@ -69,10 +74,12 @@ public class Zge extends GLSurfaceView
 
         System.loadLibrary("zgeandroid");
 
-        DataPath = context.getFilesDir().getAbsolutePath() + "/";
-        LibraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+        String dataPath = context.getFilesDir().getAbsolutePath() + "/";
+        String libraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+        String extPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+        NativeInit(extPath, dataPath, libraryPath);
 
-        Renderer = new zglCRenderer();
+        Renderer = new CRenderer();
         setRenderer( Renderer );
 
         setFocusableInTouchMode( true );
@@ -80,32 +87,61 @@ public class Zge extends GLSurfaceView
 
     public void loadEmbeddedData(int id) {
         try {
-            java.io.InputStream is = getResources().openRawResource(id);
+            InputStream is = getResources().openRawResource(id);
             byte[] b = new byte[is.available()];
             is.read(b);
-            zglSetDataContent(b);
+            NativeSetDataContent(b);
+            is.close();
         } catch (Exception e) {
-            Log.i("ZgeAndroid", "Failed to load embedded: " + e.toString());
+            Log.e("ZgeAndroid", "Failed to load embedded: " + e.toString());
         }
+    }
+
+
+    //Called from native
+    public void openURL( String url ) {
+        Log.i("ZgeAndroid", "About to open: " + url);
+        Uri uriUrl = Uri.parse( url );
+        Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
+        intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
+        getContext().startActivity( intent );
+    }
+
+    public byte[] openAssetFile(String name) {
+        name=name.substring(8);
+        Log.i("ZgeAndroid", "About to open: " + name);
+        AssetManager assets = getContext().getAssets();
+        byte[] data=null;
+        try {
+            InputStream stream = assets.open(name,AssetManager.ACCESS_BUFFER);
+            int size = stream.available();
+            Log.i("ZgeAndroid", "Open ok, available: " + size);
+            data = new byte[size];
+            stream.read(data);
+            stream.close();
+        } catch (Exception e) {
+            Log.e("ZgeAndroid",e.getMessage());
+        }
+        return data;
     }
 
     public Boolean onCloseQuery()
     {
-        return zglNativeCloseQuery();
+        return NativeCloseQuery();
     }
 
     @Override
     public void onPause()
     {
         super.onPause();
-        zglNativeActivate( false );
+        NativeActivate( false );
     }
 
     @Override
     public void onResume()
     {
         super.onResume();
-        zglNativeActivate( true );
+        NativeActivate( true );
     }
 
     @Override
@@ -123,7 +159,7 @@ public class Zge extends GLSurfaceView
                 for ( int i = 0; i < count; i++ )
                 {
                     int pointerID = event.getPointerId( i );
-                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
+                    NativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
                 }
                 break;
             }
@@ -134,7 +170,7 @@ public class Zge extends GLSurfaceView
                 for ( int i = 0; i < count; i++ )
                 {
                     int pointerID = event.getPointerId( i );
-                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), 0 );
+                    NativeTouch( pointerID, event.getX( i ), event.getY( i ), 0 );
                 }
                 break;
             }
@@ -145,7 +181,7 @@ public class Zge extends GLSurfaceView
                 for ( int i = 0; i < count; i++ )
                 {
                     int pointerID = event.getPointerId( i );
-                    zglNativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
+                    NativeTouch( pointerID, event.getX( i ), event.getY( i ), event.getPressure( i ) );
                 }
                 break;
             }
@@ -154,7 +190,7 @@ public class Zge extends GLSurfaceView
             {
                 int pointerIndex = ( action & MotionEvent.ACTION_POINTER_INDEX_MASK  ) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
                 int pointerId = event.getPointerId( pointerIndex );
-                zglNativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
+                NativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), event.getPressure( pointerIndex ) );
                 break;
             }
 
@@ -162,7 +198,7 @@ public class Zge extends GLSurfaceView
             {
                 int pointerIndex = ( action & MotionEvent.ACTION_POINTER_INDEX_MASK  ) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
                 int pointerId = event.getPointerId( pointerIndex );
-                zglNativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
+                NativeTouch( pointerId, event.getX( pointerIndex ), event.getY( pointerIndex ), 0 );
                 break;
             }
         }
@@ -172,7 +208,7 @@ public class Zge extends GLSurfaceView
 
     public void Finish()
     {
-        zglNativeDestroy();
+        NativeDestroy();
         ((Activity)getContext()).finish();
         System.exit( 0 );
     }
@@ -181,36 +217,35 @@ public class Zge extends GLSurfaceView
     public boolean onKeyDown( int keyCode, KeyEvent event )
     {
         if ( keyCode == KeyEvent.KEYCODE_BACK )
-            if ( zglNativeCloseQuery() )
+            if ( NativeCloseQuery() )
             {
                 IsDestroy = true;
                 return true;
             }
 
-        zglNativeKeydown(event.getUnicodeChar());
+        NativeKeydown(event.getUnicodeChar());
         return super.onKeyDown( keyCode, event );
     }
 
     @Override
     public boolean onKeyUp( int keyCode, KeyEvent event )
     {
-        zglNativeKeyup(event.getUnicodeChar());
+        NativeKeyup(event.getUnicodeChar());
         return super.onKeyUp( keyCode, event );
     }
 
-    class zglCRenderer implements Renderer
+    class CRenderer implements Renderer
     {
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
-            String extpath = Environment.getExternalStorageDirectory().getAbsolutePath();
-            Log.i("ZgeAndroid", "SurfaceCreated, root: " + extpath);
-            zglNativeSurfaceCreated(extpath,DataPath,LibraryPath);
+            Log.i("ZgeAndroid", "SurfaceCreated");
+            NativeSurfaceCreated();
         }
 
         public void onSurfaceChanged( GL10 gl, int width, int height )
         {
             Log.i("ZgeAndroid", "SurfaceChanged");
-            zglNativeSurfaceChanged( width, height );
+            NativeSurfaceChanged( width, height );
         }
 
         public void onDrawFrame( GL10 gl )
@@ -218,7 +253,7 @@ public class Zge extends GLSurfaceView
             if ( IsDestroy )
                 Finish();
 
-            zglNativeDrawFrame();
+            NativeDrawFrame();
         }
     }
 

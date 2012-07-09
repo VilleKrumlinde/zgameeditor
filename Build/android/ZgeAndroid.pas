@@ -19,7 +19,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.}
 
 {
-  ZGE for Android is inspired from work by Andrey Kemka and his ZenGL project:
+  ZGE-port of Android
+
+  Thanks to Andrey Kemka and his ZenGL project for help with Android/Fpc techniques:
     http://zengl.org/
 }
 
@@ -52,45 +54,47 @@ const
   AppInited : boolean = false;
   ZApp : TZApplication = nil;
 
-procedure Log(s : PAnsiChar);
-begin
-  Platform_Error(s);
-end;
-
-procedure Java_org_zgameeditor_Zge_zglNativeDestroy( env : PJNIEnv; thiz : jobject ); cdecl;
+procedure Java_org_zgameeditor_Zge_NativeDestroy( env : PJNIEnv; thiz : jobject ); cdecl;
 begin
   ZApp.Free;
   AppInited := False;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeSurfaceCreated( env : PJNIEnv; thiz : jobject; ExtPath : jstring; DataPath : jstring; LibraryPath : jstring);cdecl;
+procedure Java_org_zgameeditor_Zge_NativeSurfaceCreated( env : PJNIEnv; thiz : jobject);cdecl;
+begin
+
+end;
+
+procedure Java_org_zgameeditor_Zge_NativeInit( env : PJNIEnv; thiz : jobject; ExtPath : jstring; DataPath : jstring; LibraryPath : jstring);cdecl;
 var
   P : PAnsiChar;
 begin
   P := env^.GetStringUTFChars(Env,ExtPath,nil);
     GetMem(AndroidPath,ZStrLength(P)+1);
     ZStrCopy(AndroidPath,P);
-    Log(AndroidPath);
+    AndroidLog(AndroidPath);
   env^.ReleaseStringUTFChars(Env,ExtPath,P);
 
   P := env^.GetStringUTFChars(Env,DataPath,nil);
     GetMem(AndroidDataPath,ZStrLength(P)+1);
     ZStrCopy(AndroidDataPath,P);
-    Log(AndroidDataPath);
+    AndroidLog(AndroidDataPath);
   env^.ReleaseStringUTFChars(Env,DataPath,P);
 
   P := env^.GetStringUTFChars(Env,LibraryPath,nil);
     GetMem(AndroidLibraryPath,ZStrLength(P)+1);
     ZStrCopy(AndroidLibraryPath,P);
-    Log(AndroidLibraryPath);
+    AndroidLog(AndroidLibraryPath);
   env^.ReleaseStringUTFChars(Env,LibraryPath,P);
+  
+  AndroidThis := Env^.NewGlobalRef(Env,thiz);
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
+procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
 begin
   if not AppInited then
   begin
-    log('init');
+    AndroidLog('init');
     ZApp := ZApplication.LoadApplicationComponent;
     ZApp.ScreenWidth := Width;
     ZApp.ScreenHeight := Height;
@@ -120,7 +124,7 @@ begin
   glDisableClientState(GL_VERTEX_ARRAY);
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeDrawFrame( env : PJNIEnv; thiz : jobject );cdecl;
+procedure Java_org_zgameeditor_Zge_NativeDrawFrame( env : PJNIEnv; thiz : jobject );cdecl;
 begin
   if AppInited then
   begin
@@ -128,16 +132,16 @@ begin
   end;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeActivate( env : PJNIEnv; thiz : jobject; Activate : jboolean );cdecl;
+procedure Java_org_zgameeditor_Zge_NativeActivate( env : PJNIEnv; thiz : jobject; Activate : jboolean );cdecl;
 begin
 end;
 
-function Java_org_zgameeditor_Zge_zglNativeCloseQuery( env : PJNIEnv; thiz : jobject ) : Boolean;cdecl;
+function Java_org_zgameeditor_Zge_NativeCloseQuery( env : PJNIEnv; thiz : jobject ) : Boolean;cdecl;
 begin
   Result := True;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeTouch( env : PJNIEnv; thiz : jobject; ID : jint; X, Y, Pressure : jfloat );cdecl;
+procedure Java_org_zgameeditor_Zge_NativeTouch( env : PJNIEnv; thiz : jobject; ID : jint; X, Y, Pressure : jfloat );cdecl;
 var
   I,Ix,Iy : integer;
   IsUp,Found : boolean;
@@ -181,17 +185,17 @@ begin
   end;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeKeydown( env : PJNIEnv; thiz : jobject; Keycode : jint);cdecl;
+procedure Java_org_zgameeditor_Zge_NativeKeydown( env : PJNIEnv; thiz : jobject; Keycode : jint);cdecl;
 begin
   AndroidKeys[ Ansichar(Keycode and 255) ] := True;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglNativeKeyup( env : PJNIEnv; thiz : jobject; Keycode : jint);cdecl;
+procedure Java_org_zgameeditor_Zge_NativeKeyup( env : PJNIEnv; thiz : jobject; Keycode : jint);cdecl;
 begin
   AndroidKeys[ Ansichar(Keycode and 255) ] := False;
 end;
 
-procedure Java_org_zgameeditor_Zge_zglSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
+procedure Java_org_zgameeditor_Zge_NativeSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
 var
   Size :  integer;
   IsCopy : jboolean;
@@ -209,16 +213,17 @@ end;
 
 
 exports
-  Java_org_zgameeditor_Zge_zglNativeDestroy,
-  Java_org_zgameeditor_Zge_zglNativeSurfaceCreated,
-  Java_org_zgameeditor_Zge_zglNativeSurfaceChanged,
-  Java_org_zgameeditor_Zge_zglNativeDrawFrame,
-  Java_org_zgameeditor_Zge_zglNativeActivate,
-  Java_org_zgameeditor_Zge_zglNativeTouch,
-  Java_org_zgameeditor_Zge_zglNativeCloseQuery,
-  Java_org_zgameeditor_Zge_zglNativeKeydown,
-  Java_org_zgameeditor_Zge_zglNativeKeyup,
-  Java_org_zgameeditor_Zge_zglSetDataContent,
+  Java_org_zgameeditor_Zge_NativeInit,
+  Java_org_zgameeditor_Zge_NativeDestroy,
+  Java_org_zgameeditor_Zge_NativeSurfaceCreated,
+  Java_org_zgameeditor_Zge_NativeSurfaceChanged,
+  Java_org_zgameeditor_Zge_NativeDrawFrame,
+  Java_org_zgameeditor_Zge_NativeActivate,
+  Java_org_zgameeditor_Zge_NativeTouch,
+  Java_org_zgameeditor_Zge_NativeCloseQuery,
+  Java_org_zgameeditor_Zge_NativeKeydown,
+  Java_org_zgameeditor_Zge_NativeKeyup,
+  Java_org_zgameeditor_Zge_NativeSetDataContent,
 
   JNI_OnLoad;
 
