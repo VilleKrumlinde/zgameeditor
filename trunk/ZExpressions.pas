@@ -1636,7 +1636,9 @@ function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
 begin
   if ModuleHandle=0 then
   begin
-    ZExpressions.RunCode(BeforeInitExp.Code);
+    SaveExecutionState;
+      ZExpressions.RunCode(BeforeInitExp.Code);
+    RestoreExecutionState;
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}

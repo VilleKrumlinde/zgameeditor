@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="0 0 2.5">
+<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="0 0 30">
   <Content>
     <Group Comment="Bitmaps">
       <Children>
@@ -253,7 +253,7 @@ if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2
             <MeshBox Scale="1 0.5 1" XCount="31" YCount="15" Grid2DOnly="255"/>
             <MeshExpression AutoNormals="0">
               <Expression>
-        <![CDATA[//
+<![CDATA[//
 
         float E, A, C, X, Y, Z;
 
@@ -677,7 +677,7 @@ this.V.Z *= 0.3;]]>
       <Children>
         <AppState Comment="2D Culling">
           <OnStart>
-            <SpawnModel Model="Camera" SpawnStyle="1"/>
+            <SpawnModel Model="MyCamera" SpawnStyle="1"/>
             <Repeat Comment="X">
               <OnIteration>
                 <Repeat Comment="Y">
@@ -789,7 +789,7 @@ kbInput[1] -= 1;]]>
           <Definitions>
             <DefineArray Name="kbInput" Type="1" SizeDim1="2"/>
             <DefineArray Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
-            <Model Name="Camera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
+            <Model Name="MyCamera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
               <OnRender>
                 <UseMaterial Material="DefaultMaterial"/>
                 <RenderNet>
@@ -865,8 +865,8 @@ float X, Y;
 
 //
 
-X = CurrentModel.Position.X-Camera.Position.X;
-Y = CurrentModel.Position.Y-Camera.Position.Y;
+X = CurrentModel.Position.X-MyCamera.Position.X;
+Y = CurrentModel.Position.Y-MyCamera.Position.Y;
 
 //
 
@@ -892,7 +892,7 @@ else return Culling[U,V];]]>
             <SpawnModel Model="o_test"/>
           </OnStart>
           <OnUpdate>
-            <AnimatorSimple Duration="3" AutoStart="255" Target="App CameraPosition 2" FromValue="30" ToValue="130" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+            <AnimatorSimple Duration="3" AutoStart="255" Target="App CameraPosition 2" AutoReverse="255" RepeatCount="-1" FromValue="30" ToValue="130" Smooth="255"/>
           </OnUpdate>
           <Definitions>
             <Bitmap Name="b_cells">
@@ -922,7 +922,7 @@ gl_FragColor = mix(color, vec4(0,0,0,1), Distance/100.0);
 }]]>
               </FragmentShaderSource>
             </Shader>
-            <Material Name="m_fog" Color="1 1 1 1" Light="0" Blend="1" Shader="glsl_fog">
+            <Material Name="m_fog" Light="0" Blend="1" Shader="glsl_fog">
               <Textures>
                 <MaterialTexture Texture="b_cells"/>
               </Textures>
@@ -2049,7 +2049,7 @@ rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
                 </RenderTransformGroup>
               </OnRender>
             </Model>
-            <Material Name="matWireframe" WireframeWidth="1" Shading="2" Color="1 1 1 1" Light="0" DrawBackFace="255"/>
+            <Material Name="matWireframe" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
             <Material Name="matSmooth" Color="0.7529 0.7529 0.7529 1"/>
           </Definitions>
         </AppState>
@@ -2057,7 +2057,7 @@ rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
     </Group>
     <Group Comment="Libraries">
       <Children>
-        <Group Comment="Bit Library" Name="BitLibraryGroup">
+        <Group Name="BitLibraryGroup" Comment="Bit Library">
           <Children>
             <DefineArray Name="Bit" Type="1" SizeDim1="8"/>
             <ZLibrary Comment="Bit Library">
@@ -2118,8 +2118,9 @@ void bitField(int X, int B)
               </Source>
             </ZLibrary>
           </Children>
-        </Group>
-        <Group Comment="HSV Color Library" Name="HsvColorGroup">
+        </Group> <!-- BitLibraryGroup -->
+
+        <Group Name="HsvColorGroup" Comment="HSV Color Library">
           <Children>
             <DefineArray Name="Color" SizeDim1="3"/>
             <ZLibrary Comment="HSV Library">
@@ -2176,8 +2177,9 @@ void hsv(float H, float S, float V)
               </Source>
             </ZLibrary>
           </Children>
-        </Group>
-        <Group Comment="Matrix Library" Name="MatrixLibraryGroup">
+        </Group> <!-- HsvColorGroup -->
+
+        <Group Name="MatrixLibraryGroup" Comment="Matrix Library">
           <Children>
             <DefineArray Name="Matrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
             <ZLibrary Comment="Matrix Library">
@@ -2279,8 +2281,9 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
               </Source>
             </ZLibrary>
           </Children>
-        </Group>
-        <Group Comment="Vector Library" Name="VectorLibraryGroup">
+        </Group> <!-- MatrixLibraryGroup -->
+
+        <Group Name="VectorLibraryGroup" Comment="Vector Library">
           <Children>
             <DefineArray Name="Vector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
             <ZLibrary Comment="Vector Library">
@@ -2334,19 +2337,24 @@ void Normalize( int K,
               </Source>
             </ZLibrary>
           </Children>
-        </Group>
+        </Group> <!-- VectorLibraryGroup -->
+
       </Children>
     </Group>
     <Group Comment="External libraries">
       <Children>
         <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
-  <BeforeInitExp>
+          <BeforeInitExp>
 <![CDATA[if(ANDROID)
   this.ModuleName="libGLESv1_CM.so";]]>
-  </BeforeInitExp>
+          </BeforeInitExp>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
         <ZExternalLibrary Comment="Bass music player" ModuleName="bass.dll">
+          <BeforeInitExp>
+<![CDATA[if(ANDROID)
+  this.ModuleName = "./libbass.so";]]>
+          </BeforeInitExp>
           <Source>
 <![CDATA[//BASS-dll from http://www.un4seen.com/
 int BASS_GetVersion() { }

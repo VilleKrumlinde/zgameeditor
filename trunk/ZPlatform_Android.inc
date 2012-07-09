@@ -26,6 +26,7 @@ var
   AndroidCurrentMouse : TZPointi;
   AndroidKeys : array[ansichar] of boolean;
   AndroidPath,AndroidDataPath,AndroidLibraryPath : PAnsiChar;
+  AndroidThis : pointer;
 
   AndroidContentPtr : pointer = nil;
   AndroidContentSize : integer;
@@ -161,34 +162,82 @@ begin
   System.Close(F);
 end;
 
+procedure ReadAssetFile(Filename : PAnsiChar; var Memory : pointer; var Size : integer);
+var
+  Env : PJNIEnv;
+  AppClass : JClass;
+  Mid : JMethodID;
+  Params : array[0..10] of integer;
+  Buffer: jarray;
+  PBuffer : pointer;
+  IsCopy : JBoolean;
+  BufferSize : JSize;
+
+  function C(const args : array of const) : pointer;
+  var
+    I : integer;
+  begin
+     for I := 0 to High(args) do
+       Params[I] := args[I].vinteger;
+     Result := @Params;
+  end;
+
+begin
+  CurVM^.GetEnv(CurVM,@Env,JNI_VERSION_1_6);
+
+  AndroidLog( PAnsiChar('Opening: ' + Filename) );
+  AppClass := Env^.GetObjectClass(Env, Jobject(AndroidThis));
+  Mid := Env^.GetMethodID(Env, AppClass , 'openAssetFile', '(Ljava/lang/String;)[B');
+  Buffer := Env^.CallObjectMethodV(Env, Jobject(AndroidThis), Mid, C([Env^.NewStringUTF(Env,FileName)]) );
+
+  BufferSize := Env^.GetArrayLength(Env,Buffer);
+
+  PBuffer := Env^.GetByteArrayElements(Env, Buffer, IsCopy);
+  if PBuffer=nil then
+    AndroidLog('could not get buffer')
+  else
+  begin
+    GetMem(Memory, BufferSize);
+    Move(PBuffer^, Memory^, BufferSize);
+    Size := BufferSize;
+    Env^.ReleaseByteArrayElements(Env, Buffer, PBuffer, 0);
+  end;
+end;
+
 procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
   F : file;
   Buf : array[0..511] of AnsiChar;
 begin
-  //Open file relative to path of app data dir
-  if IsRelative then
+  if Copy(FileName,1,8)='/assets/' then
   begin
-    MakeFullPath(FileName,AndroidDataPath,Buf);
-    FileName := @Buf;
-  end;
-
-  System.FileMode := 0;
-  System.Assign(F,FileName);
-
-  System.Reset(F,1);
-  if IOResult<>0 then
+    ReadAssetFile(FileName, Memory, Size);
+  end else
   begin
-    Platform_Error( PAnsiChar('File missing: ' + FileName) );
-    Exit;
+    //Open file relative to path of app data dir
+    if IsRelative then
+    begin
+      MakeFullPath(FileName,AndroidDataPath,Buf);
+      FileName := @Buf;
+    end;
+
+    System.FileMode := 0;
+    System.Assign(F,FileName);
+
+    System.Reset(F,1);
+    if IOResult<>0 then
+    begin
+      Platform_Error( PAnsiChar('File missing: ' + FileName) );
+      Exit;
+    end;
+
+    Size := System.FileSize(F);
+
+    GetMem(Memory,Size);
+    System.BlockRead(F,Memory^,Size);
+
+    System.Close(F);
   end;
-
-  Size := System.FileSize(F);
-
-  GetMem(Memory,Size);
-  System.BlockRead(F,Memory^,Size);
-
-  System.Close(F);
 end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
@@ -386,7 +435,7 @@ begin
     env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mRelease);
   end;
 
-  env^.PopLocalFrame(env, nil);
+  Env^.PopLocalFrame(Env, nil);
   CurVM^.DetachCurrentThread(CurVM);
 end;
 
@@ -480,7 +529,30 @@ end;
 
 
 procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+var
+  Env : PJNIEnv;
+  AppClass : JClass;
+  Mid : JMethodID;
+  Params : array[0..10] of integer;
+
+  function C(const args : array of const) : pointer;
+  var
+    I : integer;
+  begin
+     for I := 0 to High(args) do
+       Params[I] := args[I].vinteger;
+     Result := @Params;
+  end;
+
 begin
+  if InBrowser then
+  begin
+    CurVM^.GetEnv(CurVM,@Env,JNI_VERSION_1_6);
+    AndroidLog( PAnsiChar('Opening: ' + Url) );
+    AppClass := Env^.GetObjectClass(Env, Jobject(AndroidThis));
+    Mid := Env^.GetMethodID(Env, AppClass , 'openURL', '(Ljava/lang/String;)V');
+    Env^.CallVoidMethodV(Env, Jobject(AndroidThis), Mid, C([Env^.NewStringUTF(Env,Url)]) );
+  end;
 end;
 
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
