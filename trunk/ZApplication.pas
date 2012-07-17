@@ -128,6 +128,7 @@ type
     ScreenHeight : integer;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
+    AndroidPackageName : TPropString;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
     //Zc-parsing
@@ -1062,6 +1063,9 @@ begin
     List.SetDesignerProperty;
   List.AddProperty('PreviewClearColor',integer(@PreviewClearColor), zptColorf);
     List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.5,0.5,0.5,0);
+    List.SetDesignerProperty;
+  List.AddProperty('AndroidPackageName',integer(@AndroidPackageName), zptString);
+    List.GetLast.DefaultValue.StringValue := 'com.mydomain.mygame1';
     List.SetDesignerProperty;
   {$ENDIF}
 end;
