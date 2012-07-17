@@ -129,18 +129,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -168,10 +160,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -230,10 +218,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             626
             146)
@@ -307,10 +291,6 @@ object EditorForm: TEditorForm
         object ViewerGlTabSheet: TTabSheet
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -612,10 +592,6 @@ object EditorForm: TEditorForm
                 end
               end
               inherited TabSheet2: TTabSheet
-                ExplicitLeft = 0
-                ExplicitTop = 0
-                ExplicitWidth = 0
-                ExplicitHeight = 0
                 inherited Label15: TLabel
                   Width = 58
                   ExplicitWidth = 58
@@ -648,10 +624,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           ImageIndex = 4
@@ -1082,6 +1054,10 @@ object EditorForm: TEditorForm
       Caption = 'Settings...'
       OnExecute = ShowSettingsActionExecute
     end
+    object AndroidBuildReleaseApkAction: TAction
+      Caption = 'Android: Build APK (release)'
+      OnExecute = AndroidBuildReleaseApkActionExecute
+    end
     object FindComponentAction: TAction
       Category = 'Edit'
       Caption = 'Find component'
@@ -1128,6 +1104,10 @@ object EditorForm: TEditorForm
     object AndroidRunAction: TAction
       Caption = 'Android: Run project'
       OnExecute = AndroidRunActionExecute
+    end
+    object AndroidBuildDebugApkAction: TAction
+      Caption = 'Android: Build APK (debug)'
+      OnExecute = AndroidBuildDebugApkActionExecute
     end
   end
   object TreePopupMenu: TPopupMenu
@@ -1813,6 +1793,12 @@ object EditorForm: TEditorForm
       end
       object AndroidRunproject1: TMenuItem
         Action = AndroidRunAction
+      end
+      object AndroidBuildAPK1: TMenuItem
+        Action = AndroidBuildDebugApkAction
+      end
+      object AndroidBuildAPKrelease1: TMenuItem
+        Action = AndroidBuildReleaseApkAction
       end
       object N5: TMenuItem
         Caption = '-'

@@ -29,8 +29,6 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
-    ExplicitLeft = 170
-    ExplicitTop = 342
   end
   object Button2: TButton
     Left = 362
@@ -41,8 +39,6 @@ object SettingsForm: TSettingsForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
-    ExplicitLeft = 252
-    ExplicitTop = 342
   end
   object PageControl1: TPageControl
     Left = 8
@@ -52,12 +48,8 @@ object SettingsForm: TSettingsForm
     ActivePage = TabSheet1
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 2
-    ExplicitWidth = 505
-    ExplicitHeight = 369
     object TabSheet1: TTabSheet
       Caption = 'General'
-      ExplicitWidth = 497
-      ExplicitHeight = 509
       DesignSize = (
         421
         348)
@@ -69,7 +61,6 @@ object SettingsForm: TSettingsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Packer settings'
         TabOrder = 0
-        ExplicitWidth = 480
         object Label1: TLabel
           Left = 14
           Top = 32
@@ -146,7 +137,6 @@ object SettingsForm: TSettingsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File association'
         TabOrder = 1
-        ExplicitWidth = 480
         object ShellCheck: TCheckBox
           Left = 10
           Top = 16
@@ -165,7 +155,6 @@ object SettingsForm: TSettingsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Designer layout'
         TabOrder = 2
-        ExplicitWidth = 480
         object Label6: TLabel
           Left = 14
           Top = 19
@@ -193,7 +182,6 @@ object SettingsForm: TSettingsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Code editor'
         TabOrder = 3
-        ExplicitWidth = 480
         DesignSize = (
           404
           59)
@@ -233,8 +221,6 @@ object SettingsForm: TSettingsForm
     object TabSheet2: TTabSheet
       Caption = 'Android'
       ImageIndex = 1
-      ExplicitWidth = 281
-      ExplicitHeight = 165
       object Label8: TLabel
         Left = 6
         Top = 19
@@ -249,6 +235,13 @@ object SettingsForm: TSettingsForm
         Height = 13
         Caption = 'Android Sdcard Path:'
       end
+      object Label10: TLabel
+        Left = 6
+        Top = 73
+        Width = 84
+        Height = 13
+        Caption = 'Apache Ant Path:'
+      end
       object AndroidSdkPathEdit: TEdit
         Left = 114
         Top = 16
@@ -262,6 +255,13 @@ object SettingsForm: TSettingsForm
         Width = 235
         Height = 21
         TabOrder = 1
+      end
+      object AndroidAntPathEdit: TEdit
+        Left = 114
+        Top = 70
+        Width = 235
+        Height = 21
+        TabOrder = 2
       end
     end
   end

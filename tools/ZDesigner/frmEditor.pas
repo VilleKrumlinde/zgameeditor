@@ -226,6 +226,10 @@ type
     AndroidRunAction: TAction;
     AndroidRunproject1: TMenuItem;
     N17: TMenuItem;
+    AndroidBuildDebugApkAction: TAction;
+    AndroidBuildAPK1: TMenuItem;
+    AndroidBuildReleaseApkAction: TAction;
+    AndroidBuildAPKrelease1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -299,6 +303,8 @@ type
     procedure OpenStyleMenuItemClick(Sender: TObject);
     procedure GenerateAndroidActionExecute(Sender: TObject);
     procedure AndroidRunActionExecute(Sender: TObject);
+    procedure AndroidBuildDebugApkActionExecute(Sender: TObject);
+    procedure AndroidBuildReleaseApkActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -320,7 +326,7 @@ type
     RenderAborted : boolean;
     MruList : TStringList;
     PackerProg,PackerParams : string;
-    AndroidSdkPath,AndroidSdCardPath : string;
+    AndroidSdkPath,AndroidSdCardPath,AndroidAntPath : string;
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
@@ -391,6 +397,7 @@ type
     procedure OnTreeRecreate(Sender : TObject);
     function OnGetLibraryPath: string;
     procedure FillNewMenuTemplateItems;
+    procedure BuildAndroidApk(const IsDebug : boolean);
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -424,7 +431,8 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
   ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
-  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils;
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
+  Generics.Collections, frmAndroidApk;
 
 { TEditorForm }
 
@@ -866,6 +874,7 @@ begin
 
     Self.AndroidSdkPath := Ini.ReadString(Section,'AndroidSdkPath','');
     Self.AndroidSdCardPath := Ini.ReadString(Section,'AndroidSdCardPath','/sdcard/');
+    Self.AndroidAntPath := Ini.ReadString(Section,'AndroidAntPath','');
   finally
     Ini.Free;
   end;
@@ -918,6 +927,7 @@ begin
 
       Ini.WriteString(Section,'AndroidSdkPath',Self.AndroidSdkPath);
       Ini.WriteString(Section,'AndroidSdCardPath',Self.AndroidSdCardPath);
+      Ini.WriteString(Section,'AndroidAntPath',Self.AndroidAntPath);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;
@@ -1839,6 +1849,7 @@ begin
     F.UpDown1.Position := Self.AutoComp.TimerInterval;
     F.AndroidSdkPathEdit.Text := Self.AndroidSdkPath;
     F.AndroidSdCardPathEdit.Text := Self.AndroidSdCardPath;
+    F.AndroidAntPathEdit.Text := Self.AndroidAntPath;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
@@ -1848,6 +1859,7 @@ begin
       Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
       Self.AndroidSdkPath := F.AndroidSdkPathEdit.Text;
       Self.AndroidSdCardPath := F.AndroidSdCardPathEdit.Text;
+      Self.AndroidAntPath := F.AndroidAntPathEdit.Text;
     end;
   finally
     F.Free;
@@ -4013,5 +4025,154 @@ begin
   end;
 end;
 
+procedure TEditorForm.AndroidBuildDebugApkActionExecute(Sender: TObject);
+begin
+  BuildAndroidApk(True);
+end;
+
+procedure TEditorForm.AndroidBuildReleaseApkActionExecute(Sender: TObject);
+begin
+  BuildAndroidApk(False);
+end;
+
+procedure TEditorForm.BuildAndroidApk(const IsDebug : boolean);
+var
+  TemplatePath,ProjectPath,OutFile : string;
+  Lookups : TDictionary<string,string>;
+
+  procedure MPath(const P : string);
+  begin
+    if not TDirectory.Exists(P) then
+      TDirectory.CreateDirectory(P);
+  end;
+
+  procedure MCopy(const Name : string; const DoReplace : boolean = False);
+  var
+    Src,Dst,Key,S : string;
+    I : integer;
+    L : TStringList;
+  begin
+    Src := TemplatePath + Name;
+    Dst := ProjectPath + Name;
+    if not DoReplace then
+    begin
+      if TFile.Exists(Dst) and
+        (TFile.GetCreationTime(Dst)>=TFile.GetCreationTime(Src)) then
+        //no need to copy
+      else
+        TFile.Copy(Src,Dst,True);
+    end
+    else
+    begin
+      L := TStringList.Create;
+      try
+        L.LoadFromFile(Src);
+        for I := 0 to L.Count-1 do
+        begin
+          S := L[I];
+          if Pos('$',S)=0 then
+            Continue;
+          for Key in Lookups.Keys do
+          begin
+            if Pos(Key,S)>0 then
+              S := StringReplace(S,Key,Lookups[Key],[rfReplaceAll])
+          end;
+          L[I] := S;
+        end;
+        L.SaveToFile(Dst);
+      finally
+        L.Free;
+      end;
+    end;
+  end;
+
+var
+  Params,ApkFileName : string;
+  F : TAndroidApkForm;
+begin
+  if Self.AndroidSdkPath='' then
+  begin
+    ShowMessage('AndroidSdkPath not set. Check settings.');
+    Exit;
+  end;
+  if Self.AndroidAntPath='' then
+  begin
+    ShowMessage('AndroidAntPath not set. Check settings.');
+    Exit;
+  end;
+
+  F := TAndroidApkForm.Create(Self);
+  try
+    F.PackageNameEdit.Text := String(Self.ZApp.AndroidPackageName);
+    F.AppNameEdit.Text := String(Self.ZApp.Caption);
+    if F.ShowModal=mrCancel then
+      Exit;
+    Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
+    Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
+  finally
+    F.Free;
+  end;
+
+  if String(Self.ZApp.AndroidPackageName)='' then
+  begin
+    ShowMessage('App.AndroidPackageName not set. Set the property and try again.');
+    Exit;
+  end;
+
+  TemplatePath := Self.ExePath + 'Android\Template\';
+  ProjectPath := Self.ExePath + 'Android\Projects\' + String(Self.ZApp.AndroidPackageName) + '\';
+
+  Lookups := TDictionary<string,string>.Create;
+  try
+    Lookups.Add('$sdkpath$', StringReplace(Self.AndroidSdkPath,'\','/',[rfReplaceAll]) );
+    Lookups.Add('$sdkpath_normal$',Self.AndroidSdkPath);
+    Lookups.Add('$package$', String(Self.ZApp.AndroidPackageName) );
+    Lookups.Add('$title$', String(Self.ZApp.Caption) );
+
+    ApkFileName := ProjectPath + 'bin\' + String(Self.ZApp.Caption);
+    if IsDebug then
+      ApkFileName := ApkFileName + '-debug.apk'
+    else
+      ApkFileName := ApkFileName + '-release-unsigned.apk';
+    Lookups.Add('$apkpath$',ApkFileName);
+
+    MPath(ProjectPath);
+    MPath(ProjectPath + 'libs');
+    MPath(ProjectPath + 'libs\armeabi');
+    MPath(ProjectPath + 'assets');
+    MPath(ProjectPath + 'res');
+    MPath(ProjectPath + 'res\drawable-ldpi');
+    MPath(ProjectPath + 'src');
+
+    MCopy('libs\armeabi\libzgeandroid.so');
+    MCopy('src\Zge.java');
+    MCopy('src\ZgeActivity.java');
+    MCopy('res\drawable-ldpi\icon.png');
+
+    MCopy('default.properties');
+    MCopy('local.properties',True);
+    MCopy('AndroidManifest.xml',True);
+    MCopy('build.xml',True);
+    if IsDebug then
+      MCopy('run.bat',True);
+
+    OutFile := BuildRelease(bbNormalAndroid);
+    TFile.Copy(OutFile,ProjectPath + 'assets\zzdc.dat',True);
+
+    Params := '-buildfile "' + ProjectPath + 'build.xml" ';
+    if IsDebug then
+      Params := Params + 'debug'
+    else
+      Params := Params + 'release';
+    ExecToolAndWait(TPath.Combine(Self.AndroidAntPath,'bin\ant'),Params);
+  finally
+    Lookups.Free;
+  end;
+
+  if TFile.Exists(ApkFileName) then
+    ShowMessageWithLink('Created APK file: '#13#13 + ApkFileName,
+      '<A HREF="' + ProjectPath + '">Open project folder</A>' + #13#13 +
+      'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
+end;
 
 end.

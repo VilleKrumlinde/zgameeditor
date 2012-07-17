@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="TripleE - version 0.1">
+<ZApplication Name="App" Caption="TripleE" AndroidPackageName="org.emix8.triplee">
   <OnLoaded>
     <ZExpression Expression="BaseDifficulty=DefaultDifficulty;"/>
     <DefineCollision Name="PlayerShotsVsEnemies" Cat1="1" Cat2="2"/>
@@ -661,7 +661,7 @@ if(abs(this.V.X)>0.3)
               </Producers>
             </Mesh>
             <DefineVariable Name="CaveDecorBaseY"/>
-            <Material Name="CaveDecorMaterial" Color="1 1 1 1">
+            <Material Name="CaveDecorMaterial">
               <Textures>
                 <MaterialTexture Name="CaveDecorMaterialTexture" Texture="CaveDecorBitmap"/>
               </Textures>

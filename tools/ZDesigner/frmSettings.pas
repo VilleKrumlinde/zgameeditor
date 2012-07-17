@@ -35,6 +35,8 @@ type
     AndroidSdkPathEdit: TEdit;
     Label9: TLabel;
     AndroidSdCardPathEdit: TEdit;
+    Label10: TLabel;
+    AndroidAntPathEdit: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
