@@ -24,9 +24,9 @@ object AndroidApkForm: TAndroidApkForm
     Top = 32
     Width = 217
     Height = 21
-    EditLabel.Width = 69
+    EditLabel.Width = 172
     EditLabel.Height = 13
-    EditLabel.Caption = 'Package name'
+    EditLabel.Caption = 'Package name (needs to be unique)'
     TabOrder = 0
   end
   object AppNameEdit: TLabeledEdit
