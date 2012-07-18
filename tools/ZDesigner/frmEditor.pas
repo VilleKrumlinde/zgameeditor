@@ -4120,7 +4120,12 @@ begin
   end;
 
   TemplatePath := Self.ExePath + 'Android\Template\';
-  ProjectPath := Self.ExePath + 'Android\Projects\' + String(Self.ZApp.AndroidPackageName) + '\';
+
+  if CurrentFileName='' then
+    ProjectPath := Self.ExePath + 'Android\Projects\'
+  else
+    ProjectPath := ExtractFilePath( ExpandFileName(CurrentFileName) );
+  ProjectPath := ProjectPath + String(Self.ZApp.AndroidPackageName) + '\';
 
   Lookups := TDictionary<string,string>.Create;
   try
