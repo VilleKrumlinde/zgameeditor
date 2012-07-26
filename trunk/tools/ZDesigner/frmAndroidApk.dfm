@@ -4,8 +4,8 @@ object AndroidApkForm: TAndroidApkForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Build Android APK'
-  ClientHeight = 181
-  ClientWidth = 287
+  ClientHeight = 262
+  ClientWidth = 252
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,8 +15,8 @@ object AndroidApkForm: TAndroidApkForm
   OldCreateOrder = False
   Position = poOwnerFormCenter
   DesignSize = (
-    287
-    181)
+    252
+    262)
   PixelsPerInch = 96
   TextHeight = 13
   object PackageNameEdit: TLabeledEdit
@@ -31,7 +31,7 @@ object AndroidApkForm: TAndroidApkForm
   end
   object AppNameEdit: TLabeledEdit
     Left = 16
-    Top = 88
+    Top = 80
     Width = 217
     Height = 21
     EditLabel.Width = 73
@@ -40,8 +40,8 @@ object AndroidApkForm: TAndroidApkForm
     TabOrder = 1
   end
   object Button1: TButton
-    Left = 121
-    Top = 148
+    Left = 86
+    Top = 229
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -52,8 +52,8 @@ object AndroidApkForm: TAndroidApkForm
     ExplicitTop = 143
   end
   object Button2: TButton
-    Left = 204
-    Top = 148
+    Left = 169
+    Top = 229
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -62,5 +62,26 @@ object AndroidApkForm: TAndroidApkForm
     TabOrder = 3
     ExplicitLeft = 443
     ExplicitTop = 143
+  end
+  object VersionNameEdit: TLabeledEdit
+    Left = 16
+    Top = 128
+    Width = 217
+    Height = 21
+    EditLabel.Width = 64
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Version name'
+    TabOrder = 4
+  end
+  object VersionNumberEdit: TLabeledEdit
+    Left = 16
+    Top = 176
+    Width = 73
+    Height = 21
+    EditLabel.Width = 74
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Version number'
+    NumbersOnly = True
+    TabOrder = 5
   end
 end

@@ -326,7 +326,8 @@ type
     RenderAborted : boolean;
     MruList : TStringList;
     PackerProg,PackerParams : string;
-    AndroidSdkPath,AndroidSdCardPath,AndroidAntPath : string;
+    AndroidSdkPath,AndroidSdCardPath,AndroidAntPath,
+    AndroidKeystorePath,AndroidKeystoreAlias : string;
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
@@ -875,6 +876,9 @@ begin
     Self.AndroidSdkPath := Ini.ReadString(Section,'AndroidSdkPath','');
     Self.AndroidSdCardPath := Ini.ReadString(Section,'AndroidSdCardPath','/sdcard/');
     Self.AndroidAntPath := Ini.ReadString(Section,'AndroidAntPath','');
+
+    Self.AndroidKeystorePath := Ini.ReadString(Section,'AndroidKeystorePath','');
+    Self.AndroidKeystoreAlias := Ini.ReadString(Section,'AndroidKeystoreAlias','');
   finally
     Ini.Free;
   end;
@@ -928,6 +932,9 @@ begin
       Ini.WriteString(Section,'AndroidSdkPath',Self.AndroidSdkPath);
       Ini.WriteString(Section,'AndroidSdCardPath',Self.AndroidSdCardPath);
       Ini.WriteString(Section,'AndroidAntPath',Self.AndroidAntPath);
+
+      Ini.WriteString(Section,'AndroidKeystorePath',Self.AndroidKeystorePath);
+      Ini.WriteString(Section,'AndroidKeystoreAlias',Self.AndroidKeystoreAlias);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;
@@ -1850,6 +1857,8 @@ begin
     F.AndroidSdkPathEdit.Text := Self.AndroidSdkPath;
     F.AndroidSdCardPathEdit.Text := Self.AndroidSdCardPath;
     F.AndroidAntPathEdit.Text := Self.AndroidAntPath;
+    F.AndroidKeystorePathEdit.Text := Self.AndroidKeystorePath;
+    F.AndroidKeystoreAliasEdit.Text := Self.AndroidKeystoreAlias;
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
@@ -1860,6 +1869,8 @@ begin
       Self.AndroidSdkPath := F.AndroidSdkPathEdit.Text;
       Self.AndroidSdCardPath := F.AndroidSdCardPathEdit.Text;
       Self.AndroidAntPath := F.AndroidAntPathEdit.Text;
+      Self.AndroidKeystorePath := F.AndroidKeystorePathEdit.Text;
+      Self.AndroidKeystoreAlias := F.AndroidKeystoreAliasEdit.Text;
     end;
   finally
     F.Free;
@@ -4105,10 +4116,15 @@ begin
   try
     F.PackageNameEdit.Text := String(Self.ZApp.AndroidPackageName);
     F.AppNameEdit.Text := String(Self.ZApp.Caption);
+    F.VersionNameEdit.Text := String(Self.ZApp.AndroidVersionName);
+    F.VersionNumberEdit.Text := IntToStr(Self.ZApp.AndroidVersionNumber);
     if F.ShowModal=mrCancel then
       Exit;
     Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
     Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
+    Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
+    Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
+    Self.SetFileChanged(True);
   finally
     F.Free;
   end;
@@ -4133,12 +4149,25 @@ begin
     Lookups.Add('$sdkpath_normal$',Self.AndroidSdkPath);
     Lookups.Add('$package$', String(Self.ZApp.AndroidPackageName) );
     Lookups.Add('$title$', String(Self.ZApp.Caption) );
+    Lookups.Add('$versionname$', String(Self.ZApp.AndroidVersionName) );
+    Lookups.Add('$versionnumber$', IntToStr(Self.ZApp.AndroidVersionNumber) );
+
+    if not IsDebug then
+    begin
+      Lookups.Add('$keystorepath$', StringReplace(Self.AndroidKeystorePath,'\','/',[rfReplaceAll]) );
+      Lookups.Add('$keystorealias$', Self.AndroidKeystoreAlias );
+    end;
 
     ApkFileName := ProjectPath + 'bin\' + String(Self.ZApp.Caption);
     if IsDebug then
       ApkFileName := ApkFileName + '-debug.apk'
     else
-      ApkFileName := ApkFileName + '-release-unsigned.apk';
+    begin
+      if Length(Self.AndroidKeystorePath)>0 then
+        ApkFileName := ApkFileName + '-release.apk'
+      else
+        ApkFileName := ApkFileName + '-release-unsigned.apk';
+    end;
     Lookups.Add('$apkpath$',ApkFileName);
 
     MPath(ProjectPath);
@@ -4160,6 +4189,8 @@ begin
     MCopy('build.xml',True);
     if IsDebug then
       MCopy('run.bat',True);
+    if (not IsDebug) and (Length(Self.AndroidKeystorePath)>0)  then
+      MCopy('ant.properties',True);
 
     OutFile := BuildRelease(bbNormalAndroid);
     TFile.Copy(OutFile,ProjectPath + 'assets\zzdc.dat',True);
@@ -4169,7 +4200,10 @@ begin
       Params := Params + 'debug'
     else
       Params := Params + 'release';
-    ExecToolAndWait(TPath.Combine(Self.AndroidAntPath,'bin\ant'),Params);
+
+    SetEnvironmentVariable('ANT_TOOL',PWideChar(TPath.Combine(Self.AndroidAntPath,'bin\ant')));
+    SetEnvironmentVariable('ANT_PARAMS',PWideChar(Params));
+    ExecToolAndWait('cmd','/c "' + ExePath + 'Android\m.bat"');
   finally
     Lookups.Free;
   end;
