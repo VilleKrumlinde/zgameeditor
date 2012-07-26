@@ -37,6 +37,11 @@ type
     AndroidSdCardPathEdit: TEdit;
     Label10: TLabel;
     AndroidAntPathEdit: TEdit;
+    AndroidKeystorePathEdit: TEdit;
+    AndroidKeystoreAliasEdit: TEdit;
+    Label11: TLabel;
+    Label12: TLabel;
+    Label13: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);

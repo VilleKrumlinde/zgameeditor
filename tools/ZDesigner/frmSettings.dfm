@@ -221,6 +221,9 @@ object SettingsForm: TSettingsForm
     object TabSheet2: TTabSheet
       Caption = 'Android'
       ImageIndex = 1
+      DesignSize = (
+        421
+        348)
       object Label8: TLabel
         Left = 6
         Top = 19
@@ -242,26 +245,65 @@ object SettingsForm: TSettingsForm
         Height = 13
         Caption = 'Apache Ant Path:'
       end
+      object Label11: TLabel
+        Left = 3
+        Top = 161
+        Width = 63
+        Height = 13
+        Caption = 'Keystore File:'
+      end
+      object Label12: TLabel
+        Left = 3
+        Top = 188
+        Width = 69
+        Height = 13
+        Caption = 'Keystore Alias:'
+      end
+      object Label13: TLabel
+        Left = 114
+        Top = 139
+        Width = 72
+        Height = 13
+        Caption = 'Signing options'
+      end
       object AndroidSdkPathEdit: TEdit
         Left = 114
         Top = 16
-        Width = 235
+        Width = 260
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
       end
       object AndroidSdCardPathEdit: TEdit
         Left = 114
         Top = 43
-        Width = 235
+        Width = 260
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
       end
       object AndroidAntPathEdit: TEdit
         Left = 114
         Top = 70
-        Width = 235
+        Width = 260
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
+      end
+      object AndroidKeystorePathEdit: TEdit
+        Left = 114
+        Top = 158
+        Width = 260
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 3
+      end
+      object AndroidKeystoreAliasEdit: TEdit
+        Left = 114
+        Top = 185
+        Width = 79
+        Height = 21
+        TabOrder = 4
       end
     end
   end

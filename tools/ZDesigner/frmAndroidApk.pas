@@ -12,6 +12,8 @@ type
     AppNameEdit: TLabeledEdit;
     Button1: TButton;
     Button2: TButton;
+    VersionNameEdit: TLabeledEdit;
+    VersionNumberEdit: TLabeledEdit;
   private
     { Private declarations }
   public
