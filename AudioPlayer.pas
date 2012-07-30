@@ -141,6 +141,8 @@ type
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
     UseSampleHz : boolean;
 
+    IsReference : boolean;
+
     Next : PVoiceEntry;
   end;
 
@@ -970,61 +972,68 @@ begin
       if not Channel.Active then
         Continue;
 
-      V := GetFreeVoice;
-      if V<>nil then
+      if Note.Sound.IsReference then
       begin
-        //FillChar(V^,SizeOf(TVoiceEntry),0);
+        V := Note.Sound;
+        if V.Active or (V.Next<>nil) then
+          Continue;
+      end
+      else
+      begin
+        V := GetFreeVoice;
+        if V=nil then
+          Continue;
         V^ := Note.Sound^;  //Memcopy voice data
-
-        V.Active := True;
-        V.NoteNr := Note.NoteNr;
-        //V.Volume := 0.25;
-        if Note.Length<>0 then
-          //Override sound length-value
-          V.Length := Note.Length;
-
-        //Modulate volume with velocity (0..1)
-        V.Volume := V.Volume * Note.Velocity;
-
-        //Determine the nr of samples in sampledata (size in bytes / sampleformat)
-        if V.SampleRef<>nil then
-        begin
-          V.SampleData := TSample(V.SampleRef).GetMemory;
-          V.SampleCount := TSample(V.SampleRef).SampleCount;
-        end;
-
-        //Initialize modulations
-        for I := 0 to High(V.Modulations) do
-        begin
-          Modulation := @V.Modulations[I];
-          if Modulation.Active then
-          begin
-            case Modulation.Destination of
-              mdFilterCutoff : Value := V.FilterCutoff;
-              mdFilterQ : Value := V.FilterQ;
-              mdNoteNr : Value := V.NoteNr;
-              mdLfo1Speed..mdLfo2Speed :
-                Value := V.Lfos[ Ord(Modulation.Destination)-Ord(mdLfo1Speed) ].Speed;
-              mdMod1Amount..mdMod4Amount :
-                Value := V.Modulations[ Ord(Modulation.Destination)-Ord(mdMod1Amount) ].Amount;
-              mdOsc1NoteMod : Value := V.Osc1.NoteModifier;
-              mdOsc2NoteMod : Value := V.Osc2.NoteModifier;
-              mdVolume : Value := V.Volume;
-              mdPan : Value := V.Pan;
-              mdOsc2Vol : Value := V.Osc2Volume;
-              mdOsc1PW : Value := V.Osc1.PulseWidth;
-            else //todo ifdef debug
-              Value := 0;
-            end;
-            Modulation.OriginalDestinationValue := Value;
-          end;
-        end;
-
-        UpdateModulators(V,0);
-        SetVoiceFrameConstants(V);
-
-        AddVoiceToChannel(V,Channel);
       end;
+
+      V.Active := True;
+      V.NoteNr := Note.NoteNr;
+      //V.Volume := 0.25;
+      if Note.Length<>0 then
+        //Override sound length-value
+        V.Length := Note.Length;
+
+      //Modulate volume with velocity (0..1)
+      V.Volume := V.Volume * Note.Velocity;
+
+      //Determine the nr of samples in sampledata (size in bytes / sampleformat)
+      if V.SampleRef<>nil then
+      begin
+        V.SampleData := TSample(V.SampleRef).GetMemory;
+        V.SampleCount := TSample(V.SampleRef).SampleCount;
+      end;
+
+      //Initialize modulations
+      for I := 0 to High(V.Modulations) do
+      begin
+        Modulation := @V.Modulations[I];
+        if Modulation.Active then
+        begin
+          case Modulation.Destination of
+            mdFilterCutoff : Value := V.FilterCutoff;
+            mdFilterQ : Value := V.FilterQ;
+            mdNoteNr : Value := V.NoteNr;
+            mdLfo1Speed..mdLfo2Speed :
+              Value := V.Lfos[ Ord(Modulation.Destination)-Ord(mdLfo1Speed) ].Speed;
+            mdMod1Amount..mdMod4Amount :
+              Value := V.Modulations[ Ord(Modulation.Destination)-Ord(mdMod1Amount) ].Amount;
+            mdOsc1NoteMod : Value := V.Osc1.NoteModifier;
+            mdOsc2NoteMod : Value := V.Osc2.NoteModifier;
+            mdVolume : Value := V.Volume;
+            mdPan : Value := V.Pan;
+            mdOsc2Vol : Value := V.Osc2Volume;
+            mdOsc1PW : Value := V.Osc1.PulseWidth;
+          else //todo ifdef debug
+            Value := 0;
+          end;
+          Modulation.OriginalDestinationValue := Value;
+        end;
+      end;
+
+      UpdateModulators(V,0);
+      SetVoiceFrameConstants(V);
+
+      AddVoiceToChannel(V,Channel);
     end;
     EmitList.Clear;
   Platform_LeaveMutex(VoicesMutex);

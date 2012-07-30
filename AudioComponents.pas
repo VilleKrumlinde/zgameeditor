@@ -190,6 +190,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Pan',{$ENDIF}integer(@Voice.Pan), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.5;
 
+  List.AddProperty({$IFNDEF MINIMAL}'IsReference',{$ENDIF}integer(@Voice.IsReference), zptBoolean);
+
   {$ifndef minimal}
   SaveCount := List.Count;
   {$endif}
