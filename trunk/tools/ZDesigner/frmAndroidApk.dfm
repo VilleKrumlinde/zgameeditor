@@ -4,7 +4,7 @@ object AndroidApkForm: TAndroidApkForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Build Android APK'
-  ClientHeight = 262
+  ClientHeight = 310
   ClientWidth = 252
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,9 +16,16 @@ object AndroidApkForm: TAndroidApkForm
   Position = poOwnerFormCenter
   DesignSize = (
     252
-    262)
+    310)
   PixelsPerInch = 96
   TextHeight = 13
+  object Label1: TLabel
+    Left = 16
+    Top = 219
+    Width = 54
+    Height = 13
+    Caption = 'Orientation'
+  end
   object PackageNameEdit: TLabeledEdit
     Left = 16
     Top = 32
@@ -41,27 +48,25 @@ object AndroidApkForm: TAndroidApkForm
   end
   object Button1: TButton
     Left = 86
-    Top = 229
+    Top = 277
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 2
-    ExplicitLeft = 360
-    ExplicitTop = 143
+    ExplicitTop = 229
   end
   object Button2: TButton
     Left = 169
-    Top = 229
+    Top = 277
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 3
-    ExplicitLeft = 443
-    ExplicitTop = 143
+    ExplicitTop = 229
   end
   object VersionNameEdit: TLabeledEdit
     Left = 16
@@ -83,5 +88,18 @@ object AndroidApkForm: TAndroidApkForm
     EditLabel.Caption = 'Version number'
     NumbersOnly = True
     TabOrder = 5
+  end
+  object OrientationComboBox: TComboBox
+    Left = 96
+    Top = 216
+    Width = 105
+    Height = 21
+    Style = csDropDownList
+    ItemIndex = 0
+    TabOrder = 6
+    Text = 'Landscape'
+    Items.Strings = (
+      'Landscape'
+      'Portrait')
   end
 end

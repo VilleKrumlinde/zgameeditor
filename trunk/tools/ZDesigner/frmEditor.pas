@@ -4068,7 +4068,7 @@ var
     if not DoReplace then
     begin
       if TFile.Exists(Dst) and
-        (TFile.GetCreationTime(Dst)>=TFile.GetCreationTime(Src)) then
+        (TFile.GetLastWriteTime(Dst)>=TFile.GetLastWriteTime(Src)) then
         //no need to copy
       else
         TFile.Copy(Src,Dst,True);
@@ -4118,12 +4118,14 @@ begin
     F.AppNameEdit.Text := String(Self.ZApp.Caption);
     F.VersionNameEdit.Text := String(Self.ZApp.AndroidVersionName);
     F.VersionNumberEdit.Text := IntToStr(Self.ZApp.AndroidVersionNumber);
+    F.OrientationComboBox.ItemIndex := IfThen(Self.ZApp.AndroidPortrait,1,0);
     if F.ShowModal=mrCancel then
       Exit;
     Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
     Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
     Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
     Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
+    Self.ZApp.AndroidPortrait := (F.OrientationComboBox.ItemIndex=1);
     Self.SetFileChanged(True);
   finally
     F.Free;
@@ -4151,6 +4153,10 @@ begin
     Lookups.Add('$title$', String(Self.ZApp.Caption) );
     Lookups.Add('$versionname$', String(Self.ZApp.AndroidVersionName) );
     Lookups.Add('$versionnumber$', IntToStr(Self.ZApp.AndroidVersionNumber) );
+    if Self.ZApp.AndroidPortrait then
+      Lookups.Add('$orientation$', 'portrait')
+    else
+      Lookups.Add('$orientation$', 'landscape');
 
     if not IsDebug then
     begin

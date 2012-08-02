@@ -14,6 +14,8 @@ type
     Button2: TButton;
     VersionNameEdit: TLabeledEdit;
     VersionNumberEdit: TLabeledEdit;
+    OrientationComboBox: TComboBox;
+    Label1: TLabel;
   private
     { Private declarations }
   public

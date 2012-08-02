@@ -13,7 +13,7 @@
             android:label="$title$"
             android:name="org.zgameeditor.ZgeActivity"
             android:configChanges="screenLayout|orientation|keyboardHidden|fontScale"
-            android:screenOrientation="landscape" >
+            android:screenOrientation="$orientation$" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
