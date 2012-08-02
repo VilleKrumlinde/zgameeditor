@@ -15,10 +15,6 @@ inherited SoundEditFrame: TSoundEditFrame
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Sound'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         793
         569)
@@ -53,11 +49,11 @@ inherited SoundEditFrame: TSoundEditFrame
       object Label13: TLabel
         Left = 8
         Top = 5
-        Width = 577
+        Width = 547
         Height = 20
         Caption = 
-          'Point mouse here and use keys '#39'a'#39','#39's'#39','#39'd'#39','#39'f'#39' etc (third row on ' +
-          'keyboard) to play notes'
+          'Point mouse here and use keys a,w,s,e,d,f,t,g,y,h,u,j to play no' +
+          'tes of an octave'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -16

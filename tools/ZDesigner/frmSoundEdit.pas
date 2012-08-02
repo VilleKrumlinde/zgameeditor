@@ -101,6 +101,8 @@ implementation
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
   frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types;
 
+const
+  NoteKeys : string = 'awsedftgyhuj';
 
 var
   SoundGraphMutex : pointer;
@@ -127,64 +129,56 @@ begin
 end;
 
 procedure TSoundEditFrame.PlayNoteFromChar(Key : char);
-const
-  Notes : string = 'asdfghjklöä';
 var
   I : integer;
   NoteLength,NoteNr : single;
 begin
-  for I := 1 to Length(Notes) do
-  begin
-    if Notes[I]=Key then
+  I := Pos(Key,NoteKeys);
+  if I=0 then
+    Exit;
+
+  Sound.Voice.Osc1.Waveform := TWaveform(Osc1WaveformCombo.ItemIndex);
+  Sound.Voice.Osc1.PulseWidth := Round(Osc1PWTrackBar.Position) / 100;
+
+  Sound.Voice.UseOsc2 := Osc2ActiveCheckBox.Checked;
+  Sound.Voice.Osc2.NoteModifier := StrToIntDef(Osc2FreqEdit.Text,0) * 0.1;
+  Sound.Voice.Osc2.Waveform := TWaveform(Osc2WaveformCombo.ItemIndex);
+  Sound.Voice.Osc2Volume := Round(Osc2VolumeTrackBar.Position) / 100;
+
+  Sound.Voice.UseFilter := FilterActiveCheckBox.Checked;
+  Sound.Voice.FilterCutoff := Round(FilterCutoffTrackBar.Position) / 100.1;
+  Sound.Voice.FilterQ := Round(FilterQTrackBar.Position) / 100.1;
+
+  NoteLength := StrToFloatDef(NoteLengthEdit.Text,0.25);
+  Sound.Voice.Length := NoteLength;
+
+  NoteNr := (StrToIntDef(OctaveEdit.Text,0)*12) + I - 1;
+  AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, StrToIntDef(ChannelEdit.Text,0), NoteLength, 1.0, False);
+
+  NoteNrLabel.Caption := 'NoteNr ' + IntToStr(Round(NoteNr));
+
+  //Init sound graph
+  Platform_EnterMutex(SoundGraphMutex);
+  try
+    SoundGraphWriteIndex := 0;
+    SoundGraphReadIndex := 0;
+    SoundGraphMaxLength := Round(Min(NoteLength * AudioRate * StereoChannels,High(SoundGraphBuffer)));
+    SoundGraphPixelPos := 0;
+    if SoundGraphBitmap=nil then
     begin
-
-      Sound.Voice.Osc1.Waveform := TWaveform(Osc1WaveformCombo.ItemIndex);
-      Sound.Voice.Osc1.PulseWidth := Round(Osc1PWTrackBar.Position) / 100;
-
-      Sound.Voice.UseOsc2 := Osc2ActiveCheckBox.Checked;
-      Sound.Voice.Osc2.NoteModifier := StrToIntDef(Osc2FreqEdit.Text,0) * 0.1;
-      Sound.Voice.Osc2.Waveform := TWaveform(Osc2WaveformCombo.ItemIndex);
-      Sound.Voice.Osc2Volume := Round(Osc2VolumeTrackBar.Position) / 100;
-
-      Sound.Voice.UseFilter := FilterActiveCheckBox.Checked;
-      Sound.Voice.FilterCutoff := Round(FilterCutoffTrackBar.Position) / 100.1;
-      Sound.Voice.FilterQ := Round(FilterQTrackBar.Position) / 100.1;
-
-      NoteLength := StrToFloatDef(NoteLengthEdit.Text,0.25);
-      Sound.Voice.Length := NoteLength;
-
-      NoteNr := (StrToIntDef(OctaveEdit.Text,0)*12) + I - 1;
-      AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, StrToIntDef(ChannelEdit.Text,0), NoteLength, 1.0);
-
-      NoteNrLabel.Caption := 'NoteNr ' + IntToStr(Round(NoteNr));
-
-      //Init sound graph
-      Platform_EnterMutex(SoundGraphMutex);
-      try
-        SoundGraphWriteIndex := 0;
-        SoundGraphReadIndex := 0;
-        SoundGraphMaxLength := Round(Min(NoteLength * AudioRate * StereoChannels,High(SoundGraphBuffer)));
-        SoundGraphPixelPos := 0;
-        if SoundGraphBitmap=nil then
-        begin
-          SoundGraphBitmap := TBitmap.Create;
-          SoundGraphBitmap.Height := SoundGraphPaintBox.Height;
-          SoundGraphBitmap.Transparent := False;
-        end;
-        SoundGraphBitmap.Width := SoundGraphPaintBox.Width;
-        FillChar(SoundGraphSavePenPos,SizeOf(SoundGraphSavePenPos),0);
-        SoundGraphBitmap.Canvas.Brush.Color := clBlack;
-        SoundGraphBitmap.Canvas.FillRect( Rect(0,0,SoundGraphBitmap.Width,SoundGraphBitmap.Height) );
-//    FillChar(SoundGraphBuffer,SizeOf(SoundGraphBuffer),128);
-      finally
-        Platform_LeaveMutex(SoundGraphMutex);
-      end;
-
-      AudioPlayer.EmitSoundsInEmitList;
-
-      Break;
+      SoundGraphBitmap := TBitmap.Create;
+      SoundGraphBitmap.Height := SoundGraphPaintBox.Height;
+      SoundGraphBitmap.Transparent := False;
     end;
+    SoundGraphBitmap.Width := SoundGraphPaintBox.Width;
+    FillChar(SoundGraphSavePenPos,SizeOf(SoundGraphSavePenPos),0);
+    SoundGraphBitmap.Canvas.Brush.Color := clBlack;
+    SoundGraphBitmap.Canvas.FillRect( Rect(0,0,SoundGraphBitmap.Width,SoundGraphBitmap.Height) );
+  finally
+    Platform_LeaveMutex(SoundGraphMutex);
   end;
+
+  AudioPlayer.EmitSoundsInEmitList;
 end;
 
 procedure TSoundEditFrame.NotesEditKeyPress(Sender: TObject; var Key: Char);
@@ -370,7 +364,7 @@ procedure TSoundEditFrame.OnKeyPress(var Key: Char);
 var
   P : TPoint;
 begin
-  if CharInSet(Key,['a','s','d','f','g','h','j','k','l','ö','ä']) then
+  if Pos(Key,NoteKeys)>0 then
   begin
     P := Self.ClientToScreen( Point(0,0) );
     if PtInRect( Rect(P.X,P.Y,P.X + Width, P.Y + Height) , Mouse.CursorPos ) then
