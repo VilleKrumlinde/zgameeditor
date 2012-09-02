@@ -141,8 +141,6 @@ type
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
     UseSampleHz : boolean;
 
-    IsReference : boolean;
-
     Next : PVoiceEntry;
   end;
 
@@ -159,7 +157,7 @@ type
   end;
 
 const
-  AudioRate = {$ifdef android}44100{$else}44100{$endif};  //44khz
+  AudioRate = 44100;  //44khz
 
   OutputBits = SizeOf(TSoundOutputUnit)*8;
 
@@ -183,7 +181,7 @@ const
   //Det blir en fördröjning av nya ljud som är lika med dma-buffer size eftersom denna
   //buffer loopar och man fyller hela tiden på med data precis före playingposition.
   //Bör därför ej vara längre än en tiondels sekund för ljudeffekter.
-  SoundBufferSamplesSize = Round(AudioRate/{$ifdef android}20{$else}20{$endif});
+  SoundBufferSamplesSize = Round(AudioRate/20);
   SoundBufferByteSize = SoundBufferSamplesSize * SizeOf(TSoundOutputUnit) * StereoChannels;
 
   AudioFrameLength = 1.0 / 50;                      //Tid mellan varje uppdatering av modulations
@@ -198,11 +196,12 @@ function GetChannel(I : integer) : PChannel;
 procedure RenderToMixBuffer(Buf : PSoundMixUnit; Count : integer);
 
 procedure AddNoteToEmitList(Sound : PVoiceEntry; NoteNr : single; ChannelNr : integer;
-  Length : single; Velocity : single);
+  Length : single; Velocity : single; ByReference : boolean);
 procedure EmitSoundsInEmitList;
 
 {$ifndef minimal}
 procedure DesignerResetMixer;
+procedure DesignerStopAllAudio;
 {$endif}
 
 implementation
@@ -929,6 +928,7 @@ type
     Length : single;
     Velocity : single;
     ChannelNr : integer;
+    ByReference : boolean;
   end;
 
 var
@@ -936,7 +936,7 @@ var
   EmitList : TZArrayList;
 
 procedure AddNoteToEmitList(Sound : PVoiceEntry; NoteNr : single; ChannelNr : integer;
-  Length : single; Velocity : single);
+  Length : single; Velocity : single; ByReference : boolean);
 var
   E : TNoteEmitEntry;
 begin
@@ -946,6 +946,7 @@ begin
   E.ChannelNr := ChannelNr;
   E.Length := Length;
   E.Velocity := Velocity;
+  E.ByReference := ByReference;
   EmitList.Add(E);
 end;
 
@@ -972,7 +973,7 @@ begin
       if not Channel.Active then
         Continue;
 
-      if Note.Sound.IsReference then
+      if Note.ByReference then
       begin
         V := Note.Sound;
         if V.Active or (V.Next<>nil) then
@@ -1084,6 +1085,30 @@ begin
     FillChar(GlobalLfos,SizeOf(GlobalLfos),0);
     InitChannels;
     MasterVolume := 1.0;
+  Platform_LeaveMutex(VoicesMutex);
+end;
+
+procedure DesignerStopAllAudio;
+var
+  I : integer;
+  Channel : PChannel;
+  Voice,Tmp : PVoiceEntry;
+begin
+  Platform_EnterMutex(VoicesMutex);
+    for I := 0 to MaxChannels-1 do
+    begin
+      Channel := GetChannel(I);
+      Voice := Channel.Voices;
+      while Voice<>nil do
+      begin //Need to walk through voices because some may have been created ByReference
+        Voice.Active := False;
+        Tmp := Voice.Next;
+        Voice.Next := nil;
+        Voice := Tmp;
+      end;
+      Channel.Voices := nil;
+    end;
+    FillChar(Voices,SizeOf(Voices),0);
   Platform_LeaveMutex(VoicesMutex);
 end;
 {$endif}

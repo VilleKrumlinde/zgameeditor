@@ -2403,6 +2403,75 @@ float b2dll_GetPositionY( int body ){ }
 float b2dll_GetAngle( int body ){ }]]>
           </Source>
         </ZExternalLibrary>
+        <ZExternalLibrary Comment="SunVox music library" ModuleName="sunvox">
+          <Source>
+<![CDATA[/*
+  Adapter to the SunVox Dynamic Library.
+  http://http://www.warmplace.ru/soft/sunvox
+
+  Created by Rado1(c)2012
+
+  Download DLL from http://www.warmplace.ru/soft/beta/sunvox_dll_win32.zip
+  More info: http://www.emix8.org/forum/viewtopic.php?p=5446
+
+*/
+
+// Constants
+
+const int SV_NOTECMD_NOTE_OFF = 128;
+const int SV_NOTECMD_ALL_NOTES_OFF  = 129; // notes of all synths off
+const int SV_NOTECMD_CLEAN_SYNTHS = 130; // stop and clean all synths
+const int SV_NOTECMD_STOP = 131;
+const int SV_NOTECMD_PLAY = 132;
+
+const int SV_INIT_FLAG_NO_DEBUG_OUTPUT = 1;
+const int SV_INIT_FLAG_USER_AUDIO_CALLBACK = 2;
+const int SV_INIT_FLAG_AUDIO_INT16 = 4;
+const int SV_INIT_FLAG_AUDIO_FLOAT32 = 8;
+
+// Initialization functions
+
+int sv_init(string dev, int freq, int channels, int flags) {}
+int sv_deinit() {}
+int sv_open_slot(int slot) {}
+int sv_close_slot(int slot) {}
+
+// Functions to control song playing
+
+int sv_load(int slot, string name) {}
+int sv_play(int slot) {}
+int sv_play_from_beginning(int slot) {}
+int sv_stop(int slot) {}
+int sv_set_autostop(int slot, int autostop) {}
+  // autostop values: 0 - disable autostop; 1 - enable autostop.
+  // When disabled, song is playing infinitely in the loop.
+int sv_rewind(int slot, int t) {}
+int sv_volume(int slot, int vol) {}
+int sv_send_event(int slot, int channel_num, int note, int vel, int module, int ctl, int ctl_val) {}
+
+// Functions to get info about the engine, song and its playing
+
+int sv_end_of_song(int slot) {}
+  // Return values: 0 - song is playing now; 1 - stopped.
+int sv_get_current_line(int slot) {}
+int sv_get_current_signal_level(int slot, int channel) {}
+string sv_get_song_name(int slot) {}
+int sv_get_song_bpm(int slot) {}
+int sv_get_song_tpl(int slot) {}
+int sv_get_song_length_lines(int slot) {}
+int sv_get_song_length_frames(int slot) {}
+  // Frame is one discrete of the sound. Sampling frequency 44100 Hz
+  // means, that you hear 44100 frames per second.
+int sv_get_ticks() {}
+  // Returns the current tick counter (from 0 to 0xFFFFFFFF).
+  // SunVox engine uses its own time space, measured in ticks.
+int sv_get_ticks_per_second() {}
+  // Returns the number of SunVox ticks per second.
+int sv_get_number_of_modules(int slot) {}
+int sv_get_module_flags(int slot, int mod_num) {}
+string sv_get_module_name(int slot, int mod_num) {}]]>
+          </Source>
+        </ZExternalLibrary>
       </Children>
     </Group>
     <Group Comment="Fonts">

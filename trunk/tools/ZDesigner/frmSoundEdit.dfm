@@ -182,11 +182,12 @@ inherited SoundEditFrame: TSoundEditFrame
         object NotesEdit: TComboBox
           Left = 64
           Top = 16
-          Width = 113
+          Width = 134
           Height = 21
           ItemIndex = 0
           TabOrder = 0
           Text = 'k dfh fda afk hfd  fh k f a a   '
+          OnChange = NotesEditChange
           OnKeyPress = NotesEditKeyPress
           Items.Strings = (
             'k dfh fda afk hfd  fh k f a a   '
@@ -210,6 +211,15 @@ inherited SoundEditFrame: TSoundEditFrame
           TabOrder = 2
           TickStyle = tsNone
           OnChange = TempoTrackBarChange
+        end
+        object CreateMidiButton: TButton
+          Left = 128
+          Top = 64
+          Width = 81
+          Height = 22
+          Caption = 'Copy to Music'
+          TabOrder = 3
+          OnClick = CreateMidiButtonClick
         end
       end
       object GroupBox3: TGroupBox

@@ -30,6 +30,9 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Voice : TVoiceEntry;
+    {$ifndef minimal}
+    PatternString : TPropString;
+    {$endif}
     constructor Create(OwnerList: TZComponentList); override;
   end;
 
@@ -43,6 +46,7 @@ type
     NoteNr : single;
     Channel : integer;
     ReplayDelay : single;
+    ByReference : boolean;
     procedure Execute; override;
     {$ifndef minimal}
     procedure DesignerReset; override;
@@ -79,6 +83,7 @@ type
     OnPlayNote : TZComponentList;
     Tempo : single;
     Volume : single;
+    LoopPlayback : boolean;
     NoteParam,NoteChannelParam,NoteLengthParam : single;
     destructor Destroy; override;
     procedure Update; override;
@@ -190,8 +195,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Pan',{$ENDIF}integer(@Voice.Pan), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.5;
 
-  List.AddProperty({$IFNDEF MINIMAL}'IsReference',{$ENDIF}integer(@Voice.IsReference), zptBoolean);
-
   {$ifndef minimal}
   SaveCount := List.Count;
   {$endif}
@@ -243,6 +246,12 @@ begin
     {$ifndef minimal}List.GetLast.SetChildClasses([TSample]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SampleRepeatPosition',{$ENDIF}integer(@Voice.SampleRepeatPosition), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'UseSampleHz',{$ENDIF}integer(@Voice.UseSampleHz), zptBoolean);
+
+  {$ifndef minimal}
+  List.AddProperty({$IFNDEF MINIMAL}'PatternString',{$ENDIF}integer(@Self.PatternString), zptString);
+    List.SetDesignerProperty;
+    List.GetLast.DefaultValue.StringValue := 'jhgfgddfgdjdgddhjhgfgddfgdjdfssh';
+  {$endif}
 end;
 
 { TPlaySound }
@@ -255,6 +264,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'NoteNr',{$ENDIF}integer(@NoteNr), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Channel',{$ENDIF}integer(@Channel), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ReplayDelay',{$ENDIF}integer(@ReplayDelay), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ByReference',{$ENDIF}integer(@ByReference), zptBoolean);
 end;
 
 procedure TPlaySound.Execute;
@@ -270,7 +280,7 @@ begin
       Exit;
     Self.LastPlayed := ZApp.Time;
   end;
-  AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Channel, 0, 1.0);
+  AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Channel, 0, 1.0, Self.ByReference);
 end;
 
 {$ifndef minimal}
@@ -278,7 +288,11 @@ function TPlaySound.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
   if Assigned(Sound) then
+  begin
     Result := Result + '  ' + Sound.Name;
+    if ByReference then
+      Result := Result + ' (Reference)';
+  end;
 end;
 
 procedure TPlaySound.DesignerReset;
@@ -331,7 +345,7 @@ begin
           Sound := TSound(Self.Instruments[InstrumentNr]);
           NoteLength := NoteLength + Sound.Voice.Envelopes[0].ReleaseTime;
           if not ZApp.NoSound then
-            AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity);
+            AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity, False);
           if Self.OnPlayNote.Count>0 then
           begin
             Self.NoteParam := NoteNr;
@@ -356,9 +370,10 @@ end;
 
 procedure TMusic.AdvanceMusic(const DeltaTime: single);
 begin
-  LocalTime := LocalTime + DeltaTime;// * Self.Tempo;
+  LocalTime := LocalTime + DeltaTime * Self.Tempo;
   while (Self.LocalTime>=Self.NextEventTime) and (Self.IsPlaying) do
   begin
+    Self.LocalTime := Self.NextEventTime;
     ProcessNextEvent;
     GetNextEventTime;
   end;
@@ -370,9 +385,10 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MusicFile',{$ENDIF}integer(@MusicFile), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'Instruments',{$ENDIF}integer(@Instruments), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSound]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'LoopPlayback',{$ENDIF}integer(@LoopPlayback), zptBoolean);
 
-//  List.AddProperty({$IFNDEF MINIMAL}'Tempo',{$ENDIF}integer(@Tempo), zptFloat);
-//    List.GetLast.DefaultValue.FloatValue := 1.0;
+  List.AddProperty({$IFNDEF MINIMAL}'Tempo',{$ENDIF}integer(@Tempo), zptFloat);
+    List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'Volume',{$ENDIF}integer(@Volume), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 1.0;
   List.AddProperty({$IFNDEF MINIMAL}'OnPlayNote',{$ENDIF}integer(@OnPlayNote), zptComponentList);
@@ -398,7 +414,12 @@ var
   I : integer;
 begin
   if Stream.Position>=Stream.Size then
-    Stop
+  begin
+    if LoopPlayback then
+      Start
+    else
+      Stop;
+  end
   else
   begin
     I := ReadVarLength;
