@@ -303,7 +303,7 @@ end;
 
 
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize*8;  //Måste vara lika stor som dma-buffern
+  MixBufferSamplesSize = SoundBufferSamplesSize;
 var
   MixBuffer : packed array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
   AudioTerminated : boolean;
@@ -356,6 +356,8 @@ end;
 
 
 function AudioCallback(Data : pointer) : longint;
+const
+  OnePassSize = 512;
 var
   Env : PJNIEnv;
   cAudioTrack : jclass;
@@ -420,15 +422,13 @@ begin
 
     while not AudioTerminated do
     begin
+      //Write in small steps to avoid having to lock VoicesMutex for long
       PBuffer := env^.GetPrimitiveArrayCritical(env, buffer, IsCopy);
-      if PBuffer=nil then
-        Platform_error('could not get buffer')
-      else
-      begin
-        MixAndCopyData(PBuffer,bufferSizeInBytes);
-        env^.ReleasePrimitiveArrayCritical(env, buffer, pBuffer, 0);
-        env^.CallNonvirtualIntMethodV(env, track, cAudioTrack, mWrite, C([buffer, 0, bufferSizeInBytes]));
-      end;
+      MixAndCopyData(PBuffer,OnePassSize);
+      env^.ReleasePrimitiveArrayCritical(env, buffer, pBuffer, 0);
+      env^.CallNonvirtualIntMethodV(env, track, cAudioTrack, mWrite, C([buffer, 0, OnePassSize]));
+
+      Platform_Sleep( Round(((SoundBufferSamplesSize/AudioRate)/8) * 1000) );
     end;
 
     env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mStop);
@@ -581,7 +581,7 @@ end;
 function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
 begin
   Result := dlsym(Pointer(Module), Name);
-  if integer(Result)=0 then
+  if Result=nil then
     Platform_Error('failed to getproc');
 end;
 

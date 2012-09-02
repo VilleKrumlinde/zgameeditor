@@ -130,6 +130,7 @@ type
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
+    AndroidPortrait : boolean;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
     //Zc-parsing
@@ -1075,6 +1076,8 @@ begin
   List.AddProperty('AndroidVersionNumber',integer(@AndroidVersionNumber), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
     List.SetDesignerProperty;
+  List.AddProperty('AndroidPortrait',integer(@AndroidPortrait), zptBoolean);
+    List.SetDesignerProperty;
   {$ENDIF}
 end;
 
@@ -1107,6 +1110,7 @@ begin
   Collisions.ClearAll;
   OnClose.ExecuteCommands;
   Renderer.DesignerRenderStop;
+  AudioPlayer.DesignerStopAllAudio;
 end;
 {$endif}
 

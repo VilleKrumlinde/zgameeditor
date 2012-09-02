@@ -67,6 +67,7 @@ type
     MasterVolumeTrackBar: TTrackBar;
     Label19: TLabel;
     Panel1: TPanel;
+    CreateMidiButton: TButton;
     procedure NotesEditKeyPress(Sender: TObject; var Key: Char);
     procedure AutoPlayCheckBoxClick(Sender: TObject);
     procedure AutoPlayTimerTimer(Sender: TObject);
@@ -80,10 +81,13 @@ type
     procedure HelpButtonClick(Sender: TObject);
     procedure HelpMixerButtonClick(Sender: TObject);
     procedure MasterVolumeTrackBarChange(Sender: TObject);
+    procedure CreateMidiButtonClick(Sender: TObject);
+    procedure NotesEditChange(Sender: TObject);
   private
     Sound : TSound;
     procedure PlayNoteFromChar(Key: char);
     procedure SetupMixerGui;
+    procedure GetNoteNr(I: Integer; var NoteNr: Single);
     { Private declarations }
   public
     procedure SetComponent(C: TZComponent; TreeNode: TZComponentTreeNode);  override;
@@ -99,7 +103,7 @@ implementation
 {$R *.dfm}
 
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
-  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types;
+  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types, Clipbrd;
 
 const
   NoteKeys : string = 'awsedftgyhuj';
@@ -151,8 +155,7 @@ begin
 
   NoteLength := StrToFloatDef(NoteLengthEdit.Text,0.25);
   Sound.Voice.Length := NoteLength;
-
-  NoteNr := (StrToIntDef(OctaveEdit.Text,0)*12) + I - 1;
+  GetNoteNr(I, NoteNr);
   AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, StrToIntDef(ChannelEdit.Text,0), NoteLength, 1.0, False);
 
   NoteNrLabel.Caption := 'NoteNr ' + IntToStr(Round(NoteNr));
@@ -179,6 +182,11 @@ begin
   end;
 
   AudioPlayer.EmitSoundsInEmitList;
+end;
+
+procedure TSoundEditFrame.NotesEditChange(Sender: TObject);
+begin
+  Self.Sound.SetString('PatternString', AnsiString(NotesEdit.Text));
 end;
 
 procedure TSoundEditFrame.NotesEditKeyPress(Sender: TObject; var Key: Char);
@@ -209,6 +217,11 @@ constructor TSoundEditFrame.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   Panel1.DoubleBuffered := True;
+end;
+
+procedure TSoundEditFrame.GetNoteNr(I: Integer; var NoteNr: Single);
+begin
+  NoteNr := (StrToIntDef(OctaveEdit.Text, 0) * 12) + I - 1;
 end;
 
 procedure TSoundEditFrame.TempoTrackBarChange(Sender: TObject);
@@ -352,6 +365,8 @@ begin
       EnvelopeFrame := EnvelopesParent.Controls[I] as TEnvelopeFrame;
     EnvelopeFrame.SetEnvelope(Envelope);
   end;
+
+  NotesEdit.Text := string(Sound.PatternString);
 
   SetupMixerGui;
 
@@ -514,6 +529,76 @@ begin
     CloseFile(F);
   end;
 end;
+
+procedure TSoundEditFrame.CreateMidiButtonClick(Sender: TObject);
+const
+  TimeUnit = 20;
+var
+  M : TMusic;
+  Str : TMemoryStream;
+  I,J,DeltaTime : integer;
+  NoteNr : single;
+  B : byte;
+  S : ansistring;
+begin
+  M := TMusic.Create(nil);
+  M.Instruments.AddComponent( Self.Sound.Clone );
+
+  Str := TMemoryStream.Create;
+  try
+    DeltaTime := 0;
+    for I := 1 to Length(NotesEdit.Text) do
+    begin
+      J := Pos(NotesEdit.Text[I],NoteKeys);
+      if J>0 then
+      begin
+        GetNoteNr(J,NoteNr);
+
+        B := DeltaTime;  //Time
+        Str.Write(B,1);
+
+        B := $90; //Cmd
+        Str.Write(B,1);
+
+        B := Round(NoteNr); //Notenr
+        Str.Write(B,1);
+
+        B := 1;  //Length
+        Str.Write(B,1);
+
+        B := 127;  //Velocity
+        Str.Write(B,1);
+
+        DeltaTime := TimeUnit;
+      end
+      else
+        Inc(DeltaTime,TimeUnit);
+    end;
+    M.MusicFile.Size := Str.Size;
+    GetMem(M.MusicFile.Data,Str.Size);
+    Move(Str.Memory^,M.MusicFile.Data^,Str.Size);
+    M.SetString('Name','Music1');
+    M.Instruments.GetComponent(0).SetString('Name','');
+  finally
+    Str.Free;
+  end;
+
+  Str := ComponentManager.SaveXmlToStream(M) as TMemoryStream;
+  try
+    SetLength(S,Str.Size);
+    Str.Position := 0;
+    Str.Read(S[1],Str.Size);
+    S := 'ZZDC' + S;
+    Clipboard.SetTextBuf( PChar(String(S)) );
+  finally
+    Str.Free;
+  end;
+
+  M.Free;
+
+  ShowMessage('The current pattern has been copied to the clipboard as a Music component.'#13'Choose where in your project tree you want to insert it and select Paste Component from right-click menu.');
+end;
+
 
 initialization
   SoundGraphMutex :=  Platform_CreateMutex;
