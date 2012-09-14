@@ -214,7 +214,7 @@ begin
   case Typ.Kind of
     zctFloat :
       begin
-        if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryXor,vbkBinaryShiftLeft,vbkBinaryShiftRight] then
+        if Kind in [vbkBinaryOr,vbkBinaryAnd,vbkBinaryXor,vbkBinaryShiftLeft,vbkBinaryShiftRight,vbkMod] then
           raise ECodeGenError.Create('Cannot use this operator on a float-expression');
         Result := TExpOpBinaryFloat.Create(nil,Kind);
       end;
@@ -487,6 +487,7 @@ begin
     zcConditional : DoGenConditional;
     zcSelect : DoGenSelect;
     zcReinterpretCast : GenValue(Op.Child(0));
+    zcMod : DoGenBinary(vbkMod)
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;

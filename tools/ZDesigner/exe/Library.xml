@@ -2424,10 +2424,11 @@ const int SV_NOTECMD_CLEAN_SYNTHS = 130; // stop and clean all synths
 const int SV_NOTECMD_STOP = 131;
 const int SV_NOTECMD_PLAY = 132;
 
-const int SV_INIT_FLAG_NO_DEBUG_OUTPUT = 1;
-const int SV_INIT_FLAG_USER_AUDIO_CALLBACK = 2;
-const int SV_INIT_FLAG_AUDIO_INT16 = 4;
-const int SV_INIT_FLAG_AUDIO_FLOAT32 = 8;
+const int SV_INIT_FLAG_NO_DEBUG_OUTPUT = 1 << 0;
+const int SV_INIT_FLAG_USER_AUDIO_CALLBACK = 1 << 1;
+const int SV_INIT_FLAG_AUDIO_INT16 = 1 << 2;
+const int SV_INIT_FLAG_AUDIO_FLOAT32 = 1 << 3;
+const int SV_INIT_FLAG_ONE_THREAD =  1 << 4;
 
 // Initialization functions
 

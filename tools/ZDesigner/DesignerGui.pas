@@ -94,8 +94,8 @@ implementation
 uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
-  frmArrayEdit, ZExpressions, pngimage, ZApplication, u3dsFile, Meshes,
-  Jpeg, Vcl.Themes, Vcl.Styles;
+  frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
+  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1411,9 +1411,20 @@ begin
       end;
     end;
 
-    (Self.Component as TBitmapFromFile).IsJpegEncoded := Pic.Graphic is TJpegImage;
-    if (Self.Component as TBitmapFromFile).IsJpegEncoded  then
+    Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(FileName)) );
+
+    if Pic.Graphic is TJpegImage then
     begin
+      (Self.Component as TBitmapFromFile).FileFormat := bffJpeg;
+      Stream.LoadFromFile(FileName);
+      Exit;
+    end;
+
+    if Pic.Graphic is TPngImage then
+    begin
+      (Self.Component as TBitmapFromFile).FileFormat := bffPng;
+      (Self.Component as TBitmapFromFile).HasAlphaLayer := True;
+      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer;
       Stream.LoadFromFile(FileName);
       Exit;
     end;
@@ -1451,8 +1462,6 @@ begin
           Stream.Write(A,1);
       end;
     end;
-
-    Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(FileName)) );
 
     (Self.Component as TBitmapFromFile).HasAlphaLayer := UseAlpha;
     if UseAlpha then

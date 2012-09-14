@@ -3140,6 +3140,14 @@ var
     OtherXml.Free;
   end;
 
+  procedure PatchBitmapFromFile;
+  begin
+    if NotFounds.Values['IsJpegEncoded']='' then
+      Exit;
+    Value.ByteValue := 1;
+    C.SetProperty(C.GetProperties.GetByName('FileFormat'),Value);
+  end;
+
 begin
   ZClassName := string(Xml.CurName);
 
@@ -3247,11 +3255,15 @@ begin
         NotFounds.Values[String(S)] := String(Xml.CurAttr.Value(I));
     end;
 
-    if (NotFounds.Count>0) and (ZClassName='Material') then
-      PatchMaterialTextures;
-
-    if (NotFounds.Count>0) and (ZClassName='Sound') and (Xml.CurPartType=ptStartTag) then
-      PatchSoundSample;
+    if (NotFounds.Count>0) then
+    begin
+      if (ZClassName='Material') then
+        PatchMaterialTextures;
+      if (ZClassName='Sound') and (Xml.CurPartType=ptStartTag) then
+        PatchSoundSample;
+      if (ZClassName='BitmapFromFile') then
+        PatchBitmapFromFile;
+    end;
 
     if Xml.CurPartType=ptStartTag then
     begin

@@ -793,7 +793,7 @@ Listing
   749  = (. OutOp := InOp; Kind := zcNop; .)
   750    { ("*"      (. Kind := zcMul; .)
   751      | "/"     (. Kind := zcDiv; .)
-  752    /*  | "%" */
+  752      | "%"     (. Kind := zcMod; .)
   753      ) Unary<Tmp>
   754           (. OutOp := MakeBinary(Kind,InOp,Tmp);
   755              InOp := OutOp;
