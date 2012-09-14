@@ -397,7 +397,7 @@ var
   SP,DP,Mem,PngMem : PByte;
   IsTransparent : boolean;
   PixelCount,Pixel : integer;
-  I: Integer;
+  I,TempW,TempH: Integer;
   B : byte;
   Nj : TNjDecoder;
 begin
@@ -438,7 +438,14 @@ begin
       end;
     bffPng:
       begin
-        BeRoPng.LoadPNG(BitmapFile.Data,BitmapFile.Size,pointer(PngMem), I,I);
+        if not BeRoPng.LoadPNG(BitmapFile.Data,BitmapFile.Size,pointer(PngMem), TempW, TempH) then
+        begin
+          {$ifndef minimal}
+          ZLog.GetLog(Self.ClassName).Warning('Png decoder failed.');
+          BM.Free;
+          {$endif}
+          Exit;
+        end;
         SP := PngMem;
       end;
   end;
