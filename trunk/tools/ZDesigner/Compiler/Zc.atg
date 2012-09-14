@@ -749,7 +749,7 @@ MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcO
 = (. OutOp := InOp; Kind := zcNop; .)
   { ("*"      (. Kind := zcMul; .)
     | "/"     (. Kind := zcDiv; .)
-  /*  | "%" */
+    | "%"     (. Kind := zcMod; .)
     ) Unary<Tmp>
          (. OutOp := MakeBinary(Kind,InOp,Tmp);
             InOp := OutOp;

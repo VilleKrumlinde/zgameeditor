@@ -15,7 +15,7 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast);
+          zcReinterpretCast,zcMod);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -570,6 +570,7 @@ begin
         Result := '(' + Child(0).ToString + ') ? ' + Child(1).ToString + ' : ' + Child(2).ToString;
       end;
     zcSelect : Result := Child(0).ToString + '.' + Self.Id;
+    zcMod : Result := Child(0).ToString + '%' + Child(1).ToString;
   end;
 end;
 
@@ -654,6 +655,7 @@ begin
         zcBinaryXor : DoIntConstant(Trunc(C1.Value) xor Trunc(C2.Value));
         zcBinaryShiftL : DoIntConstant(Trunc(C1.Value) shl Trunc(C2.Value));
         zcBinaryShiftR : DoIntConstant(Trunc(C1.Value) shr Trunc(C2.Value));
+        zcMod : DoConstant(Trunc(C1.Value) mod Trunc(C2.Value));
       end;
     end;
   end;

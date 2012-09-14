@@ -3649,7 +3649,7 @@ end;
 
 type
   TMapName = class
-    Name,MapClassName,MapMethodName : string;
+    Name,MapUnitName,MapClassName,MapMethodName : string;
     Start : integer;
     Size : integer;
   end;
@@ -3670,7 +3670,7 @@ var
   Ci : TZComponentInfo;
   UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
-  NeedJpeg,DisplayDetailedReport : boolean;
+  NeedJpeg,NeedPng,DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
@@ -3716,10 +3716,14 @@ begin
       Splitter.DelimitedText := Item.Name;
       if Splitter.Count=3 then
       begin
+        Item.MapUnitName := Splitter[0];
         Item.MapClassName := Splitter[1];
         Item.MapMethodName := Splitter[2];
         if Length(Item.MapClassName)=0 then
           Item.MapClassName := Item.MapMethodName;
+      end else if Splitter.Count=2 then
+      begin
+        Item.MapUnitName := Splitter[0];
       end;
       MapNames.Add(Item);
     end;
@@ -3746,6 +3750,7 @@ begin
 
     //Get names of used classes
     NeedJpeg := False;
+    NeedPng := False;
     AllObjects := TObjectList.Create(False);
     try
       GetAllObjects(Self.Root,AllObjects);
@@ -3756,8 +3761,10 @@ begin
       for I := 0 to AllObjects.Count - 1 do
       begin
         UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
-        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).IsJpegEncoded) then
+        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).FileFormat=bffJpeg) then
           NeedJpeg := True;
+        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).FileFormat=bffPng) then
+          NeedPng := True;
         if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName);
       end;
@@ -3832,7 +3839,9 @@ begin
           NamesKept.Add(Item);
         Continue;
       end;
-      if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and (NamesToRemove.IndexOf(Item.Name)=-1) then
+      if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and
+        (NamesToRemove.IndexOf(Item.Name)=-1) and
+        (NeedPng or (Item.MapUnitName<>'BeRoPNG')) then
       begin
         if DisplayDetailedReport then
           NamesKept.Add(Item);

@@ -22,7 +22,7 @@ unit BitmapProducers;
 
 interface
 
-uses ZOpenGL, ZClasses, ZExpressions,ZBitmap;
+uses ZOpenGL, ZClasses, ZExpressions, ZBitmap;
 
 type
   TBitmapProducerWithOptionalArgument  = class(TContentProducer)
@@ -69,7 +69,7 @@ type
     BitmapFile : TZBinaryPropValue;
     Transparency : (btNone,btBlackColor,btAlphaLayer);
     HasAlphaLayer : boolean;
-    IsJpegEncoded : boolean;
+    FileFormat : (bffUncompressed,bffJpeg,bffPng);
   end;
 
   TBitmapBlur = class(TContentProducer)
@@ -153,7 +153,7 @@ type
 
 implementation
 
-uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg;
+uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg, BeRoPng;
 
 function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
@@ -386,14 +386,15 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['None','BlackColor','AlphaLayer']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}integer(@HasAlphaLayer), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'IsJpegEncoded',{$ENDIF}integer(@IsJpegEncoded), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'FileFormat',{$ENDIF}integer(@FileFormat), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Uncompressed','Jpeg','Png']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 procedure TBitmapFromFile.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   BM : TZBitmap;
-  SP,DP,Mem : PByte;
+  SP,DP,Mem,PngMem : PByte;
   IsTransparent : boolean;
   PixelCount,Pixel : integer;
   I: Integer;
@@ -402,34 +403,44 @@ var
 begin
   BM := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
   Mem := nil;
+  PngMem := nil;
+  Nj := nil;
+  SP := nil;
 
   PixelCount := BM.PixelWidth*BM.PixelHeight;
 
   //Ifall det behövs format och storleksdata om bitmappen
   //så kan man lägga till properties senare.
-  if IsJpegEncoded then
-  begin
-    Nj := TNjDecoder.Create;
-    if not Nj.Decode(BitmapFile.Data,BitmapFile.Size) then
-    begin
-      {$ifndef minimal}
-      ZLog.GetLog(Self.ClassName).Warning('Jpeg decoder failed.');
-      BM.Free;
-      Exit;
-      {$endif}
-    end;
-    SP := Nj.GetImage;
-  end else
-  begin
-    {$ifndef minimal}
-    if BitmapFile.Size<(PixelCount*3) then
-    begin
-      BM.Free;
-      Exit;
-    end;
-    {$endif}
-    Nj := nil;
-    SP := BitmapFile.Data;
+  case Self.FileFormat of
+    bffUncompressed:
+      begin
+        {$ifndef minimal}
+        if BitmapFile.Size<(PixelCount*3) then
+        begin
+          BM.Free;
+          Exit;
+        end;
+        {$endif}
+        SP := BitmapFile.Data;
+      end;
+    bffJpeg:
+      begin
+        Nj := TNjDecoder.Create;
+        if not Nj.Decode(BitmapFile.Data,BitmapFile.Size) then
+        begin
+          {$ifndef minimal}
+          ZLog.GetLog(Self.ClassName).Warning('Jpeg decoder failed.');
+          BM.Free;
+          Exit;
+          {$endif}
+        end;
+        SP := Nj.GetImage;
+      end;
+    bffPng:
+      begin
+        BeRoPng.LoadPNG(BitmapFile.Data,BitmapFile.Size,pointer(PngMem), I,I);
+        SP := PngMem;
+      end;
   end;
 
   IsTransparent := Transparency<>btNone;
@@ -477,6 +488,7 @@ begin
 
   if Mem<>nil then
     FreeMem(Mem);
+  FreeMem(PngMem);
 
   Stack.Push(BM);
 end;

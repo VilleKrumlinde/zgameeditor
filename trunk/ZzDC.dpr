@@ -59,7 +59,8 @@ uses
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas',
-  NanoJpeg in 'NanoJpeg.pas';
+  NanoJpeg in 'NanoJpeg.pas',
+  BeRoPNG in 'BeRoPNG.pas';
 
 {$if defined(Win32) or defined(Win64)}
   {$ifdef fpc}
@@ -69,7 +70,6 @@ uses
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
   {$endif}
 {$ifend}
-
 var
   ZApp : TZApplication;
 begin
