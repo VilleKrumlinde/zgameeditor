@@ -1,2 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<BorlandProject/>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.315,C:\Data\Delphi32\ZzDC_Public\BeRoPNG.pas=</Transaction>
+  </Transactions>
+</BorlandProject>

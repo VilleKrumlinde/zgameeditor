@@ -429,6 +429,8 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
             begin
               if Assigned(FromOp.Ref) and (FromOp.Ref is TDefineArray) then
                 Kind := eckArrayToXptr;
+              if Assigned(FromOp.Ref) and (ComponentManager.GetInfo(FromOp.Ref as TZComponent).ClassId=ZFileClassId) then
+                Kind := eckFileToXptr;
             end;
         end;
     end;

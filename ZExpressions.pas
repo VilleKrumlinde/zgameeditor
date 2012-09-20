@@ -115,10 +115,8 @@ type
   strict private
     Data : PFloatArray;
     Limit : integer;
-    {$ifndef minimal}
     AllocItemCount : integer;
     AllocType : TVariableType;
-    {$endif}
     AllocPtr : PPointer;
     procedure CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);
     procedure AllocData;
@@ -325,7 +323,7 @@ type
     {$endif}
   end;
 
-  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr);
+  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckFileToXptr);
   TExpConvert = class(TExpBase)
   protected
     procedure Execute; override;
@@ -424,7 +422,7 @@ implementation
 
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
-  AudioComponents, AudioPlayer
+  AudioComponents, AudioPlayer, ZFile
 {$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
 
 var
@@ -1044,11 +1042,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['One','Two','Three']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}integer(@SizeDim1), zptInteger);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}integer(@SizeDim2), zptInteger);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'SizeDim3',{$ENDIF}integer(@SizeDim3), zptInteger);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Persistent',{$ENDIF}integer(@Persistent), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'Values',{$ENDIF}integer(@Values), zptBinary);
 end;
@@ -1063,10 +1058,10 @@ end;
 
 function TDefineArray.GetData: PFloat;
 begin
-  {$ifndef minimal}
-  //Array size can only be changed in zdesigner, not runtime
+  //Check if Array size has changed
   if Limit<>CalcLimit then
     AllocData;
+  {$ifndef minimal}
   ZAssert(not (Persistent and (_Type in [dvbString,dvbModel])),'Persistent String/Model-arrays not supported');
   {$endif}
   if Persistent then
@@ -1093,13 +1088,9 @@ var
   ByteSize: Integer;
   P : PPointer;
   I : integer;
-  {$ifndef minimal}
   WasNil : boolean;
-  {$endif}
 begin
-  {$ifndef minimal}
   CleanUpStrings(AllocType,AllocItemCount,AllocPtr);
-  {$endif}
   Self.Limit := CalcLimit;
   //Todo: 64 bit
   ByteSize := Limit * SizeOf(single);
@@ -1111,23 +1102,14 @@ begin
   else
     P := @Self.Data;
 
-  {$ifndef minimal}
-  //In designer allocation will happen whenever properties are changed
   WasNil := P^ = nil;
   ReallocMem(P^, ByteSize);
   if WasNil then
     FillChar(P^^, ByteSize, 0);
-  {$else}
-  //In minimal allocation will only happen once
-  GetMem(P^,ByteSize);
-  FillChar(P^^, ByteSize, 0);
-  {$endif}
 
   Self.AllocPtr := P^;
-  {$ifndef minimal}
   Self.AllocItemCount := Self.Limit;
   Self.AllocType := Self._Type;
-  {$endif}
 
   if Self._Type=dvbString then
   begin
@@ -1452,6 +1434,7 @@ var
   V : single;
   I : integer;
   D : TDefineArray;
+  F : TZFile;
   P : pointer;
 begin
   case Kind of
@@ -1470,6 +1453,12 @@ begin
       begin
         StackPopToPointer(D);
         P := D.GetData;
+        StackPushPointer(P);
+      end;
+    eckFileToXptr :
+      begin
+        StackPopToPointer(F);
+        P := F.FileEmbedded.Data;
         StackPushPointer(P);
       end;
   end;

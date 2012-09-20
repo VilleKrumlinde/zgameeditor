@@ -1420,15 +1420,6 @@ begin
       Exit;
     end;
 
-    if Pic.Graphic is TPngImage then
-    begin
-      (Self.Component as TBitmapFromFile).FileFormat := bffPng;
-      (Self.Component as TBitmapFromFile).HasAlphaLayer := True;
-      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer;
-      Stream.LoadFromFile(FileName);
-      Exit;
-    end;
-
     UseAlpha := Bm.PixelFormat=pf32bit;
 
     if not (Bm.PixelFormat in [pf24Bit,pf32Bit]) then

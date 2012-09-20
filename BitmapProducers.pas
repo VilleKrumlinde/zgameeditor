@@ -69,7 +69,7 @@ type
     BitmapFile : TZBinaryPropValue;
     Transparency : (btNone,btBlackColor,btAlphaLayer);
     HasAlphaLayer : boolean;
-    FileFormat : (bffUncompressed,bffJpeg,bffPng);
+    FileFormat : (bffUncompressed,bffJpeg);
   end;
 
   TBitmapBlur = class(TContentProducer)
@@ -153,7 +153,7 @@ type
 
 implementation
 
-uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg, BeRoPng;
+uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg;
 
 function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
@@ -387,23 +387,22 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}integer(@HasAlphaLayer), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'FileFormat',{$ENDIF}integer(@FileFormat), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Uncompressed','Jpeg','Png']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Uncompressed','Jpeg']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 procedure TBitmapFromFile.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   BM : TZBitmap;
-  SP,DP,Mem,PngMem : PByte;
+  SP,DP,Mem : PByte;
   IsTransparent : boolean;
   PixelCount,Pixel : integer;
-  I,TempW,TempH: Integer;
+  I : Integer;
   B : byte;
   Nj : TNjDecoder;
 begin
   BM := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
   Mem := nil;
-  PngMem := nil;
   Nj := nil;
   SP := nil;
 
@@ -435,18 +434,6 @@ begin
           {$endif}
         end;
         SP := Nj.GetImage;
-      end;
-    bffPng:
-      begin
-        if not BeRoPng.LoadPNG(BitmapFile.Data,BitmapFile.Size,pointer(PngMem), TempW, TempH) then
-        begin
-          {$ifndef minimal}
-          ZLog.GetLog(Self.ClassName).Warning('Png decoder failed.');
-          BM.Free;
-          {$endif}
-          Exit;
-        end;
-        SP := PngMem;
       end;
   end;
 
@@ -495,7 +482,6 @@ begin
 
   if Mem<>nil then
     FreeMem(Mem);
-  FreeMem(PngMem);
 
   Stack.Push(BM);
 end;
