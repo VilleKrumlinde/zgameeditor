@@ -59,8 +59,7 @@ uses
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas',
-  NanoJpeg in 'NanoJpeg.pas',
-  BeRoPNG in 'BeRoPNG.pas';
+  NanoJpeg in 'NanoJpeg.pas';
 
 {$if defined(Win32) or defined(Win64)}
   {$ifdef fpc}

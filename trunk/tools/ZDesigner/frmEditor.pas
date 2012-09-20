@@ -3763,8 +3763,6 @@ begin
         UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
         if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).FileFormat=bffJpeg) then
           NeedJpeg := True;
-        if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).FileFormat=bffPng) then
-          NeedPng := True;
         if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName);
       end;
@@ -3840,8 +3838,7 @@ begin
         Continue;
       end;
       if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and
-        (NamesToRemove.IndexOf(Item.Name)=-1) and
-        (NeedPng or (Item.MapUnitName<>'BeRoPNG')) then
+        (NamesToRemove.IndexOf(Item.Name)=-1) then
       begin
         if DisplayDetailedReport then
           NamesKept.Add(Item);

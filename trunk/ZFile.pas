@@ -38,6 +38,7 @@ type
     Encoding : (feChar,feBinary);
     OnRead : TZComponentList;
     OnWrite : TZComponentList;
+    procedure Update; override;
   end;
 
   TFileAction = class(TCommand)
@@ -227,6 +228,14 @@ begin
 end;
 {$endif}
 
+
+procedure TZFile.Update;
+begin
+  inherited;
+  //Set size so that xptr calls can read FileSize correctly
+  if FileEmbedded.Size>0 then
+    Self.FileSize := FileEmbedded.Size;
+end;
 
 { TFileMoveData }
 
