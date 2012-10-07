@@ -94,7 +94,6 @@ begin
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity;
-    glOrtho(-1, 1, -1, 1, -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity;
     glDisable(GL_LIGHTING);
@@ -289,7 +288,6 @@ begin
     //Skippa perspektiv och sätt upp -1.0 .. 1.0 upplösning
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity;
-    glOrtho(-1, 1, -1, 1, -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity;
     glDisable(GL_LIGHTING);

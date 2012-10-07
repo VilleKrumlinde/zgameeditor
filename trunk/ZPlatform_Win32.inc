@@ -690,7 +690,7 @@ begin
   Tmp.Y := Y;
   if not Fullscreen then
     ClientToScreen(h_Wnd,Tmp);
-  SetCursorPos(Tmp.X,Tmp.Y)
+  SetCursorPos(Tmp.X,Tmp.Y);
 end;
 
 function Platform_GetExeFileName : PAnsiChar;

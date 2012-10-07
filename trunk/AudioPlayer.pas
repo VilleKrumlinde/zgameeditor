@@ -102,6 +102,7 @@ type
     //The original value for what is modulated (example: FilterCutoff 0.5)
     //Copied into a modulation when a new voice is allocated
     OriginalDestinationValue : single;
+    DestinationPtr : PSingle;
   end;
   TModulations = array[0..MaxModulations-1] of TModulation;
 
@@ -346,7 +347,7 @@ procedure UpdateModulators(Voice : PVoiceEntry; const TimeStep : single);
 var
   I : integer;
   Modulation : PModulation;
-  ModValue : single;
+  ModValue,Value : single;
   Lfo : PLfo;
   Envelope : PEnvelope;
 begin
@@ -385,31 +386,34 @@ begin
 
       case Modulation.Destination of
         mdFilterCutoff :
-          Voice.FilterCutoff := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,0.99);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,0.99);
         mdFilterQ :
-          Voice.FilterQ := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,0.99);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,0.99);
         mdNoteNr :
           //Let modvalue modulation two octaves (12*2 notes)
-          Voice.NoteNr := Modulation.OriginalDestinationValue + (ModValue * 24);
+          Value := Modulation.OriginalDestinationValue + (ModValue * 24);
         mdLfo1Speed..mdLfo2Speed :
-          Voice.Lfos[ Ord(Modulation.Destination)-Ord(mdLfo1Speed) ].Speed := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
         mdMod1Amount..mdMod4Amount :
-          Voice.Modulations[ Ord(Modulation.Destination)-Ord(mdMod1Amount) ].Amount := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
         mdOsc1NoteMod :
           //Osc1 detune. One note range.
-          Voice.Osc1.NoteModifier := Modulation.OriginalDestinationValue + ModValue;
+          Value := Modulation.OriginalDestinationValue + ModValue;
         mdOsc2NoteMod :
           //Osc2 detune. One note range.
-          Voice.Osc2.NoteModifier := Modulation.OriginalDestinationValue + ModValue;
+          Value := Modulation.OriginalDestinationValue + ModValue;
         mdVolume :
-          Voice.Volume := Clamp(Modulation.OriginalDestinationValue * ModValue,0.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue * ModValue,0.0,1.0);
         mdPan :
-          Voice.Pan := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,0.0,1.0);
         mdOsc2Vol :
-          Voice.Osc2Volume := Clamp(Modulation.OriginalDestinationValue * ModValue,0.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue * ModValue,0.0,1.0);
         mdOsc1PW :
-          Voice.Osc1.PulseWidth := Clamp(Modulation.OriginalDestinationValue + ModValue,-1.0,1.0);
+          Value := Clamp(Modulation.OriginalDestinationValue + ModValue,-1.0,1.0);
+      else
+        Value := 0;
       end;
+      Modulation.DestinationPtr^ := Value;
 
     end;
   end;
@@ -682,6 +686,19 @@ begin
   end;
 end;
 
+procedure ReleaseVoice(V : PVoiceEntry);
+var
+  I : integer;
+  M : PModulation;
+begin
+  V.Active := False;
+  for I := 0 to High(V.Modulations) do
+  begin //Restore initial values (important when using ByReference)
+    M := @V.Modulations[I];
+    if M.Active then
+      M.DestinationPtr^ := M.OriginalDestinationValue;
+  end;
+end;
 
 //Tick all voices and channels with Frame-length
 procedure UpdateFrame;
@@ -725,7 +742,7 @@ begin
 
         if Voice.Time>=Voice.Length then //Voice.Env1.State=esStopped then
         begin //Release voice
-          Voice.Active := False;
+          ReleaseVoice(Voice);
           //todo cleanup klantlig linked-list kodning
           if PrevVoice<>nil then
           begin
@@ -956,10 +973,10 @@ procedure EmitSoundsInEmitList;
 var
   V : PVoiceEntry;
   I,J : integer;
-  Modulation : PModulation;
-  Value : single;
+  M : PModulation;
   Channel : PChannel;
   Note : TNoteEmitEntry;
+  P : PSingle;
 begin
   if EmitList.Count=0 then
     Exit;
@@ -987,6 +1004,10 @@ begin
         V^ := Note.Sound^;  //Memcopy voice data
       end;
 
+      V.Time := 0;
+      for I := 0 to High(V.Envelopes) do
+        V.Envelopes[I].State := esInit;
+
       V.Active := True;
       V.NoteNr := Note.NoteNr;
       //V.Volume := 0.25;
@@ -1002,32 +1023,34 @@ begin
       begin
         V.SampleData := TSample(V.SampleRef).GetMemory;
         V.SampleCount := TSample(V.SampleRef).SampleCount;
+        V.SamplePosition := 0;
       end;
 
       //Initialize modulations
       for I := 0 to High(V.Modulations) do
       begin
-        Modulation := @V.Modulations[I];
-        if Modulation.Active then
+        M := @V.Modulations[I];
+        if M.Active then
         begin
-          case Modulation.Destination of
-            mdFilterCutoff : Value := V.FilterCutoff;
-            mdFilterQ : Value := V.FilterQ;
-            mdNoteNr : Value := V.NoteNr;
+          case M.Destination of
+            mdFilterCutoff : P := @V.FilterCutoff;
+            mdFilterQ : P := @V.FilterQ;
+            mdNoteNr : P := @V.NoteNr;
             mdLfo1Speed..mdLfo2Speed :
-              Value := V.Lfos[ Ord(Modulation.Destination)-Ord(mdLfo1Speed) ].Speed;
+              P := @V.Lfos[ Ord(M.Destination)-Ord(mdLfo1Speed) ].Speed;
             mdMod1Amount..mdMod4Amount :
-              Value := V.Modulations[ Ord(Modulation.Destination)-Ord(mdMod1Amount) ].Amount;
-            mdOsc1NoteMod : Value := V.Osc1.NoteModifier;
-            mdOsc2NoteMod : Value := V.Osc2.NoteModifier;
-            mdVolume : Value := V.Volume;
-            mdPan : Value := V.Pan;
-            mdOsc2Vol : Value := V.Osc2Volume;
-            mdOsc1PW : Value := V.Osc1.PulseWidth;
+              P := @V.Modulations[ Ord(M.Destination)-Ord(mdMod1Amount) ].Amount;
+            mdOsc1NoteMod : P := @V.Osc1.NoteModifier;
+            mdOsc2NoteMod : P := @V.Osc2.NoteModifier;
+            mdVolume : P := @V.Volume;
+            mdPan : P := @V.Pan;
+            mdOsc2Vol : P := @V.Osc2Volume;
+            mdOsc1PW : P := @V.Osc1.PulseWidth;
           else //todo ifdef debug
-            Value := 0;
+            P := nil;
           end;
-          Modulation.OriginalDestinationValue := Value;
+          M.DestinationPtr := P;
+          M.OriginalDestinationValue := P^;
         end;
       end;
 

@@ -1068,8 +1068,8 @@ begin
   //Set window size to make sure camera ratio calculations are correct
   if ZApp<>nil then
   begin
-    ZApp.ScreenWidth := Glp.Width;
-    ZApp.ScreenHeight := Glp.Height;
+    ZApp.ScreenWidth := Glp.Width shr 1 shl 1; //Avoid odd sizes (because of this issue http://www.emix8.org/forum/viewtopic.php?t=947)
+    ZApp.ScreenHeight := Glp.Height shr 1 shl 1;
   end;
 
   if (ShowNode is TZApplication) and (IsAppRunning) then
