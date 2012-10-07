@@ -149,13 +149,13 @@ constructor TSound.Create(OwnerList: TZComponentList);
 begin
   inherited;
 {$ifndef minimal}
-  //Default values in designer: Connect env1 with volume
-  Voice.Modulations[0].Active := True;
-  Voice.Modulations[0].Source := msEnv1;
-  Voice.Modulations[0].Destination := mdVolume;
-  Voice.Modulations[0].Amount := 1;
-  Voice.Envelopes[0].Active := True;
-  Voice.Envelopes[0].ReleaseTime := 0.2;
+//  //Default values in designer: Connect env1 with volume
+//  Voice.Modulations[0].Active := True;
+//  Voice.Modulations[0].Source := msEnv1;
+//  Voice.Modulations[0].Destination := mdVolume;
+//  Voice.Modulations[0].Amount := 1;
+//  Voice.Envelopes[0].Active := True;
+//  Voice.Envelopes[0].ReleaseTime := 0.2;
 {$endif}
 end;
 
