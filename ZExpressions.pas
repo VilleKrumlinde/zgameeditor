@@ -884,7 +884,7 @@ begin
     fcCenterMouse :
       begin
         HasReturnValue := False;
-        Platform_SetMousePos(ZApp.ScreenWidth shr 1,ZApp.ScreenHeight shr 1);
+        ZApp.CenterMouse;
       end;
     fcSetRandomSeed :
       begin

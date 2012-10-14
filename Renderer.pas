@@ -2019,7 +2019,7 @@ procedure TShader.ReInit;
   var
     Status : GLUInt;
     S : string;
-    GlMess : array[0..511] of ansichar;
+    GlMess : array[0..16*1024-1] of ansichar;
     MessLen : integer;
   begin
     glGetShaderiv(Shader^,GL_COMPILE_STATUS,@Status);

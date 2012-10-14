@@ -230,6 +230,7 @@ type
     AndroidBuildAPK1: TMenuItem;
     AndroidBuildReleaseApkAction: TAction;
     AndroidBuildAPKrelease1: TMenuItem;
+    LogClearMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -305,6 +306,7 @@ type
     procedure AndroidRunActionExecute(Sender: TObject);
     procedure AndroidBuildDebugApkActionExecute(Sender: TObject);
     procedure AndroidBuildReleaseApkActionExecute(Sender: TObject);
+    procedure LogClearMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -798,6 +800,11 @@ var
   end;
 
 begin
+  if Pos(#12,Mess)>0 then
+  begin
+    LogClearMenuItemClick(nil);
+    Mess := StringReplace(Mess,#12,'',[rfReplaceAll]);
+  end;
   if Pos(#10,Mess)=0 then
     InAddOne(Mess)
   else
@@ -3295,6 +3302,15 @@ begin
     Point := LogListBox.ClientToScreen(Point);
     Application.ActivateHint(Point);
   end;
+end;
+
+procedure TEditorForm.LogClearMenuItemClick(Sender: TObject);
+var
+  I : integer;
+begin
+  for I := 0 to LogListBox.Items.Count-1 do
+    LogListBox.Items.Objects[I].Free;
+  LogListBox.Items.Clear;
 end;
 
 procedure TEditorForm.LogCopytoclipboardMenuItemClick(Sender: TObject);
