@@ -153,6 +153,7 @@ type
     procedure UpdateViewport; overload;
     procedure UpdateViewport(const W,H : integer); overload;
     function NormalizeToScreen(P : TZPointi) : TZVector2f;
+    procedure CenterMouse;
     procedure ResetGpuResources; override;
     {$ifndef minimal}
     procedure Terminate;
@@ -360,6 +361,13 @@ end;
 procedure TZApplication.UpdateStateVars;
 begin
   PZVector2f(@MousePosition)^ := NormalizeToScreen(Platform_GetMousePos);
+end;
+
+procedure TZApplication.CenterMouse;
+begin
+  Platform_SetMousePos(ZApp.ScreenWidth shr 1,ZApp.ScreenHeight shr 1);
+  MousePosition[0] := 0;
+  MousePosition[1] := 0;
 end;
 
 function TZApplication.Main : boolean;

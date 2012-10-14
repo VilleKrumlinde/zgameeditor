@@ -45,13 +45,11 @@ object EditorForm: TEditorForm
     BevelOuter = bvNone
     Constraints.MinWidth = 123
     TabOrder = 0
-    ExplicitTop = 27
-    ExplicitHeight = 1013
     object TreePanel: TGroupBox
       Left = 0
       Top = 0
       Width = 345
-      Height = 1013
+      Height = 1000
       Margins.Left = 4
       Margins.Top = 4
       Margins.Right = 4
@@ -99,7 +97,6 @@ object EditorForm: TEditorForm
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 821
       object Splitter4: TSplitter
         Left = 780
         Top = 0
@@ -172,10 +169,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -184,10 +177,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -227,10 +216,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -248,7 +233,6 @@ object EditorForm: TEditorForm
             Caption = '&Code editor'
             TabOrder = 0
             OnClick = ExprPanelClick
-            ExplicitWidth = 770
           end
           object ExprCompileButton: TButton
             Left = 10
@@ -310,10 +294,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -358,7 +338,6 @@ object EditorForm: TEditorForm
             Caption = '&Shader editor'
             TabOrder = 1
             OnClick = ExprPanelClick
-            ExplicitWidth = 770
           end
         end
       end
@@ -398,7 +377,6 @@ object EditorForm: TEditorForm
         Align = alLeft
         Caption = '&Properties'
         TabOrder = 1
-        ExplicitHeight = 816
       end
       object ViewerPageControl: TPageControl
         Left = 363
@@ -419,14 +397,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
-            Width = 622
+            Width = 623
             Height = 62
             Margins.Left = 4
             Margins.Top = 4
@@ -556,10 +530,10 @@ object EditorForm: TEditorForm
               OnChange = ZoomTrackBarChange
             end
             object Panel4: TPanel
-              Left = 308
+              Left = 310
               Top = 1
               Width = 312
-              Height = 59
+              Height = 60
               Margins.Left = 4
               Margins.Top = 4
               Margins.Right = 4
@@ -670,7 +644,6 @@ object EditorForm: TEditorForm
             Align = alTop
             BevelOuter = bvNone
             TabOrder = 1
-            ExplicitWidth = 622
             object DisableShadersCheckBox: TCheckBox
               Left = 236
               Top = 2
@@ -758,8 +731,8 @@ object EditorForm: TEditorForm
               Margins.Top = 4
               Margins.Right = 4
               Margins.Bottom = 4
-              ExplicitWidth = 622
-              ExplicitHeight = 804
+              ExplicitWidth = 623
+              ExplicitHeight = 793
               inherited TabSheet1: TTabSheet
                 Margins.Left = 4
                 Margins.Top = 4
@@ -767,8 +740,8 @@ object EditorForm: TEditorForm
                 Margins.Bottom = 4
                 ExplicitLeft = 4
                 ExplicitTop = 27
-                ExplicitWidth = 793
-                ExplicitHeight = 566
+                ExplicitWidth = 615
+                ExplicitHeight = 762
                 inherited Label9: TLabel
                   Left = 266
                   Top = 47
@@ -937,6 +910,7 @@ object EditorForm: TEditorForm
                   Left = 59
                   Top = 41
                   Width = 43
+                  Height = 24
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -944,11 +918,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 59
                   ExplicitTop = 41
                   ExplicitWidth = 43
+                  ExplicitHeight = 24
                 end
                 inherited NoteLengthEdit: TEdit
                   Left = 206
                   Top = 42
                   Width = 40
+                  Height = 24
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -956,6 +932,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 206
                   ExplicitTop = 42
                   ExplicitWidth = 40
+                  ExplicitHeight = 24
                 end
                 inherited LfosParent: TScrollBox
                   Left = 10
@@ -1019,6 +996,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 79
                     ExplicitTop = 20
                     ExplicitWidth = 165
+                    ExplicitHeight = 24
                   end
                   inherited AutoPlayCheckBox: TCheckBox
                     Left = 10
@@ -1087,6 +1065,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 9
                     ExplicitTop = 20
                     ExplicitWidth = 101
+                    ExplicitHeight = 24
                   end
                   inherited Osc1PWTrackBar: TTrackBar
                     Left = 117
@@ -1238,6 +1217,7 @@ object EditorForm: TEditorForm
                     Left = 98
                     Top = 43
                     Width = 61
+                    Height = 24
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1245,6 +1225,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 98
                     ExplicitTop = 43
                     ExplicitWidth = 61
+                    ExplicitHeight = 24
                   end
                   inherited Osc2WaveformCombo: TComboBox
                     Left = 10
@@ -1257,6 +1238,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 79
                     ExplicitWidth = 149
+                    ExplicitHeight = 24
                   end
                   inherited HardSyncCheckBox: TCheckBox
                     Left = 79
@@ -1305,6 +1287,7 @@ object EditorForm: TEditorForm
                   Left = 325
                   Top = 41
                   Width = 50
+                  Height = 24
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -1312,6 +1295,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 325
                   ExplicitTop = 41
                   ExplicitWidth = 50
+                  ExplicitHeight = 24
                 end
                 inherited DumpButton: TButton
                   Left = 670
@@ -1373,7 +1357,7 @@ object EditorForm: TEditorForm
                   Left = 102
                   Top = 41
                   Width = 20
-                  Height = 25
+                  Height = 24
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -1381,7 +1365,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 102
                   ExplicitTop = 41
                   ExplicitWidth = 20
-                  ExplicitHeight = 25
+                  ExplicitHeight = 24
                 end
               end
               inherited TabSheet2: TTabSheet
@@ -1508,8 +1492,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitWidth = 505
-          ExplicitHeight = 653
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -1522,8 +1504,8 @@ object EditorForm: TEditorForm
             Align = alClient
             TabOrder = 0
             TabStop = True
-            ExplicitWidth = 622
-            ExplicitHeight = 804
+            ExplicitWidth = 623
+            ExplicitHeight = 793
             inherited PlayButton: TButton
               Left = 30
               Top = 30
@@ -1562,10 +1544,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           Margins.Left = 4
@@ -1608,7 +1586,7 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               ExplicitWidth = 386
-              ExplicitHeight = 804
+              ExplicitHeight = 793
               inherited ScrollBox1: TScrollBox
                 Top = 18
                 Width = 382
@@ -1619,7 +1597,7 @@ object EditorForm: TEditorForm
                 Margins.Bottom = 4
                 ExplicitTop = 18
                 ExplicitWidth = 382
-                ExplicitHeight = 783
+                ExplicitHeight = 773
                 inherited Image: TImage
                   Width = 198
                   Height = 332
@@ -1641,29 +1619,29 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               ExplicitLeft = 391
-              ExplicitWidth = 231
-              ExplicitHeight = 804
+              ExplicitWidth = 232
+              ExplicitHeight = 793
               inherited PreviewPanel: TPanel
                 Top = 18
-                Width = 226
-                Height = 783
+                Width = 228
+                Height = 773
                 Margins.Left = 4
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
                 ExplicitTop = 18
-                ExplicitWidth = 226
-                ExplicitHeight = 783
+                ExplicitWidth = 228
+                ExplicitHeight = 773
                 inherited Panel1: TPanel
-                  Top = 756
-                  Width = 225
+                  Top = 746
+                  Width = 228
                   Height = 27
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
                   Margins.Bottom = 4
-                  ExplicitTop = 756
-                  ExplicitWidth = 225
+                  ExplicitTop = 746
+                  ExplicitWidth = 228
                   ExplicitHeight = 27
                   inherited DisablePreviewCheckBox: TCheckBox
                     Width = 124
@@ -1732,7 +1710,7 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               ExplicitWidth = 263
-              ExplicitHeight = 804
+              ExplicitHeight = 793
               inherited ScrollBox1: TScrollBox
                 Top = 18
                 Width = 259
@@ -1743,7 +1721,7 @@ object EditorForm: TEditorForm
                 Margins.Bottom = 4
                 ExplicitTop = 18
                 ExplicitWidth = 259
-                ExplicitHeight = 783
+                ExplicitHeight = 773
                 inherited Image: TImage
                   Width = 198
                   Height = 332
@@ -1765,42 +1743,42 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               ExplicitLeft = 268
-              ExplicitWidth = 354
-              ExplicitHeight = 804
+              ExplicitWidth = 355
+              ExplicitHeight = 793
               inherited WireframeCheckBox: TCheckBox
                 Top = 39
-                Width = 349
+                Width = 351
                 Height = 21
                 Margins.Left = 4
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
                 ExplicitTop = 39
-                ExplicitWidth = 349
+                ExplicitWidth = 351
                 ExplicitHeight = 21
               end
               inherited NormalsCheckBox: TCheckBox
                 Top = 18
-                Width = 349
+                Width = 351
                 Height = 21
                 Margins.Left = 4
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
                 ExplicitTop = 18
-                ExplicitWidth = 349
+                ExplicitWidth = 351
                 ExplicitHeight = 21
               end
               inherited Panel1: TPanel
-                Top = 774
-                Width = 349
+                Top = 764
+                Width = 351
                 Height = 27
                 Margins.Left = 4
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitTop = 774
-                ExplicitWidth = 349
+                ExplicitTop = 764
+                ExplicitWidth = 351
                 ExplicitHeight = 27
                 inherited SaveMeshToFileButton: TButton
                   Left = 128
@@ -1827,15 +1805,15 @@ object EditorForm: TEditorForm
               end
               inherited PreviewPanel: TPanel
                 Top = 60
-                Width = 349
-                Height = 714
+                Width = 351
+                Height = 704
                 Margins.Left = 4
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
                 ExplicitTop = 60
-                ExplicitWidth = 349
-                ExplicitHeight = 714
+                ExplicitWidth = 351
+                ExplicitHeight = 704
               end
             end
           end
@@ -1858,7 +1836,6 @@ object EditorForm: TEditorForm
     AllowTextButtons = True
     TabOrder = 2
     Transparent = False
-    ExplicitWidth = 1092
     object ToolButton8: TToolButton
       Left = 0
       Top = 0
@@ -3487,6 +3464,10 @@ object EditorForm: TEditorForm
     object LogCopytoclipboardMenuItem: TMenuItem
       Caption = 'Copy to clipboard'
       OnClick = LogCopytoclipboardMenuItemClick
+    end
+    object LogClearMenuItem: TMenuItem
+      Caption = 'Clear'
+      OnClick = LogClearMenuItemClick
     end
   end
   object OpenStyleDialog: TOpenDialog
