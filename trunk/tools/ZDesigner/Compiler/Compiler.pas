@@ -197,7 +197,7 @@ type
     procedure GenAssign(Op: TZcOp; LeaveValue : TAssignLeaveValueStyle);
     procedure GenAddress(Op : TZcOp);
     procedure GenAddToPointer(const Value : integer);
-    procedure MakeLiteralOp(const Value: single; Typ: TZcDataType);
+    procedure MakeLiteralOp(const Value: double; Typ: TZcDataType);
     procedure MakeStringLiteralOp(const Value : string);
     procedure SetBreak(L : TZCodeLabel);
     procedure SetContinue(L : TZCodeLabel);
@@ -242,13 +242,14 @@ begin
 end;
 
 
-procedure TZCodeGen.MakeLiteralOp(const Value : single; Typ : TZcDataType);
+procedure TZCodeGen.MakeLiteralOp(const Value : double; Typ : TZcDataType);
 begin
   case Typ.Kind of
     zctFloat :
       with TExpConstantFloat.Create(Target) do
         Constant := Value;
     zctInt :
+      //Need to cast from double, otherwise precision problem: assert( StrToInt('$01111111'=17895697) );
       with TExpConstantInt.Create(Target) do
         Constant := Round(Value);
     zctNull :

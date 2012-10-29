@@ -127,8 +127,15 @@ var
   Tmp : PAnsiChar;
 begin
   Tmp := @Buf;
-  ZStrCopy(Tmp,Path);
-  ZStrCat(Tmp,FileName);
+  if FileName^='/' then
+    //If filename is absolute then use it directly
+    ZStrCopy(Tmp,FileName)
+  else
+  begin
+    //Otherwise use path + filename
+    ZStrCopy(Tmp,Path);
+    ZStrCat(Tmp,FileName);
+  end;
 end;
 
 procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);

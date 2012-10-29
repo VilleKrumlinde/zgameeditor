@@ -1687,8 +1687,7 @@ begin
 end;
 {$endif}
 
-{$ifdef android}
-
+{$if defined(android)}
 procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8 : integer);
 begin
 end;
@@ -1741,7 +1740,14 @@ begin
   if Self.ReturnType.Kind<>zctVoid then
     StackPush(RetVal);
 end;
-{$else}
+
+{$elseif defined(cpux64)}
+procedure TExpExternalFuncCall.Execute;
+begin
+  raise Exception.Create('Not implemented');
+end;
+
+{$elseif defined(cpux86)}
 
 procedure TExpExternalFuncCall.Execute;
 {.$define darwin}
@@ -1858,7 +1864,7 @@ begin
   if Self.ReturnType.Kind<>zctVoid then
     StackPush(RetVal);
 end;
-{$endif}
+{$ifend}
 
 { TExpLoadComponent }
 

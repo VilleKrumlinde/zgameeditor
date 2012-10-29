@@ -68,9 +68,9 @@ type
     OriginalString : string;
   public
     Typ : TZcDataType;
-    Value : single;
+    Value : double;
     StringValue : string;
-    constructor Create(TypeKind : TZcDataTypeKind; Value : single); reintroduce; overload;
+    constructor Create(TypeKind : TZcDataTypeKind; Value : double); reintroduce; overload;
     constructor Create(TypeKind : TZcDataTypeKind; const StringValue : string); reintroduce; overload;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
@@ -159,7 +159,7 @@ function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
-function ZcStrToFloat(const S : string) : single;
+function ZcStrToFloat(const S : string) : double;
 function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
 
 function GetBuiltInFunctions : TObjectList;
@@ -579,12 +579,12 @@ var
   I : integer;
   C1,C2 : TZcOpLiteral;
 
-  procedure DoConstant(NewValue : single);
+  procedure DoConstant(const NewValue : double);
   begin
     Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;
 
-  procedure DoIntConstant(NewValue : integer);
+  procedure DoIntConstant(const NewValue : double);
   begin
     Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;
@@ -1042,7 +1042,7 @@ end;
 
 { TZcOpLiteral }
 
-constructor TZcOpLiteral.Create(TypeKind: TZcDataTypeKind; Value: single);
+constructor TZcOpLiteral.Create(TypeKind: TZcDataTypeKind; Value: double);
 begin
   inherited Create(nil);
   Kind := zcConstLiteral;
@@ -1210,10 +1210,10 @@ begin
   Result := (Arguments.Count>0) or (GetStackSize>0);
 end;
 
-function ZcStrToFloat(const S : string) : single;
+function ZcStrToFloat(const S : string) : double;
 begin
   if (Length(S)>2) and (LowerCase(Copy(S,1,2))='0x') then
-    Exit( StrToInt('$' + Copy(S,3,255)) )
+    Exit( StrToInt(S) )
   else if CharInSet(S[ Length(S) ], ['F','f']) then
     Exit( StrToFloat(Copy(S,1,Length(S)-1)) )
   else
