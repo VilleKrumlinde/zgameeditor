@@ -184,6 +184,18 @@ begin
 end;
 
 function TCocoSet.GetBit(Index: Integer): Boolean; assembler;
+{$ifdef cpux64}
+asm
+        CMP     Index,[RCX].FSize
+        JAE     @@1
+        MOV     RAX,[RCX].FBits
+        BT      [RAX],Index
+        SBB     EAX,EAX
+        AND     EAX,1
+        RET
+@@1:    MOV     EAX,0
+end;
+{$else}
 asm
         CMP     Index,[EAX].FSize
         JAE     @@1
@@ -194,8 +206,43 @@ asm
         RET
 @@1:    MOV     EAX,0
 end;
+{$endif}
 
 procedure TCocoSet.SetBit(Index: Integer; Value: Boolean);  assembler;
+{$ifdef cpux64}
+//begin
+//  if Index>=FSize then
+//  begin
+//    SetSize(Index+1);
+//  end;
+//  PByte(NativeInt(Self.FBits) + (Index shr 3))
+//end;
+asm
+        CMP     Index,[RCX].FSize
+        JAE     @@Size
+
+@@1:    MOV     RAX,[RCX].FBits
+        OR      Value,Value
+        JZ      @@2
+        BTS     [RAX],Index
+        RET
+
+@@2:    BTR     [RAX],Index
+        RET
+
+@@Size: CMP     Index,0
+        JL      TCocoSet.Error
+        PUSH    RCX
+        PUSH    RDX
+        PUSH    R8 {Value}
+        INC     Index
+        CALL    TCocoSet.SetSize
+        POP     R8 {Value}
+        POP     RDX
+        POP     RCX
+        JMP     @@1
+end;
+{$else}
 asm
         CMP     Index,[EAX].FSize
         JAE     @@Size
@@ -221,6 +268,7 @@ asm
         POP     Self
         JMP     @@1
 end;
+{$endif}
 
 procedure TCocoSet.Clear;
 begin

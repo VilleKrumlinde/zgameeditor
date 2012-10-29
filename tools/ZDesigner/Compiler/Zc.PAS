@@ -1599,7 +1599,7 @@ begin
 end;
 
 procedure TZc._Primary(var OutOp : TZcOp);
- var Op : TZcOp; S : string; V : single;
+ var Op : TZcOp; S : string; V : double;
      Typ : TZcDataType;
      Ci : TZComponentInfo;
 

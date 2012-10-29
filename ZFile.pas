@@ -22,7 +22,7 @@ unit ZFile;
 
 interface
 
-uses ZClasses;
+uses ZClasses, ZExpressions;
 
 type
   TZFile = class(TZComponent)
@@ -36,6 +36,7 @@ type
     FileEmbedded : TZBinaryPropValue;
     FilePosition,FileSize : integer;
     Encoding : (feChar,feBinary);
+    TargetArray : TDefineArray;
     OnRead : TZComponentList;
     OnWrite : TZComponentList;
     procedure Update; override;
@@ -104,6 +105,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}integer(@FileEmbedded), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TargetArray',{$ENDIF}integer(@TargetArray), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite), zptComponentList);
 
@@ -133,6 +136,38 @@ begin
 end;
 
 procedure TFileAction.Execute;
+
+  procedure CopyToArray(A : TDefineArray);
+  var
+    I : integer;
+    B : byte;
+    P : PInteger;
+  begin
+    {$ifndef minimal}
+    if A._Type<>dvbInt then
+    begin
+      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of int-type.');
+      Exit;
+    end;
+    {$endif}
+    if CurFile.Encoding=feBinary then
+    begin
+      A.SizeDim1 := CurInStream.Size div SizeOf(Integer);
+      CurInStream.Read(A.GetData^,CurInStream.Size);
+    end else
+    begin
+      A.SizeDim1 := CurInStream.Size;
+      P := PInteger(A.GetData);
+      for I := 0 to CurInStream.Size-1 do
+      begin
+        CurInStream.Read(B,1);
+        P^ := B;
+        Inc(P);
+      end;
+    end;
+    CurInStream.Position := 0;
+  end;
+
 var
   S : PAnsiChar;
   FloatBuf : array[0..15] of ansichar;
@@ -192,6 +227,12 @@ begin
   case Action of
     faRead :
       begin
+        if CurFile.TargetArray<>nil then
+        begin
+          //Copy content directly to an array
+          //(this avoids the need of FileMoveData components)
+          CopyToArray(CurFile.TargetArray);
+        end;
       {$ifndef minimal}try{$endif}
         CurFileState := fsReading;
         ZFile.OnRead.ExecuteCommands;
