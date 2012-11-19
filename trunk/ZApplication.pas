@@ -356,6 +356,14 @@ begin
   Result[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
   Result[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
+
+  {$ifndef minimal}
+  //issue http://www.emix8.org/forum/viewtopic.php?t=947
+  if Abs(Result[0])<=2/ViewportWidth then
+    Result[0] := 0;
+  if Abs(Result[1])<=2/ViewportHeight then
+    Result[1] := 0;
+  {$endif}
 end;
 
 procedure TZApplication.UpdateStateVars;

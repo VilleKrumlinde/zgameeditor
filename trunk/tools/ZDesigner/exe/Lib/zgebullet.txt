@@ -1,14 +1,18 @@
 /*
-  Adapter to the ZGEBullet DLL, a wraper of the physics library Bullet.
+  Adapter to the ZGEBullet Library, a wrapper for the Bullet Physics Library.
   http://bulletphysics.org
 
-  Created by Rado1(c)2012
+  Download Windows DLL and Android shared library from
+  http://code.google.com/p/zgebullet/downloads
 
-  Download DLL from this thread: http://www.emix8.org/forum/viewtopic.php?t=830
-
+  Copyright (c) 2012 Radovan Cervenka
 */
 
 // Global constants
+
+// boolean
+const int FALSE = 0;
+const int TRUE = 1;
 
 // rotation-related
 const float PIx2 = PI * 2; // 360 degrees
@@ -16,7 +20,6 @@ const float PI2 = PI / 2; // 90 degrees
 const float PI3 = PI / 3; // 60 degrees
 const float PI4 = PI / 4; // 45 degrees
 const float PI6 = PI / 6; // 30 degrees
-
 const float ROT360 = 1.0; // 360 degrees
 const float ROT180 = 0.5; // 180 degrees
 const float ROT120 = 0.3333; // 120 degrees
@@ -29,6 +32,10 @@ const float ROT30 = 0.0833; // 30 degrees
 const int CONVEX_HULL_MESH = 1;
 const int CONCAVE_STATIC_MESH = 2;
 const int CONCAVE_DEFORMABLE_MESH = 3;
+
+// data types for heightfield data
+const int FLOAT = 0;
+const int INTEGER = 1;
 
 // activation states
 const int ACTIVE_TAG = 1;
@@ -50,23 +57,6 @@ const int AXIS_Z_LINEAR = 2;
 const int AXIS_X_ANGULAR = 3;
 const int AXIS_Y_ANGULAR = 4;
 const int AXIS_Z_ANGULAR = 5;
-
-// raycast vehicle default values
-const float DEFAULT_SUSPENSION_STIFFNESS = 5.88;
-const float DEFAULT_SUSPENSION_COMPRESSION = 0.83;
-const float DEFAULT_SUSPENSION_DAMPING = 0.88;
-const float DEFAULT_MAX_SUSPENSION_TRAVEL_CM = 500.0;
-const float DEFAULT_FRICTION_SLIP = 10.5;
-const float DEFAULT_MAX_SUSPENSION_FORCE = 6000.0;
-const float DEFAULT_ROLL_INFLUENCE = 0.1;
-
-// boolean
-const int FALSE = 0;
-const int TRUE = 1;
-
-// data types for heightfield data
-const int FLOAT = 0;
-const int INTEGER = 1;
 
 
 // World
@@ -104,8 +94,8 @@ int zbtAddChildShape(int compoundId, int childId, float x, float y, float z,
 int zbtRemoveChildShape(int compoundId, int childId) {}
 
 int zbtCreateHeightfieldTerrainShape(xptr heightfieldData, int dataType,
-  int width, int length, float minHeight, float maxHeight, int upAxis,
-  int bFlipQuadEdges) {}
+  int width, int length, float heightScale, float minHeight, float maxHeight,
+  int upAxis, int bFlipQuadEdges, int bDiamondSubdivision) {}
 
 int zbtCreateConvexHullShape(xptr points, int numPoints) {}
 
