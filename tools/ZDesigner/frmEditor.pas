@@ -497,7 +497,8 @@ begin
 
   ExprSynEdit := TSynEdit.Create(Self);
   ExprSynEdit.Align := alClient;
-  ExprSynEdit.Gutter.Visible := False;
+  ExprSynEdit.Gutter.Visible := True;
+  ExprSynEdit.Gutter.ShowLineNumbers := True;
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
   ExprSynEdit.Highlighter := TSynZcSyn.Create(Self);
@@ -533,7 +534,8 @@ begin
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
   ShaderSynEdit.Align := alClient;
-  ShaderSynEdit.Gutter.Visible := False;
+  ShaderSynEdit.Gutter.Visible := True;
+  ShaderSynEdit.Gutter.ShowLineNumbers := True;
   ShaderSynEdit.Parent := ShaderPanel;
   ShaderSynEdit.OnChange := OnShaderExprChanged;
   ShaderSynEdit.WantTabs := True;
@@ -1075,8 +1077,8 @@ begin
   //Set window size to make sure camera ratio calculations are correct
   if ZApp<>nil then
   begin
-    ZApp.ScreenWidth := Glp.Width shr 1 shl 1; //Avoid odd sizes (because of this issue http://www.emix8.org/forum/viewtopic.php?t=947)
-    ZApp.ScreenHeight := Glp.Height shr 1 shl 1;
+    ZApp.ScreenWidth := Glp.Width;
+    ZApp.ScreenHeight := Glp.Height;
   end;
 
   if (ShowNode is TZApplication) and (IsAppRunning) then

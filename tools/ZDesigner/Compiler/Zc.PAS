@@ -630,6 +630,8 @@ begin
   Scanner.GetPosition(P);
   E.Line := P.Line;
   E.Col := P.Col;
+  if (E.Line<>0) or (E.Col<>0) then
+    E.Message := E.Message + ' (line: ' + IntToStr(E.Line) + ', col: ' + IntToStr(E.Col) + ')';
   raise E;
 end;
 

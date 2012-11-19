@@ -32,7 +32,8 @@ procedure TXmlEditForm.FormCreate(Sender: TObject);
 begin
   SynEdit := TSynEdit.Create(Self);
   SynEdit.Align := alClient;
-  SynEdit.Gutter.Visible := False;
+  SynEdit.Gutter.Visible := True;
+  SynEdit.Gutter.ShowLineNumbers := True;
   SynEdit.Parent := Panel1;
   SynEdit.Highlighter := TSynXMLSyn.Create(Self);
   SynEdit.WantTabs := True;
