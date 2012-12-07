@@ -506,7 +506,7 @@ end;
 
 function Platform_ShowOptionDialog(App : pointer) : boolean;
 begin
-  Result := False;
+  Result := True;
 end;
 
 function Platform_GetDisplayRefreshRate : integer;

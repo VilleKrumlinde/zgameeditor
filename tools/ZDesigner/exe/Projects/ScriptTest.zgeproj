@@ -594,6 +594,30 @@ if(test!=12345678)
   Error=1601;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Byte array">
+      <Expression>
+<![CDATA[for(int i=0; i<ByteArray.SizeDim1; i++) {
+  ByteArray[i]=i;
+
+  int j;
+
+  j=ByteArray[i];
+  if(j!=i)
+    Error=1701;
+
+  ByteArray[i]=ByteArray[i];
+  j=ByteArray[i];
+  if(j!=i)
+    Error=1702;
+
+  ByteVar = ByteArray[i];
+  if(ByteVar!=i)
+    Error=1703;
+//  if(ByteArray[i]!=i)
+//    Error=1701;
+}]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
@@ -653,5 +677,11 @@ V.X*=0.5;]]>
     <DefineVariable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
     <Sound Name="Sound1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="2.56"/>
     <AudioMixer Ch0Active="1" Ch0Volume="0.14" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
+    <DefineArray Name="ByteArray" Type="4" SizeDim1="4">
+      <Values>
+<![CDATA[78DA636064620600000E0007]]>
+      </Values>
+    </DefineArray>
+    <DefineVariable Name="ByteVar" Type="4"/>
   </Content>
 </ZApplication>

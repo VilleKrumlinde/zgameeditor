@@ -144,15 +144,15 @@ procedure TFileAction.Execute;
     P : PInteger;
   begin
     {$ifndef minimal}
-    if A._Type<>dvbInt then
+    if not (A._Type in [dvbInt,dvbByte]) then
     begin
-      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of int-type.');
+      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type int or byte.');
       Exit;
     end;
     {$endif}
-    if CurFile.Encoding=feBinary then
+    if (CurFile.Encoding=feBinary) or (A._Type=dvbByte) then
     begin
-      A.SizeDim1 := CurInStream.Size div SizeOf(Integer);
+      A.SizeDim1 := CurInStream.Size div A.GetElementSize;
       CurInStream.Read(A.GetData^,CurInStream.Size);
     end else
     begin
@@ -166,6 +166,14 @@ procedure TFileAction.Execute;
       end;
     end;
     CurInStream.Position := 0;
+  end;
+
+  procedure WriteFromArray(A : TDefineArray);
+  begin
+    Platform_WriteFile(CurFile.WriteFileName,A.GetData,
+      A.SizeDim1 * A.GetElementSize,
+      CurWriteBuf.Append);
+    CurWriteBuf.Append := True;
   end;
 
 var
@@ -246,6 +254,8 @@ begin
       {$ifndef minimal}try{$endif}
         CurFileState := fsWriting;
         FillChar(CurWriteBuf,SizeOf(CurWriteBuf),0);
+        if CurFile.TargetArray<>nil then
+          WriteFromArray(CurFile.TargetArray);
         ZFile.OnWrite.ExecuteCommands;
         FlushWriteBuf;
       {$ifndef minimal}finally{$endif}

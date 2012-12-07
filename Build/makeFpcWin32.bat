@@ -8,6 +8,6 @@ rem -gl  Show line-nr in stack trace (debuginfo)
 
 rem FPC 2.0 krashar zblast i G-läge
 cd ..
-fpc -al -XXis -O2 -dMINIMAL -FU.\build\obj\ -B -Mdelphi -FE.\build\ zzdc.dpr
+C:\lazarus\fpc\2.6.1\bin\i386-win32\fpc -al -XXis -O2 -dMINIMAL -FU.\build\obj\ -B -Mdelphi -FE.\build\ zzdc.dpr
 cd build
 

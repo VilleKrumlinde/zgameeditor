@@ -3536,7 +3536,7 @@ begin
   Comp.InsertList.Clear;
 
   Line := Comp.Editor.LineText;
-  I := Min(Comp.Editor.CaretX+1,Length(Line));
+  I := Min(Comp.Editor.CaretX-1,Length(Line));
   while (I>0) and CharInSet(Line[I],['a'..'z','A'..'Z','_','0'..'9']) do
     Dec(I);
   if (I>0) and (Line[I]='.') then
@@ -3576,7 +3576,7 @@ begin
         for I := 0 to PropList.Count - 1 do
         begin
           Prop := TZProperty(PropList[I]);
-          if (Prop.PropertyType in [zptPropertyRef,zptComponentList,zptExpression,zptBinary]) or
+          if (Prop.PropertyType in [zptPropertyRef,zptComponentList,zptExpression]) or
             (Prop.Name='ObjId') then
             Continue;
           if Prop.ExcludeFromBinary then

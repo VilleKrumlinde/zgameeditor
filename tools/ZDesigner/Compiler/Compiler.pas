@@ -409,12 +409,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     COp : TZcOpConvert;
     Kind : TExpConvertKind;
     FromOp : TZcOp;
+    IdInfo : TZcIdentifierInfo;
+    IsValue : boolean;
   begin
-    GenValue(Op.Child(0));
     COp := Op As TZcOpConvert;
     Kind := TExpConvertKind(99);
-    C := TExpConvert.Create(Target);
     FromOp := Cop.Child(0);
+    IsValue := True;
     case FromOp.GetDataType.Kind of
       zctFloat :
         case Cop.ToType.Kind of
@@ -424,19 +425,34 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
         case Cop.ToType.Kind of
           zctFloat: Kind := eckIntToFloat;
         end;
+      zctVoid :
+        begin
+          if (Cop.ToType.Kind=zctXptr) then
+          begin
+            IdInfo := FromOp.GetIdentifierInfo;
+            if (IdInfo.Kind=edtProperty) and (idInfo.Prop.PropertyType=zptBinary) then
+            begin
+              Kind := eckBinaryToXptr;
+              IsValue := False;
+            end;
+          end;
+        end;
       zctReference :
         case Cop.ToType.Kind of
           zctXptr :
             begin
               if Assigned(FromOp.Ref) and (FromOp.Ref is TDefineArray) then
                 Kind := eckArrayToXptr;
-              if Assigned(FromOp.Ref) and (ComponentManager.GetInfo(FromOp.Ref as TZComponent).ClassId=ZFileClassId) then
-                Kind := eckFileToXptr;
             end;
         end;
     end;
     if Ord(Kind)=99 then
       raise ECodeGenError.Create('Invalid conversion: ' + Op.ToString);
+    if IsValue then
+      GenValue(Op.Child(0))
+    else
+      GenAddress(Op.Child(0));
+    C := TExpConvert.Create(Target);
     C.Kind := Kind;
   end;
 
@@ -660,7 +676,7 @@ begin
     Aw := TExpArrayWrite.Create(Target);
     Aw.TheArray := A as TDefineArray;
     GenValue(Op.Child(1));
-    Target.AddComponent( MakeAssignOp(4) );
+    Target.AddComponent( MakeAssignOp(Aw.TheArray.GetElementSize) );
   end else
     raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 
@@ -1141,7 +1157,10 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     if Op.Children.Count<>Func.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
-      GenValue(Op.Child(I));
+      if TZcOpArgumentVar(Func.Arguments[I]).Typ.IsPointer then
+        GenAddress(Op.Child(I))
+      else
+        GenValue(Op.Child(I));
     if Func.FuncId in [fcIntToStr,fcSubStr,fcChr,fcCreateModel] then
     begin
       SF := TExpPointerFuncCall.Create(Target);
