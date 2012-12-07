@@ -70,7 +70,7 @@ type
   end;
 
 
-  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel);
+  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel,dvbByte);
   TDefineVariableBase = class(TZComponent)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -88,6 +88,7 @@ type
     IntValue : integer;
     StringValue : TPropString;
     ModelValue : TZComponent;
+    ByteValue : byte;
   end;
 
   //Define a global constant that can be used in expressions
@@ -99,6 +100,7 @@ type
     Value : single;
     IntValue : integer;
     StringValue : TPropString;
+    ByteValue : byte;
     {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
@@ -132,6 +134,7 @@ type
     destructor Destroy; override;
     function GetData : PFloat;
     function CalcLimit : integer;
+    function GetElementSize : integer;
   end;
 
   //Virtual machine instruction baseclass
@@ -217,7 +220,8 @@ type
      fcJoyGetAxis,fcJoyGetButton,fcJoyGetPOV,fcSystemTime,
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
      fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,
-     fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID);
+     fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID,
+     fcGetBinaryProp,fcSetBinaryProp);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -323,7 +327,7 @@ type
     {$endif}
   end;
 
-  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckFileToXptr);
+  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckBinaryToXptr);
   TExpConvert = class(TExpBase)
   protected
     procedure Execute; override;
@@ -422,7 +426,7 @@ implementation
 
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
-  AudioComponents, AudioPlayer, ZFile
+  AudioComponents, AudioPlayer
 {$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
 
 var
@@ -807,6 +811,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}integer(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}integer(@ByteValue), zptByte);
+    List.GetLast.NeverPersist := True;
 end;
 
 { TExpFuncCall }
@@ -824,6 +830,8 @@ var
   V,A1,A2,A3 : single;
   I1,I2 : integer;
   P1,P2 : pointer;
+  Bp : PZBinaryPropValue;
+  A : TDefineArray;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -975,6 +983,23 @@ begin
         StackPopTo(I1);
         PInteger(@V)^ := Platform_TouchGetID(I1);
       end;
+    fcGetBinaryProp :
+      begin
+        StackPopToPointer(A);
+        StackPopToPointer(Bp);
+        A.SizeDim1 := Bp.Size div A.GetElementSize;
+        Move(Bp^.Data^, A.GetData^, Bp^.Size);
+        HasReturnValue := False;
+      end;
+    fcSetBinaryProp :
+      begin
+        StackPopToPointer(A);
+        StackPopToPointer(Bp);
+        Bp^.Size := A.CalcLimit * A.GetElementSize;
+        ReallocMem(Bp^.Data,Bp^.Size);
+        Move(A.GetData^ , Bp^.Data^, Bp^.Size);
+        HasReturnValue := False;
+      end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   if HasReturnValue then
@@ -997,6 +1022,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}integer(@StringValue), zptString);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}integer(@ByteValue), zptByte);
+   {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+   {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
 end;
 
 {$ifndef minimal}
@@ -1007,6 +1035,7 @@ begin
     dvbFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
     dvbInt: Result := Result + AnsiString(IntToStr(IntValue));
     dvbString: Result := Result + '"' + StringValue + '"';
+    dvbByte: Result := Result + AnsiString(IntToStr(ByteValue));
   end;
 end;
 {$endif}
@@ -1023,15 +1052,24 @@ procedure TExpArrayRead.Execute;
 var
   V : single;
   P : PFloat;
+  I : integer;
 begin
   P := TheArray.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
     ZHalt('Array read outside range: ' + String(TheArray.Name));
   {$endif}
-  V := P^;
-  //todo: 64 bit
-  StackPush( V );
+  if TheArray._Type=dvbByte then
+  begin
+    I := PByte(P)^;
+    StackPush(I);
+  end
+  else
+  begin
+    V := P^;
+    //todo: 64 bit
+    StackPush( V );
+  end;
 end;
 
 { TDefineArray }
@@ -1078,6 +1116,16 @@ begin
   end;
 end;
 
+function TDefineArray.GetElementSize: integer;
+begin
+  case Self._Type of
+    dvbString, dvbModel: Result := SizeOf(Pointer);
+    dvbByte : Result := 1;
+  else
+    Result := SizeOf(Single);
+  end;
+end;
+
 function TDefineArray.CalcLimit: integer;
 begin
   Result := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
@@ -1092,8 +1140,7 @@ var
 begin
   CleanUpStrings(AllocType,AllocItemCount,AllocPtr);
   Self.Limit := CalcLimit;
-  //Todo: 64 bit
-  ByteSize := Limit * SizeOf(single);
+  ByteSize := Limit * GetElementSize;
   if Persistent then
   begin
     Self.Values.Size := ByteSize;
@@ -1138,7 +1185,7 @@ end;
 function TDefineArray.PopAndGetElement : PFloat;
 var
   Index,I1,I2,I3 : integer;
-  P : PFloatArray;
+  P : PBytes;
 begin
   StackPopTo(I3);
   if Self.Dimensions>=dadTwo then
@@ -1157,7 +1204,7 @@ begin
     Index := (I1*SizeDim2*SizeDim3) + (I2*SizeDim3) + I3;
   end;
 
-  P := PFloatArray(GetData);
+  P := PBytes(GetData);
 
   {$ifndef minimal}
   if ((Index<0) or (Index>=Limit)) or
@@ -1173,7 +1220,7 @@ begin
   end;
   {$endif}
 
-  Result := @P^[Index];
+  Result := @P^[Index * Self.GetElementSize];
 end;
 
 { TExpArrayWrite }
@@ -1434,8 +1481,8 @@ var
   V : single;
   I : integer;
   D : TDefineArray;
-  F : TZFile;
   P : pointer;
+  Bp : PZBinaryPropValue;
 begin
   case Kind of
     eckFloatToInt:
@@ -1455,10 +1502,10 @@ begin
         P := D.GetData;
         StackPushPointer(P);
       end;
-    eckFileToXptr :
+    eckBinaryToXptr :
       begin
-        StackPopToPointer(F);
-        P := F.FileEmbedded.Data;
+        StackPopToPointer(Bp);
+        P := Bp.Data;
         StackPushPointer(P);
       end;
   end;
@@ -1508,7 +1555,7 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model','Byte']);{$endif}
 end;
 
 { TExpStringConstant }
@@ -1747,7 +1794,7 @@ begin
   raise Exception.Create('Not implemented');
 end;
 
-{$elseif defined(cpux86)}
+{$elseif defined(cpux86) or defined(CPU32)}  //CPU32 is for Freepascal
 
 procedure TExpExternalFuncCall.Execute;
 {.$define darwin}

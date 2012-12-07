@@ -25,8 +25,8 @@ type
     { Private declarations }
     TheArray : TDefineArray;
     Index3 : integer;
-    function ValueAsText(P : PFloat) : string;
-    procedure SetValueFromText(const S: String; P: PFloat);
+    function ValueAsText(P : pointer) : string;
+    procedure SetValueFromText(const S: String; P: pointer);
     procedure ReadFromArray;
   public
     { Public declarations }
@@ -46,10 +46,10 @@ uses DesignerGUI,Clipbrd;
 
 procedure TArrayEditForm.GridSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
 var
-  P : PFloat;
+  P : PByte;
   Index : integer;
 begin
-  P := TheArray.GetData;
+  P := PByte(TheArray.GetData);
   Index := 0;
   case TheArray.Dimensions of
     dadOne:
@@ -65,7 +65,7 @@ begin
         Index := (Index3*TheArray.SizeDim2*TheArray.SizeDim3) + ((ARow-1)*TheArray.SizeDim3) + (ACol-1);
       end;
   end;
-  Inc(P,Index);
+  Inc(P,Index * TheArray.GetElementSize);
   SetValueFromText(Value,P);
 end;
 
@@ -87,10 +87,11 @@ procedure TArrayEditForm.ReadFromArray;
 var
   J: Integer;
   I: Integer;
-  P: PFloat;
+  P: PByte;
   A: TDefineArray;
 begin
   A := Self.TheArray;
+  P := PByte(A.GetData);
   case A.Dimensions of
     dadOne:
       begin
@@ -98,18 +99,16 @@ begin
         Grid.ColCount := A.SizeDim1 + 1;
         for I := 0 to A.SizeDim1 - 1 do
           Grid.Cells[I + 1, 0] := IntToStr(I);
-        P := A.GetData;
         for I := 0 to A.SizeDim1 - 1 do
         begin
           Grid.Cells[I + 1, 1] := ValueAsText(P);
-          Inc(P);
+          Inc(P,A.GetElementSize);
         end;
       end;
     dadTwo:
       begin
         Grid.RowCount := A.SizeDim1 + 1;
         Grid.ColCount := A.SizeDim2 + 1;
-        P := A.GetData;
         for I := 0 to A.SizeDim1 - 1 do
           Grid.Cells[0, I + 1] := IntToStr(I);
         for J := 0 to A.SizeDim2 - 1 do
@@ -119,7 +118,7 @@ begin
           for J := 0 to A.SizeDim2 - 1 do
           begin
             Grid.Cells[J + 1, I + 1] := ValueAsText(P);
-            Inc(P);
+            Inc(P,A.GetElementSize);
           end;
         end;
       end;
@@ -127,7 +126,6 @@ begin
       begin
         Grid.RowCount := A.SizeDim2 + 1;
         Grid.ColCount := A.SizeDim3 + 1;
-        P := A.GetData;
         for I := 0 to A.SizeDim2 - 1 do
           Grid.Cells[0, I + 1] := IntToStr(I);
         for J := 0 to A.SizeDim3 - 1 do
@@ -138,26 +136,28 @@ begin
           for J := 0 to A.SizeDim3 - 1 do
           begin
             Grid.Cells[J + 1, I + 1] := ValueAsText(P);
-            Inc(P);
+            Inc(P,A.GetElementSize);
           end;
         end;
       end;
   end;
 end;
 
-function TArrayEditForm.ValueAsText(P: PFloat): string;
+function TArrayEditForm.ValueAsText(P: pointer): string;
 begin
   case TheArray._Type of
-    dvbFloat: Result := DesignerFormatFloat(P^);
+    dvbFloat: Result := DesignerFormatFloat(PFloat(P)^);
     dvbInt: Result := IntToStr(PInteger(P)^);
+    dvbByte: Result := IntToStr(PByte(P)^);
   end;
 end;
 
-procedure TArrayEditForm.SetValueFromText(const S : String; P: PFloat);
+procedure TArrayEditForm.SetValueFromText(const S : String; P: pointer);
 begin
   case TheArray._Type of
-    dvbFloat: P^ := StrToFloatDef(S,0);
+    dvbFloat: PFloat(P)^ := StrToFloatDef(S,0);
     dvbInt: PInteger(P)^ := StrToIntDef(S,0);
+    dvbByte: PByte(P)^ := StrToIntDef(S,0);
   end;
 end;
 

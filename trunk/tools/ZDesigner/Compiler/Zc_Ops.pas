@@ -843,8 +843,19 @@ const
   NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr];
 var
   ExistingType : TZcDataType;
+  IdInfo : TZcIdentifierInfo;
 begin
   ExistingType := Op.GetDataType;
+
+  if (ExistingType.Kind=zctVoid) and (WantedType.Kind=zctXptr) then
+  begin
+    IdInfo := Op.GetIdentifierInfo;
+    if (IdInfo.Kind=edtProperty) and (idInfo.Prop.PropertyType=zptBinary) then
+    begin
+      //Todo: convert binary property to xptr
+      Exit( TZcOpConvert.Create(WantedType,Op) );
+    end;
+  end;
 
   if (ExistingType.Kind=zctReference) and (WantedType.Kind=zctReference) and
     (ExistingType.ReferenceClassId<>WantedType.ReferenceClassId) then
@@ -896,6 +907,7 @@ begin
       dvbInt : PName := 'IntValue';
       dvbString : PName := 'StringValue';
       dvbModel : PName := 'ModelValue';
+      dvbByte : PName := 'ByteValue';
     end;
     Result := MakeOp(zcSelect,[Op]);
     Result.Id := PName;
@@ -1119,6 +1131,8 @@ var
     begin
       Arg := TZcOpArgumentVar.Create;
       Arg.Typ := CharToType(Sig[I]);
+      if Arg.Typ.Kind=zctVoid then
+        Arg.Typ.IsPointer := True;
       if Arg.Typ.Kind=zctReference then
       begin
         J := PosEx('}',Sig,I+1);
@@ -1176,6 +1190,8 @@ begin
   MakeOne('touchGetX',fcTouchGetX,'FI');
   MakeOne('touchGetY',fcTouchGetY,'FI');
   MakeOne('touchGetID',fcTouchGetID,'II');
+  MakeOne('getBinaryProp',fcGetBinaryProp,'VVR{DefineArray}');
+  MakeOne('setBinaryProp',fcSetBinaryProp,'VVR{DefineArray}');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
