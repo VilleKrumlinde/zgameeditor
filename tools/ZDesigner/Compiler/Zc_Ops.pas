@@ -88,7 +88,7 @@ type
   TZcOpFunctionBase = class(TZcOp)
   public
     Locals : TObjectList;
-    Arguments : TObjectList;
+    Arguments : TObjectList<TZcOpArgumentVar>;
     Statements : TObjectList;
     ReturnType : TZcDataType;
     constructor Create(Owner : TObjectList); override;
@@ -678,7 +678,7 @@ begin
   Kind := zcFunction;
   Statements := TObjectList.Create(False);
   Locals := TObjectList.Create(False);
-  Arguments := TObjectList.Create(True);
+  Arguments := TObjectList<TZcOpArgumentVar>.Create(True);
 end;
 
 destructor TZcOpFunctionBase.Destroy;
@@ -705,7 +705,7 @@ begin
   //old bp, return pc
   Frame := 2;
   for I := 0 to Arguments.Count - 1 do
-    (Arguments[I] as TZcOpArgumentVar).Ordinal := -Arguments.Count - Frame + I;
+    Arguments[I].Ordinal := -Arguments.Count - Frame + I;
 end;
 
 function TZcOpFunctionBase.GetDataType: TZcDataType;

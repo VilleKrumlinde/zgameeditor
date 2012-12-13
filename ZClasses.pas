@@ -511,6 +511,8 @@ function ComponentManager : TZComponentManager;
 //Register componentclass
 procedure Register(C : TZComponentClass; ClassId : TZClassIds);
 
+function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
+
 //String functions
 function ZStrLength(P : PAnsiChar) : integer;
 procedure ZStrCopy(P : PAnsiChar; const Src : PAnsiChar);
@@ -934,6 +936,14 @@ begin
 end;
 {$endif}
 
+function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
+begin
+  case Typ of
+    zctModel,zctString,zctXptr,zctVoid,zctNull : Result := SizeOf(Pointer);
+  else
+    Result := SizeOf(Integer);
+  end;
+end;
 
 { TZComponent }
 
