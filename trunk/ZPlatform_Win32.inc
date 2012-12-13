@@ -1783,7 +1783,7 @@ begin
 end;
 
 
-function Platform_LoadModule(const Name : PAnsiChar) : integer;
+function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
 {$ifndef minimal}
 var
   S : AnsiString;
@@ -1804,7 +1804,7 @@ begin
   {$endif}
 end;
 
-function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   Result := GetProcAddress(Module,Name);
 end;

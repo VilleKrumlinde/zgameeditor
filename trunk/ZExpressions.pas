@@ -52,7 +52,7 @@ type
   //Import of external library (dll)
   TZExternalLibrary = class(TZComponent)
   strict private
-    ModuleHandle : integer;
+    ModuleHandle : NativeUInt;
   private
     function LoadFunction(P : PAnsiChar) : pointer;
   protected
@@ -314,6 +314,9 @@ type
   TExpExternalFuncCall = class(TExpBase)
   strict private
     Proc : pointer;
+    {$ifdef cpux64}
+    Trampoline : pointer;
+    {$endif}
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -322,6 +325,10 @@ type
     FuncName : TPropString;
     ArgCount : integer;
     ReturnType : TZcDataType;
+    {$ifdef cpux64}
+    ArgTypes : TPropString;
+    destructor Destroy; override;
+    {$endif}
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
@@ -1724,6 +1731,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}integer(@FuncName), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}integer(@ArgCount), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ReturnType',{$ENDIF}integer(@ReturnType), zptByte);
+  {$ifdef CPUX64}
+  List.AddProperty({$IFNDEF MINIMAL}'ArgTypes',{$ENDIF}integer(@ArgTypes), zptString);
+  {$endif}
 end;
 
 {$ifndef minimal}
@@ -1789,9 +1799,128 @@ begin
 end;
 
 {$elseif defined(cpux64)}
-procedure TExpExternalFuncCall.Execute;
+procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8 : NativeInt);
 begin
-  raise Exception.Create('Not implemented');
+end;
+
+function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
+const
+  Int32Regs : array[0..3] of array[0..3] of byte =
+( ($41,$8B,$4A,0),  //mov ecx,[r10+x]
+  ($41,$8B,$52,0),
+  ($45,$8B,$42,0),
+  ($45,$8B,$4A,0)
+);
+  Int64Regs : array[0..3] of array[0..3] of byte =
+( ($49,$8B,$4A,0), //mov rcx,[r10+x]
+  ($49,$8B,$52,0),
+  ($4d,$8B,$42,0),
+  ($4d,$8B,$4A,0)
+);
+  Float32Regs : array[0..3] of array[0..5] of byte =
+( ($66,$41,$0F,$6E,$4A,0), //movd xmm1,[r10+x]
+  ($66,$41,$0F,$6E,$52,0),
+  ($66,$41,$0F,$6E,$5A,0),
+  ($66,$41,$0F,$6E,$62,0)
+);
+
+var
+  I,Offs : integer;
+  P : PByte;
+
+  procedure W(const code : array of byte);
+  var
+    I : integer;
+  begin
+    for I := 0 to High(Code) do
+    begin
+      P^ := Code[I];
+      Inc(P);
+    end;
+  end;
+
+var
+  OldProtect : dword;
+  CodeSize : integer;
+begin
+  CodeSize := 64 + 4 * ArgCount;
+  GetMem(Result,CodeSize);
+
+  P := Result;
+
+  if ArgCount>0 then
+    W([$49,$89,$ca]); //mov r10,rcx
+
+  Offs := 0;
+  for I := 0 to ArgCount-1 do
+  begin
+    if I<4 then
+    begin
+      case TZcDataTypeKind(ArgTypes[I]) of
+        zctInt :
+          begin
+            W(Int32Regs[I]);
+            P[-1] := Offs;
+          end;
+        zctString,zctModel,zctXptr :
+          begin
+            W(Int64Regs[I]);
+            P[-1] := Offs;
+          end;
+        zctFloat :
+          begin
+            W(Float32Regs[I]);
+            P[-1] := Offs;
+          end;
+      else
+        Assert('This argument type not yet supported on 64-bit: ' + IntToStr(Ord(ArgTypes[I])) );
+      end;
+    end;
+    Inc(Offs, SizeOf(NativeInt) );
+  end;
+
+  W([$49,$bb]); //mov r11,x
+  PPointer(P)^ := Proc; Inc(P,8);  //x
+  W([$49,$ff,$e3]); //jmp r11
+
+  VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+end;
+
+procedure TExpExternalFuncCall.Execute;
+type
+  TFunc = procedure(Args : pointer);
+  PFunc = ^TFunc;
+var
+  I,RetVal : integer;
+  Args : array[0..31] of NativeInt;
+begin
+  if Self.Proc=nil then
+  begin
+    Self.Proc := Lib.LoadFunction(Self.FuncName);
+    //Make sure there is enough stack space for calling a func with 8 params
+    DummyProc(1,2,3,4,5,6,7,8);
+    FreeMem(Self.Trampoline);
+    Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
+  end;
+
+  fillchar(args,sizeof(args),0);  //**should not be neccessary
+
+  //Transfer arguments from Zc-stack to hardware stack
+  for I := 0 to ArgCount-1 do
+    if GetZcTypeSize(TZcDataTypeKind(Self.ArgTypes[I]))=SizeOf(Pointer) then
+      StackPopToPointer(Args[ArgCount-I-1])
+    else
+      StackPopTo(Args[ArgCount-I-1]);
+
+  TFunc(Self.Trampoline)(@Args);
+
+  if Self.ReturnType.Kind<>zctVoid then
+    StackPush(RetVal);
+end;
+
+destructor TExpExternalFuncCall.Destroy;
+begin
+  FreeMem(Trampoline);
 end;
 
 {$elseif defined(cpux86) or defined(CPU32)}  //CPU32 is for Freepascal

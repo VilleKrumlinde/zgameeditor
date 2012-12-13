@@ -444,6 +444,8 @@ begin
   inherited Create(AOwner);
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
+  Math.SetExceptionMask(exAllArithmeticExceptions);
+
   Self.Log := ZLog.GetLog(Self.ClassName);
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 

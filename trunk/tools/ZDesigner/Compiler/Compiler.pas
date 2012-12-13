@@ -1157,7 +1157,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     if Op.Children.Count<>Func.Arguments.Count then
       raise ECodeGenError.Create('Invalid nr of arguments: ' + Op.Id);
     for I := 0 to Func.Arguments.Count-1 do
-      if TZcOpArgumentVar(Func.Arguments[I]).Typ.IsPointer then
+      if Func.Arguments[I].Typ.IsPointer then
         GenAddress(Op.Child(I))
       else
         GenValue(Op.Child(I));
@@ -1181,6 +1181,10 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     I : integer;
     F : TExpUserFuncCall;
     FE : TExpExternalFuncCall;
+    S : AnsiString;
+    {$ifdef CPUX64}
+    Arg : TZcOpArgumentVar;
+    {$endif}
   begin
     if NeedReturnValue and (UserFunc.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1189,7 +1193,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 
     for I := 0 to UserFunc.Arguments.Count-1 do
     begin
-      if TZcOpArgumentVar(UserFunc.Arguments[I]).Typ.IsPointer then
+      if UserFunc.Arguments[I].Typ.IsPointer then
         GenAddress(Op.Child(I))
       else
         GenValue(Op.Child(I));
@@ -1202,6 +1206,17 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       FE.SetString('FuncName',AnsiString(UserFunc.Id));
       FE.ArgCount := UserFunc.Arguments.Count;
       FE.ReturnType := UserFunc.ReturnType;
+      {$ifdef CPUX64}
+      S := '';
+      for Arg in UserFunc.Arguments do
+      begin
+        if Arg.Typ.IsPointer then
+          S := S + AnsiChar( zctXptr )
+        else
+          S := S + AnsiChar( Arg.Typ.Kind );
+      end;
+      FE.SetString('ArgTypes',S);
+      {$endif}
     end
     else
     begin

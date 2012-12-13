@@ -9,7 +9,7 @@
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<FrameworkType>VCL</FrameworkType>
 			<Base>True</Base>
-			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<Platform Condition="'$(Platform)'==''">Win64</Platform>
 			<TargetedPlatforms>3</TargetedPlatforms>
 			<AppType>Application</AppType>
 		</PropertyGroup>
@@ -298,6 +298,6 @@
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 		</ItemGroup>
-		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
-		<Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 	</Project>

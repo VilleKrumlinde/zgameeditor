@@ -486,16 +486,16 @@ begin
   Result := -1;
 end;
 
-function Platform_LoadModule(const Name : PAnsiChar) : integer;
+function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
 begin
   {$if Defined(Linux) or Defined(Darwin)}
-  Result := Integer(dlopen( Name, RTLD_NOW));
+  Result := NativeUInt(dlopen( Name, RTLD_NOW));
   {$else}
   Result := 0;
   {$endif}
 end;
 
-function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   {$if Defined(Linux) or Defined(Darwin)}
   Result := dlsym(Pointer(Module), Name );

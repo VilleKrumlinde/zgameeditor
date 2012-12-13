@@ -81,8 +81,8 @@ function Platform_GetJoystickPOV(JoyId : integer) : single;
 procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
 procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 
-function Platform_LoadModule(const Name : PAnsiChar) : integer;
-function Platform_GetModuleProc(Module : integer; const Name : PAnsiChar) : pointer;
+function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
+function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 
 function Platform_TouchGetCount : integer;
 function Platform_TouchGetPos(const TouchIndex : integer) : TZPointi;
