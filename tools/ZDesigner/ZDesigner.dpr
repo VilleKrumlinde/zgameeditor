@@ -103,16 +103,16 @@ asm
   mov r8,[r10+$20]
   mov r9,[r10+$20]
 
+  movd xmm0,[r10+$10]
   movd xmm1,[r10+$10]
   movd xmm2,[r10+$10]
   movd xmm3,[r10+$10]
-  movd xmm4,[r10+$10]
 
-  mov eax,[r10+$10]
-  mov [rsp+$28],eax
-
-  mov rax,[r10+$10]
-  mov [rsp+$28],rax
+//  mov eax,[r10+$10]
+//  mov [rsp+$28],eax
+//
+//  mov rax,[r10+$10]
+//  mov [rsp+$28],rax
 
   mov r10d,i5
   mov r11,$12345678
@@ -120,7 +120,7 @@ asm
 end;
 
 begin
-dummyproc(1,2,3,4,5,6,7,8);
+//dummyproc(1,2,3,4,5,6,7,8);
 
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;

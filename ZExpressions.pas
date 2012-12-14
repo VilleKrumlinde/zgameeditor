@@ -471,7 +471,7 @@ begin
   if StackGetDepth>=High(ZcStack) then
     ZHalt('Zc Stack Overflow (infinite recursion?)');
   {$endif}
-  ZcStackPtr^ := PInteger(@X)^;
+  PInteger(ZcStackPtr)^ := PInteger(@X)^;
   Inc(ZcStackPtr);
 end;
 
@@ -499,7 +499,7 @@ begin
     ZHalt('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
-  PInteger(@X)^ := ZcStackPtr^;
+  PInteger(@X)^ := PInteger(ZcStackPtr)^;
 end;
 
 //Pop 32 or 64-bit value depending on architechture
@@ -1818,12 +1818,15 @@ const
   ($4d,$8B,$4A,0)
 );
   Float32Regs : array[0..3] of array[0..5] of byte =
-( ($66,$41,$0F,$6E,$4A,0), //movd xmm1,[r10+x]
+( ($66,$41,$0F,$6E,$42,0), //movd xmm0,[r10+x]
+  ($66,$41,$0F,$6E,$4A,0),
   ($66,$41,$0F,$6E,$52,0),
-  ($66,$41,$0F,$6E,$5A,0),
-  ($66,$41,$0F,$6E,$62,0)
+  ($66,$41,$0F,$6E,$5A,0)
 );
-
+  Int32Stack1 : array[0..3] of byte = ($41,$8B,$42,0);  //mov eax,[r10+$10]
+  Int32Stack2 : array[0..3] of byte = ($89,$44,$24,0);  //mov [rsp+$10],eax
+  Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov eax,[r10+$10]
+  Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],eax
 var
   I,Offs : integer;
   P : PByte;
@@ -1842,6 +1845,7 @@ var
 var
   OldProtect : dword;
   CodeSize : integer;
+  StackOffs : integer;
 begin
   CodeSize := 64 + 4 * ArgCount;
   GetMem(Result,CodeSize);
@@ -1852,6 +1856,7 @@ begin
     W([$49,$89,$ca]); //mov r10,rcx
 
   Offs := 0;
+  StackOffs := $28;
   for I := 0 to ArgCount-1 do
   begin
     if I<4 then
@@ -1875,8 +1880,30 @@ begin
       else
         Assert('This argument type not yet supported on 64-bit: ' + IntToStr(Ord(ArgTypes[I])) );
       end;
+    end else
+    begin
+      //push on stack
+      case GetZcTypeSize(TZcDataTypeKind(ArgTypes[I])) of
+        4 :
+          begin
+            W(Int32Stack1);
+            P[-1] := Offs;
+            W(Int32Stack2);
+            P[-1] := StackOffs;
+          end;
+        8 :
+          begin
+            W(Int64Stack1);
+            P[-1] := Offs;
+            W(Int64Stack2);
+            P[-1] := StackOffs;
+          end;
+      else
+        Assert('This argument type not yet supported on 64-bit: ' + IntToStr(Ord(ArgTypes[I])) );
+      end;
     end;
     Inc(Offs, SizeOf(NativeInt) );
+    Inc(StackOffs, 8);
   end;
 
   W([$49,$bb]); //mov r11,x
@@ -1888,10 +1915,11 @@ end;
 
 procedure TExpExternalFuncCall.Execute;
 type
-  TFunc = procedure(Args : pointer);
+  TFunc = function(Args : pointer) : NativeInt;
   PFunc = ^TFunc;
 var
-  I,RetVal : integer;
+  I : integer;
+  RetVal : NativeInt;
   Args : array[0..31] of NativeInt;
 begin
   if Self.Proc=nil then
@@ -1903,19 +1931,22 @@ begin
     Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
   end;
 
-  fillchar(args,sizeof(args),0);  //**should not be neccessary
-
   //Transfer arguments from Zc-stack to hardware stack
-  for I := 0 to ArgCount-1 do
+  for I := ArgCount-1 downto 0 do
     if GetZcTypeSize(TZcDataTypeKind(Self.ArgTypes[I]))=SizeOf(Pointer) then
-      StackPopToPointer(Args[ArgCount-I-1])
+      StackPopToPointer(Args[I])
     else
-      StackPopTo(Args[ArgCount-I-1]);
+      StackPopTo(Args[I]);
 
-  TFunc(Self.Trampoline)(@Args);
+  Retval := TFunc(Self.Trampoline)(@Args);
 
   if Self.ReturnType.Kind<>zctVoid then
-    StackPush(RetVal);
+  begin
+    if GetZcTypeSize(Self.ReturnType.Kind)=SizeOf(Pointer) then
+      StackPushPointer(RetVal)
+    else
+      StackPush(RetVal);
+  end;
 end;
 
 destructor TExpExternalFuncCall.Destroy;

@@ -7,12 +7,12 @@
     <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.dfm,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmXmlEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.921,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">
     <File Path="..\..\..\ZzDC_Public"/>
