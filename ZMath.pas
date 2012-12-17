@@ -125,7 +125,7 @@ implementation
 
 
 {$ifndef CPU386}
-uses Math;
+uses System.Math;
 {$endif}
 
 

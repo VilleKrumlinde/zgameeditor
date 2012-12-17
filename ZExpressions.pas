@@ -434,7 +434,8 @@ implementation
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
-{$ifndef minimal},SysUtils,Math,Windows,TypInfo{$endif};
+{$if (not defined(minimal))}, System.SysUtils, System.Math, System.TypInfo{$ifend}
+{$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 
 var
   //Expression execution context
@@ -1711,7 +1712,7 @@ begin
   inherited;
   if Self.ModuleHandle<>0 then
   begin
-    Windows.FreeLibrary(Self.ModuleHandle);
+    WinApi.Windows.FreeLibrary(Self.ModuleHandle);
     Self.ModuleHandle := 0;
   end;
 end;
@@ -1825,8 +1826,8 @@ const
 );
   Int32Stack1 : array[0..3] of byte = ($41,$8B,$42,0);  //mov eax,[r10+$10]
   Int32Stack2 : array[0..3] of byte = ($89,$44,$24,0);  //mov [rsp+$10],eax
-  Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov eax,[r10+$10]
-  Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],eax
+  Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov rax,[r10+$10]
+  Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],rax
 var
   I,Offs : integer;
   P : PByte;
@@ -1878,7 +1879,7 @@ begin
             P[-1] := Offs;
           end;
       else
-        Assert('This argument type not yet supported on 64-bit: ' + IntToStr(Ord(ArgTypes[I])) );
+        Assert('This argument type not yet supported on 64-bit:');
       end;
     end else
     begin
@@ -1899,11 +1900,11 @@ begin
             P[-1] := StackOffs;
           end;
       else
-        Assert('This argument type not yet supported on 64-bit: ' + IntToStr(Ord(ArgTypes[I])) );
+        Assert('This argument type not yet supported on 64-bit');
       end;
+      Inc(StackOffs, 8);
     end;
     Inc(Offs, SizeOf(NativeInt) );
-    Inc(StackOffs, 8);
   end;
 
   W([$49,$bb]); //mov r11,x
