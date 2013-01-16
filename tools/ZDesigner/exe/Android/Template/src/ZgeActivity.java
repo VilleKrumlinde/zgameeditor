@@ -61,4 +61,16 @@ public class ZgeActivity extends Activity
         zge.onResume();
     }
 
+    @Override
+    protected void onStop() {
+        zge.onStop();
+        super.onStop();
+    }
+
+    @Override
+    protected void onStart() {
+        zge.onStart();
+        super.onStart();
+    }
+
 }

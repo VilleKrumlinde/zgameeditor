@@ -22,6 +22,11 @@ THE SOFTWARE.}
 
 procedure AndroidLog(const P : PAnsiChar);
 
+const
+  KeyPaused = AnsiChar(255);
+  KeyResumed = AnsiChar(254);
+  KeyBack = AnsiChar(253);
+
 var
   AndroidCurrentMouse : TZPointi;
   AndroidKeys : array[ansichar] of boolean;
@@ -90,9 +95,12 @@ end;
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
   Result := AndroidKeys[ KeyMap[C] ];
-  if Result and (C='{') then
-    //Manual mouseup because there is no tap-up message
-    AndroidKeys[ '{' ] := False;
+  if Result then
+  begin
+    if C in ['{', KeyPaused, KeyResumed, KeyBack] then
+      //Actions that we auto reset
+      AndroidKeys[ C ] := False;
+  end;
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;

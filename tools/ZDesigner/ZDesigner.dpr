@@ -96,34 +96,7 @@ uses
 //+>2gb memory in 64-bitwindows
 {$SETPEFLAGS $21}
 
-procedure DummyProc(i1,i2,i3,i4 : single; i5,i6,i7,i8 : integer);
-asm
-  .noframe
-  mov rcx,[r10+$10]
-  mov rdx,[r10+$20]
-  mov r8,[r10+$20]
-  mov r9,[r10+$20]
-
-  movd xmm0,[r10+$10]
-  movd xmm1,[r10+$10]
-  movd xmm2,[r10+$10]
-  movd xmm3,[r10+$10]
-
-//  mov eax,[r10+$10]
-//  mov [rsp+$28],eax
-//
-//  mov rax,[r10+$10]
-//  mov [rsp+$28],rax
-
-  mov r10d,i5
-  mov r10d,i6
-  mov r11,$12345678
-//  jmp r11
-end;
-
 begin
-//dummyproc(1,2,3,4,5,6,7,8);
-
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;
 

@@ -52,7 +52,7 @@ public class Zge extends GLSurfaceView
     private native void NativeDestroy();
     private native void NativeSurfaceCreated();
     private native void NativeSurfaceChanged( int width, int height );
-    private native void NativeDrawFrame();
+    private native boolean NativeDrawFrame();
     private native void NativeActivate( boolean Activate );
     private native boolean NativeCloseQuery();
     private native void NativeTouch( int ID, float X, float Y, float Pressure );
@@ -127,18 +127,28 @@ public class Zge extends GLSurfaceView
         return NativeCloseQuery();
     }
 
+    public void onStop() {
+        Log.i("ZgeAndroid", "stop");
+        NativeActivate( false );
+        //Call drawframe to update zge and give expressions a chance to catch stop event
+        NativeDrawFrame();
+    }
+
+    public void onStart() {
+        Log.i("ZgeAndroid", "start");
+        NativeActivate( true );
+    }
+
     @Override
     public void onPause()
     {
         super.onPause();
-        NativeActivate( false );
     }
 
     @Override
     public void onResume()
     {
         super.onResume();
-        NativeActivate( true );
     }
 
     @Override
@@ -211,16 +221,15 @@ public class Zge extends GLSurfaceView
     }
 
     @Override
-    public boolean onKeyDown( int keyCode, KeyEvent event )
-    {
-        if ( keyCode == KeyEvent.KEYCODE_BACK )
+    public boolean onKeyDown( int keyCode, KeyEvent event ) {
+        if ( keyCode == KeyEvent.KEYCODE_BACK ) {
+            NativeKeydown(253); //Trigger KeyBack in ZGE
             if ( NativeCloseQuery() )
-            {
                 IsDestroy = true;
-                return true;
-            }
+            return true;
+	    } else
+            NativeKeydown(event.getUnicodeChar());
 
-        NativeKeydown(event.getUnicodeChar());
         return super.onKeyDown( keyCode, event );
     }
 
@@ -250,7 +259,7 @@ public class Zge extends GLSurfaceView
             if ( IsDestroy )
                 Finish();
 
-            NativeDrawFrame();
+            IsDestroy = NativeDrawFrame();
         }
     }
 
