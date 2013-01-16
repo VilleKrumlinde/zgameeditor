@@ -124,21 +124,31 @@ begin
   glDisableClientState(GL_VERTEX_ARRAY);
 end;
 
-procedure Java_org_zgameeditor_Zge_NativeDrawFrame( env : PJNIEnv; thiz : jobject );cdecl;
+function Java_org_zgameeditor_Zge_NativeDrawFrame( env : PJNIEnv; thiz : jobject ) : boolean; cdecl;
 begin
   if AppInited then
   begin
     ZApp.Main;
-  end;
+    Result := ZApp.Terminating;
+  end
+  else
+    Result := False;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeActivate( env : PJNIEnv; thiz : jobject; Activate : jboolean );cdecl;
 begin
+ if Activate<>0 then
+   AndroidKeys[ KeyResumed ] := True
+ else
+   AndroidKeys[ KeyPaused ] := True;
 end;
 
-function Java_org_zgameeditor_Zge_NativeCloseQuery( env : PJNIEnv; thiz : jobject ) : Boolean;cdecl;
+function Java_org_zgameeditor_Zge_NativeCloseQuery( env : PJNIEnv; thiz : jobject ) : boolean; cdecl;
 begin
-  Result := True;
+  if AppInited then
+    Result := ZApp.EscapeToQuit
+  else
+    Result := True;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeTouch( env : PJNIEnv; thiz : jobject; ID : jint; X, Y, Pressure : jfloat );cdecl;

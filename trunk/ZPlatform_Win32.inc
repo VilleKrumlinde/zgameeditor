@@ -103,8 +103,24 @@ const
 
 
 type
+  //From Messages.pas
+  TWordFiller = record
+  {$IFDEF CPUX86}
+    Filler: array[1..2] of Byte; // Pad word make it 4 Bytes (2+2)
+  {$ENDIF}
+  {$IFDEF CPUX64}
+    Filler: array[1..6] of Byte; // Pad word to make it 8 Bytes (2+6)
+  {$ENDIF}
+  end;
+
+  TDWordFiller = record
+  {$IFDEF CPUX64}
+    Filler: array[1..4] of Byte; // Pad DWORD to make it 8 bytes (4+4) [x64 only]
+  {$ENDIF}
+  end;
+
   PMessage = ^TMessage;
-  TMessage = packed record
+  TMessage = record
     Msg: Cardinal;
     case Integer of
       0: (
@@ -114,12 +130,16 @@ type
       1: (
         WParamLo: Word;
         WParamHi: Word;
+        WParamFiller: TDWordFiller;
         LParamLo: Word;
         LParamHi: Word;
+        LParamFiller: TDWordFiller;
         ResultLo: Word;
-        ResultHi: Word);
+        ResultHi: Word;
+        ResultFiller: TDWordFiller);
   end;
 
+{$POINTERMATH ON}
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
 var
   ZApp : TZApplication;
@@ -143,7 +163,11 @@ begin
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
+        {$ifdef cpux64}
+        Keys[ PByte(@wParam)[4] ] := True;
+        {$else}
         Keys[Lo(wParam)] := True;
+        {$endif}
       end;
     WM_KEYUP:         // Set the released key (wparam) to equal false so we can check if its pressed
       begin
@@ -155,7 +179,11 @@ begin
             PostMessage(hWnd,WM_QUIT,0,0);
         end;
         {$endif}
+        {$ifdef cpux64}
+        Keys[ PByte(@wParam)[4] ] := False;
+        {$else}
         Keys[Lo(wParam)] := False;
+        {$endif}
       end;
     WM_MOUSEMOVE :
       begin
