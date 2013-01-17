@@ -389,7 +389,6 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   procedure DoGenArrayRead;
   var
     A : TZComponent;
-    C : TExpArrayRead;
     I : integer;
   begin
     A := TZComponent(SymTab.Lookup(Op.Id));
@@ -397,10 +396,10 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
     if Ord((A as TDefineArray).Dimensions)+1<>Op.Children.Count then
       raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
-    for I := 0 to Ord((A as TDefineArray).Dimensions) do
-      GenValue(Op.Child(I));
-    C := TExpArrayRead.Create(Target);
-    C.TheArray := A as TDefineArray;
+    for I := 0 to Op.Children.Count-1 do
+      GenValue(Op.Child(I));//Indices
+    GenValue((Op as TZcOpArrayAccess).ArrayOp);
+    TExpArrayRead.Create(Target);
   end;
 
   procedure DoGenConvert;
@@ -598,7 +597,6 @@ var
   I,AssignSize : integer;
 
   A : TZComponent;
-  Aw : TExpArrayWrite;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
   Etyp : TZcIdentifierInfo;
@@ -670,13 +668,12 @@ begin
       raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
     if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
       raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
-    //Assert(Op.Arguments.Count=2);
-    for I := 0 to Ord((A as TDefineArray).Dimensions) do
-      GenValue(LeftOp.Child(I));
-    Aw := TExpArrayWrite.Create(Target);
-    Aw.TheArray := A as TDefineArray;
+    for I := 0 to LeftOp.Children.Count-1 do
+      GenValue(LeftOp.Child(I)); //Indices
+    GenValue((LeftOp as TZcOpArrayAccess).ArrayOp);
+    TExpArrayWrite.Create(Target);
     GenValue(Op.Child(1));
-    Target.AddComponent( MakeAssignOp(Aw.TheArray.GetElementSize) );
+    Target.AddComponent( MakeAssignOp((A as TDefineArray).GetElementSize) );
   end else
     raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 
@@ -1181,8 +1178,8 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     I : integer;
     F : TExpUserFuncCall;
     FE : TExpExternalFuncCall;
-    S : AnsiString;
     {$ifdef CPUX64}
+    S : AnsiString;
     Arg : TZcOpArgumentVar;
     {$endif}
   begin

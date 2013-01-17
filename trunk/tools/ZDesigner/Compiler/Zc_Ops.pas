@@ -76,6 +76,14 @@ type
     function GetDataType : TZcDataType; override;
   end;
 
+  TZcOpArrayAccess = class(TZcOp)
+  public
+    ArrayOp : TZcOp;
+    constructor Create(const Id: string; A : TZcOp); reintroduce; overload;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
+  end;
+
   TZcOpConvert = class(TZcOp)
   public
     ToType : TZcDataType;
@@ -288,18 +296,6 @@ begin
     Result := (Ref as TZcOp).GetDataType;
   end else if Kind=zcIdentifier then
     DoIdentifier
-  else if Kind=zcArrayAccess then
-  begin
-    if (Ref is TDefineArray) then
-    begin
-      case (Ref as TDefineArray)._Type of
-        dvbFloat : Result.Kind := zctFloat;
-        dvbInt : Result.Kind := zctInt;
-        dvbString : Result.Kind := zctString;
-        dvbModel : Result.Kind := zctModel;
-      end;
-    end;
-  end
   else if Kind=zcConstLiteral then
     Result.Kind := zctFloat
   else if Kind=zcConditional then
@@ -515,17 +511,6 @@ begin
         if Children.Count>0 then
           Result := Result + Child(0).ToString;
         Result := Result + ';';
-      end;
-    zcArrayAccess:
-      begin
-        Result := Id + '[';
-        for I := 0 to Children.Count-1 do
-        begin
-          if I>0 then
-            Result := Result + ',';
-          Result := Result + Child(I).ToString;
-        end;
-        Result := Result + ']';
       end;
     zcForLoop :
       begin
@@ -1335,6 +1320,42 @@ end;
 function TZcOpReinterpretCast.ToString: string;
 begin
   Result := 'reinterpret_cast<' + GetZcTypeName(Typ) + '>(' + Child(0).ToString + ')';
+end;
+
+{ TZcOpArrayAccess }
+
+constructor TZcOpArrayAccess.Create(const Id: string; A : TZcOp);
+begin
+  inherited Create(nil);
+  Self.Kind := zcArrayAccess;
+  Self.ArrayOp := A;
+  Self.Id := Id;
+  Self.Ref := CompilerContext.SymTab.Lookup(Id);
+end;
+
+function TZcOpArrayAccess.GetDataType: TZcDataType;
+begin
+  Result.Kind := zctVoid;
+  case (Ref as TDefineArray)._Type of
+    dvbFloat : Result.Kind := zctFloat;
+    dvbInt,dvbByte : Result.Kind := zctInt;
+    dvbString : Result.Kind := zctString;
+    dvbModel : Result.Kind := zctModel;
+  end;
+end;
+
+function TZcOpArrayAccess.ToString: string;
+var
+  I : integer;
+begin
+  Result := ArrayOp.ToString + '[';
+  for I := 0 to Children.Count-1 do
+  begin
+    if I>0 then
+      Result := Result + ',';
+    Result := Result + Child(I).ToString;
+  end;
+  Result := Result + ']';
 end;
 
 initialization
