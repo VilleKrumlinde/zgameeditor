@@ -1601,7 +1601,7 @@ begin
 end;
 
 procedure TZc._Primary(var OutOp : TZcOp);
- var Op : TZcOp; S : string; V : double;
+ var Op,SaveOp : TZcOp; S : string; V : double;
      Typ : TZcDataType;
      Ci : TZComponentInfo;
 
@@ -1725,16 +1725,17 @@ begin
     else if (CurrentInputSymbol=lbrackSym) then
     begin
          Get;
-           Assert(OutOp.Kind=zcIdentifier);
-           OutOp.Kind:=zcArrayAccess;
+           Assert(OutOp.Kind in [zcIdentifier,zcSelect]);
+           Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
+           OutOp := Op;
          
          _Expr(Op);
-                OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
+                    OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
          while (CurrentInputSymbol=commaSym) do
          begin
            Get;
            _Expr(Op);
-                       OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
+                           OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
          end;
          Expect(rbrackSym);
     end

@@ -490,7 +490,11 @@ if(Defined2!=42)
 
 m.Defined3="Hej";
 if(m.Defined3!="Hej")
-  Error=1205;]]>
+  Error=1205;
+
+m.DefinedArray[1]=1;
+if(m.DefinedArray[1]!=1)
+  Error=1206;]]>
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
@@ -638,6 +642,11 @@ else
         <DefineVariable Name="Defined1"/>
         <DefineVariable Name="Defined2"/>
         <DefineVariable Name="Defined3" Type="2"/>
+        <DefineArray Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
+          <Values>
+<![CDATA[78DA6360200E000000280001]]>
+          </Values>
+        </DefineArray>
       </Definitions>
       <OnRender>
         <RenderSprite/>

@@ -844,7 +844,7 @@ var
 
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>
-(. var Op : TZcOp; S : string; V : double;
+(. var Op,SaveOp : TZcOp; S : string; V : double;
      Typ : TZcDataType;
      Ci : TZComponentInfo;
 .)
@@ -919,13 +919,14 @@ Primary<var OutOp : TZcOp>
         .)
     ")"
 
-  | "[" (. Assert(OutOp.Kind=zcIdentifier);
-           OutOp.Kind:=zcArrayAccess;
+  | "[" (. Assert(OutOp.Kind in [zcIdentifier,zcSelect]);
+           Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
+           OutOp := Op;
          .)
-    Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
-      {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
-    "]"
 
+        Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
+          {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
+        "]"
   }
 .
 /*------------------------------------------------------------------------*/

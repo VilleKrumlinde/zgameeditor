@@ -245,18 +245,12 @@ type
   TExpArrayRead = class(TExpBase)
   protected
     procedure Execute; override;
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    TheArray : TDefineArray;
   end;
 
   //Push ptr to element in array on stack, used with assign
   TExpArrayWrite = class(TExpBase)
   protected
     procedure Execute; override;
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    TheArray : TDefineArray;
   end;
 
   //Setup local stack frame
@@ -387,7 +381,6 @@ type
   end;
 
   TExpLoadModelDefined = class(TExpBase)
-  strict private
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -1050,24 +1043,20 @@ end;
 
 { TExpArrayRead }
 
-procedure TExpArrayRead.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'TheArray',{$ENDIF}integer(@TheArray), zptComponentRef);
-end;
-
 procedure TExpArrayRead.Execute;
 var
   V : single;
   P : PFloat;
   I : integer;
+  A : TDefineArray;
 begin
-  P := TheArray.PopAndGetElement;
+  StackPopToPointer(A);
+  P := A.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
-    ZHalt('Array read outside range: ' + String(TheArray.Name));
+    ZHalt('Array read outside range: ' + String(A.Name));
   {$endif}
-  if TheArray._Type=dvbByte then
+  if A._Type=dvbByte then
   begin
     I := PByte(P)^;
     StackPush(I);
@@ -1233,20 +1222,16 @@ end;
 
 { TExpArrayWrite }
 
-procedure TExpArrayWrite.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'TheArray',{$ENDIF}integer(@TheArray), zptComponentRef);
-end;
-
 procedure TExpArrayWrite.Execute;
 var
   P : Pointer;
+  A : TDefineArray;
 begin
-  P := TheArray.PopAndGetElement;
+  StackPopToPointer(A);
+  P := A.PopAndGetElement;
   {$ifndef minimal}
   if P=nil then
-    ZHalt('Array assign outside range: ' + String(TheArray.Name));
+    ZHalt('Array assign outside range: ' + String(A.Name));
   {$endif}
   StackPush(P);
 end;
