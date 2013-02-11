@@ -423,7 +423,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '3.0.0b';
+  AppVersion = '3.0.0';
   ZgeProjExtension = '.zgeproj';
 
 implementation
