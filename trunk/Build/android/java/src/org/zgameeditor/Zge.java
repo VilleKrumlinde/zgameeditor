@@ -256,10 +256,11 @@ public class Zge extends GLSurfaceView
 
         public void onDrawFrame( GL10 gl )
         {
+            if(NativeDrawFrame())
+              IsDestroy=true;
+
             if ( IsDestroy )
                 Finish();
-
-            IsDestroy = NativeDrawFrame();
         }
     }
 

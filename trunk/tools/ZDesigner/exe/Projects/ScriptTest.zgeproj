@@ -58,6 +58,10 @@ void reff(ref int x, int y) {
 void reffs(ref string s) {
   if(s=="x")
     s="hello";
+}
+
+void mtest(model m) {
+  m.DefinedArray[1]=2;
 }]]>
       </Source>
     </ZLibrary>
@@ -494,6 +498,10 @@ if(m.Defined3!="Hej")
 
 m.DefinedArray[1]=1;
 if(m.DefinedArray[1]!=1)
+  Error=1206;
+
+mtest(m);
+if(m.DefinedArray[1]!=2)
   Error=1206;]]>
       </Expression>
     </ZExpression>

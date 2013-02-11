@@ -508,8 +508,8 @@ begin
 
   for I := 0 to 255 do
     KeyMap[chr(I)] := Chr(I);
-  for I := ord('A') to ord('Z') do
-    KeyMap[chr(I)] := Chr(I + (ord('a')-ord('A')));
+//  for I := ord('A') to ord('Z') do
+//    KeyMap[chr(I)] := Chr(I + (ord('a')-ord('A')));
 end;
 
 function Platform_ShowOptionDialog(App : pointer) : boolean;
