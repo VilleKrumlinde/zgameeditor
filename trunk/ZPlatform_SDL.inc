@@ -19,6 +19,7 @@ var
   SdlMousePos : TZPointi;
   Keys : array[0..511] of boolean;
   KeyMap : array[AnsiChar] of word;
+  gZApp: TZApplication;
 
 procedure Platform_ShowMouse(Visible : boolean);
 const vals : array[boolean] of integer = (0,1);
@@ -26,11 +27,14 @@ begin
   SDL_ShowCursor(vals[Visible]);
 end;
 
-function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar) : integer;
+function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
 begin
+  //Save a global handle to the app
+  gZApp := TZApplication(ZApp);
+
   if UseFullScreen then
     flags := SDL_OPENGL or SDL_FULLSCREEN
   else
@@ -98,7 +102,7 @@ begin
         SDL_KEYUP :
           begin
             {$ifdef minimal}
-            if (E.Key.keysym.sym=SDLK_ESCAPE) and ZApp.EscapeToQuit then
+            if (E.Key.keysym.sym=SDLK_ESCAPE) and gZApp.EscapeToQuit then
               Finished := True;
             {$endif}
             Keys[ E.Key.keysym.sym mod 512 ] := False;
@@ -118,8 +122,8 @@ begin
               1 : Keys[ Ord('{') ] := E.type_=SDL_MOUSEBUTTONDOWN;
               2 : Keys[ Ord('|') ] := E.type_=SDL_MOUSEBUTTONDOWN;
               3 : Keys[ Ord('}') ] := E.type_=SDL_MOUSEBUTTONDOWN;
-              4 : ZApp.MouseWheelDelta := 1;
-              5 : ZApp.MouseWheelDelta := -1;
+              4 : gZApp.MouseWheelDelta := 1;
+              5 : gZApp.MouseWheelDelta := -1;
             end;
           end;
       end;
@@ -416,7 +420,7 @@ begin
 end;
 
 {$IFDEF LINUX}
-function Platform_ShowOptionDialog : boolean;
+function Platform_ShowOptionDialog(App : pointer) : boolean;
 const
   xstr = 'x'#0;
   xdef = 'xmessage "Choose screen resolution:" -center -buttons '#0;
@@ -445,12 +449,12 @@ begin
   I := libc.system(Str) shr 8;
   //First button is 101
   if I>100 then
-    byte(ZApp.ScreenMode) := I-101;
+    byte(TZApplication(App).ScreenMode) := I-101;
 
   Result := True;
 end;
 {$else}
-function Platform_ShowOptionDialog : boolean;
+function Platform_ShowOptionDialog(App : pointer) : boolean;
 begin
   Result := True;
 end;
