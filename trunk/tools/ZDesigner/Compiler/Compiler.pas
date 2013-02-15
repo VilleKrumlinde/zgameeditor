@@ -388,10 +388,12 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
 
   procedure DoGenArrayRead;
   var
-    A : TZComponent;
+    A : TObject;
     I : integer;
   begin
-    A := TZComponent(SymTab.Lookup(Op.Id));
+    A := Op.Ref;
+    if (A is TZcOpVariableBase) then
+      A := TZcOpVariableBase(A).Typ.TheArray;
     if (A=nil) or (not (A is TDefineArray)) then
       raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
     if Ord((A as TDefineArray).Dimensions)+1<>Op.Children.Count then
@@ -596,7 +598,7 @@ procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
 var
   I,AssignSize : integer;
 
-  A : TZComponent;
+  A : TObject;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
   Etyp : TZcIdentifierInfo;
@@ -663,7 +665,9 @@ begin
   begin
     if LeaveValue=alvPost then
       raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
-    A := TZComponent(SymTab.Lookup(LeftOp.Id));
+    A := LeftOp.Ref;
+    if (A is TZcOpVariableBase) then
+      A := TZcOpVariableBase(A).Typ.TheArray;
     if (A=nil) or (not (A is TDefineArray)) then
       raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
     if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
@@ -794,6 +798,7 @@ var
     I : integer;
     Frame : TExpStackFrame;
     Ret : TExpReturn;
+    L : TZcOpLocalVar;
   begin
     if (Func.Id='') and (Func.Statements.Count=0) then
       Exit; //Don't generate code for empty nameless function (such as Repeat.WhileExp)
@@ -815,9 +820,25 @@ var
       Frame := TExpStackFrame.Create(Target);
       Frame.Size := Func.GetStackSize;
     end;
+    for L in Func.Locals do
+    begin
+      if L.Typ.Kind=zctArray then
+        with TExpInitLocalArray.Create(Target) do
+        begin
+          StackSlot := L.Ordinal;
+          Dimensions := TDefineArray(L.Typ.TheArray).Dimensions;
+          _Type := TDefineArray(L.Typ.TheArray)._Type;
+        end;
+    end;
     for I := 0 to Func.Statements.Count - 1 do
     begin
       Gen(Func.Statements[I] as TZcOp);
+    end;
+    for L in Func.Locals do
+    begin
+      if L.Typ.Kind=zctArray then
+        with TExpRemoveLocalArray.Create(Target) do
+          StackSlot := L.Ordinal;
     end;
     if Assigned(LReturn) then
     begin

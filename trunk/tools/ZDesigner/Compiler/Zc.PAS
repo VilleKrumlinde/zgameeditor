@@ -739,9 +739,30 @@ begin
 end;
 
 procedure TZc._Type(var Typ : TZcDataType);
+
+  var
+    A : TDefineArray;
+
 begin
       FillChar(Typ,SizeOf(Typ),0); 
   _SimpleType(Typ);
+  while (CurrentInputSymbol=lbrackSym) do
+  begin
+    Get;
+                  
+                   A := TDefineArray.Create(nil);
+                   GlobalNames.Add(A);
+                   A._Type := ZTypeToVarType(Typ.Kind);
+                   Typ.Kind := zctArray;
+                   Typ.TheArray := A;
+                
+    while (CurrentInputSymbol=commaSym) do
+    begin
+      Get;
+                   if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); 
+    end;
+    Expect(rbrackSym);
+  end;
 end;
 
 procedure TZc._FormalParams;
@@ -1601,7 +1622,7 @@ begin
 end;
 
 procedure TZc._Primary(var OutOp : TZcOp);
- var Op,SaveOp : TZcOp; S : string; V : double;
+ var Op : TZcOp; S : string; V : double;
      Typ : TZcDataType;
      Ci : TZComponentInfo;
 

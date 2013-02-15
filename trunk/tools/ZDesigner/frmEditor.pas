@@ -423,7 +423,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '3.0.0';
+  AppVersion = '3.1b';
   ZgeProjExtension = '.zgeproj';
 
 implementation
@@ -3690,7 +3690,7 @@ var
   Ci : TZComponentInfo;
   UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
-  NeedJpeg,NeedPng,DisplayDetailedReport : boolean;
+  NeedJpeg,DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
@@ -3770,7 +3770,6 @@ begin
 
     //Get names of used classes
     NeedJpeg := False;
-    NeedPng := False;
     AllObjects := TObjectList.Create(False);
     try
       GetAllObjects(Self.Root,AllObjects);
@@ -3798,6 +3797,8 @@ begin
       UsedComponents.Add('TMeshCombine');
     if UsedComponents.IndexOf('TRenderNet')>=0 then
       UsedComponents.Add('TMesh');
+    if UsedComponents.IndexOf('TExpInitLocalArray')>=0 then
+      UsedComponents.Add('TDefineArray');
     if not NeedJpeg then
       ClassesToRemove.Add('TNjDecoder');
 
