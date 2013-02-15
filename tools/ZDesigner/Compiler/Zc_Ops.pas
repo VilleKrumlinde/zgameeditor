@@ -95,7 +95,7 @@ type
 
   TZcOpFunctionBase = class(TZcOp)
   public
-    Locals : TObjectList;
+    Locals : TObjectList<TZcOpLocalVar>;
     Arguments : TObjectList<TZcOpArgumentVar>;
     Statements : TObjectList;
     ReturnType : TZcDataType;
@@ -170,6 +170,9 @@ function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : double;
 function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
 
+function VarTypeToZType(const VTyp : TVariableType) : TZcDataTypeKind;
+function ZTypeToVarType(const Typ : TZcDataTypeKind) : TVariableType;
+
 function GetBuiltInFunctions : TObjectList;
 function GetBuiltInConstants : TObjectList;
 
@@ -197,7 +200,7 @@ var
 
 const
   ZcTypeNames : array[TZcDataTypeKind] of string =
-(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'),('xptr'));
+(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'),('xptr'),('#array'));
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
@@ -219,6 +222,32 @@ begin
       zptString : Result.Kind := zctString;
       zptComponentRef : Result.Kind := zctNull;
     end;
+end;
+
+function VarTypeToZType(const VTyp : TVariableType) : TZcDataTypeKind;
+begin
+  Result := zctVoid;
+  case VTyp of
+    dvbFloat: Result := zctFloat;
+    dvbInt: Result := zctInt;
+    dvbString: Result := zctString;
+    dvbModel: Result := zctModel;
+  else
+    Assert(False,'Cannot convert this array type');
+  end;
+end;
+
+function ZTypeToVarType(const Typ : TZcDataTypeKind) : TVariableType;
+begin
+  Result := Low(TVariableType);
+  case Typ of
+    zctFloat: Result := dvbFloat;
+    zctInt: Result := dvbInt;
+    zctString: Result := dvbString;
+    zctModel: Result := dvbModel;
+  else
+    Assert(False,'Cannot convert this array type');
+  end;
 end;
 
 function TZcOp.Clone: TZcOp;
@@ -407,6 +436,11 @@ begin
     end else if (FirstType.Kind=zctReference) and (Ord(FirstType.ReferenceClassId)>0) then
     begin
       DoProp(ComponentManager.GetInfoFromId(FirstType.ReferenceClassId).GetProperties);
+      Exit;
+    end else if FirstType.Kind=zctArray then
+    begin
+      //Local arrays
+      DoProp(ComponentManager.GetInfoFromId(DefineArrayClassId).GetProperties);
       Exit;
     end;
 
@@ -662,7 +696,7 @@ begin
   inherited;
   Kind := zcFunction;
   Statements := TObjectList.Create(False);
-  Locals := TObjectList.Create(False);
+  Locals := TObjectList<TZcOpLocalVar>.Create(False);
   Arguments := TObjectList<TZcOpArgumentVar>.Create(True);
 end;
 
@@ -829,8 +863,21 @@ const
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;
+
+  procedure CheckArray(A1,A2 : TDefineArray);
+  begin
+    if (A1.Dimensions<>A2.Dimensions) or (A1._Type<>A2._Type) then
+      raise ECodeGenError.Create('Arrays not compatible');
+  end;
+
 begin
   ExistingType := Op.GetDataType;
+
+  if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId) then
+  begin
+    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(Op.Ref));
+    Exit(Op);
+  end;
 
   if (ExistingType.Kind=zctVoid) and (WantedType.Kind=zctXptr) then
   begin
@@ -1175,8 +1222,8 @@ begin
   MakeOne('touchGetX',fcTouchGetX,'FI');
   MakeOne('touchGetY',fcTouchGetY,'FI');
   MakeOne('touchGetID',fcTouchGetID,'II');
-  MakeOne('getBinaryProp',fcGetBinaryProp,'VVR{DefineArray}');
-  MakeOne('setBinaryProp',fcSetBinaryProp,'VVR{DefineArray}');
+  MakeOne('getBinaryProp',fcGetBinaryProp,'VVR{Array}');
+  MakeOne('setBinaryProp',fcSetBinaryProp,'VVR{Array}');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
@@ -1336,11 +1383,19 @@ end;
 function TZcOpArrayAccess.GetDataType: TZcDataType;
 begin
   Result.Kind := zctVoid;
-  case (Ref as TDefineArray)._Type of
-    dvbFloat : Result.Kind := zctFloat;
-    dvbInt,dvbByte : Result.Kind := zctInt;
-    dvbString : Result.Kind := zctString;
-    dvbModel : Result.Kind := zctModel;
+  if Ref<>nil then
+  begin
+    if (Ref is TZcOpVariableBase) then
+      Result.Kind := VarTypeToZType( TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type )
+    else
+    begin
+      case (Ref as TDefineArray)._Type of
+        dvbFloat : Result.Kind := zctFloat;
+        dvbInt,dvbByte : Result.Kind := zctInt;
+        dvbString : Result.Kind := zctString;
+        dvbModel : Result.Kind := zctModel;
+      end;
+    end;
   end;
 end;
 

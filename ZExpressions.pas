@@ -113,6 +113,7 @@ type
     Value : TPropString;
   end;
 
+  TArrayDimensions = (dadOne,dadTwo,dadThree);
   TDefineArray = class(TDefineVariableBase)
   strict private
     Data : PFloatArray;
@@ -127,7 +128,7 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Dimensions : (dadOne,dadTwo,dadThree);
+    Dimensions : TArrayDimensions;
     SizeDim1,SizeDim2,SizeDim3 : integer;
     Persistent : boolean;
     Values : TZBinaryPropValue;
@@ -408,6 +409,23 @@ type
     InvokeArgCount : integer;
   end;
 
+  TExpInitLocalArray = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    StackSlot : integer;
+    Dimensions : TArrayDimensions;
+    _Type : TVariableType;
+  end;
+
+  TExpRemoveLocalArray = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    StackSlot : integer;
+  end;
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -2193,6 +2211,48 @@ begin
   RestoreExecutionState;
 end;
 
+{ TExpInitLocalArray }
+
+procedure TExpInitLocalArray.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'StackSlot',{$ENDIF}integer(@StackSlot), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type), zptByte);
+end;
+
+procedure TExpInitLocalArray.Execute;
+var
+  P : PStackElement;
+  A : TDefineArray;
+begin
+  //Use pointer size to get all bits in 64-bit mode
+  P := StackGetPtrToItem( gCurrentBP + Self.StackSlot );
+  A := TDefineArray.Create(nil);
+  A.Dimensions := Self.Dimensions;
+  A._Type := Self._Type;
+  PPointer(P)^ := A;
+end;
+
+{ TExpRemoveLocalArray }
+
+procedure TExpRemoveLocalArray.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'StackSlot',{$ENDIF}integer(@StackSlot), zptInteger);
+end;
+
+procedure TExpRemoveLocalArray.Execute;
+var
+  P : PStackElement;
+  O : TObject;
+begin
+  //Use pointer size to get all bits in 64-bit mode
+  P := StackGetPtrToItem( gCurrentBP + Self.StackSlot );
+  O := PPointer(P)^;
+  O.Free;
+end;
+
 initialization
 
   ZcStackPtr := ZcStackBegin;
@@ -2203,11 +2263,14 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=36;{$endif}
   ZClasses.Register(TDefineVariable,DefineVariableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Variable';{$endif}
   ZClasses.Register(TDefineConstant,DefineConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=29;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Constant';{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=22;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Array';{$endif}
   ZClasses.Register(TZExternalLibrary,ExternalLibraryClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=35;{$endif}
 
@@ -2264,6 +2327,11 @@ initialization
   ZClasses.Register(TExpAddToPointer,ExpAddToPointerClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpInvokeComponent,ExpInvokeComponentClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+
+  ZClasses.Register(TExpInitLocalArray,ExpInitLocalArrayClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpRemoveLocalArray,ExpRemoveLocalArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

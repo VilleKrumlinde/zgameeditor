@@ -59,7 +59,7 @@ type
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
- ExpInvokeComponentClassId,
+ ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpRemoveLocalArrayClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -235,12 +235,13 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,zctXptr);
+  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,zctXptr,zctArray);
   TZcDataType = record
     Kind : TZcDataTypeKind;
     {$ifndef minimal}
     ReferenceClassId : TZClassIds;
     IsPointer : boolean;  //True for type of argument in f(ref x) function
+    TheArray : pointer;  //When zctArray: pointer to TDefineArray
     {$endif}
   end;
 
@@ -3160,6 +3161,13 @@ var
 
 begin
   ZClassName := string(Xml.CurName);
+
+  if ZClassName='DefineArray' then
+    ZClassName := 'Array'
+  else if ZClassName='DefineVariable' then
+    ZClassName := 'Variable'
+  else if ZClassName='DefineConstant' then
+    ZClassName := 'Constant';
 
   SaveMainXml := Self.MainXml;
   Self.MainXml := Xml;
