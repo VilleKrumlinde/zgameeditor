@@ -380,8 +380,12 @@ Type<var Typ : TZcDataType>
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 .)
+         [ intCon (. A.SizeDim1 := StrToInt(LexString); .) ]
          { ","  (. if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); .)
-       } "]"
+           [ intCon (. if (A.Dimensions=dadTwo) then A.SizeDim2 := StrToInt(LexString) else A.SizeDim3 := StrToInt(LexString);
+           .) ]
+         }
+       "]"
     )
   }
 .

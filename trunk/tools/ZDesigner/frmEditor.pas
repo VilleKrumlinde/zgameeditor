@@ -1578,7 +1578,7 @@ begin
     //set our color to be red
     glColor3f(1.0, 0.0, 0.0);
 
-    Renderer.RenderMesh(M);
+    ZApp.Driver.RenderMesh(M);
 
   glPopAttrib();
 

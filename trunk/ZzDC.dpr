@@ -26,6 +26,15 @@ program ZzDC;
   {$EXCESSPRECISION OFF} //Needed for fast single-precision math
 {$ifend}
 
+{$if defined(Win32) or defined(Win64)}
+  {$ifdef fpc}
+    {$R Data.res}
+  {$else}
+    {$R Data.res Data.rc}
+    {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
+  {$endif}
+{$ifend}
+
 //Zzap Dynamic Content engine
 
 {
@@ -59,16 +68,9 @@ uses
   AudioComponents in 'AudioComponents.pas',
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas',
-  NanoJpeg in 'NanoJpeg.pas';
+  NanoJpeg in 'NanoJpeg.pas',
+  GLDrivers in 'GLDrivers.pas';
 
-{$if defined(Win32) or defined(Win64)}
-  {$ifdef fpc}
-    {$R Data.res}
-  {$else}
-    {$R Data.res Data.rc}
-    {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
-  {$endif}
-{$ifend}
 var
   ZApp : TZApplication;
 begin

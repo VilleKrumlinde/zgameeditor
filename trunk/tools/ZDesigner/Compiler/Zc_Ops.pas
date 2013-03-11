@@ -879,6 +879,12 @@ begin
     Exit(Op);
   end;
 
+  if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctArray) then
+  begin
+    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(ExistingType.TheArray));
+    Exit(Op);
+  end;
+
   if (ExistingType.Kind=zctVoid) and (WantedType.Kind=zctXptr) then
   begin
     IdInfo := Op.GetIdentifierInfo;
@@ -1143,6 +1149,7 @@ var
       'S' : Result.Kind := zctString;
       'M' : Result.Kind := zctModel;
       'R' : Result.Kind := zctReference;
+      'A' : Result.Kind := zctArray;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
@@ -1153,6 +1160,7 @@ var
     F : TZcOpFunctionBuiltIn;
     I,J : integer;
     Arg : TZcOpArgumentVar;
+    A : TDefineArray;
   begin
     F := TZcOpFunctionBuiltIn.Create(BuiltInCleanUps);
     F.Id := Id;
@@ -1169,6 +1177,14 @@ var
       begin
         J := PosEx('}',Sig,I+1);
         Arg.Typ.ReferenceClassId := ComponentManager.GetInfoFromName(Copy(Sig,I+2, J-I-2)).ClassId;
+        I := J+1;
+      end else if Arg.Typ.Kind=zctArray then
+      begin
+        J := PosEx('}',Sig,I+1);
+        A := TDefineArray.Create(nil);
+        BuiltInCleanUps.Add(A);
+        Arg.Typ.TheArray := A;
+        A._Type := ZTypeToVarType(CharToType( Sig[I+2] ).Kind);
         I := J+1;
       end else
         Inc(I);
@@ -1224,6 +1240,7 @@ begin
   MakeOne('touchGetID',fcTouchGetID,'II');
   MakeOne('getBinaryProp',fcGetBinaryProp,'VVR{Array}');
   MakeOne('setBinaryProp',fcSetBinaryProp,'VVR{Array}');
+  MakeOne('getModels',fcGetModels,'VA{M}I');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);

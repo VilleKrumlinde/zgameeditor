@@ -22,7 +22,7 @@ unit ZApplication;
 
 interface
 
-uses ZClasses,Meshes,Collision,Commands,AudioComponents
+uses ZClasses,Meshes,Collision,Commands,AudioComponents, GLDrivers
   {$ifndef minimal},Generics.Collections,uSymTab,Contnrs{$endif}
 ;
 
@@ -87,6 +87,7 @@ type
   public
     Content : TZComponentList;
     Models : TModels;  //not a property
+    Driver : TGLDriverBase;
     Collisions : TCollisionChecks;
     States : TZComponentList;
     OnLoaded : TZComponentList;
@@ -193,7 +194,7 @@ const
 
 implementation
 
-uses ZPlatform,ZOpenGL,ZLog,AudioPlayer,ZMath,Renderer
+uses ZPlatform,ZLog,AudioPlayer,ZMath,Renderer,ZOpenGL
   {$ifndef minimal}
   ,ZExpressions,SysUtils,Zc_Ops,Classes,Compiler
   {$endif}
@@ -209,6 +210,8 @@ begin
 
   Collisions := TCollisionChecks.Create(Models,Self);
   DepthList := TZArrayList.CreateReferenced;
+
+  Self.Driver := GLDrivers.CreateDriver(0);
 
   {$ifndef minimal}
   ConstantMap := TDictionary<AnsiString,TObject>.Create;
@@ -229,6 +232,8 @@ begin
   DepthList.Free;
   if not HasShutdown then
     Shutdown;
+
+  Driver.Free;
 
   {$ifndef minimal}
   ConstantMap.Free;
@@ -654,26 +659,26 @@ begin
   begin
   {$endif}
     //Setup view and camera
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity;
-    gluPerspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity;
+    Driver.MatrixMode(GL_PROJECTION);
+    Driver.LoadIdentity;
+    Driver.Perspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+    Driver.MatrixMode(GL_MODELVIEW);
+    Driver.LoadIdentity;
   {$ifdef zgeviz}
   end;
   {$endif}
 
   {$ifdef zgeviz}
-  glRotatef( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
+  Driver.Rotate( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
   {$endif}
 
   //Reverse order to make XYZ-rotation
-  glRotatef( (CameraRotation[0]*360) , 1, 0, 0);
-  glRotatef( (CameraRotation[1]*360) , 0, 1, 0);
-  glRotatef( (CameraRotation[2]*360) , 0, 0, 1);
+  Driver.Rotate( (CameraRotation[0]*360) , 1, 0, 0);
+  Driver.Rotate( (CameraRotation[1]*360) , 0, 1, 0);
+  Driver.Rotate( (CameraRotation[2]*360) , 0, 0, 1);
   //Måste ta negativt på cameraposition för att dess axlar ska bete sig
   //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+  Driver.Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 end;
 
 procedure TZApplication.UpdateScreen;
@@ -713,7 +718,9 @@ begin
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, @Self.AmbientLightColor);
 
     if Lights.Count=0 then
+    begin
       glLightfv(GL_LIGHT0,GL_POSITION,@LightPosition)
+    end
     else
     begin
       for J := 0 to Lights.Count-1 do
@@ -1194,7 +1201,7 @@ begin
   case Self.Kind of
     catPerspective :
       begin
-        gluPerspective(Self.FOV, App.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+        App.Driver.Perspective(Self.FOV, App.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
       end;
   else
     begin
@@ -1205,22 +1212,22 @@ begin
       {$endif}
       H := (1.0/Self.OrthoZoom);
       W := App.ActualViewportRatio * H;
-      glOrtho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
+      App.Driver.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
       {$ifndef minimal}
       end;
       {$endif}
     end;
   end;
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
+  App.Driver.MatrixMode(GL_MODELVIEW);
+  App.Driver.LoadIdentity;
 
   //Reverse order to make XYZ-rotation
-  glRotatef( (Rotation[0]*360) , 1, 0, 0);
-  glRotatef( (Rotation[1]*360) , 0, 1, 0);
-  glRotatef( (Rotation[2]*360) , 0, 0, 1);
+  App.Driver.Rotate( (Rotation[0]*360) , 1, 0, 0);
+  App.Driver.Rotate( (Rotation[1]*360) , 0, 1, 0);
+  App.Driver.Rotate( (Rotation[2]*360) , 0, 0, 1);
   //Måste ta negativt på cameraposition för att dess axlar ska bete sig
   //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  glTranslatef(-Position[0], -Position[1], -Position[2]);
+  App.Driver.Translate(-Position[0], -Position[1], -Position[2]);
 end;
 
 procedure TCamera.DefineProperties(List: TZPropertyList);

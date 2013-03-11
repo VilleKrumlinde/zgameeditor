@@ -624,6 +624,9 @@ begin
     ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
   begin
     //Local variable or argument
+    if (TZcOpVariableBase(LeftOp.Ref).Typ.Kind=zctArray) then
+      //Local arrays cannot be assigned because the reference are cleaned up on function exit
+      raise ECodeGenError.Create('Cannot assign to: ' + LeftOp.ToString);
     GenValue(RightOp);
     if LeaveValue=alvPost then
       with TExpMisc.Create(Target) do
@@ -828,6 +831,9 @@ var
           StackSlot := L.Ordinal;
           Dimensions := TDefineArray(L.Typ.TheArray).Dimensions;
           _Type := TDefineArray(L.Typ.TheArray)._Type;
+          Size1 := TDefineArray(L.Typ.TheArray).SizeDim1;
+          Size2 := TDefineArray(L.Typ.TheArray).SizeDim2;
+          Size3 := TDefineArray(L.Typ.TheArray).SizeDim3;
         end;
     end;
     for I := 0 to Func.Statements.Count - 1 do

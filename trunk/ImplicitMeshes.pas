@@ -750,7 +750,6 @@ begin
   {$endif}
 
   Mesh := TMesh.Create(nil);
-  Mesh.Style := msTris;
 
   Vertices := TZArrayList.Create;
   Normals := TZArrayList.Create;

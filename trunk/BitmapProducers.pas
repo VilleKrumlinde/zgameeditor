@@ -153,7 +153,7 @@ type
 
 implementation
 
-uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg;
+uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg, ZApplication;
 
 function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
@@ -192,7 +192,7 @@ begin
     B.UseTextureBegin;
     glPushMatrix();
     glScalef(2,2,2);
-    RenderUnitQuad;
+    RenderUnitQuad(Self.ZApp.Driver);
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
   end;

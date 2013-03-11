@@ -1432,7 +1432,7 @@ var
 //  glUniform4iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniformMatrix2fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniformMatrix3fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glUniformMatrix4fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glUniformMatrix4fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glValidateProgram: procedure(_program: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glVertexAttrib1d: procedure(index: GLuint; x: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glVertexAttrib1dv: procedure(index: GLuint; const v: PGLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1497,6 +1497,11 @@ var
   glGetFramebufferAttachmentParameterivEXT: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGenerateMipmapEXT: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
+  glDisableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glEnableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glVertexAttribPointer : procedure(index : GLuint; size : GLint; _type : GLenum; normalized : GLboolean; stride : GLsizei; ptr : pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
+
   ShadersSupported,MultiTextureSupported,VbosSupported,FbosSupported : boolean;
 
 
@@ -1532,7 +1537,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..31{$ifndef minimal}+5{$endif}] of
+const ExtFuncArray : packed array[0..35{$ifndef minimal}+5{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1596,7 +1601,7 @@ const ExtFuncArray : packed array[0..31{$ifndef minimal}+5{$endif}] of
 //(Name : 'glUniformMatrix2fv'; Ptr : @@glUniformMatrix2fv),
 (Name : 'glUniform1fv'; Ptr : @@glUniform1fv),
 //(Name : 'glUniformMatrix3fv'; Ptr : @@glUniformMatrix3fv),
-//(Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
+(Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
 //(Name : 'glUniform2i'; Ptr : @@glUniform2i),
 (Name : 'glUseProgram'; Ptr : @@glUseProgram),
  //Multitexture
@@ -1619,7 +1624,11 @@ const ExtFuncArray : packed array[0..31{$ifndef minimal}+5{$endif}] of
 (Name : 'glCheckFramebufferStatusEXT'; Ptr : @@glCheckFramebufferStatusEXT),
 (Name : 'glFramebufferTexture2DEXT'; Ptr : @@glFramebufferTexture2DEXT),
 (Name : 'glFramebufferRenderbufferEXT'; Ptr : @@glFramebufferRenderbufferEXT),
-(Name : 'glGenerateMipmapEXT'; Ptr : @@glGenerateMipmapEXT)
+(Name : 'glGenerateMipmapEXT'; Ptr : @@glGenerateMipmapEXT),
+
+(Name : 'glDisableVertexAttribArray'; Ptr : @@glDisableVertexAttribArray),
+(Name : 'glEnableVertexAttribArray'; Ptr : @@glEnableVertexAttribArray),
+(Name : 'glVertexAttribPointer'; Ptr : @@glVertexAttribPointer)
 );
 
 procedure LoadOpenGLExtensions;

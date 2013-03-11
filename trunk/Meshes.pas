@@ -38,8 +38,6 @@ type
 
   TMesh = class(TContent)
   private
-    VboHandles: array[0..1] of GLuint;
-    VboOffsets : array[0..2] of integer;
     procedure FreeData;
   protected
     procedure Transform(const Matrix,NormalMatrix : TZMatrix4f);
@@ -57,7 +55,6 @@ type
     Normals : PZVector3Array;
     TexCoords : PZVector2Array;
     Colors : PMeshColorArray;
-    Style : (msTris,msQuads);
     CurrentRecursion : integer;
     {$ifndef minimal}
     BoundSphere :
@@ -67,6 +64,8 @@ type
       end;
     {$endif}
     IsDynamic : boolean;   //True if vertices can be changed in runtime
+    VboHandles: array[0..1] of GLuint;
+    VboOffsets : array[0..2] of integer;
     procedure ComputeNormals;
     procedure CreateData(VQuantity, TQuantity: integer; WithTexCoords : boolean = False; WithColors : boolean = False);
     procedure MakeNet(XCount, YCount: integer);
@@ -350,9 +349,6 @@ var
   ax,ay,az,bx,by,bz,nx,ny,nz : single;
   I,I1,I2,I3 : integer;
 begin
-  if Style<>msTris then
-    Exit;
-
   //One normal for each vertex
 //  GetMem(Normals,SizeOf(TZVector3f) * VerticesCount);
   FillChar(Normals^,SizeOf(TZVector3f) * VerticesCount,0);
@@ -430,7 +426,6 @@ begin
   Normals := M.Normals;
   TexCoords := M.TexCoords;
   Colors := M.Colors;
-  Style := M.Style;
   IsDynamic := M.IsDynamic;
   M.Vertices :=nil;
   M.Indices :=nil;
@@ -551,67 +546,47 @@ begin
     {$endif}
   end;
 
-  if ZOpenGL.VbosSupported and (not IsDynamic) then
+  if VbosSupported and (not Self.IsDynamic) then
   begin
-
+    //Use vertex buffer objects
+    //prepare vbo
     if Self.VboHandles[0]=0 then
     begin
-      glGenBuffersARB(2, @VboHandles);
+      glGenBuffersARB(2, @Self.VboHandles);
 
-      VertSize := VerticesCount * SizeOf(TZVector3f);
+      VertSize := Self.VerticesCount * SizeOf(TZVector3f);
       NormSize := VertSize;
 
-      if Colors<>nil then
-        ColsSize:= VerticesCount * SizeOf(TMeshVertexColor)
+      if Self.Colors<>nil then
+        ColsSize:= Self.VerticesCount * SizeOf(TMeshVertexColor)
       else
         ColsSize:= 0;
 
-      if TexCoords<>nil then
-        TexSize:= VerticesCount * SizeOf(TZVector2f)
+      if Self.TexCoords<>nil then
+        TexSize:= Self.VerticesCount * SizeOf(TZVector2f)
       else
         TexSize:= 0;
 
-      glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
+      glBindBufferARB(GL_ARRAY_BUFFER_ARB, Self.VboHandles[0]);
       glBufferDataARB(GL_ARRAY_BUFFER_ARB, VertSize + NormSize + ColsSize + TexSize, nil, STATIC_DRAW_ARB);
 
-      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, VertSize, Vertices);
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, VertSize, Self.Vertices);
 
-      VboOffsets[0] := VertSize;
-      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[0], NormSize, Normals);
+      Self.VboOffsets[0] := VertSize;
+      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[0], NormSize, Self.Normals);
 
-      VboOffsets[1]:=VboOffsets[0]+NormSize;
+      Self.VboOffsets[1] := Self.VboOffsets[0] + NormSize;
       if ColsSize>0 then
-        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[1], ColsSize, Colors);
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[1], ColsSize, Self.Colors);
 
-      VboOffsets[2]:=VboOffsets[1]+ColsSize;
+      Self.VboOffsets[2] := Self.VboOffsets[1] + ColsSize;
       if TexSize>0 then
-        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, VboOffsets[2], TexSize, TexCoords);
+        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[2], TexSize, Self.TexCoords);
 
-      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
-      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, IndicesCount * SizeOf(TMeshVertexIndex), Indices, STATIC_DRAW_ARB);
+      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Self.VboHandles[1]);
+      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Self.IndicesCount * SizeOf(TMeshVertexIndex), Self.Indices, STATIC_DRAW_ARB);
     end;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, VboHandles[1]);
-
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, VboHandles[0]);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT,0,pointer(VboOffsets[0]));
-
-    if Colors<>nil then
-    begin
-      glEnableClientState(GL_COLOR_ARRAY);
-      glColorPointer(4,GL_UNSIGNED_BYTE,0,pointer(VboOffsets[1]));
-    end;
-
-    if TexCoords<>nil then
-    begin
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-      glTexCoordPointer(2,GL_FLOAT,0,pointer(VboOffsets[2]));
-    end;
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3,GL_FLOAT,0,nil);
   end;
-
 end;
 
 procedure TMesh.Scale(const V: TZVector3f);
@@ -967,7 +942,6 @@ begin
     Exit;
   {$endif}
   Mesh := TMesh.Create(nil);
-  Mesh.Style := msTris;
 
   ZSm1 := ZSamples-1;
   ZSm2 := ZSamples-2;
@@ -1590,7 +1564,6 @@ var
 
 begin
   Mesh := TMesh.Create(nil);
-  Mesh.Style := msTris;
 
   if Grid2DOnly then
   begin
@@ -1675,7 +1648,6 @@ begin
   Stream.Read(TriCount,4);
 
   Mesh := TMesh.Create(nil);
-  Mesh.Style := msTris;
   Mesh.CreateData( VertCount,TriCount, Self.HasTextureCoords, Self.HasVertexColors);
 
   Stream.Read(MinV,3*4);
