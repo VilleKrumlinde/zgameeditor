@@ -756,10 +756,21 @@ begin
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 
+    if (CurrentInputSymbol=intConSym) then
+    begin
+      Get;
+                     A.SizeDim1 := StrToInt(LexString); 
+    end;
     while (CurrentInputSymbol=commaSym) do
     begin
       Get;
                    if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); 
+      if (CurrentInputSymbol=intConSym) then
+      begin
+        Get;
+                       if (A.Dimensions=dadTwo) then A.SizeDim2 := StrToInt(LexString) else A.SizeDim3 := StrToInt(LexString);
+           
+      end;
     end;
     Expect(rbrackSym);
   end;

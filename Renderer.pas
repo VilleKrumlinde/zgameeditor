@@ -22,7 +22,7 @@ unit Renderer;
 
 interface
 
-uses Meshes,ZClasses,ZBitmap,ZExpressions;
+uses Meshes,ZClasses,ZBitmap,ZExpressions,GLDrivers;
 
 type
   TRenderCommand = class(TCommand);
@@ -85,7 +85,7 @@ type
 
   TShader = class(TZComponent)
   strict private
-    ProgHandle,VShaderHandle,FShaderHandle : cardinal;
+    VShaderHandle,FShaderHandle : cardinal;
     LastVariableUpdate : single;
     TexCount,FirstTexIndex : integer;
     procedure ReInit;
@@ -102,6 +102,8 @@ type
     FragmentShaderSource : TPropString;
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
+    ProgHandle : integer;
+    MvpLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
   end;
@@ -244,6 +246,8 @@ type
 
   TRenderParticles = class(TRenderCommand)
   private
+    RenderBuffer : PFloat;
+    RenderBufferSize : integer;
     Particles : TZArrayList;
     EmitTime,Time : single;
     PColor : TZColorf;
@@ -320,25 +324,13 @@ type
     procedure RemoveLight(const LightId : integer);
   end;
 
-  TShadowHandler = class
-  strict private
-    shadowMapWidth, shadowMapHeight : integer;
-    depthTextureId, fboId : integer;
-  public
-    procedure Init;
-    procedure SetupShadowMapCreation;
-    procedure Setup3rdPass;
-  end;
-
 procedure InitRenderer;
-procedure RenderMesh(Mesh : TMesh);
 
 procedure Render_Begin;
 procedure RenderModel(Model : TModel);
 procedure Render_End;
-procedure ApplyRotation(const Rotate : TZVector3f);
 
-procedure RenderUnitQuad;
+procedure RenderUnitQuad(Driver : TGLDriverBase);
 
 {$ifndef minimal}
 procedure AssertNotRenderMode;
@@ -365,54 +357,12 @@ var
   DefaultMaterialTexture : TMaterialTexture = nil;
   DefaultFont : TFont = nil;
 
-const
-  {$if SizeOf(TMeshVertexIndex)=2}
-  TMeshVertexIndex_GL = GL_UNSIGNED_SHORT;
-  {$ifend}
-  {$if SizeOf(TMeshVertexIndex)=4}
-  TMeshVertexIndex_GL = GL_UNSIGNED_INT;
-  {$ifend}
-
-
-
 procedure EnableMaterial(OldM,NewM : TMaterial); forward;
 
-procedure ApplyRotation(const Rotate : TZVector3f);
-begin
-  //*180/PI
-  //Reverse order to make XYZ-rotation
-  if Rotate[2]<>0 then
-    glRotatef( (Rotate[2]*360) , 0, 0, 1);
-  if Rotate[1]<>0 then
-    glRotatef( (Rotate[1]*360) , 0, 1, 0);
-  if Rotate[0]<>0 then
-    glRotatef( (Rotate[0]*360) , 1, 0, 0);
-end;
 
 { TRenderer }
 
 {$ifndef minimal}
-procedure RenderNormals(Mesh : TMesh);
-var
-  EndPoint : TZVector3f;
-  I : integer;
-begin
-  // draw red unlit lines
-  glColor3f(1,0,0);
-  glDisable(GL_LIGHTING);
-  glBegin(GL_LINES);
-
-  // loop through all verts
-  for I := 0 to Mesh.VerticesCount-1 do
-  begin
-    glVertex3f(Mesh.Vertices^[I][0],Mesh.Vertices^[I][1],Mesh.Vertices^[I][2]);                  // from the vertex point...
-    EndPoint := VecAdd3(Mesh.Vertices^[I],Mesh.Normals^[I]); // to the vertex plus the normal
-    glVertex3f(EndPoint[0],EndPoint[1],EndPoint[2]);
-  end;
-  glEnd();
-  glEnable(GL_LIGHTING);
-end;
-
 //Draw area around collision bounds
 //Code originally in Z-script by Kjell
 procedure RenderCollisionBounds(const Style : integer;
@@ -511,54 +461,6 @@ begin
   glPopAttrib;
 end;
 {$endif}
-
-procedure RenderMesh(Mesh: TMesh);
-begin
-  Mesh.BeforeRender;
-
-  case Mesh.Style of
-    msTris :
-      begin
-        if VbosSupported and (not Mesh.IsDynamic) then
-        begin
-          //Use vertex buffer objects
-          //vbo is prepared in Mesh.BeforeRender
-          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
-          glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-          glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-        end else
-        begin
-          //Use vertex arrays
-          glEnableClientState(GL_VERTEX_ARRAY);
-          glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
-          glEnableClientState(GL_NORMAL_ARRAY);
-          glNormalPointer(GL_FLOAT,0,Mesh.Normals);
-          if Mesh.TexCoords<>nil then
-          begin
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
-          end;
-          if Mesh.Colors<>nil then
-          begin
-            glEnableClientState(GL_COLOR_ARRAY);
-            glColorPointer(4,GL_UNSIGNED_BYTE,0,Mesh.Colors);
-          end;
-          glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,Mesh.Indices);
-        end;
-      end;
-  end;
-
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_NORMAL_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDisableClientState(GL_COLOR_ARRAY);
-
-  {$ifndef minimal}
-  //Display normals for debugging
-  if NormalsVisible then
-    RenderNormals(Mesh);
-  {$endif}
-end;
 
 {$ifndef minimal}
 procedure AssertRenderMode;
@@ -769,12 +671,16 @@ begin
 end;
 
 procedure RenderModel(Model : TModel);
+var
+  Driver : TGLDriverBase;
 begin
-  glPushMatrix();
-  glTranslatef(Model.Position[0],Model.Position[1],Model.Position[2]);
-  ApplyRotation(Model.Rotation);
+  Driver := Model.ZApp.Driver;
+
+  Driver.PushMatrix();
+  Driver.Translate(Model.Position[0],Model.Position[1],Model.Position[2]);
+  Driver.ApplyRotation(Model.Rotation);
   if not VecIsIdentity3(Model.Scale) then
-    glScalef(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
+    Driver.Scale(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
   Model.RunRenderCommands;
   {$ifndef minimal}
   if CollisionBoundsVisible then
@@ -792,7 +698,7 @@ begin
              Model.CollisionOffset[1],
              Model.CollisionOffset[2]);
   {$endif}
-  glPopMatrix();
+  Driver.PopMatrix();
 end;
 
 //Set OpenGL defaults
@@ -913,7 +819,7 @@ begin
   if Mesh=nil then
     Exit;
   {$endif}
-  Renderer.RenderMesh(Mesh);
+  Self.ZApp.Driver.RenderMesh(Mesh);
 end;
 
 {$ifndef minimal}
@@ -938,11 +844,14 @@ end;
 
 procedure TRenderTransform.Execute;
 //Transforms the current matrix
+var
+  Driver : TGLDriverBase;
 begin
-  glTranslatef(Translate[0],Translate[1],Translate[2]);
-  ApplyRotation(Rotate);
+  Driver := Self.ZApp.Driver;
+  Driver.Translate(Translate[0],Translate[1],Translate[2]);
+  Driver.ApplyRotation(Rotate);
   if not VecIsIdentity3(Scale) then
-    glScalef(Scale[0],Scale[1],Scale[2]);
+    Driver.Scale(Scale[0],Scale[1],Scale[2]);
 end;
 
 { TRenderTransformGroup }
@@ -958,14 +867,17 @@ begin
 end;
 
 procedure TRenderTransformGroup.Execute;
+var
+  Driver : TGLDriverBase;
 begin
-  glPushMatrix();
-    glTranslatef(Translate[0],Translate[1],Translate[2]);
-    ApplyRotation(Rotate);
+  Driver := Self.ZApp.Driver;
+  Driver.PushMatrix();
+    Driver.Translate(Translate[0],Translate[1],Translate[2]);
+    Driver.ApplyRotation(Rotate);
     if not VecIsIdentity3(Scale) then
-      glScalef(Scale[0],Scale[1],Scale[2]);
+      Driver.Scale(Scale[0],Scale[1],Scale[2]);
     Children.ExecuteCommands;
-  glPopMatrix();
+  Driver.PopMatrix();
 end;
 
 procedure TRenderTransformGroup.Update;
@@ -976,7 +888,7 @@ end;
 
 { TRenderSprite }
 
-procedure RenderUnitQuad;
+procedure RenderUnitQuad(Driver : TGLDriverBase);
 const
   Width = 1;
   Height = 1;
@@ -1003,13 +915,7 @@ begin
   Verts[1] := Vector2f(X+W,Y-H); Texc[1] := Vector2f(1.0, 0.0);
   Verts[2] := Vector2f(X+W,Y+H); Texc[2] := Vector2f(1.0, 1.0);
   Verts[3] := Vector2f(X-W,Y+H); Texc[3] := Vector2f(0.0, 1.0);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glVertexPointer(2,GL_FLOAT,0,@Verts);
-  glTexCoordPointer(2,GL_FLOAT,0,@Texc);
-  glDrawArrays(GL_TRIANGLE_FAN,0,4);
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  Driver.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
 end;
 
 
@@ -1024,7 +930,7 @@ begin
     Z-Buffer on/off (depth)
     DrawBackFace on/off
   }
-  RenderUnitQuad;
+  RenderUnitQuad(Self.ZApp.Driver);
 end;
 
 { TRenderBeams }
@@ -1066,7 +972,7 @@ var
   B : TBeam;
   Angle,X,Y,C,S : single;
   Mem : pointer;
-  Vp,Tp : PFloat;
+  Vp,Tp,V,T : PFloat;
   procedure Vert(const T1,T2,V1,V2 : single);
   begin
     Tp^ := T1; Inc(Tp);
@@ -1083,10 +989,7 @@ begin
   Vp := Mem;
   Tp := pointer(integer(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
 
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glVertexPointer(2,GL_FLOAT,0,Vp);
-  glTexCoordPointer(2,GL_FLOAT,0,Tp);
+  V := Vp; T := Tp;
 
   for I := 0 to Beams.Count-1 do
   begin
@@ -1108,10 +1011,7 @@ begin
     Vert(0.5 + C/2 , 0.5 + S/2, X,Y);
   end;
 
-  glDrawArrays(GL_TRIANGLES, 0, Beams.Count*3);
-
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  Self.ZApp.Driver.RenderArrays(GL_TRIANGLES,Beams.Count*2,2,V,T,nil);
 
   FreeMem(Mem);
 end;
@@ -1213,6 +1113,7 @@ var
   FontSize : integer;
   CurFont : TFont;
   UseBuiltInFont : boolean;
+  Driver : TGLDriverBase;
   FloatBuf : array[0..19] of ansichar;
   TextBuf : array[0..(8*1024-1)] of ansichar;
 begin
@@ -1230,7 +1131,10 @@ begin
   else
   begin
     if DefaultFont=nil then
+    begin
       DefaultFont := TFont.Create(nil);
+      DefaultFont._ZApp := Self.ZApp;
+    end;
     CurFont := DefaultFont;
     Spacing := BuiltInSpacing;
   end;
@@ -1272,21 +1176,23 @@ begin
   if TheText=nil then
     Exit;
 
+  Driver := Self.ZApp.Driver;
+
   //todo move to Begin2D(), End2D()-procs
   if not Self.UseModelSpace then
   begin
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    Driver.MatrixMode(GL_PROJECTION);
+    Driver.PushMatrix();
+    Driver.LoadIdentity();
+    Driver.MatrixMode(GL_MODELVIEW);
+    Driver.PushMatrix();
+    Driver.LoadIdentity();
     //Must account for viewpointratio here because of the -1 .. 1 resolution
     YScaleFactor := ZApp.ActualViewportRatio;
   end
   else
   begin
-    glPushMatrix();
+    Driver.PushMatrix();
     YScaleFactor := 1;
   end;
 
@@ -1298,9 +1204,9 @@ begin
   glDisable(GL_TEXTURE_GEN_S);
   glDisable(GL_TEXTURE_GEN_T);
 
-  glTranslatef(Self.X,Self.Y,0);
+  Driver.Translate(Self.X,Self.Y,0);
   //Scale 1 = 20 characters width on screen
-  glScalef(Scale * 2/(CharsScreen+CharsScreen*Spacing),
+  Driver.Scale(Scale * 2/(CharsScreen+CharsScreen*Spacing),
     Scale * 2/(CharsScreen+CharsScreen*Spacing) * YScaleFactor * StretchY,
     1);
 
@@ -1346,12 +1252,12 @@ begin
 
     ZExpressions.RunCode(RenderCharExpression.Code);
 
-    glPushMatrix;
-      glTranslatef(CharX,CharY,0);
-      glScalef(CharScale,CharScale,1);
-      glRotatef(CharRotate*180/PI,0,0,1);
+    Driver.PushMatrix;
+      Driver.Translate(CharX,CharY,0);
+      Driver.Scale(CharScale,CharScale,1);
+      Driver.Rotate(CharRotate*180/PI,0,0,1);
       CurFont.RenderCharacter(CurChar,FontSize);
-    glPopMatrix;
+    Driver.PopMatrix;
 
     CharX := CharX + XStep;
 
@@ -1364,12 +1270,12 @@ begin
   // restore matrices, todo End2D()-proc
   if not Self.UseModelSpace then
   begin
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    Driver.PopMatrix();
+    Driver.MatrixMode(GL_PROJECTION);
+    Driver.PopMatrix();
+    Driver.MatrixMode(GL_MODELVIEW);
   end else
-    glPopMatrix();
+    Driver.PopMatrix();
 
 end;
 
@@ -1458,8 +1364,10 @@ var
   CurSize,FontSize : integer;
   IsBuiltIn : boolean;
   B : TZBitmap;
+  Driver : TGLDriverBase;
 begin
   IsBuiltIn := Self.Bitmap=nil;
+  Driver := Self.ZApp.Driver;
 
   if IsBuiltIn then
   begin
@@ -1482,7 +1390,7 @@ begin
     begin
       B := TZBitmap(Characters[Char]);
       B.UseTextureBegin;
-      RenderUnitQuad;
+      RenderUnitQuad(Driver);
       //B.UseTextureEnd;
     end;
   end else
@@ -1491,22 +1399,22 @@ begin
     Dec(Char,Self.FirstChar);
     if Char>=0 then
     begin
-      glMatrixMode(GL_TEXTURE);
-      glPushMatrix();
-      glLoadIdentity();
+      Driver.MatrixMode(GL_TEXTURE);
+      Driver.PushMatrix();
+      Driver.LoadIdentity();
       {$ifndef minimal} //Avoid potential div by zero
       if BmStruct.CharsPerRow>0 then
       {$endif}
-        glTranslatef( BmStruct.TransX*(Char mod BmStruct.CharsPerRow) ,
+        Driver.Translate( BmStruct.TransX*(Char mod BmStruct.CharsPerRow) ,
           BmStruct.TopLeftY - (BmStruct.TransY*((Char div BmStruct.CharsPerRow)+1)),0);
-      glScalef(BmStruct.ScaleX,BmStruct.ScaleY,1);
-      glMatrixMode(GL_MODELVIEW);
+      Driver.Scale(BmStruct.ScaleX,BmStruct.ScaleY,1);
+      Driver.MatrixMode(GL_MODELVIEW);
         Bitmap.UseTextureBegin;
-        RenderUnitQuad;
+        RenderUnitQuad(Driver);
         //Bitmap.UseTextureEnd;
-      glMatrixMode(GL_TEXTURE);
-      glPopMatrix();
-      glMatrixMode(GL_MODELVIEW);
+      Driver.MatrixMode(GL_TEXTURE);
+      Driver.PopMatrix();
+      Driver.MatrixMode(GL_MODELVIEW);
     end;
   end;
 end;
@@ -1671,7 +1579,7 @@ begin
   //Recompute normals, the vertice have changed
   Mesh.ComputeNormals;
 
-  RenderMesh(Mesh);
+  Self.ZApp.Driver.RenderMesh(Mesh);
 end;
 
 
@@ -1695,24 +1603,21 @@ end;
 destructor TRenderParticles.Destroy;
 begin
   Particles.Free;
+  FreeMem(RenderBuffer);
   inherited;
 end;
 
-//Define to use interleaved arrays
-//Not worth the effort on nvidia
-{$ifdef Android}
-  {$define USE_PARTICLE_ARRAYS}
-{$endif}
 procedure TRenderParticles.Execute;
 var
   I : integer;
   P : TParticle;
   X,Y,W,H : single;
   Tmp : TZVector2f;
-  {$ifdef USE_PARTICLE_ARRAYS}
-  Ar,ArV,ArT : PFloat;
+  ArV,ArT : PFloat;
   ArC : PInteger;
   MemSize,ColorB : integer;
+  V,T,C : pointer;
+
   procedure Vert(const T1,T2,V1,V2 : single);
   begin
     ArT^ := T1; Inc(ArT);
@@ -1721,7 +1626,7 @@ var
     ArV^ := V2; Inc(ArV);
     ArC^ := ColorB; Inc(ArC);
   end;
-  {$endif}
+
 begin
   {$ifndef minimal}
   AssertRenderMode;
@@ -1732,26 +1637,24 @@ begin
     if CurrentModel<>nil then
     begin
       Tmp := PZVector2f(@CurrentModel.Position)^;
-      glTranslatef(-Tmp[0],-Tmp[1],0);
+      Self.ZApp.Driver.Translate(-Tmp[0],-Tmp[1],0);
     end;
   end;
 
-  {$ifdef USE_PARTICLE_ARRAYS}
   if Particles.Count>0 then
   begin
     //Every particle has 6 vertex (two tris). Per vertex: 2 floats coords, 2 float tex coords, 1 integer color
     MemSize := Particles.Count * 6 * (SizeOf(Single)*4 + SizeOf(Integer));
-    GetMem(Ar,MemSize);
-    ArV := Ar;
+    if MemSize>Self.RenderBufferSize then
+    begin
+      ReAllocMem(Self.RenderBuffer,MemSize);
+      Self.RenderBufferSize := MemSize;
+    end;
+    ArV := Self.RenderBuffer;
     ArT := Pointer(Integer(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
     ArC := Pointer(Integer(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
 
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(2,GL_FLOAT,0,ArV);
-    glTexCoordPointer(2,GL_FLOAT,0,ArT);
-    glColorPointer(4,GL_UNSIGNED_BYTE,0,ArC);
+    V := ArV; T := ArT; C := ArC;
 
     for I := 0 to Particles.Count-1 do
     begin
@@ -1783,51 +1686,8 @@ begin
       Vert(1,1,X+W,Y+H);
     end;
 
-    glDrawArrays(GL_TRIANGLES, 0, Particles.Count*6);
-
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    FreeMem(Ar);
+    Self.ZApp.Driver.RenderArrays(GL_TRIANGLES,Particles.Count*6,2,V,T,C);
   end;
-  {$endif}
-
-  {$ifndef USE_PARTICLE_ARRAYS}
-  glBegin(GL_QUADS);
-  for I := 0 to Particles.Count-1 do
-  begin
-    P := TParticle(Particles[I]);
-
-    X := P.Position[0];
-    Y := P.Position[1];
-    W := P.Width * 0.5;
-    H := P.Height * 0.5;
-
-    glColor4fv(@P.Color);
-
-    //..
-    //x.
-    glTexCoord2f(0.0, 0.0);
-    glVertex2f(X-W,Y-H);
-
-    //..
-    //.x
-    glTexCoord2f(1.0, 0.0);
-    glVertex2f(X+W,Y-H);
-
-    //.x
-    //..
-    glTexCoord2f(1.0, 1.0);
-    glVertex2f(X+W,Y+H);
-
-    //x.
-    //..
-    glTexCoord2f(0.0, 1.0);
-    glVertex2f(X-W,Y+H);
-  end;
-  glEnd;
-  {$endif}
 
   //Restore default color
   glColor3fv(@ZMath.UNIT_XYZ3);
@@ -2229,6 +2089,8 @@ begin
     UpdateVariableValues;
     LastVariableUpdate := ZApp.Time;
   end;
+
+  Self.ZApp.Driver.SetCurrentShader(Self);
 end;
 
 procedure TShader.CleanUp;
@@ -2591,9 +2453,9 @@ begin
   Id := GL_LIGHT0 + LightId;
   if LightId=0 then
   begin
+    glEnable(Id);
     //Also restore diffuse color
     glLightfv(Id, GL_DIFFUSE, @ZMath.UNIT_XYZ4);
-    glEnable(Id);
   end
   else
     glDisable(Id);
@@ -2613,134 +2475,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'SpotExponent',{$ENDIF}integer(@SpotExponent), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'SpotCutoff',{$ENDIF}integer(@SpotCutoff), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
-end;
-
-{ TShadowHandler }
-
-//NOT YET USED
-//Using code from http://fabiensanglard.net/shadowmapping/index.php
-procedure TShadowHandler.Init;
-begin
-  shadowMapWidth := 512;
-  shadowMapHeight := 512;
-
-	// Try to use a texture depth component
-	glGenTextures(1, @depthTextureId);
-	glBindTexture(GL_TEXTURE_2D, depthTextureId);
-
-  // GL_LINEAR does not make sense for depth texture. However, next tutorial shows usage of GL_LINEAR and PCF
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  // Remove artefact on the edges of the shadowmap
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-
-  // No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nil);
-  glBindTexture(GL_TEXTURE_2D, 0);
-
-  // create a framebuffer object
-  glGenFramebuffersEXT(1, @fboId);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
-
-	// Instruct openGL that we won't bind a color texture with the currently binded FBO
-  glDrawBuffer(GL_NONE);
-//	glReadBuffer(GL_NONE);
-
-	// attach the texture to FBO depth attachment point
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D, depthTextureId, 0);
-
-  {$ifndef minimal}
-  if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
-    ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) );
-  {$endif}
-
-	// switch back to window-system-provided framebuffer
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-end;
-
-procedure TShadowHandler.Setup3rdPass;
-begin
-  (*
-	//3rd pass
-	//Draw with bright light
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, white);
-
-	//Calculate texture matrix for projection
-	//This matrix takes us from eye space to the light's clip space
-	//It is postmultiplied by the inverse of the current view matrix when specifying texgen
-	static MATRIX4X4 biasMatrix(0.5f, 0.0f, 0.0f, 0.0f,
-								0.0f, 0.5f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.5f, 0.0f,
-								0.5f, 0.5f, 0.5f, 1.0f);	//bias from [-1, 1] to [0, 1]
-	MATRIX4X4 textureMatrix=biasMatrix*lightProjectionMatrix*lightViewMatrix;
-
-	//Set up texture coordinate generation.
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_S, GL_EYE_PLANE, textureMatrix.GetRow(0));
-	glEnable(GL_TEXTURE_GEN_S);
-
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_T, GL_EYE_PLANE, textureMatrix.GetRow(1));
-	glEnable(GL_TEXTURE_GEN_T);
-
-	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_R, GL_EYE_PLANE, textureMatrix.GetRow(2));
-	glEnable(GL_TEXTURE_GEN_R);
-
-	glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_Q, GL_EYE_PLANE, textureMatrix.GetRow(3));
-	glEnable(GL_TEXTURE_GEN_Q);
-
-	//Bind & enable shadow map texture
-	glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
-	glEnable(GL_TEXTURE_2D);
-
-	//Enable shadow comparison
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE);
-
-	//Shadow comparison should be true (ie not in shadow) if r<=texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC_ARB, GL_LEQUAL);
-
-	//Shadow comparison should generate an INTENSITY result
-	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_INTENSITY);
-
-	//Set alpha test to discard false comparisons
-	glAlphaFunc(GL_GEQUAL, 0.99f);
-	glEnable(GL_ALPHA_TEST);
-  *)
-end;
-
-procedure TShadowHandler.SetupShadowMapCreation;
-begin
-(*
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fboId);	//Rendering offscreen
-
-	//Using the fixed pipeline to render to the depthbuffer
-	glUseProgram(0);
-
-	// In the case we render the shadowmap to a higher resolution, the viewport must be modified accordingly.
-	glViewport(0,0,shadowMapWidth,shadowMapHeight);
-
-	// Clear previous frame values
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	//Disable color rendering, we only want to write to the Z-Buffer
-//	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-//	setupMatrices(p_light[0],p_light[1],p_light[2],l_light[0],l_light[1],l_light[2]);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45,RENDER_WIDTH/RENDER_HEIGHT,10,40000);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-//**  gluLookAt(position_x,position_y,position_z,lookAt_x,lookAt_y,lookAt_z,0,1,0);
-
-	// Culling switching, rendering only backface, this is done to avoid self-shadowing
-	glCullFace(GL_FRONT);
-*)
 end;
 
 initialization

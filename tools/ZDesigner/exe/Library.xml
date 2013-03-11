@@ -787,8 +787,8 @@ kbInput[1] -= 1;]]>
             </Group>
           </OnRender>
           <Definitions>
-            <DefineArray Name="kbInput" Type="1" SizeDim1="2"/>
-            <DefineArray Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
+            <Array Name="kbInput" Type="1" SizeDim1="2"/>
+            <Array Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
             <Model Name="MyCamera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
               <OnRender>
                 <UseMaterial Material="DefaultMaterial"/>
@@ -1024,7 +1024,7 @@ DebugHSV.Color.B = ColorExample[2];]]>
             <RenderSprite/>
           </OnRender>
           <Definitions>
-            <DefineArray Name="ColorExample" SizeDim1="3"/>
+            <Array Name="ColorExample" SizeDim1="3"/>
             <Material Name="DefaultMaterialHSV" Shading="1" Light="0" ZBuffer="0"/>
           </Definitions>
         </AppState>
@@ -1166,7 +1166,7 @@ Debug.Translate.Z = MatrixExample[0,2,0];]]>
             </RenderTransformGroup>
           </OnRender>
           <Definitions>
-            <DefineArray Name="MatrixExample" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+            <Array Name="MatrixExample" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
             <Material Name="MatrixMaterial" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
           </Definitions>
         </AppState>
@@ -1203,20 +1203,20 @@ if(CharI != 0)
                   </Producers>
                 </Bitmap>
                 <Material Name="ArialMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0" Font="Arial"/>
-                <DefineArray Name="Letter" SizeDim1="128" Persistent="255">
+                <Array Name="Letter" SizeDim1="128" Persistent="255">
                   <Values>
 <![CDATA[78DA6360185870F6CC193BF2F4F9D851CB0DB3664ADA0F703080ED4F4B7B660765037103980D12333636B643F7B7B1F167B83C44BCC70E22D600536B0FD4876C2E560000B8961A6B]]>
                   </Values>
-                </DefineArray>
+                </Array>
               </Children>
             </Group>
             <Group Comment="String">
               <Children>
-                <DefineArray Name="String" Type="1" SizeDim1="64" Persistent="255">
+                <Array Name="String" Type="1" SizeDim1="64" Persistent="255">
                   <Values>
 <![CDATA[78DA758DED0980300C44334A27700747113F6A41ACD4A2B8BD577801FF587890EBE52EBD99057188223273465791D0BB18C446A6790FFBB358F0477460F66CC54FE8939D48A777AD1F2FD3DBE68B7C61D77B22FECDDFC42DEFE9ECFFBD563C1628]]>
                   </Values>
-                </DefineArray>
+                </Array>
               </Children>
             </Group>
           </Definitions>
@@ -1417,7 +1417,7 @@ return this.iteration < Input.SizeDim1;]]>
             </Repeat>
           </OnRender>
           <Definitions>
-            <DefineArray Name="Input" Dimensions="2" SizeDim1="2" SizeDim2="4" SizeDim3="4"/>
+            <Array Name="Input" Dimensions="2" SizeDim1="2" SizeDim2="4" SizeDim3="4"/>
           </Definitions>
         </AppState>
         <AppState Comment="RayCast">
@@ -1582,10 +1582,10 @@ if(this.Vertex.X > 0)
             </RenderTransformGroup>
           </OnRender>
           <Definitions>
-            <DefineArray Name="RCVector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
-            <DefineConstant Name="Epsilon" Value="0.001"/>
+            <Array Name="RCVector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
+            <Constant Name="Epsilon" Value="0.001"/>
             <Material Name="Wireframe" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
-            <DefineVariable Name="DebugVar"/>
+            <Variable Name="DebugVar"/>
           </Definitions>
         </AppState>
         <AppState Comment="Trail">
@@ -1687,9 +1687,9 @@ else
             </RenderNet>
           </OnRender>
           <Definitions>
-            <DefineArray Name="Mouse" Dimensions="1" SizeDim1="64" SizeDim2="4"/>
-            <DefineVariable Name="MouseIndex" Type="1"/>
-            <DefineVariable Name="MouseIndexLast" Type="1"/>
+            <Array Name="Mouse" Dimensions="1" SizeDim1="64" SizeDim2="4"/>
+            <Variable Name="MouseIndex" Type="1"/>
+            <Variable Name="MouseIndexLast" Type="1"/>
             <Bitmap Name="Bitmap" Width="0" Height="4">
               <Producers>
                 <BitmapExpression>
@@ -1712,7 +1712,7 @@ this.Pixel = Y;]]>
           <OnStart>
             <Group Comment="VFCMatrix Lib">
               <Children>
-                <DefineArray Name="VFCMatrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+                <Array Name="VFCMatrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
                 <ZLibrary Comment="VFCMatrix">
                   <Source>
 <![CDATA[// ================================================================
@@ -1855,16 +1855,16 @@ float shortDot( int c, int n ){
             </Group>
             <Group Comment="View">
               <Children>
-                <DefineVariable Name="viewAngle"/>
-                <DefineVariable Name="viewRatio"/>
-                <DefineArray Name="viewRotation" SizeDim1="2"/>
-                <DefineArray Name="camRotation" SizeDim1="2"/>
-                <DefineArray Name="aFrustrumNormals" Dimensions="1" SizeDim1="4" SizeDim2="3" Persistent="255">
+                <Variable Name="viewAngle"/>
+                <Variable Name="viewRatio"/>
+                <Array Name="viewRotation" SizeDim1="2"/>
+                <Array Name="camRotation" SizeDim1="2"/>
+                <Array Name="aFrustrumNormals" Dimensions="1" SizeDim1="4" SizeDim2="3" Persistent="255">
                   <Values>
 <![CDATA[78DA636068D8CF000620BAC11EC1868BC1D8F608360200005C1F08F9]]>
                   </Values>
-                </DefineArray>
-                <DefineArray Name="aFrustrumNormalsTransformed" Dimensions="1" SizeDim1="4" SizeDim2="3"/>
+                </Array>
+                <Array Name="aFrustrumNormalsTransformed" Dimensions="1" SizeDim1="4" SizeDim2="3"/>
                 <ZExpression Comment="init">
                   <Expression>
 <![CDATA[viewAngle = 0.125; // don't touch - this is not dynamic yet, sorry!
@@ -1873,7 +1873,7 @@ viewRatio = tan( viewAngle * 2 * PI );]]>
                 </ZExpression>
               </Children>
             </Group>
-            <DefineArray Name="cubePositions" Dimensions="1" SizeDim1="1000" SizeDim2="3"/>
+            <Array Name="cubePositions" Dimensions="1" SizeDim1="1000" SizeDim2="3"/>
             <Repeat Comment="fill Cubes">
               <WhileExp>
 <![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
@@ -2059,7 +2059,7 @@ rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
       <Children>
         <Group Name="BitLibraryGroup" Comment="Bit Library">
           <Children>
-            <DefineArray Name="Bit" Type="1" SizeDim1="8"/>
+            <Array Name="Bit" Type="1" SizeDim1="8"/>
             <ZLibrary Comment="Bit Library">
               <Source>
 <![CDATA[/*
@@ -2122,7 +2122,7 @@ void bitField(int X, int B)
 
         <Group Name="HsvColorGroup" Comment="HSV Color Library">
           <Children>
-            <DefineArray Name="Color" SizeDim1="3"/>
+            <Array Name="Color" SizeDim1="3"/>
             <ZLibrary Comment="HSV Library">
               <Source>
 <![CDATA[//
@@ -2181,7 +2181,7 @@ void hsv(float H, float S, float V)
 
         <Group Name="MatrixLibraryGroup" Comment="Matrix Library">
           <Children>
-            <DefineArray Name="Matrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
+            <Array Name="Matrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
             <ZLibrary Comment="Matrix Library">
               <Source>
 <![CDATA[//
@@ -2285,7 +2285,7 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
 
         <Group Name="VectorLibraryGroup" Comment="Vector Library">
           <Children>
-            <DefineArray Name="Vector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
+            <Array Name="Vector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
             <ZLibrary Comment="Vector Library">
               <Source>
 <![CDATA[//
@@ -2471,6 +2471,82 @@ int sv_get_ticks_per_second() {}
 int sv_get_number_of_modules(int slot) {}
 int sv_get_module_flags(int slot, int mod_num) {}
 string sv_get_module_name(int slot, int mod_num) {}]]>
+          </Source>
+        </ZExternalLibrary>
+        <ZExternalLibrary Comment="ZGESensor library" ModuleName="./libZGESensor.so" CallingConvention="1">
+          <Source>
+<![CDATA[/*
+  ZGESensor Library used to handle various sensors on Android.
+
+  Download Android shared library from
+  http://code.google.com/p/zgesensor/downloads
+
+  Copyright (c) 2013 Radovan Cervenka
+*/
+
+// sensor types; also used as sensor identifiers
+const int SENSOR_TYPE_ACCELEROMETER = 1;
+const int SENSOR_TYPE_MAGNETIC_FIELD = 2;
+const int SENSOR_TYPE_GYROSCOPE = 4;
+const int SENSOR_TYPE_LIGHT = 5;
+const int SENSOR_TYPE_PROXIMITY = 8;
+const int SENSOR_TYPE_ROTATION_VECTOR = 11;
+const int SENSOR_TYPE_RELATIVE_HUMIDITY = 12;
+const int SENSOR_TYPE_PRESSURE = 6;
+const int SENSOR_TYPE_LINEAR_ACCELERATION = 10;
+const int SENSOR_TYPE_GRAVITY = 9;
+const int SENSOR_TYPE_AMBIENT_TEMPERATURE = 13;
+
+// Initialize the library.
+void sensorInitLib() {}
+
+// Stop the library usage. Returns a negative error code on failure.
+int sensorStopLib() {}
+
+// Start to use sensor of the specified type.
+// Returns a negative error code on failure.
+int sensorUse(int type) {}
+
+// Set the delivery rate of events in microseconds for a sensor
+// of the given type.
+// Returns a negative error code on failure.
+int sensorSetEventRate(int type, float eventRate) {}
+
+// Disable a sensor of the specified type.
+// Returns a negative error code on failure.
+int sensorDisable(int type) {}
+
+// Enable a sensor of the specified type.
+// Returns a negative error code on failure.
+int sensorEnable(int type) {}
+
+// Update actual data for all the used sensors.
+// Usually called in ZApplication's or AppState's OnUpdate section.
+// Returns number of processes events.
+int sensorUpdateData() {}
+
+/*
+ * Get actual data for the selected sensor type.
+ * Vector sensors, such as accelerometer, magnetic field, or
+ * gyroscope use x, y and z values. Scalar sensors, such as
+ * light, proximity or temperature, use just x value.
+ */
+void sensorGetData(int type, ref float x, ref float y, ref float z) {}
+
+// Return name of a sensor of the specified type.
+string sensorGetName(int type) {}
+
+// Return vendor's name of a sensor of the specified type.
+string sensorGetVendor(int type) {}
+
+// Return resolution of a sensor of the specified type.
+float sensorGetResolution(int type) {}
+
+/*
+ * Return the minimum delay allowed between events in microseconds for
+ * a sensor of the specified type.
+ */
+float sensorGetMinDelay(int type) {}]]>
           </Source>
         </ZExternalLibrary>
       </Children>

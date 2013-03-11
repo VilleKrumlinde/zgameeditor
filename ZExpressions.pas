@@ -222,7 +222,7 @@ type
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
      fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,
      fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID,
-     fcGetBinaryProp,fcSetBinaryProp);
+     fcGetBinaryProp,fcSetBinaryProp,fcGetModels);
 
   //Built-in function call
   TExpFuncCall = class(TExpBase)
@@ -417,6 +417,7 @@ type
     StackSlot : integer;
     Dimensions : TArrayDimensions;
     _Type : TVariableType;
+    Size1,Size2,Size3 : integer;
   end;
 
   TExpRemoveLocalArray = class(TExpBase)
@@ -851,6 +852,7 @@ var
   P1,P2 : pointer;
   Bp : PZBinaryPropValue;
   A : TDefineArray;
+  L : TZArrayList;
   HasReturnValue : boolean;
 begin
   HasReturnValue := True;
@@ -1018,6 +1020,19 @@ begin
         ReallocMem(Bp^.Data,Bp^.Size);
         Move(A.GetData^ , Bp^.Data^, Bp^.Size);
         HasReturnValue := False;
+      end;
+    fcGetModels :
+      begin
+        StackPopTo(I1);
+        StackPopToPointer(A);
+        L := ZApp.Models.Get(I1);
+        A.SizeDim1 := L.Count;
+        P1 := A.GetData;
+        for I2 := 0 to L.Count-1 do
+        begin
+          PPointer(P1)^ := L[I2];
+          Inc(PPointer(P1));
+        end;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
@@ -2219,6 +2234,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'StackSlot',{$ENDIF}integer(@StackSlot), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}integer(@Dimensions), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}integer(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Size1',{$ENDIF}integer(@Size1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Size2',{$ENDIF}integer(@Size2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Size3',{$ENDIF}integer(@Size3), zptInteger);
 end;
 
 procedure TExpInitLocalArray.Execute;
@@ -2231,6 +2249,9 @@ begin
   A := TDefineArray.Create(nil);
   A.Dimensions := Self.Dimensions;
   A._Type := Self._Type;
+  A.SizeDim1 := Self.Size1;
+  A.SizeDim2 := Self.Size2;
+  A.SizeDim3 := Self.Size3;
   PPointer(P)^ := A;
 end;
 

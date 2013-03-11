@@ -109,6 +109,7 @@ type
   TZVector4f = array[0..3] of single;
 
   TZMatrix4f = array[0..3] of TZVector4f;
+  PZMatrix4f = ^TZMatrix4f;
 
   PZVector3Array = ^TZVector3Array;
   TZVector3Array = packed array[0..100000] of TZVector3f;
