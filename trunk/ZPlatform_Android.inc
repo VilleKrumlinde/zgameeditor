@@ -492,9 +492,17 @@ begin
   LeaveCriticalSection(PRTLCriticalSection(P)^);
 end;
 
+var
+  _GL : pointer;
+
 function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := nil;
+  if _GL=nil then
+  begin
+    _GL := dlopen('libGLESv1_CM.so',1);
+  end;
+  Result := dlsym(_GL, P);
 end;
 
 procedure Platform_InitGlobals;

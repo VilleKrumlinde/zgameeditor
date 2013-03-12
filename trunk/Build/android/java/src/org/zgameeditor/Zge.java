@@ -59,6 +59,8 @@ public class Zge extends GLSurfaceView
     private native void NativeKeyup(int keycode);
     private native void NativeKeydown(int keycode);
     private native void NativeSetDataContent(byte[] content);
+    private native int NativeGetGLBase();
+    private native void NativeInitAppFromSDCard();
 
     private boolean IsDestroy;
     private CRenderer Renderer;
@@ -79,19 +81,25 @@ public class Zge extends GLSurfaceView
         String extPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         NativeInit(extPath, dataPath, libraryPath);
 
-        //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
-        loadEmbeddedData();
+        initZApp();
 
+        if(NativeGetGLBase()==1) {
+          Log.i("ZgeAndroid", "GLES 2");
+          setEGLContextClientVersion(2);
+        }
         Renderer = new CRenderer();
         setRenderer( Renderer );
 
         setFocusableInTouchMode( true );
     }
 
-    private void loadEmbeddedData() {
+    private void initZApp() {
+        //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
         byte[] b = openAssetFile("/assets/zzdc.dat");
         if(b!=null)
             NativeSetDataContent(b);
+        else
+          	NativeInitAppFromSDCard();
     }
 
     //Called from native
@@ -244,7 +252,7 @@ public class Zge extends GLSurfaceView
     {
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
-            Log.i("ZgeAndroid", "SurfaceCreated");
+            Log.i("ZgeAndroid", "SurfaceCreated: " + gl.glGetString( GL10.GL_VERSION ));
             NativeSurfaceCreated();
         }
 

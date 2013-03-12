@@ -90,17 +90,22 @@ begin
   AndroidThis := Env^.NewGlobalRef(Env,thiz);
 end;
 
-procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
+procedure Java_org_zgameeditor_Zge_NativeInitAppFromSDCard( env : PJNIEnv; thiz : jobject);cdecl;
 begin
   if not AppInited then
   begin
-    AndroidLog('init');
+    AndroidLog('init from sdcard');
     ZApp := ZApplication.LoadApplicationComponent;
-    ZApp.ScreenWidth := Width;
-    ZApp.ScreenHeight := Height;
+    ZApp.ScreenWidth := 100;
+    ZApp.ScreenHeight := 100;
     ZApp.Run;
     AppInited := True;
-  end else
+  end;
+end;
+
+procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
+begin
+  if AppInited then
   begin
     ZApp.ScreenWidth := Width;
     ZApp.ScreenHeight := Height;
@@ -222,6 +227,15 @@ begin
 end;
 
 
+function Java_org_zgameeditor_Zge_NativeGetGLBase( env : PJNIEnv; thiz : jobject ) : integer; cdecl;
+begin
+  Result := Ord(ZApp.GLBase);
+  if Result=0 then
+    AndroidLog('GLBase: 1.1')
+  else
+    AndroidLog('GLBase: 2');
+end;
+
 exports
   Java_org_zgameeditor_Zge_NativeInit,
   Java_org_zgameeditor_Zge_NativeDestroy,
@@ -234,6 +248,8 @@ exports
   Java_org_zgameeditor_Zge_NativeKeydown,
   Java_org_zgameeditor_Zge_NativeKeyup,
   Java_org_zgameeditor_Zge_NativeSetDataContent,
+  Java_org_zgameeditor_Zge_NativeGetGLBase,
+  Java_org_zgameeditor_Zge_NativeInitAppFromSDCard,
 
   JNI_OnLoad;
 

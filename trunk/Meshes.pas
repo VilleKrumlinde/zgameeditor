@@ -513,7 +513,7 @@ begin
 
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
-    glDeleteBuffersARB(2, @VboHandles);
+    glDeleteBuffers(2, @VboHandles);
     VboHandles[0]:=0;
   end;
 end;
@@ -522,7 +522,7 @@ procedure TMesh.ResetGpuResources;
 begin
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
-    glDeleteBuffersARB(2, @VboHandles);
+    glDeleteBuffers(2, @VboHandles);
     VboHandles[0]:=0;
   end;
   inherited;
@@ -552,7 +552,7 @@ begin
     //prepare vbo
     if Self.VboHandles[0]=0 then
     begin
-      glGenBuffersARB(2, @Self.VboHandles);
+      glGenBuffers(2, @Self.VboHandles);
 
       VertSize := Self.VerticesCount * SizeOf(TZVector3f);
       NormSize := VertSize;
@@ -567,24 +567,24 @@ begin
       else
         TexSize:= 0;
 
-      glBindBufferARB(GL_ARRAY_BUFFER_ARB, Self.VboHandles[0]);
-      glBufferDataARB(GL_ARRAY_BUFFER_ARB, VertSize + NormSize + ColsSize + TexSize, nil, STATIC_DRAW_ARB);
+      glBindBuffer(GL_ARRAY_BUFFER, Self.VboHandles[0]);
+      glBufferData(GL_ARRAY_BUFFER, VertSize + NormSize + ColsSize + TexSize, nil, STATIC_DRAW);
 
-      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, VertSize, Self.Vertices);
+      glBufferSubData(GL_ARRAY_BUFFER, 0, VertSize, Self.Vertices);
 
       Self.VboOffsets[0] := VertSize;
-      glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[0], NormSize, Self.Normals);
+      glBufferSubData(GL_ARRAY_BUFFER, Self.VboOffsets[0], NormSize, Self.Normals);
 
       Self.VboOffsets[1] := Self.VboOffsets[0] + NormSize;
       if ColsSize>0 then
-        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[1], ColsSize, Self.Colors);
+        glBufferSubData(GL_ARRAY_BUFFER, Self.VboOffsets[1], ColsSize, Self.Colors);
 
       Self.VboOffsets[2] := Self.VboOffsets[1] + ColsSize;
       if TexSize>0 then
-        glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, Self.VboOffsets[2], TexSize, Self.TexCoords);
+        glBufferSubData(GL_ARRAY_BUFFER, Self.VboOffsets[2], TexSize, Self.TexCoords);
 
-      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Self.VboHandles[1]);
-      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Self.IndicesCount * SizeOf(TMeshVertexIndex), Self.Indices, STATIC_DRAW_ARB);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Self.VboHandles[1]);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, Self.IndicesCount * SizeOf(TMeshVertexIndex), Self.Indices, STATIC_DRAW);
     end;
   end;
 end;

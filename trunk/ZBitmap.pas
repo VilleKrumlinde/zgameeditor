@@ -64,7 +64,7 @@ implementation
 uses BitmapProducers,ZApplication,ZLog,SysUtils,Renderer;
 {$endif}
 {$ifdef Android}
-uses ZMath,Renderer;
+uses ZMath,Renderer,ZApplication;
 {$endif}
 
 { TZBitmap }
@@ -104,7 +104,7 @@ begin
     glEnable(GL_TEXTURE_2D);
     B.UseTextureBegin;
     glScalef(2,2,2);
-    RenderUnitQuad;
+    RenderUnitQuad(B.ZApp.Driver);
 
     Count := B.PixelWidth * B.PixelHeight;
     GetMem(Tp,Count*4);

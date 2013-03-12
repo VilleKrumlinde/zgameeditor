@@ -30,7 +30,7 @@ uses
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg, Vcl.Themes, ZApplication;
+  Jpeg, Vcl.Themes, ZApplication, GLDrivers;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -337,6 +337,7 @@ type
     AutoComp,ParamComp : TSynCompletionProposal;
     Log : TLog;
     ZApp : TZApplication;
+    Driver : TGLDriverBase;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -441,6 +442,7 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
 
 constructor TEditorForm.Create(AOwner: TComponent);
 begin
+  Driver := CreateDriver(glbFixed);
   inherited Create(AOwner);
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
@@ -739,15 +741,14 @@ begin
   //Must compile directly after load because no zc-instructions are saved in the xml
   CompileAll;
 
-  //Initial tree update. Must be after compileall.
-  //Slows down opening project but without this call the walls in FpsDemo
-  //become black when WallModel is selected.
-  if Self.Visible then
-  begin
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-    Root.Update;
-    CheckGLError;
-  end;
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      ZApp.DesignerStart(Glp.Width,Glp.Height);
+      CheckGLError;
+    end
+  );
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -1578,7 +1579,7 @@ begin
     //set our color to be red
     glColor3f(1.0, 0.0, 0.0);
 
-    ZApp.Driver.RenderMesh(M);
+    Self.Driver.RenderMesh(M);
 
   glPopAttrib();
 
@@ -1748,6 +1749,7 @@ begin
   UndoNodes.Free;
   UndoIndices.Free;
   SysLibrary.Free;
+  Driver.Free;
 end;
 
 procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);

@@ -82,6 +82,7 @@ type
   GLclampd   = Double;        PGLclampd   = ^GLclampd;
 { GLvoid     = void; }        PGLvoid     = Pointer;
 
+
 {******************************************************************************}
 
 const
@@ -1176,10 +1177,10 @@ const
 
 
   //VBOs
-  GL_ARRAY_BUFFER_ARB = $8892;
-  GL_ELEMENT_ARRAY_BUFFER_ARB = $8893;
+  GL_ARRAY_BUFFER = $8892;
+  GL_ELEMENT_ARRAY_BUFFER = $8893;
 
-  STATIC_DRAW_ARB = $88E4;
+  STATIC_DRAW = $88E4;
 
   //***** GL_EXT_framebuffer_object *****//
   GL_FRAMEBUFFER_EXT = $8D40;
@@ -1475,11 +1476,11 @@ var
 
 
   //Vertex buffer objects
-  glBindBufferARB : procedure(target: GLenum; buffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glDeleteBuffersARB : procedure(n :GLsizei; const buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGenBuffersARB : procedure(n :GLsizei; buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glBufferDataARB : procedure(target: GLenum; size: integer; const data: pointer; usage: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glBufferSubDataARB : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindBuffer : procedure(target: GLenum; buffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteBuffers : procedure(n :GLsizei; const buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenBuffers : procedure(n :GLsizei; buffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBufferData : procedure(target: GLenum; size: integer; const data: pointer; usage: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBufferSubData : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   //***** GL_EXT_framebuffer_object *****//
   glIsRenderbufferEXT: function(renderbuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1608,11 +1609,11 @@ const ExtFuncArray : packed array[0..36{$ifndef minimal}+5{$endif}] of
  //Multitexture
 (Name : 'glActiveTexture'; Ptr : @@glActiveTexture),
  //VBO
-(Name : 'glBindBufferARB'; Ptr : @@glBindBufferARB),
-(Name : 'glDeleteBuffersARB'; Ptr : @@glDeleteBuffersARB),
-(Name : 'glGenBuffersARB'; Ptr : @@glGenBuffersARB),
-(Name : 'glBufferDataARB'; Ptr : @@glBufferDataARB),
-(Name : 'glBufferSubDataARB'; Ptr : @@glBufferSubDataARB),
+(Name : 'glBindBuffer'; Ptr : @@glBindBuffer),
+(Name : 'glDeleteBuffers'; Ptr : @@glDeleteBuffers),
+(Name : 'glGenBuffers'; Ptr : @@glGenBuffers),
+(Name : 'glBufferData'; Ptr : @@glBufferData),
+(Name : 'glBufferSubData'; Ptr : @@glBufferSubData),
 //FBO
 (Name : 'glIsRenderbufferEXT'; Ptr : @@glIsRenderbufferEXT),
 (Name : 'glBindRenderbufferEXT'; Ptr : @@glBindRenderbufferEXT),
@@ -1645,7 +1646,7 @@ begin
 
   ShadersSupported := @glUseProgram<>nil;
   MultiTextureSupported := @glActiveTexture<>nil;
-  VbosSupported := @glBindBufferARB<>nil;
+  VbosSupported := @glBindBuffer<>nil;
   {$ifdef linux}
   //VBOs crash on my ubuntu-linux setup.
   VbosSupported := False;
