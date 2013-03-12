@@ -123,6 +123,7 @@ type
     ViewportX,ViewportY,ViewportWidth,ViewportHeight : integer;
     MouseWheelDelta : integer;
     Camera : TCamera;
+    GLBase : TGLBase;
     NoSound : boolean;
     FrameLoss : boolean;  //sätts till true ifall vi tappar frames
     ScreenWidth : integer;
@@ -211,8 +212,6 @@ begin
   Collisions := TCollisionChecks.Create(Models,Self);
   DepthList := TZArrayList.CreateReferenced;
 
-  Self.Driver := GLDrivers.CreateDriver(0);
-
   {$ifndef minimal}
   ConstantMap := TDictionary<AnsiString,TObject>.Create;
   SymTab := TSymbolTable.Create;
@@ -249,6 +248,9 @@ var
   I : integer;
 {$endif}
 begin
+  if Self.Driver=nil then
+    Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
+
   {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
   {$endif}
@@ -1082,6 +1084,10 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}integer(@NoSound), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}integer(@GLBase), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Compatible','ES2/GL3']);{$endif}
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon), zptBinary);

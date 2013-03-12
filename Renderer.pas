@@ -103,7 +103,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvLoc,PrLoc : Integer;
+    MvpLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
   end;

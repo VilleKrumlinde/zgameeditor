@@ -5,6 +5,8 @@ interface
 uses ZOpenGL, Meshes, ZClasses;
 
 type
+  TGLBase = (glbFixed,glbProgrammable);
+
   TGLDriverBase = class
   public
     procedure Translate(const X,Y,Z : GLfloat); virtual; abstract;
@@ -23,7 +25,7 @@ type
     procedure OnCompileShader(Shader : pointer); virtual; abstract;
   end;
 
-function CreateDriver(Kind : integer) : TGLDriverBase;
+function CreateDriver(Kind : TGLBase) : TGLDriverBase;
 
 implementation
 
@@ -190,9 +192,9 @@ begin
 
   if VbosSupported and (not Mesh.IsDynamic) then
   begin
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Mesh.VboHandles[1]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mesh.VboHandles[1]);
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, Mesh.VboHandles[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandles[0]);
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_FLOAT,0,pointer(Mesh.VboOffsets[0]));
 
@@ -212,8 +214,8 @@ begin
     glVertexPointer(3,GL_FLOAT,0,nil);
 
     glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   end else
   begin
     //Use vertex arrays
@@ -420,23 +422,18 @@ end;
 
 procedure TGLDriverProgrammable.UpdateUniforms;
 begin
+  {$ifndef minimal}
   ZAssert(Self.CurrentShader<>nil, 'No shader set before render');
+  {$endif}
 
   if Self.MDirty[0] or Self.MDirty[1] then
   begin
-//    MVP := MatrixMultiply(Self.MPtrs[ 1 ]^, Self.MPtrs[ 0 ]^);
-//    MVP := MatrixMultiply(IdentityHmgMatrix, Self.MPtrs[ 0 ]^);
-//    MVP := IdentityHmgMatrix;
     MVP := MatrixMultiply(Self.MPtrs[ 0 ]^, Self.MPtrs[ 1 ]^);
-    MVP := Self.MPtrs[ 1 ]^;
-
     Self.MDirty[0]:=False;
     Self.MDirty[1]:=False;
   end;
 
-//  glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
-  glUniformMatrix4fv(CurrentShader.MvLoc,1,GL_FALSE,Pointer(Self.MPtrs[ 0 ]));
-  glUniformMatrix4fv(CurrentShader.PrLoc,1,GL_FALSE,Pointer(Self.MPtrs[ 1 ]));
+  glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
 end;
 
 procedure TGLDriverProgrammable.OnCompileShader(Shader: pointer);
@@ -444,8 +441,7 @@ var
   S : TShader;
 begin
   S := TShader(Shader);
-  S.MvLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('modelView'));
-  S.PrLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('projection'));
+  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
   glBindAttribLocation(S.ProgHandle, 0, 'position');
   glBindAttribLocation(S.ProgHandle, 1, 'normal');
   glBindAttribLocation(S.ProgHandle, 2, 'color');
@@ -492,7 +488,7 @@ begin
   Mesh.BeforeRender;
   UpdateUniforms;
 
-  glBindBufferARB(GL_ARRAY_BUFFER_ARB, Mesh.VboHandles[0]);
+  glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandles[0]);
 
   //Vertex
   glEnableVertexAttribArray(0);
@@ -506,7 +502,6 @@ begin
   if Mesh.Colors<>nil then
   begin
     glEnableVertexAttribArray(2);
-//    glVertexAttribIPointer(2, 4, GL_UNSIGNED_BYTE, 0, pointer(Mesh.VboOffsets[1]));
     glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, pointer(Mesh.VboOffsets[1]));
   end;
 
@@ -517,10 +512,10 @@ begin
     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, pointer(Mesh.VboOffsets[2]));
   end;
 
-  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, Mesh.VboHandles[1]);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mesh.VboHandles[1]);
   glDrawElements(GL_TRIANGLES,Mesh.IndicesCount,TMeshVertexIndex_GL,nil);
-  glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
@@ -534,10 +529,13 @@ begin
   {$endif}
 end;
 
-function CreateDriver(Kind : integer) : TGLDriverBase;
+function CreateDriver(Kind : TGLBase) : TGLDriverBase;
 begin
-//  Result := TGLDriverFixed.Create;
-  Result := TGLDriverProgrammable.Create;
+  case Kind of
+    glbProgrammable : Result := TGLDriverProgrammable.Create;
+  else
+    Result := TGLDriverFixed.Create
+  end;
 end;
 
 
