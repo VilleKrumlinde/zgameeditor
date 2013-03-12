@@ -1383,7 +1383,7 @@ var
 //  glStencilFuncSeparate: procedure(frontfunc: GLenum; backfunc: GLenum; ref: GLint; mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glStencilMaskSeparate: procedure(face: GLenum; mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glAttachShader: procedure(_program: GLuint; shader: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glBindAttribLocation: procedure(_program: GLuint; index: GLuint; const name: PGLchar); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindAttribLocation: procedure(_program: GLuint; index: GLuint; const name: PAnsiChar); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCompileShader: procedure(shader: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCreateProgram: function(): GLuint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCreateShader: function(_type: GLenum): GLuint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1471,6 +1471,7 @@ var
 //  glVertexAttrib4uiv: procedure(index: GLuint; const v: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glVertexAttrib4usv: procedure(index: GLuint; const v: PGLushort); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glVertexAttribPointer: procedure(index: GLuint; size: GLint; _type: GLenum; normalized: GLboolean; stride: GLsizei; const pointer: PGLvoid); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+//  glVertexAttribPointer: procedure(index: GLuint; size: GLint; _type: GLenum; normalized: GLboolean; stride: GLsizei; const pointer: PGLvoid); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
 
   //Vertex buffer objects
@@ -1537,14 +1538,14 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..35{$ifndef minimal}+5{$endif}] of
+const ExtFuncArray : packed array[0..36{$ifndef minimal}+5{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
   end =
 (
 (Name : 'glAttachShader'; Ptr : @@glAttachShader),
-//(Name : 'glBindAttribLocation'; Ptr : @@glBindAttribLocation),
+(Name : 'glBindAttribLocation'; Ptr : @@glBindAttribLocation),
 //(Name : 'glBlendEquationSeparate'; Ptr : @@glBlendEquationSeparate),
 (Name : 'glCompileShader'; Ptr : @@glCompileShader),
 (Name : 'glCreateShader'; Ptr : @@glCreateShader),
