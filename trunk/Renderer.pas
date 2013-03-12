@@ -103,7 +103,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvpLoc : Integer;
+    MvLoc,PrLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
   end;
@@ -1965,6 +1965,8 @@ begin
       if J>-1 then
         glUniform1i(J,I);
     end;
+
+  Self.ZApp.Driver.OnCompileShader(Self);
 
   IsChanged := False;
 end;

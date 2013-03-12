@@ -487,8 +487,8 @@ begin
   if WithColors then
     GetMem(Colors, SizeOf(TMeshVertexColor) * VerticesCount);
 
-  //Use VBOs for larger meshes only
-  IsDynamic := TQuantity<1024;
+  //Always use VBOs
+  IsDynamic := False;
 end;
 
 procedure TMesh.FreeData;

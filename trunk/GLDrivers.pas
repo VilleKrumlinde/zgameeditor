@@ -12,13 +12,12 @@ type
     procedure Scale(const X,Y,Z: GLfloat); virtual; abstract;
     procedure MatrixMode(const mode: GLenum); virtual; abstract;
     procedure LoadIdentity; virtual; abstract;
-    procedure Frustum(const left, right, bottom, top, zNear, zFar: GLfloat); virtual; abstract;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); virtual; abstract;
     procedure PushMatrix; virtual; abstract;
     procedure PopMatrix; virtual; abstract;
     procedure RenderMesh(Mesh : TMesh); virtual; abstract;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); virtual; abstract;
-    procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat);
+    procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); virtual; abstract;
     procedure ApplyRotation(const R : TZVector3f);
     procedure SetCurrentShader(Shader : pointer); virtual; abstract;
     procedure OnCompileShader(Shader : pointer); virtual; abstract;
@@ -48,12 +47,14 @@ type
     procedure Scale(const X,Y,Z: GLfloat); override;
     procedure MatrixMode(const mode: GLenum); override;
     procedure LoadIdentity; override;
-    procedure Frustum(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure PushMatrix; override;
     procedure PopMatrix; override;
     procedure RenderMesh(Mesh : TMesh); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
+    procedure SetCurrentShader(Shader : pointer); override;
+    procedure OnCompileShader(Shader : pointer); override;
+    procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
   end;
 
   TGLDriverProgrammable = class(TGLDriverBase)
@@ -76,7 +77,7 @@ type
     procedure RenderMesh(Mesh : TMesh); override;
     procedure SetCurrentShader(Shader : pointer); override;
     procedure OnCompileShader(Shader : pointer); override;
-    procedure Frustum(const left, right, bottom, top, zNear, zFar: GLfloat); override;
+    procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
     constructor Create;
@@ -119,7 +120,9 @@ begin
     Rotate( (R[0]*360) , 1, 0, 0);
 end;
 
-procedure TGLDriverBase.Perspective(const fovy, aspect, zNear, zFar: GLfloat);
+{ TGLDriverFixed }
+
+procedure TGLDriverFixed.Perspective(const fovy, aspect, zNear, zFar: GLfloat);
 //http://steinsoft.net/index.php?site=Programming/Code%20Snippets/OpenGL/gluperspective
 var
    xmin, xmax, ymin, ymax : GLfloat;
@@ -128,15 +131,7 @@ begin
   ymin := -ymax;
   xmin := ymin * aspect;
   xmax := ymax * aspect;
-  Frustum(xmin, xmax, ymin, ymax, zNear, zFar);
-end;
-
-{ TGLDriverFixed }
-
-procedure TGLDriverFixed.Frustum(const left, right, bottom, top, zNear,
-  zFar: GLfloat);
-begin
-  glFrustum(left,right,bottom,top,znear,zfar);
+  glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 end;
 
 procedure TGLDriverFixed.LoadIdentity;
@@ -147,6 +142,11 @@ end;
 procedure TGLDriverFixed.MatrixMode(const mode: GLenum);
 begin
   glMatrixMode(mode);
+end;
+
+procedure TGLDriverFixed.OnCompileShader(Shader: pointer);
+begin
+
 end;
 
 procedure TGLDriverFixed.Ortho(const left, right, bottom, top, zNear,
@@ -256,16 +256,14 @@ begin
   glScalef(X,Y,Z);
 end;
 
+procedure TGLDriverFixed.SetCurrentShader(Shader: pointer);
+begin
+
+end;
+
 procedure TGLDriverFixed.Translate(const X, Y, Z: GLfloat);
 begin
   glTranslatef(X,Y,Z);
-end;
-
-
-function CreateDriver(Kind : integer) : TGLDriverBase;
-begin
-//  Result := TGLDriverFixed.Create;
-  Result := TGLDriverProgrammable.Create;
 end;
 
 
@@ -279,37 +277,39 @@ begin
     MPtrs[I] := @MStack[I,0];
 end;
 
-procedure TGLDriverProgrammable.Frustum(const left, right, bottom, top, zNear,
-  zFar: GLfloat);
+procedure TGLDriverProgrammable.Perspective(const fovy, aspect, zNear, zFar: GLfloat);
 var
-  M : TZMatrix4f;
-  x_2n,x_2nf,p_fn,m_nf,p_rl,m_rl,p_tb,m_tb : single;
+  xymax,ymin,xmin,width,height,depth,q,qn,w,h : single;
+  M  : TZMatrix4f;
 begin
-  //http://forums.4fips.com/viewtopic.php?f=3&t=1059
-  x_2n := znear + znear;
-  x_2nf := 2.0 * znear * zfar;
+  //http://www.geeks3d.com/20090729/howto-perspective-projection-matrix-in-opengl/
+  xymax := znear * tan(fovy * PI / 360.0);
+  ymin := -xymax;
+  xmin := -xymax;
 
-  p_fn := zfar + znear;
-  m_nf := znear - zfar;
+  width := xymax - xmin;
+  height := xymax - ymin;
 
-  p_rl := right + left;
-  m_rl := right - left;
-  p_tb := top + bottom;
-  m_tb := top - bottom;
+  depth := zfar - znear;
+  q := -(zfar + znear) / depth;
+  qn := -2 * (zfar * znear) / depth;
 
-  M[0] := Vector4f(x_2n/m_rl,    0,          p_rl/m_rl,    0);
-  M[1] := Vector4f(0,            x_2n/m_tb,  p_tb/m_tb,    0);
-  M[2] := Vector4f(0,            0,          p_fn/m_nf,    x_2nf/m_nf);
-  M[3] := Vector4f(0,            0,          -1,           0);
+  w := 2 * znear / width;
+  w := w / aspect;
+  h := 2 * znear / height;
 
+  M[0] := Vector4f(w,0,0,0);
+  M[1] := Vector4f(0,h,0,0);
+  M[2] := Vector4f(0,0,q,-1);
+  M[3] := Vector4f(0,0,qn,0);
   Self.MPtrs[ Self.MMode ]^ := M;
-  MDirty[Self.MMode] := True;
 end;
 
 procedure TGLDriverProgrammable.Ortho(const left, right, bottom, top, zNear,
   zFar: GLfloat);
 var
   M : TZMatrix4f;
+  P : PZMatrix4f;
   p_fn,m_nf,p_rl,m_rl,p_tb,m_tb,m_lr,m_bt : single;
 begin
   //http://forums.4fips.com/viewtopic.php?f=3&t=1059
@@ -330,7 +330,8 @@ begin
   M[2] := Vector4f(0,            0,          2/m_nf,  p_fn/m_nf);
   M[3] := Vector4f(0,            0,          0,       1);
 
-  Self.MPtrs[ Self.MMode ]^ := M;
+  P := Self.MPtrs[ Self.MMode ];
+  P^ := MatrixMultiply(P^, M);
   MDirty[Self.MMode] := True;
 end;
 
@@ -343,15 +344,7 @@ end;
 
 procedure TGLDriverProgrammable.MatrixMode(const mode: GLenum);
 begin
-  Self.MMode := Mode-GL_MODELVIEW_MATRIX;
-end;
-
-procedure TGLDriverProgrammable.OnCompileShader(Shader: pointer);
-var
-  S : TShader;
-begin
-  S := TShader(Shader);
-  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('MVP'));
+  Self.MMode := Mode-GL_MODELVIEW;
 end;
 
 procedure TGLDriverProgrammable.PopMatrix;
@@ -376,22 +369,24 @@ var
   M : TZMatrix4f;
   A :  single;
 begin
+  if Angle=0 then
+    Exit;
   P := Self.MPtrs[ Self.MMode ];
   A := Angle * PI/180;
   if X<>0 then
   begin
     CreateRotationMatrixX( A , M);
-    P^ := MatrixMultiply(P^, M);
+    P^ := MatrixMultiply(M,P^);
   end;
   if Y<>0 then
   begin
     CreateRotationMatrixY( A , M);
-    P^ := MatrixMultiply(P^, M);
+    P^ := MatrixMultiply(M,P^);
   end;
   if Z<>0 then
   begin
     CreateRotationMatrixZ( A, M);
-    P^ := MatrixMultiply(P^, M);
+    P^ := MatrixMultiply(M,P^);
   end;
   MDirty[Self.MMode] := True;
 end;
@@ -403,7 +398,7 @@ var
 begin
   P := Self.MPtrs[ Self.MMode ];
   CreateScaleAndTranslationMatrix(Vector3f(X,Y,Z), Vector3f(0,0,0), M);
-  P^ := MatrixMultiply(P^, M);
+  P^ := MatrixMultiply(M,P^);
   MDirty[Self.MMode] := True;
 end;
 
@@ -419,7 +414,7 @@ var
 begin
   P := Self.MPtrs[ Self.MMode ];
   CreateScaleAndTranslationMatrix(UNIT_XYZ3 , Vector3f(X,Y,Z), M);
-  P^ := MatrixMultiply(P^, M);
+  P^ := MatrixMultiply(M,P^);
   MDirty[Self.MMode] := True;
 end;
 
@@ -429,11 +424,32 @@ begin
 
   if Self.MDirty[0] or Self.MDirty[1] then
   begin
-    MVP := MatrixMultiply(Self.MPtrs[ 1 ]^, Self.MPtrs[ 0 ]^);
+//    MVP := MatrixMultiply(Self.MPtrs[ 1 ]^, Self.MPtrs[ 0 ]^);
+//    MVP := MatrixMultiply(IdentityHmgMatrix, Self.MPtrs[ 0 ]^);
+//    MVP := IdentityHmgMatrix;
+    MVP := MatrixMultiply(Self.MPtrs[ 0 ]^, Self.MPtrs[ 1 ]^);
+    MVP := Self.MPtrs[ 1 ]^;
+
     Self.MDirty[0]:=False;
     Self.MDirty[1]:=False;
   end;
-  glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
+
+//  glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
+  glUniformMatrix4fv(CurrentShader.MvLoc,1,GL_FALSE,Pointer(Self.MPtrs[ 0 ]));
+  glUniformMatrix4fv(CurrentShader.PrLoc,1,GL_FALSE,Pointer(Self.MPtrs[ 1 ]));
+end;
+
+procedure TGLDriverProgrammable.OnCompileShader(Shader: pointer);
+var
+  S : TShader;
+begin
+  S := TShader(Shader);
+  S.MvLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('modelView'));
+  S.PrLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('projection'));
+  glBindAttribLocation(S.ProgHandle, 0, 'position');
+  glBindAttribLocation(S.ProgHandle, 1, 'normal');
+  glBindAttribLocation(S.ProgHandle, 2, 'color');
+  glBindAttribLocation(S.ProgHandle, 3, 'texCoord');
 end;
 
 procedure TGLDriverProgrammable.RenderArrays(const Mode: GLenum; const Count,
@@ -490,7 +506,8 @@ begin
   if Mesh.Colors<>nil then
   begin
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_FALSE, 0, pointer(Mesh.VboOffsets[1]));
+//    glVertexAttribIPointer(2, 4, GL_UNSIGNED_BYTE, 0, pointer(Mesh.VboOffsets[1]));
+    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, pointer(Mesh.VboOffsets[1]));
   end;
 
   //Texcoords
@@ -516,5 +533,12 @@ begin
     RenderNormals(Mesh);
   {$endif}
 end;
+
+function CreateDriver(Kind : integer) : TGLDriverBase;
+begin
+//  Result := TGLDriverFixed.Create;
+  Result := TGLDriverProgrammable.Create;
+end;
+
 
 end.

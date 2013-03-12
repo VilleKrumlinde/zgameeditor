@@ -87,7 +87,8 @@ uses
   Vcl.Styles,
   CocoAncestor in 'Compiler\CocoAncestor.pas',
   CocoSets in 'Compiler\CocoSets.pas',
-  frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm};
+  frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm},
+  GLDrivers in '..\..\GLDrivers.pas';
 
 {$R *.res}
 
