@@ -248,15 +248,14 @@ var
   I : integer;
 {$endif}
 begin
-  if Self.Driver=nil then
-    Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
-
   {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
   {$endif}
 
   {$ifndef minimal}
     //no init if inside designer tool
+    if Self.Driver=nil then
+      Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
     UpdateViewport;
   {$else}
     if Platform_CommandLine('f') then
@@ -284,8 +283,10 @@ begin
     {$endif}
 
     Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption), Self);
+    Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
+    Driver.InitGL;
+
     Platform_ShowMouse(MouseVisible);
-    Renderer.InitRenderer;
     UpdateViewport;
 
     TargetFrameRate := Platform_GetDisplayRefreshRate;
@@ -729,7 +730,7 @@ begin
         TLight(Lights[J]).ApplyLight(J);
     end;
 
-    Renderer.Render_Begin;
+    Driver.EnableMaterial(DefaultMaterial);
       RenderModels;
 
       //Render application
@@ -739,7 +740,7 @@ begin
       if Self.CurrentState<>nil then
         Self.CurrentState.OnRender.ExecuteCommands;
       glPopMatrix;
-    Renderer.Render_End;
+    Driver.EnableMaterial(DefaultMaterial);
 
     for J := 0 to Lights.Count-1 do
       TLight(Lights[J]).RemoveLight(J);

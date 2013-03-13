@@ -1046,7 +1046,7 @@ var
   P : PAnsiChar;
   I : integer;
 begin
-  Renderer.InitRenderer;
+  Driver.InitGL;
 
   DisableShadersCheckBox.Enabled := ShadersSupported;
   DisableFBOCheckBox.Enabled := FbosSupported;
@@ -1604,7 +1604,7 @@ begin
   try
     ZApp.DesignerSetUpView;
 
-    Renderer.Render_Begin;
+    Driver.EnableMaterial(DefaultMaterial);
     try
       OnRender.ExecuteCommands;
     except
@@ -1614,7 +1614,7 @@ begin
         raise;
       end;
     end;
-    Renderer.Render_End;
+    Driver.EnableMaterial(DefaultMaterial);
   finally
     glPopAttrib();
   end;
@@ -1677,7 +1677,7 @@ begin
     begin
       ZApp.DeltaTime := 0;
     end;
-    Renderer.Render_Begin;
+    Driver.EnableMaterial(DefaultMaterial);
     try
       //Undo translation so that the model is in screen center
       glTranslatef(-Model.Position[0],-Model.Position[1],-Model.Position[2]);
@@ -1689,7 +1689,6 @@ begin
         raise;
       end;
     end;
-    Renderer.Render_End;
 
   glPopAttrib();
 

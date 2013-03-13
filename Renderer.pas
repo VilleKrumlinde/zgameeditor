@@ -22,7 +22,7 @@ unit Renderer;
 
 interface
 
-uses Meshes,ZClasses,ZBitmap,ZExpressions,GLDrivers;
+uses Meshes,ZClasses,ZBitmap,ZExpressions;
 
 type
   TRenderCommand = class(TCommand);
@@ -92,11 +92,8 @@ type
     procedure CleanUp;
     procedure UpdateVariableLocations;
     procedure UpdateVariableValues;
-  private
-    procedure DetachArrayVariables;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
-    procedure UseShader;
   public
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
@@ -106,6 +103,8 @@ type
     MvpLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
+    procedure DetachArrayVariables;
+    procedure UseShader;
   end;
 
   //Render-commands
@@ -288,7 +287,6 @@ type
     procedure CleanUp;
   protected
     procedure Activate;
-    procedure UseTextureBegin;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     ClearBeforeUse : boolean;
@@ -298,6 +296,7 @@ type
     CustomWidth,CustomHeight : integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
+    procedure UseTextureBegin;
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -324,16 +323,9 @@ type
     procedure RemoveLight(const LightId : integer);
   end;
 
-procedure InitRenderer;
-
-procedure Render_Begin;
 procedure RenderModel(Model : TModel);
-procedure Render_End;
-
-procedure RenderUnitQuad(Driver : TGLDriverBase);
 
 {$ifndef minimal}
-procedure AssertNotRenderMode;
 procedure CleanUp;
 procedure DesignerRenderStop;
 
@@ -345,19 +337,17 @@ var
 
 var
   CurrentRenderTarget : TRenderTarget;
+  DefaultMaterial : TMaterial = nil;
+  DefaultMaterialTexture : TMaterialTexture = nil;
 
 
 implementation
 
-uses ZOpenGL, ZMath, ZApplication, ZPlatform
-  {$ifdef zlog},ZLog,SysUtils{$endif};
+uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZLog, GLDrivers
+  {$ifdef zlog},SysUtils{$endif};
 
 var
-  DefaultMaterial : TMaterial = nil;
-  DefaultMaterialTexture : TMaterialTexture = nil;
   DefaultFont : TFont = nil;
-
-procedure EnableMaterial(OldM,NewM : TMaterial); forward;
 
 
 { TRenderer }
@@ -462,213 +452,11 @@ begin
 end;
 {$endif}
 
-{$ifndef minimal}
-procedure AssertRenderMode;
-begin
-  if not IsRendering then
-    raise EZHalted.Create('Render-components can only be used in OnRender');
-end;
-
-procedure AssertNotRenderMode;
-begin
-  if IsRendering then
-    raise EZHalted.Create('This component can not be used in OnRender');
-end;
-{$endif}
 
 var
   CurrentMaterial : TMaterial;
 
-procedure EnableMaterial(OldM,NewM : TMaterial);
-const
-  //0x8370 GL_MIRRORED_REPEAT, enbart gl 1.4 och uppåt
-  TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
-var
-  NilOld : boolean;
-  Tmp,I,TexCount : integer;
-  Tex : TMaterialTexture;
-begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
 
-  if (NewM=nil) then
-    Exit;
-
-  glColor4fv(@NewM.Color);
-
-  //Test for equal material after setting color
-  //This is because rendersetcolor may have been called so we need reset material.color
-  if NewM=OldM then
-    Exit;
-
-  NilOld := OldM=nil;
-
-  CurrentMaterial := NewM;
-
-  glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
-  glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
-  glMaterialf(GL_FRONT, GL_SHININESS, NewM.Shininess);
-
-  if NilOld or (NewM.Shading<>OldM.Shading) then
-  begin
-    if (not NilOld) and (OldM.Shading=msWireframe) then
-    begin
-      glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-      glLineWidth(1.0);
-    end;
-    case NewM.Shading of
-      msSmooth :
-        glShadeModel(GL_SMOOTH);
-      msFlat :
-        glShadeModel(GL_FLAT);
-      msWireframe :
-        //Wireframe
-        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-    end;
-  end;
-
-  if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
-    glLineWidth(NewM.WireframeWidth);
-
-  if NilOld or (NewM.Light<>OldM.Light) then
-  begin
-    if NewM.Light then
-      glEnable( GL_LIGHTING )
-    else
-      glDisable( GL_LIGHTING );
-  end;
-
-  if NilOld or (NewM.ZBuffer<>OldM.ZBuffer) then
-  begin
-    if NewM.ZBuffer then
-    begin
-      glDepthFunc(GL_LEQUAL);
-      glDepthMask(1);
-    end
-    else
-    begin
-      //Disable z-buffer: Skip depth-test
-      glDepthFunc(GL_ALWAYS);
-      glDepthMask(0);
-    end;
-  end;
-
-  if NilOld or (NewM.DrawBackFace<>OldM.DrawBackFace) then
-  begin
-    if NewM.DrawBackFace then
-      glDisable(GL_CULL_FACE)
-    else
-      glEnable(GL_CULL_FACE);
-  end;
-
-  if NilOld or (NewM.Blend<>OldM.Blend) then
-  begin
-    if NewM.Blend=mbNoBlend then
-      glDisable(GL_BLEND)
-    else
-    begin
-      glEnable(GL_BLEND);
-      case NewM.Blend of
-        mbA_1MSA : glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        mbA_1 : glBlendFunc(GL_SRC_ALPHA,GL_ONE);
-        mbC_1MSC : glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
-        mbAlphaSat_1 : glBlendFunc(GL_SRC_ALPHA_SATURATE,GL_ONE);
-      end;
-    end;
-  end;
-
-  TexCount := NewM.Textures.Count;
-  if (not NilOld) and (OldM.Textures.Count>TexCount) then
-    TexCount := OldM.Textures.Count;
-  //Count backwards so that activetexture is zero on loop exit
-  for I := TexCount-1 downto 0 do
-  begin
-    if MultiTextureSupported then
-      glActiveTexture($84C0 + I)
-    else if I>0 then
-      Continue;
-
-    if I<NewM.Textures.Count then
-      Tex := TMaterialTexture(NewM.Textures[I])
-    else
-      Tex := DefaultMaterialTexture;
-
-    if Tex.Texture<>nil then
-    begin
-      glEnable(GL_TEXTURE_2D);
-      Tex.Texture.UseTextureBegin;
-    end else if Tex.RenderTarget<>nil then
-    begin
-      glEnable(GL_TEXTURE_2D);
-      Tex.RenderTarget.UseTextureBegin;
-    end else
-    begin
-      glDisable(GL_TEXTURE_2D);
-    end;
-
-    //Texture matrix
-    //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-      glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
-      glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
-      glRotatef(Tex.TextureRotate*360,0,0,1);
-      glTranslatef(-0.5,-0.5,0);
-    glMatrixMode(GL_MODELVIEW);
-
-    if Tex.TexCoords=tcGenerated then
-    begin
-      {$ifndef Android}
-      glEnable(GL_TEXTURE_GEN_S);
-      glEnable(GL_TEXTURE_GEN_T);
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      {$endif}
-    end
-    else
-    begin
-      glDisable(GL_TEXTURE_GEN_S);
-      glDisable(GL_TEXTURE_GEN_T);
-    end;
-
-    //This is a local parameter for every texture
-    Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
-  end;
-
-  if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
-  begin
-    if (not NilOld) and (OldM.Shader<>nil) then
-      OldM.Shader.DetachArrayVariables;
-    if NewM.Shader<>nil then
-      NewM.Shader.UseShader
-    else
-      glUseProgram(0);
-  end;
-
-end;
-
-
-procedure Render_Begin;
-begin
-  {$ifndef minimal}
-  IsRendering:=true;
-  {$endif}
-  //Designer may have messed with default settings, restore
-  //Must reset runtime also otherwise mirror_repeat fails
-  //Not sure why this is needed
-  EnableMaterial(nil,DefaultMaterial)
-end;
-
-procedure Render_End;
-begin
-  EnableMaterial(CurrentMaterial,DefaultMaterial);
-  {$ifndef minimal}
-  IsRendering:=false;
-  {$endif}
-end;
 
 procedure RenderModel(Model : TModel);
 var
@@ -701,52 +489,6 @@ begin
   Driver.PopMatrix();
 end;
 
-//Set OpenGL defaults
-procedure InitRenderer;
-const
-  //exempel från http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
-  //Specular är färg för highlights i direkt ljus
-  Specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
-  LowShininess = 5;
-begin
-  if DefaultMaterial=nil then
-    DefaultMaterial := TMaterial.Create(nil);
-  if DefaultMaterialTexture=nil then
-    DefaultMaterialTexture := TMaterialTexture.Create(nil);
-
-  glEnable(GL_DEPTH_TEST);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
-  glMatrixMode(GL_MODELVIEW);
-
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-  //Light
-  //Use default position
-  glEnable(GL_LIGHT0);
-
-  //Färg på material följer anrop till glColor. Detta gör att man slipper
-  //sätta glMaterial ambient och diffuse separat.
-  glEnable(GL_COLOR_MATERIAL);
-  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-
-  glMaterialfv(GL_FRONT, GL_SPECULAR, @Specular);
-  glMaterialf(GL_FRONT, GL_SHININESS, LowShininess);
-
-  //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 då blir det för ljust
-  //Detta p.g.a. gl skalar normals vid glScale
-  glEnable(GL_NORMALIZE);
-
-  //Extensions must be loaded after video-init, shaders are available on a
-  //per-context basis in Win32
-  LoadOpenGLExtensions;
-
-  //Set other default properties using the material-handler
-  {$ifndef minimal}IsRendering := True;{$endif}
-     EnableMaterial(nil,DefaultMaterial);
-  {$ifndef minimal}IsRendering := False;{$endif}
-end;
 
 { TMaterial }
 
@@ -790,7 +532,7 @@ end;
 
 procedure TUseMaterial.Execute;
 begin
-  Renderer.EnableMaterial(CurrentMaterial,Self.Material);
+  Self.ZApp.Driver.EnableMaterial(Self.Material);
 end;
 
 {$ifndef minimal}
@@ -815,7 +557,6 @@ end;
 procedure TRenderMesh.Execute;
 begin
   {$ifndef minimal}
-  AssertRenderMode;
   if Mesh=nil then
     Exit;
   {$endif}
@@ -888,49 +629,16 @@ end;
 
 { TRenderSprite }
 
-procedure RenderUnitQuad(Driver : TGLDriverBase);
-const
-  Width = 1;
-  Height = 1;
-  X = 0;
-  Y = 0;
-var
-  W,H : single;
-  Verts : array[0..3] of TZVector2f;
-  Texc : array[0..3] of TZVector2f;
-begin
-  //Y är positivt uppåt
-  //Rita i CCW direction för att skapa en front-facing polygon
-  //Behövs normals här? Default är 0,0,1.
-
-  //För TexCoords gäller: Y=1 Top, Y=0 Bottom
-
-  W := Width / 2.0;
-  H := Height / 2.0;
-
-  //Normal towards camera
-  glNormal3f(0,0,1);
-
-  Verts[0] := Vector2f(X-W,Y-H); Texc[0] := Vector2f(0.0, 0.0);
-  Verts[1] := Vector2f(X+W,Y-H); Texc[1] := Vector2f(1.0, 0.0);
-  Verts[2] := Vector2f(X+W,Y+H); Texc[2] := Vector2f(1.0, 1.0);
-  Verts[3] := Vector2f(X-W,Y+H); Texc[3] := Vector2f(0.0, 1.0);
-  Driver.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
-end;
-
 
 procedure TRenderSprite.Execute;
 begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
   //todo: ange texgen auto on/off i material?
   {
     TexCoords Generated,ModelDefined
     Z-Buffer on/off (depth)
     DrawBackFace on/off
   }
-  RenderUnitQuad(Self.ZApp.Driver);
+  Self.ZApp.Driver.RenderUnitQuad;
 end;
 
 { TRenderBeams }
@@ -981,13 +689,9 @@ var
     Vp^ := V2; Inc(Vp);
   end;
 begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
-
   GetMem(Mem,Beams.Count * 3 * ((2+2)*SizeOf(single)));
   Vp := Mem;
-  Tp := pointer(integer(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
+  Tp := pointer(NativeUInt(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
 
   V := Vp; T := Tp;
 
@@ -1117,10 +821,6 @@ var
   FloatBuf : array[0..19] of ansichar;
   TextBuf : array[0..(8*1024-1)] of ansichar;
 begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
-
   UseBuiltInFont := (CurrentMaterial=nil) or (CurrentMaterial.Font=nil);
 
   if not UseBuiltInFont then
@@ -1220,7 +920,7 @@ begin
   P := pointer(TheText);
   while not (P^ in [0,13]) do
     Inc(P);
-  CharLen := integer(P) - integer(TheText);
+  CharLen := NativeUInt(P) - NativeUInt(TheText);
 
   XStep := 1.0 + Spacing;
 
@@ -1390,7 +1090,7 @@ begin
     begin
       B := TZBitmap(Characters[Char]);
       B.UseTextureBegin;
-      RenderUnitQuad(Driver);
+      Driver.RenderUnitQuad;
       //B.UseTextureEnd;
     end;
   end else
@@ -1410,7 +1110,7 @@ begin
       Driver.Scale(BmStruct.ScaleX,BmStruct.ScaleY,1);
       Driver.MatrixMode(GL_MODELVIEW);
         Bitmap.UseTextureBegin;
-        RenderUnitQuad(Driver);
+        Driver.RenderUnitQuad;
         //Bitmap.UseTextureEnd;
       Driver.MatrixMode(GL_TEXTURE);
       Driver.PopMatrix();
@@ -1538,10 +1238,6 @@ var
   Tex : PZVector2f;
   PColor : PMeshVertexColor;
 begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
-
   if (Mesh=nil) then
   begin
     Mesh := TMesh.Create(nil);
@@ -1628,10 +1324,6 @@ var
   end;
 
 begin
-  {$ifndef minimal}
-  AssertRenderMode;
-  {$endif}
-
   if not Self.FollowModel then
   begin
     if CurrentModel<>nil then
@@ -1651,8 +1343,8 @@ begin
       Self.RenderBufferSize := MemSize;
     end;
     ArV := Self.RenderBuffer;
-    ArT := Pointer(Integer(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
-    ArC := Pointer(Integer(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
+    ArT := Pointer(NativeUInt(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
+    ArC := Pointer(NativeUInt(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
 
     V := ArV; T := ArT; C := ArC;
 
@@ -1863,8 +1555,29 @@ begin
   inherited;
 end;
 
+{$if (not defined(minimal)) or defined(android)}
+  {$define glsl_error_check}
+{$ifend}
 procedure TShader.ReInit;
-  {$ifndef minimal}
+  {$ifdef glsl_error_check}
+  procedure LogWrite(P : PAnsiChar);
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog(Self.ClassName).Write( String(P) );
+    {$else}
+    Platform_Error(P);
+    {$endif}
+  end;
+
+  procedure LogWarn(P : PAnsiChar);
+  begin
+    {$ifdef zlog}
+    ZLog.GetLog(Self.ClassName).Write( String(P) );
+    {$else}
+    Platform_Error(P);
+    {$endif}
+  end;
+
   procedure InDumpProgramLog(Prog : GLuint);
   var
     GlMess : array[0..511] of ansichar;
@@ -1872,7 +1585,7 @@ procedure TShader.ReInit;
   begin
     glGetProgramInfoLog(Prog,SizeOf(GlMess),@MessLen,@GlMess);
     if MessLen>0 then
-      ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
+      LogWrite( PAnsiChar(@GlMess) );
   end;
 
   function InCheckShaderValid(Shader : PGLuint; Kind: GLEnum) : boolean;
@@ -1894,10 +1607,10 @@ procedure TShader.ReInit;
     end
     else
     begin
-      ZLog.GetLog(Self.ClassName).Warning( 'Error in ' + S + ' shader compilation' );
+      LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation')) );
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
-        ZLog.GetLog(Self.ClassName).Write( String(PAnsiChar(@GlMess)) );
+        LogWrite( PAnsiChar(@GlMess) );
       //Remove the incorrect shader, otherwise it try to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
@@ -1912,14 +1625,14 @@ procedure TShader.ReInit;
     glGetProgramiv(ProgHandle,GL_LINK_STATUS,@Status);
     if Status=GL_FALSE then
     begin
-      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      LogWarn( 'Error when linking shader program' );
       InDumpProgramLog(ProgHandle);
     end;
     glValidateProgram(ProgHandle);
     glGetProgramiv(ProgHandle,GL_VALIDATE_STATUS,@Status);
     if Status=GL_FALSE then
     begin
-      ZLog.GetLog(Self.ClassName).Warning( 'Error when linking shader program' );
+      LogWarn( 'Error when linking shader program' );
       InDumpProgramLog(ProgHandle);
     end;
   end;
@@ -1933,7 +1646,7 @@ procedure TShader.ReInit;
     Result := glCreateShader(Kind);
     glShaderSource(Result,1,@Source,nil);
     glCompileShader(Result);
-    {$ifndef minimal}
+    {$ifdef glsl_error_check}
     if InCheckShaderValid(@Result,Kind) then
     {$endif}
     glAttachShader(ProgHandle,Result);
@@ -1953,7 +1666,7 @@ begin
   FShaderHandle := InCreate(FragmentShaderSource,GL_FRAGMENT_SHADER);
 
   glLinkProgram(ProgHandle);
-  {$ifndef minimal}InCheckProgramStatus;{$endif}
+  {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
 
   //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
@@ -2538,5 +2251,8 @@ initialization
   ZClasses.Register(TLight,LightClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'Lights';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=25;{$endif}
+
+  DefaultMaterial := TMaterial.Create(nil);
+  DefaultMaterialTexture := TMaterialTexture.Create(nil);
 
 end.
