@@ -110,7 +110,7 @@ begin
     ZApp.ScreenWidth := Width;
     ZApp.ScreenHeight := Height;
     ZApp.ResetGpuResources;
-    Renderer.InitRenderer;
+    ZApp.Driver.InitGL
   end;
 end;
 
@@ -236,6 +236,7 @@ begin
     AndroidLog('GLBase: 2');
 end;
 
+
 exports
   Java_org_zgameeditor_Zge_NativeInit,
   Java_org_zgameeditor_Zge_NativeDestroy,
@@ -252,6 +253,7 @@ exports
   Java_org_zgameeditor_Zge_NativeInitAppFromSDCard,
 
   JNI_OnLoad;
+
 
 begin
 end.

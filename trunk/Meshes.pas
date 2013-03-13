@@ -433,7 +433,7 @@ begin
   M.TexCoords :=nil;
   M.Colors :=nil;
   M.Free;
-  {$if defined(zlog) and (not defined(zgeviz))}
+  {$if (not defined(minimal)) and (not defined(zgeviz))}
   if CurrentRecursion=0 then
   begin
     if VerticesCount>=High(TMeshVertexIndex) then
@@ -1240,9 +1240,6 @@ procedure TSpawnModel.Execute;
 var
   Spawned : TModel;
 begin
-  {$ifndef minimal}
-  AssertNotRenderMode;
-  {$endif}
   if Model<>nil then
   begin
     if SpawnStyle=ssClone then
@@ -1427,9 +1424,6 @@ end;
 
 procedure TRemoveModel.Execute;
 begin
-  {$ifndef minimal}
-  AssertNotRenderMode;
-  {$endif}
   ZApp.Models.Remove( Meshes.CurrentModel );
 end;
 
@@ -1448,10 +1442,6 @@ var
   List : TZArrayList;
   M : TModel;
 begin
-  {$ifndef minimal}
-  AssertNotRenderMode;
-  {$endif}
-
   if OfType=nil then
     ZApp.Models.RemoveAll
   else

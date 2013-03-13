@@ -104,7 +104,7 @@ begin
     glEnable(GL_TEXTURE_2D);
     B.UseTextureBegin;
     glScalef(2,2,2);
-    RenderUnitQuad(B.ZApp.Driver);
+    B.ZApp.Driver.RenderUnitQuad();
 
     Count := B.PixelWidth * B.PixelHeight;
     GetMem(Tp,Count*4);

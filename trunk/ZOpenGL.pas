@@ -601,7 +601,7 @@ const
   GL_SELECTION_BUFFER_POINTER       = $0DF3;
   GL_SELECTION_BUFFER_SIZE          = $0DF4;
   //      GL_TEXTURE_BINDING_1D
-  //      GL_TEXTURE_BINDING_2D 
+  //      GL_TEXTURE_BINDING_2D
   //      GL_VERTEX_ARRAY
   //      GL_NORMAL_ARRAY 
   //      GL_COLOR_ARRAY 
@@ -614,7 +614,7 @@ const
   //      GL_NORMAL_ARRAY_TYPE 
   //      GL_NORMAL_ARRAY_STRIDE
   //      GL_COLOR_ARRAY_SIZE 
-  //      GL_COLOR_ARRAY_TYPE 
+  //      GL_COLOR_ARRAY_TYPE
   //      GL_COLOR_ARRAY_STRIDE 
   //      GL_INDEX_ARRAY_TYPE 
   //      GL_INDEX_ARRAY_STRIDE 
@@ -1232,147 +1232,103 @@ const
   GL_MAX_RENDERBUFFER_SIZE_EXT = $84E8;
   GL_INVALID_FRAMEBUFFER_OPERATION_EXT = $0506;
 
-const
-  {$IFDEF Win32}
-  opengl = 'opengl32.dll';
-  {$ENDIF}
-  {$IFDEF Win64}
-  opengl = 'opengl32.dll';
-  {$ENDIF}
-  {$IFDEF LINUX}
-    {$IFDEF ANDROID}
-    opengl = 'libGLESv1_CM.so';
-    {$else}
-    opengl = 'libGL.so';
-    {$endif}
-  {$ENDIF}
-  {$IFDEF DARWIN}
-  ///System/Library/Frameworks/OpenGL.framework/Libraries/
-  opengl = 'libGL.dylib';
-  {$ENDIF}
-
 
 {******************************************************************************}
 
 procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
 
-procedure glBindTexture(target: GLenum; texture: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glBlendFunc(sfactor, dfactor: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glClear(mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glClearColor(red, green, blue, alpha: GLclampf); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glColorPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glCopyTexImage2D(target: GLenum; level: GLint; internalFormat: GLenum; x, y: GLint; width, height: GLsizei; border: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glCopyTexSubImage2D(target: GLenum; level, xoffset, yoffset, x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glCullFace(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDeleteTextures(n: GLsizei; const textures: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDepthFunc(func: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDepthMask(flag: GLboolean); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDepthRange(zNear, zFar: GLclampd); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDisable(cap: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDisableClientState(aarray: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDrawArrays(mode: GLenum; first: GLint; count: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDrawElements(mode: GLenum; count: GLsizei; atype: GLenum; const indices: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glEnable(cap: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glEnableClientState(aarray: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glFinish; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glFlush; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glFrontFace(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-function glGenLists(range: GLsizei): GLuint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glGenTextures(n: GLsizei; textures: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-function glGetError: GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glGetFloatv(pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glGetIntegerv(pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glMateriali(face, pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexParameteri(target: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-function glGetString(name: GLenum): PAnsiChar; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glHint(target, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glIndexMask(mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLightModelf(pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLightModelfv(pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLightfv(light, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLineWidth(width: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glListBase(base: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLoadIdentity; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glLoadMatrixf(const m: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glMaterialf(face, pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glMaterialfv(face, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glMatrixMode(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glNormal3f(nx, ny, nz: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glNormalPointer(atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
 
-{$ifdef android}
-procedure glOrtho(left, right, bottom, top, zNear, zFar: GLfloat); cdecl;external opengl name 'glOrthof';
-procedure glFrustum(left, right, bottom, top, zNear, zFar: GLfloat); cdecl; external opengl name 'glFrustumf';
-procedure glColor4f(red, green, blue, alpha: GLfloat); cdecl; external opengl;
-//Remove these below
-procedure glTexImage1D(target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer);
-procedure glTexSubImage1D(target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer);
-procedure glColor3f(red, green, blue: GLfloat);
-procedure glColor3fv(const v: PGLfloat);
-procedure glColor4fv(const v: PGLfloat);
-procedure glBegin(mode: GLenum);
-procedure glCallList(list: GLuint);
-procedure glEnd;
-procedure glColorMaterial(face, mode: GLenum);
-procedure glDeleteLists(list: GLuint; range: GLsizei);
-procedure glDrawBuffer(mode: GLenum);
-procedure glGetTexImage(target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer);
-procedure glPolygonMode(face, mode: GLenum);
-procedure glPopAttrib;
-procedure glPushAttrib(mask: GLbitfield);
-procedure glRasterPos2f(x, y: GLfloat);
-procedure glTexCoord2f(s, t: GLfloat);
-procedure glVertex2f(x, y: GLfloat);
-procedure glVertex3f(x, y, z: GLfloat);
-{$else}
-procedure glOrtho(left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glFrustum(left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glBegin(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glCallList(list: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexImage1D(target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexSubImage1D(target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glColor3f(red, green, blue: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glColor3fv(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glColor4fv(const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glEnd; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glColorMaterial(face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDeleteLists(list: GLuint; range: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glDrawBuffer(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glGetTexImage(target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPolygonMode(face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPopAttrib; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPushAttrib(mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glRasterPos2f(x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexCoord2f(s, t: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glVertex2f(x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glVertex3f(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-{$endif}
+var
+  glBindTexture : procedure (target: GLenum; texture: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBlendFunc : procedure (sfactor, dfactor: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glClear : procedure (mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glClearColor : procedure (red, green, blue, alpha: GLclampf); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glColorPointer : procedure (size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCopyTexImage2D : procedure (target: GLenum; level: GLint; internalFormat: GLenum; x, y: GLint; width, height: GLsizei; border: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCopyTexSubImage2D : procedure (target: GLenum; level, xoffset, yoffset, x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCullFace : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteTextures : procedure (n: GLsizei; const textures: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDepthFunc : procedure (func: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDepthMask : procedure (flag: GLboolean); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDepthRange : procedure (zNear, zFar: GLclampd); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDisable : procedure (cap: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDisableClientState : procedure (aarray: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDrawArrays : procedure (mode: GLenum; first: GLint; count: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDrawElements : procedure (mode: GLenum; count: GLsizei; atype: GLenum; const indices: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glEnable : procedure (cap: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glEnableClientState : procedure (aarray: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFinish : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFlush : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFrontFace : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenLists : function (range: GLsizei): GLuint; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenTextures : procedure (n: GLsizei; textures: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetError : function : GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetFloatv : procedure (pname: GLenum; params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetIntegerv : procedure (pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glMateriali : procedure (face, pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexParameteri : procedure (target: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetString : function (name: GLenum): PAnsiChar; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glHint : procedure (target, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glIndexMask : procedure (mask: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLightModelf : procedure (pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLightModelfv : procedure (pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLightfv : procedure (light, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLineWidth : procedure (width: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glListBase : procedure (base: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLoadIdentity : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glLoadMatrixf : procedure (const m: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glMaterialf : procedure (face, pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glMaterialfv : procedure (face, pname: GLenum; const params: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glMatrixMode : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glNormal3f : procedure (nx, ny, nz: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glNormalPointer : procedure (atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
-procedure glPointSize(size: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPolygonOffset(factor, units: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPopMatrix; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPushMatrix; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glReadPixels(x, y: GLint; width, height: GLsizei; format, atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glRotatef(angle, x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glScalef(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glScissor(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glShadeModel(mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexCoordPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexGeni(coord: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexImage2D(target: GLenum; level, internalformat: GLint; width, height: GLsizei; border: GLint; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTexParameterf(target: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glTranslatef(x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glVertexPointer(size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glViewport(x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
+  glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBegin : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCallList : procedure (list: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexImage1D : procedure (target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexSubImage1D : procedure (target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glColor3f : procedure (red, green, blue: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glColor3fv : procedure (const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glColor4fv : procedure (const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glEnd : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glColorMaterial : procedure (face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteLists : procedure (list: GLuint; range: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDrawBuffer : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetTexImage : procedure (target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPolygonMode : procedure (face, mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPopAttrib : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPushAttrib : procedure (mask: GLbitfield); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glRasterPos2f : procedure (x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexCoord2f : procedure (s, t: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glVertex2f : procedure (x, y: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glVertex3f : procedure (x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
-{$ifndef minimal}
-function glIsEnabled(cap: GLEnum): bytebool; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glGetTexLevelParameteriv(target: GLEnum; level: GLint; pname: GLEnum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-procedure glPixelStorei(pname: GLEnum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF} external opengl;
-{$endif}
+  glPointSize : procedure (size: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPolygonOffset : procedure (factor, units: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPopMatrix : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glPushMatrix : procedure ; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glReadPixels : procedure (x, y: GLint; width, height: GLsizei; format, atype: GLenum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glRotatef : procedure (angle, x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glScalef : procedure (x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glScissor : procedure (x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glShadeModel : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexCoordPointer : procedure (size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexGeni : procedure (coord: GLenum; pname: GLenum; param: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexImage2D : procedure (target: GLenum; level, internalformat: GLint; width, height: GLsizei; border: GLint; format, atype: GLenum; const pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexParameterf : procedure (target: GLenum; pname: GLenum; param: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTranslatef : procedure (x, y, z: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glVertexPointer : procedure (size: GLint; atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glViewport : procedure (x, y: GLint; width, height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
+  {$ifdef android}
+  glColor4f : procedure(red, green, blue, alpha: GLfloat); cdecl;
+  {$endif}
+
 
 {$if defined(WIN32) or defined(WIN64)}
-function wglGetProcAddress (P : pansichar) : pointer; stdcall; external opengl;
+function wglGetProcAddress (P : pansichar) : pointer; stdcall; external 'opengl32.dll';
 {$ifend}
 
 var
@@ -1508,11 +1464,15 @@ var
 
 
 
-procedure LoadOpenGLExtensions;
+procedure LoadOpenGLExtensions(const Mode : integer);
+procedure LoadOpenGL(const Mode : integer);
 
 {$ifndef minimal}
 procedure CheckGLError;
 {$endif}
+
+var
+  LibGL : NativeUInt;
 
 implementation
 
@@ -1539,7 +1499,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..36{$ifndef minimal}+5{$endif}] of
+const ExtFuncArray : packed array[0..36{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1563,13 +1523,13 @@ const ExtFuncArray : packed array[0..36{$ifndef minimal}+5{$endif}] of
 //(Name : 'glGetActiveUniform'; Ptr : @@glGetActiveUniform),
 //(Name : 'glGetProgramInfoLog'; Ptr : @@glGetProgramInfoLog),
 
-{$ifndef minimal}
+{$if (not defined(minimal)) or defined(android)}
 (Name : 'glGetProgramiv'; Ptr : @@glGetProgramiv),
 (Name : 'glGetShaderiv'; Ptr : @@glGetShaderiv),
 (Name : 'glGetShaderInfoLog'; Ptr : @@glGetShaderInfoLog),
 (Name : 'glGetProgramInfoLog'; Ptr : @@glGetProgramInfoLog),
 (Name : 'glValidateProgram'; Ptr : @@glValidateProgram),
-{$endif}
+{$ifend}
 
 //(Name : 'glGetShaderSource'; Ptr : @@glGetShaderSource),
 //(Name : 'glGetUniformiv'; Ptr : @@glGetUniformiv),
@@ -1654,32 +1614,19 @@ begin
   FbosSupported := @glIsRenderbufferEXT<>nil;
 end;
 
-
-//Ville:
-//http://steinsoft.net/index.php?site=Programming/Code%20Snippets/OpenGL/gluperspective
-procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
-var
-   xmin, xmax, ymin, ymax : GLdouble;
-begin
-  ymax := zNear * tan(fovy * PI / 360.0);
-  ymin := -ymax;
-  xmin := ymin * aspect;
-  xmax := ymax * aspect;
-  glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
-end;
-
-
 {$ifdef Android} //Define dummys for functions not supported in GL ES 1.1
-procedure glTexImage1D(target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer);
+procedure fakeTexImage1D(target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer);
 begin end;
-procedure glTexSubImage1D(target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer);
+
+procedure fakeTexSubImage1D(target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer);
 begin end;
-procedure glColor3f(red, green, blue: GLfloat);
+
+procedure fakeColor3f(red, green, blue: GLfloat);
 begin
   glColor4f(red,green,blue,1);
 end;
 
-procedure glColor3fv(const v: PGLfloat);
+procedure fakeColor3fv(const v: PGLfloat);
 var
   P : PGLFloat;
   r,g,b : single;
@@ -1691,7 +1638,7 @@ begin
   glColor4f(r,g,b,1);
 end;
 
-procedure glColor4fv(const v: PGLfloat);
+procedure fakeColor4fv(const v: PGLfloat);
 var
   P : PGLFloat;
   r,g,b,a : single;
@@ -1715,7 +1662,7 @@ type
 const
   SavedAttrib : PSaveAttribs = nil;
 
-procedure glPushAttrib(mask: GLbitfield);
+procedure fakePushAttrib(mask: GLbitfield);
 var
   A : PSaveAttribs;
 begin
@@ -1731,7 +1678,7 @@ begin
   SavedAttrib := A;
 end;
 
-procedure glPopAttrib;
+procedure fakePopAttrib;
 var
   A : PSaveAttribs;
 begin
@@ -1759,32 +1706,200 @@ begin
   SavedAttrib := nil;
 end;
 
-procedure glBegin(mode: GLenum);
+procedure fakeBegin(mode: GLenum);
 begin end;
-procedure glCallList(list: GLuint);
+procedure fakeCallList(list: GLuint);
 begin end;
-procedure glEnd;
+procedure fakeEnd;
 begin end;
-procedure glColorMaterial(face, mode: GLenum);
+procedure fakeColorMaterial(face, mode: GLenum);
 begin end;
-procedure glDeleteLists(list: GLuint; range: GLsizei);
+procedure fakeDeleteLists(list: GLuint; range: GLsizei);
 begin end;
-procedure glDrawBuffer(mode: GLenum);
+procedure fakeDrawBuffer(mode: GLenum);
 begin end;
-procedure glGetTexImage(target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer);
+procedure fakeGetTexImage(target: GLenum; level: GLint; format: GLenum; atype: GLenum; pixels: Pointer);
 begin end;
-procedure glPolygonMode(face, mode: GLenum);
+procedure fakePolygonMode(face, mode: GLenum);
 begin end;
 
-procedure glRasterPos2f(x, y: GLfloat);
+procedure fakeRasterPos2f(x, y: GLfloat);
 begin end;
-procedure glTexCoord2f(s, t: GLfloat);
+procedure fakeTexCoord2f(s, t: GLfloat);
 begin end;
-procedure glVertex2f(x, y: GLfloat);
+procedure fakeVertex2f(x, y: GLfloat);
 begin end;
-procedure glVertex3f(x, y, z: GLfloat);
+procedure fakeVertex3f(x, y, z: GLfloat);
 begin end;
+
+procedure GlNotImp;
+begin
+  Platform_Error('Non-implemented GL function called');
+end;
 {$endif} //Android
+
+const FuncArray : packed array[0..79{$ifdef android}+1{$endif}] of
+  packed record
+    Name : pansichar;
+    Ptr : ^pointer;
+  end =
+(
+(Name : 'glBindTexture'; Ptr : @@glBindTexture),
+(Name : 'glBlendFunc'; Ptr : @@glBlendFunc),
+(Name : 'glClear'; Ptr : @@glClear),
+(Name : 'glClearColor'; Ptr : @@glClearColor),
+(Name : 'glColorPointer'; Ptr : @@glColorPointer),
+(Name : 'glCopyTexImage2D'; Ptr : @@glCopyTexImage2D),
+(Name : 'glCopyTexSubImage2D'; Ptr : @@glCopyTexSubImage2D),
+(Name : 'glCullFace'; Ptr : @@glCullFace),
+(Name : 'glDeleteTextures'; Ptr : @@glDeleteTextures),
+(Name : 'glDepthFunc'; Ptr : @@glDepthFunc),
+(Name : 'glDepthMask'; Ptr : @@glDepthMask),
+(Name : 'glDepthRange'; Ptr : @@glDepthRange),
+(Name : 'glDisable'; Ptr : @@glDisable),
+(Name : 'glDisableClientState'; Ptr : @@glDisableClientState),
+(Name : 'glDrawArrays'; Ptr : @@glDrawArrays),
+(Name : 'glDrawElements'; Ptr : @@glDrawElements),
+(Name : 'glEnable'; Ptr : @@glEnable),
+(Name : 'glEnableClientState'; Ptr : @@glEnableClientState),
+(Name : 'glFinish'; Ptr : @@glFinish),
+(Name : 'glFlush'; Ptr : @@glFlush),
+(Name : 'glFrontFace'; Ptr : @@glFrontFace),
+(Name : 'glGenLists'; Ptr : @@glGenLists),
+(Name : 'glGenTextures'; Ptr : @@glGenTextures),
+(Name : 'glGetError'; Ptr : @@glGetError),
+(Name : 'glGetFloatv'; Ptr : @@glGetFloatv),
+(Name : 'glGetIntegerv'; Ptr : @@glGetIntegerv),
+(Name : 'glMateriali'; Ptr : @@glMateriali),
+(Name : 'glTexParameteri'; Ptr : @@glTexParameteri),
+(Name : 'glGetString'; Ptr : @@glGetString),
+(Name : 'glHint'; Ptr : @@glHint),
+(Name : 'glIndexMask'; Ptr : @@glIndexMask),
+(Name : 'glLightModelf'; Ptr : @@glLightModelf),
+(Name : 'glLightModelfv'; Ptr : @@glLightModelfv),
+(Name : 'glLightfv'; Ptr : @@glLightfv),
+(Name : 'glLineWidth'; Ptr : @@glLineWidth),
+(Name : 'glListBase'; Ptr : @@glListBase),
+(Name : 'glLoadIdentity'; Ptr : @@glLoadIdentity),
+(Name : 'glLoadMatrixf'; Ptr : @@glLoadMatrixf),
+(Name : 'glMaterialf'; Ptr : @@glMaterialf),
+(Name : 'glMaterialfv'; Ptr : @@glMaterialfv),
+(Name : 'glMatrixMode'; Ptr : @@glMatrixMode),
+(Name : 'glNormal3f'; Ptr : @@glNormal3f),
+(Name : 'glNormalPointer'; Ptr : @@glNormalPointer),
+(Name : {$ifdef android}'glOrthof'{$else}'glOrtho'{$endif}; Ptr : @@glOrtho),
+(Name : {$ifdef android}'glFrustumf'{$else}'glFrustum'{$endif}; Ptr : @@glFrustum),
+(Name : 'glBegin'; Ptr : @@glBegin),
+(Name : 'glCallList'; Ptr : @@glCallList),
+(Name : 'glTexImage1D'; Ptr : @@glTexImage1D),
+(Name : 'glTexSubImage1D'; Ptr : @@glTexSubImage1D),
+(Name : 'glColor3f'; Ptr : @@glColor3f),
+(Name : 'glColor3fv'; Ptr : @@glColor3fv),
+(Name : 'glColor4fv'; Ptr : @@glColor4fv),
+(Name : 'glEnd'; Ptr : @@glEnd),
+(Name : 'glColorMaterial'; Ptr : @@glColorMaterial),
+(Name : 'glDeleteLists'; Ptr : @@glDeleteLists),
+(Name : 'glDrawBuffer'; Ptr : @@glDrawBuffer),
+(Name : 'glGetTexImage'; Ptr : @@glGetTexImage),
+(Name : 'glPolygonMode'; Ptr : @@glPolygonMode),
+(Name : 'glPopAttrib'; Ptr : @@glPopAttrib),
+(Name : 'glPushAttrib'; Ptr : @@glPushAttrib),
+(Name : 'glRasterPos2f'; Ptr : @@glRasterPos2f),
+(Name : 'glTexCoord2f'; Ptr : @@glTexCoord2f),
+(Name : 'glVertex2f'; Ptr : @@glVertex2f),
+(Name : 'glVertex3f'; Ptr : @@glVertex3f),
+(Name : 'glPointSize'; Ptr : @@glPointSize),
+(Name : 'glPolygonOffset'; Ptr : @@glPolygonOffset),
+(Name : 'glPopMatrix'; Ptr : @@glPopMatrix),
+(Name : 'glPushMatrix'; Ptr : @@glPushMatrix),
+(Name : 'glReadPixels'; Ptr : @@glReadPixels),
+(Name : 'glRotatef'; Ptr : @@glRotatef),
+(Name : 'glScalef'; Ptr : @@glScalef),
+(Name : 'glScissor'; Ptr : @@glScissor),
+(Name : 'glShadeModel'; Ptr : @@glShadeModel),
+(Name : 'glTexCoordPointer'; Ptr : @@glTexCoordPointer),
+(Name : 'glTexGeni'; Ptr : @@glTexGeni),
+(Name : 'glTexImage2D'; Ptr : @@glTexImage2D),
+(Name : 'glTexParameterf'; Ptr : @@glTexParameterf),
+(Name : 'glTranslatef'; Ptr : @@glTranslatef),
+(Name : 'glVertexPointer'; Ptr : @@glVertexPointer),
+(Name : 'glViewport'; Ptr : @@glViewport)
+{$ifdef android}
+,(Name : 'glColor4f'; Ptr : @@glColor4f)
+{$endif}
+);
+
+procedure LoadOpenGL(const Mode : integer);
+var
+  I : integer;
+  S : PAnsiChar;
+begin
+  {$IFDEF LINUX}
+    {$IFDEF ANDROID}
+    if Mode=0 then //Different modules depending on GLES version
+      S := 'libGLESv1_CM.so'
+    else
+      S := 'libGLESv2.so';
+    {$else}
+    S := 'libGL.so';
+    {$endif}
+  {$ENDIF}
+  {$IFDEF DARWIN}
+  ///System/Library/Frameworks/OpenGL.framework/Libraries/
+  S := 'libGL.dylib';
+  {$ENDIF}
+  {$if defined(WIN32) or defined(WIN64)}
+  S := 'opengl32.dll';
+  {$ifend}
+
+  LibGL := Platform_LoadModule(S);
+  if LibGL=0 then
+    ZHalt('OpenGL could not be loaded');
+
+  for I := 0 to High(FuncArray) do
+    FuncArray[I].Ptr^ := Platform_GetModuleProc(LibGL, FuncArray[I].Name);
+
+  {$ifdef android}
+  for I := 0 to High(FuncArray) do
+    if FuncArray[I].Ptr^=nil then
+      FuncArray[I].Ptr^ := @GlNotImp;
+  glTexImage1D := @fakeTexImage1D;
+  glTexSubImage1D := @fakeTexSubImage1D;
+  glColor3f := @fakeColor3f;
+  glColor3fv := @fakeColor3fv;
+  glColor4fv := @fakeColor4fv;
+  glPushAttrib := @fakePushAttrib;
+  glPopAttrib := @fakePopAttrib;
+  glBegin := @fakeBegin;
+  glCallList := @fakeCallList;
+  glEnd := @fakeEnd;
+  glColorMaterial := @fakeColorMaterial;
+  glDeleteLists := @fakeDeleteLists;
+  glDrawBuffer := @fakeDrawBuffer;
+  glGetTexImage := @fakeGetTexImage;
+  glPolygonMode := @fakePolygonMode;
+  glRasterPos2f := @fakeRasterPos2f;
+  glTexCoord2f := @fakeTexCoord2f;
+  glVertex2f := @fakeVertex2f;
+  glVertex3f := @fakeVertex3f;
+  {$endif}
+end;
+
+//Ville:
+//http://steinsoft.net/index.php?site=Programming/Code%20Snippets/OpenGL/gluperspective
+procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
+var
+   xmin, xmax, ymin, ymax : GLdouble;
+begin
+  ymax := zNear * tan(fovy * PI / 360.0);
+  ymin := -ymax;
+  xmin := ymin * aspect;
+  xmax := ymax * aspect;
+  glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
+end;
+
+
+
 
 
 

@@ -2345,8 +2345,12 @@ void Normalize( int K,
       <Children>
         <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
           <BeforeInitExp>
-<![CDATA[if(ANDROID)
-  this.ModuleName="libGLESv1_CM.so";]]>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
           </BeforeInitExp>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
@@ -2487,6 +2491,7 @@ string sv_get_module_name(int slot, int mod_num) {}]]>
 // sensor types; also used as sensor identifiers
 const int SENSOR_TYPE_ACCELEROMETER = 1;
 const int SENSOR_TYPE_MAGNETIC_FIELD = 2;
+const int SENSOR_TYPE_ORIENTATION = 3; // deprecated
 const int SENSOR_TYPE_GYROSCOPE = 4;
 const int SENSOR_TYPE_LIGHT = 5;
 const int SENSOR_TYPE_PROXIMITY = 8;
@@ -2526,12 +2531,25 @@ int sensorEnable(int type) {}
 int sensorUpdateData() {}
 
 /*
- * Get actual data for the selected sensor type.
- * Vector sensors, such as accelerometer, magnetic field, or
- * gyroscope use x, y and z values. Scalar sensors, such as
- * light, proximity or temperature, use just x value.
+ * Get actual data for the selected scalar sensor type.
+ * This is used for sensors such as ambient temperature,
+ * proximity, light, pressure or humidity.
  */
-void sensorGetData(int type, ref float x, ref float y, ref float z) {}
+void sensorGetData1(int type, ref float value) {}
+
+/*
+ * Get actual data for the selected 3D sensor type.
+ * This is used for sensors such as accelerometer, magnetic field,
+ * gyroscope, or gravity.
+ */
+void sensorGetData3(int type, ref float x, ref float y, ref float z) {}
+
+/*
+ * Get actual data for the selected 3D sensor type.
+ * Rotation vector sensor uses <x, y, z, w> as components of
+ * a unit quaternion representing rotation of the device.
+ */
+void sensorGetData4(int type, ref float x, ref float y, ref float z, ref float w) {}
 
 // Return name of a sensor of the specified type.
 string sensorGetName(int type) {}

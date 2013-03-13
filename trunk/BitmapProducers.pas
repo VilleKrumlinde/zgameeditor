@@ -192,7 +192,7 @@ begin
     B.UseTextureBegin;
     glPushMatrix();
     glScalef(2,2,2);
-    RenderUnitQuad(Self.ZApp.Driver);
+    Self.ZApp.Driver.RenderUnitQuad();
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
   end;

@@ -2,13 +2,16 @@ unit GLDrivers;
 
 interface
 
-uses ZOpenGL, Meshes, ZClasses;
+uses ZOpenGL, Meshes, ZClasses, Renderer;
 
 type
   TGLBase = (glbFixed,glbProgrammable);
 
   TGLDriverBase = class
+  strict private
+    CurrentMaterial : TMaterial;
   public
+    Kind : TGLBase;
     procedure Translate(const X,Y,Z : GLfloat); virtual; abstract;
     procedure Rotate(const Angle, X, Y, Z: GLfloat); virtual; abstract;
     procedure Scale(const X,Y,Z: GLfloat); virtual; abstract;
@@ -21,15 +24,18 @@ type
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); virtual; abstract;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); virtual; abstract;
     procedure ApplyRotation(const R : TZVector3f);
-    procedure SetCurrentShader(Shader : pointer); virtual; abstract;
-    procedure OnCompileShader(Shader : pointer); virtual; abstract;
+    procedure SetCurrentShader(Shader : TShader); virtual; abstract;
+    procedure OnCompileShader(Shader : TShader); virtual; abstract;
+    procedure InitGL;
+    procedure EnableMaterial(NewM : TMaterial);
+    procedure RenderUnitQuad;
   end;
 
 function CreateDriver(Kind : TGLBase) : TGLDriverBase;
 
 implementation
 
-uses ZMath, Renderer
+uses ZMath
 {$ifndef minimal},ZLog{$endif}
 ;
 
@@ -54,8 +60,8 @@ type
     procedure PopMatrix; override;
     procedure RenderMesh(Mesh : TMesh); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
-    procedure SetCurrentShader(Shader : pointer); override;
-    procedure OnCompileShader(Shader : pointer); override;
+    procedure SetCurrentShader(Shader : TShader); override;
+    procedure OnCompileShader(Shader : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
   end;
 
@@ -77,8 +83,8 @@ type
     procedure PushMatrix; override;
     procedure PopMatrix; override;
     procedure RenderMesh(Mesh : TMesh); override;
-    procedure SetCurrentShader(Shader : pointer); override;
-    procedure OnCompileShader(Shader : pointer); override;
+    procedure SetCurrentShader(Shader : TShader); override;
+    procedure OnCompileShader(Shader : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
@@ -122,6 +128,245 @@ begin
     Rotate( (R[0]*360) , 1, 0, 0);
 end;
 
+procedure TGLDriverBase.InitGL;
+const
+  //exempel från http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
+  //Specular är färg för highlights i direkt ljus
+  Specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
+  LowShininess = 5;
+begin
+  LoadOpenGL(Ord(Self.Kind));
+
+  glEnable(GL_DEPTH_TEST);
+
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  if Self.Kind=glbFixed then
+  begin
+    //Light
+    //Use default position
+    glEnable(GL_LIGHT0);
+
+    //Färg på material följer anrop till glColor. Detta gör att man slipper
+    //sätta glMaterial ambient och diffuse separat.
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+    glMaterialfv(GL_FRONT, GL_SPECULAR, @Specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, LowShininess);
+  end;
+
+  //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 då blir det för ljust
+  //Detta p.g.a. gl skalar normals vid glScale
+  glEnable(GL_NORMALIZE);
+
+  //Extensions must be loaded after video-init, shaders are available on a
+  //per-context basis in Win32
+  LoadOpenGLExtensions(Ord(Self.Kind));
+
+  //Set other default properties using the material-handler
+  EnableMaterial(DefaultMaterial);
+end;
+
+procedure TGLDriverBase.EnableMaterial(NewM : TMaterial);
+const
+  //0x8370 GL_MIRRORED_REPEAT, enbart gl 1.4 och uppåt
+  TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
+var
+  NilOld : boolean;
+  Tmp,I,TexCount : integer;
+  Tex : TMaterialTexture;
+  OldM : TMaterial;
+begin
+  OldM := Self.CurrentMaterial;
+  if (NewM=nil) then
+    Exit;
+
+  glColor4fv(@NewM.Color);
+
+  //Test for equal material after setting color
+  //This is because rendersetcolor may have been called so we need reset material.color
+  if NewM=OldM then
+    Exit;
+
+  NilOld := OldM=nil;
+
+  CurrentMaterial := NewM;
+
+  glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
+  glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
+  glMaterialf(GL_FRONT, GL_SHININESS, NewM.Shininess);
+
+  if NilOld or (NewM.Shading<>OldM.Shading) then
+  begin
+    if (not NilOld) and (OldM.Shading=msWireframe) then
+    begin
+      glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+      glLineWidth(1.0);
+    end;
+    case NewM.Shading of
+      msSmooth :
+        glShadeModel(GL_SMOOTH);
+      msFlat :
+        glShadeModel(GL_FLAT);
+      msWireframe :
+        //Wireframe
+        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    end;
+  end;
+
+  if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
+    glLineWidth(NewM.WireframeWidth);
+
+  if NilOld or (NewM.Light<>OldM.Light) then
+  begin
+    if NewM.Light then
+      glEnable( GL_LIGHTING )
+    else
+      glDisable( GL_LIGHTING );
+  end;
+
+  if NilOld or (NewM.ZBuffer<>OldM.ZBuffer) then
+  begin
+    if NewM.ZBuffer then
+    begin
+      glDepthFunc(GL_LEQUAL);
+      glDepthMask(1);
+    end
+    else
+    begin
+      //Disable z-buffer: Skip depth-test
+      glDepthFunc(GL_ALWAYS);
+      glDepthMask(0);
+    end;
+  end;
+
+  if NilOld or (NewM.DrawBackFace<>OldM.DrawBackFace) then
+  begin
+    if NewM.DrawBackFace then
+      glDisable(GL_CULL_FACE)
+    else
+      glEnable(GL_CULL_FACE);
+  end;
+
+  if NilOld or (NewM.Blend<>OldM.Blend) then
+  begin
+    if NewM.Blend=mbNoBlend then
+      glDisable(GL_BLEND)
+    else
+    begin
+      glEnable(GL_BLEND);
+      case NewM.Blend of
+        mbA_1MSA : glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        mbA_1 : glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+        mbC_1MSC : glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
+        mbAlphaSat_1 : glBlendFunc(GL_SRC_ALPHA_SATURATE,GL_ONE);
+      end;
+    end;
+  end;
+
+  TexCount := NewM.Textures.Count;
+  if (not NilOld) and (OldM.Textures.Count>TexCount) then
+    TexCount := OldM.Textures.Count;
+  //Count backwards so that activetexture is zero on loop exit
+  for I := TexCount-1 downto 0 do
+  begin
+    if MultiTextureSupported then
+      glActiveTexture($84C0 + I)
+    else if I>0 then
+      Continue;
+
+    if I<NewM.Textures.Count then
+      Tex := TMaterialTexture(NewM.Textures[I])
+    else
+      Tex := DefaultMaterialTexture;
+
+    if Tex.Texture<>nil then
+    begin
+      glEnable(GL_TEXTURE_2D);
+      Tex.Texture.UseTextureBegin;
+    end else if Tex.RenderTarget<>nil then
+    begin
+      glEnable(GL_TEXTURE_2D);
+      Tex.RenderTarget.UseTextureBegin;
+    end else
+    begin
+      glDisable(GL_TEXTURE_2D);
+    end;
+
+    //Texture matrix
+    //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+      glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+      glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
+      glRotatef(Tex.TextureRotate*360,0,0,1);
+      glTranslatef(-0.5,-0.5,0);
+    glMatrixMode(GL_MODELVIEW);
+
+    if Tex.TexCoords=tcGenerated then
+    begin
+      {$ifndef Android}
+      glEnable(GL_TEXTURE_GEN_S);
+      glEnable(GL_TEXTURE_GEN_T);
+      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+      {$endif}
+    end
+    else
+    begin
+      glDisable(GL_TEXTURE_GEN_S);
+      glDisable(GL_TEXTURE_GEN_T);
+    end;
+
+    //This is a local parameter for every texture
+    Tmp := TexWrapModes[Ord(Tex.TextureWrapMode)];
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Tmp );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Tmp );
+  end;
+
+  if ShadersSupported and (NilOld or (NewM.Shader<>OldM.Shader)) then
+  begin
+    if (not NilOld) and (OldM.Shader<>nil) then
+      OldM.Shader.DetachArrayVariables;
+    if NewM.Shader<>nil then
+      NewM.Shader.UseShader
+    else
+      glUseProgram(0);
+  end;
+end;
+
+procedure TGLDriverBase.RenderUnitQuad;
+const
+  Width = 1;
+  Height = 1;
+  X = 0;
+  Y = 0;
+var
+  W,H : single;
+  Verts : array[0..3] of TZVector2f;
+  Texc : array[0..3] of TZVector2f;
+begin
+  //Y är positivt uppåt
+  //Rita i CCW direction för att skapa en front-facing polygon
+  //Behövs normals här? Default är 0,0,1.
+
+  //För TexCoords gäller: Y=1 Top, Y=0 Bottom
+
+  W := Width / 2.0;
+  H := Height / 2.0;
+
+  //Normal towards camera
+  glNormal3f(0,0,1);
+
+  Verts[0] := Vector2f(X-W,Y-H); Texc[0] := Vector2f(0.0, 0.0);
+  Verts[1] := Vector2f(X+W,Y-H); Texc[1] := Vector2f(1.0, 0.0);
+  Verts[2] := Vector2f(X+W,Y+H); Texc[2] := Vector2f(1.0, 1.0);
+  Verts[3] := Vector2f(X-W,Y+H); Texc[3] := Vector2f(0.0, 1.0);
+  Self.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
+end;
+
+
 { TGLDriverFixed }
 
 procedure TGLDriverFixed.Perspective(const fovy, aspect, zNear, zFar: GLfloat);
@@ -136,6 +381,7 @@ begin
   glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 end;
 
+
 procedure TGLDriverFixed.LoadIdentity;
 begin
   glLoadIdentity;
@@ -146,7 +392,7 @@ begin
   glMatrixMode(mode);
 end;
 
-procedure TGLDriverFixed.OnCompileShader(Shader: pointer);
+procedure TGLDriverFixed.OnCompileShader(Shader: TShader);
 begin
 
 end;
@@ -258,7 +504,7 @@ begin
   glScalef(X,Y,Z);
 end;
 
-procedure TGLDriverFixed.SetCurrentShader(Shader: pointer);
+procedure TGLDriverFixed.SetCurrentShader(Shader: TShader);
 begin
 
 end;
@@ -404,7 +650,7 @@ begin
   MDirty[Self.MMode] := True;
 end;
 
-procedure TGLDriverProgrammable.SetCurrentShader(Shader: pointer);
+procedure TGLDriverProgrammable.SetCurrentShader(Shader: TShader);
 begin
   Self.CurrentShader := Shader;
 end;
@@ -436,7 +682,7 @@ begin
   glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
 end;
 
-procedure TGLDriverProgrammable.OnCompileShader(Shader: pointer);
+procedure TGLDriverProgrammable.OnCompileShader(Shader: TShader);
 var
   S : TShader;
 begin
@@ -536,6 +782,7 @@ begin
   else
     Result := TGLDriverFixed.Create
   end;
+  Result.Kind := Kind;
 end;
 
 
