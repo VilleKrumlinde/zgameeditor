@@ -1283,8 +1283,14 @@ var
   glNormal3f : procedure (nx, ny, nz: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glNormalPointer : procedure (atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
+  {$ifdef android}
+  glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  {$else}
   glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  {$endif}
+
   glBegin : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCallList : procedure (list: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glTexImage1D : procedure (target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}

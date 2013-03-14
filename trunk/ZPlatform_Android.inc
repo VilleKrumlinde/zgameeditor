@@ -495,6 +495,8 @@ end;
 function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := Platform_GetModuleProc(ZOpenGL.LibGL, P);
+  if Result=nil then
+    Platform_Error(P);
 end;
 
 procedure Platform_InitGlobals;

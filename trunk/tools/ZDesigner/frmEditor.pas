@@ -1544,7 +1544,7 @@ begin
   glLoadIdentity();
   //calculate the aspect ratio of the window
   //we'll use a perspective matrix to view our scene
-  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
   glMatrixMode(GL_MODELVIEW);
 
 //  glShadeModel(GL_SMOOTH);
@@ -1632,7 +1632,7 @@ begin
   glLoadIdentity();
   //calculate the aspect ratio of the window
   //we'll use a perspective matrix to view our scene
-  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
 //  glTranslatef(0,0,-10);
   glMatrixMode(GL_MODELVIEW);
 
