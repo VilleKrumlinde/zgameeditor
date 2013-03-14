@@ -1235,7 +1235,7 @@ const
 
 {******************************************************************************}
 
-procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
+//procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
 
 
 var
@@ -1464,7 +1464,7 @@ var
 
 
 
-procedure LoadOpenGLExtensions(const Mode : integer);
+procedure LoadOpenGLExtensions;
 procedure LoadOpenGL(const Mode : integer);
 
 {$ifndef minimal}
@@ -1607,10 +1607,6 @@ begin
   ShadersSupported := @glUseProgram<>nil;
   MultiTextureSupported := @glActiveTexture<>nil;
   VbosSupported := @glBindBuffer<>nil;
-  {$ifdef linux}
-  //VBOs crash on my ubuntu-linux setup.
-  VbosSupported := False;
-  {$endif}
   FbosSupported := @glIsRenderbufferEXT<>nil;
 end;
 
@@ -1732,9 +1728,15 @@ begin end;
 procedure fakeVertex3f(x, y, z: GLfloat);
 begin end;
 
+var
+  _shown : boolean = false;
 procedure GlNotImp;
 begin
-  Platform_Error('Non-implemented GL function called');
+  if not _shown then
+  begin
+    Platform_Error('Non-implemented GL function called');
+    _shown := true;
+  end;
 end;
 {$endif} //Android
 

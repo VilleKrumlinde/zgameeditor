@@ -453,11 +453,6 @@ end;
 {$endif}
 
 
-var
-  CurrentMaterial : TMaterial;
-
-
-
 procedure RenderModel(Model : TModel);
 var
   Driver : TGLDriverBase;
@@ -691,7 +686,7 @@ var
 begin
   GetMem(Mem,Beams.Count * 3 * ((2+2)*SizeOf(single)));
   Vp := Mem;
-  Tp := pointer(NativeUInt(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
+  Tp := pointer(NativeInt(Vp) + Beams.Count * 3 * (2*SizeOf(single)));
 
   V := Vp; T := Tp;
 
@@ -821,11 +816,12 @@ var
   FloatBuf : array[0..19] of ansichar;
   TextBuf : array[0..(8*1024-1)] of ansichar;
 begin
-  UseBuiltInFont := (CurrentMaterial=nil) or (CurrentMaterial.Font=nil);
+  Driver := Self.ZApp.Driver;
+  UseBuiltInFont := (Driver.CurrentMaterial=nil) or (Driver.CurrentMaterial.Font=nil);
 
   if not UseBuiltInFont then
   begin
-    CurFont := CurrentMaterial.Font;
+    CurFont := Driver.CurrentMaterial.Font;
     Spacing := 0;
   end
   else
@@ -875,8 +871,6 @@ begin
 
   if TheText=nil then
     Exit;
-
-  Driver := Self.ZApp.Driver;
 
   //todo move to Begin2D(), End2D()-procs
   if not Self.UseModelSpace then
@@ -1343,8 +1337,8 @@ begin
       Self.RenderBufferSize := MemSize;
     end;
     ArV := Self.RenderBuffer;
-    ArT := Pointer(NativeUInt(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
-    ArC := Pointer(NativeUInt(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
+    ArT := Pointer(NativeInt(ArV) + (Particles.Count*6*SizeOf(Single)*2) );
+    ArC := Pointer(NativeInt(ArT) + (Particles.Count*6*SizeOf(Single)*2) );
 
     V := ArV; T := ArT; C := ArC;
 
@@ -1657,6 +1651,7 @@ const
   TexVar : array[0..4] of ansichar = 'tex'#0#0;
 var
   I,J : integer;
+  Driver : TGLDriverBase;
 begin
   CleanUp;
 
@@ -1668,10 +1663,12 @@ begin
   glLinkProgram(ProgHandle);
   {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
 
+  Driver := Self.ZApp.Driver;
+
   //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
-  if CurrentMaterial<>nil then
-    for I := 0 to CurrentMaterial.Textures.Count-1 do
+  if Driver.CurrentMaterial<>nil then
+    for I := 0 to Driver.CurrentMaterial.Textures.Count-1 do
     begin
       TexVar[3]:=ansichar(ord('1') + I);
       J := glGetUniformLocation(ProgHandle,pansichar(@TexVar));
@@ -1679,7 +1676,7 @@ begin
         glUniform1i(J,I);
     end;
 
-  Self.ZApp.Driver.OnCompileShader(Self);
+  Driver.OnCompileShader(Self);
 
   IsChanged := False;
 end;
@@ -1718,8 +1715,8 @@ var
 
 begin
   //Arrays are passed as sampler1d so update with the index of the texture
-  if CurrentMaterial<>nil then
-    Self.FirstTexIndex := CurrentMaterial.Textures.Count
+  if ZApp.Driver.CurrentMaterial<>nil then
+    Self.FirstTexIndex := ZApp.Driver.CurrentMaterial.Textures.Count
   else
     FirstTexIndex := 0;
   Self.TexCount := 0;

@@ -8,9 +8,8 @@ type
   TGLBase = (glbFixed,glbProgrammable);
 
   TGLDriverBase = class
-  strict private
-    CurrentMaterial : TMaterial;
   public
+    CurrentMaterial : TMaterial;
     Kind : TGLBase;
     procedure Translate(const X,Y,Z : GLfloat); virtual; abstract;
     procedure Rotate(const Angle, X, Y, Z: GLfloat); virtual; abstract;
@@ -162,7 +161,7 @@ begin
 
   //Extensions must be loaded after video-init, shaders are available on a
   //per-context basis in Win32
-  LoadOpenGLExtensions(Ord(Self.Kind));
+  LoadOpenGLExtensions;
 
   //Set other default properties using the material-handler
   EnableMaterial(DefaultMaterial);
@@ -193,37 +192,40 @@ begin
 
   CurrentMaterial := NewM;
 
-  glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
-  glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
-  glMaterialf(GL_FRONT, GL_SHININESS, NewM.Shininess);
-
-  if NilOld or (NewM.Shading<>OldM.Shading) then
+  if Self.Kind=glbFixed then
   begin
-    if (not NilOld) and (OldM.Shading=msWireframe) then
+    glMaterialfv(GL_FRONT, GL_SPECULAR, @NewM.SpecularColor);
+    glMaterialfv(GL_FRONT, GL_EMISSION, @NewM.EmissionColor);
+    glMaterialf(GL_FRONT, GL_SHININESS, NewM.Shininess);
+
+    if NilOld or (NewM.Shading<>OldM.Shading) then
     begin
-      glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-      glLineWidth(1.0);
+      if (not NilOld) and (OldM.Shading=msWireframe) then
+      begin
+        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+        glLineWidth(1.0);
+      end;
+      case NewM.Shading of
+        msSmooth :
+          glShadeModel(GL_SMOOTH);
+        msFlat :
+          glShadeModel(GL_FLAT);
+        msWireframe :
+          //Wireframe
+          glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+      end;
     end;
-    case NewM.Shading of
-      msSmooth :
-        glShadeModel(GL_SMOOTH);
-      msFlat :
-        glShadeModel(GL_FLAT);
-      msWireframe :
-        //Wireframe
-        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+
+    if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
+      glLineWidth(NewM.WireframeWidth);
+
+    if NilOld or (NewM.Light<>OldM.Light) then
+    begin
+      if NewM.Light then
+        glEnable( GL_LIGHTING )
+      else
+        glDisable( GL_LIGHTING );
     end;
-  end;
-
-  if NilOld or (NewM.WireframeWidth<>OldM.WireFrameWidth) then
-    glLineWidth(NewM.WireframeWidth);
-
-  if NilOld or (NewM.Light<>OldM.Light) then
-  begin
-    if NewM.Light then
-      glEnable( GL_LIGHTING )
-    else
-      glDisable( GL_LIGHTING );
   end;
 
   if NilOld or (NewM.ZBuffer<>OldM.ZBuffer) then
@@ -296,27 +298,30 @@ begin
 
     //Texture matrix
     //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-      glTranslatef(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
-      glScalef(Tex.TextureScale[0],Tex.TextureScale[1],1);
-      glRotatef(Tex.TextureRotate*360,0,0,1);
-      glTranslatef(-0.5,-0.5,0);
-    glMatrixMode(GL_MODELVIEW);
+    Self.MatrixMode(GL_TEXTURE);
+    Self.LoadIdentity();
+      Self.Translate(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+      Self.Scale(Tex.TextureScale[0],Tex.TextureScale[1],1);
+      Self.Rotate(Tex.TextureRotate*360,0,0,1);
+      Self.Translate(-0.5,-0.5,0);
+    Self.MatrixMode(GL_MODELVIEW);
 
-    if Tex.TexCoords=tcGenerated then
+    if Self.Kind=glbFixed then
     begin
-      {$ifndef Android}
-      glEnable(GL_TEXTURE_GEN_S);
-      glEnable(GL_TEXTURE_GEN_T);
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-      {$endif}
-    end
-    else
-    begin
-      glDisable(GL_TEXTURE_GEN_S);
-      glDisable(GL_TEXTURE_GEN_T);
+      if Tex.TexCoords=tcGenerated then
+      begin
+        {$ifndef Android}
+        glEnable(GL_TEXTURE_GEN_S);
+        glEnable(GL_TEXTURE_GEN_T);
+        glTexGeni(GL_S,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+        glTexGeni(GL_T,GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+        {$endif}
+      end
+      else
+      begin
+        glDisable(GL_TEXTURE_GEN_S);
+        glDisable(GL_TEXTURE_GEN_T);
+      end;
     end;
 
     //This is a local parameter for every texture

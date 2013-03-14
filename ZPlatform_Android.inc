@@ -596,8 +596,8 @@ end;
 function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   Result := dlsym(Pointer(Module), Name);
-  if Result=nil then
-    Platform_Error('failed to getproc');
+//  if Result=nil then
+//    Platform_Error('failed to getproc');
 end;
 
 function Platform_TouchGetCount : integer;
