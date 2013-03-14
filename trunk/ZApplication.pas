@@ -734,12 +734,12 @@ begin
       RenderModels;
 
       //Render application
-      glPushMatrix;
+      Driver.PushMatrix;
       if Self.OnRender.Count>0 then
         Self.OnRender.ExecuteCommands;
       if Self.CurrentState<>nil then
         Self.CurrentState.OnRender.ExecuteCommands;
-      glPopMatrix;
+      Driver.PopMatrix;
     Driver.EnableMaterial(DefaultMaterial);
 
     for J := 0 to Lights.Count-1 do
@@ -1203,8 +1203,8 @@ var
 begin
   //Setup view and camera
 
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
+  App.Driver.MatrixMode(GL_PROJECTION);
+  App.Driver.LoadIdentity;
   case Self.Kind of
     catPerspective :
       begin
