@@ -24,7 +24,8 @@ type
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); virtual; abstract;
     procedure ApplyRotation(const R : TZVector3f);
     procedure SetCurrentShader(Shader : TShader); virtual; abstract;
-    procedure OnCompileShader(Shader : TShader); virtual; abstract;
+    procedure BeforeLinkShader(S : TShader); virtual; abstract;
+    procedure AfterLinkShader(S : TShader); virtual; abstract;
     procedure InitGL;
     procedure EnableMaterial(NewM : TMaterial);
     procedure RenderUnitQuad;
@@ -34,7 +35,7 @@ function CreateDriver(Kind : TGLBase) : TGLDriverBase;
 
 implementation
 
-uses ZMath
+uses ZMath, zplatform
 {$ifndef minimal},ZLog{$endif}
 ;
 
@@ -60,7 +61,8 @@ type
     procedure RenderMesh(Mesh : TMesh); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
     procedure SetCurrentShader(Shader : TShader); override;
-    procedure OnCompileShader(Shader : TShader); override;
+    procedure BeforeLinkShader(S : TShader); override;
+    procedure AfterLinkShader(S : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
   end;
 
@@ -83,7 +85,8 @@ type
     procedure PopMatrix; override;
     procedure RenderMesh(Mesh : TMesh); override;
     procedure SetCurrentShader(Shader : TShader); override;
-    procedure OnCompileShader(Shader : TShader); override;
+    procedure BeforeLinkShader(S : TShader); override;
+    procedure AfterLinkShader(S : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
@@ -181,7 +184,8 @@ begin
   if (NewM=nil) then
     Exit;
 
-  glColor4fv(@NewM.Color);
+  if Self.Kind=glbFixed then
+    glColor4fv(@NewM.Color);
 
   //Test for equal material after setting color
   //This is because rendersetcolor may have been called so we need reset material.color
@@ -387,6 +391,16 @@ begin
 end;
 
 
+procedure TGLDriverFixed.AfterLinkShader(S: TShader);
+begin
+
+end;
+
+procedure TGLDriverFixed.BeforeLinkShader(S: TShader);
+begin
+
+end;
+
 procedure TGLDriverFixed.LoadIdentity;
 begin
   glLoadIdentity;
@@ -395,11 +409,6 @@ end;
 procedure TGLDriverFixed.MatrixMode(const mode: GLenum);
 begin
   glMatrixMode(mode);
-end;
-
-procedure TGLDriverFixed.OnCompileShader(Shader: TShader);
-begin
-
 end;
 
 procedure TGLDriverFixed.Ortho(const left, right, bottom, top, zNear,
@@ -687,16 +696,17 @@ begin
   glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
 end;
 
-procedure TGLDriverProgrammable.OnCompileShader(Shader: TShader);
-var
-  S : TShader;
+procedure TGLDriverProgrammable.BeforeLinkShader(S: TShader);
 begin
-  S := TShader(Shader);
-  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
   glBindAttribLocation(S.ProgHandle, 0, 'position');
   glBindAttribLocation(S.ProgHandle, 1, 'normal');
   glBindAttribLocation(S.ProgHandle, 2, 'color');
   glBindAttribLocation(S.ProgHandle, 3, 'texCoord');
+end;
+
+procedure TGLDriverProgrammable.AfterLinkShader(S: TShader);
+begin
+  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
 end;
 
 procedure TGLDriverProgrammable.RenderArrays(const Mode: GLenum; const Count,

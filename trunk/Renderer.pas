@@ -1660,10 +1660,13 @@ begin
   VShaderHandle := InCreate(VertexShaderSource,GL_VERTEX_SHADER);
   FShaderHandle := InCreate(FragmentShaderSource,GL_FRAGMENT_SHADER);
 
+  Driver := Self.ZApp.Driver;
+  Driver.BeforeLinkShader(Self);
+
   glLinkProgram(ProgHandle);
   {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
 
-  Driver := Self.ZApp.Driver;
+  Driver.AfterLinkShader(Self);
 
   //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
@@ -1675,8 +1678,6 @@ begin
       if J>-1 then
         glUniform1i(J,I);
     end;
-
-  Driver.OnCompileShader(Self);
 
   IsChanged := False;
 end;

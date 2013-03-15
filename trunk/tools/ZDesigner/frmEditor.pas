@@ -3803,6 +3803,11 @@ begin
     if not NeedJpeg then
       ClassesToRemove.Add('TNjDecoder');
 
+    if ZApp.GLBase=glbFixed then
+      ClassesToRemove.Add('TGLDriverProgrammable')
+    else
+      ClassesToRemove.Add('TGLDriverFixed');
+
     //NamesToRemove = AllNames - UsedNames
     Infos := ZClasses.ComponentManager.GetAllInfos;
     for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do

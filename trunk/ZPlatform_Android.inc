@@ -495,8 +495,6 @@ end;
 function Platform_GLLoadProc(const P : PAnsiChar) : pointer;
 begin
   Result := Platform_GetModuleProc(ZOpenGL.LibGL, P);
-  if Result=nil then
-    Platform_Error(P);
 end;
 
 procedure Platform_InitGlobals;
@@ -598,8 +596,8 @@ end;
 function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   Result := dlsym(Pointer(Module), Name);
-//  if Result=nil then
-//    Platform_Error('failed to getproc');
+  if Result=nil then
+    Platform_Error(Name);
 end;
 
 function Platform_TouchGetCount : integer;
