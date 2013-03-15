@@ -496,6 +496,15 @@ begin
     Self.OldCaption := Self.Caption;
     Platform_SetWindowCaption(Self.Caption);
   end;
+
+  {$ifndef minimal}
+  if (Self.Driver<>nil) and (Self.Driver.Kind<>Self.GLBase) then
+  begin
+    FreeAndNil(Self.Driver);
+    Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
+  end;
+  {$endif}
+
   //Reset wheel delta (it is set from platform)
   MouseWheelDelta := 0;
 end;
@@ -992,6 +1001,10 @@ begin
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
+  List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}integer(@GLBase), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Compatible','ES2/GL3']);{$endif}
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+
   List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}integer(@FpsCounter), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -1085,10 +1098,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}integer(@NoSound), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-
-  List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}integer(@GLBase), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Compatible','ES2/GL3']);{$endif}
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('Icon',integer(@Icon), zptBinary);
