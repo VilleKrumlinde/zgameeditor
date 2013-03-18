@@ -574,10 +574,12 @@ procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
 begin
 end;
 
+
 function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
 var
   Buf : array[0..511] of AnsiChar;
   TheName : PAnsiChar;
+  InitFunc : function(vm:PJavaVM;reserved:pointer):jint; cdecl;
 begin
   if Name^='.' then
   begin
@@ -591,6 +593,14 @@ begin
   begin
     Platform_Error( PAnsiChar('failed to load: ' + TheName) );
   end;
+
+  InitFunc := Platform_GetModuleProc(Result,'JNI_OnLoad');
+  if @InitFunc<>nil then
+  begin
+    AndroidLog('Found JNI_OnLoad function, calling now...');
+    InitFunc(curVM,nil);
+  end;
+
 end;
 
 function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
