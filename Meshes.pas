@@ -869,9 +869,9 @@ begin
       for I := 0 to 2 do
         Rotation[I] := Rotation[I] + (RotationVelocity[I] * ZApp.DeltaTime);
 
-    OnUpdate.ExecuteCommands;
+    ExecuteWithCurrentModel(Self,OnUpdate);
     //Update renderers: particlesystems, beams etc
-    OnRender.Update;
+    ExecuteWithCurrentModel(Self,OnRender);
 
     //Update current state
     if CurrentState<>nil then
