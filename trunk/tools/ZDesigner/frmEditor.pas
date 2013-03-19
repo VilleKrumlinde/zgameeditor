@@ -745,7 +745,11 @@ begin
     procedure
     begin
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-      ZApp.DesignerStart(Glp.Width,Glp.Height);
+      try
+        ZApp.DesignerStart(Glp.Width,Glp.Height);
+      except
+        on E : EZHalted do ;
+      end;
       CheckGLError;
     end
   );
@@ -1540,12 +1544,12 @@ begin
   else
     Exit;
 
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+  ZApp.Driver.MatrixMode(GL_PROJECTION);
+  ZApp.Driver.LoadIdentity();
   //calculate the aspect ratio of the window
   //we'll use a perspective matrix to view our scene
-  Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
-  glMatrixMode(GL_MODELVIEW);
+  ZApp.Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  ZApp.Driver.MatrixMode(GL_MODELVIEW);
 
 //  glShadeModel(GL_SMOOTH);
 
@@ -1566,15 +1570,15 @@ begin
 
     // now here is where we'd translate and rotate the cube
     //reset our modelview matrix
-    glLoadIdentity();
+    ZApp.Driver.LoadIdentity();
 
     //translate
-    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
+    ZApp.Driver.Translate(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
 
     //rotate
-    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
-    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
-    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
+    ZApp.Driver.Rotate( ViewRotate[0] , 1.0, 0.0, 0.0);
+    ZApp.Driver.Rotate( ViewRotate[1] , 0.0, 1.0, 0.0);
+    ZApp.Driver.Rotate( ViewRotate[2] , 0.0, 0.0, 1.0);
 
     //set our color to be red
     glColor3f(1.0, 0.0, 0.0);
@@ -1604,7 +1608,7 @@ begin
   try
     ZApp.DesignerSetUpView;
 
-    Driver.EnableMaterial(DefaultMaterial);
+    ZApp.Driver.EnableMaterial(DefaultMaterial);
     try
       OnRender.ExecuteCommands;
     except
@@ -1614,7 +1618,7 @@ begin
         raise;
       end;
     end;
-    Driver.EnableMaterial(DefaultMaterial);
+    ZApp.Driver.EnableMaterial(DefaultMaterial);
   finally
     glPopAttrib();
   end;
@@ -1632,7 +1636,7 @@ begin
   glLoadIdentity();
   //calculate the aspect ratio of the window
   //we'll use a perspective matrix to view our scene
-  Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  ZApp.Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
 //  glTranslatef(0,0,-10);
   glMatrixMode(GL_MODELVIEW);
 
@@ -1677,10 +1681,10 @@ begin
     begin
       ZApp.DeltaTime := 0;
     end;
-    Driver.EnableMaterial(DefaultMaterial);
+    ZApp.Driver.EnableMaterial(DefaultMaterial);
     try
       //Undo translation so that the model is in screen center
-      glTranslatef(-Model.Position[0],-Model.Position[1],-Model.Position[2]);
+      ZApp.Driver.Translate(-Model.Position[0],-Model.Position[1],-Model.Position[2]);
       Renderer.RenderModel(Model);
     except
       on E : EZHalted do

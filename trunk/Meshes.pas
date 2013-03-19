@@ -871,7 +871,7 @@ begin
 
     ExecuteWithCurrentModel(Self,OnUpdate);
     //Update renderers: particlesystems, beams etc
-    ExecuteWithCurrentModel(Self,OnRender);
+    OnRender.Update;
 
     //Update current state
     if CurrentState<>nil then
