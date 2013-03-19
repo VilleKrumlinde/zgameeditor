@@ -100,7 +100,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvpLoc : Integer;
+    MvpLoc,TexMatLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure DetachArrayVariables;
