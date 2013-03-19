@@ -4096,9 +4096,10 @@ var
 
   procedure MCopy(const Name : string; const DoReplace : boolean = False);
   var
-    Src,Dst,Key,S : string;
+    Src,Dst,Key,S,DstContent : string;
     I : integer;
     L : TStringList;
+    NeedReplace : boolean;
   begin
     Src := TemplatePath + Name;
     Dst := ProjectPath + Name;
@@ -4112,6 +4113,16 @@ var
     end
     else
     begin
+      NeedReplace := False;
+      if TFile.Exists(Dst) then
+      begin
+        L := TStringList.Create;
+        L.LoadFromFile(Dst);
+        DstContent := L.Text;
+        L.Free;
+      end
+      else
+        DstContent := '';
       L := TStringList.Create;
       try
         L.LoadFromFile(Src);
@@ -4123,11 +4134,17 @@ var
           for Key in Lookups.Keys do
           begin
             if Pos(Key,S)>0 then
-              S := StringReplace(S,Key,Lookups[Key],[rfReplaceAll])
+            begin
+              S := StringReplace(S,Key,Lookups[Key],[rfReplaceAll]);
+              if Pos(Lookups[Key],DstContent)<=0 then
+                NeedReplace := True;
+            end;
           end;
           L[I] := S;
         end;
-        L.SaveToFile(Dst);
+        if NeedReplace then
+          //Only replace file if the replacement values did not already exists in destination
+          L.SaveToFile(Dst);
       finally
         L.Free;
       end;
@@ -4194,6 +4211,7 @@ begin
       Lookups.Add('$orientation$', 'portrait')
     else
       Lookups.Add('$orientation$', 'landscape');
+    Lookups.Add('$antpath$', Self.AndroidAntPath);
 
     if not IsDebug then
     begin
@@ -4231,7 +4249,10 @@ begin
     MCopy('AndroidManifest.xml',True);
     MCopy('build.xml',True);
     if IsDebug then
+    begin
       MCopy('run.bat',True);
+      MCopy('m.bat',True);
+    end;
     if (not IsDebug) and (Length(Self.AndroidKeystorePath)>0)  then
       MCopy('ant.properties',True);
 
