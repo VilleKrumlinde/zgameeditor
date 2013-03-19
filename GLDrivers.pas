@@ -694,6 +694,9 @@ begin
   end;
 
   glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
+
+  if CurrentShader.TexMatLoc>-1 then
+    glUniformMatrix4fv(CurrentShader.TexMatLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 2 ]));
 end;
 
 procedure TGLDriverProgrammable.BeforeLinkShader(S: TShader);
@@ -707,6 +710,7 @@ end;
 procedure TGLDriverProgrammable.AfterLinkShader(S: TShader);
 begin
   S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
+  S.TexMatLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('textureMatrix'));
 end;
 
 procedure TGLDriverProgrammable.RenderArrays(const Mode: GLenum; const Count,
@@ -716,7 +720,7 @@ begin
 
   //Vertex
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Verts);
+  glVertexAttribPointer(0, VertElements, GL_FLOAT, GL_FALSE, 0, Verts);
 
   //TODO: Normals
 //  glEnableVertexAttribArray(1);
