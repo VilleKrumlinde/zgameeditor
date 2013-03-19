@@ -90,17 +90,40 @@ begin
   AndroidThis := Env^.NewGlobalRef(Env,thiz);
 end;
 
-procedure Java_org_zgameeditor_Zge_NativeInitAppFromSDCard( env : PJNIEnv; thiz : jobject);cdecl;
+procedure InitApp;
 begin
   if not AppInited then
   begin
-    AndroidLog('init from sdcard');
     ZApp := ZApplication.LoadApplicationComponent;
     ZApp.ScreenWidth := 100;
     ZApp.ScreenHeight := 100;
     ZApp.Run;
     AppInited := True;
   end;
+end;
+
+procedure Java_org_zgameeditor_Zge_NativeSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
+var
+  Size :  integer;
+  IsCopy : jboolean;
+  P : pointer;
+begin
+  Size := env^.GetArrayLength(env,Content);
+  P := env^.GetPrimitiveArrayCritical(env, Content, IsCopy);
+  
+  GetMem(AndroidContentPtr,Size);
+  Move(P^,AndroidContentPtr^,Size);
+  AndroidContentSize := Size;
+  
+  env^.ReleasePrimitiveArrayCritical(env, Content, P, 0);
+  
+  InitApp;
+end;
+
+procedure Java_org_zgameeditor_Zge_NativeInitAppFromSDCard( env : PJNIEnv; thiz : jobject);cdecl;
+begin
+  AndroidLog('init from sdcard');
+  InitApp;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
@@ -209,23 +232,6 @@ procedure Java_org_zgameeditor_Zge_NativeKeyup( env : PJNIEnv; thiz : jobject; K
 begin
   AndroidKeys[ Ansichar(Keycode and 255) ] := False;
 end;
-
-procedure Java_org_zgameeditor_Zge_NativeSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
-var
-  Size :  integer;
-  IsCopy : jboolean;
-  P : pointer;
-begin
-  Size := env^.GetArrayLength(env,Content);
-  P := env^.GetPrimitiveArrayCritical(env, Content, IsCopy);
-  
-  GetMem(AndroidContentPtr,Size);
-  Move(P^,AndroidContentPtr^,Size);
-  AndroidContentSize := Size;
-  
-  env^.ReleasePrimitiveArrayCritical(env, Content, P, 0);
-end;
-
 
 function Java_org_zgameeditor_Zge_NativeGetGLBase( env : PJNIEnv; thiz : jobject ) : integer; cdecl;
 begin
