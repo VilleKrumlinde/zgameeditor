@@ -7,8 +7,20 @@
     <ZExpression Expression="//App.ClearColor.G=frac(App.Time);"/>
   </OnUpdate>
   <OnRender>
-    <UseMaterial Material="DinaMaterial"/>
-    <RenderText Text="TEXT" X="-0.58" Y="-0.66"/>
+    <Group Comment="Text">
+      <Children>
+        <UseMaterial Material="DinaMaterial"/>
+        <RenderText Text="TEXT" X="-0.58" Y="-0.66"/>
+      </Children>
+    </Group>
+    <Group Comment="Sprite">
+      <Children>
+        <RenderTransform Translate="-5 0 0"/>
+        <UseMaterial Material="SpriteMaterial"/>
+        <RenderSetColor Color="0 0.502 0 1"/>
+        <RenderSprite/>
+      </Children>
+    </Group>
   </OnRender>
   <Content>
     <Shader Name="Shader1">
@@ -124,5 +136,33 @@ void main() {
       </Children>
     </Group> <!-- DinaFontGroup -->
 
+    <Material Name="SpriteMaterial" Shader="SpriteShader"/>
+    <Shader Name="SpriteShader">
+      <VertexShaderSource>
+<![CDATA[precision mediump float;
+
+varying vec4 colorVar;
+
+//The variables below are predefined in ZGE
+uniform mat4 mvp;           //modelviewprojection
+attribute vec3 position;    //vertex position
+
+void main() {
+  // project the transformed position
+  vec4 p = mvp * vec4(position, 1.0);
+  gl_Position = p;
+}]]>
+      </VertexShaderSource>
+      <FragmentShaderSource>
+<![CDATA[precision mediump float;
+
+uniform vec4 globalColor;
+//varying vec4 colorVar;
+
+void main() {
+  gl_FragColor = globalColor;
+}]]>
+      </FragmentShaderSource>
+    </Shader>
   </Content>
 </ZApplication>

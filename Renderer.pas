@@ -100,7 +100,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvpLoc,TexMatLoc : Integer;
+    MvpLoc,TexMatLoc,GlobColLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure DetachArrayVariables;
@@ -1191,7 +1191,7 @@ end;
 
 procedure TRenderSetColor.Execute;
 begin
-  glColor4fv(@Color);
+  Self.ZApp.Driver.SetColor(Self.Color);
 end;
 
 { TRenderNet }

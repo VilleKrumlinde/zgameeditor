@@ -1388,7 +1388,7 @@ var
   glUniform1fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform2fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glUniform4fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glUniform4fv: procedure(location: GLint; count: GLsizei; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform1iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform2iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform3iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1505,7 +1505,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..36{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
+const ExtFuncArray : packed array[0..37{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1555,7 +1555,7 @@ const ExtFuncArray : packed array[0..36{$if (not defined(minimal)) or defined(an
 //(Name : 'glUniform2f'; Ptr : @@glUniform2f),
 //(Name : 'glUniform3fv'; Ptr : @@glUniform3fv),
 (Name : 'glUniform1f'; Ptr : @@glUniform1f),
-//(Name : 'glUniform4fv'; Ptr : @@glUniform4fv),
+(Name : 'glUniform4fv'; Ptr : @@glUniform4fv),
 //(Name : 'glUniform4f'; Ptr : @@glUniform4f),
 //(Name : 'glUniform2fv'; Ptr : @@glUniform2fv),
 //(Name : 'glUniform3i'; Ptr : @@glUniform3i),

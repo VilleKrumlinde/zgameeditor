@@ -26,6 +26,7 @@ type
     procedure SetCurrentShader(Shader : TShader); virtual; abstract;
     procedure BeforeLinkShader(S : TShader); virtual; abstract;
     procedure AfterLinkShader(S : TShader); virtual; abstract;
+    procedure SetColor(const C : TZColorf); virtual; abstract;
     procedure InitGL;
     procedure EnableMaterial(NewM : TMaterial);
     procedure RenderUnitQuad;
@@ -64,6 +65,7 @@ type
     procedure BeforeLinkShader(S : TShader); override;
     procedure AfterLinkShader(S : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
+    procedure SetColor(const C : TZColorf); override;
   end;
 
   TGLDriverProgrammable = class(TGLDriverBase)
@@ -74,6 +76,7 @@ type
     MMode : integer;
     CurrentShader : TShader;
     MVP : TZMatrix4f;
+    GlobalColor : TZColorf;
     procedure UpdateUniforms;
   public
     procedure Translate(const X,Y,Z: GLfloat); override;
@@ -90,6 +93,7 @@ type
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
+    procedure SetColor(const C : TZColorf); override;
     constructor Create;
   end;
 
@@ -184,8 +188,7 @@ begin
   if (NewM=nil) then
     Exit;
 
-  if Self.Kind=glbFixed then
-    glColor4fv(@NewM.Color);
+  Self.SetColor(NewM.Color);
 
   //Test for equal material after setting color
   //This is because rendersetcolor may have been called so we need reset material.color
@@ -518,6 +521,11 @@ begin
   glScalef(X,Y,Z);
 end;
 
+procedure TGLDriverFixed.SetColor(const C: TZColorf);
+begin
+  glColor4fv(@C);
+end;
+
 procedure TGLDriverFixed.SetCurrentShader(Shader: TShader);
 begin
 
@@ -664,6 +672,11 @@ begin
   MDirty[Self.MMode] := True;
 end;
 
+procedure TGLDriverProgrammable.SetColor(const C: TZColorf);
+begin
+  Self.GlobalColor := C;
+end;
+
 procedure TGLDriverProgrammable.SetCurrentShader(Shader: TShader);
 begin
   Self.CurrentShader := Shader;
@@ -697,6 +710,9 @@ begin
 
   if CurrentShader.TexMatLoc>-1 then
     glUniformMatrix4fv(CurrentShader.TexMatLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 2 ]));
+
+  if CurrentShader.GlobColLoc>-1 then
+    glUniform4fv(CurrentShader.GlobColLoc,1,PGLfloat(@Self.GlobalColor));
 end;
 
 procedure TGLDriverProgrammable.BeforeLinkShader(S: TShader);
@@ -711,6 +727,7 @@ procedure TGLDriverProgrammable.AfterLinkShader(S: TShader);
 begin
   S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
   S.TexMatLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('textureMatrix'));
+  S.GlobColLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('globalColor'));
 end;
 
 procedure TGLDriverProgrammable.RenderArrays(const Mode: GLenum; const Count,
