@@ -31,6 +31,7 @@ copy .\exe\projects\ZBlast.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderTexture.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\RenderPass.zgeproj ..\..\Deploy\%tool%\projects\
 copy .\exe\projects\YakYakReader.zgeproj ..\..\Deploy\%tool%\projects\
+copy .\exe\projects\GLES2Demo.zgeproj ..\..\Deploy\%tool%\projects\
 
 copy .\exe\projects\ModPlay\ModPlay.zgeproj ..\..\Deploy\%tool%\projects\ModPlay\
 copy .\exe\projects\ModPlay\bass.dll ..\..\Deploy\%tool%\projects\ModPlay\
