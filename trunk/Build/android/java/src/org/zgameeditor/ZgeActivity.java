@@ -34,10 +34,14 @@ import android.util.Log;
 
 public class ZgeActivity extends Activity
 {
+    public static ZgeActivity zgeActivity;
     public Zge zge;
 
     public void onCreate( Bundle savedInstanceState )
     {
+        //Set static member so that jni methods in external libraries can get hold of activity
+        zgeActivity = this;
+
         super.onCreate( savedInstanceState );
 
         this.requestWindowFeature( Window.FEATURE_NO_TITLE );
@@ -45,6 +49,13 @@ public class ZgeActivity extends Activity
 
         zge = new Zge(this);
         setContentView( zge );
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        //Remove global handle so that we do not get in the way of garbage collection
+        zgeActivity = null;
     }
 
     @Override

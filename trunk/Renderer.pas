@@ -76,6 +76,7 @@ type
     Value : single;
     ValuePropRef : TZPropertyRef;
     ValueArrayRef : TDefineArray;
+    ArrayKind : (sakTexture1D,sakMat4);
     procedure ResetGpuResources; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
@@ -100,7 +101,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvpLoc,TexMatLoc,GlobColLoc : Integer;
+    MvpLoc,MvLoc,ProjLoc,TexMatLoc,GlobColLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure DetachArrayVariables;
@@ -1541,6 +1542,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}integer(@UniformVariables), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}integer(@UpdateVarsOnEachUse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}integer(@ProgHandle), zptInteger);
+    List.GetLast.NeverPersist:=True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 destructor TShader.Destroy;
@@ -1695,23 +1699,33 @@ var
   begin
     Count := Sv.ValueArrayRef.CalcLimit;
     P := Sv.ValueArrayRef.GetData;
-    glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
-    glEnable(GL_TEXTURE_1D);
-    if Sv.TextureHandle=0 then
-    begin
-      glGenTextures(1, @Sv.TextureHandle);
-      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
-      glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-      glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
-    end else
-    begin
-      glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
-      glTexSubImage1D(GL_TEXTURE_1D, 0, 0, Count, GL_RED, GL_FLOAT, P);
+    case Sv.ArrayKind of
+      sakTexture1D :
+        begin
+          glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
+          glEnable(GL_TEXTURE_1D);
+          if Sv.TextureHandle=0 then
+          begin
+            glGenTextures(1, @Sv.TextureHandle);
+            glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+            glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+            glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+          end else
+          begin
+            glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
+            glTexSubImage1D(GL_TEXTURE_1D, 0, 0, Count, GL_RED, GL_FLOAT, P);
+          end;
+          glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
+          Inc(Self.TexCount);
+        end;
+      sakMat4 :
+        begin
+          glUniformMatrix4fv(Sv.Location,1,GL_FALSE,P);
+        end;
     end;
-    glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
-    Inc(Self.TexCount);
+
   end;
 
 begin
@@ -1726,7 +1740,7 @@ begin
   begin
     Sv := TShaderVariable(UniformVariables[I]);
     {$ifndef minimal}
-    if Sv.Location=-1 then Continue;
+    if (Sv.Location=-1) or (Sv.DesignDisable) then Continue;
     {$endif}
 
     if Sv.ValueArrayRef<>nil then
@@ -1751,6 +1765,8 @@ begin
   begin
     Sv := TShaderVariable(UniformVariables[I]);
     {$ifndef minimal}
+    if Sv.DesignDisable then
+      Continue;
     if Length(Sv.VariableName)=0 then
     begin
       if Length(Sv.Name)>0 then
@@ -1845,6 +1861,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}integer(@ValuePropRef), zptPropertyRef);
   List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}integer(@ValueArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}integer(@ArrayKind), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Texture1D','Mat4']);{$endif}
 end;
 
 {$ifndef minimal}
