@@ -699,14 +699,22 @@ begin
   ZAssert(Self.CurrentShader<>nil, 'No shader set before render');
   {$endif}
 
-  if Self.MDirty[0] or Self.MDirty[1] then
+  if (CurrentShader.MvpLoc>-1) then
   begin
-    MVP := MatrixMultiply(Self.MPtrs[ 0 ]^, Self.MPtrs[ 1 ]^);
-    Self.MDirty[0]:=False;
-    Self.MDirty[1]:=False;
+    if (Self.MDirty[0] or Self.MDirty[1]) then
+    begin
+      MVP := MatrixMultiply(Self.MPtrs[ 0 ]^, Self.MPtrs[ 1 ]^);
+      Self.MDirty[0]:=False;
+      Self.MDirty[1]:=False;
+    end;
+    glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
   end;
 
-  glUniformMatrix4fv(CurrentShader.MvpLoc,1,GL_FALSE,@Self.MVP);
+  if CurrentShader.MvLoc>-1 then
+    glUniformMatrix4fv(CurrentShader.MvLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 0 ]));
+
+  if CurrentShader.ProjLoc>-1 then
+    glUniformMatrix4fv(CurrentShader.ProjLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 1 ]));
 
   if CurrentShader.TexMatLoc>-1 then
     glUniformMatrix4fv(CurrentShader.TexMatLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 2 ]));
@@ -725,7 +733,9 @@ end;
 
 procedure TGLDriverProgrammable.AfterLinkShader(S: TShader);
 begin
-  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('mvp'));
+  S.MvpLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('modelViewProjectionMatrix'));
+  S.MvLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('modelViewMatrix'));
+  S.ProjLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('projectionMatrix'));
   S.TexMatLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('textureMatrix'));
   S.GlobColLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('globalColor'));
 end;

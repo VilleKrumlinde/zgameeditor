@@ -31,7 +31,9 @@ uniform float time;
 varying vec4 colorVar;
 
 //The variables below are predefined in ZGE
-uniform mat4 mvp;           //modelviewprojection
+uniform mat4 modelViewProjectionMatrix;
+//uniform mat4 modelViewMatrix;
+//uniform mat4 projectionMatrix;
 attribute vec3 position;    //vertex position
 attribute vec4 color;       //vertex color
 //attribute vec2 texCoord;  //vertex texture coordinate
@@ -43,7 +45,7 @@ void main() {
   colorVar.x += sin(time);  //add simple color animation
 
   // project the transformed position
-  vec4 p = mvp * vec4(position, 1.0);
+  vec4 p = modelViewProjectionMatrix * vec4(position, 1.0);
   gl_Position = p;
 }]]>
       </VertexShaderSource>
@@ -106,7 +108,7 @@ this.N.Z=rnd();]]>
 varying vec2 tc;
 
 //The variables below are predefined in ZGE
-uniform mat4 mvp;           //modelviewprojection
+uniform mat4 modelViewProjectionMatrix;
 uniform mat4 textureMatrix;
 
 attribute vec3 position;    //vertex position
@@ -117,7 +119,7 @@ void main() {
   tc=(textureMatrix * vec4(texCoord,0,1)).xy;
 
   // project the transformed position
-  vec4 p = mvp * vec4(position, 1.0);
+  vec4 p = modelViewProjectionMatrix * vec4(position, 1.0);
   gl_Position = p;
 }]]>
           </VertexShaderSource>
@@ -144,12 +146,12 @@ void main() {
 varying vec4 colorVar;
 
 //The variables below are predefined in ZGE
-uniform mat4 mvp;           //modelviewprojection
+uniform mat4 modelViewProjectionMatrix;
 attribute vec3 position;    //vertex position
 
 void main() {
   // project the transformed position
-  vec4 p = mvp * vec4(position, 1.0);
+  vec4 p = modelViewProjectionMatrix * vec4(position, 1.0);
   gl_Position = p;
 }]]>
       </VertexShaderSource>
