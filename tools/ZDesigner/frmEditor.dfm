@@ -1016,7 +1016,6 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 79
                     ExplicitTop = 20
                     ExplicitWidth = 165
-                    ExplicitHeight = 24
                   end
                   inherited AutoPlayCheckBox: TCheckBox
                     Left = 10
@@ -1085,7 +1084,6 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 9
                     ExplicitTop = 20
                     ExplicitWidth = 101
-                    ExplicitHeight = 24
                   end
                   inherited Osc1PWTrackBar: TTrackBar
                     Left = 117
@@ -1258,7 +1256,6 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 79
                     ExplicitWidth = 149
-                    ExplicitHeight = 24
                   end
                   inherited HardSyncCheckBox: TCheckBox
                     Left = 79
