@@ -372,7 +372,7 @@ if (this.V.Y != 0 || this.V.X != 0) {
     //Normals
     //this.N.X = cos(Psi);
     //this.N.Y = sin(Psi);
-    
+
     if (VarQ == 0) {
         this.V.Z /= 1 - 2/(VarP-1);
         }
@@ -403,7 +403,7 @@ if (this.V.Y != 0 || this.V.X != 0) {
                  //Edges normals, you can decide what to use.
         }
     }  // End of normals section
-    
+
     //soft edges      Work In Progress
     /*
     if (abs(this.V.Z) > 0.7 && pow(this.V.X,2) + pow(this.V.Y,2) > 0.7) {
@@ -581,7 +581,7 @@ if (this.V.X!=0 || this.V.Y!=0) { //this is always true (textures are multiples 
     this.V.Y /= VarR;
     this.V.X /= VarR;
     */
-    
+
 }   // X or Y different by zero
 
 this.V.Z *= 0.3;]]>
@@ -916,9 +916,9 @@ uniform sampler2D TheTexture;
 void main (void)
 {
 vec4 color= texture2D(TheTexture, gl_TexCoord[0].st);
-gl_FragColor = mix(color, vec4(0,0,0,1), Distance/100.0); 
+gl_FragColor = mix(color, vec4(0,0,0,1), Distance/100.0);
 //fog color in line above; vec4(r,g,b,a)
-// fog fades from camera to 100 in Z direction,. . 
+// fog fades from camera to 100 in Z direction,. .
 }]]>
               </FragmentShaderSource>
             </Shader>
@@ -967,7 +967,7 @@ float angle(float X)
 void hsv(float H, float S, float V)
 {
   float R,G,B,I,F,P,Q,T;
-  
+
   H = angle(H);
   S = clamp(S,0,100);
   V = clamp(V,0,100);
@@ -975,7 +975,7 @@ void hsv(float H, float S, float V)
   H /= 60;
   S /= 100;
   V /= 100;
-  
+
   if(S == 0)
   {
     ColorExample[0] = V;
@@ -997,7 +997,7 @@ void hsv(float H, float S, float V)
   if(I == 3){R = P; G = Q; B = V;}
   if(I == 4){R = T; G = P; B = V;}
   if(I == 5){R = V; G = P; B = Q;}
-  
+
   ColorExample[0] = R;
   ColorExample[1] = G;
   ColorExample[2] = B;
@@ -1077,18 +1077,18 @@ void RotationMatrixY(int K, float Angle)
 void RotationMatrixZ(int K, float Angle)
 {
   float C, S;
-  
+
   C = cos(Angle);
   S = sin(Angle);
-  
+
   MatrixExample[K,0,0] = C;
   MatrixExample[K,0,1] = S*-1;
   MatrixExample[K,0,2] = 0;
-  
+
   MatrixExample[K,1,0] = S;
   MatrixExample[K,1,1] = C;
   MatrixExample[K,1,2] = 0;
-  
+
   MatrixExample[K,2,0] = 0;
   MatrixExample[K,2,1] = 0;
   MatrixExample[K,2,2] = 1;
@@ -1101,7 +1101,7 @@ void MultiplyMatrix(int K, int A, int B)
   MatrixExample[K,0,0] = MatrixExample[A,0,0]*MatrixExample[B,0,0]+MatrixExample[A,0,1]*MatrixExample[B,1,0]+MatrixExample[A,0,2]*MatrixExample[B,2,0];
   MatrixExample[K,0,1] = MatrixExample[A,0,0]*MatrixExample[B,0,1]+MatrixExample[A,0,1]*MatrixExample[B,1,1]+MatrixExample[A,0,2]*MatrixExample[B,2,1];
   MatrixExample[K,0,2] = MatrixExample[A,0,0]*MatrixExample[B,0,2]+MatrixExample[A,0,1]*MatrixExample[B,1,2]+MatrixExample[A,0,2]*MatrixExample[B,2,2];
-  
+
   MatrixExample[K,1,0] = MatrixExample[A,1,0]*MatrixExample[B,0,0]+MatrixExample[A,1,1]*MatrixExample[B,1,0]+MatrixExample[A,1,2]*MatrixExample[B,2,0];
   MatrixExample[K,1,1] = MatrixExample[A,1,0]*MatrixExample[B,0,1]+MatrixExample[A,1,1]*MatrixExample[B,1,1]+MatrixExample[A,1,2]*MatrixExample[B,2,1];
   MatrixExample[K,1,2] = MatrixExample[A,1,0]*MatrixExample[B,0,2]+MatrixExample[A,1,1]*MatrixExample[B,1,2]+MatrixExample[A,1,2]*MatrixExample[B,2,2];
@@ -1118,10 +1118,10 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
   RotationMatrixX(1,AX);
   RotationMatrixY(2,AY);
   RotationMatrixZ(3,AZ);
-  
+
   MultiplyMatrix(4,1,2);
   MultiplyMatrix(5,4,3);
-  
+
   MatrixExample[0,0,0] = VX*MatrixExample[5,0,0]+VY*MatrixExample[5,0,1]+VZ*MatrixExample[5,0,2];
   MatrixExample[0,1,0] = VX*MatrixExample[5,1,0]+VY*MatrixExample[5,1,1]+VZ*MatrixExample[5,1,2];
   MatrixExample[0,2,0] = VX*MatrixExample[5,2,0]+VY*MatrixExample[5,2,1]+VZ*MatrixExample[5,2,2];
@@ -1466,16 +1466,16 @@ int RayTriangle(float OX, float OY, float OZ,
 
   Sub(1,X2,Y2,Z2,X1,Y1,Z1);
   Sub(2,X3,Y3,Z3,X1,Y1,Z1);
-  
+
   Cross(3,DX,DY,DZ,RCVector[2,0],RCVector[2,1],RCVector[2,2]);
 
   R = Dot(RCVector[1,0],RCVector[1,1],RCVector[1,2],RCVector[3,0],RCVector[3,1],RCVector[3,2]);
 
   Sub(4,OX,OY,OZ,X1,Y1,Z1);
   S = 1/R;
-  
+
   Cross(5,RCVector[4,0],RCVector[4,1],RCVector[4,2],RCVector[1,0],RCVector[1,1],RCVector[1,2]);
-  
+
   if(R <= Epsilon && R >= Epsilon*-1)
   {
     return 0;
@@ -1513,11 +1513,11 @@ int RayTriangle(float OX, float OY, float OZ,
       }
     }
   }
-  
+
   T = Dot(RCVector[2,0],RCVector[2,1],RCVector[2,2],RCVector[5,0],RCVector[5,1],RCVector[5,2]);
   U *= S;
   V *= S;
-  
+
   return 1;
 }]]>
               </Source>
@@ -1602,7 +1602,7 @@ for(U=0; U<Mouse.SizeDim1; ++U)
   {
     Mouse[U,V] = 0;
   }
-  
+
   Mouse[U,0] = App.MousePosition.X*16;
   Mouse[U,1] = App.MousePosition.Y*9;
 }
@@ -1762,18 +1762,18 @@ void RotationMatrixY(int K, float Angle)
 void RotationMatrixZ(int K, float Angle)
 {
   float C, S;
- 
+
   C = cos(Angle);
   S = sin(Angle);
- 
+
   VFCMatrix[K,0,0] = C;
   VFCMatrix[K,0,1] = S*-1;
   VFCMatrix[K,0,2] = 0;
- 
+
   VFCMatrix[K,1,0] = S;
   VFCMatrix[K,1,1] = C;
   VFCMatrix[K,1,2] = 0;
- 
+
   VFCMatrix[K,2,0] = 0;
   VFCMatrix[K,2,1] = 0;
   VFCMatrix[K,2,2] = 1;
@@ -1786,7 +1786,7 @@ void MultiplyMatrix(int K, int A, int B)
   VFCMatrix[K,0,0] = VFCMatrix[A,0,0]*VFCMatrix[B,0,0]+VFCMatrix[A,0,1]*VFCMatrix[B,1,0]+VFCMatrix[A,0,2]*VFCMatrix[B,2,0];
   VFCMatrix[K,0,1] = VFCMatrix[A,0,0]*VFCMatrix[B,0,1]+VFCMatrix[A,0,1]*VFCMatrix[B,1,1]+VFCMatrix[A,0,2]*VFCMatrix[B,2,1];
   VFCMatrix[K,0,2] = VFCMatrix[A,0,0]*VFCMatrix[B,0,2]+VFCMatrix[A,0,1]*VFCMatrix[B,1,2]+VFCMatrix[A,0,2]*VFCMatrix[B,2,2];
- 
+
   VFCMatrix[K,1,0] = VFCMatrix[A,1,0]*VFCMatrix[B,0,0]+VFCMatrix[A,1,1]*VFCMatrix[B,1,0]+VFCMatrix[A,1,2]*VFCMatrix[B,2,0];
   VFCMatrix[K,1,1] = VFCMatrix[A,1,0]*VFCMatrix[B,0,1]+VFCMatrix[A,1,1]*VFCMatrix[B,1,1]+VFCMatrix[A,1,2]*VFCMatrix[B,2,1];
   VFCMatrix[K,1,2] = VFCMatrix[A,1,0]*VFCMatrix[B,0,2]+VFCMatrix[A,1,1]*VFCMatrix[B,1,2]+VFCMatrix[A,1,2]*VFCMatrix[B,2,2];
@@ -1803,10 +1803,10 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
   RotationMatrixX(1,AX);
   RotationMatrixY(2,AY);
   RotationMatrixZ(3,AZ);
- 
+
   MultiplyMatrix(4,1,2);
   MultiplyMatrix(5,4,3);
- 
+
   VFCMatrix[0,0,0] = VX*VFCMatrix[5,0,0]+VY*VFCMatrix[5,0,1]+VZ*VFCMatrix[5,0,2];
   VFCMatrix[0,1,0] = VX*VFCMatrix[5,1,0]+VY*VFCMatrix[5,1,1]+VZ*VFCMatrix[5,1,2];
   VFCMatrix[0,2,0] = VX*VFCMatrix[5,2,0]+VY*VFCMatrix[5,2,1]+VZ*VFCMatrix[5,2,2];
@@ -1880,7 +1880,7 @@ viewRatio = tan( viewAngle * 2 * PI );]]>
 int i = this.iteration;
 
 if( i < 1000 ){
-  cubePositions[ i, 0 ] =( i -( floor( i / 10.0 )* 10 ))/5 - 1; 
+  cubePositions[ i, 0 ] =( i -( floor( i / 10.0 )* 10 ))/5 - 1;
   cubePositions[ i, 1 ] =( floor( i / 10.0 )-( floor( i / 100.0 )*10 ))/5 - 1;
   cubePositions[ i, 2 ] =( floor( i / 100.0 ))/5 - 1;
   return 1; }
@@ -1952,9 +1952,9 @@ int temp = 0;
 
 // check for all four frustrum planes (no far & near plane for now...)
 for( int n = 0; n < 4; ++n )
-  temp +=( shortDot( c, n ) <= 0 );  
-// transfer properties if cube lies in view frustrum  
-if( temp == 4 ){  
+  temp +=( shortDot( c, n ) <= 0 );
+// transfer properties if cube lies in view frustrum
+if( temp == 4 ){
   rtg_Cube.Translate.X = cubePositions[ c, 0 ];
   rtg_Cube.Translate.Y = cubePositions[ c, 1 ];
   rtg_Cube.Translate.Z = cubePositions[ c, 2 ];
@@ -2139,7 +2139,7 @@ float angle(float X)
 void hsv(float H, float S, float V)
 {
   float R,G,B,I,F,P,Q,T;
-  
+
   H = angle(H);
   S = clamp(S,0,100);
   V = clamp(V,0,100);
@@ -2147,7 +2147,7 @@ void hsv(float H, float S, float V)
   H /= 60;
   S /= 100;
   V /= 100;
-  
+
   if(S == 0)
   {
     Color[0] = V;
@@ -2169,7 +2169,7 @@ void hsv(float H, float S, float V)
   if(I == 3){R = P; G = Q; B = V;}
   if(I == 4){R = T; G = P; B = V;}
   if(I == 5){R = V; G = P; B = Q;}
-  
+
   Color[0] = R;
   Color[1] = G;
   Color[2] = B;
@@ -2229,18 +2229,18 @@ void RotationMatrixY(int K, float Angle)
 void RotationMatrixZ(int K, float Angle)
 {
   float C, S;
-  
+
   C = cos(Angle);
   S = sin(Angle);
-  
+
   Matrix[K,0,0] = C;
   Matrix[K,0,1] = S*-1;
   Matrix[K,0,2] = 0;
-  
+
   Matrix[K,1,0] = S;
   Matrix[K,1,1] = C;
   Matrix[K,1,2] = 0;
-  
+
   Matrix[K,2,0] = 0;
   Matrix[K,2,1] = 0;
   Matrix[K,2,2] = 1;
@@ -2253,7 +2253,7 @@ void MultiplyMatrix(int K, int A, int B)
   Matrix[K,0,0] = Matrix[A,0,0]*Matrix[B,0,0]+Matrix[A,0,1]*Matrix[B,1,0]+Matrix[A,0,2]*Matrix[B,2,0];
   Matrix[K,0,1] = Matrix[A,0,0]*Matrix[B,0,1]+Matrix[A,0,1]*Matrix[B,1,1]+Matrix[A,0,2]*Matrix[B,2,1];
   Matrix[K,0,2] = Matrix[A,0,0]*Matrix[B,0,2]+Matrix[A,0,1]*Matrix[B,1,2]+Matrix[A,0,2]*Matrix[B,2,2];
-  
+
   Matrix[K,1,0] = Matrix[A,1,0]*Matrix[B,0,0]+Matrix[A,1,1]*Matrix[B,1,0]+Matrix[A,1,2]*Matrix[B,2,0];
   Matrix[K,1,1] = Matrix[A,1,0]*Matrix[B,0,1]+Matrix[A,1,1]*Matrix[B,1,1]+Matrix[A,1,2]*Matrix[B,2,1];
   Matrix[K,1,2] = Matrix[A,1,0]*Matrix[B,0,2]+Matrix[A,1,1]*Matrix[B,1,2]+Matrix[A,1,2]*Matrix[B,2,2];
@@ -2270,10 +2270,10 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
   RotationMatrixX(1,AX);
   RotationMatrixY(2,AY);
   RotationMatrixZ(3,AZ);
-  
+
   MultiplyMatrix(4,1,2);
   MultiplyMatrix(5,4,3);
-  
+
   Matrix[0,0,0] = VX*Matrix[5,0,0]+VY*Matrix[5,0,1]+VZ*Matrix[5,0,2];
   Matrix[0,1,0] = VX*Matrix[5,1,0]+VY*Matrix[5,1,1]+VZ*Matrix[5,1,2];
   Matrix[0,2,0] = VX*Matrix[5,2,0]+VY*Matrix[5,2,1]+VZ*Matrix[5,2,2];
@@ -2491,6 +2491,7 @@ string sv_get_module_name(int slot, int mod_num) {}]]>
 // sensor types; also used as sensor identifiers
 const int SENSOR_TYPE_ACCELEROMETER = 1;
 const int SENSOR_TYPE_MAGNETIC_FIELD = 2;
+const int SENSOR_TYPE_ORIENTATION = 3; // deprecated
 const int SENSOR_TYPE_GYROSCOPE = 4;
 const int SENSOR_TYPE_LIGHT = 5;
 const int SENSOR_TYPE_PROXIMITY = 8;
@@ -2501,11 +2502,20 @@ const int SENSOR_TYPE_LINEAR_ACCELERATION = 10;
 const int SENSOR_TYPE_GRAVITY = 9;
 const int SENSOR_TYPE_AMBIENT_TEMPERATURE = 13;
 
+// display rotation
+const int ROTATION_0 = 0;
+const int ROTATION_90 = 1;
+const int ROTATION_180 = 2;
+const int ROTATION_270 = 3;
+
 // Initialize the library.
 void sensorInitLib() {}
 
 // Stop the library usage. Returns a negative error code on failure.
 int sensorStopLib() {}
+
+// Get rotation of display
+int getDisplayRotation() {}
 
 // Start to use sensor of the specified type.
 // Returns a negative error code on failure.
@@ -2524,18 +2534,26 @@ int sensorDisable(int type) {}
 // Returns a negative error code on failure.
 int sensorEnable(int type) {}
 
-// Update actual data for all the used sensors.
-// Usually called in ZApplication's or AppState's OnUpdate section.
-// Returns number of processes events.
-int sensorUpdateData() {}
+/*
+ * Get actual data for the selected scalar sensor type.
+ * This is used for sensors such as ambient temperature,
+ * proximity, light, pressure or humidity.
+ */
+void sensorGetData1(int type, ref float value) {}
 
 /*
- * Get actual data for the selected sensor type.
- * Vector sensors, such as accelerometer, magnetic field, or
- * gyroscope use x, y and z values. Scalar sensors, such as
- * light, proximity or temperature, use just x value.
+ * Get actual data for the selected 3D sensor type.
+ * This is used for sensors such as accelerometer, magnetic field,
+ * gyroscope, or gravity.
  */
-void sensorGetData(int type, ref float x, ref float y, ref float z) {}
+void sensorGetData3(int type, ref float x, ref float y, ref float z) {}
+
+/*
+ * Get actual data for the selected 3D sensor type.
+ * Rotation vector sensor uses <x, y, z, w> as components of
+ * a unit quaternion representing rotation of the device.
+ */
+void sensorGetData4(int type, ref float x, ref float y, ref float z, ref float w) {}
 
 // Return name of a sensor of the specified type.
 string sensorGetName(int type) {}
@@ -2551,7 +2569,7 @@ float sensorGetResolution(int type) {}
  * a sensor of the specified type.
  */
 float sensorGetMinDelay(int type) {}]]>
-          </Source>
+		  </Source>
         </ZExternalLibrary>
       </Children>
     </Group>

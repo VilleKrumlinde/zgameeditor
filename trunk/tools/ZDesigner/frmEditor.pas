@@ -2503,9 +2503,9 @@ begin
     ZApp.SymTab.Add(S,C);
   end;
 
+  TZComponentTreeNode(Tree.Selected).ComponentList.AddComponent(C);
+  TZComponentTreeNode(Tree.Selected).ComponentList.Change;
   Tree.AddNode(C,Tree.Selected).Selected := True;
-  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.AddComponent(C);
-  TZComponentTreeNode(Tree.Selected.Parent).ComponentList.Change;
   SetFileChanged(True);
   if CompEditor<>nil then
     CompEditor.OnTreeChanged;
