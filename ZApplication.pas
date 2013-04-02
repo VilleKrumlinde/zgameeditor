@@ -401,7 +401,7 @@ var
     J := 0;
     for I := 0 to Models.Cats.Count - 1 do
       Inc(J,Models.Get(I).Count);
-    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', strings: ' + ManagedHeap_GetStatus );
+    ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', managed: ' + ManagedHeap_GetStatus );
   end;
   {$ifend}
 
@@ -981,141 +981,141 @@ end;
 procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}integer(@OnLoaded), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}integer(@OnClose), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}integer(@States), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}(@OnLoaded), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}(@OnClose), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}integer(@OnBeginRenderPass), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Lights',{$ENDIF}integer(@Lights), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}(@OnBeginRenderPass), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Lights',{$ENDIF}(@Lights), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TLight]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}integer(@Content), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}integer(@Caption), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}(@Content), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}(@Caption), zptString);
     List.GetLast.IsStringTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}integer(@DeltaTime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}(@DeltaTime), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}integer(@Time), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}(@Time), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}integer(@GLBase), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}(@GLBase), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Compatible','ES2/GL3']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}integer(@FpsCounter), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}(@FpsCounter), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}integer(@CurrentRenderPass), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRenderPass',{$ENDIF}(@CurrentRenderPass), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}integer(@MousePosition), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'MousePosition',{$ENDIF}(@MousePosition), zptVector3f);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}integer(@MouseWheelDelta), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}(@MouseWheelDelta), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}integer(@ClearScreenMode), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}(@ClearScreenMode), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}integer(@RenderPasses), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}(@RenderPasses), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'WindowHandle',{$ENDIF}integer(@WindowHandle), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'WindowHandle',{$ENDIF}(@WindowHandle), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'AmbientLightColor',{$ENDIF}integer(@AmbientLightColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}(@ClearColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'AmbientLightColor',{$ENDIF}(@AmbientLightColor), zptColorf);
     List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.4,0.4,0.4,1);
 
-  List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}integer(@FullScreen), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}(@FullScreen), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}integer(@FrameRateStyle), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}(@FrameRateStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['SyncedWithMonitor','Free','Fixed']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}integer(@FixedFrameRate), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'FixedFrameRate',{$ENDIF}(@FixedFrameRate), zptInteger);
 
-  List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}integer(@ScreenMode), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}(@ScreenMode), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Use Desktop resolution','640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     List.GetLast.DefaultValue.ByteValue := 2;
-  List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}integer(@ShowOptionsDialog), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}(@ShowOptionsDialog), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}integer(@CustomScreenWidth), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenHeight',{$ENDIF}integer(@CustomScreenHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}(@CustomScreenWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomScreenHeight',{$ENDIF}(@CustomScreenHeight), zptInteger);
 
-  List.AddProperty({$IFNDEF MINIMAL}'CameraPosition',{$ENDIF}integer(@CameraPosition), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'CameraPosition',{$ENDIF}(@CameraPosition), zptVector3f);
     //Camera default is z 10
     List.GetLast.DefaultValue.Vector3fValue[2] := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'CameraRotation',{$ENDIF}integer(@CameraRotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'CameraRotation',{$ENDIF}(@CameraRotation), zptVector3f);
 
-  List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}integer(@Camera), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}(@Camera), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCamera]);{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}integer(@LightPosition), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}(@LightPosition), zptVector3f);
     //Light default is down the Z axis
     List.GetLast.DefaultValue.Vector3fValue[2] := 1;
 
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportRatio',{$ENDIF}integer(@ViewportRatio), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportRatio',{$ENDIF}(@ViewportRatio), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Full window','Custom','4:3','16:9']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CustomViewportRatio',{$ENDIF}integer(@CustomViewportRatio), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomViewportRatio',{$ENDIF}(@CustomViewportRatio), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}(@FOV), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
-  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}(@ClipNear), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 0.1;
-  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}(@ClipFar), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
-  List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}integer(@MouseVisible), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}integer(@EscapeToQuit), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}(@MouseVisible), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}(@EscapeToQuit), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
 
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}integer(@ViewportX), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}(@ViewportX), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}integer(@ViewportX), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}(@ViewportX), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportWidth',{$ENDIF}integer(@ViewportWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportWidth',{$ENDIF}(@ViewportWidth), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportHeight',{$ENDIF}integer(@ViewportHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportHeight',{$ENDIF}(@ViewportHeight), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'ScreenHeight',{$ENDIF}integer(@ScreenHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenHeight',{$ENDIF}(@ScreenHeight), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 600;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ScreenWidth',{$ENDIF}integer(@ScreenWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ScreenWidth',{$ENDIF}(@ScreenWidth), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 800;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}integer(@ConstantPool), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}integer(@NoSound), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}(@NoSound), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
-  List.AddProperty('Icon',integer(@Icon), zptBinary);
+  List.AddProperty('Icon',@Icon, zptBinary);
     List.SetDesignerProperty;
-  List.AddProperty('PreviewClearColor',integer(@PreviewClearColor), zptColorf);
+  List.AddProperty('PreviewClearColor',@PreviewClearColor, zptColorf);
     List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.5,0.5,0.5,0);
     List.SetDesignerProperty;
 
-  List.AddProperty('AndroidPackageName',integer(@AndroidPackageName), zptString);
+  List.AddProperty('AndroidPackageName',(@AndroidPackageName), zptString);
     List.GetLast.DefaultValue.StringValue := 'com.mydomain.mygame1';
     List.SetDesignerProperty;
-  List.AddProperty('AndroidVersionName',integer(@AndroidVersionName), zptString);
+  List.AddProperty('AndroidVersionName',(@AndroidVersionName), zptString);
     List.GetLast.DefaultValue.StringValue := '1.0';
     List.SetDesignerProperty;
-  List.AddProperty('AndroidVersionNumber',integer(@AndroidVersionNumber), zptInteger);
+  List.AddProperty('AndroidVersionNumber',(@AndroidVersionNumber), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
     List.SetDesignerProperty;
-  List.AddProperty('AndroidPortrait',integer(@AndroidPortrait), zptBoolean);
+  List.AddProperty('AndroidPortrait',(@AndroidPortrait), zptBoolean);
     List.SetDesignerProperty;
   {$ENDIF}
 end;
@@ -1167,9 +1167,9 @@ end;
 procedure TAppState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ModelUpdatesEnabled',{$ENDIF}integer(@ModelUpdatesEnabled), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ModelUpdatesEnabled',{$ENDIF}(@ModelUpdatesEnabled), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionsEnabled',{$ENDIF}integer(@CollisionsEnabled), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'CollisionsEnabled',{$ENDIF}(@CollisionsEnabled), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
 end;
 
@@ -1179,7 +1179,7 @@ end;
 procedure TSetAppState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}integer(@State), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}(@State), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
 end;
 
@@ -1249,17 +1249,17 @@ end;
 procedure TCamera.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Perspective','Orthographic']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}integer(@Rotation), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}integer(@ClipNear), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipNear',{$ENDIF}(@ClipNear), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 0.1;
-  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}integer(@ClipFar), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ClipFar',{$ENDIF}(@ClipFar), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 100;
-  List.AddProperty({$IFNDEF MINIMAL}'OrthoZoom',{$ENDIF}integer(@OrthoZoom), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OrthoZoom',{$ENDIF}(@OrthoZoom), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}integer(@FOV), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FOV',{$ENDIF}(@FOV), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
 end;
 

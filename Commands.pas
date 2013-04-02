@@ -143,14 +143,14 @@ uses ZPlatform,ZApplication
 procedure TRepeat.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}integer(@OnIteration), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'WhileExp',{$ENDIF}integer(@WhileExp), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}(@OnIteration), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'WhileExp',{$ENDIF}(@WhileExp), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source:='//this.Iteration=current iteration nr. Return false to end loop.';
     List.GetLast.ReturnType.Kind := zctFloat;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}integer(@Iteration), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}(@Iteration), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -196,11 +196,11 @@ end;
 procedure TCondition.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}integer(@Expression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
     {$ifndef minimal}List.GetLast.ReturnType.Kind := zctFloat;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}integer(@OnTrue), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnTrue',{$ENDIF}(@OnTrue), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}integer(@OnFalse), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnFalse',{$ENDIF}(@OnFalse), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
 end;
 
@@ -225,12 +225,12 @@ end;
 procedure TKeyPress.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}integer(@Keys), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}(@Keys), zptString);
     List.GetLast.IsStringTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}integer(@CharCode), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}integer(@RepeatDelay), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}integer(@OnPressed), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}integer(@KeyIndex), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}(@CharCode), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}(@RepeatDelay), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}(@OnPressed), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}(@KeyIndex), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -272,7 +272,7 @@ end;
 procedure TRefreshContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}(@Component), zptComponentRef);
 end;
 
 procedure TRefreshContent.Execute;
@@ -298,12 +298,12 @@ end;
 procedure TZTimer.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnTimer',{$ENDIF}integer(@OnTimer), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnTimer',{$ENDIF}(@OnTimer), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TCommand,TZExpression]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}integer(@Interval), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}(@Interval), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}(@RepeatCount), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := -1;
-  List.AddProperty({$IFNDEF MINIMAL}'CurrentRelativeTime',{$ENDIF}integer(@Time), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRelativeTime',{$ENDIF}(@Time), zptFloat);
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
     List.GetLast.NeverPersist := True;
 end;
@@ -342,17 +342,17 @@ end;
 procedure TWebOpen.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}integer(@Url), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}(@Url), zptString);
     List.GetLast.IsStringTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}integer(@ResultArray), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}(@ResultArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}integer(@ResultString), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}(@ResultString), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsStringTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}integer(@ParamArray), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}(@ParamArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}integer(@InBrowser), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}integer(@OnResult), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}(@InBrowser), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}(@OnResult), zptComponentList);
 end;
 
 destructor TWebOpen.Destroy;
@@ -476,7 +476,7 @@ end;
 procedure TCallComponent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}integer(@Component), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}(@Component), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCommand]);{$endif}
 end;
 

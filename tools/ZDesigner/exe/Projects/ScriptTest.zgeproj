@@ -62,6 +62,17 @@ void reffs(ref string s) {
 
 void mtest(model m) {
   m.DefinedArray[1]=2;
+}
+
+void flocalarray(int[] x) {
+  x[0]=1;
+}
+
+int[] glocalarray() {
+  int[] y;
+  y.SizeDim1=1;
+  y[0]=2;
+  return y;
 }]]>
       </Source>
     </ZLibrary>
@@ -630,6 +641,37 @@ if(test!=12345678)
 }]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="Local arrays">
+      <Expression>
+<![CDATA[model[] models;
+getModels(models,0);
+
+int[] x;
+x.SizeDim1=10;
+flocalarray(x);
+if(x[0]!=1)
+  Error=1801;
+
+x=glocalarray();
+if(x[0]!=2)
+  Error=1802;
+
+for(int i=0; i<x.SizeDim1; i++)
+  x[i]=i;
+
+
+string[] s;
+s.SizeDim1=10;
+for(int i=0; i<s.SizeDim1; i++)
+  s[i]= intToStr(i);
+
+string[,] s2;
+s2.SizeDim1=10;
+s2.SizeDim2=10;
+for(int i=0; i<s2.SizeDim1; i++)
+  s2[i,0]= intToStr(i);]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
@@ -647,14 +689,14 @@ else
   <Content>
     <Model Name="Model1" Position="1 2 3" Category="5">
       <Definitions>
-        <DefineVariable Name="Defined1"/>
-        <DefineVariable Name="Defined2"/>
-        <DefineVariable Name="Defined3" Type="2"/>
-        <DefineArray Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
+        <Variable Name="Defined1"/>
+        <Variable Name="Defined2"/>
+        <Variable Name="Defined3" Type="2"/>
+        <Array Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
           <Values>
 <![CDATA[78DA6360200E000000280001]]>
           </Values>
-        </DefineArray>
+        </Array>
       </Definitions>
       <OnRender>
         <RenderSprite/>
@@ -663,7 +705,7 @@ else
         <ZExpression Expression="currentmodel.position.x=f4()*8;"/>
       </OnUpdate>
     </Model>
-    <DefineVariable Name="Error"/>
+    <Variable Name="Error"/>
     <Mesh Name="Mesh1">
       <Producers>
         <MeshBox Name="MeshBox1" XCount="50"/>
@@ -684,21 +726,21 @@ V.X*=0.5;]]>
       </Producers>
     </Mesh>
     <Material Name="Material1" Shading="1" Blend="1"/>
-    <DefineVariable Name="Global1" Type="1"/>
-    <DefineVariable Name="GlobalFloat"/>
-    <DefineConstant Name="ConS" Type="2" StringValue="String"/>
-    <DefineConstant Name="ConI" Type="1" IntValue="1"/>
-    <DefineConstant Name="ConF" Value="1"/>
-    <DefineVariable Name="VarM" Type="3"/>
-    <DefineArray Name="ModelArray" Type="3" SizeDim1="4"/>
-    <DefineVariable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
+    <Variable Name="Global1" Type="1"/>
+    <Variable Name="GlobalFloat"/>
+    <Constant Name="ConS" Type="2" StringValue="String"/>
+    <Constant Name="ConI" Type="1" IntValue="1"/>
+    <Constant Name="ConF" Value="1"/>
+    <Variable Name="VarM" Type="3"/>
+    <Array Name="ModelArray" Type="3" SizeDim1="4"/>
+    <Variable Name="C" Comment="test distinction between global C as and  MeshExpression this.C"/>
     <Sound Name="Sound1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Env0Active="1" Env0ReleaseTime="2.56"/>
     <AudioMixer Ch0Active="1" Ch0Volume="0.14" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
-    <DefineArray Name="ByteArray" Type="4" SizeDim1="4">
+    <Array Name="ByteArray" Type="4" SizeDim1="4">
       <Values>
 <![CDATA[78DA636064620600000E0007]]>
       </Values>
-    </DefineArray>
-    <DefineVariable Name="ByteVar" Type="4"/>
+    </Array>
+    <Variable Name="ByteVar" Type="4"/>
   </Content>
 </ZApplication>

@@ -187,9 +187,9 @@ end;
 procedure TAnimatorBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'AutoStart',{$ENDIF}integer(@AutoStart), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}(@Duration), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}(@BeginTime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AutoStart',{$ENDIF}(@AutoStart), zptBoolean);
 end;
 
 {$ifndef minimal}
@@ -245,8 +245,8 @@ end;
 procedure TMouseModelController.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}integer(@ScaleX), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}integer(@ScaleY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleX',{$ENDIF}(@ScaleX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ScaleY',{$ENDIF}(@ScaleY), zptFloat);
 end;
 
 procedure TMouseModelController.Execute;
@@ -275,10 +275,10 @@ end;
 procedure TAnimatorGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Animators',{$ENDIF}integer(@Animators), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Animators',{$ENDIF}(@Animators), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAnimatorBase]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnStop',{$ENDIF}integer(@OnStop), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}(@OnStart), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStop',{$ENDIF}(@OnStop), zptComponentList);
 end;
 
 procedure TAnimatorGroup.Start;
@@ -329,11 +329,11 @@ end;
 procedure TAnimatorSimple.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'FromValue',{$ENDIF}integer(@FromValue), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'FromKind',{$ENDIF}integer(@FromKind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FromValue',{$ENDIF}(@FromValue), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FromKind',{$ENDIF}(@FromKind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['UseFromValue','UseTargetValue']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ToValue',{$ENDIF}integer(@ToValue), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Smooth',{$ENDIF}integer(@Smooth), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ToValue',{$ENDIF}(@ToValue), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Smooth',{$ENDIF}(@Smooth), zptBoolean);
 end;
 
 
@@ -374,10 +374,10 @@ end;
 procedure TAnimatorWithTargetBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}integer(@Target), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}(@Target), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'AutoReverse',{$ENDIF}integer(@AutoReverse), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}integer(@RepeatCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'AutoReverse',{$ENDIF}(@AutoReverse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}(@RepeatCount), zptInteger);
 end;
 
 {$ifndef minimal}
@@ -444,7 +444,7 @@ end;
 procedure TStartAnimator.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Animator',{$ENDIF}integer(@Animator), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Animator',{$ENDIF}(@Animator), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAnimatorBase]);{$endif}
 end;
 
@@ -469,12 +469,12 @@ end;
 procedure TCurvePoint.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Frame',{$ENDIF}integer(@Frame), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'InX',{$ENDIF}integer(@InX), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'InY',{$ENDIF}integer(@InY), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OutX',{$ENDIF}integer(@OutX), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OutY',{$ENDIF}integer(@OutY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Frame',{$ENDIF}(@Frame), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'InX',{$ENDIF}(@InX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'InY',{$ENDIF}(@InY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OutX',{$ENDIF}(@OutX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OutY',{$ENDIF}(@OutY), zptFloat);
 end;
 
 { TCurve }
@@ -482,7 +482,7 @@ end;
 procedure TCurve.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Points',{$ENDIF}integer(@Points), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Points',{$ENDIF}(@Points), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCurvePoint]);{$endif}
 end;
 
@@ -532,7 +532,7 @@ end;
 procedure TAnimatorCurve.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Curve',{$ENDIF}integer(@Curve), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Curve',{$ENDIF}(@Curve), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCurve]);{$endif}
 end;
 
