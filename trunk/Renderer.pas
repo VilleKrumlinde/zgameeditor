@@ -491,27 +491,27 @@ end;
 procedure TMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Textures',{$ENDIF}integer(@Textures), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Textures',{$ENDIF}(@Textures), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMaterialTexture]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}integer(@WireframeWidth), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}(@WireframeWidth), zptFloat);
     List.GetLast.DefaultValue.FloatValue:=4.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}integer(@Shading), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}(@Shading), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}(@Color), zptColorf);
     List.GetLast.DefaultValue.ColorfValue := TZColorf(ZMath.UNIT_XYZ4);
-  List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}integer(@Light), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}(@Light), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}integer(@SpecularColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}integer(@EmissionColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}integer(@Shininess), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}integer(@Blend), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}(@SpecularColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}(@EmissionColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}(@Shininess), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}(@Blend), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}integer(@ZBuffer), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}(@ZBuffer), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}integer(@DrawBackFace), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Font',{$ENDIF}integer(@Font), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}(@DrawBackFace), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Font',{$ENDIF}(@Font), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TFont]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Shader',{$ENDIF}integer(@Shader), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Shader',{$ENDIF}(@Shader), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShader]);{$endif}
 end;
 
@@ -521,7 +521,7 @@ end;
 procedure TUseMaterial.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Material',{$ENDIF}integer(@Material), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Material',{$ENDIF}(@Material), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMaterial]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -545,7 +545,7 @@ end;
 procedure TRenderMesh.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}integer(@Mesh), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}(@Mesh), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -573,10 +573,10 @@ end;
 procedure TRenderTransform.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}(@Translate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}(@Rotate), zptVector3f);
 end;
 
 procedure TRenderTransform.Execute;
@@ -596,11 +596,11 @@ end;
 procedure TRenderTransformGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}integer(@Translate), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}integer(@Rotate), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Translate',{$ENDIF}(@Translate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Rotate',{$ENDIF}(@Rotate), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}(@Children), zptComponentList);
 end;
 
 procedure TRenderTransformGroup.Execute;
@@ -662,10 +662,10 @@ end;
 procedure TRenderBeams.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}integer(@Count), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}integer(@Length), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}(@Length), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}(@Width), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}(@Speed), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 2;
 end;
 
@@ -756,21 +756,21 @@ end;
 procedure TRenderText.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}integer(@Text), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}(@Text), zptString);
     List.GetLast.IsStringTarget := True;
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}integer(@TextFloatRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}(@TextFloatRef), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextArray',{$ENDIF}integer(@TextArrayRef), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TextArray',{$ENDIF}(@TextArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}integer(@X), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}integer(@Y), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}integer(@Scale), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}(@X), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}(@Y), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'Align',{$ENDIF}integer(@Align), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Align',{$ENDIF}(@Align), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Center','Left']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RenderCharExpression',{$ENDIF}integer(@RenderCharExpression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderCharExpression',{$ENDIF}(@RenderCharExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Modify current character before render.'#13#10 +
@@ -779,22 +779,22 @@ begin
       '//CharRotate : current character rotation in radians'#13#10 +
       '//CharScale : current character scale';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FloatMultiply',{$ENDIF}integer(@FloatMultiply), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'FloatMultiply',{$ENDIF}(@FloatMultiply), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
-  List.AddProperty({$IFNDEF MINIMAL}'UseModelSpace',{$ENDIF}integer(@UseModelSpace), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'StretchY',{$ENDIF}integer(@StretchY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'UseModelSpace',{$ENDIF}(@UseModelSpace), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'StretchY',{$ENDIF}(@StretchY), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
 
-  List.AddProperty({$IFNDEF MINIMAL}'CharX',{$ENDIF}integer(@CharX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharX',{$ENDIF}(@CharX), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharY',{$ENDIF}integer(@CharY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharY',{$ENDIF}(@CharY), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}integer(@CharI), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharI',{$ENDIF}(@CharI), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CharRotate',{$ENDIF}integer(@CharRotate), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharRotate',{$ENDIF}(@CharRotate), zptFloat);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'CharScale',{$ENDIF}integer(@CharScale), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'CharScale',{$ENDIF}(@CharScale), zptFloat);
     List.GetLast.NeverPersist:=True;
 end;
 
@@ -1004,12 +1004,12 @@ const
 procedure TFont.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}integer(@Bitmap), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}(@Bitmap), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'FirstChar',{$ENDIF}integer(@FirstChar), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CharPixelWidth',{$ENDIF}integer(@CharPixelWidth), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CharPixelHeight',{$ENDIF}integer(@CharPixelHeight), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}integer(@BorderPixels), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'FirstChar',{$ENDIF}(@FirstChar), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharPixelWidth',{$ENDIF}(@CharPixelWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CharPixelHeight',{$ENDIF}(@CharPixelHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'BorderPixels',{$ENDIF}(@BorderPixels), zptInteger);
 end;
 
 destructor TFont.Destroy;
@@ -1187,7 +1187,7 @@ end;
 procedure TRenderSetColor.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}(@Color), zptColorf);
 end;
 
 procedure TRenderSetColor.Execute;
@@ -1200,9 +1200,9 @@ end;
 procedure TRenderNet.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}integer(@XCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}integer(@YCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'RenderVertexExpression',{$ENDIF}integer(@RenderVertexExpression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}(@XCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}(@YCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderVertexExpression',{$ENDIF}(@RenderVertexExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Update each vertex.'#13#10 +
@@ -1210,12 +1210,12 @@ begin
       '//TexCoord : current texture coordinate'#13#10 +
       '//Color : current vertex color';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}integer(@VertexColors), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Vertex',{$ENDIF}integer(@Vertex), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}(@VertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Vertex',{$ENDIF}(@Vertex), zptVector3f);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}integer(@TexCoord), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}(@TexCoord), zptVector3f);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}(@Color), zptColorf);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -1503,31 +1503,31 @@ end;
 procedure TRenderParticles.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ParticlesPerSecond',{$ENDIF}integer(@ParticlesPerSecond), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Direction',{$ENDIF}integer(@Direction), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Spread',{$ENDIF}integer(@Spread), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleWidth',{$ENDIF}integer(@ParticleWidth), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleHeight',{$ENDIF}integer(@ParticleHeight), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}integer(@Speed), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'SpeedRange',{$ENDIF}integer(@SpeedRange), zptScalar);
-  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}integer(@Radius), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}integer(@ParticleLifetime), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}integer(@AnimateAlpha), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}integer(@Duration), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}integer(@BeginTime), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}integer(@OnEmitExpression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticlesPerSecond',{$ENDIF}(@ParticlesPerSecond), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Direction',{$ENDIF}(@Direction), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Spread',{$ENDIF}(@Spread), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleWidth',{$ENDIF}(@ParticleWidth), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleHeight',{$ENDIF}(@ParticleHeight), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Speed',{$ENDIF}(@Speed), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'SpeedRange',{$ENDIF}(@SpeedRange), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}(@Radius), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}(@ParticleLifetime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}(@AnimateAlpha), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}(@Duration), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}(@BeginTime), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}(@OnEmitExpression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Emit particle.'#13#10 +
       '//PColor : particle color, PAngle : particle angle'#13#10 +
       '';
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Gravity',{$ENDIF}integer(@Gravity), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'FollowModel',{$ENDIF}integer(@FollowModel), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Gravity',{$ENDIF}(@Gravity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'FollowModel',{$ENDIF}(@FollowModel), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'PColor',{$ENDIF}integer(@PColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'PColor',{$ENDIF}(@PColor), zptColorf);
     List.GetLast.NeverPersist:=True;
-  List.AddProperty({$IFNDEF MINIMAL}'PAngle',{$ENDIF}integer(@PAngle), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'PAngle',{$ENDIF}(@PAngle), zptFloat);
     List.GetLast.NeverPersist:=True;
 end;
 
@@ -1537,12 +1537,12 @@ end;
 procedure TShader.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'VertexShaderSource',{$ENDIF}integer(@VertexShaderSource), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}integer(@FragmentShaderSource), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}integer(@UniformVariables), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'VertexShaderSource',{$ENDIF}(@VertexShaderSource), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}(@FragmentShaderSource), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}(@UniformVariables), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}integer(@UpdateVarsOnEachUse), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}integer(@ProgHandle), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}(@UpdateVarsOnEachUse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@ProgHandle), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -1856,13 +1856,13 @@ end;
 procedure TShaderVariable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'VariableName',{$ENDIF}integer(@VariableName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'VariableName',{$ENDIF}(@VariableName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}integer(@Value), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}integer(@ValuePropRef), zptPropertyRef);
-  List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}integer(@ValueArrayRef), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}(@ValuePropRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}(@ValueArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}integer(@ArrayKind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}(@ArrayKind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Texture1D','Mat4']);{$endif}
 end;
 
@@ -1918,18 +1918,18 @@ end;
 procedure TMaterialTexture.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}integer(@Texture), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Texture',{$ENDIF}(@Texture), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}(@RenderTarget), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}integer(@TextureScale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureScale',{$ENDIF}(@TextureScale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}integer(@TextureX), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}integer(@TextureY), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}integer(@TextureRotate), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}integer(@TextureWrapMode), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureX',{$ENDIF}(@TextureX), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureY',{$ENDIF}(@TextureY), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureRotate',{$ENDIF}(@TextureRotate), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'TextureWrapMode',{$ENDIF}(@TextureWrapMode), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}integer(@TexCoords), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}(@TexCoords), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
 end;
 
@@ -2052,18 +2052,18 @@ end;
 procedure TRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}integer(@Width), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}(@Width), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width','128','256','512']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 4;
-  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}integer(@Height), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}(@Height), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height','128','256','512']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 4;
-  List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}integer(@CustomWidth), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}integer(@CustomHeight), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}integer(@ClearBeforeUse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}(@CustomWidth), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}(@CustomHeight), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearBeforeUse',{$ENDIF}(@ClearBeforeUse), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'AutoPowerOfTwo',{$ENDIF}integer(@AutoPowerOfTwo), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}integer(@ClearColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'AutoPowerOfTwo',{$ENDIF}(@AutoPowerOfTwo), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}(@ClearColor), zptColorf);
 end;
 
 procedure TRenderTarget.CleanUp;
@@ -2101,7 +2101,7 @@ end;
 procedure TSetRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}integer(@RenderTarget), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderTarget',{$ENDIF}(@RenderTarget), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TRenderTarget]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -2196,16 +2196,16 @@ end;
 procedure TLight.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}integer(@Color), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'Enabled',{$ENDIF}integer(@Enabled), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}(@Color), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Enabled',{$ENDIF}(@Enabled), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}integer(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Directional','Point','Spot']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SpotDirection',{$ENDIF}integer(@SpotDirection), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}'SpotDirection',{$ENDIF}(@SpotDirection), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := Vector3f(0,0,-1);
-  List.AddProperty({$IFNDEF MINIMAL}'SpotExponent',{$ENDIF}integer(@SpotExponent), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'SpotCutoff',{$ENDIF}integer(@SpotCutoff), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'SpotExponent',{$ENDIF}(@SpotExponent), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'SpotCutoff',{$ENDIF}(@SpotCutoff), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 45;
 end;
 

@@ -307,6 +307,7 @@ type
     procedure AndroidBuildDebugApkActionExecute(Sender: TObject);
     procedure AndroidBuildReleaseApkActionExecute(Sender: TObject);
     procedure LogClearMenuItemClick(Sender: TObject);
+    procedure FileOpenActionBeforeExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -746,7 +747,10 @@ begin
     begin
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
       try
-        ZApp.DesignerStart(Glp.Width,Glp.Height);
+        //App needs driver to allow editor to preview graphics
+        ZApp.Driver := GLDrivers.CreateDriver(ZApp.GLBase);
+        //ZApp.DesignerStart(Glp.Width,Glp.Height);
+        //ZApp.DesignerStop;
       except
         on E : EZHalted do ;
       end;
@@ -1244,6 +1248,11 @@ procedure TEditorForm.FileOpenActionAccept(Sender: TObject);
 begin
   if CloseProject then
     OpenProject(FileOpenAction.Dialog.FileName);
+end;
+
+procedure TEditorForm.FileOpenActionBeforeExecute(Sender: TObject);
+begin
+  FileOpenAction.Dialog.InitialDir := ExtractFilePath( Self.CurrentFileName );
 end;
 
 procedure TEditorForm.FileSaveAsActionAccept(Sender: TObject);

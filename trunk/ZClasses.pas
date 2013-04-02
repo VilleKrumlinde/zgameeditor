@@ -59,7 +59,7 @@ type
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
- ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpRemoveLocalArrayClassId,
+ ExpInvokeComponentClassId,ExpInitLocalArrayClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -312,9 +312,9 @@ type
   TZPropertyList = class(TZArrayList)
   private
     NextId : integer;
-    TheSelf : integer;
+    TheSelf : NativeInt;
   public
-    procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Offset : integer; const PropType : TZPropertyType);
+    procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Addr: pointer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
     function GetByName(const Name : string) : TZProperty;
@@ -527,6 +527,7 @@ function ZStrToInt(const Str : PAnsiChar) : integer;
 
 //Garbage collected managed heap
 function ManagedHeap_Alloc(const Size : integer) : pointer;
+procedure ManagedHeap_AddValueObject(const O : TObject);
 function ManagedHeap_GetAllocCount : integer;
 procedure ManagedHeap_GarbageCollect(Full : boolean);
 procedure ManagedHeap_AddTarget(const P : pointer);
@@ -684,16 +685,22 @@ begin
   mh_Values := TZArrayList.CreateReferenced;
 end;
 
-procedure ManagedHeap_FreeMem(const P : pointer);
+procedure ManagedHeap_FreeMemAt(const Index : integer);
+var
+  P : pointer;
 begin
-  mh_Allocations.SwapRemove(P);
-  FreeMem(P);
+  P := mh_Allocations[Index];
+  mh_Allocations.SwapRemoveAt(Index);
+  if NativeInt(P) and 1=1 then
+    TObject( NativeInt(P) and (not 1) ).Free
+  else
+    FreeMem(P);
 end;
 
 procedure ManagedHeap_Destroy;
 begin
   while mh_Allocations.Count>0 do
-    ManagedHeap_FreeMem( pointer(mh_Allocations[mh_Allocations.Count-1]) );
+    ManagedHeap_FreeMemAt( mh_Allocations.Count-1 );
   mh_Targets.Free;
   mh_Allocations.Free;
   mh_Values.Free;
@@ -707,6 +714,19 @@ begin
   {$endif}
   GetMem(Result,Size);
   mh_Allocations.Add(Result);
+  {$ifndef minimal}
+  ZAssert(NativeInt(Result) and 1=0,'Alloc fail');
+  {$endif}
+end;
+
+procedure ManagedHeap_AddValueObject(const O : TObject);
+//Add an TObject to managed heap. The destructor will be called when released.
+begin
+  {$ifndef minimal}
+  ZAssert(NativeInt(O) and 1=0,'AddValueObject fail');
+  {$endif}
+  //Use unused lower bits of pointer to flag that this is an object
+  mh_Allocations.Add(Pointer(NativeInt(O) or 1));
 end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
@@ -769,13 +789,12 @@ begin
   I := 0;
   while I<mh_Allocations.Count do
   begin
-    P := Pointer(mh_Allocations[I]);
+    P := Pointer( NativeInt(mh_Allocations[I]) and (not 1) );
     J := mh_Values.IndexOf(P);
     if J=-1 then
     begin
       //Pointer is no longer used
-      FreeMem(P);
-      mh_Allocations.SwapRemoveAt(I);
+      ManagedHeap_FreeMemAt(I);
     end
     else
     begin
@@ -1048,17 +1067,17 @@ end;
 procedure TZComponent.DefineProperties(List: TZPropertyList);
 begin
   {$IFNDEF MINIMAL}
-  List.AddProperty('Name', integer(@Name), zptString);
+  List.AddProperty('Name', @Name, zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('Comment', integer(@Comment), zptString);
+  List.AddProperty('Comment', @Comment, zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('DesignDisable', integer(@DesignDisable), zptBoolean);
+  List.AddProperty('DesignDisable', @DesignDisable, zptBoolean);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   {$ENDIF}
-  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}integer(@ObjId), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}@ObjId, zptInteger);
     {$IFNDEF MINIMAL}
     List.GetLast.ExcludeFromXml := True;
     List.GetLast.IsReadOnly := True;
@@ -1884,7 +1903,7 @@ begin
   if Result=nil then
   begin
     Result := TZPropertyList.Create;
-    Result.TheSelf := integer(Component);
+    Result.TheSelf := NativeInt(Component);
     Component.DefineProperties(Result);
     Ci.Properties := Result;
   end
@@ -1893,7 +1912,7 @@ begin
   begin
     //Components that use global variables must be single instance
     //and redefines their properties each time (AudioMixer).
-    Result.TheSelf := integer(Component);
+    Result.TheSelf := NativeInt(Component);
     Result.Clear;
     Result.NextId := 0;
     Component.DefineProperties(Result);
@@ -1960,13 +1979,13 @@ begin
   Result := nil;
 end;
 
-procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Offset: integer; const PropType : TZPropertyType);
+procedure TZPropertyList.AddProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Addr: pointer; const PropType : TZPropertyType);
 var
   P : TZProperty;
 begin
   P := TZProperty.Create;
   P.PropertyType := PropType;
-  P.Offset := Offset-Self.TheSelf;
+  P.Offset := NativeInt(Addr)-Self.TheSelf;
 
   P.PropId := NextId;
   Inc(NextId);
@@ -3541,7 +3560,7 @@ end;
 procedure TLogicalGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}integer(@Children), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}@Children, zptComponentList);
 end;
 
 procedure TLogicalGroup.Execute;
@@ -3561,7 +3580,7 @@ end;
 procedure TContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}integer(@Producers), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}@Producers, zptComponentList);
 end;
 
 type
@@ -3676,11 +3695,11 @@ end;
 procedure TStateBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}integer(@OnStart), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}integer(@OnUpdate), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}integer(@OnLeave), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}integer(@OnRender), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}integer(@Definitions), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}@OnStart, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}@OnUpdate, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}@OnLeave, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}@OnRender, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}@Definitions, zptComponentList);
 end;
 
 
@@ -3775,7 +3794,7 @@ begin
       until (P^<>P1^) or (P^=#0) or (P1^=#0);
       if P1^=#0 then
       begin
-        Result := integer(SaveP) - integer(Str);
+        Result := NativeInt(SaveP) - NativeInt(Str);
         Break;
       end;
     end else
@@ -3848,7 +3867,7 @@ begin
     //When C.Create is called the list will be empty
     Self.Properties := Result;
     C := Self.ZClass.Create(nil);
-    Result.TheSelf := integer(C);
+    Result.TheSelf := NativeInt(C);
     C.DefineProperties(Result);
     //ZComponent destroy also calls GetProperties
     //Give it an empty list to iterate too to keep in sync with constructor

@@ -99,20 +99,20 @@ end;
 procedure TZFile.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}integer(@FileName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}(@FileName), zptString);
     List.GetLast.IsStringTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}integer(@FileNameFloatRef), zptPropertyRef);
-  List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}integer(@FileEmbedded), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}integer(@Encoding), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}(@FileNameFloatRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}(@FileEmbedded), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}(@Encoding), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TargetArray',{$ENDIF}integer(@TargetArray), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TargetArray',{$ENDIF}(@TargetArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}integer(@OnRead), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}integer(@OnWrite), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRead',{$ENDIF}(@OnRead), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnWrite',{$ENDIF}(@OnWrite), zptComponentList);
 
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}integer(@FilePosition), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@FilePosition), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}integer(@FileSize), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}(@FileSize), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -127,10 +127,10 @@ const
 procedure TFileAction.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'File',{$ENDIF}integer(@ZFile), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'File',{$ENDIF}(@ZFile), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZFile]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}integer(@Action), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(FileActionNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -293,7 +293,7 @@ end;
 procedure TFileMoveData.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}integer(@ZProperty), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}(@ZProperty), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
