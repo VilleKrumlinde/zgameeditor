@@ -393,12 +393,36 @@ Type<var Typ : TZcDataType>
 /*------------------------------------------------------------------------*/
 
 SimpleType<var Typ : TZcDataType>
+(.
+  var
+    A : TDefineArray;
+.)
 /* = IntType | "float" | "double" | "decimal" | "bool" */
 = "float" (. Typ.Kind := zctFloat; .)
   | "int" (. Typ.Kind := zctInt; .)
   | "string" (. Typ.Kind := zctString; .)
   | "model" (. Typ.Kind := zctModel; .)
   | "xptr" (. Typ.Kind := zctXptr; .)
+
+  | "mat4" (.
+     A := TDefineArray.Create(nil);
+     GlobalNames.Add(A);
+     A._Type := dvbFloat;
+     A.Dimensions := dadTwo;
+     A.SizeDim1 := 4;
+     A.SizeDim2 := 4;
+     Typ.Kind := zctMat4;
+     Typ.TheArray := A;
+    .)
+  | "vec3" (.
+     A := TDefineArray.Create(nil);
+     GlobalNames.Add(A);
+     A._Type := dvbFloat;
+     A.Dimensions := dadOne;
+     A.SizeDim1 := 3;
+     Typ.Kind := zctVec3;
+     Typ.TheArray := A;
+  .)
 
   /* Changes below also must be made in homographs-section */
   | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)

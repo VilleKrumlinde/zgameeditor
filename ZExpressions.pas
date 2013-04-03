@@ -70,12 +70,13 @@ type
   end;
 
 
-  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel,dvbByte);
+  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel,dvbByte,dvbMat4,dvbVec3);
   TDefineVariableBase = class(TZComponent)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
     _Type : TVariableType;
+    {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
 
@@ -86,7 +87,7 @@ type
   public
     Value : single;
     IntValue : integer;
-    StringValue : TPropString;
+    ManagedValue : pointer;
     ModelValue : TZComponent;
     ByteValue : byte;
   end;
@@ -121,7 +122,7 @@ type
     AllocItemCount : integer;
     AllocType : TVariableType;
     AllocPtr : PPointer;
-    procedure CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);
+    procedure CleanUpManagedValues(TheType : TVariableType; Count : integer; P : PPointer);
     procedure AllocData;
   private
     function PopAndGetElement : PFloat;
@@ -222,24 +223,35 @@ type
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
      fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,
      fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID,
-     fcGetBinaryProp,fcSetBinaryProp,fcGetModels);
+     fcGetBinaryProp,fcSetBinaryProp,fcGetModels,
+     //Mat4
+     fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix
+     );
 
-  //Built-in function call
-  TExpFuncCall = class(TExpBase)
+
+  TExpFuncCallBase = class(TExpBase)
   protected
-    procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpFuncCallKind;
   end;
 
-  //Built-in functions that return pointer
-  TExpPointerFuncCall = class(TExpBase)
+  //Built-in function call
+  TExpFuncCall = class(TExpFuncCallBase)
   protected
     procedure Execute; override;
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    Kind : TExpFuncCallKind;
+  end;
+
+  //Built-in functions that return pointer
+  TExpPointerFuncCall = class(TExpFuncCallBase)
+  protected
+    procedure Execute; override;
+  end;
+
+  //Matrix functions
+  TExpMat4FuncCall = class(TExpFuncCallBase)
+  protected
+    procedure Execute; override;
   end;
 
   //Read value from array and push on stack
@@ -817,24 +829,26 @@ begin
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'ManagedValue',{$ENDIF}(@ManagedValue), zptString);
     List.GetLast.NeverPersist := True;
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
-   {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
     List.GetLast.NeverPersist := True;
 end;
 
-{ TExpFuncCall }
+{ TExpFuncCallBase }
 
-procedure TExpFuncCall.DefineProperties(List: TZPropertyList);
+procedure TExpFuncCallBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
 end;
 
+{ TExpFuncCall }
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
 procedure TExpFuncCall.Execute;
@@ -1110,7 +1124,7 @@ end;
 
 destructor TDefineArray.Destroy;
 begin
-  CleanUpStrings(_Type,Limit,AllocPtr);
+  CleanUpManagedValues(_Type,Limit,AllocPtr);
   if Data<>nil then
     FreeMem(Data);
   inherited;
@@ -1122,7 +1136,7 @@ begin
   if Limit<>CalcLimit then
     AllocData;
   {$ifndef minimal}
-  ZAssert(not (Persistent and (_Type in [dvbString,dvbModel])),'Persistent String/Model-arrays not supported');
+  ZAssert(not (Persistent and (_Type in [dvbString,dvbModel,dvbMat4,dvbVec3])),'Persistent arrays of this datatype not supported');
   {$endif}
   if Persistent then
   begin
@@ -1141,7 +1155,7 @@ end;
 function TDefineArray.GetElementSize: integer;
 begin
   case Self._Type of
-    dvbString, dvbModel: Result := SizeOf(Pointer);
+    dvbString, dvbModel, dvbVec3, dvbMat4 : Result := SizeOf(Pointer);
     dvbByte : Result := 1;
   else
     Result := SizeOf(Single);
@@ -1160,7 +1174,7 @@ var
   I : integer;
   WasNil : boolean;
 begin
-  CleanUpStrings(AllocType,AllocItemCount,AllocPtr);
+  CleanUpManagedValues(AllocType,AllocItemCount,AllocPtr);
   Self.Limit := CalcLimit;
   ByteSize := Limit * GetElementSize;
   if Persistent then
@@ -1180,7 +1194,7 @@ begin
   Self.AllocItemCount := Self.Limit;
   Self.AllocType := Self._Type;
 
-  if Self._Type=dvbString then
+  if Self._Type in [dvbString,dvbMat4,dvbVec3] then
   begin
     P := P^;
     for I := 0 to Self.Limit - 1 do
@@ -1191,11 +1205,11 @@ begin
   end;
 end;
 
-procedure TDefineArray.CleanUpStrings(TheType : TVariableType; Count : integer; P : PPointer);
+procedure TDefineArray.CleanUpManagedValues(TheType : TVariableType; Count : integer; P : PPointer);
 var
   I : integer;
 begin
-  if (TheType<>dvbString) or (Count=0) then
+  if (not (TheType in [dvbString,dvbMat4,dvbVec3])) or (Count=0) then
     Exit;
   for I := 0 to Count - 1 do
   begin
@@ -1573,8 +1587,17 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model','Byte']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model','Byte','Mat4','Vec3']);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
+
+{$ifndef minimal}
+function TDefineVariableBase.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName + ' <' +
+    Self.GetProperties.GetByName('Type').Options[ Ord(Self._Type) ] + '>';
+end;
+{$endif}
 
 { TExpStringConstant }
 
@@ -1606,12 +1629,6 @@ begin
 end;
 
 { TExpPointerFuncCall }
-
-procedure TExpPointerFuncCall.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
-end;
 
 procedure TExpPointerFuncCall.Execute;
 var
@@ -1666,7 +1683,7 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}(@ModuleName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'CallingConvention',{$ENDIF}(@CallingConvention), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Stdcall','Cdecl']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'BeforeInitExp',{$ENDIF}(@BeforeInitExp), zptExpression);
@@ -2248,6 +2265,64 @@ begin
   PPointer(P)^ := A;
 end;
 
+{ TExpMat4 }
+
+procedure TExpMat4FuncCall.Execute;
+var
+  M1,M2 : PZMatrix4f;
+  V1 : PZVector3f;
+  I : integer;
+  A : TDefineArray;
+begin
+  case Kind of
+    fcMatMultiply:
+      begin
+        StackPopToPointer(M1);
+        StackPopToPointer(M2);
+
+        A := TDefineArray.Create(nil);
+        A.Dimensions := dadTwo;
+        A.SizeDim1 := 4;
+        A.SizeDim2 := 4;
+        A._Type := dvbFloat;
+        ManagedHeap_AddValueObject(A);
+
+        M1 := PZMatrix4f(TDefineArray(M1).GetData);
+        M2 := PZMatrix4f(TDefineArray(M2).GetData);
+        PZMatrix4f(A.GetData)^ := MatrixMultiply(M1^,M2^);
+        StackPushPointer(A);
+      end;
+    fcMatTransformPoint :
+      begin
+        StackPopToPointer(V1);
+        StackPopToPointer(M1);
+
+        A := TDefineArray.Create(nil);
+        A.Dimensions := dadOne;
+        A.SizeDim1 := 3;
+        A._Type := dvbFloat;
+        ManagedHeap_AddValueObject(A);
+
+        V1 := PZVector3f(TDefineArray(V1).GetData);
+        M1 := PZMatrix4f(TDefineArray(M1).GetData);
+        VectorTransform(V1^,M1^,PZVector3f(A.GetData)^);
+        StackPushPointer(A);
+      end;
+    fcGetMatrix :
+      begin
+        StackPopToPointer(A);
+        StackPopTo(I);
+        Self.ZApp.Driver.GetMatrix(I, PZMatrix4f(A.GetData));
+      end;
+    fcSetMatrix :
+      begin
+        StackPopToPointer(A);
+        StackPopTo(I);
+        Self.ZApp.Driver.SetMatrix(I, PZMatrix4f(A.GetData)^);
+      end;
+  end;
+end;
+
 initialization
 
   ZcStackPtr := ZcStackBegin;
@@ -2323,8 +2398,9 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpInvokeComponent,ExpInvokeComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-
   ZClasses.Register(TExpInitLocalArray,ExpInitLocalArrayClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpMat4FuncCall,ExpMat4FuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.

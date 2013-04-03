@@ -27,6 +27,8 @@ type
     procedure BeforeLinkShader(S : TShader); virtual; abstract;
     procedure AfterLinkShader(S : TShader); virtual; abstract;
     procedure SetColor(const C : TZColorf); virtual; abstract;
+    procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); virtual; abstract;
+    procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); virtual; abstract;
     procedure InitGL;
     procedure EnableMaterial(NewM : TMaterial);
     procedure RenderUnitQuad;
@@ -66,6 +68,8 @@ type
     procedure AfterLinkShader(S : TShader); override;
     procedure Perspective(const fovy,aspect,zNear,zFar : GLfloat); override;
     procedure SetColor(const C : TZColorf); override;
+    procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); override;
+    procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); override;
   end;
 
   TGLDriverProgrammable = class(TGLDriverBase)
@@ -94,6 +98,8 @@ type
     procedure Ortho(const left, right, bottom, top, zNear, zFar: GLfloat); override;
     procedure RenderArrays(const Mode: GLenum; const Count,VertElements : integer; const Verts,Texc,Cols : pointer); override;
     procedure SetColor(const C : TZColorf); override;
+    procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); override;
+    procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); override;
     constructor Create;
   end;
 
@@ -404,6 +410,21 @@ begin
 
 end;
 
+procedure TGLDriverFixed.GetMatrix(const Index: integer; Mat: PZMatrix4f);
+begin
+  glGetFloatv(GL_MODELVIEW_MATRIX + Index, PGLFloat(Mat));
+end;
+
+procedure TGLDriverFixed.SetMatrix(const Index: integer; const Mat: TZMatrix4f);
+var
+  OldMode : integer;
+begin
+  glGetIntegerv(GL_MATRIX_MODE, @OldMode);
+  glMatrixMode(GL_MODELVIEW + Index);
+  glLoadMatrixf(@Mat);
+  glMatrixMode(OldMode);
+end;
+
 procedure TGLDriverFixed.LoadIdentity;
 begin
   glLoadIdentity;
@@ -545,6 +566,17 @@ var
 begin
   for I := 0 to High(MPtrs) do
     MPtrs[I] := @MStack[I,0];
+end;
+
+procedure TGLDriverProgrammable.GetMatrix(const Index: integer; Mat: PZMatrix4f);
+begin
+  Mat^ := MPtrs[Index]^;
+end;
+
+procedure TGLDriverProgrammable.SetMatrix(const Index: integer;
+  const Mat: TZMatrix4f);
+begin
+  MPtrs[Index]^ := Mat;
 end;
 
 procedure TGLDriverProgrammable.Perspective(const fovy, aspect, zNear, zFar: GLfloat);

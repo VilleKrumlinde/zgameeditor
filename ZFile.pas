@@ -100,7 +100,7 @@ procedure TZFile.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}(@FileName), zptString);
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}(@FileNameFloatRef), zptPropertyRef);
   List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}(@FileEmbedded), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}(@Encoding), zptByte);

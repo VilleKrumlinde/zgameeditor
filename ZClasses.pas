@@ -59,7 +59,7 @@ type
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
- ExpInvokeComponentClassId,ExpInitLocalArrayClassId,
+ ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -236,7 +236,8 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,zctXptr,zctArray);
+  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,
+    zctXptr,zctArray,zctMat4,zctVec3);
   TZcDataType = record
     Kind : TZcDataTypeKind;
     {$ifndef minimal}
@@ -287,7 +288,7 @@ type
     DefaultValue : TZPropertyValue;
     NeverPersist : boolean;
     DontClone : boolean;
-    IsStringTarget: boolean;   //Can be assigned as string in expressions, values are garbagecollected
+    IsManagedTarget: boolean;   //Values are garbagecollected
     Offset : integer;
     PropertyType : TZPropertyType;
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
@@ -995,7 +996,7 @@ begin
       zptString :
         begin
           P := GetPropertyPtr(Prop,0);
-          if Prop.IsStringTarget then
+          if Prop.IsManagedTarget then
             ManagedHeap_AddTarget(P);
           PPointer(P)^ := @NilString;
         end;
@@ -1046,7 +1047,7 @@ begin
         end;
       zptString :
         begin
-          if Prop.IsStringTarget then
+          if Prop.IsManagedTarget then
             ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));
         end;
       {$ifndef minimal}
@@ -3893,11 +3894,11 @@ initialization
 
 finalization
 
+  ManagedHeap_Destroy;
+
   Zc_Ops.CleanUp;
   if Assigned(_ComponentManager) then
     FreeAndNil(_ComponentManager);
-
-  ManagedHeap_Destroy;
 
   StringCache.Free;
 
