@@ -200,7 +200,8 @@ var
 
 const
   ZcTypeNames : array[TZcDataTypeKind] of string =
-(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'),('xptr'),('#array'));
+(('void'),('float'),('int'),('string'),('model'),('#reference'),('null'),('xptr'),
+ ('#array'),('mat4'),('vec3'));
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
@@ -232,6 +233,8 @@ begin
     dvbInt: Result := zctInt;
     dvbString: Result := zctString;
     dvbModel: Result := zctModel;
+    dvbMat4: Result := zctMat4;
+    dvbVec3: Result := zctVec3;
   else
     Assert(False,'Cannot convert this array type');
   end;
@@ -245,6 +248,8 @@ begin
     zctInt: Result := dvbInt;
     zctString: Result := dvbString;
     zctModel: Result := dvbModel;
+    zctMat4 : Result := dvbMat4;
+    zctVec3 : Result := dvbVec3;
   else
     Assert(False,'Cannot convert this array type');
   end;
@@ -312,6 +317,9 @@ var
         Result.Kind := zctReference;
         Result.ReferenceClassId := ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).ClassId;
       end;
+    end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='ManagedValue') then
+    begin //Allow DefineVariable.ManagedType=mat4/vec3/string even though proptype is string
+      Result.Kind := VarTypeToZType(TDefineVariableBase(Self.Child(0).Ref)._Type);
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
   end;
@@ -943,7 +951,7 @@ begin
     PName := 'Value';
     case (Op.Ref as TDefineVariableBase)._Type of
       dvbInt : PName := 'IntValue';
-      dvbString : PName := 'StringValue';
+      dvbString,dvbMat4,dvbVec3 : PName := 'ManagedValue';
       dvbModel : PName := 'ModelValue';
       dvbByte : PName := 'ByteValue';
     end;
@@ -1150,6 +1158,8 @@ var
       'M' : Result.Kind := zctModel;
       'R' : Result.Kind := zctReference;
       'A' : Result.Kind := zctArray;
+      'm' : Result.Kind := zctMat4;
+      'v' : Result.Kind := zctVec3;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
@@ -1241,6 +1251,9 @@ begin
   MakeOne('getBinaryProp',fcGetBinaryProp,'VVR{Array}');
   MakeOne('setBinaryProp',fcSetBinaryProp,'VVR{Array}');
   MakeOne('getModels',fcGetModels,'VA{M}I');
+  MakeOne('transformPoint',fcMatTransformPoint,'vmv');
+  MakeOne('getMatrix',fcGetMatrix,'VIm');
+  MakeOne('setMatrix',fcSetMatrix,'VIm');
 
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);

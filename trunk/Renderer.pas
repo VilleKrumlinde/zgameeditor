@@ -757,7 +757,7 @@ procedure TRenderText.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}(@Text), zptString);
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}(@TextFloatRef), zptPropertyRef);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}

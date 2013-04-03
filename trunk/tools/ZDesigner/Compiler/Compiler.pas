@@ -128,7 +128,11 @@ begin
         PName := 'Value';
         case (C as TDefineVariableBase)._Type of
           dvbInt : PName := 'IntValue';
-          dvbString : PName := 'StringValue';
+          dvbString :
+            if C is TDefineVariable then
+              PName := 'ManagedValue'
+            else
+              PName := 'StringValue';
         end;
       end else
         C := nil;
@@ -225,6 +229,13 @@ begin
           raise ECodeGenError.Create('Cannot use this operator on a string-expression');
         Result := TExpStringConCat.Create(nil);
       end;
+    zctMat4 :
+      begin
+        if Kind<>vbkMul then
+          raise ECodeGenError.Create('Cannot use this operator on a mat4-expression');
+        Result := TExpMat4FuncCall.Create(nil);
+        TExpMat4FuncCall(Result).Kind := fcMatMultiply;
+      end
   else
     raise ECodeGenError.Create('Wrong datatype for binaryop');
   end;
@@ -650,7 +661,7 @@ begin
     end;
     if Prop.IsReadOnly then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-    if (Prop.PropertyType=zptString) and (not Prop.IsStringTarget) then
+    if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
     case Prop.PropertyType of
       zptString, zptComponentRef: AssignSize := 100;
@@ -822,16 +833,18 @@ var
     end;
     for L in Func.Locals do
     begin
-      if L.Typ.Kind=zctArray then
-        with TExpInitLocalArray.Create(Target) do
-        begin
-          StackSlot := L.Ordinal;
-          Dimensions := TDefineArray(L.Typ.TheArray).Dimensions;
-          _Type := TDefineArray(L.Typ.TheArray)._Type;
-          Size1 := TDefineArray(L.Typ.TheArray).SizeDim1;
-          Size2 := TDefineArray(L.Typ.TheArray).SizeDim2;
-          Size3 := TDefineArray(L.Typ.TheArray).SizeDim3;
-        end;
+      case L.Typ.Kind of
+        zctArray,zctMat4,zctVec3 :
+          with TExpInitLocalArray.Create(Target) do
+          begin
+            StackSlot := L.Ordinal;
+            Dimensions := TDefineArray(L.Typ.TheArray).Dimensions;
+            _Type := TDefineArray(L.Typ.TheArray)._Type;
+            Size1 := TDefineArray(L.Typ.TheArray).SizeDim1;
+            Size2 := TDefineArray(L.Typ.TheArray).SizeDim2;
+            Size3 := TDefineArray(L.Typ.TheArray).SizeDim3;
+          end;
+      end;
     end;
     for I := 0 to Func.Statements.Count - 1 do
     begin
@@ -1164,8 +1177,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
   procedure DoGenBuiltInFunc(Func : TZcOpFunctionBuiltIn);
   var
     I : integer;
-    F : TExpFuncCall;
-    SF : TExpPointerFuncCall;
+    F : TExpFuncCallBase;
   begin
     if NeedReturnValue and (Func.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1178,13 +1190,15 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
         GenValue(Op.Child(I));
     if Func.FuncId in [fcIntToStr,fcSubStr,fcChr,fcCreateModel] then
     begin
-      SF := TExpPointerFuncCall.Create(Target);
-      SF.Kind := Func.FuncId;
+      F := TExpPointerFuncCall.Create(Target);
+    end else if Func.FuncId in [fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix] then
+    begin
+      F := TExpMat4FuncCall.Create(Target);
     end else
     begin
       F := TExpFuncCall.Create(Target);
-      F.Kind := Func.FuncId;
     end;
+    F.Kind := Func.FuncId;
     if (not NeedReturnValue) and (Func.ReturnType.Kind<>zctVoid) then
       //discard return value from stack
       with TExpMisc.Create(Target) do

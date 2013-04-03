@@ -226,7 +226,7 @@ procedure TKeyPress.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Keys',{$ENDIF}(@Keys), zptString);
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}(@CharCode), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}(@RepeatDelay), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}(@OnPressed), zptComponentList);
@@ -343,12 +343,12 @@ procedure TWebOpen.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}(@Url), zptString);
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}(@ResultArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}(@ResultString), zptString);
     List.GetLast.NeverPersist := True;
-    List.GetLast.IsStringTarget := True;
+    List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}(@ParamArray), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}(@InBrowser), zptBoolean);
