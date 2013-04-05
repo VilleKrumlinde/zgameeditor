@@ -614,6 +614,33 @@ begin
 end;
 {$endif}
 
+function CreateManagedValue(const Typ : TVariableType) : pointer;
+var
+  A : TDefineArray;
+begin
+  Result := nil;
+  case Typ of
+    dvbMat4:
+      begin
+        A := TDefineArray.Create(nil);
+        A.Dimensions := dadTwo;
+        A.SizeDim1 := 4;
+        A.SizeDim2 := 4;
+        A._Type := dvbFloat;
+        Result := A;
+      end;
+    dvbVec3:
+      begin
+        A := TDefineArray.Create(nil);
+        A.Dimensions := dadOne;
+        A.SizeDim1 := 3;
+        A._Type := dvbFloat;
+        Result := A;
+      end;
+  end;
+  ManagedHeap_AddValueObject(Result);
+end;
+
 { TZExpression }
 
 procedure TZExpression.DefineProperties(List: TZPropertyList);
@@ -1200,6 +1227,8 @@ begin
     for I := 0 to Self.Limit - 1 do
     begin
       ManagedHeap_AddTarget(P);
+      if Self._Type<>dvbString then
+        P^ := CreateManagedValue(Self._Type);
       Inc(P);
     end;
   end;
@@ -1595,7 +1624,7 @@ end;
 function TDefineVariableBase.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName + ' <' +
-    Self.GetProperties.GetByName('Type').Options[ Ord(Self._Type) ] + '>';
+    AnsiString(Self.GetProperties.GetByName('Type').Options[ Ord(Self._Type) ]) + '>';
 end;
 {$endif}
 
@@ -1895,7 +1924,7 @@ begin
             W(Int32Regs[I]);
             P[-1] := Offs;
           end;
-        zctString,zctModel,zctXptr :
+        zctString,zctModel,zctXptr,zctMat4,zctVec3 :
           begin
             W(Int64Regs[I]);
             P[-1] := Offs;
@@ -2279,14 +2308,7 @@ begin
       begin
         StackPopToPointer(M1);
         StackPopToPointer(M2);
-
-        A := TDefineArray.Create(nil);
-        A.Dimensions := dadTwo;
-        A.SizeDim1 := 4;
-        A.SizeDim2 := 4;
-        A._Type := dvbFloat;
-        ManagedHeap_AddValueObject(A);
-
+        A := TDefineArray(CreateManagedValue(dvbMat4));
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         M2 := PZMatrix4f(TDefineArray(M2).GetData);
         PZMatrix4f(A.GetData)^ := MatrixMultiply(M1^,M2^);
@@ -2296,13 +2318,7 @@ begin
       begin
         StackPopToPointer(V1);
         StackPopToPointer(M1);
-
-        A := TDefineArray.Create(nil);
-        A.Dimensions := dadOne;
-        A.SizeDim1 := 3;
-        A._Type := dvbFloat;
-        ManagedHeap_AddValueObject(A);
-
+        A := TDefineArray(CreateManagedValue(dvbVec3));
         V1 := PZVector3f(TDefineArray(V1).GetData);
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         VectorTransform(V1^,M1^,PZVector3f(A.GetData)^);
