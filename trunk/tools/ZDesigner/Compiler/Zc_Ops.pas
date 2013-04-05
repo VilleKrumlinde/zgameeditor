@@ -230,7 +230,7 @@ begin
   Result := zctVoid;
   case VTyp of
     dvbFloat: Result := zctFloat;
-    dvbInt: Result := zctInt;
+    dvbInt,dvbByte: Result := zctInt;
     dvbString: Result := zctString;
     dvbModel: Result := zctModel;
     dvbMat4: Result := zctMat4;
@@ -300,6 +300,8 @@ var
       C := Ref as TZComponent;
       if ComponentManager.GetInfo(C).ClassId=ModelClassId then
         Result.Kind := zctModel
+      else if ComponentManager.GetInfo(C).ClassId=DefineArrayClassId then
+        Result.TheArray := C
       else
         Result.ReferenceClassId := ComponentManager.GetInfo(C).ClassId;
     end else if SameText(Id,'currentmodel') then
@@ -1418,14 +1420,11 @@ begin
     if (Ref is TZcOpVariableBase) then
       Result.Kind := VarTypeToZType( TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type )
     else
-    begin
-      case (Ref as TDefineArray)._Type of
-        dvbFloat : Result.Kind := zctFloat;
-        dvbInt,dvbByte : Result.Kind := zctInt;
-        dvbString : Result.Kind := zctString;
-        dvbModel : Result.Kind := zctModel;
-      end;
-    end;
+      Result.Kind := VarTypeToZType((Ref as TDefineArray)._Type);
+  end else if (ArrayOp is TZcOpArrayAccess) then
+  begin
+    if TZcOpArrayAccess(ArrayOp).GetDataType.Kind in [zctVec3,zctMat4] then
+      Result.Kind := zctFloat;
   end;
 end;
 

@@ -25,6 +25,7 @@ type
   private             
     IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
+    Mat4Array,Vec3Array : TDefineArray;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
@@ -613,6 +614,8 @@ procedure TZc.CleanUp;
 begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
+  Mat4Array.Free;
+  Vec3Array.Free;
 end;
 
 function TZc.MakeTempName : string;
@@ -1789,8 +1792,15 @@ begin
     else if (CurrentInputSymbol=lbrackSym) then
     begin
          Get;
-           Assert(OutOp.Kind in [zcIdentifier,zcSelect]);
+           Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess]);
            Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
+           if OutOp.Kind=zcArrayAccess then
+           begin
+             case TDefineArray(TZcOpArrayAccess(outop).Arrayop.GetDataType.TheArray)._Type of
+               dvbMat4 : Op.Ref := Mat4Array;
+               dvbVec3 : Op.Ref := Vec3Array;
+             end;
+           end;
            OutOp := Op;
          
          _Expr(Op);
@@ -1991,6 +2001,17 @@ begin
               
     ZFunctions := TObjectList.Create(False);
     Self.OnError := OnParserError;
+
+    Mat4Array := TDefineArray.Create(nil);
+    Mat4Array.Dimensions := dadTwo;
+    Mat4Array.SizeDim1 := 4;
+    Mat4Array.SizeDim2 := 4;
+    Mat4Array._Type := dvbFloat;
+
+    Vec3Array := TDefineArray.Create(nil);
+    Vec3Array.Dimensions := dadOne;
+    Vec3Array.SizeDim1 := 3;
+    Vec3Array._Type := dvbFloat;
   
   inherited;
 
