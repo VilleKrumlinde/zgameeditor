@@ -17,7 +17,7 @@ public = (.
 private = (.
     IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
-    Mat4Array,Vec3Array : TDefineArray;
+    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
@@ -32,12 +32,22 @@ precreate = (.
     Mat4Array.Dimensions := dadTwo;
     Mat4Array.SizeDim1 := 4;
     Mat4Array.SizeDim2 := 4;
-    Mat4Array._Type := dvbFloat;
+    Mat4Array._Type := zctFloat;
+
+    Vec2Array := TDefineArray.Create(nil);
+    Vec2Array.Dimensions := dadOne;
+    Vec2Array.SizeDim1 := 2;
+    Vec2Array._Type := zctFloat;
 
     Vec3Array := TDefineArray.Create(nil);
     Vec3Array.Dimensions := dadOne;
     Vec3Array.SizeDim1 := 3;
-    Vec3Array._Type := dvbFloat;
+    Vec3Array._Type := zctFloat;
+
+    Vec4Array := TDefineArray.Create(nil);
+    Vec4Array.Dimensions := dadOne;
+    Vec4Array.SizeDim1 := 4;
+    Vec4Array._Type := zctFloat;
 .)
 
 semErrors = (.
@@ -88,7 +98,9 @@ begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
   Mat4Array.Free;
+  Vec2Array.Free;
   Vec3Array.Free;
+  Vec4Array.Free;
 end;
 
 function TZc.MakeTempName : string;
@@ -216,7 +228,6 @@ HOMOGRAPHS
   "Camera" 
   "Font"
   "Sample"
-
 
 PRODUCTIONS
 
@@ -390,7 +401,7 @@ Type<var Typ : TZcDataType>
       "["       (.
                    A := TDefineArray.Create(nil);
                    GlobalNames.Add(A);
-                   A._Type := ZTypeToVarType(Typ.Kind);
+                   A._Type := Typ.Kind;
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 .)
@@ -421,20 +432,30 @@ SimpleType<var Typ : TZcDataType>
   | "mat4" (.
      A := TDefineArray.Create(nil);
      GlobalNames.Add(A);
-     A._Type := dvbFloat;
+     A._Type := zctFloat;
      A.Dimensions := dadTwo;
      A.SizeDim1 := 4;
      A.SizeDim2 := 4;
      Typ.Kind := zctMat4;
      Typ.TheArray := A;
     .)
+  | "vec2" (.
+     A := Vec2Array;
+     Typ.Kind := zctVec2;
+     Typ.TheArray := A;
+  .)
   | "vec3" (.
      A := TDefineArray.Create(nil);
      GlobalNames.Add(A);
-     A._Type := dvbFloat;
+     A._Type := zctFloat;
      A.Dimensions := dadOne;
      A.SizeDim1 := 3;
      Typ.Kind := zctVec3;
+     Typ.TheArray := A;
+  .)
+  | "vec4" (.
+     A := Vec4Array;
+     Typ.Kind := zctVec4;
      Typ.TheArray := A;
   .)
 
@@ -492,17 +513,17 @@ ident (. CnsName := LexString; .) "=" Expr<Op>
    case Typ.Kind of
      zctInt:
        begin
-         Cns._Type := dvbInt;
+         Cns._Type := zctInt;
          Cns.IntValue := Round(Lit.Value);
        end;
      zctFloat:
        begin
-         Cns._Type := dvbFloat;
+         Cns._Type := zctFloat;
          Cns.Value := Lit.Value;
        end;
      zctString:
        begin
-         Cns._Type := dvbString;
+         Cns._Type := zctString;
          Cns.SetString('StringValue',AnsiString(Lit.StringValue));
        end;
      else
@@ -983,10 +1004,13 @@ Primary<var OutOp : TZcOp>
            if OutOp.Kind=zcArrayAccess then
            begin
              //Array of arrays
-             case TDefineArray(TZcOpArrayAccess(outop).Arrayop.GetDataType.TheArray)._Type of
-               dvbMat4 : Op.Ref := Mat4Array;
-               dvbVec3 : Op.Ref := Vec3Array;
+             case TDefineArray(TZcOpArrayAccess(OutOp).Arrayop.GetDataType.TheArray)._Type of
+               zctMat4 : Op.Ref := Mat4Array;
+               zctVec3 : Op.Ref := Vec3Array;
+               zctVec2 : Op.Ref := Vec2Array;
+               zctVec4 : Op.Ref := Vec4Array;
              end;
+             TZcOpArrayAccess(Op).IsRawMem := True;
            end;
            OutOp := Op;
          .)

@@ -70,12 +70,11 @@ type
   end;
 
 
-  TVariableType = (dvbFloat,dvbInt,dvbString,dvbModel,dvbByte,dvbMat4,dvbVec3);
   TDefineVariableBase = class(TZComponent)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    _Type : TVariableType;
+    _Type : TZcDataTypeKind;
     {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
   end;
 
@@ -90,6 +89,8 @@ type
     ManagedValue : pointer;
     ModelValue : TZComponent;
     ByteValue : byte;
+    IsInitialized : boolean;
+    procedure Update; override;
   end;
 
   //Define a global constant that can be used in expressions
@@ -120,9 +121,9 @@ type
     Data : PFloatArray;
     Limit : integer;
     AllocItemCount : integer;
-    AllocType : TVariableType;
+    AllocType : TZcDataTypeKind;
     AllocPtr : PPointer;
-    procedure CleanUpManagedValues(TheType : TVariableType; Count : integer; P : PPointer);
+    procedure CleanUpManagedValues(TheType : TZcDataTypeKind; Count : integer; P : PPointer);
     procedure AllocData;
   private
     function PopAndGetElement : PFloat;
@@ -225,7 +226,8 @@ type
      fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID,
      fcGetBinaryProp,fcSetBinaryProp,fcGetModels,
      //Mat4
-     fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix
+     fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix,
+     fcVec2,fcVec3,fcVec4
      );
 
 
@@ -261,7 +263,7 @@ type
   end;
 
   //Push ptr to element in array on stack, used with assign
-  TExpArrayWrite = class(TExpBase)
+  TExpArrayGetElement = class(TExpBase)
   protected
     procedure Execute; override;
   end;
@@ -299,14 +301,18 @@ type
     Arguments : integer;
   end;
 
-  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,emPtrDerefPointer);
+  TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
+    emPtrDerefPointer);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpMiscKind;
-    {$ifndef minimal}public function ExpAsText : string; override;{$endif}
+    {$ifndef minimal}
+    constructor Create(OwnerList: TZComponentList; Kind : TExpMiscKind); overload;
+    public function ExpAsText : string; override;
+    {$endif}
   end;
 
   TExpUserFuncCall = class(TExpBase)
@@ -428,8 +434,24 @@ type
   public
     StackSlot : integer;
     Dimensions : TArrayDimensions;
-    _Type : TVariableType;
+    _Type : TZcDataTypeKind;
     Size1,Size2,Size3 : integer;
+  end;
+
+  TExpGetRawMemElement = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    _Type : TZcDataTypeKind;
+  end;
+
+  TExpArrayUtil = class(TExpBase)
+  protected
+    procedure Execute; override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (auArrayToRawMem, auRawMemToArray, auRawMemToRawMem);
   end;
 
 //Run a compiled expression
@@ -438,6 +460,7 @@ procedure RunCode(Code : TZComponentList);
 
 {$ifndef minimal}
 procedure ResetScriptState;
+function GetStackSlots(const Bytes : integer) : integer;
 {$endif}
 
 var
@@ -535,6 +558,21 @@ begin
   StackPopTo(Result);
 end;
 
+function GetStackSlots(const Bytes : integer) : integer;
+begin
+  Result := Bytes div SizeOf(TStackElement);
+end;
+
+procedure StackPopXBytes(var X; const Bytes : integer);
+begin
+  {$ifndef minimal}
+  if StackGetDepth=0 then
+    ZHalt('Zc Stack Underflow');
+  {$endif}
+  Dec(ZcStackPtr, GetStackSlots(Bytes) );
+  Move(ZcStackPtr^, Pointer(@X)^, Bytes);
+end;
+
 function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
 begin
   Result := @ZcStack;
@@ -614,27 +652,27 @@ begin
 end;
 {$endif}
 
-function CreateManagedValue(const Typ : TVariableType) : pointer;
+function CreateManagedValue(const Typ : TZcDataTypeKind) : pointer;
 var
   A : TDefineArray;
 begin
   Result := nil;
   case Typ of
-    dvbMat4:
+    zctMat4:
       begin
         A := TDefineArray.Create(nil);
         A.Dimensions := dadTwo;
         A.SizeDim1 := 4;
         A.SizeDim2 := 4;
-        A._Type := dvbFloat;
+        A._Type := zctFloat;
         Result := A;
       end;
-    dvbVec3:
+    zctVec2, zctVec3, zctVec4 :
       begin
         A := TDefineArray.Create(nil);
         A.Dimensions := dadOne;
-        A.SizeDim1 := 3;
-        A._Type := dvbFloat;
+        A.SizeDim1 := 2 + Ord(Typ)-Ord(zctVec2);
+        A._Type := zctFloat;
         Result := A;
       end;
   end;
@@ -865,6 +903,17 @@ begin
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
     List.GetLast.NeverPersist := True;
+end;
+
+procedure TDefineVariable.Update;
+begin
+  inherited;
+  if not IsInitialized then
+  begin
+    IsInitialized := True;
+    if _Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
+      Self.ManagedValue := CreateManagedValue(Self._Type);
+  end;
 end;
 
 { TExpFuncCallBase }
@@ -1099,10 +1148,10 @@ function TDefineConstant.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName + ' ';
   case _Type of
-    dvbFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
-    dvbInt: Result := Result + AnsiString(IntToStr(IntValue));
-    dvbString: Result := Result + '"' + StringValue + '"';
-    dvbByte: Result := Result + AnsiString(IntToStr(ByteValue));
+    zctFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
+    zctInt: Result := Result + AnsiString(IntToStr(IntValue));
+    zctString: Result := Result + '"' + StringValue + '"';
+    zctByte: Result := Result + AnsiString(IntToStr(ByteValue));
   end;
 end;
 {$endif}
@@ -1122,7 +1171,7 @@ begin
   if P=nil then
     ZHalt('Array read outside range: ' + String(A.Name));
   {$endif}
-  if A._Type=dvbByte then
+  if A._Type=zctByte then
   begin
     I := PByte(P)^;
     StackPush(I);
@@ -1163,7 +1212,7 @@ begin
   if Limit<>CalcLimit then
     AllocData;
   {$ifndef minimal}
-  ZAssert(not (Persistent and (_Type in [dvbString,dvbModel,dvbMat4,dvbVec3])),'Persistent arrays of this datatype not supported');
+  ZAssert(not (Persistent and (_Type in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
   {$endif}
   if Persistent then
   begin
@@ -1181,12 +1230,7 @@ end;
 
 function TDefineArray.GetElementSize: integer;
 begin
-  case Self._Type of
-    dvbString, dvbModel, dvbVec3, dvbMat4 : Result := SizeOf(Pointer);
-    dvbByte : Result := 1;
-  else
-    Result := SizeOf(Single);
-  end;
+  Result := GetZcTypeSize(Self._Type);
 end;
 
 function TDefineArray.CalcLimit: integer;
@@ -1221,24 +1265,22 @@ begin
   Self.AllocItemCount := Self.Limit;
   Self.AllocType := Self._Type;
 
-  if Self._Type in [dvbString,dvbMat4,dvbVec3] then
+  if Self._Type in [zctString] then
   begin
     P := P^;
     for I := 0 to Self.Limit - 1 do
     begin
       ManagedHeap_AddTarget(P);
-      if Self._Type<>dvbString then
-        P^ := CreateManagedValue(Self._Type);
       Inc(P);
     end;
   end;
 end;
 
-procedure TDefineArray.CleanUpManagedValues(TheType : TVariableType; Count : integer; P : PPointer);
+procedure TDefineArray.CleanUpManagedValues(TheType : TZcDataTypeKind; Count : integer; P : PPointer);
 var
   I : integer;
 begin
-  if (not (TheType in [dvbString,dvbMat4,dvbVec3])) or (Count=0) then
+  if (not (TheType in [zctString])) or (Count=0) then
     Exit;
   for I := 0 to Count - 1 do
   begin
@@ -1290,7 +1332,7 @@ end;
 
 { TExpArrayWrite }
 
-procedure TExpArrayWrite.Execute;
+procedure TExpArrayGetElement.Execute;
 var
   P : Pointer;
   A : TDefineArray;
@@ -1499,6 +1541,12 @@ begin
 end;
 
 {$ifndef minimal}
+constructor TExpMisc.Create(OwnerList: TZComponentList; Kind: TExpMiscKind);
+begin
+  inherited Create(OwnerList);
+  Self.Kind := Kind;
+end;
+
 function TExpMisc.ExpAsText : string;
 begin
   Result := Copy(GetEnumName(TypeInfo(TExpMiscKind),Ord(Kind)),3,100) + ' (misc)';
@@ -1616,7 +1664,7 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Float','Integer','String','Model','Byte','Mat4','Vec3']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
 
@@ -1924,7 +1972,7 @@ begin
             W(Int32Regs[I]);
             P[-1] := Offs;
           end;
-        zctString,zctModel,zctXptr,zctMat4,zctVec3 :
+        zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4 :
           begin
             W(Int64Regs[I]);
             P[-1] := Offs;
@@ -2302,13 +2350,14 @@ var
   V1 : PZVector3f;
   I : integer;
   A : TDefineArray;
+  X,Y,Z,W : single;
 begin
   case Kind of
     fcMatMultiply:
       begin
         StackPopToPointer(M1);
         StackPopToPointer(M2);
-        A := TDefineArray(CreateManagedValue(dvbMat4));
+        A := TDefineArray(CreateManagedValue(zctMat4));
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         M2 := PZMatrix4f(TDefineArray(M2).GetData);
         PZMatrix4f(A.GetData)^ := MatrixMultiply(M1^,M2^);
@@ -2318,7 +2367,7 @@ begin
       begin
         StackPopToPointer(V1);
         StackPopToPointer(M1);
-        A := TDefineArray(CreateManagedValue(dvbVec3));
+        A := TDefineArray(CreateManagedValue(zctVec3));
         V1 := PZVector3f(TDefineArray(V1).GetData);
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         VectorTransform(V1^,M1^,PZVector3f(A.GetData)^);
@@ -2335,6 +2384,104 @@ begin
         StackPopToPointer(A);
         StackPopTo(I);
         Self.ZApp.Driver.SetMatrix(I, PZMatrix4f(A.GetData)^);
+      end;
+    fcVec2 :
+      begin
+        StackPopTo(Y);
+        StackPopTo(X);
+        A := TDefineArray(CreateManagedValue(zctVec2));
+        PZVector2f(A.GetData)^ := Vector2f(X,Y);
+        StackPushPointer(A);
+      end;
+    fcVec3 :
+      begin
+        StackPopTo(Z);
+        StackPopTo(Y);
+        StackPopTo(X);
+        A := TDefineArray(CreateManagedValue(zctVec3));
+        PZVector3f(A.GetData)^ := Vector3f(X,Y,Z);
+        StackPushPointer(A);
+      end;
+    fcVec4 :
+      begin
+        StackPopTo(W);
+        StackPopTo(Z);
+        StackPopTo(Y);
+        StackPopTo(X);
+        A := TDefineArray(CreateManagedValue(zctVec4));
+        PColorf(A.GetData)^ := MakeColorf(X,Y,Z,W);
+        StackPushPointer(A);
+      end;
+  end;
+end;
+
+
+{ TExpGetRawMemElement }
+
+procedure TExpGetRawMemElement.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+end;
+
+procedure TExpGetRawMemElement.Execute;
+var
+  I3,I2,Index : integer;
+  P : PBytes;
+begin
+  StackPopToPointer(P);
+
+  case Self._Type of
+    zctMat4:
+      begin
+        StackPopTo(I3);
+        StackPopTo(I2);
+        Index := (I2*4) + I3;
+      end;
+    zctVec2..zctVec4:
+      begin
+        StackPopTo(I3);
+        Index := I3;
+      end;
+  end;
+
+  P := @P^[Index * 4];
+  StackPushPointer(P);
+end;
+
+{ TExpArrayUtil }
+
+procedure TExpArrayUtil.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+end;
+
+procedure TExpArrayUtil.Execute;
+var
+  A : TDefineArray;
+  P,P2 : pointer;
+  Size : integer;
+begin
+  case Kind of
+    auArrayToRawMem:
+      begin
+        StackPopToPointer(A);
+        StackPopToPointer(P);
+        Move(A.GetData^, P^, A.GetElementSize * A.CalcLimit);
+      end;
+    auRawMemToArray:
+      begin
+        StackPopToPointer(P);
+        StackPopToPointer(A);
+        Move(P^, A.GetData^, A.GetElementSize * A.CalcLimit);
+      end;
+    auRawMemToRawMem:
+      begin
+        StackPopTo(Size);
+        StackPopToPointer(P);
+        StackPopToPointer(P2);
+        Move(P^, P2^, Size);
       end;
   end;
 end;
@@ -2378,7 +2525,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayRead,ExpArrayReadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpArrayWrite,ExpArrayWriteClassId);
+  ZClasses.Register(TExpArrayGetElement,ExpArrayWriteClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpStackFrame,ExpStackFrameClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -2417,6 +2564,10 @@ initialization
   ZClasses.Register(TExpInitLocalArray,ExpInitLocalArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpMat4FuncCall,ExpMat4FuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpGetRawMemElement,ExpGetRawMemElementClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpArrayUtil,ExpArrayUtilClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
 end.
