@@ -1722,8 +1722,8 @@ var
         end;
       sakMat4 :
         begin
-          //Div 16 to allow mat4 arrays
-          glUniformMatrix4fv(Sv.Location,Count div 16,GL_FALSE,P);
+          //Use count to allow mat4 arrays
+          glUniformMatrix4fv(Sv.Location,Count,GL_FALSE,P);
         end;
     end;
 

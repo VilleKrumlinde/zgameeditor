@@ -59,7 +59,8 @@ type
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
- ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,
+ ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,ExpGetRawMemElementClassId,
+ ExpArrayUtilClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -236,8 +237,22 @@ type
   end;
 
   //Datatypes in Zc-script
-  TZcDataTypeKind = (zctVoid,zctFloat,zctInt,zctString,zctModel,zctReference,zctNull,
-    zctXptr,zctArray,zctMat4,zctVec3);
+  TZcDataTypeKind = (
+    zctFloat, //Public types (selectable in Variable and Array components)
+    zctInt,
+    zctString,
+    zctModel,
+    zctByte,
+    zctMat4,
+    zctVec2,
+    zctVec3,
+    zctVec4,
+    zctVoid,  //Private types
+    zctReference,
+    zctNull,
+    zctXptr,
+    zctArray);
+
   TZcDataType = record
     Kind : TZcDataTypeKind;
     {$ifndef minimal}
@@ -542,6 +557,11 @@ function ManagedHeap_GetStatus : string;
 const
   FloatTypes : set of TZPropertyType = [zptFloat,zptScalar,zptRectf,zptColorf,zptVector3f];
   FloatTextDecimals = 4;  //Nr of fraction digits when presenting float-values as text
+
+  ZcTypeNames : array[TZcDataTypeKind] of string =
+(('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),
+ ('void'),('#reference'),('null'),('xptr'),('#array'));
+
 
 function GetPropRefAsString(const PRef : TZPropertyRef) : string;
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
@@ -962,6 +982,10 @@ function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
 begin
   case Typ of
     zctModel,zctString,zctXptr,zctVoid,zctNull : Result := SizeOf(Pointer);
+    zctMat4 : RESult := SizeOf(single) * 16;
+    zctVec2 : RESult := SizeOf(single) * 2;
+    zctVec3 : RESult := SizeOf(single) * 3;
+    zctVec4 : RESult := SizeOf(single) * 4;
   else
     Result := SizeOf(Integer);
   end;

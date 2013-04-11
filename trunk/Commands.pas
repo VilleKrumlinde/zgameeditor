@@ -380,7 +380,7 @@ begin
     if ParamArray<>nil then
     begin
       {$ifndef minimal}
-      if ParamArray._Type<>dvbInt then
+      if ParamArray._Type<>zctInt then
         GetLog(Self.ClassName).Warning('ParamArray must be of int-type');
       {$endif}
       Limit := ParamArray.CalcLimit;
@@ -442,7 +442,7 @@ begin
   if ResultArray<>nil then
   begin
     {$ifndef minimal}
-    if ResultArray._Type<>dvbInt then
+    if ResultArray._Type<>zctInt then
       GetLog(Self.ClassName).Warning('ResultArray must be of int-type');
     {$endif}
     Ps := Buffer;

@@ -146,18 +146,18 @@ end;
 function TArrayEditForm.ValueAsText(P: pointer): string;
 begin
   case TheArray._Type of
-    dvbFloat: Result := DesignerFormatFloat(PFloat(P)^);
-    dvbInt: Result := IntToStr(PInteger(P)^);
-    dvbByte: Result := IntToStr(PByte(P)^);
+    zctFloat: Result := DesignerFormatFloat(PFloat(P)^);
+    zctInt: Result := IntToStr(PInteger(P)^);
+    zctByte: Result := IntToStr(PByte(P)^);
   end;
 end;
 
 procedure TArrayEditForm.SetValueFromText(const S : String; P: pointer);
 begin
   case TheArray._Type of
-    dvbFloat: PFloat(P)^ := StrToFloatDef(S,0);
-    dvbInt: PInteger(P)^ := StrToIntDef(S,0);
-    dvbByte: PByte(P)^ := StrToIntDef(S,0);
+    zctFloat: PFloat(P)^ := StrToFloatDef(S,0);
+    zctInt: PInteger(P)^ := StrToIntDef(S,0);
+    zctByte: PByte(P)^ := StrToIntDef(S,0);
   end;
 end;
 

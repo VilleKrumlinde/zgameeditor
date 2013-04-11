@@ -25,7 +25,7 @@ type
   private             
     IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
-    Mat4Array,Vec3Array : TDefineArray;
+    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
@@ -107,12 +107,12 @@ const
 	MaterialSym = 36;	SoundSym = 37;	ShaderSym = 38;	BitmapSym = 39;	MeshSym = 40;
 	CameraSym = 41;	FontSym = 42;	SampleSym = 43;	voidSym = 44;	refSym = 45;
 	floatSym = 46;	intSym = 47;	stringSym = 48;	modelSym = 49;	xptrSym = 50;
-	mat_fourSym = 51;	vec_threeSym = 52;	constSym = 53;	ifSym = 54;	elseSym = 55;
-	switchSym = 56;	whileSym = 57;	forSym = 58;	breakSym = 59;	continueSym = 60;
-	returnSym = 61;	_plus_equalSym = 62;	_minus_equalSym = 63;	_star_equalSym = 64;	_slash_equalSym = 65;
-	caseSym = 66;	defaultSym = 67;	_querySym = 68;	_bar_barSym = 69;	_and_andSym = 70;
-	reinterpret_underscorecastSym = 71;	_atSym = 72;	nullSym = 73;	_NOSYMB = 74;	_slash_starSym = 75;
-	_slash_slashSym = 76;
+	mat_fourSym = 51;	vec_twoSym = 52;	vec_threeSym = 53;	vec_fourSym = 54;	constSym = 55;
+	ifSym = 56;	elseSym = 57;	switchSym = 58;	whileSym = 59;	forSym = 60;
+	breakSym = 61;	continueSym = 62;	returnSym = 63;	_plus_equalSym = 64;	_minus_equalSym = 65;
+	_star_equalSym = 66;	_slash_equalSym = 67;	caseSym = 68;	defaultSym = 69;	_querySym = 70;
+	_bar_barSym = 71;	_and_andSym = 72;	reinterpret_underscorecastSym = 73;	_atSym = 74;	nullSym = 75;
+	_NOSYMB = 76;	_slash_starSym = 77;	_slash_slashSym = 78;
 
 var ZcSymSets: TSetArray;
 
@@ -615,7 +615,9 @@ begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
   Mat4Array.Free;
+  Vec2Array.Free;
   Vec3Array.Free;
+  Vec4Array.Free;
 end;
 
 function TZc.MakeTempName : string;
@@ -756,7 +758,7 @@ begin
                   
                    A := TDefineArray.Create(nil);
                    GlobalNames.Add(A);
-                   A._Type := ZTypeToVarType(Typ.Kind);
+                   A._Type := Typ.Kind;
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 
@@ -979,7 +981,7 @@ begin
              
      A := TDefineArray.Create(nil);
      GlobalNames.Add(A);
-     A._Type := dvbFloat;
+     A._Type := zctFloat;
      A.Dimensions := dadTwo;
      A.SizeDim1 := 4;
      A.SizeDim2 := 4;
@@ -987,16 +989,34 @@ begin
      Typ.TheArray := A;
     
   end
+  else if (CurrentInputSymbol=vec_twoSym) then
+  begin
+       Get;
+             
+     A := Vec2Array;
+     Typ.Kind := zctVec2;
+     Typ.TheArray := A;
+  
+  end
   else if (CurrentInputSymbol=vec_threeSym) then
   begin
        Get;
              
      A := TDefineArray.Create(nil);
      GlobalNames.Add(A);
-     A._Type := dvbFloat;
+     A._Type := zctFloat;
      A.Dimensions := dadOne;
      A.SizeDim1 := 3;
      Typ.Kind := zctVec3;
+     Typ.TheArray := A;
+  
+  end
+  else if (CurrentInputSymbol=vec_fourSym) then
+  begin
+       Get;
+             
+     A := Vec4Array;
+     Typ.Kind := zctVec4;
      Typ.TheArray := A;
   
   end
@@ -1073,17 +1093,17 @@ begin
    case Typ.Kind of
      zctInt:
        begin
-         Cns._Type := dvbInt;
+         Cns._Type := zctInt;
          Cns.IntValue := Round(Lit.Value);
        end;
      zctFloat:
        begin
-         Cns._Type := dvbFloat;
+         Cns._Type := zctFloat;
          Cns.Value := Lit.Value;
        end;
      zctString:
        begin
-         Cns._Type := dvbString;
+         Cns._Type := zctString;
          Cns.SetString('StringValue',AnsiString(Lit.StringValue));
        end;
      else
@@ -1796,10 +1816,14 @@ begin
            Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
            if OutOp.Kind=zcArrayAccess then
            begin
-             case TDefineArray(TZcOpArrayAccess(outop).Arrayop.GetDataType.TheArray)._Type of
-               dvbMat4 : Op.Ref := Mat4Array;
-               dvbVec3 : Op.Ref := Vec3Array;
+             //Array of arrays
+             case TDefineArray(TZcOpArrayAccess(OutOp).Arrayop.GetDataType.TheArray)._Type of
+               zctMat4 : Op.Ref := Mat4Array;
+               zctVec3 : Op.Ref := Vec3Array;
+               zctVec2 : Op.Ref := Vec2Array;
+               zctVec4 : Op.Ref := Vec4Array;
              end;
+             TZcOpArrayAccess(Op).IsRawMem := True;
            end;
            OutOp := Op;
          
@@ -1904,11 +1928,12 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'"Material"'	,'"Sound"'	,'"Shader"'	,'"Bitmap"'	,'"Mesh"'
 	,'"Camera"'	,'"Font"'	,'"Sample"'	,'"void"'	,'"ref"'
 	,'"float"'	,'"int"'	,'"string"'	,'"model"'	,'"xptr"'
-	,'"mat4"'	,'"vec3"'	,'"const"'	,'"if"'	,'"else"'
-	,'"switch"'	,'"while"'	,'"for"'	,'"break"'	,'"continue"'
-	,'"return"'	,'"+="'	,'"-="'	,'"*="'	,'"/="'
-	,'"case"'	,'"default"'	,'"?"'	,'"||"'	,'"&&"'
-	,'"reinterpret_cast"'	,'"@"'	,'"null"'  ,'not');
+	,'"mat4"'	,'"vec2"'	,'"vec3"'	,'"vec4"'	,'"const"'
+	,'"if"'	,'"else"'	,'"switch"'	,'"while"'	,'"for"'
+	,'"break"'	,'"continue"'	,'"return"'	,'"+="'	,'"-="'
+	,'"*="'	,'"/="'	,'"case"'	,'"default"'	,'"?"'
+	,'"||"'	,'"&&"'	,'"reinterpret_cast"'	,'"@"'	,'"null"'
+  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -1979,11 +2004,11 @@ begin
     end;
     ZcLiterals := CreateLiterals(True,
 	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','void','ref','float','int','string','model','xptr'
-		,'mat4','vec3','const','if','else','switch','while','for','break','continue','return','case','default','reinterpret_cast'
-		,'null'],
+		,'mat4','vec2','vec3','vec4','const','if','else','switch','while','for','break','continue','return','case','default'
+		,'reinterpret_cast','null'],
 	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,voidSym,refSym,floatSym,intSym,stringSym
-		,modelSym,xptrSym,mat_fourSym,vec_threeSym,constSym,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym
-		,caseSym,defaultSym,reinterpret_underscorecastSym,nullSym]
+		,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,constSym,ifSym,elseSym,switchSym,whileSym,forSym
+		,breakSym,continueSym,returnSym,caseSym,defaultSym,reinterpret_underscorecastSym,nullSym]
      );
   end;
   with TZcScanner(Result) do
@@ -2006,29 +2031,39 @@ begin
     Mat4Array.Dimensions := dadTwo;
     Mat4Array.SizeDim1 := 4;
     Mat4Array.SizeDim2 := 4;
-    Mat4Array._Type := dvbFloat;
+    Mat4Array._Type := zctFloat;
+
+    Vec2Array := TDefineArray.Create(nil);
+    Vec2Array.Dimensions := dadOne;
+    Vec2Array.SizeDim1 := 2;
+    Vec2Array._Type := zctFloat;
 
     Vec3Array := TDefineArray.Create(nil);
     Vec3Array.Dimensions := dadOne;
     Vec3Array.SizeDim1 := 3;
-    Vec3Array._Type := dvbFloat;
+    Vec3Array._Type := zctFloat;
+
+    Vec4Array := TDefineArray.Create(nil);
+    Vec4Array.Dimensions := dadOne;
+    Vec4Array.SizeDim1 := 4;
+    Vec4Array._Type := zctFloat;
   
   inherited;
 
   if Length(ZcSymSets)=0 then
   InitSymSets(ZcSymSets,[
-    	{ 0} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, constSym, -1,
-	{ 1} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, constSym, -1,
-	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, -1,
-	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, -1,
-	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, refSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, -1,
-	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
-	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+    	{ 0} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 1} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 2} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, voidSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, refSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 5} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{ 9} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, -1,
 	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
-	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_threeSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
+	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, floatSym, intSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{12} decSym, incSym, minusSym, notSym, -1,
 	{13} gtSym, gteSym, ltSym, lteSym, -1,
 	{14} intConSym, realConSym, stringConSym, nullSym, -1,
