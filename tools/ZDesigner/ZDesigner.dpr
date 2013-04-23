@@ -28,6 +28,7 @@ program ZDesigner;
 {$ifend}
 
 uses
+//FastMM4,
   Forms,
   HTMLHelpViewer,
   ZLog in '..\..\ZLog.pas',

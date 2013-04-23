@@ -310,7 +310,7 @@ type
   public
     Kind : TExpMiscKind;
     {$ifndef minimal}
-    constructor Create(OwnerList: TZComponentList; Kind : TExpMiscKind); overload;
+    constructor Create(OwnerList: TZComponentList; Kind : TExpMiscKind); reintroduce;
     public function ExpAsText : string; override;
     {$endif}
   end;
@@ -451,7 +451,8 @@ type
     procedure Execute; override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (auArrayToRawMem, auRawMemToArray, auRawMemToRawMem);
+    Kind : (auArrayToRawMem, auRawMemToArray);
+    _Type : TZcDataTypeKind;
   end;
 
 //Run a compiled expression
@@ -1235,7 +1236,11 @@ end;
 
 function TDefineArray.CalcLimit: integer;
 begin
-  Result := SizeDim1 * (SizeDim2 + 1) * (SizeDim3 + 1);
+  Result := SizeDim1;
+  if SizeDim2>0 then
+    Result := Result * SizeDim2;
+  if SizeDim3>0 then
+    Result := Result * SizeDim3;
 end;
 
 procedure TDefineArray.AllocData;
@@ -2443,6 +2448,8 @@ begin
         StackPopTo(I3);
         Index := I3;
       end;
+  else
+    Index := 0;
   end;
 
   P := @P^[Index * 4];
@@ -2455,13 +2462,13 @@ procedure TExpArrayUtil.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
 end;
 
 procedure TExpArrayUtil.Execute;
 var
   A : TDefineArray;
-  P,P2 : pointer;
-  Size : integer;
+  P : pointer;
 begin
   case Kind of
     auArrayToRawMem:
@@ -2473,15 +2480,9 @@ begin
     auRawMemToArray:
       begin
         StackPopToPointer(P);
-        StackPopToPointer(A);
+        A := TDefineArray(CreateManagedValue(Self._Type));
         Move(P^, A.GetData^, A.GetElementSize * A.CalcLimit);
-      end;
-    auRawMemToRawMem:
-      begin
-        StackPopTo(Size);
-        StackPopToPointer(P);
-        StackPopToPointer(P2);
-        Move(P^, P2^, Size);
+        StackPushPointer(A);
       end;
   end;
 end;

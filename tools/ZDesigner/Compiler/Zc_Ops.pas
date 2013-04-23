@@ -317,7 +317,7 @@ begin
       edtPropIndex: Result.Kind := zctFloat;
       edtModelDefined : Result.Kind := zctReference;
     else
-      Assert(False);
+      raise ECodeGenError.Create('Could not determine type: ' + Self.ToString);
     end;
   end
   else if Kind in [zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ] then
@@ -432,7 +432,7 @@ begin
         DoProp(ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).GetProperties);
         Exit;
       end else
-      begin
+      begin if ETyp.Prop.PropertyType in [zptRectf,zptColorf,zptVector3f] then
         Result.Kind := edtPropIndex;
         I := -1;
         if Length(Id)=1 then
@@ -849,17 +849,23 @@ var
 begin
   ExistingType := Op.GetDataType;
 
-  if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId) then
-  begin
-    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(Op.Ref));
-    Exit(Op);
-  end;
-
   if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctArray) then
   begin
     CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(ExistingType.TheArray));
     Exit(Op);
   end;
+
+  if (ExistingType.Kind=zctReference) and (WantedType.Kind=zctReference) and
+    (ExistingType.ReferenceClassId<>WantedType.ReferenceClassId) then
+    raise ECodeGenError.Create('Cannot convert ' + GetZcTypeName(ExistingType) + ' to ' + GetZcTypeName(WantedType));
+
+  if (WantedType.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
+    (ExistingType.Kind=WantedType.Kind) and
+    (Op.Kind=zcArrayAccess) then
+    Exit( TZcOpConvert.Create(WantedType,Op) );
+
+  if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
+    Exit(Op);
 
   if (ExistingType.Kind=zctVoid) and (WantedType.Kind=zctXptr) then
   begin
@@ -871,12 +877,11 @@ begin
     end;
   end;
 
-  if (ExistingType.Kind=zctReference) and (WantedType.Kind=zctReference) and
-    (ExistingType.ReferenceClassId<>WantedType.ReferenceClassId) then
-    raise ECodeGenError.Create('Cannot convert ' + GetZcTypeName(ExistingType) + ' to ' + GetZcTypeName(WantedType));
-
-  if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
+  if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId) then
+  begin
+    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(Op.Ref));
     Exit(Op);
+  end;
 
   if (WantedType.Kind=zctByte) and (ExistingType.Kind=zctInt) then
     Exit(Op);
@@ -1402,11 +1407,13 @@ begin
   begin
     if (Ref is TZcOpVariableBase) then
       Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type
-    else
+    else if (Ref is TDefineArray) then
       Result.Kind := (Ref as TDefineArray)._Type;
-  end else if (ArrayOp is TZcOpArrayAccess) then
+  end;
+
+  if Result.Kind=zctVoid then
   begin
-    if TZcOpArrayAccess(ArrayOp).GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
+    if ArrayOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
       Result.Kind := zctFloat;
   end;
 end;
