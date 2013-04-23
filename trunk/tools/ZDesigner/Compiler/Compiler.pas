@@ -259,7 +259,7 @@ begin
     zctFloat :
       with TExpConstantFloat.Create(Target) do
         Constant := Value;
-    zctInt :
+    zctByte, zctInt :
       //Need to cast from double, otherwise precision problem: assert( StrToInt('$01111111'=17895697) );
       with TExpConstantInt.Create(Target) do
         Constant := Round(Value);
@@ -298,7 +298,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   var
     Etyp : TZcIdentifierInfo;
     PTyp : TZPropertyType;
-    E : TExpMisc;
+    Kind : TExpMiscKind;
   begin
     Etyp := Op.GetIdentifierInfo;
     if ETyp.Kind=edtPropIndex then
@@ -311,19 +311,18 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     else
       raise ECodeGenError.Create('Failed to deref ' + Op.Id);
 
-    E := TExpMisc.Create(Target);
     case PTyp of
-      zptString,zptComponentRef: E.Kind := emPtrDerefPointer;
-      zptByte,zptBoolean: E.Kind := emPtrDeref1;
+      zptString,zptComponentRef: Kind := emPtrDerefPointer;
+      zptByte,zptBoolean: Kind := emPtrDeref1;
     else
-      E.Kind := emPtrDeref4;
+      Kind := emPtrDeref4;
     end;
+    TExpMisc.Create(Target,Kind);
   end;
 
   procedure DoGenIdentifier;
   var
     L : TExpAccessLocal;
-    E : TExpMisc;
   begin
     if (Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar) then
     begin
@@ -333,14 +332,12 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       L.Kind := loLoad;
       if (Op.Ref is TZcOpArgumentVar) and (Op.Ref as TZcOpArgumentVar).Typ.IsPointer then
       begin //"ref" argument, need to dereference pointer to get value
-        E := TExpMisc.Create(Target);
+        TExpMisc.Create(Target, emPtrDeref4);
         //todo: need attention in 64-bit mode
-        E.Kind := emPtrDeref4;
       end;
     end else if LowerCase(Op.Id)='currentmodel' then
     begin
-      with TExpMisc.Create(Target) do
-        Kind := emLoadCurrentModel;
+      TExpMisc.Create(Target,emLoadCurrentModel)
     end else if Op.Ref is TZComponent then
     begin
       with TExpLoadComponent.Create(Target) do
@@ -478,6 +475,18 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
               else if FromOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
                 Kind := eckArrayToXptr;
             end;
+        else
+          if Cop.ToType.Kind=FromOp.GetDataType.Kind then
+          begin
+            //This is vec3[0] to vec3 ref conversion
+            GenValue(Op.Child(0));
+            with TExpArrayUtil.Create(Target) do
+            begin
+              Kind := auRawMemToArray;
+              _Type := Cop.ToType.Kind;
+            end;
+            Exit;
+          end;
         end;
     end;
     if Ord(Kind)=99 then
@@ -657,21 +666,12 @@ begin
     ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
   begin
     //Local variable or argument
-    if (RightOp.Kind=zcArrayAccess) and (LeftOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4]) then
-    begin
-      GenValue(LeftOp);
-      GenValue(RightOp);
-      with TExpArrayUtil.Create(Target) do
-        Kind := auRawMemToArray;
-    end else
-    begin
-      GenValue(RightOp);
-      if LeaveValue=alvPost then
-        TExpMisc.Create(Target, emDup);
-      L := TExpAccessLocal.Create(Target);
-      L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
-      L.Kind := loStore;
-    end;
+    GenValue(RightOp);
+    if LeaveValue=alvPost then
+      TExpMisc.Create(Target, emDup);
+    L := TExpAccessLocal.Create(Target);
+    L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
+    L.Kind := loStore;
   end
   else if LeftOp.Kind=zcSelect then
   begin
@@ -697,18 +697,9 @@ begin
     else
       AssignSize := 4;
     end;
-    if (RightOp.Kind=zcArrayAccess) and (LeftOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4]) then
-    begin
-      GenValue(LeftOp);
-      GenValue(RightOp);
-      with TExpArrayUtil.Create(Target) do
-        Kind := auRawMemToArray;
-    end else
-    begin
-      GenAddress(LeftOp);
-      GenValue(RightOp);
-      Target.AddComponent( MakeAssignOp(AssignSize) );
-    end;
+    GenAddress(LeftOp);
+    GenValue(RightOp);
+    Target.AddComponent( MakeAssignOp(AssignSize) );
     if LeaveValue=alvPost then
       GenValue(LeftOp);
   end else if LeftOp.Kind=zcArrayAccess then
@@ -733,16 +724,8 @@ begin
     GenValue(Op.Child(1));
     if LeftOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
     begin //These types are copied by value into arrays (to allow VBO arrays with vec3 etc)
-      if RightOp.Kind=zcArrayAccess then
-      begin
-        with TExpConstantInt.Create(Target) do
-          Constant := GetZcTypeSize(LeftOp.GetDataType.Kind);
-        with TExpArrayUtil.Create(Target) do
-          Kind := auRawMemToRawMem
-      end
-      else
-        with TExpArrayUtil.Create(Target) do
-          Kind := auArrayToRawMem;
+      with TExpArrayUtil.Create(Target) do
+        Kind := auArrayToRawMem;
     end
     else
       Target.AddComponent( MakeAssignOp((A as TDefineArray).GetElementSize) );

@@ -31,6 +31,7 @@ type
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     function MakeTempName : string;
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
+    function GetArray(Kind : TZcDataTypeKind) : TDefineArray;
     
   protected
 
@@ -597,6 +598,18 @@ begin
   CleanUp;
 end;
 
+function TZc.GetArray(Kind : TZcDataTypeKind) : TDefineArray;
+begin
+  case Kind of
+    zctMat4 : Result := Mat4Array;
+    zctVec3 : Result := Vec3Array;
+    zctVec2 : Result := Vec2Array;
+    zctVec4 : Result := Vec4Array;
+  else
+    Assert(False);
+  end;
+end;
+
 procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
 begin
   if Op=nil then
@@ -979,12 +992,7 @@ begin
   begin
        Get;
              
-     A := TDefineArray.Create(nil);
-     GlobalNames.Add(A);
-     A._Type := zctFloat;
-     A.Dimensions := dadTwo;
-     A.SizeDim1 := 4;
-     A.SizeDim2 := 4;
+     A := Mat4Array;
      Typ.Kind := zctMat4;
      Typ.TheArray := A;
     
@@ -1002,11 +1010,7 @@ begin
   begin
        Get;
              
-     A := TDefineArray.Create(nil);
-     GlobalNames.Add(A);
-     A._Type := zctFloat;
-     A.Dimensions := dadOne;
-     A.SizeDim1 := 3;
+     A := Vec3Array;
      Typ.Kind := zctVec3;
      Typ.TheArray := A;
   
@@ -1812,19 +1816,22 @@ begin
     else if (CurrentInputSymbol=lbrackSym) then
     begin
          Get;
-           Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess]);
+           Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
            Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
+
            if OutOp.Kind=zcArrayAccess then
            begin
              //Array of arrays
-             case TDefineArray(TZcOpArrayAccess(OutOp).Arrayop.GetDataType.TheArray)._Type of
-               zctMat4 : Op.Ref := Mat4Array;
-               zctVec3 : Op.Ref := Vec3Array;
-               zctVec2 : Op.Ref := Vec2Array;
-               zctVec4 : Op.Ref := Vec4Array;
-             end;
+             Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(OutOp).Arrayop.GetDataType.TheArray)._Type);
              TZcOpArrayAccess(Op).IsRawMem := True;
            end;
+
+           if OutOp.Kind=zcFuncCall then
+           begin
+             //Function returning array
+             Op.Ref := GetArray((OutOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
+           end;
+
            OutOp := Op;
          
          _Expr(Op);

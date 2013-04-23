@@ -169,6 +169,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -177,6 +181,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -294,6 +302,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -738,6 +750,8 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
+                ExplicitLeft = 4
+                ExplicitTop = 27
                 ExplicitWidth = 615
                 ExplicitHeight = 762
                 inherited Label9: TLabel
@@ -994,6 +1008,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 79
                     ExplicitTop = 20
                     ExplicitWidth = 165
+                    ExplicitHeight = 24
                   end
                   inherited AutoPlayCheckBox: TCheckBox
                     Left = 10
@@ -1062,6 +1077,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 9
                     ExplicitTop = 20
                     ExplicitWidth = 101
+                    ExplicitHeight = 24
                   end
                   inherited Osc1PWTrackBar: TTrackBar
                     Left = 117
@@ -1234,6 +1250,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 79
                     ExplicitWidth = 149
+                    ExplicitHeight = 24
                   end
                   inherited HardSyncCheckBox: TCheckBox
                     Left = 79
@@ -1368,6 +1385,10 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
+                ExplicitLeft = 0
+                ExplicitTop = 0
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 inherited Label10: TLabel
                   Left = 10
                   Top = 63
@@ -1539,6 +1560,10 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           Margins.Left = 4
