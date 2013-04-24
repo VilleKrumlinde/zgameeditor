@@ -2407,15 +2407,15 @@ float b2dll_GetPositionY( int body ){ }
 float b2dll_GetAngle( int body ){ }]]>
           </Source>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="SunVox music library" ModuleName="sunvox">
+        <ZExternalLibrary Comment="SunVox music library" ModuleName="sunvox" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libsunvox.so&quot;;">
           <Source>
 <![CDATA[/*
-  Adapter to the SunVox Dynamic Library.
-  http://http://www.warmplace.ru/soft/sunvox
+  Adapter to the SunVox Library.
+  http://www.warmplace.ru/soft/sunvox
 
-  Created by Rado1(c)2012
+  Created by Rado1(c)2012-2013
 
-  Download DLL from http://www.warmplace.ru/soft/beta/sunvox_dll_win32.zip
+  Download the library from http://www.warmplace.ru/soft/sunvox/sunvox_dll.zip
   More info: http://www.emix8.org/forum/viewtopic.php?p=5446
 
 */
@@ -2434,16 +2434,31 @@ const int SV_INIT_FLAG_AUDIO_INT16 = 1 << 2;
 const int SV_INIT_FLAG_AUDIO_FLOAT32 = 1 << 3;
 const int SV_INIT_FLAG_ONE_THREAD =  1 << 4;
 
+const int SV_MODULE_FLAG_EXISTS = 1;
+const int SV_MODULE_FLAG_EFFECT = 2;
+const int SV_MODULE_INPUTS_OFF = 16;
+const int SV_MODULE_INPUTS_MASK = ( 255 << SV_MODULE_INPUTS_OFF );
+const int SV_MODULE_OUTPUTS_OFF = ( 16 + 8 );
+const int SV_MODULE_OUTPUTS_MASK = ( 255 << SV_MODULE_OUTPUTS_OFF );
+
+const int SV_STYPE_INT16 = 0;
+const int SV_STYPE_INT32 = 1;
+const int SV_STYPE_FLOAT32 = 2;
+const int SV_STYPE_FLOAT64 = 3;
+
 // Initialization functions
 
 int sv_init(string dev, int freq, int channels, int flags) {}
 int sv_deinit() {}
 int sv_open_slot(int slot) {}
 int sv_close_slot(int slot) {}
+int sv_lock_slot(int slot ) {}
+int sv_unlock_slot(int slot) {}
+int sv_load(int slot, string name) {}
+int sv_load_from_memory(int slot, xptr data, int data_size) {}
 
 // Functions to control song playing
 
-int sv_load(int slot, string name) {}
 int sv_play(int slot) {}
 int sv_play_from_beginning(int slot) {}
 int sv_stop(int slot) {}
@@ -2456,6 +2471,18 @@ int sv_send_event(int slot, int channel_num, int note, int vel, int module, int 
 
 // Functions to get info about the engine, song and its playing
 
+int sv_audio_callback(xptr buf, int frames, int latency, int out_time) {}
+  // Get the next piece of SunVox audio.
+  // buf - destination buffer of type signed short (if SV_INIT_FLAG_AUDIO_INT16 used in sv_init())
+  //       or float (if SV_INIT_FLAG_AUDIO_FLOAT32 used in sv_init());
+  //       stereo data will be interleaved in this buffer: LRLR... ; where the LR is the one frame;
+  // frames - number of frames in destination buffer;
+  // latency - audio latency (in frames);
+  // out_time - output time (in ticks).
+int sv_get_sample_type() {}
+  // Get internal sample type of the SunVox engine.
+  // Return value: one of the SV_STYPE_xxx defines.
+  // Use it to get the scope buffer type from get_module_scope() function.
 int sv_end_of_song(int slot) {}
   // Return values: 0 - song is playing now; 1 - stopped.
 int sv_get_current_line(int slot) {}
@@ -2474,7 +2501,29 @@ int sv_get_ticks_per_second() {}
   // Returns the number of SunVox ticks per second.
 int sv_get_number_of_modules(int slot) {}
 int sv_get_module_flags(int slot, int mod_num) {}
-string sv_get_module_name(int slot, int mod_num) {}]]>
+string sv_get_module_name(int slot, int mod_num) {}
+int[] sv_get_module_inputs(int slot, int mod_num) {}
+int[] sv_get_module_outputs(int slot, int mod_num) {}
+int sv_get_module_xy(int slot, int mod_num) {}
+int sv_get_module_color(int slot, int mod_num) {}
+byte[] sv_get_module_scope(int slot, int mod_num, int channel, int[] offset, int[] buffer_size) {}
+int sv_get_number_of_patterns(int slot) {}
+int sv_get_pattern_x(int slot, int pat_num) {}
+int sv_get_pattern_y(int slot, int pat_num) {}
+int sv_get_pattern_tracks(int slot, int pat_num) {}
+int sv_get_pattern_lines(int slot, int pat_num) {}
+byte[] sv_get_pattern_data(int slot, int pat_num) {}
+  // Returns array of structures:
+  // typedef struct {
+  //   unsigned char  note;    // 0 - nothing; 1..127 - note num; 128 - note off; 129, 130... - see NOTECMD_xxx
+  //   unsigned char  vel;     // Velocity 1..129; 0 - default
+  //   unsigned char  module;  // 0 - nothing; 1..255 - module number
+  //   unsigned char  nothing;
+  //   unsigned short ctl;     // CCXX. CC - number of controller. XX - std effect
+  //   unsigned short ctl_val; // Value of controller
+  // } sunvox_note;
+int sv_pattern_mute(int slot, int pat_num, int mute) {}
+  // Use it with sv_lock_slot() and sv_unlock_slot()]]>
           </Source>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="ZGESensor library" ModuleName="./libZGESensor.so" CallingConvention="1">
@@ -2569,7 +2618,7 @@ float sensorGetResolution(int type) {}
  * a sensor of the specified type.
  */
 float sensorGetMinDelay(int type) {}]]>
-		  </Source>
+          </Source>
         </ZExternalLibrary>
       </Children>
     </Group>

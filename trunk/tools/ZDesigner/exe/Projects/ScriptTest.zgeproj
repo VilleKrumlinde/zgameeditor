@@ -672,6 +672,72 @@ for(int i=0; i<s2.SizeDim1; i++)
   s2[i,0]= intToStr(i);]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="mat4,vecx">
+      <Expression>
+<![CDATA[mat4 m1,m2,m3;
+vec3 v;
+mat4[2] ma1;
+
+//vec4 v4;
+//vec2 v2;
+
+if(vector3(1,2,3)[1]!=2)
+  Error=1901;
+
+v=vector3(1,2,3);
+if((v[0]!=1) || (v[1]!=2) || (v[2]!=3))
+  Error=1902;
+
+//m1=m2;
+m1[0,0]=1;
+ma1[0]=m1;
+if(ma1[0][0,0]!=1)
+  Error=1903;
+
+m1=ma1[0];
+if(m1[0,0]!=1)
+  Error=1904;
+
+ma1[1]=ma1[0];
+if(ma1[1][0,0]!=1)
+  Error=1905;
+
+VarMat4=ma1[0];
+m1=VarMat4;
+if(m1[0,0]!=1)
+  Error=1906;
+
+
+ma1[0][0,0]=2;
+float f=ma1[0][0,0];
+if(f!=2)
+  Error=1907;
+
+
+Mat4Ar[0]=m1;
+if(Mat4Ar[0][0,0]!=1)
+  Error=1908;
+
+v[0]=1;
+m1[0,0]=1;
+
+m3=m1*m2;
+
+v=transformPoint(m1,v);
+
+getMatrix(0,m1);
+m1[0,0]=2.5;
+setMatrix(0,m1);
+//v=m1*v;
+
+/*Ar2[0]=v;
+Var1=m1;
+Var2=v;
+
+//mat4[1] am;
+//am[0]=m1;*/]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
@@ -742,5 +808,11 @@ V.X*=0.5;]]>
       </Values>
     </Array>
     <Variable Name="ByteVar" Type="4"/>
+    <Variable Name="VarMat4" Type="5"/>
+    <Array Name="Mat4Ar" Type="5" SizeDim1="4">
+      <Values>
+<![CDATA[78DA636064620600000E0007]]>
+      </Values>
+    </Array>
   </Content>
 </ZApplication>

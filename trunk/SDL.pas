@@ -259,7 +259,7 @@ uses
   {$ENDIF}
 {$ENDIF}
 
-{$IFDEF UNIX}
+{$IFNDEF Win32}
   {$IFDEF FPC}
     {$IFDEF Ver1_0}
     linux,
@@ -284,17 +284,13 @@ uses
 {$ENDIF}
 
 const
-{$IFDEF WIN32}
+{$IF Defined(WIN32)}
   SDLLibName = 'SDL.dll';
-{$ENDIF}
-
-{$IFDEF UNIX}
-{$IFDEF DARWIN}
+{$ELSEIF Defined(DARWIN)}
   SDLLibName = 'libSDL.dylib';
 {$ELSE}
   SDLLibName = 'libSDL.so';
-{$ENDIF}
-{$ENDIF}
+{$IFEND}
 
 
 //  SDLLibName = 'SDL';
