@@ -2,10 +2,10 @@
 
 implementation
 
-{$ifdef darwin}
+{$if defined(darwin) and defined(fpc)}
   //Must link with hacked main-function for sdl osx
   {$linklib SDLMain.o}
-{$endif}
+{$ifend}
 
 {$i-}  //No io-test on files, code tests ioresult
 

@@ -265,10 +265,10 @@ var
       C := Ref as TZComponent;
       if ComponentManager.GetInfo(C).ClassId=ModelClassId then
         Result.Kind := zctModel
-      else if ComponentManager.GetInfo(C).ClassId=DefineArrayClassId then
-        Result.TheArray := C
       else
         Result.ReferenceClassId := ComponentManager.GetInfo(C).ClassId;
+      if Result.ReferenceClassId=DefineArrayClassId then
+        Result.TheArray := C;
     end else if SameText(Id,'currentmodel') then
       Result.Kind := zctModel;
   end;

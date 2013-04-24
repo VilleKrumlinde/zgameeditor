@@ -115,7 +115,7 @@
 		<PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
 			<DCC_RemoteDebug>true</DCC_RemoteDebug>
 			<Debugger_Launcher>/usr/X11/bin/xterm -e &quot;%debuggee%&quot;</Debugger_Launcher>
-			<DCC_Define>ZZDC_SDL;$(DCC_Define)</DCC_Define>
+			<DCC_Define>ZZDC_SDL;DARWIN;$(DCC_Define)</DCC_Define>
 			<VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName)</VerInfo_Keys>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
