@@ -207,6 +207,7 @@ type
     procedure SetContinue(L : TZCodeLabel);
     procedure RestoreBreak;
     procedure RestoreContinue;
+    procedure GenInvoke(Op: TZcOpInvokeComponent; IsValue: boolean);
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -549,7 +550,8 @@ begin
     zcConditional : DoGenConditional;
     zcSelect : DoGenSelect;
     zcReinterpretCast : GenValue(Op.Child(0));
-    zcMod : DoGenBinary(vbkMod)
+    zcMod : DoGenBinary(vbkMod);
+    zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, True);
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
@@ -732,6 +734,30 @@ begin
   end else
     raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 
+end;
+
+procedure TZCodeGen.GenInvoke(Op : TZcOpInvokeComponent; IsValue : boolean);
+var
+  Inv : TExpInvokeComponent;
+  Ci : TZComponentInfo;
+  Arg : TZcOp;
+  Prop : TZProperty;
+begin
+  Ci := ComponentManager.GetInfoFromName(Op.Id);
+  if (not IsValue) and (not Ci.ZClass.InheritsFrom(TCommand)) then
+    raise ECodeGenError.Create('Class must inherit TCommand: ' + Op.Id);
+  for Arg in Op.Children do
+  begin
+    Prop := Ci.GetProperties.GetByName(Arg.Id);
+    Assert(Prop<>nil);
+    GenValue(Arg.Children.First);
+    with TExpConstantInt.Create(Target) do
+      Constant := Prop.PropId;
+  end;
+  Inv := TExpInvokeComponent.Create(Target);
+  Inv.InvokeClassId := integer( Ci.ClassId );
+  Inv.InvokeArgCount := Op.Children.Count;
+  Inv.IsValue := IsValue;
 end;
 
 procedure TZCodeGen.Gen(Op : TZcOp);
@@ -948,27 +974,6 @@ var
     RestoreBreak;
   end;
 
-  procedure DoGenInvoke(Op : TZcOpInvokeComponent);
-  var
-    Inv : TExpInvokeComponent;
-    Ci : TZComponentInfo;
-    Arg : TZcOp;
-    Prop : TZProperty;
-  begin
-    Ci := ComponentManager.GetInfoFromName(Op.Id);
-    for Arg in Op.Children do
-    begin
-      Prop := Ci.GetProperties.GetByName(Arg.Id);
-      Assert(Prop<>nil);
-      GenValue(Arg.Children.First);
-      with TExpConstantInt.Create(Target) do
-        Constant := Prop.PropId;
-    end;
-    Inv := TExpInvokeComponent.Create(Target);
-    Inv.InvokeClassId := integer( Ci.ClassId );
-    Inv.InvokeArgCount := Op.Children.Count;
-  end;
-
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -993,7 +998,7 @@ begin
       else
         raise ECodeGenError.Create('Continue can only be used in loops');
     zcSwitch : DoGenSwitch(Op as TZcOpSwitch);
-    zcInvokeComponent : DoGenInvoke(Op as TZcOpInvokeComponent);
+    zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
   else
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;

@@ -425,6 +425,7 @@ type
     InvokedItemList : TZComponentList;
     InvokeClassId : integer;
     InvokeArgCount : integer;
+    IsValue : boolean;
   end;
 
   TExpInitLocalArray = class(TExpBase)
@@ -2274,6 +2275,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'InvokeArgCount',{$ENDIF}(@InvokeArgCount), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'InvokedItemList',{$ENDIF}(@InvokedItemList), zptComponentList);
     List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'IsValue',{$ENDIF}(@IsValue), zptBoolean);
 end;
 
 procedure TExpInvokeComponent.Execute;
@@ -2312,9 +2314,15 @@ begin
     Self.InvokeC.SetProperty(Prop,V);
   end;
 
-  SaveExecutionState;
-    TCommand(InvokeC).Execute;
-  RestoreExecutionState;
+  if IsValue then
+  begin
+    StackPushPointer(Self.InvokeC);
+  end else
+  begin
+    SaveExecutionState;
+      TCommand(InvokeC).Execute;
+    RestoreExecutionState;
+  end;
 end;
 
 { TExpInitLocalArray }
