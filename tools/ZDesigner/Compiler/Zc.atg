@@ -241,6 +241,7 @@ HOMOGRAPHS
   "Camera" 
   "Font"
   "Sample"
+  "File"
 
 PRODUCTIONS
 
@@ -438,6 +439,7 @@ SimpleType<var Typ : TZcDataType>
 /* = IntType | "float" | "double" | "decimal" | "bool" */
 = "float" (. Typ.Kind := zctFloat; .)
   | "int" (. Typ.Kind := zctInt; .)
+  | "byte" (. Typ.Kind := zctByte; .)
   | "string" (. Typ.Kind := zctString; .)
   | "model" (. Typ.Kind := zctModel; .)
   | "xptr" (. Typ.Kind := zctXptr; .)
@@ -472,6 +474,7 @@ SimpleType<var Typ : TZcDataType>
   | "Camera" (. Typ.Kind := zctReference; Typ.ReferenceClassId := CameraClassId; .)
   | "Font" (. Typ.Kind := zctReference; Typ.ReferenceClassId := FontClassId; .)
   | "Sample" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; .)
+  | "File" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZFileClassId; .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -927,27 +930,35 @@ var
 .
 
 /*------------------------------------------------------------------------*/
-Primary<var OutOp : TZcOp>
-(. var Op : TZcOp; S : string; V : double;
-     Typ : TZcDataType;
+InlineComponent<var OutOp : TZcOp>
+(. var Op : TZcOp;
      Ci : TZComponentInfo;
 .)
-=            (. OutOp := nil; .)
-  (
-    ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
-  | "@" ident (.
+=  (. OutOp := nil;
+      IsInInvokeArg := True;
+   .)
+   "@" ident (.
        Ci := ComponentManager.GetInfoFromName(LexString);
-       if not Ci.ZClass.InheritsFrom(TCommand) then
-         ZError('Class must inherit TCommand: ' + LexString);
        OutOp := TZcOpInvokeComponent.Create(nil);
        OutOp.Id := LexString;
     .)
-    "(" (. IsInInvokeArg := True; .)
+    "("
         [InvokeArgument<Op,Ci>       (. OutOp.Children.Add(Op); .)
           {"," InvokeArgument<Op,Ci> (. OutOp.Children.Add(Op); .)
           }
         ]
     ")" (. IsInInvokeArg := False; .)
+.
+
+/*------------------------------------------------------------------------*/
+Primary<var OutOp : TZcOp>
+(. var Op : TZcOp; S : string; V : double;
+     Typ : TZcDataType;
+.)
+=            (. OutOp := nil; .)
+  (
+    ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
+  | InlineComponent<OutOp>
   | Literal<Typ>  (.
         if Typ.Kind in [zctString,zctNull] then
           OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
@@ -1005,6 +1016,8 @@ Primary<var OutOp : TZcOp>
 
   | "[" (. Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
            Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
+
+           //**todo: verify that outop actually is an array type
 
            if OutOp.Kind=zcArrayAccess then
            begin

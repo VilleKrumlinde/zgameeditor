@@ -835,7 +835,7 @@ end;
 
 function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp;
 const
-  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr];
+  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray];
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;
@@ -848,6 +848,8 @@ var
 
 begin
   ExistingType := Op.GetDataType;
+
+  //The order of all the IF-statements below are important
 
   if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctArray) then
   begin
@@ -864,18 +866,18 @@ begin
     (Op.Kind=zcArrayAccess) then
     Exit( TZcOpConvert.Create(WantedType,Op) );
 
-  if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
-    Exit(Op);
-
   if (ExistingType.Kind=zctVoid) and (WantedType.Kind=zctXptr) then
   begin
     IdInfo := Op.GetIdentifierInfo;
     if (IdInfo.Kind=edtProperty) and (idInfo.Prop.PropertyType=zptBinary) then
     begin
-      //Todo: convert binary property to xptr
+      //convert binary property to xptr
       Exit( TZcOpConvert.Create(WantedType,Op) );
     end;
   end;
+
+  if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
+    Exit(Op);
 
   if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId) then
   begin
@@ -1406,7 +1408,12 @@ begin
   if Ref<>nil then
   begin
     if (Ref is TZcOpVariableBase) then
-      Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type
+    begin
+      if (Ref as TZcOpVariableBase).Typ.TheArray=nil then
+        raise ECodeGenError.Create(Self.Id + ' is not an array')
+      else
+        Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type
+    end
     else if (Ref is TDefineArray) then
       Result.Kind := (Ref as TDefineArray)._Type;
   end;
