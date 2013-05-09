@@ -29,6 +29,7 @@ type
     procedure SetColor(const C : TZColorf); virtual; abstract;
     procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); virtual; abstract;
     procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); virtual; abstract;
+    procedure UpdateNormalMatrix; virtual; abstract;
     procedure InitGL;
     procedure EnableMaterial(NewM : TMaterial);
     procedure RenderUnitQuad;
@@ -70,6 +71,7 @@ type
     procedure SetColor(const C : TZColorf); override;
     procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); override;
     procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); override;
+    procedure UpdateNormalMatrix; override;
   end;
 
   TGLDriverProgrammable = class(TGLDriverBase)
@@ -80,6 +82,7 @@ type
     MMode : integer;
     CurrentShader : TShader;
     MVP : TZMatrix4f;
+    NormalM : array[0..3,0..3] of single;
     GlobalColor : TZColorf;
     procedure UpdateUniforms;
   public
@@ -100,6 +103,7 @@ type
     procedure SetColor(const C : TZColorf); override;
     procedure GetMatrix(const Index : integer; Mat : PZMatrix4f); override;
     procedure SetMatrix(const Index : integer; const Mat : TZMatrix4f); override;
+    procedure UpdateNormalMatrix; override;
     constructor Create;
   end;
 
@@ -558,6 +562,11 @@ begin
 end;
 
 
+procedure TGLDriverFixed.UpdateNormalMatrix;
+begin
+
+end;
+
 { TGLDriverProgrammable }
 
 constructor TGLDriverProgrammable.Create;
@@ -725,6 +734,17 @@ begin
   MDirty[Self.MMode] := True;
 end;
 
+procedure TGLDriverProgrammable.UpdateNormalMatrix;
+var
+  P : PZMatrix4f;
+  I,J : integer;
+begin
+  P := Self.MPtrs[ 0 ];
+  for I := 0 to 2 do
+    for J := 0 to 2 do
+      Self.NormalM[I,J] := P^[I,J];
+end;
+
 procedure TGLDriverProgrammable.UpdateUniforms;
 begin
   {$ifndef minimal}
@@ -751,6 +771,9 @@ begin
   if CurrentShader.TexMatLoc>-1 then
     glUniformMatrix4fv(CurrentShader.TexMatLoc,1,GL_FALSE,PGLfloat(Self.MPtrs[ 2 ]));
 
+  if CurrentShader.NormMatLoc>-1 then
+    glUniformMatrix3fv(CurrentShader.NormMatLoc,1,GL_FALSE,PGLfloat(@Self.NormalM));
+
   if CurrentShader.GlobColLoc>-1 then
     glUniform4fv(CurrentShader.GlobColLoc,1,PGLfloat(@Self.GlobalColor));
 end;
@@ -769,6 +792,7 @@ begin
   S.MvLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('modelViewMatrix'));
   S.ProjLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('projectionMatrix'));
   S.TexMatLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('textureMatrix'));
+  S.NormMatLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('normalMatrix'));
   S.GlobColLoc := glGetUniformLocation(S.ProgHandle, PAnsiChar('globalColor'));
 end;
 

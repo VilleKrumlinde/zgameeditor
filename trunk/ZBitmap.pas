@@ -61,10 +61,10 @@ type
 implementation
 
 {$ifndef minimal}
-uses BitmapProducers,ZApplication,ZLog,SysUtils,Renderer;
+uses BitmapProducers,ZApplication,ZLog,SysUtils,Renderer,GLDrivers;
 {$endif}
 {$ifdef Android}
-uses ZMath,Renderer,ZApplication;
+uses ZMath,Renderer,ZApplication,GLDrivers;
 {$endif}
 
 { TZBitmap }
@@ -75,6 +75,9 @@ begin
   PropHeight := B.PropHeight;
   PropWidth := B.PropWidth;
   Filter := B.Filter;
+  {$ifdef android}
+  Self._ZApp := B.ZApp;
+  {$endif}
 end;
 
 destructor TZBitmap.Destroy;
@@ -272,6 +275,10 @@ begin
       I := FilterTypes[Ord(Self.Filter)];
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] ); //GL_NEAREST_MIPMAP_LINEAR);
+    {$ifdef android}
+    if (Self.Filter=bmfMipmap) and (Self.ZApp.Driver.Kind>glbFixed) then
+      glGenerateMipmap(GL_TEXTURE_2D);  //Mipmaps must be explicitly generated in GLES2
+    {$endif}
   end;
   IsChanged := False;
   Producers.IsChanged := False;

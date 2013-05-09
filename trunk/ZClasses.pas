@@ -322,6 +322,7 @@ type
     function IsDefaultValue(const Value : TZPropertyValue) : boolean;
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
+    constructor Create;
     {$ENDIF}
   end;
 
@@ -2597,6 +2598,11 @@ end;
 { TZProperty }
 
 {$IFNDEF MINIMAL}
+constructor TZProperty.Create;
+begin
+  Self.ReturnType.Kind := zctVoid;
+end;
+
 function TZProperty.IsDefaultValue(const Value: TZPropertyValue): boolean;
 begin
   Result := False;

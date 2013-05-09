@@ -60,6 +60,10 @@ void reffs(ref string s) {
     s="hello";
 }
 
+void reffloat(ref float f) {
+  f=42;
+}
+
 void mtest(model m) {
   m.DefinedArray[1]=2;
 }
@@ -603,7 +607,12 @@ if(s!="hello")
 Global1=1;
 reff(Global1,0);
 if(Global1!=42)
-  Error=1503;]]>
+  Error=1503;
+
+float f=0;
+reffloat(f);
+if(f!=42)
+  Error=1504;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Reinterpret cast">
