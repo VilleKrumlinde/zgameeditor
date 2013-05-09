@@ -1394,7 +1394,7 @@ var
 //  glUniform3iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniform4iv: procedure(location: GLint; count: GLsizei; const value: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glUniformMatrix2fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-//  glUniformMatrix3fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glUniformMatrix3fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glUniformMatrix4fv: procedure(location: GLint; count: GLsizei; transpose: GLboolean; const value: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glValidateProgram: procedure(_program: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glVertexAttrib1d: procedure(index: GLuint; x: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1459,7 +1459,7 @@ var
   glFramebufferTexture2DEXT: procedure(target: GLenum; attachment: GLenum; textarget: GLenum; texture: GLuint; level: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFramebufferRenderbufferEXT: procedure(target: GLenum; attachment: GLenum; renderbuffertarget: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGetFramebufferAttachmentParameterivEXT: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGenerateMipmapEXT: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenerateMipmap: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   glDisableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEnableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1505,7 +1505,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..37{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
+const ExtFuncArray : packed array[0..38{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1568,7 +1568,7 @@ const ExtFuncArray : packed array[0..37{$if (not defined(minimal)) or defined(an
 //(Name : 'glUniform1iv'; Ptr : @@glUniform1iv),
 //(Name : 'glUniformMatrix2fv'; Ptr : @@glUniformMatrix2fv),
 (Name : 'glUniform1fv'; Ptr : @@glUniform1fv),
-//(Name : 'glUniformMatrix3fv'; Ptr : @@glUniformMatrix3fv),
+(Name : 'glUniformMatrix3fv'; Ptr : @@glUniformMatrix3fv),
 (Name : 'glUniformMatrix4fv'; Ptr : @@glUniformMatrix4fv),
 //(Name : 'glUniform2i'; Ptr : @@glUniform2i),
 (Name : 'glUseProgram'; Ptr : @@glUseProgram),
@@ -1592,7 +1592,7 @@ const ExtFuncArray : packed array[0..37{$if (not defined(minimal)) or defined(an
 (Name : 'glCheckFramebufferStatusEXT'; Ptr : @@glCheckFramebufferStatusEXT),
 (Name : 'glFramebufferTexture2DEXT'; Ptr : @@glFramebufferTexture2DEXT),
 (Name : 'glFramebufferRenderbufferEXT'; Ptr : @@glFramebufferRenderbufferEXT),
-(Name : 'glGenerateMipmapEXT'; Ptr : @@glGenerateMipmapEXT),
+(Name : 'glGenerateMipmap'; Ptr : @@glGenerateMipmap),
 
 (Name : 'glDisableVertexAttribArray'; Ptr : @@glDisableVertexAttribArray),
 (Name : 'glEnableVertexAttribArray'; Ptr : @@glEnableVertexAttribArray),

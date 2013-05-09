@@ -90,16 +90,9 @@ begin
   AndroidThis := Env^.NewGlobalRef(Env,thiz);
 end;
 
-procedure InitApp;
+procedure LoadApp;
 begin
-  if not AppInited then
-  begin
-    ZApp := ZApplication.LoadApplicationComponent;
-    ZApp.ScreenWidth := 100;
-    ZApp.ScreenHeight := 100;
-    ZApp.Run;
-    AppInited := True;
-  end;
+  ZApp := ZApplication.LoadApplicationComponent;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
@@ -117,24 +110,29 @@ begin
   
   env^.ReleasePrimitiveArrayCritical(env, Content, P, 0);
   
-  InitApp;
+  LoadApp;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeInitAppFromSDCard( env : PJNIEnv; thiz : jobject);cdecl;
 begin
   AndroidLog('init from sdcard');
-  InitApp;
+  LoadApp;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
 begin
-  if AppInited then
+  if not AppInited then
   begin
-    ZApp.ScreenWidth := Width;
-    ZApp.ScreenHeight := Height;
-    ZApp.ResetGpuResources;
-    ZApp.Driver.InitGL
+    ZApp.ScreenWidth := 100;
+    ZApp.ScreenHeight := 100;
+    ZApp.Run;
+    AppInited := True;
   end;
+
+  ZApp.ScreenWidth := Width;
+  ZApp.ScreenHeight := Height;
+  ZApp.ResetGpuResources;
+  ZApp.Driver.InitGL
 end;
 
 procedure DrawTestTriangle;

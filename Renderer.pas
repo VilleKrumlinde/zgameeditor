@@ -101,7 +101,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
-    MvpLoc,MvLoc,ProjLoc,TexMatLoc,GlobColLoc : Integer;
+    MvpLoc,MvLoc,ProjLoc,TexMatLoc,NormMatLoc,GlobColLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure DetachArrayVariables;
@@ -463,6 +463,7 @@ begin
   Driver.PushMatrix();
   Driver.Translate(Model.Position[0],Model.Position[1],Model.Position[2]);
   Driver.ApplyRotation(Model.Rotation);
+  Driver.UpdateNormalMatrix;
   if not VecIsIdentity3(Model.Scale) then
     Driver.Scale(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
   Model.RunRenderCommands;
@@ -2115,7 +2116,7 @@ begin
   begin
     //update texture mipmap of current render target
     CurrentRenderTarget.UseTextureBegin;
-    glGenerateMipmapEXT(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D);
   end;
 
   if Self.RenderTarget=nil then
