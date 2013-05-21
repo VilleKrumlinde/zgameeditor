@@ -1820,15 +1820,19 @@ begin
              Op.Ref := GetArray((OutOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
            end;
 
+           if OutOp.Kind=zcSelect then
+             //DefineVariable managedvalue
+             Op.Ref := GetArray( (OutOp.Children.First.Ref as TDefineVariable)._Type );
+
            OutOp := Op;
-         
+
          _Expr(Op);
-                    OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
+                    OutOp.Children.Add( MakeCompatible(Op,zctInt) );
          while (CurrentInputSymbol=commaSym) do
          begin
            Get;
            _Expr(Op);
-                           OutOp.Children.Add( MakeCompatible(Op,zctInt) ); 
+                           OutOp.Children.Add( MakeCompatible(Op,zctInt) );
          end;
          Expect(rbrackSym);
     end
@@ -1843,9 +1847,9 @@ procedure TZc._InvokeArgument(var OutOp : TZcOp; Ci : TZComponentInfo);
     Prop : TZProperty;
 
 begin
-     OutOp := nil; Op := nil; 
+     OutOp := nil; Op := nil;
   Expect(identSym);
-          
+
     Prop := Ci.GetProperties.GetByName(LexString);
     if Prop=nil then
       ZError(LexString + ' is not a property of ' + Ci.ZClassName);

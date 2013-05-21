@@ -34,6 +34,7 @@ varying vec4 colorVar;
 uniform mat4 modelViewProjectionMatrix;
 //uniform mat4 modelViewMatrix;
 //uniform mat4 projectionMatrix;
+//uniform mat3 normalMatrix;
 attribute vec3 position;    //vertex position
 attribute vec4 color;       //vertex color
 //attribute vec2 texCoord;  //vertex texture coordinate

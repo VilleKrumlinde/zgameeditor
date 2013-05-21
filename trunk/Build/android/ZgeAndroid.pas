@@ -95,6 +95,17 @@ begin
   ZApp := ZApplication.LoadApplicationComponent;
 end;
 
+procedure InitApp;
+begin
+  if not AppInited then
+  begin
+    ZApp.ScreenWidth := 100;
+    ZApp.ScreenHeight := 100;
+    ZApp.Run;
+    AppInited := True;
+  end;
+end;
+
 procedure Java_org_zgameeditor_Zge_NativeSetDataContent( env : PJNIEnv; thiz : jobject; Content : jarray); cdecl;
 var
   Size :  integer;
@@ -111,24 +122,18 @@ begin
   env^.ReleasePrimitiveArrayCritical(env, Content, P, 0);
   
   LoadApp;
+  InitApp;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeInitAppFromSDCard( env : PJNIEnv; thiz : jobject);cdecl;
 begin
   AndroidLog('init from sdcard');
   LoadApp;
+  InitApp;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
 begin
-  if not AppInited then
-  begin
-    ZApp.ScreenWidth := 100;
-    ZApp.ScreenHeight := 100;
-    ZApp.Run;
-    AppInited := True;
-  end;
-
   ZApp.ScreenWidth := Width;
   ZApp.ScreenHeight := Height;
   ZApp.ResetGpuResources;
