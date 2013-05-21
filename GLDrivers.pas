@@ -82,7 +82,7 @@ type
     MMode : integer;
     CurrentShader : TShader;
     MVP : TZMatrix4f;
-    NormalM : array[0..3,0..3] of single;
+    NormalM : array[0..2,0..2] of single;
     GlobalColor : TZColorf;
     procedure UpdateUniforms;
   public
@@ -161,6 +161,7 @@ begin
   begin
     //Light
     //Use default position
+    glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
     //Färg på material följer anrop till glColor. Detta gör att man slipper
