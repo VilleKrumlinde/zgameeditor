@@ -7,7 +7,7 @@ object EditorForm: TEditorForm
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -14
+  Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   KeyPreview = True
@@ -18,7 +18,7 @@ object EditorForm: TEditorForm
   OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnKeyPress = FormKeyPress
-  PixelsPerInch = 120
+  PixelsPerInch = 96
   TextHeight = 16
   object Splitter2: TSplitter
     Left = 345
@@ -181,10 +181,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -302,10 +298,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -750,7 +742,6 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 4
                 ExplicitTop = 27
                 ExplicitWidth = 615
                 ExplicitHeight = 762
@@ -758,6 +749,7 @@ object EditorForm: TEditorForm
                   Left = 266
                   Top = 47
                   Width = 49
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -765,11 +757,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 266
                   ExplicitTop = 47
                   ExplicitWidth = 49
+                  ExplicitHeight = 16
                 end
                 inherited Label8: TLabel
                   Left = 127
                   Top = 47
                   Width = 68
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -777,11 +771,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 127
                   ExplicitTop = 47
                   ExplicitWidth = 68
+                  ExplicitHeight = 16
                 end
                 inherited Label7: TLabel
                   Left = 10
                   Top = 47
                   Width = 43
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -789,11 +785,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 47
                   ExplicitWidth = 43
+                  ExplicitHeight = 16
                 end
                 inherited Label6: TLabel
                   Left = 10
                   Top = 458
                   Width = 32
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -801,6 +799,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 458
                   ExplicitWidth = 32
+                  ExplicitHeight = 16
                 end
                 inherited Label13: TLabel
                   Left = 10
@@ -821,6 +820,7 @@ object EditorForm: TEditorForm
                   Left = 10
                   Top = 556
                   Width = 65
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -828,11 +828,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 556
                   ExplicitWidth = 65
+                  ExplicitHeight = 16
                 end
                 inherited Label1: TLabel
                   Left = 10
                   Top = 295
                   Width = 104
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -840,6 +842,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 295
                   ExplicitWidth = 104
+                  ExplicitHeight = 16
                 end
                 inherited NoteNrLabel: TLabel
                   Left = 768
@@ -859,6 +862,7 @@ object EditorForm: TEditorForm
                   Left = 394
                   Top = 47
                   Width = 46
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -866,11 +870,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 394
                   ExplicitTop = 47
                   ExplicitWidth = 46
+                  ExplicitHeight = 16
                 end
                 inherited Label17: TLabel
                   Left = 591
                   Top = 47
                   Width = 24
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -878,6 +884,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 591
                   ExplicitTop = 47
                   ExplicitWidth = 24
+                  ExplicitHeight = 16
                 end
                 inherited Panel1: TPanel
                   Left = 511
@@ -977,6 +984,7 @@ object EditorForm: TEditorForm
                     Left = 10
                     Top = 23
                     Width = 62
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -984,11 +992,13 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 23
                     ExplicitWidth = 62
+                    ExplicitHeight = 16
                   end
                   inherited Label11: TLabel
                     Left = 10
                     Top = 53
                     Width = 44
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -996,11 +1006,13 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 53
                     ExplicitWidth = 44
+                    ExplicitHeight = 16
                   end
                   inherited NotesEdit: TComboBox
                     Left = 79
                     Top = 20
                     Width = 165
+                    Height = 24
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1070,6 +1082,7 @@ object EditorForm: TEditorForm
                     Left = 9
                     Top = 20
                     Width = 101
+                    Height = 24
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1111,6 +1124,7 @@ object EditorForm: TEditorForm
                     Left = 10
                     Top = 49
                     Width = 33
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1118,11 +1132,13 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 49
                     ExplicitWidth = 33
+                    ExplicitHeight = 16
                   end
                   inherited Label4: TLabel
                     Left = 10
                     Top = 79
                     Width = 10
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1130,6 +1146,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 79
                     ExplicitWidth = 10
+                    ExplicitHeight = 16
                   end
                   inherited FilterActiveCheckBox: TCheckBox
                     Left = 10
@@ -1191,6 +1208,7 @@ object EditorForm: TEditorForm
                     Left = 10
                     Top = 49
                     Width = 80
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1198,11 +1216,13 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 49
                     ExplicitWidth = 80
+                    ExplicitHeight = 16
                   end
                   inherited Label18: TLabel
                     Left = 10
                     Top = 117
                     Width = 78
+                    Height = 16
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1210,6 +1230,7 @@ object EditorForm: TEditorForm
                     ExplicitLeft = 10
                     ExplicitTop = 117
                     ExplicitWidth = 78
+                    ExplicitHeight = 16
                   end
                   inherited Osc2ActiveCheckBox: TCheckBox
                     Left = 10
@@ -1243,6 +1264,7 @@ object EditorForm: TEditorForm
                     Left = 10
                     Top = 79
                     Width = 149
+                    Height = 24
                     Margins.Left = 4
                     Margins.Top = 4
                     Margins.Right = 4
@@ -1393,6 +1415,7 @@ object EditorForm: TEditorForm
                   Left = 10
                   Top = 63
                   Width = 56
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -1400,6 +1423,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 63
                   ExplicitWidth = 56
+                  ExplicitHeight = 16
                 end
                 inherited Label14: TLabel
                   Left = 10
@@ -1420,6 +1444,7 @@ object EditorForm: TEditorForm
                   Left = 10
                   Top = 422
                   Width = 75
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -1427,11 +1452,13 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 422
                   ExplicitWidth = 75
+                  ExplicitHeight = 16
                 end
                 inherited Label19: TLabel
                   Left = 10
                   Top = 38
                   Width = 88
+                  Height = 16
                   Margins.Left = 4
                   Margins.Top = 4
                   Margins.Right = 4
@@ -1439,6 +1466,7 @@ object EditorForm: TEditorForm
                   ExplicitLeft = 10
                   ExplicitTop = 38
                   ExplicitWidth = 88
+                  ExplicitHeight = 16
                 end
                 inherited ChannelsParent: TScrollBox
                   Left = 10

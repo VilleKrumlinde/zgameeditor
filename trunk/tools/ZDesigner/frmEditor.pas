@@ -3704,7 +3704,7 @@ var
   Ci : TZComponentInfo;
   UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
-  NeedJpeg,DisplayDetailedReport : boolean;
+  NeedJpeg,NeedArray,DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
@@ -3784,6 +3784,7 @@ begin
 
     //Get names of used classes
     NeedJpeg := False;
+    NeedArray := False;
     AllObjects := TObjectList.Create(False);
     try
       GetAllObjects(Self.Root,AllObjects);
@@ -3795,9 +3796,11 @@ begin
       begin
         UsedComponents.Add(TZComponent(AllObjects[I]).ClassName);
         if (AllObjects[I] is TBitmapFromFile) and ((AllObjects[I] as TBitmapFromFile).FileFormat=bffJpeg) then
-          NeedJpeg := True;
-        if (AllObjects[I] is TExpInvokeComponent) then
-          UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName);
+          NeedJpeg := True
+        else if (AllObjects[I] is TExpInvokeComponent) then
+          UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName)
+        else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
+          NeedArray := True;
       end;
     finally
       AllObjects.Free;
@@ -3811,7 +3814,7 @@ begin
       UsedComponents.Add('TMeshCombine');
     if UsedComponents.IndexOf('TRenderNet')>=0 then
       UsedComponents.Add('TMesh');
-    if UsedComponents.IndexOf('TExpInitLocalArray')>=0 then
+    if NeedArray or (UsedComponents.IndexOf('TExpInitLocalArray')>=0) then
       UsedComponents.Add('TDefineArray');
     if not NeedJpeg then
       ClassesToRemove.Add('TNjDecoder');

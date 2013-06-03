@@ -4349,7 +4349,7 @@ void glBeginTransformFeedback(int primitiveMode) { }
 void glEndTransformFeedback() { }
 void glBindBufferRange(int target,int index,int buffer,int offset,int size) { }
 void glBindBufferBase(int target,int index,int buffer) { }
-void glTransformFeedbackVaryings(int program,int count,ref string varyings,int bufferMode) { }
+void glTransformFeedbackVaryings(int program,int count,xptr varyings,int bufferMode) { }
 void glGetTransformFeedbackVarying(int program,int index,int bufSize,xptr length,xptr size,xptr type,string name) { }
 void glClampColor(int target,int clamp) { }
 void glBeginConditionalRender(int id,int mode) { }

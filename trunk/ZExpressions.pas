@@ -81,6 +81,8 @@ type
 
   //Define a global variable that can be used in expressions
   TDefineVariable = class(TDefineVariableBase)
+  strict private
+    procedure InitManaged;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -89,8 +91,10 @@ type
     ManagedValue : pointer;
     ModelValue : TZComponent;
     ByteValue : byte;
-    IsInitialized : boolean;
-    procedure Update; override;
+    procedure AfterLoaded; override;
+    {$ifndef minimal}
+    procedure DesignerReset; override;
+    {$endif}
   end;
 
   //Define a global constant that can be used in expressions
@@ -907,15 +911,24 @@ begin
     List.GetLast.NeverPersist := True;
 end;
 
-procedure TDefineVariable.Update;
+{$ifndef minimal}
+procedure TDefineVariable.DesignerReset;
 begin
   inherited;
-  if not IsInitialized then
-  begin
-    IsInitialized := True;
-    if _Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
-      Self.ManagedValue := CreateManagedValue(Self._Type);
-  end;
+  InitManaged;
+end;
+{$endif}
+
+procedure TDefineVariable.InitManaged;
+begin
+  if Self._Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
+    Self.ManagedValue := CreateManagedValue(Self._Type);
+end;
+
+procedure TDefineVariable.AfterLoaded;
+begin
+  inherited;
+  InitManaged;
 end;
 
 { TExpFuncCallBase }
@@ -2290,6 +2303,7 @@ begin
   begin
     Ci := ComponentManager.GetInfoFromId(TZClassIds(Self.InvokeClassId));
     Self.InvokeC := Ci.ZClass.Create(Self.InvokedItemList);
+    Self.InvokeC._ZApp := Self.ZApp;
   end;
 
   for I := 0 to InvokeArgCount-1 do

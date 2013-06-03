@@ -77,6 +77,7 @@ type
     ValuePropRef : TZPropertyRef;
     ValueArrayRef : TDefineArray;
     ArrayKind : (sakTexture1D,sakMat4);
+    VariableRef : TDefineVariable;
     procedure ResetGpuResources; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
@@ -101,6 +102,7 @@ type
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
+    BeforeLinkExpression : TZExpressionPropValue;
     MvpLoc,MvLoc,ProjLoc,TexMatLoc,NormMatLoc,GlobColLoc : Integer;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
@@ -1543,6 +1545,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}(@UniformVariables), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'UpdateVarsOnEachUse',{$ENDIF}(@UpdateVarsOnEachUse), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'BeforeLinkExpression',{$ENDIF}(@BeforeLinkExpression), zptExpression);
   List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@ProgHandle), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -1667,6 +1670,7 @@ begin
 
   Driver := Self.ZApp.Driver;
   Driver.BeforeLinkShader(Self);
+  ZExpressions.RunCode(BeforeLinkExpression.Code);
 
   glLinkProgram(ProgHandle);
   {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
@@ -1727,7 +1731,20 @@ var
           glUniformMatrix4fv(Sv.Location,Count,GL_FALSE,P);
         end;
     end;
+  end;
 
+  procedure UpdateVariableRef;
+  var
+    V : TDefineVariable;
+  begin
+    V := Sv.VariableRef;
+    case V._Type of
+      zctFloat : glUniform1f(Sv.Location,V.Value);
+      zctVec2 : glUniform2fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
+      zctVec3 : glUniform3fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
+      zctVec4 : glUniform4fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
+      zctMat4 : glUniformMatrix4fv(Sv.Location, 1, GL_FALSE, PGLFloat(TDefineArray(V.ManagedValue).GetData));
+    end;
   end;
 
 begin
@@ -1747,6 +1764,8 @@ begin
 
     if Sv.ValueArrayRef<>nil then
       UpdateArrayVar
+    else if Sv.VariableRef<>nil then
+      UpdateVariableRef
     else
     begin
       if Sv.ValuePropRef.Component<>nil then
@@ -1865,6 +1884,8 @@ begin
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}(@ArrayKind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Texture1D','Mat4']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'VariableRef',{$ENDIF}(@VariableRef), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineVariable]);{$endif}
 end;
 
 {$ifndef minimal}

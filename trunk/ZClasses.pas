@@ -348,7 +348,6 @@ type
   protected
     ObjId : integer;    //only used in streaming
     IsChanged : boolean;
-    _ZApp : pointer;
     procedure DefineProperties(List : TZPropertyList); virtual;
   public
     {$ifndef minimal}
@@ -356,6 +355,7 @@ type
     DesignDisable : boolean;
     {$endif}
     OwnerList : TZComponentList;
+    _ZApp : pointer;
     constructor Create(OwnerList: TZComponentList); virtual;
     destructor Destroy; override;
     function GetProperties : TZPropertyList;
@@ -366,6 +366,7 @@ type
     procedure Change;
     function Clone : TZComponent;
     procedure ResetGpuResources; virtual; //Free resources such as GL-handles
+    procedure AfterLoaded; virtual;
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
@@ -1244,6 +1245,28 @@ begin
   Result := pointer(NativeInt(Self) + Prop.Offset);
   if Index>0 then
     Result := pointer(NativeInt(Result) + Index*4);
+end;
+
+procedure TZComponent.AfterLoaded;
+var
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  I,J : integer;
+begin
+  PropList := GetProperties;
+  for I := 0 to PropList.Count-1 do
+  begin
+    Prop := TZProperty(PropList[I]);
+    case Prop.PropertyType of
+      zptComponentList :
+        begin
+          GetProperty(Prop,Value);
+          for J := 0 to Value.ComponentListValue.Count - 1 do
+            (Value.ComponentListValue[J] as TZComponent).AfterLoaded;
+        end;
+    end;
+  end;
 end;
 
 procedure TZComponent.Change;
@@ -2936,6 +2959,9 @@ begin
       ObjIds.Add(nil);
     ObjIds[C.ObjId] := C;
   end;
+
+  C.AfterLoaded;
+
   Result := C;
 end;
 
@@ -3401,6 +3427,8 @@ begin
     SymTab.Add(String(LowerCase(C.Name)),C);
 
   Self.MainXml := SaveMainXml;
+
+  C.AfterLoaded;
 
   Result := C;
 end;
