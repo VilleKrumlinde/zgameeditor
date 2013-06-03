@@ -159,7 +159,7 @@ type
     procedure ResetGpuResources; override;
     {$ifndef minimal}
     procedure Terminate;
-    procedure DesignerStart(const ViewW,ViewH : integer);
+    procedure DesignerStart(const ViewW,ViewH : integer; const InitTime : single = 0);
     procedure DesignerStop;
     procedure DesignerSetUpView;
     function AddToConstantPool(const Value : string) : TObject;
@@ -312,6 +312,7 @@ end;
 procedure TZApplication.Update;
 begin
   Content.Update;
+  States.Update;
 end;
 
 procedure TZApplication.UpdateTime;
@@ -869,7 +870,10 @@ var
   PropValue : TZPropertyValue;
   PropList : TZPropertyList;
   List : TObjectList;
+  OldSep : char;
 begin
+  OldSep := FormatSettings.DecimalSeparator;
+  FormatSettings.DecimalSeparator := '.';
 
   for I := 0 to ZcGlobalNames.Count - 1 do
   begin
@@ -906,6 +910,8 @@ begin
   finally
     List.Free;
   end;
+
+  FormatSettings.DecimalSeparator := OldSep;
 end;
 
 procedure TZApplication.CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
@@ -1121,7 +1127,7 @@ begin
 end;
 
 {$ifndef minimal}
-procedure TZApplication.DesignerStart(const ViewW,ViewH : integer);
+procedure TZApplication.DesignerStart(const ViewW,ViewH : integer; const InitTime : single = 0);
 begin
 //  Assert(ZApp=Self);
   Self.Init;
@@ -1129,9 +1135,9 @@ begin
   ScreenWidth := ViewW;
   ScreenHeight := ViewH;
 
-  Self.Time := 0;
+  Self.Time := InitTime;
   Self.DeltaTime := 0;
-  Self.LastTime := 0;
+  Self.LastTime := InitTime;
   Self.FpsTime := 0;
 
   //Initial tree update

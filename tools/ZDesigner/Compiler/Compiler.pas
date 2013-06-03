@@ -467,13 +467,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
             end;
           end;
         end;
-      zctReference, zctMat4,zctVec2,zctVec3,zctVec4 :
+      zctReference, zctMat4,zctVec2,zctVec3,zctVec4,zctArray :
         case Cop.ToType.Kind of
           zctXptr :
             begin
               if Assigned(FromOp.Ref) and (FromOp.Ref is TDefineArray) then
                 Kind := eckArrayToXptr
-              else if FromOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
+              else if FromOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4,zctArray] then
                 Kind := eckArrayToXptr;
             end;
         else

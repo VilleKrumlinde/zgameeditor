@@ -722,6 +722,9 @@ end;
 procedure TGLDriverProgrammable.SetCurrentShader(Shader: TShader);
 begin
   Self.CurrentShader := Shader;
+  //Must update matrices directly on use to work with scripted OpenGL calls
+  //Possibly add a Shader.MatricesUpdatedTime to avoid redundant updates
+  UpdateUniforms;
 end;
 
 procedure TGLDriverProgrammable.Translate(const X, Y, Z: GLfloat);
