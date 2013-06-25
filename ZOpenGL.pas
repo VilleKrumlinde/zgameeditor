@@ -1235,7 +1235,7 @@ const
 
 {******************************************************************************}
 
-//procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
+procedure gluPerspective(fovy,aspect,zNear,zFar : GLDouble);
 
 
 var

@@ -1,7 +1,7 @@
 object MainForm: TMainForm
   Left = 0
   Top = 0
-  Caption = 'MainForm'
+  Caption = 'OpenGL headers generator'
   ClientHeight = 489
   ClientWidth = 766
   Color = clBtnFace
@@ -17,11 +17,12 @@ object MainForm: TMainForm
   PixelsPerInch = 96
   TextHeight = 13
   object Button1: TButton
-    Left = 440
-    Top = 96
+    Left = 383
+    Top = 8
     Width = 75
     Height = 25
-    Caption = 'Button1'
+    Anchors = [akTop, akRight]
+    Caption = 'Generate'
     TabOrder = 0
     OnClick = Button1Click
   end

@@ -191,6 +191,8 @@ begin
   ZgeTypeMap.Add('GLchar*','ref string');
   ZgeTypeMap.Add('GLcharARB','string');
   ZgeTypeMap.Add('GLcharARB*','ref string');
+  ZgeTypeMap.Add('GLbitfield','int');
+
 
   Xml := TXmlParser.Create;
   try
@@ -213,7 +215,7 @@ begin
 
   Dst.Add('const int');
   for Enum in Enums do
-    if Length(Enum.Value)<10 then
+    if Length(Enum.Value)<11 then
       Dst.Add( '  GL_' + Enum.Name + ' = ' + Enum.Value + ',' );
   S := Dst[Dst.Count-1];
   S := Copy(S,1,Length(S)-1) + ';';
