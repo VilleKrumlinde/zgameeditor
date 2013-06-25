@@ -1448,6 +1448,9 @@ begin
 //    B := (ShowNode as TBitmapProducer).ProduceOutput as TZBitmap;
   end;
 
+  if ShadersSupported then
+    glUseProgram(0);
+
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
@@ -1513,7 +1516,7 @@ begin
 
   glPopMatrix;
 
-//  glFlush;
+  glFlush;
 end;
 
 procedure SetupGLShading;
@@ -1553,12 +1556,16 @@ begin
   else
     Exit;
 
-  ZApp.Driver.MatrixMode(GL_PROJECTION);
-  ZApp.Driver.LoadIdentity();
+  if ShadersSupported then
+    glUseProgram(0);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
   //calculate the aspect ratio of the window
   //we'll use a perspective matrix to view our scene
-  ZApp.Driver.Perspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
-  ZApp.Driver.MatrixMode(GL_MODELVIEW);
+
+  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  glMatrixMode(GL_MODELVIEW);
 
 //  glShadeModel(GL_SMOOTH);
 
@@ -1579,24 +1586,24 @@ begin
 
     // now here is where we'd translate and rotate the cube
     //reset our modelview matrix
-    ZApp.Driver.LoadIdentity();
+    glLoadIdentity();
 
     //translate
-    ZApp.Driver.Translate(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
+    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
 
     //rotate
-    ZApp.Driver.Rotate( ViewRotate[0] , 1.0, 0.0, 0.0);
-    ZApp.Driver.Rotate( ViewRotate[1] , 0.0, 1.0, 0.0);
-    ZApp.Driver.Rotate( ViewRotate[2] , 0.0, 0.0, 1.0);
+    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
+    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
+    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
 
     //set our color to be red
     glColor3f(1.0, 0.0, 0.0);
-
     Self.Driver.RenderMesh(M);
+    glColor3f(1.0, 1.0, 1.0);
 
   glPopAttrib();
 
-//  glFlush;
+  glFlush;
 end;
 
 
@@ -1705,7 +1712,7 @@ begin
 
   glPopAttrib();
 
-//  glFlush;
+  glFlush;
 end;
 
 procedure TEditorForm.Timer1Timer(Sender: TObject);

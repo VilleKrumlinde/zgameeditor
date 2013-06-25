@@ -389,6 +389,9 @@ begin
     List.GetLast.DefaultValue.ByteValue := Ord(bs64);
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@Handle), zptInteger);
+    List.GetLast.NeverPersist:=True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 initialization
