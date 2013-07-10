@@ -454,6 +454,11 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       zctInt :
         case Cop.ToType.Kind of
           zctFloat: Kind := eckIntToFloat;
+          zctXptr :
+            begin
+              GenAddress(Op.Child(0));
+              Exit;
+            end;
         end;
       zctVoid :
         begin

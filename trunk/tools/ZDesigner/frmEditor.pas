@@ -1081,6 +1081,8 @@ begin
 end;
 
 procedure TEditorForm.OnGlDraw(Sender: TObject);
+var
+  IsRenderComponent : boolean;
 begin
   if ShowNode=nil then
     Exit;
@@ -1107,9 +1109,12 @@ begin
   end
   else if not RenderAborted then
   begin
-    //Gör update på hela trädet för att prop-ändringar skall slå igenom
-//    Root.Update;
-    ShowNode.Update;
+    IsRenderComponent := ((ShowNode is TStateBase) or (ShowNode is TZApplication));
+
+    if not IsRenderComponent then
+      //Gör update för att prop-ändringar skall slå igenom
+      //Men inte för appar och states, då körs update-kod t.ex. med centerMouse();
+      ShowNode.Update;
 
     glViewport(0, 0, Glp.Width, Glp.Height);
 
@@ -1119,13 +1124,13 @@ begin
       FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
       FloatToStr( RoundTo(ViewTranslate[2],-1) );
 
-    if {(ShowNode is TBitmapProducer) or }(ShowNode is TZBitmap)then
+    if (ShowNode is TZBitmap)then
       DrawZBitmap
-    else if {(ShowNode is TMeshProducer) or }(ShowNode is TMesh) then
+    else if (ShowNode is TMesh) then
       DrawMesh
     else if (ShowNode is TModel) then
       DrawModel
-    else if ((ShowNode is TStateBase) or (ShowNode is TZApplication))then
+    else if IsRenderComponent then
       DrawOnRenderComponent
     else
     begin
