@@ -615,6 +615,7 @@ begin
   M[2] := Vector4f(0,0,q,-1);
   M[3] := Vector4f(0,0,qn,0);
   Self.MPtrs[ Self.MMode ]^ := M;
+  MDirty[Self.MMode] := True;
 end;
 
 procedure TGLDriverProgrammable.Ortho(const left, right, bottom, top, zNear,
@@ -642,8 +643,7 @@ begin
   M[2] := Vector4f(0,            0,          2/m_nf,  p_fn/m_nf);
   M[3] := Vector4f(0,            0,          0,       1);
 
-  P := Self.MPtrs[ Self.MMode ];
-  P^ := MatrixMultiply(P^, M);
+  Self.MPtrs[ Self.MMode ]^ := M;
   MDirty[Self.MMode] := True;
 end;
 
