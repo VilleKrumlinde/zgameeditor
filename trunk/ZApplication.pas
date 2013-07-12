@@ -1232,7 +1232,7 @@ begin
       if Abs(Self.OrthoZoom)>0.000001 then
       begin //Avoid divide by zero
       {$endif}
-      H := (1.0/Self.OrthoZoom);
+      H := Self.OrthoZoom;
       W := App.ActualViewportRatio * H;
       App.Driver.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
       {$ifndef minimal}
