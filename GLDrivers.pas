@@ -622,7 +622,6 @@ procedure TGLDriverProgrammable.Ortho(const left, right, bottom, top, zNear,
   zFar: GLfloat);
 var
   M : TZMatrix4f;
-  P : PZMatrix4f;
   p_fn,m_nf,p_rl,m_rl,p_tb,m_tb,m_lr,m_bt : single;
 begin
   //http://forums.4fips.com/viewtopic.php?f=3&t=1059
@@ -638,10 +637,10 @@ begin
   m_lr := -m_rl;
   m_bt := -m_tb;
 
-  M[0] := Vector4f(2/m_rl,       0,          0,       p_rl/m_lr);
-  M[1] := Vector4f(0,            2/m_tb,     0,       p_tb/m_bt);
-  M[2] := Vector4f(0,            0,          2/m_nf,  p_fn/m_nf);
-  M[3] := Vector4f(0,            0,          0,       1);
+  M[0] := Vector4f(2/m_rl,       0,          0,         p_rl/m_lr);
+  M[1] := Vector4f(0,            2/m_tb,     0,         p_tb/m_bt);
+  M[2] := Vector4f(0,            0,          2/m_nf,    0);
+  M[3] := Vector4f(0,            0,          p_fn/m_nf, 1);
 
   Self.MPtrs[ Self.MMode ]^ := M;
   MDirty[Self.MMode] := True;
