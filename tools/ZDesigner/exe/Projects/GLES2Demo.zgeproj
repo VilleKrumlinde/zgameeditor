@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" GLBase="1" ClearColor="0.4 0.7804 0.3451 1" NoSound="1">
+<ZApplication Name="App" Caption="ZGameEditor application" GLBase="1" ClearColor="0.4 0.7804 0.3451 1" Camera="Camera1" NoSound="1">
   <OnLoaded>
     <SpawnModel Model="Model1"/>
+    <Camera Name="Camera1" Kind="1"/>
   </OnLoaded>
   <OnUpdate>
     <ZExpression Expression="//App.ClearColor.G=frac(App.Time);"/>

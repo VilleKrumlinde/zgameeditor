@@ -796,7 +796,11 @@ begin
     vbkBinaryXor : V := A2 xor A1;
     vbkBinaryShiftLeft : V := A2 shl A1;
     vbkBinaryShiftRight : V := A2 shr A1;
-    vbkMod : V := A2 mod A1;
+    vbkMod :
+      if A1<>0 then
+        V := A2 mod A1
+      else
+        V := 0; //avoid runtime div by zero error
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
   StackPush(V);

@@ -2,7 +2,7 @@ COMPILER Zc
 
 FRAME "delphi.frm"
 
-uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils, ZExpressions .)
+uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils, ZExpressions, ZApplication .)
 
 public = (.
     ZFunctions : TObjectList;
@@ -11,6 +11,7 @@ public = (.
     AllowFunctions : boolean;
     GlobalNames : TObjectList;
     TempCounter : integer;
+    ZApp : TZApplication;
     destructor Destroy; override;
     procedure CheckHomograph(var sym: Integer); override;
 .)
@@ -249,34 +250,50 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
+ZcFuncRest<Typ : TZcDataType; const Name : string>
+(.
+var
+  Func : TZcOpFunctionUserDefined;
+.)
+=
+     (.
+        if SymTab.Contains(Name) then
+          ZError('Name already defined: ' + Name);
+
+        Func := TZcOpFunctionUserDefined.Create(GlobalNames);
+        Func.Id := Name;
+        Func.ReturnType := Typ;
+        SymTab.Add(Func.Id,Func);
+        ZFunctions.Add(Func);
+        Self.CurrentFunction := Func;
+        SymTab.PushScope;
+        try
+     .)
+    [ FormalParams ] ")" "{" ZcFuncBody "}"
+        (.
+          finally
+            SymTab.PopScope;
+          end;
+        .)
+.
+
+
 Zc (. var
-        Func : TZcOpFunctionUserDefined;
         Typ : TZcDataType;
+        Func : TZcOpFunctionUserDefined;
+        Name : string;
     .)
 =
   IF (. AllowFunctions .)
   {
     ConstantDeclarationList
     |
-    ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (.
-          if SymTab.Contains(LexString) then
-            ZError('Name already defined: ' + LexString);
-
-          Func := TZcOpFunctionUserDefined.Create(GlobalNames);
-          Func.Id := LexString;
-          Func.ReturnType := Typ;
-          SymTab.Add(Func.Id,Func);
-          ZFunctions.Add(Func);
-          Self.CurrentFunction := Func;
-          SymTab.PushScope;
-          try
-       .)
-    "(" [ FormalParams ] ")" "{" ZcFuncBody "}"
-        (.
-          finally
-            SymTab.PopScope;
-          end;
-        .)
+    ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (. Name := LexString; .)
+       /* Need to separate between global variable and method declarations */
+       (
+         "(" ZcFuncRest<Typ,Name>
+         | GlobalVarDecl<Typ,Name> ";"
+       )
   }
   | IF (. not AllowFunctions .)
   {
@@ -319,7 +336,7 @@ ZcFuncBody (. var Op : TZcOp; .)
 .
 
 /*------------------------------------------------------------------------*/
-FormalParams                    
+FormalParams
 = ( Par ["," FormalParams] )
 .
 /*------------------------------------------------------------------------*/
@@ -377,8 +394,42 @@ LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitO
             OutOp := MakeOp(zcBlock);
           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
         end;
-        
+
      .)
+.
+
+/*------------------------------------------------------------------------*/
+
+GlobalVarRest<Typ : TZcDataType; const Name : string> (. var V : TDefineVariableBase; .)
+=
+     (.
+        if SymTab.ScopeContains(Name) then
+          ZError('Name already defined: ' + Name);
+
+        if Typ.Kind=zctArray then
+        begin
+          TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
+          V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
+          Self.ZApp.GlobalVars.AddComponent(V);
+        end
+        else
+        begin
+          V := TDefineVariable.Create(Self.ZApp.GlobalVars);
+          V._Type := Typ.Kind;
+        end;
+
+        V.SetString('Name', AnsiString(Name));
+        SymTab.Add(Name,V);
+     .)
+.
+
+
+GlobalVar<Typ : TZcDataType>
+= ident GlobalVarRest<Typ,LexString>
+.
+
+GlobalVarDecl<Typ : TZcDataType; const Name : string>
+= GlobalVarRest<Typ,Name> {"," GlobalVar<Typ>}
 .
 
 /*------------------------------------------------------------------------*/
@@ -1017,7 +1068,7 @@ Primary<var OutOp : TZcOp>
   | "[" (. Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
            Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
 
-           //**todo: verify that outop actually is an array type
+           //todo: verify that outop actually is an array type
 
            if OutOp.Kind=zcArrayAccess then
            begin
@@ -1033,8 +1084,10 @@ Primary<var OutOp : TZcOp>
            end;
 
            if OutOp.Kind=zcSelect then
-             //DefineVariable managedvalue
-             Op.Ref := GetArray( (OutOp.Children.First.Ref as TDefineVariable)._Type );
+             if (OutOp.Children.First.Ref is TDefineVariable) then
+               //DefineVariable managedvalue
+               Op.Ref := GetArray( (OutOp.Children.First.Ref as TDefineVariable)._Type );
+             //else it is a model defined array, so outop.ref is already correct
 
            OutOp := Op;
          .)
