@@ -77,6 +77,19 @@ int[] glocalarray() {
   y.SizeDim1=1;
   y[0]=2;
   return y;
+}
+
+
+int globalX;
+int[5,5] globalXX,globalYY;
+string globalS;
+string[10] globalSS;
+
+void globalF() {
+  globalX=0;
+  globalXX[0,0]=42;
+  globalS="hugo";
+  globalSS[0]="test";
 }]]>
       </Source>
     </ZLibrary>
@@ -745,6 +758,15 @@ Var2=v;
 
 //mat4[1] am;
 //am[0]=m1;*/]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="global vars">
+      <Expression>
+<![CDATA[
+globalF();
+string s=globalSS[0] + intToStr(globalXX[0,0]);
+if(s!="test42")
+  Error=2001;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>

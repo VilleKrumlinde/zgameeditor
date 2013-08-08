@@ -96,6 +96,7 @@ type
     OnRender : TZComponentList;
     OnBeginRenderPass : TZComponentList;
     Lights : TZComponentList;
+    GlobalVars : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     CurrentMusic : TMusic;
@@ -886,6 +887,13 @@ begin
   end;
   ZcGlobalNames.Clear;
 
+  //Remove global variables (declared in zlibraries)
+  for I := 0 to GlobalVars.Count-1 do
+  begin
+    SymTab.Remove(String(TDefineVariableBase(GlobalVars[I]).Name))
+  end;
+  GlobalVars.Clear;
+
   //Remove stringconstants
   ClearConstantPool;
 
@@ -1098,6 +1106,9 @@ begin
     {$ifndef minimal}List.GetLast.DefaultValue.IntegerValue := 800;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}(@ConstantPool), zptComponentList);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'GlobalVars',{$ENDIF}(@GlobalVars), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 

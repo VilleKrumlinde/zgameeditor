@@ -1362,6 +1362,7 @@ begin
     Compiler.SymTab := SymTab;
     Compiler.ReturnType := ReturnType;
     Compiler.GlobalNames := GlobalNames;
+    Compiler.ZApp := ZApp;
 
     Compiler.SetSource(S);
 
