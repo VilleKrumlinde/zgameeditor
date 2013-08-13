@@ -634,7 +634,7 @@ begin
     if C1.Typ.Kind=zctString then
     begin
       if Kind=zcPlus then
-        Result := TZcOpLiteral.Create(zctString,'"' + C1.StringValue + C2.StringValue + '"');
+        Exit( TZcOpLiteral.Create(zctString,'"' + C1.StringValue + C2.StringValue + '"') );
     end
     else
     begin
@@ -659,9 +659,36 @@ begin
     C1 := Child(0) as TZcOpLiteral;
     if C1.Typ.Kind<>zctString then
       case Kind of
-        zcNegate : Result := TZcOpLiteral.Create(C1.Typ.Kind,C1.Value * -1);
+        zcNegate : Exit( TZcOpLiteral.Create(C1.Typ.Kind,C1.Value * -1) );
       end;
   end;
+
+  //Optimize for trees such as:
+  //   plus ( plus(i,1) , const(1) )
+  //replaced with:
+  //   plus(i,2)
+  if (Kind=zcPlus) and (Self.GetDataType.Kind=zctString) and
+     (Children.Count=2) and (Child(0).Kind=zcPlus) and (Child(1).Kind=zcConstLiteral) and
+     (Child(0).Child(1).Kind=zcConstLiteral) then
+  begin //S + "1" + "2"  ->  s + "12"
+    C1 := TZcOpLiteral(Child(0).Child(1));
+    Child(0).Children[1] := TZcOpLiteral.Create(zctString,'"' + C1.StringValue + TZcOpLiteral(Child(1)).StringValue + '"');
+    Exit( Child(0) );
+  end;
+
+  if (Kind in [zcPlus,zcMul]) and (Self.GetDataType.Kind in [zctByte,zctInt,zctFloat]) and
+     (Children.Count=2) and (Child(0).Kind=Kind) and (Child(1).Kind=zcConstLiteral) and
+     (Child(0).Child(1).Kind=zcConstLiteral) then
+  begin //i + 1 + 2  ->  i + 3
+    C1 := TZcOpLiteral(Child(0).Child(1));
+    C2 := TZcOpLiteral(Child(1));
+    case Kind of
+      zcPlus : Child(0).Children[1] := TZcOpLiteral.Create(C1.Typ.Kind,C1.Value + C2.Value);
+      zcMul : Child(0).Children[1] := TZcOpLiteral.Create(C1.Typ.Kind,C1.Value * C2.Value);
+    end;
+    Exit( Child(0) );
+  end;
+
 end;
 
 { TZcOpFunctionBase }
@@ -956,6 +983,7 @@ begin
     raise ECodeGenError.Create('Missing op in binary expression');
   T1 := Op1.GetDataType;
   T2 := Op2.GetDataType;
+
   //Cast to common type that does not lose precision
   if T2.Kind=zctFloat then
     Op1 := MakeCompatible(Op1,T2)

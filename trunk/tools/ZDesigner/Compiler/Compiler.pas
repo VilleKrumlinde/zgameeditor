@@ -223,7 +223,7 @@ begin
           raise ECodeGenError.Create('Cannot use this operator on a float-expression');
         Result := TExpOpBinaryFloat.Create(nil,Kind);
       end;
-    zctInt : Result := TExpOpBinaryInt.Create(nil,Kind);
+    zctInt,zctByte : Result := TExpOpBinaryInt.Create(nil,Kind);
     zctString :
       begin
         if Kind<>vbkPlus then
@@ -1046,7 +1046,7 @@ begin
   Op.Kind := Kind;
   case T of
     zctFloat: Op._Type := jutFloat;
-    zctInt,zctModel,zctNull,zctReference: Op._Type := jutInt;
+    zctInt,zctByte,zctModel,zctNull,zctReference: Op._Type := jutInt;
     zctString:
       begin
         Op._Type := jutString;
