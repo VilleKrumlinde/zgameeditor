@@ -458,6 +458,8 @@ Type<var Typ : TZcDataType>
 (.
   var
     A : TDefineArray;
+    SizeOp : TZcOp;
+    I : integer;
 .)
 =  (. FillChar(Typ,SizeOf(Typ),0); .)
   ( SimpleType<Typ> )
@@ -470,9 +472,22 @@ Type<var Typ : TZcDataType>
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 .)
-         [ intCon (. A.SizeDim1 := StrToInt(LexString); .) ]
+
+         [ Expr<SizeOp> (.
+            SizeOp := SizeOp.Optimize;
+            if SizeOp.Kind<>zcConstLiteral then
+              ZError('Array size must be a constant expression');
+            A.SizeDim1 := Trunc( (SizeOp as TZcOpLiteral).Value );
+                         .)
+         ]
+
          { ","  (. if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); .)
-           [ intCon (. if (A.Dimensions=dadTwo) then A.SizeDim2 := StrToInt(LexString) else A.SizeDim3 := StrToInt(LexString);
+           [ Expr<SizeOp> (.
+                SizeOp := SizeOp.Optimize;
+                if SizeOp.Kind<>zcConstLiteral then
+                  ZError('Array size must be a constant expression');
+               I := Trunc( (SizeOp as TZcOpLiteral).Value );
+               if (A.Dimensions=dadTwo) then A.SizeDim2 := I else A.SizeDim3 := I;
            .) ]
          }
        "]"

@@ -627,7 +627,7 @@ begin
 
   {$ifndef minimal}
   GuardLimit := 500 * 1000000;
-  GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000;
+  GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000*10;
   {$endif}
   while True do
   begin
@@ -640,7 +640,7 @@ begin
     if GuardLimit=0 then
       ZHalt('Five hundered million instructions executed. Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
-      ZHalt('One million strings allocated. Infinite loop?');
+      ZHalt('Ten million strings allocated. Infinite loop?');
     {$endif}
   end;
   if StackGetDepth-SaveDepth=1 then
