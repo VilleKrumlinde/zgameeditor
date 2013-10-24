@@ -607,6 +607,7 @@ end;
 
 function TZc.GetArray(Kind : TZcDataTypeKind) : TDefineArray;
 begin
+  Result := nil;
   case Kind of
     zctMat4 : Result := Mat4Array;
     zctVec3 : Result := Vec3Array;

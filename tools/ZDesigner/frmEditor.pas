@@ -2657,6 +2657,7 @@ begin
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
   AppStopButton.Perform(CM_RECREATEWND, 0, 0);
+  Self.ShowHint := False;  //http://www.emix8.org/forum/viewtopic.php?t=1045
 end;
 
 procedure TEditorForm.AppPreviewStopActionExecute(Sender: TObject);
@@ -2672,6 +2673,7 @@ begin
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
   AppStopButton.Perform(CM_RECREATEWND, 0, 0);
+  Self.ShowHint := True;
 end;
 
 procedure TEditorForm.ResetComponentActionExecute(Sender: TObject);
@@ -2984,6 +2986,7 @@ begin
       //Button   Button1
       //Button58 Button59
       C := List[I] as TZComponent;
+      C._ZApp := Self.ZApp;
       if C.Name='' then
         Continue;
 
@@ -3450,7 +3453,7 @@ var
       else
       begin
         M.OnClick := OnAddFromLibraryItemClick;
-        M.Tag := Integer(C);
+        M.Tag := NativeInt(C);
       end;
     end;
   end;

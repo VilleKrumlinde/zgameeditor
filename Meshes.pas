@@ -1401,17 +1401,28 @@ end;
 
 procedure TModels.FlushRemoveList;
 var
-  I : integer;
+  I,J,K : integer;
   M : TModel;
 begin
   for I := 0 to RemoveList.Count-1 do
   begin
     M := TModel(RemoveList[I]);
-    {$ifndef minimal}
-    //The user may have changed category in designer, guard against this
-    if Get(M.Category).IndexOf(M)>-1 then
-    {$endif}
-    Get(M.Category).Remove(M);
+
+    J := Get(M.Category).IndexOf(M);
+    if J=-1 then
+      //The category may have changed in designer or using a expression, check all categories
+      for K := 0 to Cats.Count-1 do
+      begin
+        J := TZArrayList(Cats[K]).IndexOf(M);
+        if J<>-1 then
+        begin
+          TZArrayList(Cats[K]).RemoveAt(J);
+          Break;
+        end;
+      end
+    else
+      Get(M.Category).RemoveAt(J);
+
     if M.IsSpawnedAsReference then
       //If referenced, remove from list to keep it from being freed below
       RemoveList[I]:=nil;
