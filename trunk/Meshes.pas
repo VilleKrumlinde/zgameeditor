@@ -1368,12 +1368,23 @@ begin
   for I := 0 to Cats.Count-1 do
   begin
     List := TZArrayList(Cats[I]);
-    for J := 0 to List.Count-1 do
+    J := 0;
+    while J<List.Count do
     begin
       M := TModel(List[J]);
+
+      if M.Category<>I then
+      begin  //Category can be changed at runtime
+        Self.Get(M.Category).Add(M);
+        List.SwapRemoveAt(J);
+        Continue;
+      end;
+
       Meshes.CurrentModel := M;
       if M.Active then
         M.Update;
+
+      Inc(J);
     end;
   end;
   Meshes.CurrentModel := nil;

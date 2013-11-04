@@ -1134,6 +1134,7 @@ begin
           PPointer(P1)^ := L[I2];
           Inc(PPointer(P1));
         end;
+        HasReturnValue := False;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
