@@ -182,6 +182,7 @@ begin
   LoadOpenGLExtensions;
 
   //Set other default properties using the material-handler
+  Self.CurrentMaterial := nil;
   EnableMaterial(DefaultMaterial);
 end;
 

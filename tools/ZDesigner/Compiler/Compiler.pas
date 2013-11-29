@@ -449,9 +449,9 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     case FromOp.GetDataType.Kind of
       zctFloat :
         case Cop.ToType.Kind of
-          zctInt: Kind := eckFloatToInt;
+          zctByte, zctInt: Kind := eckFloatToInt;
         end;
-      zctInt :
+      zctByte, zctInt :
         case Cop.ToType.Kind of
           zctFloat: Kind := eckIntToFloat;
           zctXptr :
