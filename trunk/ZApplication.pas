@@ -1153,6 +1153,7 @@ begin
 
   //Initial tree update
   Content.Update;
+  Self.AfterLoaded;
   OnLoaded.ExecuteCommands;
   DesignerIsRunning := True;
 end;
