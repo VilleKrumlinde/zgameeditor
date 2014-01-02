@@ -104,7 +104,7 @@ end;
 
 procedure SetReceiverFunc(F : TLogReceiverFunc);
 begin
-  Assert( not Assigned(ReceiverFunc) );
+//  Assert( not Assigned(ReceiverFunc) );
   ReceiverFunc := F;
 end;
 
