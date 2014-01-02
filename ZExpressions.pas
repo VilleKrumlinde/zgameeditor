@@ -1874,26 +1874,35 @@ end;
 {$endif}
 
 {$if defined(android)}
-procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8 : integer);
-begin
-end;
-
 procedure TExpExternalFuncCall.Execute;
+const
+  MaxArgs = 16;
 type
+  TArgArray = array[0..MaxArgs-1] of integer;
   TFunc = procedure();
   PFunc = ^TFunc;
+  TDummyFunc = procedure(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16 : integer);
+  PDummyFunc = ^TDummyFunc;
 var
-  Arg1,I,RetVal : integer;
+  Arg1,I,RetVal,Tmp : integer;
+  P : pointer;
   TheFunc : PFunc;
-  Args : array[0..31] of integer;
+  Args : TArgArray;
 begin
   if Self.Proc=nil then
   begin
     Self.Proc := Lib.LoadFunction(Self.FuncName);
-    //Make sure android generates enough stack space for calling a func with 8 params
-    DummyProc(1,2,3,4,5,6,7,8);
+    //Make sure android generates enough stack space for calling a func with maxargs params
+    if ArgCount<0 then
+      PDummyFunc(Self.Proc)^(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);  //Should never execute
   end;
   TheFunc := Self.Proc;
+
+  if ArgCount>MaxArgs then
+  begin
+    Platform_Error('Too many arguments to external function call');
+    Exit;
+  end;
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
@@ -1902,26 +1911,44 @@ begin
   //http://en.wikipedia.org/wiki/Calling_convention#ARM
   //First params in r-registers
   //Then on stack
+  if ArgCount>4 then
+  begin
+    P := @Args+16;
+    Tmp := ArgCount-4;
+    asm
+      ldr r0, Tmp
+      ldr r1, P
+      mov r3, #0
+   .Lmyloop:
+      ldr r2, [r1, r3]
+      str r2, [r13, r3]
+      add r3,r3,#4
+      sub	r0,r0,#1
+      cmp r0,#0
+      bgt .Lmyloop
+    end;
+  end;
+
   asm
     ldr r0, Args
     ldr r1, Args+4
     ldr r2, Args+8
     ldr r3, Args+12
 
-    ldr r4, Args+16
-	  str	r4,[r13]
-    ldr r4, Args+20
-	  str	r4,[r13, #4]
-    ldr r4, Args+24
-	  str	r4,[r13, #8]
-    ldr r4, Args+28
-	  str	r4,[r13, #12]
-
     ldr r4,TheFunc
     blx r4
 
     str r0,RetVal
   end;
+
+//    ldr r4, Args+16
+//	  str	r4,[r13]
+//    ldr r4, Args+20
+//	  str	r4,[r13, #4]
+//    ldr r4, Args+24
+//	  str	r4,[r13, #8]
+//    ldr r4, Args+28
+//	  str	r4,[r13, #12]
 
   if Self.ReturnType.Kind<>zctVoid then
     StackPush(RetVal);
