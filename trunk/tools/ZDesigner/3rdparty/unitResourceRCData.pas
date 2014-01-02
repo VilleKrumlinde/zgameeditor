@@ -75,7 +75,7 @@ end;
 
 implementation
 
-uses AnsiStrings;
+//uses AnsiStrings;
 
 type
   TPkgName = packed record

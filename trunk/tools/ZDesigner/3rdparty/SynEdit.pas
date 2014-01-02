@@ -83,6 +83,7 @@ uses
   Themes,
   {$ENDIF}
   SynUnicode,
+  uitypes,
 {$ENDIF}
 {$IFDEF SYN_CLX}
   kTextDrawer,
@@ -4752,7 +4753,7 @@ begin
         ScrollInfo.fMask := ScrollInfo.fMask or SIF_DISABLENOSCROLL;
       end;
 
-      if (fScrollBars in [ssBoth, ssHorizontal]) and not WordWrap then
+      if (fScrollBars in [TScrollStyle.ssBoth, TScrollStyle.ssHorizontal]) and not WordWrap then
       begin
         if eoScrollPastEol in Options then
           nMaxScroll := MaxScrollWidth

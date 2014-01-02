@@ -30,7 +30,7 @@ program ZzDC;
   {$ifdef fpc}
     {$R Data.res}
   {$else}
-    {$R Data.res Data.rc}
+    {$R 'Data.res' 'Data.rc'}
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
   {$endif}
 {$ifend}
@@ -47,6 +47,7 @@ program ZzDC;
 
     ZLOG      Logging active (large binary)
 }
+
 
 uses
   ZClasses in 'ZClasses.pas',

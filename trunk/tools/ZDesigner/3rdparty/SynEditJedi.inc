@@ -622,7 +622,7 @@
       {$UNDEF UNKNOWN_COMPILER_VERSION}
     {$ENDIF VER190}
 
-    {$IFDEF VER200} // RAD Studio 2009
+    {.$IFDEF VER200} // RAD Studio 2009
       {$DEFINE BDS}
       {$DEFINE BDS6}
       {$IFDEF CLR}
@@ -642,7 +642,7 @@
         {$DEFINE RTL200_UP}
       {$ENDIF}
       {$UNDEF UNKNOWN_COMPILER_VERSION}
-    {$ENDIF VER200}
+    {.$ENDIF VER200}
 
     {$IFDEF UNKNOWN_COMPILER_VERSION} // adjust for newer version (always use latest version)
       {$DEFINE BDS}

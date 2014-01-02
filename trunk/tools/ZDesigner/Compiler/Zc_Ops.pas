@@ -602,7 +602,7 @@ begin
           if (Children.Count=3) and Assigned(Child(2)) then
             Exit( Child(2) )  //Replace with Else
           else
-            Exit( MakeOp(zcNop );  //Replace with nop
+            Exit( MakeOp(zcNop) );  //Replace with nop
         end else
         begin
           //Constant True
