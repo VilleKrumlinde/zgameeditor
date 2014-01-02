@@ -10,14 +10,23 @@ FOR %%A IN (%*) DO (
   if "%%A"=="SS" set zgeproduct=SS
 )
 
-rem Delphi XE2
+rem Delphi XE5
 if "%BIT%"=="64" (
-  set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\9.0\bin\dcc64.exe"
+  set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\12.0\bin\dcc64.exe"
   set commonparams=-B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr
 ) else (
-  set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\9.0\bin\dcc32.exe"
-  set commonparams=-$J+ -$I- --no-config -B -N.\build\obj\ -E.\tools\zdesigner -U.\rtl\DXE2\lib ZzDC.dpr
+  set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\12.0\bin\dcc32.exe"
+  set commonparams=-$J+ -$I- --no-config -B -N.\build\obj\ -E.\tools\zdesigner -U.\rtl\DXE5\lib ZzDC.dpr
 )
+
+rem Delphi XE2
+rem if "%BIT%"=="64" (
+rem   set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\9.0\bin\dcc64.exe"
+rem   set commonparams=-B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr
+rem ) else (
+rem  set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\9.0\bin\dcc32.exe"
+rem  set commonparams=-$J+ -$I- --no-config -B -N.\build\obj\ -E.\tools\zdesigner -U.\rtl\DXE2\lib ZzDC.dpr
+rem )
 
 rem Delphi 2010
 rem set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\7.0\bin\dcc32.exe"

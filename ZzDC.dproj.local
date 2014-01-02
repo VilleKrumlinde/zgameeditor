@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899-12-30 00:00:00.000.950,C:\Data\Delphi32\ZzDC_Public\GLDrivers.pas=C:\Data\Delphi32\ZzDC_Public\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.273,=C:\Data\Delphi32\ZzDC_Public\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.315,C:\Data\Delphi32\ZzDC_Public\BeRoPNG.pas=</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.273,=C:\Data\Delphi32\ZzDC_Public\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.524,=C:\Data\Delphi32\ZzDC_Public\Data.rc</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.950,C:\Data\Delphi32\ZzDC_Public\GLDrivers.pas=C:\Data\Delphi32\ZzDC_Public\Unit1.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">
     <File Path="ZClasses.pas"/>
@@ -27,5 +28,6 @@
     <File Path="ZFile.pas"/>
     <File Path="NanoJpeg.pas"/>
     <File Path="GLDrivers.pas"/>
+    <File Path="Data.rc"/>
   </ProjectSortOrder>
 </BorlandProject>

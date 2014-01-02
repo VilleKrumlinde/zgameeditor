@@ -197,31 +197,7 @@ Date        Author Version Changes
          (*$DEFINE K1_OR_NEWER *)
        (*$ENDIF *)
 
-       (*$IFDEF MSWINDOWS *)
-         (*$DEFINE D1_OR_NEWER *)
-         (*$IFNDEF VER80 *)
-           (*$DEFINE D2_OR_NEWER *)
-           (*$IFNDEF VER90 *)
-             (*$DEFINE D3_OR_NEWER *)
-             (*$IFNDEF VER100 *)
-               (*$DEFINE D4_OR_NEWER *)
-               (*$IFNDEF VER120 *)
                  (*$DEFINE D5_OR_NEWER *)
-                 (*$IFNDEF VER130 *)
-                   (*$IFNDEF VER140 *)
-                     (*$IFNDEF VER150 *)
-//                       If the compiler gets stuck here,
-//                       you are using a compiler version unknown to this code.
-//                       You will probably have to change this code accordingly.
-//                       At first, try to comment out these lines and see what will happen.
-                     (*$ENDIF *)
-                   (*$ENDIF *)
-                 (*$ENDIF *)
-               (*$ENDIF *)
-             (*$ENDIF *)
-           (*$ENDIF *)
-         (*$ENDIF *)
-       (*$ENDIF *)
 
        (*$IFDEF D5_OR_NEWER *)
          (*$DEFINE HAS_CONTNRS_UNIT *)
@@ -619,7 +595,7 @@ IMPLEMENTATION
 
 IMPLEMENTATION
 
-uses AnsiStrings;
+//uses AnsiStrings;
 (*
 ===============================================================================================
 Unicode and UTF-8 stuff
