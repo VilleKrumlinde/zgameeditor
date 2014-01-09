@@ -30,7 +30,7 @@ uses
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg, Vcl.Themes, ZApplication, GLDrivers;
+  Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
