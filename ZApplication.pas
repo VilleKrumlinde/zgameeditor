@@ -1168,6 +1168,7 @@ begin
   OnClose.ExecuteCommands;
   Renderer.DesignerRenderStop;
   AudioPlayer.DesignerStopAllAudio;
+  Self.CurrentState := nil;
 end;
 {$endif}
 
@@ -1206,11 +1207,11 @@ var
   OldState : TStateBase;
 begin
   OldState := ZApp.CurrentState;
-  ZApp.CurrentState := State;
-  if OldState<>nil then
+  ZApp.CurrentState := Self.State;
+  if (OldState<>nil) and (OldState<>Self.State) then
     OldState.OnLeave.ExecuteCommands;
-  if State<>nil then
-    State.OnStart.ExecuteCommands;
+  if Self.State<>nil then
+    Self.State.OnStart.ExecuteCommands;
 end;
 
 {$ifndef minimal}
