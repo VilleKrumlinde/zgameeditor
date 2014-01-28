@@ -858,6 +858,9 @@ begin
       PropEditorPanel.Height := Self.Height div 2;
     end;
 
+    ExprSynEdit.Font.Size := Ini.ReadInteger(Section,'CodeEditorFontSize',ExprSynEdit.Font.Size);
+    ShaderSynEdit.Font.Size := ExprSynEdit.Font.Size;
+
     S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
     if S<>TStyleManager.ActiveStyle.Name then
       SwitchToStyle(S,nil);
@@ -924,6 +927,8 @@ begin
       Ini.WriteString(Section,'LastOpenedProject',CurrentFileName);
 
       Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
+
+      Ini.WriteInteger(Section,'CodeEditorFontSize',ExprSynEdit.Font.Size);
 
       S := ExtractFilePath(CurrentFileName);
       if S='' then
@@ -2164,6 +2169,7 @@ begin
   try
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
+    F.SynEdit.Font.Size := ExprSynEdit.Font.Size;
     repeat
       if (F.ShowModal=mrOk) and F.SynEdit.Modified then
       begin

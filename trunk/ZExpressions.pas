@@ -1694,9 +1694,16 @@ end;
 
 {$ifndef minimal}
 function TDefineVariableBase.GetDisplayName: AnsiString;
+var
+  I : integer;
+  P : TZProperty;
 begin
-  Result := inherited GetDisplayName + ' <' +
-    AnsiString(Self.GetProperties.GetByName('Type').Options[ Ord(Self._Type) ]) + '>';
+  I := Ord(Self._Type);
+  P := Self.GetProperties.GetByName('Type');
+  if I<Length(P.Options) then
+    Result := inherited GetDisplayName + ' <' + AnsiString(P.Options[ I ]) + '>'
+  else
+    Result := inherited GetDisplayName + ' <error>';
 end;
 {$endif}
 

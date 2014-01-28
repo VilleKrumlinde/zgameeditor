@@ -514,8 +514,9 @@ end;
 procedure TZApplication.Run;
 begin
   Init;
-  //Initial tree update
-  Self.Update;
+  //Skip initial tree update for now because it triggers AppState.OnStart etc. which can cause trouble
+  //Any component needing init should ovveride Loaded instead.
+  //Self.Update;
   OnLoaded.ExecuteCommands;
   Platform_Run(Self.Main);
 end;
@@ -1152,7 +1153,7 @@ begin
   Self.FpsTime := 0;
 
   //Initial tree update
-  Content.Update;
+  //Content.Update;
   Self.AfterLoaded;
   OnLoaded.ExecuteCommands;
   DesignerIsRunning := True;
