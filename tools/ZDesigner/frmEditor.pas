@@ -572,6 +572,8 @@ begin
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
 
+  TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
+
   BuildStyleMenu;
   ReadAppSettingsFromIni;
   RefreshMenuFromMruList;
@@ -4000,36 +4002,6 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
-//http://stackoverflow.com/questions/9978106/vcl-styles-menu-hotkey-inconsistency
-type
-  TFormStyleHookFix= class (TFormStyleHook)
-  procedure CMDialogChar(var Message: TWMKey); message CM_DIALOGCHAR;
-  end;
-
-  TFormStyleHookHelper= class  helper for TFormStyleHook
-  private
-     function CheckHotKeyItem(ACharCode: Word): Boolean;
-  end;
-
-{ TFormStyleHookFix }
-
-procedure TFormStyleHookFix.CMDialogChar(var Message: TWMKey);
-begin
-   if ((Message.KeyData and $20000000) <> 0 ) and (CheckHotKeyItem(Message.CharCode)) then
-    begin
-      Message.Result := 1;
-      Handled := True;
-    end
-end;
-
-{ TFormStyleHookHelper }
-function TFormStyleHookHelper.CheckHotKeyItem(ACharCode: Word): Boolean;
-begin
-  Result:=False;
-  if Self.FMainMenuBarHook<>nil then
-   Result:=Self.FMainMenuBarHook.CheckHotKeyItem(ACharCode);
-end;
-
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
 
 {  procedure RecolorHighlighter(H : TSynCustomHighlighter);
@@ -4053,8 +4025,6 @@ procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle 
 begin
   //Make sure we leave the currently selected component because nodes will be recreated
   Tree.Selected := nil;
-  TStyleManager.Engine.RegisterStyleHook(TEditorForm, TFormStyleHookFix);
-  TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
   if StyleHandle=nil then
   begin
     TStyleManager.TrySetStyle( StyleName );

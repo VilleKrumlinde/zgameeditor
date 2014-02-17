@@ -99,7 +99,7 @@ public class Zge extends GLSurfaceView
         if(b!=null)
             NativeSetDataContent(b);
         else
-          	NativeInitAppFromSDCard();
+            NativeInitAppFromSDCard();
     }
 
     //Called from native
@@ -116,7 +116,7 @@ public class Zge extends GLSurfaceView
         name=name.substring(8); //strip "/assets/" from name
         Log.i("ZgeAndroid", "About to open: " + name);
         AssetManager assets = getContext().getAssets();
-        byte[] data=null;
+        byte[] data=new byte[0]; //Return zero length to native if file not available
         try {
             InputStream stream = assets.open(name,AssetManager.ACCESS_BUFFER);
             int size = stream.available();
@@ -235,7 +235,7 @@ public class Zge extends GLSurfaceView
             if ( NativeCloseQuery() )
                 IsDestroy = true;
             return true;
-	    } else
+        } else
             NativeKeydown(event.getUnicodeChar());
 
         return super.onKeyDown( keyCode, event );
