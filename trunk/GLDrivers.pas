@@ -189,7 +189,7 @@ end;
 procedure TGLDriverBase.EnableMaterial(NewM : TMaterial);
 const
   //0x8370 GL_MIRRORED_REPEAT, enbart gl 1.4 och uppåt
-  TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP);
+  TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP_TO_EDGE);
 var
   NilOld : boolean;
   Tmp,I,TexCount : integer;
@@ -319,10 +319,10 @@ begin
     //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
     Self.MatrixMode(GL_TEXTURE);
     Self.LoadIdentity();
-      Self.Translate(Tex.TextureX+0.5,Tex.TextureY+0.5,0);
+      Self.Translate(Tex.TextureX+Tex.Origin[0],Tex.TextureY+Tex.Origin[1],0);
       Self.Scale(Tex.TextureScale[0],Tex.TextureScale[1],1);
       Self.Rotate(Tex.TextureRotate*360,0,0,1);
-      Self.Translate(-0.5,-0.5,0);
+      Self.Translate(-Tex.Origin[0],-Tex.Origin[1],0);
     Self.MatrixMode(GL_MODELVIEW);
 
     if Self.Kind=glbFixed then

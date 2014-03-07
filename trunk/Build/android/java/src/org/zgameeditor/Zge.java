@@ -230,7 +230,7 @@ public class Zge extends GLSurfaceView
 
     @Override
     public boolean onKeyDown( int keyCode, KeyEvent event ) {
-        if ( keyCode == KeyEvent.KEYCODE_BACK ) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getRepeatCount()== 0))
             NativeKeydown(253); //Trigger KeyBack in ZGE
             if ( NativeCloseQuery() )
                 IsDestroy = true;

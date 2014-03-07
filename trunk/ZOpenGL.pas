@@ -988,6 +988,7 @@ const
   // TextureWrapMode
   GL_CLAMP                          = $2900;
   GL_REPEAT                         = $2901;
+  GL_CLAMP_TO_EDGE                                  = $812F; // GL 1.2
 
   // VertexPointerType
   //      GL_SHORT

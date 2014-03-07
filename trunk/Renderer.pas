@@ -62,6 +62,7 @@ type
     TextureRotate : single;
     TextureWrapMode : (tmMirror,tmTile,tmClamp);
     TexCoords : TMaterialTexCoords;
+    Origin : TZVector3f;
     {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
@@ -1953,6 +1954,8 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['Mirror','Tile','Clamp']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TexCoords',{$ENDIF}(@TexCoords), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Generated','ModelDefined']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Origin',{$ENDIF}(@Origin), zptVector3f);
+    List.GetLast.DefaultValue.Vector3fValue := Vector3f(0.5,0.5,0);
 end;
 
 {$ifndef minimal}
