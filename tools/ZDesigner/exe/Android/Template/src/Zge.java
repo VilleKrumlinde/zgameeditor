@@ -96,7 +96,7 @@ public class Zge extends GLSurfaceView
     private void initZApp() {
         //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
         byte[] b = openAssetFile("/assets/zzdc.dat");
-        if(b!=null)
+        if(b.length!=0)
             NativeSetDataContent(b);
         else
             NativeInitAppFromSDCard();
@@ -230,7 +230,7 @@ public class Zge extends GLSurfaceView
 
     @Override
     public boolean onKeyDown( int keyCode, KeyEvent event ) {
-        if ( keyCode == KeyEvent.KEYCODE_BACK ) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getRepeatCount()== 0)) {
             NativeKeydown(253); //Trigger KeyBack in ZGE
             if ( NativeCloseQuery() )
                 IsDestroy = true;
