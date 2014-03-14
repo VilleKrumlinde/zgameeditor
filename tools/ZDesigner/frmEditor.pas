@@ -4240,11 +4240,11 @@ begin
     MPath(ProjectPath + 'assets');
     MPath(ProjectPath + 'res');
     MPath(ProjectPath + 'res\drawable-ldpi');
-    MPath(ProjectPath + 'src');
+    MPath(ProjectPath + 'src\org\zgameeditor');
 
     MCopy('libs\armeabi\libzgeandroid.so');
-    MCopy('src\Zge.java');
-    MCopy('src\ZgeActivity.java');
+    MCopy('src\org\zgameeditor\Zge.java');
+    MCopy('src\org\zgameeditor\ZgeActivity.java');
     MCopy('res\drawable-ldpi\icon.png');
 
     MCopy('default.properties');

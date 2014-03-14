@@ -41,6 +41,23 @@ var
     Id,X,Y : integer;
   end;
 
+
+const
+  MAX_JOYSTICKS = 16;
+  MAX_AXES = 6;
+
+type
+  PJoystick = ^TJoystick;
+  TJoystick =
+    record
+      Values : array[0..MAX_AXES-1] of single;
+      Buttons : DWORD;
+      POV : single;
+    end;
+
+var
+  Joysticks : array[0..MAX_JOYSTICKS-1] of TJoystick;
+
 implementation
 
 uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
@@ -303,7 +320,8 @@ begin
   System.Reset(F,1);
   if IOResult<>0 then
   begin
-    Platform_Error('File missing zzdc.dat');
+    AndroidLog(PAnsiChar(@Buf));
+    Platform_Error('File missing: zzdc.dat');
     Exit;
   end;
 
@@ -530,11 +548,18 @@ end;
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;
 begin
   Result := 0;
+  if JoyId<MAX_JOYSTICKS then
+  begin
+    if Axis<MAX_AXES then
+      Result := Joysticks[JoyId].Values[Axis];
+  end;
 end;
 
 function Platform_GetJoystickButton(JoyId : integer; Button : integer) : boolean;
 begin
   Result := False;
+  if JoyId<MAX_JOYSTICKS then
+    Result := (Joysticks[JoyId].Buttons and (1 shl Button))>0;
 end;
 
 function Platform_GetJoystickPOV(JoyId : integer) : single;

@@ -1930,7 +1930,7 @@ begin
   if Stream=nil then
     Stream := TZInputStream.CreateFromFile('zzdc.dat',True);
   {$ifdef zlog}
-  if Stream=nil then
+  if (Stream=nil) or (Stream.Size=0) then
     ZHalt('no data');
   {$endif}
 
