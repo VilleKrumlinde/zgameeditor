@@ -134,6 +134,7 @@ type
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
     AndroidPortrait : boolean;
+    AndroidSdk : byte;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
     //Zc-parsing
@@ -1135,6 +1136,8 @@ begin
     List.SetDesignerProperty;
   List.AddProperty('AndroidPortrait',(@AndroidPortrait), zptBoolean);
     List.SetDesignerProperty;
+  List.AddProperty('AndroidSdk',(@AndroidSdk), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['2.2 (API Level 8)','4.1 (API Level 16)']);{$endif}
   {$ENDIF}
 end;
 

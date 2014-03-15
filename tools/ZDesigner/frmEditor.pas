@@ -4088,7 +4088,7 @@ end;
 
 procedure TEditorForm.BuildAndroidApk(const IsDebug : boolean);
 var
-  TemplatePath,ProjectPath,OutFile : string;
+  TemplatePath,OverridePath,ProjectPath,OutFile : string;
   Lookups : TDictionary<string,string>;
 
   procedure MPath(const P : string);
@@ -4097,18 +4097,22 @@ var
       TDirectory.CreateDirectory(P);
   end;
 
-  procedure MCopy(const Name : string; const DoReplace : boolean = False);
+  procedure MCopy(const Name : string; const DoReplaceStrings : boolean = False; const AlwaysOverwrite : boolean = False);
   var
     Src,Dst,Key,S,DstContent : string;
     I : integer;
     L : TStringList;
     NeedReplace : boolean;
   begin
-    Src := TemplatePath + Name;
+    if (Length(OverridePath)>0) and TFile.Exists(OverridePath + Name) then
+      Src := OverridePath + Name
+    else
+      Src := TemplatePath + Name;
     Dst := ProjectPath + Name;
-    if not DoReplace then
+    if not DoReplaceStrings then
     begin
       if TFile.Exists(Dst) and
+        (not AlwaysOverwrite) and
         (TFile.GetLastWriteTime(Dst)>=TFile.GetLastWriteTime(Src)) then
         //no need to copy
       else
@@ -4145,7 +4149,7 @@ var
           end;
           L[I] := S;
         end;
-        if NeedReplace then
+        if NeedReplace or AlwaysOverwrite then
           //Only replace file if the replacement values did not already exists in destination
           L.SaveToFile(Dst);
       finally
@@ -4154,9 +4158,15 @@ var
     end;
   end;
 
+  function InGetApi(const s : string) : string;
+  begin
+    Result := Copy(S,1,Pos(' ',S)-1);
+  end;
+
 var
-  Params,ApkFileName : string;
+  Params,ApkFileName,S : string;
   F : TAndroidApkForm;
+  SdkChanged : boolean;
 begin
   if Self.AndroidSdkPath='' then
   begin
@@ -4176,6 +4186,11 @@ begin
     F.VersionNameEdit.Text := String(Self.ZApp.AndroidVersionName);
     F.VersionNumberEdit.Text := IntToStr(Self.ZApp.AndroidVersionNumber);
     F.OrientationComboBox.ItemIndex := IfThen(Self.ZApp.AndroidPortrait,1,0);
+
+    for S in ZApp.GetProperties.GetByName('AndroidSdk').Options do
+      F.AndroidVersionComboBox.Items.Add(S);
+    F.AndroidVersionComboBox.ItemIndex := ZApp.AndroidSdk;
+
     if F.ShowModal=mrCancel then
       Exit;
     Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
@@ -4183,6 +4198,10 @@ begin
     Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
     Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
     Self.ZApp.AndroidPortrait := (F.OrientationComboBox.ItemIndex=1);
+
+    SdkChanged := Self.ZApp.AndroidSdk <> F.AndroidVersionComboBox.ItemIndex;
+    Self.ZApp.AndroidSdk := F.AndroidVersionComboBox.ItemIndex;
+
     Self.SetFileChanged(True);
   finally
     F.Free;
@@ -4194,7 +4213,13 @@ begin
     Exit;
   end;
 
-  TemplatePath := Self.ExePath + 'Android\Template\';
+  TemplatePath := Self.ExePath + 'Android\Template\base\';
+  if ZApp.AndroidSdk=0 then
+    OverridePath := ''
+  else
+    OverridePath := Self.ExePath + 'Android\Template\' +
+      InGetApi(ZApp.GetProperties.GetByName('AndroidSdk').Options[ZApp.AndroidSdk]) +
+      '\';
 
   if CurrentFileName='' then
     ProjectPath := Self.ExePath + 'Android\Projects\'
@@ -4243,13 +4268,13 @@ begin
     MPath(ProjectPath + 'src\org\zgameeditor');
 
     MCopy('libs\armeabi\libzgeandroid.so');
-    MCopy('src\org\zgameeditor\Zge.java');
+    MCopy('src\org\zgameeditor\Zge.java', False, SdkChanged);
     MCopy('src\org\zgameeditor\ZgeActivity.java');
     MCopy('res\drawable-ldpi\icon.png');
 
-    MCopy('default.properties');
-    MCopy('local.properties',True);
-    MCopy('AndroidManifest.xml',True);
+    MCopy('default.properties', False, SdkChanged);
+    MCopy('local.properties', True);
+    MCopy('AndroidManifest.xml', True, SdkChanged);
     MCopy('build.xml',True);
     if IsDebug then
     begin

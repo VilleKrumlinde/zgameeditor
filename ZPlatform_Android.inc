@@ -321,7 +321,7 @@ begin
   if IOResult<>0 then
   begin
     AndroidLog(PAnsiChar(@Buf));
-    Platform_Error('File missing: zzdc.dat');
+    Platform_Error('Platform_LoadLinkedResource: No data found');
     Exit;
   end;
 
