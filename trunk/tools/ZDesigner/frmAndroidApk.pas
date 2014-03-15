@@ -16,6 +16,8 @@ type
     VersionNumberEdit: TLabeledEdit;
     OrientationComboBox: TComboBox;
     Label1: TLabel;
+    Label2: TLabel;
+    AndroidVersionComboBox: TComboBox;
   private
     { Private declarations }
   public

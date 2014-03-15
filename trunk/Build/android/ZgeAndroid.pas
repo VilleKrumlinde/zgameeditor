@@ -48,7 +48,8 @@ uses jni, ZOpenGL,
   AudioComponents,
   ImplicitMeshes,
   ZFile,
-  NanoJpeg;
+  NanoJpeg,
+  Math;
 
 const
   AppInited : boolean = false;
@@ -156,10 +157,15 @@ begin
 end;
 
 function Java_org_zgameeditor_Zge_NativeDrawFrame( env : PJNIEnv; thiz : jobject ) : boolean; cdecl;
+//var
+//  OldFPUExceptionMask : TFPUExceptionMask;
 begin
   if AppInited then
   begin
+//    OldFPUExceptionMask := GetExceptionMask;
+//    SetExceptionMask([]);
     ZApp.Main;
+//    SetExceptionMask(OldFPUExceptionMask);
     Result := ZApp.Terminating;
   end
   else
@@ -245,6 +251,28 @@ begin
     AndroidLog('GLBase: 2');
 end;
 
+procedure Java_org_zgameeditor_Zge_NativeSetJoyButton(env : PJNIEnv; thiz : jobject; joyId, buttonNr : jint; value : jboolean);
+var
+  Joy : PJoystick;
+begin
+  if JoyId<MAX_JOYSTICKS then
+  begin
+    Joy := @Joysticks[JoyId];
+    if value<>0 then
+      Joy.Buttons := Joy.Buttons or (1 shl buttonNr)
+    else
+      Joy.Buttons := Joy.Buttons and (not (1 shl buttonNr));
+  end;
+end;
+
+procedure Java_org_zgameeditor_Zge_NativeSetJoyAxisValue(env : PJNIEnv; thiz : jobject; joyId, axisNr : jint; value : jfloat);
+begin
+  if JoyId<MAX_JOYSTICKS then
+  begin
+    if axisNr<MAX_AXES then
+      Joysticks[JoyId].Values[axisNr] := value;
+  end;
+end;
 
 exports
   Java_org_zgameeditor_Zge_NativeInit,
@@ -260,6 +288,8 @@ exports
   Java_org_zgameeditor_Zge_NativeSetDataContent,
   Java_org_zgameeditor_Zge_NativeGetGLBase,
   Java_org_zgameeditor_Zge_NativeInitAppFromSDCard,
+  Java_org_zgameeditor_Zge_NativeSetJoyButton,
+  Java_org_zgameeditor_Zge_NativeSetJoyAxisValue,
 
   JNI_OnLoad;
 
