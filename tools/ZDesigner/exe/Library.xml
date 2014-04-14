@@ -2339,6 +2339,89 @@ void Normalize( int K,
           </Children>
         </Group> <!-- VectorLibraryGroup -->
 
+        <ZLibrary Comment="Android Gamepad Library">
+          <Source>
+<![CDATA[/*
+  Library of gamepad codes for Android 4.1+ (API 16).
+  Generic Android codes and OUYA-specific codes are included.
+
+  Use the codes in joyGetButton() and joyGetAxis() functions to
+  identify buttons and axes. ZApplication.AndroidSdk property
+  must be set to "4.1 (API Level 16)".
+
+  Copyright (c) 2014 Radovan Cervenka
+*/
+
+// Generic Android button codes
+const int ANDROID_KEYCODE_BUTTON_A = 0;
+const int ANDROID_KEYCODE_BUTTON_X = 1;
+const int ANDROID_KEYCODE_BUTTON_Y = 2;
+const int ANDROID_KEYCODE_BUTTON_B = 3;
+const int ANDROID_KEYCODE_BUTTON_L1 = 4;
+const int ANDROID_KEYCODE_BUTTON_L2 = 5;
+const int ANDROID_KEYCODE_BUTTON_THUMBL = 6;
+const int ANDROID_KEYCODE_BUTTON_R1 = 7;
+const int ANDROID_KEYCODE_BUTTON_R2 = 8;
+const int ANDROID_KEYCODE_BUTTON_THUMBR = 9;
+const int ANDROID_KEYCODE_DPAD_UP = 10;
+const int ANDROID_KEYCODE_DPAD_DOWN = 11;
+const int ANDROID_KEYCODE_DPAD_LEFT = 12;
+const int ANDROID_KEYCODE_DPAD_RIGHT = 13;
+const int ANDROID_KEYCODE_MENU = 14;
+const int ANDROID_KEYCODE_BUTTON_C = 15;
+const int ANDROID_KEYCODE_BUTTON_Z = 16;
+const int ANDROID_KEYCODE_BUTTON_MODE = 17;
+const int ANDROID_KEYCODE_BUTTON_SELECT = 18;
+const int ANDROID_KEYCODE_BUTTON_START = 19;
+const int ANDROID_KEYCODE_BUTTON_1 = 20;
+const int ANDROID_KEYCODE_BUTTON_2 = 21;
+const int ANDROID_KEYCODE_BUTTON_3 = 22;
+const int ANDROID_KEYCODE_BUTTON_4 = 23;
+const int ANDROID_KEYCODE_BUTTON_5 = 24;
+const int ANDROID_KEYCODE_BUTTON_6 = 25;
+const int ANDROID_KEYCODE_BUTTON_7 = 26;
+const int ANDROID_KEYCODE_BUTTON_8 = 27;
+const int ANDROID_KEYCODE_BUTTON_9 = 28;
+const int ANDROID_KEYCODE_BUTTON_10 = 29;
+const int ANDROID_KEYCODE_BUTTON_11 = 30;
+const int ANDROID_KEYCODE_BUTTON_12 = 31;
+
+// OUYA button codes
+const int OUYA_BUTTON_O = 0;
+const int OUYA_BUTTON_U = 1;
+const int OUYA_BUTTON_Y = 2;
+const int OUYA_BUTTON_A = 3;
+const int OUYA_BUTTON_L1 = 4;
+const int OUYA_BUTTON_L2 = 5;
+const int OUYA_BUTTON_LS = 6;
+const int OUYA_BUTTON_R1 = 7;
+const int OUYA_BUTTON_R2 = 8;
+const int OUYA_BUTTON_RS = 9;
+const int OUYA_BUTTON_DPAD_UP = 10;
+const int OUYA_BUTTON_DPAD_DOWN = 11;
+const int OUYA_BUTTON_DPAD_LEFT = 12;
+const int OUYA_BUTTON_DPAD_RIGHT = 13;
+const int OUYA_BUTTON_MENU = 14;
+
+// Generic Android joystick axis codes
+const int ANDROID_AXIS_X = 0;
+const int ANDROID_AXIS_Y = 1;
+const int ANDROID_AXIS_Z = 2;
+const int ANDROID_AXIS_RZ = 3;
+const int ANDROID_AXIS_LTRIGGER = 4;
+const int ANDROID_AXIS_RTRIGGER = 5;
+const int ANDROID_AXIS_RX = 6;
+const int ANDROID_AXIS_RY = 7;
+
+// OUYA joystick axis codes
+const int OUYA_AXIS_LS_X = 0;
+const int OUYA_AXIS_LS_Y = 1;
+const int OUYA_AXIS_RS_X = 2;
+const int OUYA_AXIS_RS_Y = 3;
+const int OUYA_AXIS_L2 = 4;
+const int OUYA_AXIS_R2 = 5;]]>
+          </Source>
+        </ZLibrary>
       </Children>
     </Group>
     <Group Comment="External libraries">
@@ -2354,57 +2437,409 @@ void Normalize( int K,
           </BeforeInitExp>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
-        <ZExternalLibrary Comment="Bass music player" ModuleName="bass.dll">
-          <BeforeInitExp>
-<![CDATA[if(ANDROID)
-  this.ModuleName = "./libbass.so";]]>
-          </BeforeInitExp>
+        <ZExternalLibrary Comment="Box2D physics" ModuleName="ZGEBox2D.dll" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZGEBox2D.so&quot;;">
           <Source>
-<![CDATA[//BASS-dll from http://www.un4seen.com/
-int BASS_GetVersion() { }
+<![CDATA[/*
+  Adapter to the ZGEBox2D Library, a wrapper for the Box2D Physics Engine.
+  http://box2d.org/
 
-int BASS_ErrorGetCode() { }
+  Download Windows DLL and Android shared library from
+  http://googledrive.com/host/0BxwfQ8la88oueHUzRDlDTUhNU00/
 
-int BASS_Free() { }
-int BASS_Stop() { }
+  Project home
+  http://code.google.com/p/zgebox2d
 
-int BASS_Init(int device, int freq, int flags, int win, int clsid) { }
+  Copyright (c) 2013-2014 Radovan Cervenka
+*/
 
-int BASS_MusicLoad(int mem, string filename, int of1, int of2, int length, int flags, int freq) { }
+// Constants
 
-int BASS_ChannelPlay(int handle, int restart) { }
-int BASS_ChannelGetLevel(int handle) { }]]>
+// type of body
+const int ZB2_STATIC = 0;
+const int ZB2_KINEMATIC = 1;
+const int ZB2_DYNAMIC = 2;
+
+// state of contact point
+const int ZB2_NULL_STATE = 0;    // point does not exist
+const int ZB2_ADD_STATE = 1;     // point was added in the update
+const int ZB2_PERSIST_STATE = 2; // point persisted across the update
+const int ZB2_REMOVE_STATE = 3;  // point was removed in the update
+
+// World
+
+// init
+void zb2InitWorld(float gravityX, float gravityY) {}
+
+// destroy
+void zb2DestroyWorld() {}
+
+// allow/suppress global colision detection
+void zb2AllowCollisionDetection(int allow) {}
+
+// advance simulation
+void zb2Step(float timeStep, int velocityIterations, int positionIterations) {}
+
+// clear forces
+void zb2ClearForces() {}
+
+// allow/suppress sleeping of inactive bodies
+void zb2SetAllowSleeping(int allow) {}
+
+// set gravity
+void zb2SetGravity(float x, float y) {}
+
+// enable/disable warm starting; for testing
+void zb2SetWarmStarting(int enable) {}
+
+// count bodies
+int zb2GetBodyCount() {}
+
+void zb2DestroyAllBodies() {}
+
+// Bodies
+
+// create and return a static body without shape
+int zb2CreateEmptyBody(float x, float y, int type) {}
+
+// create and return box
+int zb2CreateBox(float x, float y, float width, float height, float angle, int type) {}
+
+// create and return circle
+int zb2CreateCircle(float x, float y, float radius, int type) {}
+
+// create and return polygon (up to 8 vertices)
+// vertices - 2D array of floats or 1D array of vec2
+int zb2CreatePolygon(float x, float y, xptr vertices, int count, float angle, int type) {}
+
+// create and return static edge
+int zb2CreateEdge(float x1, float y1, float x2, float y2) {}
+
+// create and return static chain
+// vertices - 2D array of floats or 1D array of vec2
+int zb2CreateChain(xptr vertices, int count, int isLoop) {}
+
+// compound bodies
+
+// add box to existing body
+void zb2AddBox(int body, float x, float y, float width, float height,
+  float angle) {}
+
+// add circle to existing body
+void zb2AddCircle(int body, float x, float y, float radius) {}
+
+// add polygon to existing body
+// vertices - 2D array of floats or 1D array of vec2
+void zb2AddPolygon(int body, xptr vertices, int count) {}
+
+// add edge to existing body
+void zb2AddEdge(int body, float x1, float y1, float x2, float y2) {}
+
+// add chain to existing body
+// vertices - 2D array of floats or 1D array of vec2
+void zb2AddChain(int body, xptr vertices, int count, int isLoop) {}
+
+// destroy body
+void zb2DestroyBody(int body) {}
+
+// getters
+float zb2GetPositionX(int body) {}
+float zb2GetPositionY(int body) {}
+float zb2GetAngle(int body) {}
+void zb2GetTransform(int body, ref float x, ref float y, ref float angle) {}
+float zb2GetMass(int body) {}
+int zb2IsAwake(int body) {}
+
+// setters
+void zb2SetPosition(int body, float x, float y) {}
+void zb2SetRotation(int body, float angle) {}
+void zb2SetTransform(int body, float x, float y, float angle) {}
+void zb2SetLinearVelocity(int body, float x, float y) {}
+void zb2SetAngularVelocity(int body, float omega) {}
+void zb2SetLinearDamping(int body, float linearDamping) {}
+void zb2SetAngularDamping(int body, float angularDamping) {}
+void zb2SetDensity(int body, float density) {}
+void zb2SetFriction(int body, float friction) {} // can be more than 1.0
+void zb2SetRestitution(int body, float restitution) {}
+void zb2SetGravityScale(int body, float gravityScale) {} // -1.0 - reverse gravity
+void zb2SetFixedRotation(int body, int hasFixedRotation) {}
+void zb2SetSleepingAllowed(int body, int isSleepingAllowed) {}
+void zb2SetBullet(int body, int isBullet) {}
+void zb2SetSensor(int body, int isSensor) {}
+void zb2SetActive(int body, int isActive) {}
+void zb2SetMass(int body, float mass) {}
+void zb2SetMassData(int body, float mass, float x, float y, float rotationalInertia) {}
+void zb2ResetMassData(int body) {}
+
+// apply forces
+void zb2ApplyForce(int body, float forceX, float forceY, float pointX, float pointY, int wake) {}
+void zb2ApplyForceToCenter(int body, float forceX, float forceY, int wake) {}
+void zb2ApplyTorque(int body, float torque, int wake) {}
+void zb2ApplyLinearImpulse(int body, float impulseX, float impulseY, float pointX, float pointY, int wake) {}
+void zb2ApplyAngularImpulse(int body, float impulse, int wake) {}
+
+// changing shapes
+void zb2ChangeCircleRadius(int body, float radius) {}
+void zb2ChangeEdge(int body, float x1, float y1, float x2, float y2) {}
+
+// Joints
+
+// create and return distance joint
+// local coordinates used
+int zb2CreateDistanceJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
+	float frequency, float dampingRatio, int isCollided) {}
+
+// create and return distance joint
+// world coordinates used
+int zb2CreateDistanceJointWorld(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
+	float frequency, float dampingRatio, int isCollided) {}
+
+// update distance joint
+void zb2UpdateDistanceJoint(int joint, float length,
+	float frequency, float dampingRatio) {}
+
+// create and return prismatic joint
+// local coordinates used
+int zb2CreatePrismaticJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float axisAx, float axisAy, float referenceAngle,
+	int enableLimit, float lower, float upper,
+	int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
+
+// create and return prismatic joint
+// world coordinates used
+int zb2CreatePrismaticJointWorld(int bodyA, int bodyB,
+	float anchorX, float anchorY, float axisX, float axisY,
+	int enableLimit, float lower, float upper,
+	int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
+
+
+// update prismatic joint
+void zb2UpdatePrismaticJoint(int joint,
+	int enableLimit, float lower, float upper,
+	int enableMotor, float maxMotorForce, float motorSpeed) {}
+
+// get curent translation of prismatic joint
+float zb2GetPrismaticTranslation(int joint) {}
+
+// get curent speed of prismatic joint
+float zb2GetPrismaticSpeed(int joint) {}
+
+// create and return revolute joint
+// local coordinates used
+int zb2CreateRevoluteJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float referenceAngle, int enableLimit, float lowerAngle, float upperAngle,
+	int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
+
+// create and return revolute joint
+// world coordinates used
+int zb2CreateRevoluteJointWorld(int bodyA, int bodyB,
+	float anchorX, float anchorY, int enableLimit, float lowerAngle, float upperAngle,
+	int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
+
+// update revolute joint
+void zb2UpdateRevoluteJoint(int joint,
+	int enableLimit, float lowerAngle, float upperAngle,
+	int enableMotor, float motorSpeed, float maxMotorTorque) {}
+
+// get current angle of revolute joint
+float zb2GetRevoluteAngle(int joint) {}
+
+// create and return weld joint
+// local coordinates used
+int zb2CreateWeldJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float referenceAngle, float frequency, float dampingRatio, int isCollided) {}
+
+// create and return weld joint
+// world coordinates used
+int zb2CreateWeldJointWorld(int bodyA, int bodyB,
+	float anchorX, float anchorY, float frequency, float dampingRatio,
+	int isCollided) {}
+
+// update weld joint
+void zb2UpdateWeldJoint(int joint, float frequency, float dampingRatio) {}
+
+// create and return rope joint
+// local coordinates used
+int zb2CreateRopeJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float maxLength, int isCollided) {}
+
+// update rope joint
+void zb2UpdateRopeJoint(int joint, float maxLength) {}
+
+// create and return pulley joint
+// local coordinates used
+int zb2CreatePulleyJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float groundAx, float groundAy, float groundBx, float groundBy,
+	float lengthA, float lengthB, float ratio, int isCollided) {}
+
+// create and return pulley joint
+// world coordinates used
+int zb2CreatePulleyJointWorld(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float groundAx, float groundAy, float groundBx, float groundBy,
+	float ratio, int isCollided) {}
+
+// get lenght of rope at side A of pulley joint
+float zb2GetPulleyLengthA(int joint) {}
+
+// get lenght of rope at side B of pulley joint
+float zb2GetPulleyLengthB(int joint) {}
+
+// create and return gear joint
+// only revolute and/or prismatic joints can be connected
+int zb2CreateGearJoint(int joint1, int joint2, float ratio, int isCollided) {}
+
+// update gear joint
+void zb2UpdateGearJoint(int joint, float ratio) {}
+
+// create and return wheel joint
+// local coordinates used
+int zb2CreateWheelJoint(int bodyA, int bodyB,
+	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+	float axisAx, float axisAy,
+	int enableMotor, float motorSpeed, float maxMotorTorque,
+	float frequency, float dampingRatio, int isCollided) {}
+
+// create and return wheel joint
+// world coordinates used
+int zb2CreateWheelJointWorld(int bodyA, int bodyB,
+	float anchorX, float anchorY,float axisX, float axisY,
+	int enableMotor, float motorSpeed, float maxMotorTorque,
+	float frequency, float dampingRatio, int isCollided) {}
+
+
+// update wheel joint
+void zb2UpdateWheelJoint(int joint,
+	int enableMotor, float motorSpeed, float maxMotorTorque,
+	float frequency, float dampingRatio) {}
+
+// get wheel joint's spring translation
+float zb2GetWheelTranslation(int joint) {}
+
+// get wheel joint's spring translation speed
+float zb2GetWheelTranslationSpeed(int joint) {}
+
+// create and return motor joint
+// local coordinates used
+int zb2CreateMotorJoint(int bodyA, int bodyB,
+	float linearOffsetX, float linearOffsetY, float angularOffset,
+	float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
+
+// create and return motor joint
+// world coordinates used
+int zb2CreateMotorJointWorld(int bodyA, int bodyB,
+	float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
+
+// update motor joint
+void zb2UpdateMotorJoint(int joint,
+	float linearOffsetX, float linearOffsetY, float angularOffset,
+	float maxForce, float maxTorque, float correctionFactor) {}
+
+// create and return mouse joint
+// world coordinates used
+int zb2CreateMouseJoint(int body, float targetX, float targetY,
+	float maxForce,	float frequency, float dampingRatio) {}
+
+// update target of mouse joint
+void zb2UpdateMouseJoint(int joint, float targetX, float targetY) {}
+
+// destroy joint
+void zb2DestroyJoint(int joint) {}
+
+// get all joints of a body
+// jointList - array of integers (1D) having sufficient size
+void zb2GetJoints(int body, xptr jointList, ref int count) {}
+
+// Custom user data
+
+// set ZGE models
+void zb2SetUserModelToBody(int body, model userModel) {}
+void zb2SetUserModelToJoint(int joint, model userModel) {}
+
+// get ZGE models
+model zb2GetUserModelFromBody(int body) {}
+model zb2GetUserModelFromJoint(int joint) {}
+
+// Queries
+
+// test containment of point in body
+int zb2TestPoint(int body, float x, float y) {}
+
+// get body at point or 0 if no body is there
+int zb2GetBodyAtPoint(float x, float y, ref int body) {}
+
+// raycast
+// returns id of found body or 0 if no body found
+int zb2RayCast(float x1, float y1, float x2, float y2,
+	ref float x, ref float y, ref float normalX, ref float normalY) {}
+
+// Collisions
+
+// initialize getting of global collision points
+void zb2ResetContacts() {}
+
+// get next global collision point
+// returns:
+//    1 - next collision point was returned
+//    0 - no other collision point is available
+int zb2GetNextContact(ref int bodyA, ref int bodyB,
+  ref float posX, ref float posY,
+	ref float normX, ref float normY,
+  ref int state) {}
+
+// number of global collision points
+int zb2GetContactCount() {}
+
+// is body collided?
+int zb2IsCollided(int body) {}
+
+// number of collisions of given body
+int zb2GetBodyContactCount(int body) {}
+
+// set collision filtering flags to body
+void zb2SetBodyFilteringFlags(int body, int categoryBits, int maskBits, int groupIndex) {}]]>
           </Source>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="Box2D physics" ModuleName="Box2DZGE.dll">
+        <ZExternalLibrary Comment="BASS audio library" ModuleName="bass" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libbass.so&quot;;">
           <Source>
-<![CDATA[//Box2D physics integration
-//Get the DLL from here:
-//
-//   http://www.emix8.org/forum/viewtopic.php?t=586
+<![CDATA[/*
+  Adapter to the BASS audio library.
+  http://www.un4seen.com/
 
-// ================== WORLD
-// init the world
-void b2dll_InitWorld( float aabbxl, float aabbxh, // bounding box x limits
-                      float aabbyl, float aabbyh, // bounding box y limits
-                      float gx, float gy, // gravity vector (default [ 0, -10 ])
-                      int doSleep ){ } // turn off simulation of resting bodies (default on)
-// advance the simulation
-void b2dll_Step( float timestep, int iterations ){ }
-// count bodies
-int b2dll_GetBodyCount( ){ }
+  Download Windows DLL and Android shared library from
+  http://www.un4seen.com/
 
-// ================== BODIES
-// create a static box (e.g. ground)
-int b2dll_CreateStaticBox( float x, float y,
-                           float width, float height ){ }
-// create a dynamic box
-int b2dll_CreateDynamicBox( float x, float y, // position
-                            float width, float height ){ } // dimension
-// getters
-float b2dll_GetPositionX( int body ){ }
-float b2dll_GetPositionY( int body ){ }
-float b2dll_GetAngle( int body ){ }]]>
+  Copyright (c) 2012 Radovan Cervenka
+*/
+
+// channel attributes
+const int BASS_ATTRIB_VOL = 2;
+const int BASS_ATTRIB_PAN	= 3;
+const int BASS_ATTRIB_MUSIC_AMPLIFY	= 0x100;
+const int BASS_ATTRIB_MUSIC_VOL_GLOBAL = 0x105;
+const int BASS_ATTRIB_MUSIC_VOL_CHAN = 0x200; // + channel #
+const int BASS_ATTRIB_MUSIC_VOL_INST = 0x300; // + instrument #
+
+// music flags
+const int BASS_SAMPLE_LOOP = 4;
+
+int BASS_Init(int device, int freq, int flags, int win, int clsid) {}
+int BASS_MusicLoad(int mem, string filename, int of1, int of2, int length, int flags, int freq) {}
+int BASS_ChannelPlay(int handle, int restart) {}
+int BASS_SetVolume(float volume) {}
+float BASS_GetVolume() {}
+int BASS_ChannelSetAttribute(int handle, int attrib, float value) {}
+int BASS_ChannelSlideAttribute(int handle, int attrib, float value, int time) {}
+int BASS_Pause() {}
+int BASS_Free() {}
+int BASS_ErrorGetCode() {}
+int BASS_ChannelPause(int handle) {}]]>
           </Source>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="SunVox music library" ModuleName="sunvox" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libsunvox.so&quot;;">
@@ -2620,6 +3055,116 @@ float sensorGetResolution(int type) {}
 float sensorGetMinDelay(int type) {}]]>
           </Source>
         </ZExternalLibrary>
+        <ZExternalLibrary Comment="OUYA library" ModuleName="./libZgeOuya.so">
+          <Source>
+<![CDATA[/*
+  ZGAmeEditor adapter to the ZgeOuya Library.
+  The library provides interface to the OUYA
+  In-App Purchasing (IAP) and Storage mechanisms.
+
+  Download Android shared library from
+  http://googledrive.com/host/0BxwfQ8la88ouc2t2TWJ1NUtCeUk/
+
+  Project home
+  http://code.google.com/p/zgeouya/
+
+  Copyright (c) 2014 Radovan Cervenka
+*/
+
+// Constants
+const int ouya_YES = 1;
+const int ouya_NO = 0;
+const int ouya_ERROR = -1;
+
+// Generic
+
+// Returns ouya_YES if running on OUYA; else ouya_NO
+int ouya_IsOuya() {}
+
+// In-App Purchasing (IAP)
+
+// Initializes IAP interface. Specify the developer id (UUID),
+// the application key (pointer to a byte array) and the key
+// length parameters. Their values can be obtained from the
+// OUYA developer Portal; http://devs.ouya.tv/developers
+// Returns ouya_YES is succeded, or ouya_ERROR if failed.
+int ouya_InitPurchasing(string developerId, xptr applicationKey,
+  int applicationKeyLen) {}
+
+// Stops the IAP interface.
+void ouya_StopPurchasing() {}
+
+// Requests the OUYA products. Products are specified as
+// a pointer to the string array. Each array item represents a
+// separate product identifier. The productNum parameter
+// determines number of requested products.
+void ouya_RequestProducts(xptr productIds, int productNum) {}
+
+// Returns ouya_YES if product request was successful and product
+// info is available, ouya_NO if the product request is
+// still in progress, or ouya_ERROR if the request failed.
+// In the case of failure the errorMsg parameter is set
+// to the error message.
+int ouya_IsProductRequestDone(ref string errorMsg) {}
+
+// Sets name, price and description for a product identified
+// by productId. Returns ouya_ERROR in the case of error; e.g.
+// the requested product information is not available.
+int ouya_GetProductInfo(string productId, ref string name,
+	ref string price, ref string description) {}
+
+// Requests purchasing of the specified product.
+void ouya_RequestPurchase(string productId) {}
+
+// Returns ouya_YES if the product has been purchased
+// successfully, ouya_NO if the purchase is in the progress, or
+// ouya_ERROR if the purchase failed. In the case of failure
+// the errorMsg parameter is set to the error message.
+int ouya_IsPurchaseRequestDone(string productId,
+	ref string errorMsg) {}
+
+// Clear the list of purchases. This is usually called after all
+// purchase requests finished.
+void ouya_ClearPurchases() {}
+
+// Requests receipts for all of the purchases that the current
+// gamer has made from a particular vendor.
+void ouya_RequestReceipts() {}
+
+// Returns ouya_YES if receipt request was successful and
+// receipts are available, ouya_NO if the receipt request is
+// still in progress, or ouya_ERROR if the request failed.
+// In the case of success the parameter numberOfReceipts gives
+// the number of obtained receipts. In the case of failure the
+// errorMsg parameter is set to the error message.
+int ouya_IsReceiptRequestDone(ref int numberOfReceipts,
+	ref string errorMsg) {}
+
+// Sets the product identifier of a receipt identified by id.
+// Returns ouya_ERROR if the receipt information is not
+// available.
+int ouya_GetReceiptInfo(int id, ref string productId) {}
+
+// Requests the current gamer's information.
+void ouya_RequestGamerInfo() {}
+
+// Returns ouya_YES if gamer information request was successful,
+// ouya_NO if the request is still in progress, or ouya_ERROR
+// if the request failed. In the case of success the parameters
+// username and uuid are set. In the case of failure the
+// errorMsg parameter is set to the error message.
+int ouya_IsGamerInfoRequestDone(ref string username,
+	ref string uuid, ref string errorMsg) {}
+
+// Storage
+
+// Stores game data.
+void ouya_PutGameData(string name, string value) {}
+
+// Gets a piece of previously stored game data.
+string ouya_GetGameData(string name) {}]]>
+          </Source>
+        </ZExternalLibrary>
       </Children>
     </Group>
     <Group Comment="Fonts">
@@ -2652,6 +3197,8 @@ jph_wacheski  (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=54)
 Kattle87      (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=47)
 y offs et     (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=80)
 diki          (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=67)
+VilleK        (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=2)
+Rado1         (http://www.emix8.org/forum/profile.php?mode=viewprofile&u=102)
 
 Code:
 Bitmaps
@@ -2679,7 +3226,15 @@ Libraries
   HSV Color Library (http://www.emix8.org/forum/viewtopic.php?t=557) Kjell
   Matrix Library (http://www.emix8.org/forum/viewtopic.php?t=389) Kjell
   Vector Library (http://www.emix8.org/forum/viewtopic.php?t=392) Kjell
-
+  Android Gamepad Library (http://www.emix8.org/forum/viewtopic.php?t=1048) Rado1
+External Libraries
+  OpenGL 4.0 graphics () VilleK
+  Bullet 3D physics (http://www.emix8.org/forum/viewtopic.php?t=830) Rado1
+  Box2D physics (http://www.emix8.org/forum/viewtopic.php?t=586) Rado1
+  BASS audio library () Rado1
+  SunVox music library (http://www.emix8.org/forum/viewtopic.php?t=911) Rado1
+  ZGESensor library (http://www.emix8.org/forum/viewtopic.php?t=1006) Rado1
+  OUYA library (http://www.emix8.org/forum/viewtopic.php?t=1097) Rado1
 */]]>
       </Expression>
     </ZExpression>
