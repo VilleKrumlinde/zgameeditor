@@ -7,7 +7,7 @@
           <Producers>
             <BitmapExpression>
               <Expression>
-        <![CDATA[// Local variables
+<![CDATA[// Local variables
 
 float X, Y, B, S;
 
@@ -3069,35 +3069,14 @@ int ouya_IsOuya() {}
 
 // In-App Purchasing (IAP)
 
-// Initializes IAP interface. Specify the developer id (UUID),
-// the application key (pointer to a byte array) and the key
-// length parameters. Their values can be obtained from the
-// OUYA developer Portal; http://devs.ouya.tv/developers
+// Initializes IAP interface. The developer id (UUID) can
+// be obtained from the OUYA developer Portal;
+// http://devs.ouya.tv/developers
 // Returns ouya_YES is succeded, or ouya_ERROR if failed.
-int ouya_InitPurchasing(string developerId, xptr applicationKey,
-  int applicationKeyLen) {}
+int ouya_InitPurchasing(string developerId) {}
 
 // Stops the IAP interface.
 void ouya_StopPurchasing() {}
-
-// Requests the OUYA products. Products are specified as
-// a pointer to the string array. Each array item represents a
-// separate product identifier. The productNum parameter
-// determines number of requested products.
-void ouya_RequestProducts(xptr productIds, int productNum) {}
-
-// Returns ouya_YES if product request was successful and product
-// info is available, ouya_NO if the product request is
-// still in progress, or ouya_ERROR if the request failed.
-// In the case of failure the errorMsg parameter is set
-// to the error message.
-int ouya_IsProductRequestDone(ref string errorMsg) {}
-
-// Sets name, price and description for a product identified
-// by productId. Returns ouya_ERROR in the case of error; e.g.
-// the requested product information is not available.
-int ouya_GetProductInfo(string productId, ref string name,
-    ref string price, ref string description) {}
 
 // Requests purchasing of the specified product.
 void ouya_RequestPurchase(string productId) {}
@@ -3107,7 +3086,7 @@ void ouya_RequestPurchase(string productId) {}
 // ouya_ERROR if the purchase failed. In the case of failure
 // the errorMsg parameter is set to the error message.
 int ouya_IsPurchaseRequestDone(string productId,
-    ref string errorMsg) {}
+	ref string errorMsg) {}
 
 // Clear the list of purchases. This is usually called after all
 // purchase requests finished.
@@ -3124,7 +3103,7 @@ void ouya_RequestReceipts() {}
 // the number of obtained receipts. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsReceiptRequestDone(ref int numberOfReceipts,
-    ref string errorMsg) {}
+	ref string errorMsg) {}
 
 // Sets the product identifier of a receipt identified by id.
 // Returns ouya_ERROR if the receipt information is not
@@ -3140,7 +3119,7 @@ void ouya_RequestGamerInfo() {}
 // username and uuid are set. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsGamerInfoRequestDone(ref string username,
-    ref string uuid, ref string errorMsg) {}
+	ref string uuid, ref string errorMsg) {}
 
 // Storage
 
