@@ -5,40 +5,26 @@
       <Children>
         <Bitmap Comment="Anti-Aliased Circle">
           <Producers>
-            <BitmapExpression UseBlankSource="1">
+            <BitmapExpression>
               <Expression>
-<![CDATA[//X,Y : current coordinate (0..1)
-//Pixel : current color (rgb)
+        <![CDATA[// Local variables
 
-int BitmapSize = 64;
-float AAWidth = 2;
+float X, Y, B, S;
 
-// Default Pixel values
+// Distance from center ( per axis )
+
+X = 0.5-this.X;
+Y = 0.5-this.Y;
+
+B = 64/2; // 64 = BitmapSize | 2 = Anti-Aliasing bias ( in pixels )
+
+this.Pixel.A = B*0.5-sqrt(X*X+Y*Y)*B;
+
+// Set RGB to white
 
 this.Pixel.R = 1;
 this.Pixel.G = 1;
-this.Pixel.B = 1;
-this.Pixel.A = 0;
-
-// Calculate the radius of the current Pixel from the center
-
-float Radius = sqrt(pow(0.5-X-0.5/BitmapSize,2)+pow(0.5-Y-0.5/BitmapSize,2));
-
-// Function for Pixels that are in the Anti-Aliased outer circle
-
-if(Radius<0.5 && Radius>=0.5-AAWidth/BitmapSize){
-  this.Pixel.A = (0.5-Radius)*BitmapSize/AAWidth;
-}
-
-// Aliased inner circle
-
-if(Radius<0.5-AAWidth/BitmapSize){
-  this.Pixel.A = 1;
-}
-
-this.Pixel.R *= this.Pixel.A;
-this.Pixel.G *= this.Pixel.A;
-this.Pixel.B *= this.Pixel.A;]]>
+this.Pixel.B = 1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -2586,39 +2572,39 @@ void zb2ChangeEdge(int body, float x1, float y1, float x2, float y2) {}
 // create and return distance joint
 // local coordinates used
 int zb2CreateDistanceJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
-	float frequency, float dampingRatio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
+    float frequency, float dampingRatio, int isCollided) {}
 
 // create and return distance joint
 // world coordinates used
 int zb2CreateDistanceJointWorld(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
-	float frequency, float dampingRatio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy, float length,
+    float frequency, float dampingRatio, int isCollided) {}
 
 // update distance joint
 void zb2UpdateDistanceJoint(int joint, float length,
-	float frequency, float dampingRatio) {}
+    float frequency, float dampingRatio) {}
 
 // create and return prismatic joint
 // local coordinates used
 int zb2CreatePrismaticJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float axisAx, float axisAy, float referenceAngle,
-	int enableLimit, float lower, float upper,
-	int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float axisAx, float axisAy, float referenceAngle,
+    int enableLimit, float lower, float upper,
+    int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
 
 // create and return prismatic joint
 // world coordinates used
 int zb2CreatePrismaticJointWorld(int bodyA, int bodyB,
-	float anchorX, float anchorY, float axisX, float axisY,
-	int enableLimit, float lower, float upper,
-	int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
+    float anchorX, float anchorY, float axisX, float axisY,
+    int enableLimit, float lower, float upper,
+    int enableMotor, float maxMotorForce, float motorSpeed, int isCollided) {}
 
 
 // update prismatic joint
 void zb2UpdatePrismaticJoint(int joint,
-	int enableLimit, float lower, float upper,
-	int enableMotor, float maxMotorForce, float motorSpeed) {}
+    int enableLimit, float lower, float upper,
+    int enableMotor, float maxMotorForce, float motorSpeed) {}
 
 // get curent translation of prismatic joint
 float zb2GetPrismaticTranslation(int joint) {}
@@ -2629,20 +2615,20 @@ float zb2GetPrismaticSpeed(int joint) {}
 // create and return revolute joint
 // local coordinates used
 int zb2CreateRevoluteJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float referenceAngle, int enableLimit, float lowerAngle, float upperAngle,
-	int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float referenceAngle, int enableLimit, float lowerAngle, float upperAngle,
+    int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
 
 // create and return revolute joint
 // world coordinates used
 int zb2CreateRevoluteJointWorld(int bodyA, int bodyB,
-	float anchorX, float anchorY, int enableLimit, float lowerAngle, float upperAngle,
-	int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
+    float anchorX, float anchorY, int enableLimit, float lowerAngle, float upperAngle,
+    int enableMotor, float motorSpeed, float maxMotorTorque, int isCollided) {}
 
 // update revolute joint
 void zb2UpdateRevoluteJoint(int joint,
-	int enableLimit, float lowerAngle, float upperAngle,
-	int enableMotor, float motorSpeed, float maxMotorTorque) {}
+    int enableLimit, float lowerAngle, float upperAngle,
+    int enableMotor, float motorSpeed, float maxMotorTorque) {}
 
 // get current angle of revolute joint
 float zb2GetRevoluteAngle(int joint) {}
@@ -2650,14 +2636,14 @@ float zb2GetRevoluteAngle(int joint) {}
 // create and return weld joint
 // local coordinates used
 int zb2CreateWeldJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float referenceAngle, float frequency, float dampingRatio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float referenceAngle, float frequency, float dampingRatio, int isCollided) {}
 
 // create and return weld joint
 // world coordinates used
 int zb2CreateWeldJointWorld(int bodyA, int bodyB,
-	float anchorX, float anchorY, float frequency, float dampingRatio,
-	int isCollided) {}
+    float anchorX, float anchorY, float frequency, float dampingRatio,
+    int isCollided) {}
 
 // update weld joint
 void zb2UpdateWeldJoint(int joint, float frequency, float dampingRatio) {}
@@ -2665,8 +2651,8 @@ void zb2UpdateWeldJoint(int joint, float frequency, float dampingRatio) {}
 // create and return rope joint
 // local coordinates used
 int zb2CreateRopeJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float maxLength, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float maxLength, int isCollided) {}
 
 // update rope joint
 void zb2UpdateRopeJoint(int joint, float maxLength) {}
@@ -2674,16 +2660,16 @@ void zb2UpdateRopeJoint(int joint, float maxLength) {}
 // create and return pulley joint
 // local coordinates used
 int zb2CreatePulleyJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float groundAx, float groundAy, float groundBx, float groundBy,
-	float lengthA, float lengthB, float ratio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float groundAx, float groundAy, float groundBx, float groundBy,
+    float lengthA, float lengthB, float ratio, int isCollided) {}
 
 // create and return pulley joint
 // world coordinates used
 int zb2CreatePulleyJointWorld(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float groundAx, float groundAy, float groundBx, float groundBy,
-	float ratio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float groundAx, float groundAy, float groundBx, float groundBy,
+    float ratio, int isCollided) {}
 
 // get lenght of rope at side A of pulley joint
 float zb2GetPulleyLengthA(int joint) {}
@@ -2701,23 +2687,23 @@ void zb2UpdateGearJoint(int joint, float ratio) {}
 // create and return wheel joint
 // local coordinates used
 int zb2CreateWheelJoint(int bodyA, int bodyB,
-	float anchorAx, float anchorAy, float anchorBx, float anchorBy,
-	float axisAx, float axisAy,
-	int enableMotor, float motorSpeed, float maxMotorTorque,
-	float frequency, float dampingRatio, int isCollided) {}
+    float anchorAx, float anchorAy, float anchorBx, float anchorBy,
+    float axisAx, float axisAy,
+    int enableMotor, float motorSpeed, float maxMotorTorque,
+    float frequency, float dampingRatio, int isCollided) {}
 
 // create and return wheel joint
 // world coordinates used
 int zb2CreateWheelJointWorld(int bodyA, int bodyB,
-	float anchorX, float anchorY,float axisX, float axisY,
-	int enableMotor, float motorSpeed, float maxMotorTorque,
-	float frequency, float dampingRatio, int isCollided) {}
+    float anchorX, float anchorY,float axisX, float axisY,
+    int enableMotor, float motorSpeed, float maxMotorTorque,
+    float frequency, float dampingRatio, int isCollided) {}
 
 
 // update wheel joint
 void zb2UpdateWheelJoint(int joint,
-	int enableMotor, float motorSpeed, float maxMotorTorque,
-	float frequency, float dampingRatio) {}
+    int enableMotor, float motorSpeed, float maxMotorTorque,
+    float frequency, float dampingRatio) {}
 
 // get wheel joint's spring translation
 float zb2GetWheelTranslation(int joint) {}
@@ -2728,23 +2714,23 @@ float zb2GetWheelTranslationSpeed(int joint) {}
 // create and return motor joint
 // local coordinates used
 int zb2CreateMotorJoint(int bodyA, int bodyB,
-	float linearOffsetX, float linearOffsetY, float angularOffset,
-	float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
+    float linearOffsetX, float linearOffsetY, float angularOffset,
+    float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
 
 // create and return motor joint
 // world coordinates used
 int zb2CreateMotorJointWorld(int bodyA, int bodyB,
-	float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
+    float maxForce, float maxTorque, float correctionFactor, int isCollided) {}
 
 // update motor joint
 void zb2UpdateMotorJoint(int joint,
-	float linearOffsetX, float linearOffsetY, float angularOffset,
-	float maxForce, float maxTorque, float correctionFactor) {}
+    float linearOffsetX, float linearOffsetY, float angularOffset,
+    float maxForce, float maxTorque, float correctionFactor) {}
 
 // create and return mouse joint
 // world coordinates used
 int zb2CreateMouseJoint(int body, float targetX, float targetY,
-	float maxForce,	float frequency, float dampingRatio) {}
+    float maxForce, float frequency, float dampingRatio) {}
 
 // update target of mouse joint
 void zb2UpdateMouseJoint(int joint, float targetX, float targetY) {}
@@ -2777,7 +2763,7 @@ int zb2GetBodyAtPoint(float x, float y, ref int body) {}
 // raycast
 // returns id of found body or 0 if no body found
 int zb2RayCast(float x1, float y1, float x2, float y2,
-	ref float x, ref float y, ref float normalX, ref float normalY) {}
+    ref float x, ref float y, ref float normalX, ref float normalY) {}
 
 // Collisions
 
@@ -2790,7 +2776,7 @@ void zb2ResetContacts() {}
 //    0 - no other collision point is available
 int zb2GetNextContact(ref int bodyA, ref int bodyB,
   ref float posX, ref float posY,
-	ref float normX, ref float normY,
+    ref float normX, ref float normY,
   ref int state) {}
 
 // number of global collision points
@@ -2820,8 +2806,8 @@ void zb2SetBodyFilteringFlags(int body, int categoryBits, int maskBits, int grou
 
 // channel attributes
 const int BASS_ATTRIB_VOL = 2;
-const int BASS_ATTRIB_PAN	= 3;
-const int BASS_ATTRIB_MUSIC_AMPLIFY	= 0x100;
+const int BASS_ATTRIB_PAN   = 3;
+const int BASS_ATTRIB_MUSIC_AMPLIFY = 0x100;
 const int BASS_ATTRIB_MUSIC_VOL_GLOBAL = 0x105;
 const int BASS_ATTRIB_MUSIC_VOL_CHAN = 0x200; // + channel #
 const int BASS_ATTRIB_MUSIC_VOL_INST = 0x300; // + instrument #
@@ -3111,7 +3097,7 @@ int ouya_IsProductRequestDone(ref string errorMsg) {}
 // by productId. Returns ouya_ERROR in the case of error; e.g.
 // the requested product information is not available.
 int ouya_GetProductInfo(string productId, ref string name,
-	ref string price, ref string description) {}
+    ref string price, ref string description) {}
 
 // Requests purchasing of the specified product.
 void ouya_RequestPurchase(string productId) {}
@@ -3121,7 +3107,7 @@ void ouya_RequestPurchase(string productId) {}
 // ouya_ERROR if the purchase failed. In the case of failure
 // the errorMsg parameter is set to the error message.
 int ouya_IsPurchaseRequestDone(string productId,
-	ref string errorMsg) {}
+    ref string errorMsg) {}
 
 // Clear the list of purchases. This is usually called after all
 // purchase requests finished.
@@ -3138,7 +3124,7 @@ void ouya_RequestReceipts() {}
 // the number of obtained receipts. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsReceiptRequestDone(ref int numberOfReceipts,
-	ref string errorMsg) {}
+    ref string errorMsg) {}
 
 // Sets the product identifier of a receipt identified by id.
 // Returns ouya_ERROR if the receipt information is not
@@ -3154,7 +3140,7 @@ void ouya_RequestGamerInfo() {}
 // username and uuid are set. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsGamerInfoRequestDone(ref string username,
-	ref string uuid, ref string errorMsg) {}
+    ref string uuid, ref string errorMsg) {}
 
 // Storage
 

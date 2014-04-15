@@ -352,8 +352,8 @@ begin
 
   P := Pixels;
   Y := 0;
-  XStep := 1/W;
-  YStep := 1/H;
+  XStep := 1/(W-1);
+  YStep := 1/(H-1);
   for I := 0 to H-1 do
   begin
     X := 0;
