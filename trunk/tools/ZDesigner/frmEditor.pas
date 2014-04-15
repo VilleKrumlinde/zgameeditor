@@ -1478,6 +1478,9 @@ begin
 
   glDisable( GL_LIGHTING );
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   glLoadIdentity();
 
   glScalef(2.0 / Glp.Width, -2.0 / Glp.Height, 1.0);
@@ -1521,6 +1524,7 @@ begin
   glEnd();
 
   glDisable(GL_TEXTURE_2D);
+  glDisable(GL_BLEND);
 
   //B.UseTextureEnd;
   if Owns then
