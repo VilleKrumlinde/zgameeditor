@@ -518,7 +518,7 @@ begin
   //SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
-  AutoComp.EndOfTokenChr := '+-/*=()[]. @';
+  AutoComp.EndOfTokenChr := '+-/*=()[]., @';
   AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
   AutoComp.ShortCut := 16416;
   AutoComp.OnExecute := AutoCompOnExecute;
@@ -3559,7 +3559,10 @@ var
   end;
 
   function InGetC(S : string) : TZComponent;
+  var
+    P : TObject;
   begin
+    Result := nil;
     if SameText(S,'this') then
       Result := Tree.ZSelected.Component
     else if SameText(S,'CurrentModel') then
@@ -3567,7 +3570,11 @@ var
       FindCurrentModel(Tree.ZSelected,Result);
     end
     else
-      Result := ZApp.SymTab.Lookup(S) as TZComponent;
+    begin
+      P := ZApp.SymTab.Lookup(S);
+      if Assigned(P) and (P is TZComponent) then
+        Result := P as TZComponent;
+    end;
   end;
 
 var

@@ -290,7 +290,10 @@ type
   end;
 
   TRemoveModel = class(TCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
   public
+    Model : TModel;
     procedure Execute; override;
   end;
 
@@ -1444,9 +1447,23 @@ end;
 
 { TRemoveModel }
 
-procedure TRemoveModel.Execute;
+procedure TRemoveModel.DefineProperties(List: TZPropertyList);
 begin
-  ZApp.Models.Remove( Meshes.CurrentModel );
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Model',{$ENDIF}(@Model), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
+end;
+
+procedure TRemoveModel.Execute;
+var
+  M : TModel;
+begin
+  if Self.Model<>nil then
+    M := Self.Model
+  else
+    M := Meshes.CurrentModel;
+  ZApp.Models.Remove( M );
 end;
 
 { TRemoveAllModels }
@@ -1987,7 +2004,6 @@ initialization
   ZClasses.Register(TSpawnModel,SpawnModelClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 14;{$endif}
   ZClasses.Register(TRemoveModel,RemoveModelClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NeedParentComp := 'Model';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 15;{$endif}
   ZClasses.Register(TRemoveAllModels,RemoveAllModelsClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex := 41;{$endif}
