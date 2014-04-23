@@ -9120,7 +9120,7 @@ begin
   wglChoosePixelFormatARB := wglGetProcAddress('wglChoosePixelFormatARB');
 
   // To get synchronized again, if this proc was called externally.
-  LastPixelFormat := 0; 
+  LastPixelFormat := 0;
 end; 
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -25,13 +25,11 @@ type
   private             
     IsInIdent,IsInInvokeArg : boolean;
     CurrentFunction : TZcOpFunctionUserDefined;
-    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     function MakeTempName : string;
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
-    function GetArray(Kind : TZcDataTypeKind) : TDefineArray;
     
   protected
 
@@ -605,19 +603,6 @@ begin
   CleanUp;
 end;
 
-function TZc.GetArray(Kind : TZcDataTypeKind) : TDefineArray;
-begin
-  Result := nil;
-  case Kind of
-    zctMat4 : Result := Mat4Array;
-    zctVec3 : Result := Vec3Array;
-    zctVec2 : Result := Vec2Array;
-    zctVec4 : Result := Vec4Array;
-  else
-    Assert(False);
-  end;
-end;
-
 procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
 begin
   if Op=nil then
@@ -635,10 +620,6 @@ procedure TZc.CleanUp;
 begin
   Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
-  Mat4Array.Free;
-  Vec2Array.Free;
-  Vec3Array.Free;
-  Vec4Array.Free;
 end;
 
 function TZc.MakeTempName : string;
@@ -1077,7 +1058,7 @@ begin
   begin
        Get;
              
-     A := Mat4Array;
+     A := Prototypes.Mat4Array;
      Typ.Kind := zctMat4;
      Typ.TheArray := A;
     
@@ -1086,7 +1067,7 @@ begin
   begin
        Get;
              
-     A := Vec2Array;
+     A := Prototypes.Vec2Array;
      Typ.Kind := zctVec2;
      Typ.TheArray := A;
   
@@ -1095,7 +1076,7 @@ begin
   begin
        Get;
              
-     A := Vec3Array;
+     A := Prototypes.Vec3Array;
      Typ.Kind := zctVec3;
      Typ.TheArray := A;
   
@@ -1104,7 +1085,7 @@ begin
   begin
        Get;
              
-     A := Vec4Array;
+     A := Prototypes.Vec4Array;
      Typ.Kind := zctVec4;
      Typ.TheArray := A;
   
@@ -1883,29 +1864,7 @@ begin
     begin
          Get;
            Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
-           Op := TZcOpArrayAccess.Create(OutOp.Id, OutOp);
-
-           //todo: verify that outop actually is an array type
-
-           if OutOp.Kind=zcArrayAccess then
-           begin
-             //Array of arrays
-             Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(OutOp).Arrayop.GetDataType.TheArray)._Type);
-             TZcOpArrayAccess(Op).IsRawMem := True;
-           end;
-
-           if OutOp.Kind=zcFuncCall then
-           begin
-             //Function returning array
-             Op.Ref := GetArray((OutOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
-           end;
-
-           if OutOp.Kind=zcSelect then
-             if (OutOp.Children.First.Ref is TDefineVariable) then
-               //DefineVariable managedvalue
-               Op.Ref := GetArray( (OutOp.Children.First.Ref as TDefineVariable)._Type );
-             //else it is a model defined array, so outop.ref is already correct
-
+           Op := MakeArrayAccess(OutOp);
            OutOp := Op;
          
          _Expr(Op);
@@ -2139,26 +2098,6 @@ begin
     ZFunctions := TObjectList.Create(False);
     Self.OnError := OnParserError;
 
-    Mat4Array := TDefineArray.Create(nil);
-    Mat4Array.Dimensions := dadTwo;
-    Mat4Array.SizeDim1 := 4;
-    Mat4Array.SizeDim2 := 4;
-    Mat4Array._Type := zctFloat;
-
-    Vec2Array := TDefineArray.Create(nil);
-    Vec2Array.Dimensions := dadOne;
-    Vec2Array.SizeDim1 := 2;
-    Vec2Array._Type := zctFloat;
-
-    Vec3Array := TDefineArray.Create(nil);
-    Vec3Array.Dimensions := dadOne;
-    Vec3Array.SizeDim1 := 3;
-    Vec3Array._Type := zctFloat;
-
-    Vec4Array := TDefineArray.Create(nil);
-    Vec4Array.Dimensions := dadOne;
-    Vec4Array.SizeDim1 := 4;
-    Vec4Array._Type := zctFloat;
   
   inherited;
 
