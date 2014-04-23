@@ -85,13 +85,13 @@ type
     procedure InitManaged;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
+    procedure InitAfterPropsAreSet; override;
   public
     Value : single;
     IntValue : integer;
     ManagedValue : pointer;
     ModelValue : TZComponent;
     ByteValue : byte;
-    procedure AfterLoaded; override;
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
@@ -907,6 +907,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ManagedValue',{$ENDIF}(@ManagedValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
+    List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
@@ -929,7 +930,7 @@ begin
     Self.ManagedValue := CreateManagedValue(Self._Type);
 end;
 
-procedure TDefineVariable.AfterLoaded;
+procedure TDefineVariable.InitAfterPropsAreSet;
 begin
   inherited;
   InitManaged;

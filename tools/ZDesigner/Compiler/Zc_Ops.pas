@@ -169,6 +169,8 @@ function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
+function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
+
 function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : double;
 function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
@@ -187,6 +189,10 @@ var
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
+  end;
+
+  Prototypes : record
+    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
   end;
 
 implementation
@@ -1020,7 +1026,7 @@ var
     I,LastIndex : integer;
     BlockOp,Op : TZcOp;
 
-    function InSelect(Op : TZcOp; const S : string) : TZcOp;
+    function InSelect(Op : TZcOp; const S : string; const Index : integer) : TZcOp;
     var
       Etyp : TZcIdentifierInfo;
       //I : integer;
@@ -1033,7 +1039,16 @@ var
           Op := MakeOp(zcSelect,Op);
           Op.Id := S;
         end;
-      end;{ else
+      end else if (Op.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
+      begin
+        if Index < (2+Ord(Op.GetDataType.Kind)-Ord(zctVec2)) then
+        begin
+          Op := MakeArrayAccess(Op);
+          Op.Children.Add( TZcOpLiteral.Create(zctInt,Index) );
+        end;
+      end;
+
+      { else
       begin
         if Op.Children.Count>0 then
         begin
@@ -1055,7 +1070,7 @@ var
     begin
       Op := MakeOp(zcSelect,Names[I+1]);
       Op.Children.Add(LeftOp);
-      BlockOp.Children.Add( MakeAssign(Kind,Op, InSelect(RightOp,Op.Id) ) );
+      BlockOp.Children.Add( MakeAssign(Kind,Op, InSelect(RightOp,Op.Id,I) ) );
     end;
     Result := BlockOp;
   end;
@@ -1377,6 +1392,13 @@ begin
   FreeAndNil(BuiltInFunctions);
   FreeAndNil(BuiltInConstants);
   FreeAndNil(BuiltInCleanUps);
+  with Prototypes do
+  begin
+    Vec2Array.Free;
+    Vec3Array.Free;
+    Vec4Array.Free;
+    Mat4Array.Free;
+  end;
 end;
 
 { TZcOpInvokeComponent }
@@ -1467,8 +1489,73 @@ begin
   Result := Result + ']';
 end;
 
+function GetArray(Kind : TZcDataTypeKind) : TDefineArray;
+begin
+  case Kind of
+    zctMat4 : Result := Prototypes.Mat4Array;
+    zctVec3 : Result := Prototypes.Vec3Array;
+    zctVec2 : Result := Prototypes.Vec2Array;
+    zctVec4 : Result := Prototypes.Vec4Array;
+  else
+    Assert(False);
+  end;
+end;
+
+function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
+var
+  Op : TZcOp;
+begin
+  Op := TZcOpArrayAccess.Create(ArrayOp.Id, ArrayOp);
+
+  //todo: verify that ArrayOp actually is an array type
+
+  if ArrayOp.Kind=zcArrayAccess then
+  begin
+   //Array of arrays
+   Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type);
+   TZcOpArrayAccess(Op).IsRawMem := True;
+  end;
+
+  if ArrayOp.Kind=zcFuncCall then
+  begin
+   //Function returning array
+   Op.Ref := GetArray((ArrayOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
+  end;
+
+  if ArrayOp.Kind=zcSelect then
+   if (ArrayOp.Children.First.Ref is TDefineVariable) then
+     //DefineVariable managedvalue
+     Op.Ref := GetArray( (ArrayOp.Children.First.Ref as TDefineVariable)._Type );
+   //else it is a model defined array, so ArrayOp.ref is already correct
+
+  Result := Op;
+end;
+
 initialization
 
   FunctionCleanUps := TObjectList.Create(True);
+  with Prototypes do
+  begin
+    Mat4Array := TDefineArray.Create(nil);
+    Mat4Array.Dimensions := dadTwo;
+    Mat4Array.SizeDim1 := 4;
+    Mat4Array.SizeDim2 := 4;
+    Mat4Array._Type := zctFloat;
+
+    Vec2Array := TDefineArray.Create(nil);
+    Vec2Array.Dimensions := dadOne;
+    Vec2Array.SizeDim1 := 2;
+    Vec2Array._Type := zctFloat;
+
+    Vec3Array := TDefineArray.Create(nil);
+    Vec3Array.Dimensions := dadOne;
+    Vec3Array.SizeDim1 := 3;
+    Vec3Array._Type := zctFloat;
+
+    Vec4Array := TDefineArray.Create(nil);
+    Vec4Array.Dimensions := dadOne;
+    Vec4Array.SizeDim1 := 4;
+    Vec4Array._Type := zctFloat;
+  end;
 
 end.

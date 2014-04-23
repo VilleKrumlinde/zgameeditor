@@ -349,6 +349,7 @@ type
     ObjId : integer;    //only used in streaming
     IsChanged : boolean;
     procedure DefineProperties(List : TZPropertyList); virtual;
+    procedure InitAfterPropsAreSet; virtual; //On creation after props have their values (streamed or cloned)
   public
     {$ifndef minimal}
     Name,Comment : TPropString;
@@ -366,7 +367,6 @@ type
     procedure Change;
     function Clone : TZComponent;
     procedure ResetGpuResources; virtual; //Free resources such as GL-handles
-    procedure AfterLoaded; virtual;
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
@@ -1122,11 +1122,7 @@ begin
     zptFloat,zptScalar :
       Value.FloatValue := PFloat(P)^;
     zptString :
-      {$IFDEF MINIMAL}
       Value.StringValue := PAnsiChar(PPointer(P)^);
-      {$ELSE}
-      Value.StringValue := PAnsiChar(PPointer(P)^);
-      {$ENDIF}
     zptComponentRef :
       Value.ComponentValue := TZComponent(PPointer(P)^);
     zptInteger :
@@ -1247,26 +1243,8 @@ begin
     Result := pointer(NativeInt(Result) + Index*4);
 end;
 
-procedure TZComponent.AfterLoaded;
-var
-  PropList : TZPropertyList;
-  Prop : TZProperty;
-  Value : TZPropertyValue;
-  I,J : integer;
+procedure TZComponent.InitAfterPropsAreSet;
 begin
-  PropList := GetProperties;
-  for I := 0 to PropList.Count-1 do
-  begin
-    Prop := TZProperty(PropList[I]);
-    case Prop.PropertyType of
-      zptComponentList :
-        begin
-          GetProperty(Prop,Value);
-          for J := 0 to Value.ComponentListValue.Count - 1 do
-            (Value.ComponentListValue[J] as TZComponent).AfterLoaded;
-        end;
-    end;
-  end;
 end;
 
 procedure TZComponent.Change;
@@ -1427,6 +1405,8 @@ begin
       Result.SetProperty(Prop,Value);
     end;
   end;
+  //This is needed because managed variables need to init their values (the values have DontClone set)
+  Result.InitAfterPropsAreSet;
 end;
 
 procedure TZComponent.ResetGpuResources;
@@ -2960,7 +2940,7 @@ begin
     ObjIds[C.ObjId] := C;
   end;
 
-  C.AfterLoaded;
+  C.InitAfterPropsAreSet;
 
   Result := C;
 end;
@@ -3428,7 +3408,7 @@ begin
 
   Self.MainXml := SaveMainXml;
 
-  C.AfterLoaded;
+  C.InitAfterPropsAreSet;
 
   Result := C;
 end;

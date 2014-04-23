@@ -325,6 +325,7 @@ var
   H,W,I,J : integer;
   Pixels,P : PColorf;
   XStep,YStep : single;
+//  DefaultColor : TZColorf;
 begin
   SourceB := GetOptionalArgument(Stack);
   if SourceB<>nil then
@@ -345,7 +346,14 @@ begin
   if Pixels=nil then
   begin
     GetMem(Pixels,W * H * Sizeof(Pixel) );
-    FillChar(Pixels^,W * H * Sizeof(Pixel),0);
+    FillChar(Pixels^, W * H * Sizeof(Pixel), 0);
+//    DefaultColor := MakeColorf(0,0,0,1);
+//    P := Pixels;
+//    for I := 0 to (W * H)-1 do
+//    begin
+//      P^ := DefaultColor;
+//      Inc(P);
+//    end;
   end;
 
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
@@ -359,9 +367,9 @@ begin
     X := 0;
     for J := 0 to W-1 do
     begin
-      Pixel := P^;
+      Self.Pixel := P^;
       ZExpressions.RunCode(Expression.Code);
-      P^ := Pixel;
+      P^ := Self.Pixel;
       Inc(P);
       X := X + XStep;
     end;
