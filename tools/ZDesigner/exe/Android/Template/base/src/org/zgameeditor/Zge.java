@@ -35,14 +35,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.opengl.GLSurfaceView;
-import android.text.InputType;
 import android.net.Uri;
 import android.view.*;
-import android.view.inputmethod.BaseInputConnection;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.GestureDetector;
 import android.util.Log;
 
