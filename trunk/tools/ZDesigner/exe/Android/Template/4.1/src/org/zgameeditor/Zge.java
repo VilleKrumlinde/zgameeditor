@@ -21,6 +21,8 @@ THE SOFTWARE. */
 /*
   Thanks to Andrey Kemka and his ZenGL project for help with Android/Fpc techniques:
     http://zengl.org/
+
+	Support for Android game pads implemented by Radovan Cervenka.
 */
 
 package org.zgameeditor;
@@ -235,7 +237,7 @@ public class Zge extends GLSurfaceView
       for ( int i = 0; i < lastDevice; ++i )
         if ( devices[i] == deviceId ) return i;
 
-      if ( lastDevice == MAX_NUMBER_OF_DEVICES)  return -1;
+      if ( lastDevice == MAX_NUMBER_OF_DEVICES) return -1;
 
       devices[lastDevice++] = deviceId;
       return lastDevice - 1;

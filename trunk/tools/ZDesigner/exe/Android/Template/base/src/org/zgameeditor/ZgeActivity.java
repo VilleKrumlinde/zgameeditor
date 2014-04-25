@@ -27,10 +27,8 @@ package org.zgameeditor;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
-import android.util.Log;
 
 public class ZgeActivity extends Activity
 {
