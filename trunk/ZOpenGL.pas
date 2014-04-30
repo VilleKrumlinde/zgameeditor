@@ -1853,9 +1853,8 @@ begin
     S := 'libGL.so';
     {$endif}
   {$ENDIF}
-  {$IFDEF DARWIN}
-  ///System/Library/Frameworks/OpenGL.framework/Libraries/
-  S := 'libGL.dylib';
+  {$IFDEF MACOS}
+  S := 'System/Library/Frameworks/OpenGL.framework/OpenGL';
   {$ENDIF}
   {$if defined(WIN32) or defined(WIN64)}
   S := 'opengl32.dll';

@@ -30,7 +30,8 @@ uses
   SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions;
+  Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
+  Vcl.Imaging.pngimage, ZBitmap;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -231,6 +232,7 @@ type
     AndroidBuildReleaseApkAction: TAction;
     AndroidBuildAPKrelease1: TMenuItem;
     LogClearMenuItem: TMenuItem;
+    GamutImage: TImage;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -339,6 +341,7 @@ type
     Log : TLog;
     ZApp : TZApplication;
     Driver : TGLDriverBase;
+    GamutZBitmap : TZBitmap;
     procedure SelectComponent(C : TZComponent);
     procedure DrawZBitmap;
     procedure DrawMesh;
@@ -432,7 +435,7 @@ implementation
 
 {$R *.dfm}
 
-uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpressions,
+uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
@@ -442,6 +445,47 @@ uses Math, ZOpenGL, BitmapProducers, ZBitmap, Meshes, Renderer, Compiler, ZExpre
 { TEditorForm }
 
 constructor TEditorForm.Create(AOwner: TComponent);
+
+  procedure LoadGamutBitmap;
+  var
+    B : TPngImage;
+    Zb : TZBitmap;
+    Bf : TBitmapFromFile;
+    Value : TZPropertyValue;
+    X,Y : integer;
+    M : TMemoryStream;
+    PPixel : PRGBQuad;
+  begin
+    M := TMemoryStream.Create;
+    try
+      B := Self.GamutImage.Picture.Graphic as TPngImage;
+      for Y := 0 to B.Height-1 do
+      begin
+        PPixel := B.ScanLine[Y];
+        for X := 0  to B.Width-1 do
+        begin
+          M.Write(PPixel.rgbRed,1);
+          M.Write(PPixel.rgbGreen,1);
+          M.Write(PPixel.rgbBlue,1);
+          Inc(NativeUInt(PPixel),3);
+        end;
+      end;
+      Value.BinaryValue.Size := M.Size;
+      GetMem(Value.BinaryValue.Data,M.Size);
+      Move(M.Memory^,Value.BinaryValue.Data^,M.Size);
+    finally
+      M.Free;
+    end;
+
+    Zb := TZBitmap.Create(nil);
+    Zb.PropWidth := bs16;
+    Zb.PropHeight := bs16;
+    Bf := TBitmapFromFile.Create(Zb.Producers);
+    Bf.SetProperty( Bf.GetProperties.GetByName('BitmapFile'), Value );
+
+    Self.GamutZBitmap := Zb;
+  end;
+
 begin
   Driver := CreateDriver(glbFixed);
   inherited Create(AOwner);
@@ -451,6 +495,8 @@ begin
 
   Self.Log := ZLog.GetLog(Self.ClassName);
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
+
+  LoadGamutBitmap;
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -1447,6 +1493,7 @@ var
   W,H : integer;
   B : TZBitmap;
   Owns : boolean;
+  UseAlpha : boolean;
 begin
   if ShowNode is TZBitmap then
   begin
@@ -1459,6 +1506,11 @@ begin
 //    Owns := True;
 //    B := (ShowNode as TBitmapProducer).ProduceOutput as TZBitmap;
   end;
+
+  UseAlpha := BitmapEditFrame1.UseAlphaCheckBox.Checked;
+
+  //Make sure texture matrix is reset
+  ZApp.Driver.EnableMaterial(DefaultMaterial);
 
   if ShadersSupported then
     glUseProgram(0);
@@ -1478,18 +1530,9 @@ begin
 
   glDisable( GL_LIGHTING );
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
   glLoadIdentity();
 
   glScalef(2.0 / Glp.Width, -2.0 / Glp.Height, 1.0);
-
-  //rita en quad
-  glPushMatrix;
-
-  glEnable(GL_TEXTURE_2D);
-  B.UseTextureBegin;
 
   W := (Min(Glp.Width,Glp.Height) div 2) - 8;
   H := W;
@@ -1497,9 +1540,47 @@ begin
   W := Min(Round(W * B.PixelWidth/B.PixelHeight),W);
   H := Min(Round(H * B.PixelHeight/B.PixelWidth),H);
 
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
+  //rita en quad
+  glPushMatrix;
 
+  glEnable(GL_TEXTURE_2D);
+  if UseAlpha then
+  begin
+    //Draw gamut bitmap
+    Self.GamutZBitmap.UseTextureBegin;
+
+    glBegin(GL_QUADS);
+      //x.
+      //..
+      glTexCoord2f(0.0, H div 16);
+      glVertex2f(-W,-H);
+
+      //..
+      //x.
+      glTexCoord2f(0.0, 0.0);
+      glVertex2f(-W,H);
+
+      //..
+      //.x
+      glTexCoord2f(W div 16, 0.0);
+      glVertex2f(W,H);
+
+      //.x
+      //..
+      glTexCoord2f(W div 16, H div 16);
+      glVertex2f(W,-H);
+    glEnd();
+  end;
+
+  glDisable(GL_DEPTH_TEST);
+
+  if UseAlpha then
+  begin
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  end;
+
+  B.UseTextureBegin;
   //För TexCoords gäller: Y=1 Top, Y=0 Bottom
   glBegin(GL_QUADS);
     //x.
@@ -1785,6 +1866,7 @@ begin
   UndoIndices.Free;
   SysLibrary.Free;
   Driver.Free;
+  GamutZBitmap.Free;
 end;
 
 procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);

@@ -58,6 +58,20 @@ object EditorForm: TEditorForm
       Caption = 'Project &tree'
       Constraints.MinHeight = 185
       TabOrder = 0
+      object GamutImage: TImage
+        Left = 176
+        Top = 256
+        Width = 105
+        Height = 105
+        Picture.Data = {
+          0954506E67496D61676589504E470D0A1A0A0000000D49484452000000100000
+          00100802000000909168360000000467414D410000B18E7CFB51930000000970
+          48597300000B1200000B1201D2DD7EFC0000001A74455874536F667477617265
+          005061696E742E4E45542076332E352E313147F34237000000274944415478DA
+          63FCFFFF3F033670F6EC59ACE28CA31A68A2E1CC993358258C8D8D4735D04F03
+          00238343190EE1CA360000000049454E44AE426082}
+        Visible = False
+      end
     end
   end
   object ViewerPanel: TPanel
@@ -169,10 +183,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -181,10 +191,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -224,10 +230,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -306,10 +308,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -403,7 +401,7 @@ object EditorForm: TEditorForm
         Margins.Top = 4
         Margins.Right = 4
         Margins.Bottom = 4
-        ActivePage = ViewerGlTabSheet
+        ActivePage = ViewerBitmapTabSheet
         Align = alClient
         TabOrder = 0
         object ViewerGlTabSheet: TTabSheet
@@ -413,10 +411,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -758,7 +752,6 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 4
                 ExplicitTop = 27
                 ExplicitWidth = 615
                 ExplicitHeight = 762
@@ -1424,9 +1417,7 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 0
                 ExplicitTop = 27
-                ExplicitWidth = 0
                 ExplicitHeight = 566
                 inherited Label10: TLabel
                   Left = 10
@@ -1553,10 +1544,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -1609,10 +1596,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           Margins.Left = 4
@@ -1712,27 +1695,15 @@ object EditorForm: TEditorForm
                   ExplicitTop = 746
                   ExplicitWidth = 228
                   ExplicitHeight = 27
-                  inherited DisablePreviewCheckBox: TCheckBox
-                    Width = 124
-                    Height = 22
-                    Margins.Left = 4
-                    Margins.Top = 4
-                    Margins.Right = 4
-                    Margins.Bottom = 4
-                    ExplicitWidth = 124
-                    ExplicitHeight = 22
-                  end
                   inherited SaveToFileButton: TButton
-                    Left = 128
-                    Width = 92
-                    Height = 25
-                    Margins.Left = 4
-                    Margins.Top = 4
-                    Margins.Right = 4
-                    Margins.Bottom = 4
-                    ExplicitLeft = 128
-                    ExplicitWidth = 92
-                    ExplicitHeight = 25
+                    Left = 250
+                    ExplicitLeft = 250
+                  end
+                  inherited UseAlphaCheckBox: TCheckBox
+                    Left = 119
+                    Width = 125
+                    ExplicitLeft = 119
+                    ExplicitWidth = 125
                   end
                 end
               end
