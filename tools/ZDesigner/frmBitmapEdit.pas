@@ -22,6 +22,7 @@ type
     PreviewMenuItem: TMenuItem;
     SaveToFileButton: TButton;
     Panel1: TPanel;
+    UseAlphaCheckBox: TCheckBox;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -423,7 +424,7 @@ end;
 procedure TBitmapEditFrame.DisablePreviewCheckBoxClick(Sender: TObject);
 begin
   Glp.Invalidate;
-  Glp.Visible := not (Sender as TCheckBox).Checked;
+  Glp.Visible := not DisablePreviewCheckBox.Checked;
 end;
 
 function TBitmapEditFrame.FindNodeAt(X, Y: integer): TObject;

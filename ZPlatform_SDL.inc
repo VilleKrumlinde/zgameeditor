@@ -11,7 +11,7 @@ implementation
 
 uses SDL, ZLog, AudioPlayer,ZApplication
   {$ifdef linux},libc{$endif}
-  {$ifdef darwin},dl{$endif}
+  {$ifdef darwin} {$ifdef fpc},dl{$else},Posix.Dlfcn{$endif}  {$endif}
   ;
 
 var
@@ -27,11 +27,29 @@ begin
   SDL_ShowCursor(vals[Visible]);
 end;
 
+{$ifdef macos}
+//Need to init cocoa before calling SDL_SetVideoMode
+//http://stackoverflow.com/questions/12641755/sdl-video-init-causes-exception-on-mac-os-x-10-8
+procedure OsxInit;
+var
+  cocoa_lib : nativeuint;
+  nsappload : procedure; cdecl;
+begin
+  cocoa_lib := dlopen( '/System/Library/Frameworks/Cocoa.framework/Cocoa', RTLD_LAZY );
+  nsappload := dlsym( cocoa_lib, 'NSApplicationLoad');
+  nsappload();
+end;
+{$endif}
+
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 var
   Flags : SDL.UINT32;
   Mode : PSDL_Surface;
 begin
+  {$ifdef macos}
+  OsxInit;
+  {$endif}
+
   //Save a global handle to the app
   gZApp := TZApplication(ZApp);
 
@@ -146,7 +164,7 @@ end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;
 var
-  P : string;
+  P : AnsiString;
   I : integer;
 begin
   Result := False;
@@ -199,8 +217,12 @@ begin
     Result[I] := #0;
   end;
 {$else}
+var
+  AppName: array [0..1024] of Char;
+  ResModuleName : string;
 begin
-  Result := PAnsiChar(System.ParamStr(0));
+  GetModuleFileName(0, AppName, Length(AppName));
+  Result := PAnsiChar( AnsiString(PChar(@AppName)) );
 {$endif}
 end;
 
@@ -290,9 +312,9 @@ var
   I : integer;
 begin
   for I := 0 to 255 do
-    KeyMap[chr(I)] := I;
+    KeyMap[AnsiChar(I)] := I;
   for I := ord('A') to ord('Z') do
-    KeyMap[chr(I)] := I + (ord('a')-ord('A'));;
+    KeyMap[AnsiChar(I)] := I + (ord('a')-ord('A'));;
 
   KeyMap[UpKey] := SDLK_UP;
   KeyMap[DownKey] := SDLK_DOWN;
@@ -502,7 +524,7 @@ end;
 function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   {$if Defined(Linux) or Defined(Darwin)}
-  Result := dlsym(Pointer(Module), Name );
+  Result := dlsym({$ifdef fpc}Pointer(Module){$else}Module{$endif}, Name );
   {$else}
   Result := 0;
   {$endif}

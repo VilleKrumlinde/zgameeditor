@@ -95,99 +95,278 @@ this.Pixel.B *= this.Pixel.A;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Bricks" Width="4" Height="4" Filter="2">
+        <Bitmap Comment="glowDesigner">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//glow designer - jph2011
+
+float posX = 0.5;
+float posY = 0.4;
+float focus=2.0;
+float sz=2.8;
+
+this.Pixel.R = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+posY=0.6;
+this.Pixel.B = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+posY=0.5; //sz=4.0;
+this.Pixel.G = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+sz=2.2;
+this.Pixel.a=focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+
+/*
+this.Pixel*=.3;
+this.Pixel+=.6;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="superform">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=1; N1=8; N2=4; N3=4; S=5; Z=2.2;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(0-S);
+ this.Pixel.g=Tp*(0-S);
+ this.Pixel.b=Tp*(0-S);
+ this.Pixel.a=Tp*(0-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Squarey">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=4; N1=8; N2=4; N3=4; S=5; Z=2.1;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(1-S);
+ this.Pixel.g=Tp*(3-S);
+ this.Pixel.b=Tp*(2-S);
+ this.Pixel.a=Tp*(4-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Ruffled">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=10; N1=8; N2=8; N3=8; S=1.9; Z=2.5;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(1-S);
+ this.Pixel.g=Tp*(0-S);
+ this.Pixel.b=Tp*(2-S);
+ this.Pixel.a=Tp*(0-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Penta">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=5; N1=1.8; N2=1; N3=1; S=2; Z=2;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(0-S);
+ this.Pixel.g=Tp*(1-S);
+ this.Pixel.b=Tp*(2-S);
+ this.Pixel.a=Tp*(0-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Pointy" Width="3" Height="3">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=7; N1=1.5; N2=8; N3=8; S=2; Z=8;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(1-S);
+ this.Pixel.g=Tp*(0-S);
+ this.Pixel.b=Tp*(0-S);
+ this.Pixel.a=Tp*(0-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Glow">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
+M=0; N1=2.8; N2=3; N3=3; S=2; Z=2;
+
+Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.r=Tp*(0-S);
+ this.Pixel.g=Tp*(1-S);
+ this.Pixel.b=Tp*(0-S);
+ this.Pixel.a=Tp*(0-S);
+ }]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Block" Filter="2">
+          <Producers>
+            <BitmapExpression Comment="2D Superformula">
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z, posX, posY;
+M=4; N1=10; N2=10; N3=10; S=-6; Z=1.9;
+
+posX=.495;posY=0.495;  // sets position
+this.Pixel=1; this.Pixel.a=0; // color all for alpha
+
+Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+
+this.Pixel.A=Tp*S;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Beam">
           <Producers>
             <BitmapExpression>
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-float X1, Y1;
 
-if (Y>0.5) {
- Y1 = Y*4-3; X1 = (X- 0.5)*2;
-}
-else {
- Y1 = Y*4-1; X1 = (abs(X-0.5)*2-1)*((X-0.5)*2+0.01)/abs((X-0.5)*2+0.01);
-}
-this.Pixel.B = pow(X1,8) + pow(Y1,8);
-if (X1 > Y1) this.Pixel.G=1;]]>
+this.pixel=1-abs(sin(.5-x))*2.3;
+this.pixel-=noise2(x*8,y*8)*.5;
+this.pixel-=rnd()*.3;]]>
               </Expression>
             </BitmapExpression>
-            <BitmapZoomRotate Zoom="-4.5"/>
+            <BitmapBlur Radius="5" Kind="2"/>
             <BitmapExpression>
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-float Temp=0, Down = 0;
 
-Temp = this.Pixel.B - pow(sin(X*pi),0.33)*noise2(X*3+768,Y+187)*1;
-if (this.Pixel.G > 0.5) Down = 1;
-this.Pixel = 0;
-if (Temp < 0.7) {
-    this.Pixel.G = clamp(pow(sin(X*pi),0.3),0,0.5) * noise2(X*15+500,Y*12+170);
-    this.Pixel.R = 0.8 + noise2(X*35+350,Y*35)/3;
-    if (noise2(X*35+350,Y*35) < -0.2) this.Pixel.R -= 0.1;
-   if (noise2(X*35+350,Y*35) < -0.25) this.Pixel.R -= 0.3;
-}
-if (Temp < 0.7 && Temp > 0.45) {
-    if (Down == 1) this.Pixel.R -= 0.3;
-    else this.Pixel.R += 0.2;
-}
-
-if (Temp >= 0.7) {this.Pixel = 0.3 + noise2(X*130+2463,Y*130+374)/2;}
-/*
-if (this.Pixel.R > 0.2) {
-    this.Pixel.R -= 0.2 + noise2(Y*12+2015,X*12+1021)/3;}
-
-if (this.Pixel.G > 0.2) {
-    this.Pixel.G = 0.1 + noise2(Y*12+715,X*12+321)/4;}
-
-if (this.Pixel.B > 0.2) {
-    this.Pixel.R += 0.1;
-    this.Pixel.G += 0.2 + noise2(Y*12+203,X*12+821)/3;
-    this.Pixel.B = 0;
-}
-
-if (this.Pixel.A > 0.2) {
-    this.Pixel.R -= 0.3 + noise2(Y*12+2015,X*12+1021)/4;
-    this.Pixel.A = 0;
-
-}
-
-if (this.Pixel.R < 0.2) {
-    this.Pixel = 0.3 + noise2(Y*130+374,X*130+2463)/2;}]]>
+this.pixel.a=1-abs(sin(.5-x))*2.3;]]>
               </Expression>
             </BitmapExpression>
-            <BitmapZoomRotate Zoom="-1.5"/>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Dithering">
+        <Bitmap Comment="Ring">
+          <Producers>
+            <BitmapExpression Comment="nose" UseBlankSource="1">
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z, posX, posY;
+M=2; N1=6; N2=2; N3=7; S=-2; Z=4;
+posX=.495;posY=0.6;
+
+Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.a+=Tp*S;
+ this.Pixel.r+=Tp*S;
+ this.Pixel.g+=Tp*S;
+ this.Pixel.b+=Tp*S;
+ }]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapExpression Comment="main" UseBlankSource="1">
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z, posX, posY;
+M=4; N1=6; N2=3; N3=3; S=-3; Z=2;
+posX=.495;posY=0.495;
+
+Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.a=Tp*S;
+ this.Pixel.r=Tp*S;
+ this.Pixel.g=Tp*S;
+ this.Pixel.b=Tp*S;
+ }]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapCombine Comment="base" Method="1"/>
+          </Producers>
+        </Bitmap>
+        <Bitmap Comment="Halo" Width="4" Height="4">
           <Producers>
             <BitmapExpression UseBlankSource="1">
               <Expression>
-<![CDATA[//X,Y : current coordinate (0..1)
-//Pixel : current color (rgb)
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z, posX, posY;
+M=2; N1=21; N2=3; N3=3; S=-4; Z=2;
+posX=.495;posY=0.495;
 
-float C, F, S, R, G, B;
-
-C = 9/16-X/8; // Low contrast gradient ( less colors available then preferable )
-
-R = C;
-G = C;
-B = C;
-
-F = frac(C*255);
-S = 1/255; // 1-bit offset ( on a 8-bit value )
-
-if(frac(F) < 0.25)R += S;
-if(frac(F) < 0.50)G += S;
-if(frac(F) < 0.75)B += S;
-
-this.Pixel.R = R;
-this.Pixel.G = G;
-this.Pixel.B = B;]]>
+Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.a+=Tp*S-rnd();
+ this.Pixel.r+=Tp*S;
+ this.Pixel.g+=Tp*S;
+ this.Pixel.b+=Tp*S;
+ }
+this.Pixel-=rnd();]]>
               </Expression>
             </BitmapExpression>
+            <BitmapExpression UseBlankSource="1">
+              <Expression>
+<![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z, posX, posY;
+M=2; N1=21; N2=3; N3=3; S=-2; Z=2;
+posX=.495;posY=0.495;
+
+Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
+Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
+ if (Tp<0) {
+ this.Pixel.a+=Tp*S-rnd();
+ this.Pixel.r+=Tp*S;
+ this.Pixel.g+=Tp*S;
+ this.Pixel.b+=Tp*S;
+ }
+this.Pixel=this.Pixel-rnd();]]>
+              </Expression>
+            </BitmapExpression>
+            <BitmapCombine Method="1"/>
+            <BitmapBlur Radius="2" Amplify="1.2"/>
+            <BitmapExpression Expression="this.Pixel.a=this.Pixel.r*8;"/>
           </Producers>
         </Bitmap>
         <Bitmap Comment="Superformula" Width="4" Height="4">
@@ -3086,7 +3265,7 @@ void ouya_RequestPurchase(string productId) {}
 // ouya_ERROR if the purchase failed. In the case of failure
 // the errorMsg parameter is set to the error message.
 int ouya_IsPurchaseRequestDone(string productId,
-	ref string errorMsg) {}
+    ref string errorMsg) {}
 
 // Clear the list of purchases. This is usually called after all
 // purchase requests finished.
@@ -3103,7 +3282,7 @@ void ouya_RequestReceipts() {}
 // the number of obtained receipts. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsReceiptRequestDone(ref int numberOfReceipts,
-	ref string errorMsg) {}
+    ref string errorMsg) {}
 
 // Sets the product identifier of a receipt identified by id.
 // Returns ouya_ERROR if the receipt information is not
@@ -3119,7 +3298,7 @@ void ouya_RequestGamerInfo() {}
 // username and uuid are set. In the case of failure the
 // errorMsg parameter is set to the error message.
 int ouya_IsGamerInfoRequestDone(ref string username,
-	ref string uuid, ref string errorMsg) {}
+    ref string uuid, ref string errorMsg) {}
 
 // Storage
 
