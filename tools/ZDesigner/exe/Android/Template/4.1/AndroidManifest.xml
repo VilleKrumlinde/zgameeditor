@@ -6,6 +6,8 @@
 
     <uses-sdk android:minSdkVersion="16" />
 
+    <uses-feature android:name="android.hardware.audio.low_latency"/>
+
     <application
         android:icon="@drawable/icon"
         android:label="$title$" >

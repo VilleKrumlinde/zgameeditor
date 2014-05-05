@@ -350,6 +350,8 @@ begin
   if not (O is TZComponent) then
     Exit;
   C := O as TZComponent;
+  if C.OwnerList=nil then
+    Exit;
   OwnerC := C.OwnerList.Owner;
   if ComponentManager.GetInfo(OwnerC).ClassId<>ModelClassId then
     Exit;
