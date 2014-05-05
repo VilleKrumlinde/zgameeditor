@@ -1158,7 +1158,7 @@ begin
 
    Lit := Op as TZcOpLiteral;
 
-   if Lit.Typ.Kind<>Typ.Kind then
+   if (Lit.Typ.Kind<>Typ.Kind) and not ((Lit.Typ.Kind=zctInt) and (Typ.Kind=zctFloat)) then
      ZError('Constant expression is not of the expected type: ' + Op.ToString);
 
    Cns := TDefineConstant.Create(nil);

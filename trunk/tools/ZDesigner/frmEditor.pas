@@ -1147,49 +1147,57 @@ begin
     ZApp.ScreenHeight := Glp.Height;
   end;
 
-  if (ShowNode is TZApplication) and (IsAppRunning) then
-  begin
-    try
-      //Update app
-      (ShowNode as TZApplication).Main;
-    except
-      on E : EZHalted do
+  try
+    if (ShowNode is TZApplication) and (IsAppRunning) then
+    begin
+      try
+        //Update app
+        (ShowNode as TZApplication).Main;
+      except
+        on E : Exception do
+        begin
+          AppPreviewStopAction.Execute;
+          raise;
+        end;
+      end;
+    end
+    else if not RenderAborted then
+    begin
+      IsRenderComponent := ((ShowNode is TStateBase) or (ShowNode is TZApplication));
+
+      if not IsRenderComponent then
+        //Gör update för att prop-ändringar skall slå igenom
+        //Men inte för appar och states, då körs update-kod t.ex. med centerMouse();
+        ShowNode.Update;
+
+      glViewport(0, 0, Glp.Width, Glp.Height);
+
+      //todo: delphi 2010 needs this line
+      Set8087CW($133F);
+      ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
+        FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
+        FloatToStr( RoundTo(ViewTranslate[2],-1) );
+
+      if (ShowNode is TZBitmap)then
+        DrawZBitmap
+      else if (ShowNode is TMesh) then
+        DrawMesh
+      else if (ShowNode is TModel) then
+        DrawModel
+      else if IsRenderComponent then
+        DrawOnRenderComponent
+      else
       begin
-        AppPreviewStopAction.Execute;
-        raise;
+        //Prevent displaying junk
+        glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
       end;
     end;
-  end
-  else if not RenderAborted then
-  begin
-    IsRenderComponent := ((ShowNode is TStateBase) or (ShowNode is TZApplication));
-
-    if not IsRenderComponent then
-      //Gör update för att prop-ändringar skall slå igenom
-      //Men inte för appar och states, då körs update-kod t.ex. med centerMouse();
-      ShowNode.Update;
-
-    glViewport(0, 0, Glp.Width, Glp.Height);
-
-    //todo: delphi 2010 needs this line
-    Set8087CW($133F);
-    ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
-      FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
-      FloatToStr( RoundTo(ViewTranslate[2],-1) );
-
-    if (ShowNode is TZBitmap)then
-      DrawZBitmap
-    else if (ShowNode is TMesh) then
-      DrawMesh
-    else if (ShowNode is TModel) then
-      DrawModel
-    else if IsRenderComponent then
-      DrawOnRenderComponent
-    else
+  except
+    on E : Exception do
     begin
-      //Prevent displaying junk
-      glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
-      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      RenderAborted := True;
+      Log.Error(E.Message);
     end;
   end;
 end;
@@ -1725,7 +1733,7 @@ begin
     try
       OnRender.ExecuteCommands;
     except
-      on E : EZHalted do
+      on E : Exception do
       begin //Detect errors in onrender-list
         RenderAborted := True;
         raise;
@@ -1783,7 +1791,7 @@ begin
       try
         Model.DesignerUpdate;
       except
-        on E : EZHalted do
+        on E : Exception do
         begin
           UpdateTimeCheckBox.Checked:=False;
           raise;
@@ -1800,7 +1808,7 @@ begin
       ZApp.Driver.Translate(-Model.Position[0],-Model.Position[1],-Model.Position[2]);
       Renderer.RenderModel(Model);
     except
-      on E : EZHalted do
+      on E : Exception do
       begin //Detect errors in onrender-list
         RenderAborted := True;
         raise;
