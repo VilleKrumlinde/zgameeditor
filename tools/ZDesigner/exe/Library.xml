@@ -2601,8 +2601,7 @@ const int OUYA_AXIS_R2 = 5;]]>
 }]]>
           </BeforeInitExp>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="Bullet 3D physics" ModuleName="ZGEBullet" CallingConvention="1" DefinitionsFile="zgebullet.txt"/>
-        <ZExternalLibrary Comment="Box2D physics" ModuleName="ZGEBox2D.dll" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZGEBox2D.so&quot;;">
+        <ZExternalLibrary Comment="Box2D physics library" ModuleName="ZGEBox2D.dll" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZGEBox2D.so&quot;;">
           <Source>
 <![CDATA[/*
   Adapter to the ZGEBox2D Library, a wrapper for the Box2D Physics Engine.
@@ -2971,6 +2970,183 @@ int zb2GetBodyContactCount(int body) {}
 void zb2SetBodyFilteringFlags(int body, int categoryBits, int maskBits, int groupIndex) {}]]>
           </Source>
         </ZExternalLibrary>
+        <ZExternalLibrary Comment="Bullet 3D physics library" ModuleName="ZGEBullet" CallingConvention="1" Source="if(ANDROID) this.ModuleName = &quot;./libZGEBullet.so&quot;;" DefinitionsFile="zgebullet.txt"/>
+        <ZExternalLibrary Comment="Skeletal animation library" ModuleName="ZgeSkelet" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZgeSkelet.so&quot;;">
+          <Source>
+<![CDATA[/*
+  Adapter to the ZgeSkelet Library, a wrapper for a skeletal-based
+  3D character animation library Cal3D.
+  http://home.gna.org/cal3d
+
+  Download Windows DLL and Android shared library from
+  http://googledrive.com/host/0BxwfQ8la88ouZElvWnZpLVhSdGs/
+
+  Project home
+  http://code.google.com/p/zgeskelet
+
+  Copyright (c) 2014 Radovan Cervenka
+*/
+
+// Core models
+
+// Creates a new core model. Returns ID of the created core model
+// which is used in other functions to refer to the core model.
+int zsk_CreateCoreModel(string name) {}
+
+// Frees the previously created core model from memory.
+void zsk_DestroyCoreModel(int coreModel) {}
+
+// Loads skeleton of a core model from file.
+// Returns 1 if successful, or 0 if an error happened.
+int zsk_LoadSkeleton(int coreModel, string file) {}
+
+// Loads skeleton of a core model from memory buffer.
+// Returns 1 if successful, or 0 if an error happened.
+int zsk_LoadSkeletonBuffer(int coreModel, xptr buffer) {}
+
+// Loads animation of a core model from file.
+// Returns the assigned ID of the loaded animation,
+// or -1 if an error happened.
+int zsk_LoadAnimation(int coreModel, string file) {}
+
+// Loads animation of a core model from memory buffer.
+// Returns the assigned ID of the loaded animation,
+// or -1 if an error happened.
+int zsk_LoadAnimationBuffer(int coreModel, xptr buffer) {}
+
+// Loads mesh of a core model from file.
+// Returns the assigned ID of the loaded mesh,
+// or -1 if an error happened.
+int zsk_LoadMesh(int coreModel, string file) {}
+
+// Loads mesh of a core model from memory buffer.
+// Returns the assigned ID of the loaded mesh,
+// or -1 if an error happened.
+int zsk_LoadMeshBuffer(int coreModel, xptr buffer) {}
+
+// Loads material of a core model from file. The specified
+// material user ID can be used to determine the material assigned
+// to the rendered sub-meshes of a model instance, see the
+// zsk_GetSubmeshUserMaterialId() function for details.
+// Returns the assigned ID of the loaded material,
+// or -1 if an error happened.
+int zsk_LoadMaterial(int coreModel, int userId, string file) {}
+
+// Loads material of a core model from memory buffer. The specified
+// material user ID can be used to determine the material assigned
+// to the rendered sub-meshes of a model instance, see the
+// zsk_GetSubmeshUserMaterialId() function for details.
+// Returns the assigned ID of the loaded material,
+// or -1 if an error happened.
+int zsk_LoadMaterialBuffer(int coreModel, int userId, xptr buffer) {}
+
+// Creates a new core material thread with the given ID.
+// (See the Cal3D User's Guide for details about handling materials.)
+void zsk_CreateCoreMaterialThread(int coreModel, int threadId) {}
+
+// Sets a core material ID for a material thread / material set pair.
+// (See the Cal3D User's Guide for details about handling materials.)
+void zsk_SetCoreMaterialId(int coreModel,
+				int threadId, int setId, int materialId) {}
+
+// Model instances
+
+// Creates a new model instance from the specified core model.
+// Returns ID of the created model instance which is used in other
+// functions to refer to the model instance.
+int zsk_CreateModelInstance(int coreModel) {}
+
+// Frees the previously created model instance from memory.
+void zsk_DestroyModelInstance(int modelInst) {}
+
+// Attaches a mesh to the model instance.
+// Returns 1 if successful, or 0 if an error happened.
+int zsk_AttachMesh(int modelInst, int meshId) {}
+
+// Detaches a mesh from the model instance.
+// Returns 1 if successful, or 0 if an error happened.
+int zsk_DetachMesh(int modelInst, int meshId) {}
+
+// Sets the level of detail (LOD) for all attached meshes.
+// The LOD level is in the range [0.0, 1.0].
+void zsk_SetLevelOfDetail(int modelInst, float lod) {}
+
+// Interpolates the weight of an animation cycle to a new value
+// in a given amount of time. If the specified animation cycle is
+// not active yet, it is activated. The delay is specified in seconds.
+// The weight is in the range [0.0, 1.0].
+void zsk_BlendAnimCycle(int modelInst, int animationId, float weight, float delay) {}
+
+// Fades an animation cycle out in a given amount of time.
+// The delay is specified in seconds.
+void zsk_ClearAnimCycle(int modelInst, int animationId, float delay) {}
+
+// Executes an animation action. The delayIn parameter is the time
+// in seconds until the animation action reaches the full weight from
+// the beginning of its execution. The parameter delayOut is the time
+// in seconds in which the animation action reaches zero weight at the
+// end of its execution.
+void zsk_ExecuteAction(int modelInst, int animationId, float delayIn,
+							float delayOut) {}
+
+// Executes an animation action. The delayIn parameter is the time
+// in seconds until the animation action reaches the full weight from
+// the beginning of its execution. The parameter delayOut is the time
+// in seconds in which the animation action reaches zero weight at the
+// end of its execution. The parameter weightTarget is the weight to
+// interpolate the animation action to. If the parameter bAutoLock is
+// set to 1, it prevents the action from being reset and removed
+// on the last keyframe.
+void zsk_ExecuteActionExt(int modelInst, int animationId, float delayIn,
+							float delayOut, float weightTarget, int bAutoLock) {}
+
+// Updates the model instance for a given amount of time. To reach real-time
+// animation use ZAplication.DeltaTime as value of deltaTime.
+void zsk_Update(int modelInst, float deltaTime) {}
+
+// Sets the material set of all attached meshes.
+// (See the Cal3D User's Guide for details about handling materials.)
+void zsk_SetMaterialSet(int modelInst, int setId) {}
+
+// Sets the material set of the specified mesh instance.
+// (See the Cal3D User's Guide for details about handling materials.)
+void zsk_SetMeshMaterialSet(int modelInst, int meshId, int setId) {}
+
+// Meshes and textures
+
+// Returns the number of meshes attached to the model instance.
+int zsk_GetMeshCount(int modelInst) {}
+
+// Returns the number of sub-meshes in a given mesh.
+int zsk_GetSubmeshCount(int modelInst, int meshId) {}
+
+// Returns the (file) name of the first texture attached to
+// a material of the specified sub-mesh.
+string zsk_GetSubmeshTexture(int modelInst, int meshId, int submeshId) {}
+
+// Returns the user ID of a material attached to the specified sub-mesh.
+int zsk_GetSubmeshUserMaterialId(int modelInst, int meshId, int submeshId) {}
+
+// Rendering
+
+// Renders the whole model instance. If bSetColor is set to 1, rendering sets
+// the color of sub-meshes as specified in their materials. If bSetColor
+// is 0, rendering does not change the sub-mesh colors. If bRenderTexture
+// is set to 1, rendering uses the texture of the current material to render
+// all meshes of the model instance. If bRenderTexture id set to 0, the model
+// is not rendered with textures.
+void zsk_RenderModelInstance(int modelInst, int bSetColor, int bRenderTexture) {}
+
+// Renders a single sub-mesh of the model instance. If bSetColor is set to 1,
+// rendering sets the color of the sub-mesh as specified in its material.
+// If bSetColor is 0, rendering does not change the sub-mesh color.
+// If bRenderTexture is set to 1, rendering uses the texture of the current
+// material to render the sub-mesh. If bRenderTexture id set to 0, the sub-mesh
+// is not rendered with texture.
+void zsk_RenderSubmesh(int modelInst, int meshId, int submeshId,
+        int bSetColor, int bRenderTexture) {}]]>
+          </Source>
+        </ZExternalLibrary>
         <ZExternalLibrary Comment="BASS audio library" ModuleName="bass" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libbass.so&quot;;">
           <Source>
 <![CDATA[/*
@@ -3126,7 +3302,7 @@ int sv_pattern_mute(int slot, int pat_num, int mute) {}
   // Use it with sv_lock_slot() and sv_unlock_slot()]]>
           </Source>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="ZGESensor library" ModuleName="./libZGESensor.so" CallingConvention="1">
+        <ZExternalLibrary Comment="Android sensor library" ModuleName="./libZGESensor.so" CallingConvention="1">
           <Source>
 <![CDATA[/*
   ZGESensor Library used to handle various sensors on Android.
@@ -3373,11 +3549,12 @@ Libraries
   Android Gamepad Library (http://www.emix8.org/forum/viewtopic.php?t=1048) Rado1
 External Libraries
   OpenGL 4.0 graphics () VilleK
-  Bullet 3D physics (http://www.emix8.org/forum/viewtopic.php?t=830) Rado1
-  Box2D physics (http://www.emix8.org/forum/viewtopic.php?t=586) Rado1
+  Box2D physics library (http://www.emix8.org/forum/viewtopic.php?t=586) Rado1
+  Bullet 3D physics library (http://www.emix8.org/forum/viewtopic.php?t=830) Rado1
+  Skeletal animation library (http://www.emix8.org/forum/viewtopic.php?t=1106) Rado1
   BASS audio library () Rado1
   SunVox music library (http://www.emix8.org/forum/viewtopic.php?t=911) Rado1
-  ZGESensor library (http://www.emix8.org/forum/viewtopic.php?t=1006) Rado1
+  Android sensor library (http://www.emix8.org/forum/viewtopic.php?t=1006) Rado1
   OUYA library (http://www.emix8.org/forum/viewtopic.php?t=1097) Rado1
 */]]>
       </Expression>
