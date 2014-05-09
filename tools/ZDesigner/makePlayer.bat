@@ -8,6 +8,7 @@ set zgeproduct=NORMAL
 FOR %%A IN (%*) DO (
   if "%%A"=="64" set BIT=64
   if "%%A"=="SS" set zgeproduct=SS
+  if "%%A"=="OSX" set zgeproduct=OSX
 )
 
 rem Delphi XE5
@@ -15,6 +16,7 @@ if "%BIT%"=="64" (
   set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\12.0\bin\dcc64.exe"
   set commonparams=-B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr
 ) else (
+  set dccosx="C:\Program Files (x86)\Embarcadero\RAD Studio\12.0\bin\dccosx.exe"
   set dcc="C:\Program Files (x86)\Embarcadero\RAD Studio\12.0\bin\dcc32.exe"
   set commonparams=-$J+ -$I- --no-config -B -N.\build\obj\ -E.\tools\zdesigner -U.\rtl\DXE5\lib ZzDC.dpr
 )
@@ -53,6 +55,9 @@ if %zgeproduct%==NORMAL (
   rem Screensaver
   %dcc% -DMINIMAL -Dzzdc_screensaver %commonparams%
   set playername=Player_SS.bin
+) else if %zgeproduct%==OSX (
+  %dccosx% -DZZDC_SDL;DARWIN;UNIX;MINIMAL -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr
+  set playername=player_osx86.bin
 ) else (
   echo Error
   goto :exit
@@ -61,7 +66,12 @@ if %zgeproduct%==NORMAL (
 cd tools\zdesigner
 dir .\exe\%playername%
 del .\exe\%playername%
-copy zzdc.exe .\exe\%playername%
+
+if %zgeproduct%==OSX (
+  copy zzdc .\exe\%playername%
+) else (
+  copy zzdc.exe .\exe\%playername%
+)
 
 if %1.==. (
   copy zzdc.map .\exe\

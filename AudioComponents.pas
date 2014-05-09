@@ -61,17 +61,18 @@ type
   end;
 
   TMusic = class(TZComponent)
-  private
+  strict private
     IsPlaying : boolean;
     Stream : TZInputStream;
     NextEventTime : single;
     LocalTime : single;
     CurrentInstruments : array[0..15] of integer;
     ChannelVolumes : array[0..15] of single;
+    PlayedNotes : TZArrayList;
     procedure GetNextEventTime;
     function ReadVarLength: Integer;
     procedure ProcessNextEvent;
-  {$ifndef minimal}public{$else}private{$endif}
+  public
     procedure AdvanceMusic(const DeltaTime : single);
     procedure Start;
     procedure Stop;
@@ -87,6 +88,7 @@ type
     NoteParam,NoteChannelParam,NoteLengthParam : single;
     destructor Destroy; override;
     procedure Update; override;
+    constructor Create(OwnerList: TZComponentList); override;
   end;
 
   TMusicControl = class(TCommand)
@@ -135,9 +137,12 @@ type
     SampleFormat : (sfoSigned8bit,sfoSigned16bit);
   end;
 
+var
+  CurrentMusic : TMusic;
+
 implementation
 
-uses ZApplication,ZExpressions,ZMath
+uses ZApplication,ZExpressions,ZMath, ZPlatform
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -280,7 +285,7 @@ begin
       Exit;
     Self.LastPlayed := ZApp.Time;
   end;
-  AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Channel, 0, 1.0, Self.ByReference);
+  AudioPlayer.AddNoteToEmitList( TNoteEmitEntry.Create(@Sound.Voice, NoteNr, Channel, 0, 1.0, Self.ByReference) );
 end;
 
 {$ifndef minimal}
@@ -345,13 +350,9 @@ begin
           Sound := TSound(Self.Instruments[InstrumentNr]);
           NoteLength := NoteLength + Sound.Voice.Envelopes[0].ReleaseTime;
           if not ZApp.NoSound then
-            AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity, False);
-          if Self.OnPlayNote.Count>0 then
           begin
-            Self.NoteParam := NoteNr;
-            Self.NoteChannelParam := Ch;  //int to float
-            Self.NoteLengthParam := NoteLength;
-            Self.OnPlayNote.ExecuteCommands;
+            Self.PlayedNotes.Add(TNoteEmitEntry.Create(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity, False));
+            AudioPlayer.EmitNote( TNoteEmitEntry(PlayedNotes.Last) );
           end;
         end;
       end;
@@ -377,6 +378,12 @@ begin
     ProcessNextEvent;
     GetNextEventTime;
   end;
+end;
+
+constructor TMusic.Create(OwnerList: TZComponentList);
+begin
+  inherited;
+  PlayedNotes := TZArrayList.Create;
 end;
 
 procedure TMusic.DefineProperties(List: TZPropertyList);
@@ -406,6 +413,7 @@ end;
 destructor TMusic.Destroy;
 begin
   Stop;
+  PlayedNotes.Free;
   inherited;
 end;
 
@@ -453,9 +461,27 @@ begin
 end;
 
 procedure TMusic.Update;
+var
+  I : integer;
+  Note : TNoteEmitEntry;
 begin
-  if IsPlaying then
-    AdvanceMusic(ZApp.DeltaTime);
+  if PlayedNotes.Count>0 then
+  begin
+    Platform_EnterMutex(VoicesMutex);
+      if Self.OnPlayNote.Count>0 then
+      begin
+        for I := 0 to Min(PlayedNotes.Count-1,8) do
+        begin
+          Note := TNoteEmitEntry(PlayedNotes[I]);
+          Self.NoteParam := Note.NoteNr;
+          Self.NoteChannelParam := Note.ChannelNr;  //int to float
+          Self.NoteLengthParam := Note.Length;
+          Self.OnPlayNote.ExecuteCommands;
+        end;
+      end;
+      PlayedNotes.Clear;
+    Platform_LeaveMutex(VoicesMutex);
+  end;
 end;
 
 { TMusicControl }
@@ -476,9 +502,9 @@ begin
       begin
         {$ifndef minimal}if Music=nil then Exit;{$endif}
         Music.Start;
-        ZApp.CurrentMusic := Music;
+        AudioComponents.CurrentMusic := Music;
       end;
-    mckStop : ZApp.CurrentMusic := nil;
+    mckStop : AudioComponents.CurrentMusic := nil;
   end;
 end;
 

@@ -3976,6 +3976,7 @@ begin
       ClassesToRemove.Add('TAudioMixer');
       NamesToRemove.Add('ZPlatform.Platform_InitAudio');
       NamesToRemove.Add('AudioPlayer.EmitSoundsInEmitList');
+      NamesToRemove.Add('AudioPlayer.EmitNote');
       NamesToRemove.Add('AudioPlayer.RenderToMixBuffer');
       NamesToRemove.Add('ZPlatform.Platform_ShutdownAudio');
       NamesToRemove.Add('AudioPlayer.RenderChannel');
