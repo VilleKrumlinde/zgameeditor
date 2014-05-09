@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="ZGameEditor application">
   <OnLoaded>
-    <DefineVariable Name="Temp1"/>
+    <Variable Name="Temp1"/>
   </OnLoaded>
+  <OnClose>
+    <ZExpression Expression="Timer1.Interval=0.5;"/>
+  </OnClose>
   <OnUpdate>
     <Timer Name="Timer1" Comment="Delay before music starts" Interval="0.5">
       <OnTimer>
@@ -35,11 +38,11 @@
     </Mesh>
     <Model Name="NoteModel" RotationVelocity="0 0.25 0" Category="1">
       <Definitions>
-        <DefineVariable Name="NoteLifeTime"/>
-        <DefineVariable Name="NoteChannel"/>
-        <DefineVariable Name="NoteNr"/>
-        <DefineVariable Name="NoteTargetX"/>
-        <DefineVariable Name="NoteTargetY"/>
+        <Variable Name="NoteLifeTime"/>
+        <Variable Name="NoteChannel"/>
+        <Variable Name="NoteNr"/>
+        <Variable Name="NoteTargetX"/>
+        <Variable Name="NoteTargetY"/>
       </Definitions>
       <OnRender>
         <UseMaterial Material="NoteMaterial"/>

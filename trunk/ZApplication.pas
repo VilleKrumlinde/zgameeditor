@@ -99,7 +99,6 @@ type
     GlobalVars : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
-    CurrentMusic : TMusic;
     Caption : TPropString;
     MousePosition : TZVector3f;
     ClearScreenMode : integer;
@@ -465,8 +464,8 @@ end;
 
 procedure TZApplication.MainSlice;
 begin
-  if CurrentMusic<>nil then
-    CurrentMusic.Update;
+  if AudioComponents.CurrentMusic<>nil then
+    AudioComponents.CurrentMusic.Update;
 
   //Uppdatera current state
   if CurrentState<>nil then

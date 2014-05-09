@@ -193,11 +193,25 @@ var
   GlobalLfos : array[0..MaxGlobalLfos-1] of TLfo;
   MasterVolume : single;
 
+type
+  TNoteEmitEntry = class
+    Sound : PVoiceEntry;
+    NoteNr : single;
+    Length : single;
+    Velocity : single;
+    ChannelNr : integer;
+    ByReference : boolean;
+  public
+    constructor Create(const Sound : PVoiceEntry; const NoteNr : single; const ChannelNr : integer;
+      const Length : single; const Velocity : single; const ByReference : boolean);
+  end;
+
+procedure EmitNote(Note: TNoteEmitEntry);
+
 function GetChannel(I : integer) : PChannel;
 procedure RenderToMixBuffer(Buf : PSoundMixUnit; Count : integer);
 
-procedure AddNoteToEmitList(Sound : PVoiceEntry; NoteNr : single; ChannelNr : integer;
-  Length : single; Velocity : single; ByReference : boolean);
+procedure AddNoteToEmitList(Note: TNoteEmitEntry);
 procedure EmitSoundsInEmitList;
 
 {$ifndef minimal}
@@ -938,126 +952,104 @@ begin
   Channel.Voices := Voice;
 end;
 
-type
-  TNoteEmitEntry = class
-    Sound : PVoiceEntry;
-    NoteNr : single;
-    Length : single;
-    Velocity : single;
-    ChannelNr : integer;
-    ByReference : boolean;
-  end;
-
 var
   //List with notes to emit in next call to emitsounds
   EmitList : TZArrayList;
 
-procedure AddNoteToEmitList(Sound : PVoiceEntry; NoteNr : single; ChannelNr : integer;
-  Length : single; Velocity : single; ByReference : boolean);
-var
-  E : TNoteEmitEntry;
+procedure AddNoteToEmitList(Note: TNoteEmitEntry);
 begin
-  E := TNoteEmitEntry.Create;
-  E.Sound := Sound;
-  E.NoteNr := NoteNr;
-  E.ChannelNr := ChannelNr;
-  E.Length := Length;
-  E.Velocity := Velocity;
-  E.ByReference := ByReference;
-  EmitList.Add(E);
+  EmitList.Add(Note);
+end;
+
+procedure EmitNote(Note: TNoteEmitEntry);
+var
+  P: PSingle;
+  V: PVoiceEntry;
+  Channel: PChannel;
+  I: Integer;
+  M: PModulation;
+begin
+  Channel := @Channels[Note.ChannelNr];
+  if not Channel.Active then
+    Exit;
+  if Note.ByReference then
+  begin
+    V := Note.Sound;
+    if V.Active or (V.Next<>nil) then
+      Exit;
+  end
+  else
+  begin
+    V := GetFreeVoice;
+    if V=nil then
+      Exit;
+    V^ := Note.Sound^;  //Memcopy voice data
+  end;
+  V.Time := 0;
+  for I := 0 to High(V.Envelopes) do
+    V.Envelopes[I].State := esInit;
+  V.Active := True;
+  V.NoteNr := Note.NoteNr;
+  //V.Volume := 0.25;
+  if Note.Length <> 0 then
+    //Override sound length-value
+    V.Length := Note.Length;
+
+  //Modulate volume with velocity (0..1)
+  V.Volume := V.Volume * Note.Velocity;
+
+  //Determine the nr of samples in sampledata (size in bytes / sampleformat)
+  if V.SampleRef <> nil then
+  begin
+    V.SampleData := TSample(V.SampleRef).GetMemory;
+    V.SampleCount := TSample(V.SampleRef).SampleCount;
+    V.SamplePosition := 0;
+  end;
+  //Initialize modulations
+  for I := 0 to High(V.Modulations) do
+  begin
+    M := @V.Modulations[I];
+    if M.Active then
+    begin
+      case M.Destination of
+        mdFilterCutoff:  P := @V.FilterCutoff;
+        mdFilterQ: P := @V.FilterQ;
+        mdNoteNr:  P := @V.NoteNr;
+        mdLfo1Speed..mdLfo2Speed: P := @V.Lfos[Ord(M.Destination) - Ord(mdLfo1Speed)].Speed;
+        mdMod1Amount..mdMod4Amount:  P := @V.Modulations[Ord(M.Destination) - Ord(mdMod1Amount)].Amount;
+        mdOsc1NoteMod: P := @V.Osc1.NoteModifier;
+        mdOsc2NoteMod: P := @V.Osc2.NoteModifier;
+        mdVolume: P := @V.Volume;
+        mdPan: P := @V.Pan;
+        mdOsc2Vol: P := @V.Osc2Volume;
+        mdOsc1PW: P := @V.Osc1.PulseWidth;
+      else //todo ifdef debug
+        P := nil;
+      end;
+      M.DestinationPtr := P;
+      M.OriginalDestinationValue := P^;
+    end;
+  end;
+  UpdateModulators(V, 0);
+  SetVoiceFrameConstants(V);
+  AddVoiceToChannel(V, Channel);
 end;
 
 //Emit all sounds queued up in emitlist
 //This minimizes synchronization problems with playerthread
 procedure EmitSoundsInEmitList;
 var
-  V : PVoiceEntry;
-  I,J : integer;
-  M : PModulation;
-  Channel : PChannel;
+  I : integer;
   Note : TNoteEmitEntry;
-  P : PSingle;
 begin
   if EmitList.Count=0 then
     Exit;
 
   Platform_EnterMutex(VoicesMutex);
-    for J := 0 to EmitList.Count-1 do
+    for I := 0 to EmitList.Count-1 do
     begin
-      Note := TNoteEmitEntry(EmitList[J]);
-
-      Channel := @Channels[Note.ChannelNr];
-      if not Channel.Active then
-        Continue;
-
-      if Note.ByReference then
-      begin
-        V := Note.Sound;
-        if V.Active or (V.Next<>nil) then
-          Continue;
-      end
-      else
-      begin
-        V := GetFreeVoice;
-        if V=nil then
-          Continue;
-        V^ := Note.Sound^;  //Memcopy voice data
-      end;
-
-      V.Time := 0;
-      for I := 0 to High(V.Envelopes) do
-        V.Envelopes[I].State := esInit;
-
-      V.Active := True;
-      V.NoteNr := Note.NoteNr;
-      //V.Volume := 0.25;
-      if Note.Length<>0 then
-        //Override sound length-value
-        V.Length := Note.Length;
-
-      //Modulate volume with velocity (0..1)
-      V.Volume := V.Volume * Note.Velocity;
-
-      //Determine the nr of samples in sampledata (size in bytes / sampleformat)
-      if V.SampleRef<>nil then
-      begin
-        V.SampleData := TSample(V.SampleRef).GetMemory;
-        V.SampleCount := TSample(V.SampleRef).SampleCount;
-        V.SamplePosition := 0;
-      end;
-
-      //Initialize modulations
-      for I := 0 to High(V.Modulations) do
-      begin
-        M := @V.Modulations[I];
-        if M.Active then
-        begin
-          case M.Destination of
-            mdFilterCutoff : P := @V.FilterCutoff;
-            mdFilterQ : P := @V.FilterQ;
-            mdNoteNr : P := @V.NoteNr;
-            mdLfo1Speed..mdLfo2Speed :
-              P := @V.Lfos[ Ord(M.Destination)-Ord(mdLfo1Speed) ].Speed;
-            mdMod1Amount..mdMod4Amount :
-              P := @V.Modulations[ Ord(M.Destination)-Ord(mdMod1Amount) ].Amount;
-            mdOsc1NoteMod : P := @V.Osc1.NoteModifier;
-            mdOsc2NoteMod : P := @V.Osc2.NoteModifier;
-            mdVolume : P := @V.Volume;
-            mdPan : P := @V.Pan;
-            mdOsc2Vol : P := @V.Osc2Volume;
-            mdOsc1PW : P := @V.Osc1.PulseWidth;
-          else //todo ifdef debug
-            P := nil;
-          end;
-          M.DestinationPtr := P;
-          M.OriginalDestinationValue := P^;
-        end;
-      end;
-
-      UpdateModulators(V,0);
-      SetVoiceFrameConstants(V);
-
-      AddVoiceToChannel(V,Channel);
+      Note := TNoteEmitEntry(EmitList[I]);
+      EmitNote(Note);
     end;
     EmitList.Clear;
   Platform_LeaveMutex(VoicesMutex);
@@ -1132,9 +1124,24 @@ begin
       Channel.Voices := nil;
     end;
     FillChar(Voices,SizeOf(Voices),0);
+    AudioComponents.CurrentMusic := nil;
   Platform_LeaveMutex(VoicesMutex);
 end;
 {$endif}
+
+{ TNoteEmitEntry }
+
+constructor TNoteEmitEntry.Create(const Sound: PVoiceEntry;
+  const NoteNr: single; const ChannelNr: integer; const Length,
+  Velocity: single; const ByReference: boolean);
+begin
+  Self.Sound := Sound;
+  Self.NoteNr := NoteNr;
+  Self.ChannelNr := ChannelNr;
+  Self.Length := Length;
+  Self.Velocity := Velocity;
+  Self.ByReference := ByReference;
+end;
 
 initialization
 

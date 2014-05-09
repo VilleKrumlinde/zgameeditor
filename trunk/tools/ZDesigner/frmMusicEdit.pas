@@ -16,7 +16,7 @@ type
     { Private declarations }
     Music : TMusic;
     IsPlaying : boolean;
-    Thread : TThread;
+//    Thread : TThread;
   public
     { Public declarations }
     procedure SetComponent(C : TZComponent; TreeNode : TZComponentTreeNode); override;
@@ -66,39 +66,34 @@ begin
 end;
 
 procedure TMusicEditFrame.PlayButtonClick(Sender: TObject);
-var
-  T :TPlaybackThread;
+//var
+//  T :TPlaybackThread;
 begin
   if IsPlaying then
   begin
     PlayButton.Caption := '&Play music';
 //    PlayTimer.Enabled := False;
     Music.Stop;
-    if Thread<>nil then
-    begin
-      Thread.Terminate;
-      Thread := nil;
-    end;
+    AudioComponents.CurrentMusic := nil;
+    DesignerStopAllAudio;
+//    if Thread<>nil then
+//    begin
+//      Thread.Terminate;
+//      Thread := nil;
+//    end;
   end
   else
   begin
     Platform_InitGlobals; //reset timer
     PlayButton.Caption := '&Stop music';
-//    Music.Start;
-{    if ThreadCheckBox.Checked then
-    begin }
-      T := TPlaybackThread.Create(True);
-      T.Priority := tpTimeCritical;
-      T.Music:=Music;
-      T.Start;
-      T.FreeOnTerminate := True;
-      Self.Thread := T;
-{    end
-    else
-    begin}
-//      LastTimerTime := Platform_GetTime;
-//      PlayTimer.Enabled := True;
-//    end;
+    Music.Start;
+    AudioComponents.CurrentMusic := Music;
+//      T := TPlaybackThread.Create(True);
+//      T.Priority := tpTimeCritical;
+//      T.Music:=Music;
+//      T.Start;
+//      T.FreeOnTerminate := True;
+//      Self.Thread := T;
   end;
   IsPlaying := not IsPlaying;
 end;

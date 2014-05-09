@@ -276,7 +276,7 @@ uses
   Posix.Semaphore,
   Posix.Pthread,
   Posix.Stdlib,
-  Types;
+  System.Types;
   {$ENDIF}
 {$ENDIF}
 

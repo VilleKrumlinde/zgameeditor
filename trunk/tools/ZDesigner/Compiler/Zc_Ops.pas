@@ -1464,7 +1464,12 @@ begin
       if (Ref as TZcOpVariableBase).Typ.TheArray=nil then
         raise ECodeGenError.Create(Self.Id + ' is not an array')
       else
-        Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type
+      begin
+        Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type;
+        if Result.Kind=zctReference then
+          //Allow "Bitmap[3] b;" declarations
+          Result.ReferenceClassId := ArrayOp.GetDataType.ReferenceClassId;
+      end;
     end
     else if (Ref is TDefineArray) then
       Result.Kind := (Ref as TDefineArray)._Type;

@@ -38,14 +38,13 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplication, AudioPlayer,Commands
+uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplication, AudioPlayer,
+  Commands, AudioComponents
  {$ifndef minimal}
   ,SysUtils
  {$endif}
  {$IFDEF FPC}
   ,WinEvent
- {$ELSE}
-//    Messages;
  {$ENDIF}
  ;
 
@@ -1288,6 +1287,8 @@ begin
       //Skriv SamplesToWrite samples från LastWritePosition
       //dela upp i två anrop ifall buffer-wrap
       AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
+      if AudioComponents.CurrentMusic<>nil then
+        AudioComponents.CurrentMusic.AdvanceMusic(SamplesToWrite / AudioRate);
     Platform_LeaveMutex(VoicesMutex);
 
     DSBuffer.Vtbl.Lock(DSBuffer,LastWritePosition,BytesToWrite,@LockPtr1,@LockSize1, @LockPtr2,@LockSize2,0);

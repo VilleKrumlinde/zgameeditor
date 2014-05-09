@@ -156,7 +156,7 @@ begin
   NoteLength := StrToFloatDef(NoteLengthEdit.Text,0.25);
   Sound.Voice.Length := NoteLength;
   GetNoteNr(I, NoteNr);
-  AudioPlayer.AddNoteToEmitList(@Sound.Voice, NoteNr, StrToIntDef(ChannelEdit.Text,0), NoteLength, 1.0, False);
+  AudioPlayer.AddNoteToEmitList( TNoteEmitEntry.Create(@Sound.Voice, NoteNr, StrToIntDef(ChannelEdit.Text,0), NoteLength, 1.0, False) );
 
   NoteNrLabel.Caption := 'NoteNr ' + IntToStr(Round(NoteNr));
 
