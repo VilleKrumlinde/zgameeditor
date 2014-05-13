@@ -9,7 +9,7 @@ implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses SDL, ZLog, AudioPlayer, ZApplication, AudioComponents
+uses SDL, ZLog, AudioPlayer, ZApplication
   {$ifdef linux},libc{$endif}
   {$ifdef darwin} {$ifdef fpc},dl{$else},Posix.Dlfcn{$endif}  {$endif}
   ;
@@ -365,8 +365,6 @@ begin
     //Skriv SamplesToWrite samples från LastWritePosition
     //dela upp i två anrop ifall buffer-wrap
     AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
-    if AudioComponents.CurrentMusic<>nil then
-      AudioComponents.CurrentMusic.AdvanceMusic(SamplesToWrite / AudioRate);
   Platform_LeaveMutex(VoicesMutex);
 
   //Flytta paint buffer till dma-soundbuffer

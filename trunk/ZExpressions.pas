@@ -98,7 +98,7 @@ type
   end;
 
   //Define a global constant that can be used in expressions
-  //Value is copied into code, this component is not streamed in final binary
+  //Value is copied into code
   TDefineConstant = class(TDefineVariableBase)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -1153,15 +1153,19 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
 end;
 
 {$ifndef minimal}
@@ -1776,7 +1780,7 @@ begin
         StackPopToPointer(M);
         SaveExecutionState;
           //AddToScene will call m.OnSpawn which in turn can run expressions
-          M := TModel(M.Clone);
+          M := TModel(M.CloneModel);
           M.AddToScene(ZApp);
         RestoreExecutionState;
         Dest := pointer(M);
@@ -2561,7 +2565,6 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Variable';{$endif}
   ZClasses.Register(TDefineConstant,DefineConstantClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.ExcludeFromBinary:=True;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=29;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Constant';{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);

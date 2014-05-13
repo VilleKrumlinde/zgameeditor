@@ -369,8 +369,9 @@ var
 
   function DoModelDefined(var Edt : TZcIdentifierInfo) : boolean;
   var
-    C : TZComponent;
+    Parent,Model,C : TZComponent;
     I : integer;
+    PropValue : TZPropertyValue;
   begin
     Result := False;
     C := GetModelDefined(Self);
@@ -378,7 +379,21 @@ var
       Exit;
     Edt.Kind := edtModelDefined;
     Edt.Component := C;
+
     I := C.OwnerList.IndexOf(C);
+    Model := C.OwnerList.Owner;
+    repeat
+      //Get the correct item index by adding up definitions in the  model inheritance chain
+      Model.GetProperty( Model.GetProperties.GetByName('BaseModel'), PropValue );
+      Parent := PropValue.ComponentValue;
+      if Parent<>nil then
+      begin
+        Parent.GetProperty( Parent.GetProperties.GetByName('Definitions'), PropValue );
+        Inc(I,PropValue.ComponentListValue.Count);
+      end;
+      Model := Parent;
+    until Model=nil;
+
     Edt.DefinedIndex := I;
     Result := True;
   end;
@@ -950,12 +965,39 @@ end;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 var
   PName : string;
+  C : TZComponent;
+  PropValue : TZPropertyValue;
+  Owner : TZComponent;
 begin
   Result := Op;
 
   if (Op.Kind=zcSelect) and (Op.Ref<>nil) and (GetModelDefined(Op)=nil) then
     //Avoid situations like "App.Time" conflicting with global variable "Time"
     Op.Ref := nil;
+
+  if (Op.Kind=zcIdentifier) and (Op.Ref<>nil) and (Op.Ref is TZComponent) and ((Op.Ref as TZComponent).OwnerList<>nil) then
+  begin
+    //Prefix items in Model.Definitions with "CurrentModel". This is needed to get model inheritance right.
+    C := (Op.Ref as TZComponent).OwnerList.Owner;
+    if ComponentManager.GetInfo(C).ClassId=ModelClassId then
+    begin
+      //Skip if code is not in a component inside model (because code outside should be able to set the global values)
+      Owner := CompilerContext.ThisC;
+      repeat
+        Owner := Owner.GetOwner;
+      until (Owner=nil) or (ComponentManager.GetInfo(Owner).ClassId=ModelClassId);
+      if Owner<>nil then
+      begin
+        Owner.GetProperty( C.GetProperties.GetByName('Definitions'), PropValue );
+        if PropValue.ComponentListValue.IndexOf(Op.Ref)>-1 then
+        begin
+          Result := MakeOp(zcSelect,[ MakeIdentifier('CurrentModel') ]);
+          Result.Id := Op.Id;
+          Result.Ref := Op.Ref;
+        end;
+      end;
+    end;
+  end;
 
   if (Op.Kind in [zcIdentifier,zcSelect])
     and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant))
@@ -970,7 +1012,7 @@ begin
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
     end;
-    Result := MakeOp(zcSelect,[Op]);
+    Result := MakeOp(zcSelect,[Result]);
     Result.Id := PName;
   end else if (Op.Kind=zcIdentifier) and (Op.Ref=nil) then
   begin
@@ -1498,6 +1540,7 @@ end;
 
 function GetArray(Kind : TZcDataTypeKind) : TDefineArray;
 begin
+  Result := nil;
   case Kind of
     zctMat4 : Result := Prototypes.Mat4Array;
     zctVec3 : Result := Prototypes.Vec3Array;

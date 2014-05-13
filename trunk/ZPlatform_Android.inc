@@ -60,7 +60,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, AudioComponents;
+uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
 
 {$i-}  //No io-test on files, code tests ioresult
 
@@ -381,8 +381,6 @@ begin
 
   Platform_EnterMutex(VoicesMutex);
     AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
-    if AudioComponents.CurrentMusic<>nil then
-      AudioComponents.CurrentMusic.AdvanceMusic(SamplesToWrite / AudioRate);
   Platform_LeaveMutex(VoicesMutex);
 
   //Flytta paint buffer till dma-soundbuffer
