@@ -216,6 +216,7 @@ type
     ParentModel : TModel;
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    BaseModel : TModel;
     Definitions : TZComponentList;
     OnRender : TZComponentList;
     OnUpdate : TZComponentList;       //uppdateringslogik
@@ -250,6 +251,7 @@ type
     procedure DesignerUpdate;
     {$endif}
     procedure RunRenderCommands;
+    function CloneModel : TModel;
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
   end;
@@ -744,6 +746,25 @@ begin
   {$endif}
 end;
 
+function TModel.CloneModel: TModel;
+var
+  Parent : TModel;
+begin
+  if Self.BaseModel<>nil then
+  begin
+    //Create all parents first
+    {$ifndef minimal}
+    ZAssert(Self.BaseModel<>Self,'BaseModel cannot be set to itself');
+    {$endif}
+    Parent := Self.BaseModel;
+    Self.BaseModel := nil;
+    Result := TModel( Self.Clone(Parent.CloneModel) );
+    Self.BaseModel := Parent;
+  end
+  else
+    Result := TModel(Self.Clone);
+end;
+
 procedure TModel.Collision(Hit: TModel);
 begin
   Self.CollidedWith := Hit;
@@ -755,6 +776,9 @@ end;
 procedure TModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'BaseModel',{$ENDIF}(@BaseModel), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
@@ -1247,10 +1271,14 @@ begin
   begin
     if SpawnStyle=ssClone then
       //Clone copy owned by app
-      Spawned := TModel(Model.Clone)
+      Spawned := TModel(Model.CloneModel)
     else
     begin
       //Reference to original, keep ownership
+      {$ifndef minimal}
+      if Assigned(Model.BaseModel) then
+        ZHalt('Model with BaseModel set must be spawned as Clone: ' + Model.Name);
+      {$endif}
       Spawned := Model;
       Spawned.IsSpawnedAsReference := True;
     end;

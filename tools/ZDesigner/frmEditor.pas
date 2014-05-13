@@ -3958,7 +3958,6 @@ begin
     end;
     if UsedComponents.IndexOf('TMeshImplicit')=-1 then
       ClassesToRemove.Add('TImpProcess');
-    ClassesToRemove.Add('TDefineConstant');
     if not ZApp.ShowOptionsDialog then
     begin
       NamesToRemove.Add('ZPlatform.Options');

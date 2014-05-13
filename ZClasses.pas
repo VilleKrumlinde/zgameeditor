@@ -319,11 +319,11 @@ type
     Options : array of string;  //För bytes: Valbara alternativ
     HideInGui : boolean;        //Visa inte denna prop i gui
     ReturnType : TZcDataType;      //For expresssions: return type of expression
-    function IsDefaultValue(const Value : TZPropertyValue) : boolean;
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
     constructor Create;
     {$ENDIF}
+    function IsDefaultValue(const Value : TZPropertyValue) : boolean;
   end;
 
   TZPropertyList = class(TZArrayList)
@@ -344,7 +344,7 @@ type
   //Baskomponentklass för allt som ska kunna redigeras i tool
   TZComponent = class
   private
-    function DoClone(ObjIds,FixUps : TZArrayList) : TZComponent;
+    function DoClone(ObjIds,FixUps : TZArrayList; Into : TZComponent) : TZComponent;
   protected
     ObjId : integer;    //only used in streaming
     IsChanged : boolean;
@@ -365,7 +365,7 @@ type
     function GetPropertyPtr(Prop : TZProperty; Index : integer) : pointer;
     procedure Update; virtual;
     procedure Change;
-    function Clone : TZComponent;
+    function Clone(Into : TZComponent = nil) : TZComponent;
     procedure ResetGpuResources; virtual; //Free resources such as GL-handles
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
@@ -1292,7 +1292,7 @@ begin
   end;
 end;
 
-function TZComponent.Clone: TZComponent;
+function TZComponent.Clone(Into : TZComponent = nil): TZComponent;
 var
   ObjIds,CleanUps,Fixups : TZArrayList;
   I,Id : integer;
@@ -1311,7 +1311,7 @@ begin
   CleanUps := TZArrayList.CreateReferenced;
   FixUps := TZArrayList.CreateReferenced;
   CloneAssignObjectIds(Self,ObjIds,CleanUps);
-  Result := DoClone(ObjIds,FixUps);
+  Result := DoClone(ObjIds,FixUps,Into);
 
   //component references
   for I := 0 to FixUps.Count-1 do
@@ -1333,7 +1333,7 @@ end;
 
 
 
-function TZComponent.DoClone(ObjIds,FixUps : TZArrayList): TZComponent;
+function TZComponent.DoClone(ObjIds,FixUps : TZArrayList; Into : TZComponent): TZComponent;
 var
   PropList : TZPropertyList;
   Prop : TZProperty;
@@ -1348,12 +1348,15 @@ var
     for I := 0 to List.Count-1 do
     begin
       C := List.GetComponent(I);
-      DestList.AddComponent( C.DoClone(ObjIds,FixUps) );
+      DestList.AddComponent( C.DoClone(ObjIds,FixUps,nil) );
     end;
   end;
 
 begin
-  Result := TZComponentClass(Self.ClassType).Create(nil);
+  if Into<>nil then
+    Result := Into
+  else
+    Result := TZComponentClass(Self.ClassType).Create(nil);
   ObjIds[ Self.ObjId ] := Result;
   PropList := GetProperties;
   for I := 0 to PropList.Count-1 do
@@ -1362,6 +1365,10 @@ begin
     if Prop.DontClone then
       Continue; //Skip properties like: objid, model.personality
     GetProperty(Prop,Value);
+    if (Into<>nil) and Prop.IsDefaultValue(Value) then
+      //Skip default values when cloning into. 
+      //This is because child models should keep their base model property values unless values are overriden (i.e. non-default).
+      Continue;
     case Prop.PropertyType of
       zptComponentRef :
         begin
@@ -2606,6 +2613,26 @@ begin
   Self.ReturnType.Kind := zctVoid;
 end;
 
+procedure TZProperty.SetChildClasses(const C: array of TZComponentClass);
+var
+  I : integer;
+begin
+  SetLength(ChildClasses,Length(C));
+  for I := 0 to Length(C)-1 do
+    ChildClasses[I] := C[I];
+end;
+
+procedure TZProperty.SetOptions(const O: array of string);
+var
+  I : integer;
+begin
+  SetLength(Options,Length(O));
+  for I := 0 to Length(O)-1 do
+    Options[I] := O[I];
+end;
+
+{$ENDIF}
+
 function TZProperty.IsDefaultValue(const Value: TZPropertyValue): boolean;
 begin
   Result := False;
@@ -2633,26 +2660,6 @@ begin
       Result := Value.BinaryValue.Size=0;
   end;
 end;
-
-procedure TZProperty.SetChildClasses(const C: array of TZComponentClass);
-var
-  I : integer;
-begin
-  SetLength(ChildClasses,Length(C));
-  for I := 0 to Length(C)-1 do
-    ChildClasses[I] := C[I];
-end;
-
-procedure TZProperty.SetOptions(const O: array of string);
-var
-  I : integer;
-begin
-  SetLength(Options,Length(O));
-  for I := 0 to Length(O)-1 do
-    Options[I] := O[I];
-end;
-
-{$ENDIF}
 
 { TZInputStream }
 

@@ -517,7 +517,7 @@ if(Defined1!=10)
   Error=1203;
 
 Model1.Defined2=42;
-if(Defined2!=42)
+if(Model1.Defined2!=42)
   Error=1204;
 
 m.Defined3="Hej";

@@ -918,6 +918,10 @@ begin
       else
         FrameCount := Count;
       Finished := FrameCount<=0;
+
+      //And update midi music
+      if AudioComponents.CurrentMusic<>nil then
+        AudioComponents.CurrentMusic.AdvanceMusic(FrameSampleCount / AudioRate);
     end
     else
       Finished := True;
