@@ -530,7 +530,12 @@ if(m.DefinedArray[1]!=1)
 
 mtest(m);
 if(m.DefinedArray[1]!=2)
-  Error=1206;]]>
+  Error=1206;
+
+m.DefinedVecArray[0].x=1;
+m.DefinedVecArray[0].y=2;
+if((m.DefinedVecArray[0][0]!=1) || (m.DefinedVecArray[0][1]!=2))
+  Error=1207;]]>
       </Expression>
     </ZExpression>
     <SpawnModel Model="Model1"/>
@@ -799,12 +804,19 @@ else
 <![CDATA[78DA6360200E000000280001]]>
           </Values>
         </Array>
+        <Array Name="DefinedVecArray" Type="6" SizeDim1="1"/>
       </Definitions>
       <OnRender>
         <RenderSprite/>
       </OnRender>
       <OnUpdate>
-        <ZExpression Expression="currentmodel.position.x=f4()*8;"/>
+        <ZExpression>
+          <Expression>
+<![CDATA[currentmodel.position.x=f4()*8;
+
+DefinedVecArray[0][0]=1;]]>
+          </Expression>
+        </ZExpression>
       </OnUpdate>
     </Model>
     <Variable Name="Error"/>

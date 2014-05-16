@@ -30,6 +30,7 @@ type
     WriteFileName : array[0..254] of AnsiChar;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
+    procedure InitAfterPropsAreSet; override;
   public
     FileName : TPropString;
     FileNameFloatRef : TZPropertyRef;
@@ -279,6 +280,12 @@ begin
 end;
 {$endif}
 
+
+procedure TZFile.InitAfterPropsAreSet;
+begin
+  inherited;
+  Self.FileSize := Self.FileEmbedded.Size;
+end;
 
 procedure TZFile.Update;
 begin

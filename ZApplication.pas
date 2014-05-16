@@ -1211,7 +1211,7 @@ var
 begin
   OldState := ZApp.CurrentState;
   ZApp.CurrentState := Self.State;
-  if (OldState<>nil) and (OldState<>Self.State) then
+  if (OldState<>nil) then
     OldState.OnLeave.ExecuteCommands;
   if Self.State<>nil then
     Self.State.OnStart.ExecuteCommands;

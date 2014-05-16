@@ -321,7 +321,7 @@ begin
         end;
       edtProperty: DoProp;
       edtPropIndex: Result.Kind := zctFloat;
-      edtModelDefined : Result.Kind := zctReference;
+      edtModelDefined : DoIdentifier;  //With modeldefined, Ref should already point to the correct identifier
     else
       raise ECodeGenError.Create('Could not determine type: ' + Self.ToString);
     end;
@@ -968,12 +968,30 @@ var
   C : TZComponent;
   PropValue : TZPropertyValue;
   Owner : TZComponent;
+  I : integer;
 begin
   Result := Op;
 
   if (Op.Kind=zcSelect) and (Op.Ref<>nil) and (GetModelDefined(Op)=nil) then
     //Avoid situations like "App.Time" conflicting with global variable "Time"
     Op.Ref := nil;
+
+  if (Op.Kind=zcSelect) and (Op.Children.Count>0) and (Op.Children.First.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
+  begin
+    //Allow xyz/rgb syntax for vec-types
+    if Length(Op.Id)=1 then
+    begin
+      case Upcase(Op.Id[1]) of
+        'X','R' : I := 0;
+        'Y','G' : I := 1;
+        'Z','B' : I := 2;
+        'W','A' : I := 3;
+      end;
+      Result := MakeArrayAccess(Op.Children.First);
+      Result.Children.Add( TZcOpLiteral.Create(zctInt,I) );
+      Exit;
+    end;
+  end;
 
   if (Op.Kind=zcIdentifier) and (Op.Ref<>nil) and (Op.Ref is TZComponent) and ((Op.Ref as TZComponent).OwnerList<>nil) then
   begin
