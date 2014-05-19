@@ -83,6 +83,12 @@ public class Zge extends GLSurfaceView
 
         initZApp();
 
+        //The lines below are needed to get alpha channel
+        //Source: https://github.com/Wizcorp/Ejecta-X/issues/13
+        setZOrderOnTop(true);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
+
         if(NativeGetGLBase()==1) {
           Log.i("ZgeAndroid", "GLES 2");
           setEGLContextClientVersion(2);
@@ -306,7 +312,7 @@ public class Zge extends GLSurfaceView
           NativeKeydown(event.getUnicodeChar());
       }
 
-      return true;//super.onKeyDown(keyCode, event);
+      return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -326,7 +332,7 @@ public class Zge extends GLSurfaceView
         // key up
         NativeKeyup(event.getUnicodeChar());
 
-      return true;//super.onKeyUp(keyCode, event);
+      return super.onKeyUp(keyCode, event);
     }
 
     @Override
