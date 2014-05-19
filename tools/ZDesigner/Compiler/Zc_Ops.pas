@@ -1004,15 +1004,18 @@ begin
       repeat
         Owner := Owner.GetOwner;
       until (Owner=nil) or (ComponentManager.GetInfo(Owner).ClassId=ModelClassId);
-      if Owner<>nil then
-      begin
-        Owner.GetProperty( C.GetProperties.GetByName('Definitions'), PropValue );
+      while Owner<>nil do
+      begin //Check in closest parent model including any hierarchy
+        Owner.GetProperty( Owner.GetProperties.GetByName('Definitions'), PropValue );
         if PropValue.ComponentListValue.IndexOf(Op.Ref)>-1 then
         begin
           Result := MakeOp(zcSelect,[ MakeIdentifier('CurrentModel') ]);
           Result.Id := Op.Id;
           Result.Ref := Op.Ref;
+          Break;
         end;
+        Owner.GetProperty( Owner.GetProperties.GetByName('BaseModel'), PropValue );
+        Owner := PropValue.ComponentValue;
       end;
     end;
   end;

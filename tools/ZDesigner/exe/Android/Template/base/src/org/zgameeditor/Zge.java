@@ -78,6 +78,12 @@ public class Zge extends GLSurfaceView
 
         initZApp();
 
+        //The lines below are needed to get alpha channel
+        //Source: https://github.com/Wizcorp/Ejecta-X/issues/13
+        setZOrderOnTop(true);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
+
         if(NativeGetGLBase()==1) {
           Log.i("ZgeAndroid", "GLES 2");
           setEGLContextClientVersion(2);
