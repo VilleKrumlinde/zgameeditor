@@ -104,6 +104,11 @@ begin
 
     glViewport(0, 0, B.PixelWidth, B.PixelHeight);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ZERO);
+
+    glDisable(GL_DEPTH_TEST);
+
     glEnable(GL_TEXTURE_2D);
     B.UseTextureBegin;
     glScalef(2,2,2);

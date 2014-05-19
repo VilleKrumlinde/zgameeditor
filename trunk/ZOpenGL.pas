@@ -1659,7 +1659,7 @@ type
   TSaveAttribs =
   record
     Viewport : array[0..3] of integer;
-    Lighting,Cullface,Texture2d : integer;
+    Lighting,Cullface,Texture2d,Blend,Depth : integer;
   end;
 
 const
@@ -1677,6 +1677,9 @@ begin
   glGetIntegerv(GL_LIGHTING, @A^.Lighting);
   glGetIntegerv(GL_CULL_FACE, @A^.Cullface);
   glGetIntegerv(GL_TEXTURE_2D, @A^.Texture2d);
+
+  glGetIntegerv(GL_BLEND, @A^.Blend);
+  glGetIntegerv(GL_DEPTH_TEST, @A^.Depth);
 
   SavedAttrib := A;
 end;
@@ -1704,6 +1707,16 @@ begin
     glDisable(GL_TEXTURE_2D)
   else
     glEnable(GL_TEXTURE_2D);
+
+  if A.Blend=0 then
+    glDisable(GL_BLEND)
+  else
+    glEnable(GL_BLEND);
+
+  if A.Depth=0 then
+    glDisable(GL_DEPTH_TEST)
+  else
+    glEnable(GL_DEPTH_TEST);
 
   Dispose(A);
   SavedAttrib := nil;

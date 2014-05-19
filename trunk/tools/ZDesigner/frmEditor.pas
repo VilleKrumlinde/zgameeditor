@@ -1527,6 +1527,11 @@ begin
   glLoadIdentity();
 
   glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
 
   glViewport(0, 0, Glp.Width, Glp.Height);
 
@@ -1537,8 +1542,7 @@ begin
     Exit;
 
   glDisable( GL_LIGHTING );
-
-  glLoadIdentity();
+  glDisable( GL_CULL_FACE );
 
   glScalef(2.0 / Glp.Width, -2.0 / Glp.Height, 1.0);
 
@@ -1586,7 +1590,11 @@ begin
   begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  end;
+  end else
+    glDisable(GL_BLEND);
+
+  glDisable(GL_TEXTURE_GEN_S);
+  glDisable(GL_TEXTURE_GEN_T);
 
   B.UseTextureBegin;
   //För TexCoords gäller: Y=1 Top, Y=0 Bottom
