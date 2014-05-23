@@ -2970,7 +2970,7 @@ int zb2GetBodyContactCount(int body) {}
 void zb2SetBodyFilteringFlags(int body, int categoryBits, int maskBits, int groupIndex) {}]]>
           </Source>
         </ZExternalLibrary>
-        <ZExternalLibrary Comment="Bullet 3D physics library" ModuleName="ZGEBullet" CallingConvention="1" Source="if(ANDROID) this.ModuleName = &quot;./libZGEBullet.so&quot;;" DefinitionsFile="zgebullet.txt"/>
+        <ZExternalLibrary Comment="Bullet 3D physics library" ModuleName="ZGEBullet" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZGEBullet.so&quot;;" DefinitionsFile="zgebullet.txt"/>
         <ZExternalLibrary Comment="Skeletal animation library" ModuleName="ZgeSkelet" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libZgeSkelet.so&quot;;">
           <Source>
 <![CDATA[/*
