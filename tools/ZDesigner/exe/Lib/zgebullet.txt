@@ -1,62 +1,44 @@
 /*
-  Adapter to the ZGEBullet Library, a wrapper for the Bullet Physics Library.
+  Adapter to the ZgeBullet Library, a wrapper for the Bullet Physics Library.
   http://bulletphysics.org
 
   Download Windows DLL and Android shared library from
   http://code.google.com/p/zgebullet/downloads
 
-  Copyright (c) 2012 Radovan Cervenka
+  Copyright (c) 2012-2014 Radovan Cervenka
 */
 
 // Global constants
 
-// boolean
-const int FALSE = 0;
-const int TRUE = 1;
-
-// rotation-related
-const float PIx2 = PI * 2; // 360 degrees
-const float PI2 = PI / 2; // 90 degrees
-const float PI3 = PI / 3; // 60 degrees
-const float PI4 = PI / 4; // 45 degrees
-const float PI6 = PI / 6; // 30 degrees
-const float ROT360 = 1.0; // 360 degrees
-const float ROT180 = 0.5; // 180 degrees
-const float ROT120 = 0.3333; // 120 degrees
-const float ROT90 = 0.25; // 90 degrees
-const float ROT60 = 0.1666; // 60 degrees
-const float ROT45 = 0.125; // 45 degrees
-const float ROT30 = 0.0833; // 30 degrees
-
 // triangle mesh types
-const int CONVEX_HULL_MESH = 1;
-const int CONCAVE_STATIC_MESH = 2;
-const int CONCAVE_DEFORMABLE_MESH = 3;
+const int ZBT_CONVEX_HULL_MESH = 1;
+const int ZBT_CONCAVE_STATIC_MESH = 2;
+const int ZBT_CONCAVE_DEFORMABLE_MESH = 3;
 
 // data types for heightfield data
-const int FLOAT = 0;
-const int INTEGER = 1;
+const int ZBT_FLOAT = 0;
+const int ZBT_INTEGER = 1;
 
 // activation states
-const int ACTIVE_TAG = 1;
-const int DISABLE_DEACTIVATION = 4;
-const int DISABLE_SIMULATION = 5;
-const int ISLAND_SLEEPING = 2;
-const int WANTS_DEACTIVATION = 3;
+const int ZBT_ACTIVE_TAG = 1;
+const int ZBT_DISABLE_DEACTIVATION = 4;
+const int ZBT_DISABLE_SIMULATION = 5;
+const int ZBT_ISLAND_SLEEPING = 2;
+const int ZBT_WANTS_DEACTIVATION = 3;
 
 // limit default values
-const float DEFAULT_HINGE_SOFTNESS = 0.9;
-const float DEFAULT_HINGE_BIAS_FACTOR = 0.3;
-const float DEFAULT_HINGE_RELAXATION_FACTOR = 1.0;
-const float DEFAULT_CONE_TWIST_SOFTNESS = 0.8;
-const float DEFAULT_CONE_TWIST_BIAS_FACTOR = 0.3;
-const float DEFAULT_CONE_TWIST_RELAXATION_FACTOR = 1.0;
-const int AXIS_X_LINEAR = 0;
-const int AXIS_Y_LINEAR = 1;
-const int AXIS_Z_LINEAR = 2;
-const int AXIS_X_ANGULAR = 3;
-const int AXIS_Y_ANGULAR = 4;
-const int AXIS_Z_ANGULAR = 5;
+const float ZBT_DEFAULT_HINGE_SOFTNESS = 0.9;
+const float ZBT_DEFAULT_HINGE_BIAS_FACTOR = 0.3;
+const float ZBT_DEFAULT_HINGE_RELAXATION_FACTOR = 1.0;
+const float ZBT_DEFAULT_CONE_TWIST_SOFTNESS = 0.8;
+const float ZBT_DEFAULT_CONE_TWIST_BIAS_FACTOR = 0.3;
+const float ZBT_DEFAULT_CONE_TWIST_RELAXATION_FACTOR = 1.0;
+const int ZBT_AXIS_X_LINEAR = 0;
+const int ZBT_AXIS_Y_LINEAR = 1;
+const int ZBT_AXIS_Z_LINEAR = 2;
+const int ZBT_AXIS_X_ANGULAR = 3;
+const int ZBT_AXIS_Y_ANGULAR = 4;
+const int ZBT_AXIS_Z_ANGULAR = 5;
 
 
 // World
@@ -72,7 +54,7 @@ int zbtStepSimulation(float timeStep, int maxSubSteps, float fixedTimeStep) {}
 // Collision shapes
 
 int zbtCreateStaticPlaneShape(float normalX, float normalY, float normalZ,
-  float planeConstant) {}
+	float planeConstant) {}
 
 int zbtCreateBoxShape(float x, float y, float z) {}
 
@@ -89,13 +71,13 @@ int zbtCreateCapsuleShape(float radius, float height) {}
 int zbtCreateCompoundShape() {}
 
 int zbtAddChildShape(int compoundId, int childId, float x, float y, float z,
-  float rx, float ry, float rz) {}
+	float rx, float ry, float rz) {}
 
 int zbtRemoveChildShape(int compoundId, int childId) {}
 
 int zbtCreateHeightfieldTerrainShape(xptr heightfieldData, int dataType,
-  int width, int length, float heightScale, float minHeight, float maxHeight,
-  int upAxis, int bFlipQuadEdges, int bDiamondSubdivision) {}
+	int width, int length, float heightScale, float minHeight, float maxHeight,
+	int upAxis, int bFlipQuadEdges, int bDiamondSubdivision) {}
 
 int zbtCreateConvexHullShape(xptr points, int numPoints) {}
 
@@ -119,7 +101,7 @@ int zbtDeleteAllShapes() {}
 // Rigid bodies
 
 int zbtAddRigidBody(float mass, int shapeId, float x, float y, float z,
-  float rx, float ry, float rz) {}
+	float rx, float ry, float rz) {}
 
 int zbtDeleteRigidBody(int rigidBodyId) {}
 
@@ -146,7 +128,7 @@ int zbtApplyCentralImpulse(int rigidBodyId, float x, float y, float z) {}
 int zbtApplyTorqueImpulse(int rigidBodyId, float rx, float ry, float rz) {}
 
 int zbtApplyImpulse(int rigidBodyId, float x, float y, float z,
-  float relX, float relY, float relZ) {}
+	float relX, float relY, float relZ) {}
 
 // Constraints and limits
 
@@ -157,7 +139,7 @@ int zbtAddPoint2PointConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotBx, float pivotBy, float pivotBz, int bDisableCollision) {}
 
 int zbtAddPoint2PointConstraint1(int rigidBodyId,
-  float pivotX, float pivotY, float pivotZ, int bDisableCollision) {}
+	float pivotX, float pivotY, float pivotZ, int bDisableCollision) {}
 
 int zbtAddHingeConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
@@ -173,7 +155,7 @@ int zbtSetHingeLimits(int constraintId, float low, float high,
 	float softness, float biasFactor, float relaxationFactor) {}
 
 int zbtEnableHingeAngularMotor(int constraintId, int bEnableMotor,
-  float targetVelocity, float maxMotorImpulse) {}
+	float targetVelocity, float maxMotorImpulse) {}
 
 int zbtAddConeTwistConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
@@ -186,7 +168,7 @@ int zbtAddConeTwistConstraint1(int rigidBodyId,
 	float rotX, float rotY, float rotZ, int bDisableCollision) {}
 
 int zbtSetConeTwistLimits(int constraintId,
-  float swingX, float swingY, float swingZ,
+	float swingX, float swingY, float swingZ,
 	float softness, float biasFactor, float relaxationFactor) {}
 
 int zbtAddSliderConstraint(int rigidBodyAId, int rigidBodyBId,
@@ -194,42 +176,100 @@ int zbtAddSliderConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotBx, float pivotBy, float pivotBz,
 	float rotAx, float rotAy, float rotAz,
 	float rotBx, float rotBy, float rotBz, int bUseLinearReferenceFrameA,
-  int bDisableCollision) {}
+	int bDisableCollision) {}
 
 int zbtSetSliderLimits(int constraintId, float linLower, float linUpper,
-  float angLower, float angUpper) {}
+	float angLower, float angUpper) {}
 
 int zbtSetSliderSoftness(int constraintId, float dirLin, float dirAng,
-  float limLin, float limAng, float orthoLin, float orthoAng) {}
+	float limLin, float limAng, float orthoLin, float orthoAng) {}
 
 int zbtSetSliderRestitution(int constraintId, float dirLin, float dirAng,
-  float limLin, float limAng, float orthoLin, float orthoAng) {}
+	float limLin, float limAng, float orthoLin, float orthoAng) {}
 
 int zbtSetSliderDamping(int constraintId, float dirLin, float dirAng,
-  float limLin, float limAng, float orthoLin, float orthoAng) {}
+	float limLin, float limAng, float orthoLin, float orthoAng) {}
 
 int zbtEnableSliderMotor(int constraintId,
-  int bEnableLinMotor, float targetLinVelocity, float maxLinForce,
-  int bEnableAngMotor, float targetAngVelocity, float maxAngForce) {}
+	int bEnableLinMotor, float targetLinVelocity, float maxLinForce,
+	int bEnableAngMotor, float targetAngVelocity, float maxAngForce) {}
 
 int zbtAddGeneric6DofConstraint(int rigidBodyAId, int rigidBodyBId,
 	float pivotAx, float pivotAy, float pivotAz,
 	float pivotBx, float pivotBy, float pivotBz,
 	float rotAx, float rotAy, float rotAz,
 	float rotBx, float rotBy, float rotBz,
-  int bUseLinearReferenceFrameA, int bDisableCollision) {}
+	int bUseLinearReferenceFrameA, int bDisableCollision) {}
 
 int zbtSetGeneric6DofLimits(int constraintId, int axis, float lo, float hi) {}
 
 int zbtSetGeneric6DofLinearLimits(int constraintId,
-  float lowerX, float lowerY, float lowerZ,
-  float upperX, float upperY, float upperZ) {}
+	float lowerX, float lowerY, float lowerZ,
+	float upperX, float upperY, float upperZ) {}
 
 int zbtSetGeneric6DofAngularLimits(int constraintId,
-  float lowerX, float lowerY, float lowerZ,
+	float lowerX, float lowerY, float lowerZ,
 	float upperX, float upperY, float upperZ) {}
 
 int zbtDeleteConstraint(int constraintId) {}
+
+// Raycast vehicle
+
+// use before zbtCreateRaycastVehicle or zbtAddWheel
+int zbtSetVehicleTunning(float suspStiffness, float suspCompression,
+	float suspDamping, float maxSuspTravelCm, float maxSuspForce,
+	float frictionSlip) {}
+
+int zbtCreateRaycastVehicle(int rigidBodyId,
+	int rightIndex, int upIndex, int forwardIndex) {}
+
+int zbtAddWheel(int vehicleId,
+	float connectionPointX, float connectionPointY, float connectionPointZ,
+	float directionX, float directionY, float directionZ,
+	float wheelAxleX, float wheelAxleY, float wheelAxleZ,
+	float wheelRadius, float suspRestLength, int bIsFrontWheel) {}
+
+int zbtSetWheelIsFront(int vehicleId, int wheelId, int bIsFront) {}
+
+int zbtSetWheelRadius(int vehicleId, int wheelId, float radius) {}
+
+int zbtSetWheelEngineForce(int vehicleId, int wheelId, float engineForce) {}
+
+int zbtSetWheelBreakAmount(int vehicleId, int wheelId, float brakeAmount) {}
+
+int zbtSetWheelRollInfluence(int vehicleId, int wheelId, float rollInfluence) {}
+
+int zbtSetWheelFrictionSlip(int vehicleId, int wheelId, float frictionSlip) {}
+
+int zbtSetWheelSuspRestLength(int vehicleId, int wheelId, float suspRestLength) {}
+
+int zbtSetWheelMaxSuspTravel(int vehicleId, int wheelId, float maxSuspTravel) {}
+
+int zbtSetWheelSuspStiffness(int vehicleId, int wheelId, float suspStiffness) {}
+
+int zbtSetWheelDampingCompression(int vehicleId, int wheelId, float dampingCompression) {}
+
+int zbtSetWheelDampingRelaxation(int vehicleId, int wheelId, float dampingRelaxation) {}
+
+int zbtSetVehicleSteeringValue(int vehicleId, int wheelId, float steering) {}
+
+int zbtSetVehicleEngineForce(int vehicleId, int wheelId, float force) {}
+
+int zbtSetVehicleBrake(int vehicleId, int wheelId, float brake) {}
+
+int zbtSetVehiclePitchControl(int vehicleId, float pitch) {}
+
+int zbtResetVehicleSusp(int vehicleId) {}
+
+float zbtGetVehicleCurrentSpeed(int vehicleId) {}
+
+int zbtGetWheelPosition(int vehicleId, int wheelId, ref float x, ref float y, ref float z) {}
+
+int zbtGetWheelRotation(int vehicleId, int wheelId, ref float rx, ref float ry, ref float rz) {}
+int zbtGetWheelPosRot(int vehicleId, int wheelId,
+	ref float x, ref float y, ref float z, ref float rx, ref float ry, ref float rz) {}
+
+int zbtDeleteRaycastVehicle(int vehicleId) {}
 
 // Collision objects (in general)
 
@@ -237,7 +277,7 @@ int zbtSetFriction(int collisionObjectId, float friction) {}
 
 int zbtSetRestitution(int collisionObjectId, float restitution) {}
 
-int zbtSetHitFraction(int collisionObjectId, float hitFraction ) {}
+int zbtSetHitFraction(int collisionObjectId, float hitFraction) {}
 
 int zbtGetPosition(int collisionObjectId, ref float x, ref float y, ref float z) {}
 
@@ -246,6 +286,9 @@ int zbtSetPosition(int collisionObjectId, float x, float y, float z) {}
 int zbtGetRotation(int collisionObjectId, ref float rx, ref float ry, ref float rz) {}
 
 int zbtSetRotation(int collisionObjectId, float rx, float ry, float rz) {}
+
+int zbtGetPosRot(int collisionObjectId, ref float x, ref float y, ref float z,
+	ref float rx, ref float ry, ref float rz) {}
 
 // Activation and deactivation
 
