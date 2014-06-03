@@ -541,9 +541,10 @@ begin
   //TODO: Net support
 end;
 
-procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+function Platform_NetRead(Handle,Buffer : pointer; Size : integer) : integer;
 begin
   //TODO: Net support
+  Result := 0;
 end;
 
 function Platform_TouchGetCount : integer;

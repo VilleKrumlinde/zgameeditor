@@ -11,7 +11,7 @@ Rtext1.Text="";]]>
     </ZExpression>
   </OnLoaded>
   <OnUpdate>
-    <AnimatorSimple Duration="10" AutoStart="255" Target="Rt1 Rotate 2" FromValue="-4" ToValue="4" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+    <AnimatorSimple Duration="10" AutoStart="255" Target="Rt1 Rotate 2" AutoReverse="255" RepeatCount="-1" FromValue="-4" ToValue="4" Smooth="255"/>
     <Timer Name="RefreshTimer" Interval="10">
       <OnTimer>
         <ZExpression>
@@ -21,7 +21,7 @@ RefreshTimer.Interval=10;
 IsUpdating=1;]]>
           </Expression>
         </ZExpression>
-        <WebOpen Name="Web1" Url="http://www.yakyak.org/search.php?search_id=newposts">
+        <WebOpen Name="Web1" Url="http://www.yakyak.org/search.php?search_id=active_topics">
           <OnResult>
             <ZExpression>
               <Expression>
@@ -97,8 +97,8 @@ Web2.Url="http://www.yakyak.org/viewtopic.php?f=2&t=" + intToStr(Links[clicked])
   </OnRender>
   <Content>
     <Group/>
-    <DefineArray Name="Links" Type="1" SizeDim1="10"/>
+    <Array Name="Links" Type="1" SizeDim1="10"/>
     <Material Name="Material1"/>
-    <DefineVariable Name="IsUpdating" Type="1"/>
+    <Variable Name="IsUpdating" Type="1"/>
   </Content>
 </ZApplication>

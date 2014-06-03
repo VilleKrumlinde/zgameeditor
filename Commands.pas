@@ -363,8 +363,7 @@ end;
 
 procedure TWebOpen.Execute;
 var
-  Ps : PInteger;
-  Pd : PByte;
+  Ps,Pd : PByte;
   I,Limit : integer;
   Buf : array[0..1024-1] of byte;
 begin
@@ -380,11 +379,11 @@ begin
     if ParamArray<>nil then
     begin
       {$ifndef minimal}
-      if ParamArray._Type<>zctInt then
-        GetLog(Self.ClassName).Warning('ParamArray must be of int-type');
+      if ParamArray._Type<>zctByte then
+        GetLog(Self.ClassName).Warning('ParamArray must be of byte-type');
       {$endif}
       Limit := ParamArray.CalcLimit;
-      Ps := PInteger(ParamArray.GetData);
+      Ps := PByte(ParamArray.GetData);
       I := 0;
       while (I<Limit) and (I<High(Buf)-1) and (Ps^<>0) do
       begin
@@ -423,43 +422,36 @@ end;
 
 procedure TWebOpen.StartReading;
 var
-  Pd : PInteger;
-  Ps : PByte;
-  I : integer;
+  Ps,Pd : PByte;
+  BytesRead : integer;
 begin
   if not Self.IsWaiting then
     Exit;
   Self.IsWaiting := False;
 
-  if ResultArray<>nil then
-    BufferSize := ResultArray.CalcLimit
-  else
-    BufferSize := 512 * 1024;
+  BufferSize := 512 * 1024;
 
-  ReAllocMem(Buffer,BufferSize);
-  Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
+  ReAllocMem(Self.Buffer,BufferSize);
+  BytesRead := Platform_NetRead(Self.Handle,Self.Buffer,Self.BufferSize);
 
-  if ResultArray<>nil then
+  if BytesRead>0 then
   begin
-    {$ifndef minimal}
-    if ResultArray._Type<>zctInt then
-      GetLog(Self.ClassName).Warning('ResultArray must be of int-type');
-    {$endif}
-    Ps := Buffer;
-    Pd := PInteger(ResultArray.GetData);
-    I := BufferSize;
-    while I>0 do
+    if ResultArray<>nil then
     begin
-      Pd^ := Ps^;
-      Inc(Pd);
-      Inc(Ps);
-      Dec(I);
+      {$ifndef minimal}
+      if ResultArray._Type<>zctByte then
+        GetLog(Self.ClassName).Warning('ResultArray must be of byte-type');
+      {$endif}
+      ResultArray.SizeDim1 := BytesRead;
+      Ps := Self.Buffer;
+      Pd := PByte(ResultArray.GetData);
+      Move(Ps^,Pd^,BytesRead);
+    end else
+    begin
+      Self.ResultString := ManagedHeap_Alloc(BytesRead+1);
+      Move(Self.Buffer^,Self.ResultString^,BytesRead);
+      PBytes(Self.ResultString)^[BytesRead+1] := 0; //Zero terminate
     end;
-  end else
-  begin
-    I := ZStrLength( PAnsiChar(Self.Buffer) );
-    Self.ResultString := ManagedHeap_Alloc(I+1);
-    ZStrCopy(Self.ResultString,PAnsiChar(Self.Buffer));
   end;
   AddToResultList;
 end;
