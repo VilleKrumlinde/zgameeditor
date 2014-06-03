@@ -1769,10 +1769,11 @@ begin
   {$endif}
 end;
 
-procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+function Platform_NetRead(Handle,Buffer : pointer; Size : integer) : integer;
 var
   BytesRead,Avail,ThisSize : dword;
 begin
+  Result := 0;
   while True and (Size>0) do
   begin
     SessionWait := True;
@@ -1800,11 +1801,8 @@ begin
       Break;
 
     Inc(pbyte(Buffer),BytesRead);
+    Inc(Result,BytesRead);
     Dec(Size,BytesRead);
-  end;
-  if Size>0 then
-  begin
-    PByte(Buffer)^:=0;
   end;
   InternetCloseHandle(Handle);
 end;

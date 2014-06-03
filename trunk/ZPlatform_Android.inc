@@ -595,8 +595,9 @@ begin
   end;
 end;
 
-procedure Platform_NetRead(Handle,Buffer : pointer; Size : integer);
+function Platform_NetRead(Handle,Buffer : pointer; Size : integer) : integer;
 begin
+  Result := 0;
 end;
 
 
