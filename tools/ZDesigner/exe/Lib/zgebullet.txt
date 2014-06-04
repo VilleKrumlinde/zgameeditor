@@ -3,7 +3,7 @@
   http://bulletphysics.org
 
   Download Windows DLL and Android shared library from
-  http://code.google.com/p/zgebullet/downloads
+  http://googledrive.com/host/0BxwfQ8la88ouQTVuLWJfY1dMVGs/
 
   Copyright (c) 2012-2014 Radovan Cervenka
 */
@@ -100,7 +100,9 @@ int zbtDeleteAllShapes() {}
 
 // Rigid bodies
 
-int zbtAddRigidBody(float mass, int shapeId, float x, float y, float z,
+int zbtAddRigidBody(float mass, int shapeId, xptr pos, xptr rot) {}
+
+int zbtAddRigidBodyXYZ(float mass, int shapeId, float x, float y, float z,
 	float rx, float ry, float rz) {}
 
 int zbtDeleteRigidBody(int rigidBodyId) {}
@@ -263,10 +265,17 @@ int zbtResetVehicleSusp(int vehicleId) {}
 
 float zbtGetVehicleCurrentSpeed(int vehicleId) {}
 
-int zbtGetWheelPosition(int vehicleId, int wheelId, ref float x, ref float y, ref float z) {}
+int zbtGetWheelPosition(int vehicleId, int wheelId, xptr pos) {}
 
-int zbtGetWheelRotation(int vehicleId, int wheelId, ref float rx, ref float ry, ref float rz) {}
-int zbtGetWheelPosRot(int vehicleId, int wheelId,
+int zbtGetWheelPositionXYZ(int vehicleId, int wheelId, ref float x, ref float y, ref float z) {}
+
+int zbtGetWheelRotation(int vehicleId, int wheelId, xptr rot) {}
+
+int zbtGetWheelRotationXYZ(int vehicleId, int wheelId, ref float rx, ref float ry, ref float rz) {}
+
+int zbtGetWheelPosRot(int vehicleId, int wheelId,	xptr pos, xptr rot) {}
+
+int zbtGetWheelPosRotXYZ(int vehicleId, int wheelId,
 	ref float x, ref float y, ref float z, ref float rx, ref float ry, ref float rz) {}
 
 int zbtDeleteRaycastVehicle(int vehicleId) {}
@@ -279,15 +288,21 @@ int zbtSetRestitution(int collisionObjectId, float restitution) {}
 
 int zbtSetHitFraction(int collisionObjectId, float hitFraction) {}
 
-int zbtGetPosition(int collisionObjectId, ref float x, ref float y, ref float z) {}
+int zbtGetPosition(int collisionObjectId, xptr pos) {}
+
+int zbtGetPositionXYZ(int collisionObjectId, ref float x, ref float y, ref float z) {}
 
 int zbtSetPosition(int collisionObjectId, float x, float y, float z) {}
 
-int zbtGetRotation(int collisionObjectId, ref float rx, ref float ry, ref float rz) {}
+int zbtGetRotation(int collisionObjectId, xptr rot) {}
+
+int zbtGetRotationXYZ(int collisionObjectId, ref float rx, ref float ry, ref float rz) {}
 
 int zbtSetRotation(int collisionObjectId, float rx, float ry, float rz) {}
 
-int zbtGetPosRot(int collisionObjectId, ref float x, ref float y, ref float z,
+int zbtGetPosRot(int collisionObjectId, xptr pos, xptr rot) {}
+
+int zbtGetPosRotXYZ(int collisionObjectId, ref float x, ref float y, ref float z,
 	ref float rx, ref float ry, ref float rz) {}
 
 // Activation and deactivation
