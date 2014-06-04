@@ -3746,7 +3746,7 @@ begin
   begin
     //List global identifiers
     ZApp.SymTab.Iterate(AutoCompAddOne,Comp);
-    InAdd(['CurrentModel','this','string','int','float','while','for']);
+    InAdd(['CurrentModel','this','string','int','float','while','for','vec2','vec3','vec4','mat4']);
   end;
   (Comp.ItemList as TStringList).Sort;
   (Comp.InsertList as TStringList).Sort;
