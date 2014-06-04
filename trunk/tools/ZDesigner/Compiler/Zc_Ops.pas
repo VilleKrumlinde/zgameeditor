@@ -1096,20 +1096,20 @@ var
       Etyp : TZcIdentifierInfo;
       //I : integer;
     begin
-      if Op.Kind=zcSelect then
+      if (Op.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
+      begin
+        if Index < (2+Ord(Op.GetDataType.Kind)-Ord(zctVec2)) then
+        begin
+          Op := MakeArrayAccess(Op);
+          Op.Children.Add( TZcOpLiteral.Create(zctInt,Index) );
+        end;
+      end else if Op.Kind=zcSelect then
       begin
         ETyp := Op.GetIdentifierInfo;
         if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
         begin
           Op := MakeOp(zcSelect,Op);
           Op.Id := S;
-        end;
-      end else if (Op.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
-      begin
-        if Index < (2+Ord(Op.GetDataType.Kind)-Ord(zctVec2)) then
-        begin
-          Op := MakeArrayAccess(Op);
-          Op.Children.Add( TZcOpLiteral.Create(zctInt,Index) );
         end;
       end;
 

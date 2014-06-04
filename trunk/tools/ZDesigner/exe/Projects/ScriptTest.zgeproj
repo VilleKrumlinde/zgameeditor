@@ -750,6 +750,12 @@ App.LightPosition = foo;
 if((App.LightPosition.X!=1) || (App.LightPosition.Y!=2) || (App.LightPosition.Z!=3))
   Error=1909;
 
+VarV3 = vector3(3,2,1);
+App.LightPosition = VarV3;
+if((App.LightPosition.X!=3) || (App.LightPosition.Y!=2) || (App.LightPosition.Z!=1))
+  Error=1910;
+
+
 
 v[0]=1;
 m1[0,0]=1;
@@ -862,5 +868,6 @@ V.X*=0.5;]]>
 <![CDATA[78DA636064620600000E0007]]>
       </Values>
     </Array>
+    <Variable Name="VarV3" Type="7"/>
   </Content>
 </ZApplication>

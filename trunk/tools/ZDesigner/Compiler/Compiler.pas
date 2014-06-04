@@ -450,6 +450,11 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       zctFloat :
         case Cop.ToType.Kind of
           zctByte, zctInt: Kind := eckFloatToInt;
+          zctXptr :
+            begin
+              GenAddress(Op.Child(0));
+              Exit;
+            end;
         end;
       zctByte, zctInt :
         case Cop.ToType.Kind of
