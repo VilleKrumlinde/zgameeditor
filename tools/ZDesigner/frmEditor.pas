@@ -1388,7 +1388,12 @@ begin
   if Assigned(Tree.ZSelected.ComponentList) then
     Tree.ZSelected.ComponentList.Change
   else if Assigned(Tree.ZSelected.Component) then
-    Tree.ZSelected.Component.Change;
+  begin
+    if (Tree.ZSelected.Component is TCommand) then
+      TCommand(Tree.ZSelected.Component).Execute
+    else
+      Tree.ZSelected.Component.Change;
+  end;
   Glp.Invalidate;
 end;
 

@@ -28,7 +28,6 @@ type
     procedure CleanUp;
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
-    function MakeTempName : string;
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
     
   protected
@@ -622,12 +621,6 @@ begin
   ZFunctions.Free;
 end;
 
-function TZc.MakeTempName : string;
-begin
-  Inc(TempCounter);
-  Result := '#temp' + IntToStr(TempCounter);
-end;
-
 procedure TZc.ZError(const S : string);
 var
   E : EParseError;
@@ -1158,7 +1151,7 @@ begin
 
    Lit := Op as TZcOpLiteral;
 
-   if (Lit.Typ.Kind<>Typ.Kind) and not ((Lit.Typ.Kind=zctInt) and (Typ.Kind=zctFloat)) then
+   if Lit.Typ.Kind<>Typ.Kind then
      ZError('Constant expression is not of the expected type: ' + Op.ToString);
 
    Cns := TDefineConstant.Create(nil);
@@ -1233,9 +1226,7 @@ begin
        _Expr(SwitchValueOp);
        Expect(rparSym);
         
-         Loc := TZcOpLocalVar.Create(nil);
-         Loc.Id := MakeTempName;
-         Loc.Typ := SwitchValueOp.GetDataType;
+         Loc := MakeTemp(SwitchValueOp.GetDataType.Kind);
          SymTab.Add(Loc.Id,Loc);
          CurrentFunction.AddLocal(Loc);
 
