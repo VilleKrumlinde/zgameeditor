@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="1 2 3" LightPosition="1 2 3" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="1 2 3" LightPosition="3 2 1" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -745,6 +745,8 @@ Mat4Ar[0]=m1;
 if(Mat4Ar[0][0,0]!=1)
   Error=1908;
 
+//Multiassigns between arrays and properties
+
 vec3 foo = vector3(1,2,3);
 App.LightPosition = foo;
 if((App.LightPosition.X!=1) || (App.LightPosition.Y!=2) || (App.LightPosition.Z!=3))
@@ -754,6 +756,12 @@ VarV3 = vector3(3,2,1);
 App.LightPosition = VarV3;
 if((App.LightPosition.X!=3) || (App.LightPosition.Y!=2) || (App.LightPosition.Z!=1))
   Error=1910;
+
+vec4 saveColor = App.ClearColor;
+App.ClearColor=vector2(1,2);
+App.ClearColor=vector3(3,2,1);
+App.ClearColor=vector4(1,2,3,4);
+App.ClearColor = saveColor;
 
 
 

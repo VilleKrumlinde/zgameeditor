@@ -83,6 +83,7 @@ type
     constructor Create(const Id: string; A : TZcOp); reintroduce; overload;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
+    function Optimize: TZcOp; override;
   end;
 
   TZcOpConvert = class(TZcOp)
@@ -159,6 +160,7 @@ function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; over
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 function MakeIdentifier(const Id : string) : TZcOp;
+function MakeTemp(Kind : TZcDataTypeKind) : TZcOpLocalVar;
 
 function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp; overload;
 function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp; overload;
@@ -986,6 +988,8 @@ begin
         'Y','G' : I := 1;
         'Z','B' : I := 2;
         'W','A' : I := 3;
+      else
+        I := 0;
       end;
       Result := MakeArrayAccess(Op.Children.First);
       Result.Children.Add( TZcOpLiteral.Create(zctInt,I) );
@@ -1083,8 +1087,9 @@ const
   AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
 var
   Etyp : TZcIdentifierInfo;
+  LeftTyp : TZcDataType;
 
-  function InMultiAssign : TZcOp;
+  function InMultiAssign(LeftIsArray : boolean) : TZcOp;
   const
     Names = 'RGBA';
   var
@@ -1098,11 +1103,8 @@ var
     begin
       if (Op.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
       begin
-        if Index < (2+Ord(Op.GetDataType.Kind)-Ord(zctVec2)) then
-        begin
-          Op := MakeArrayAccess(Op);
-          Op.Children.Add( TZcOpLiteral.Create(zctInt,Index) );
-        end;
+        Op := MakeArrayAccess(Op);
+        Op.Children.Add( TZcOpLiteral.Create(zctInt,Index) );
       end else if Op.Kind=zcSelect then
       begin
         ETyp := Op.GetIdentifierInfo;
@@ -1112,30 +1114,35 @@ var
           Op.Id := S;
         end;
       end;
-
-      { else
-      begin
-        if Op.Children.Count>0 then
-        begin
-          Op := Op.Clone;
-          for I := 0 to Op.Children.Count - 1 do
-            Op.Children[I] := InSelect(Op.Children[I],S);
-        end;
-      end; }
       Result := Op;
     end;
 
   begin
-    if Etyp.Prop.PropertyType=zptVector3f then
-      LastIndex := 2
+    //Left/Right can be either array (i.e. vec2) or property (i.e. App.ClearColor)
+    if LeftIsArray then
+      LastIndex := 1+Ord(LeftTyp.Kind)-Ord(zctVec2)
     else
-      LastIndex := 3;
+    begin
+      if Etyp.Prop.PropertyType=zptVector3f then
+        LastIndex := 2
+      else
+        LastIndex := 3;
+    end;
+    if (RightOp.GetDataType.Kind in [zctVec2,zctVec3,zctVec4]) then
+      LastIndex := Min(LastIndex,(1+Ord(RightOp.GetDataType.Kind)-Ord(zctVec2)));
     BlockOp := MakeOp(zcBlock);
     for I := 0 to LastIndex do
     begin
-      Op := MakeOp(zcSelect,Names[I+1]);
-      Op.Children.Add(LeftOp);
-      BlockOp.Children.Add( MakeAssign(Kind,Op, InSelect(RightOp,Op.Id,I) ) );
+      if LeftIsArray then
+      begin
+        Op := MakeArrayAccess(LeftOp);
+        Op.Children.Add( TZcOpLiteral.Create(zctInt,I) );
+      end else
+      begin
+        Op := MakeOp(zcSelect,Names[I+1]);
+        Op.Children.Add(LeftOp);
+      end;
+      BlockOp.Children.Add( MakeAssign(Kind,Op, InSelect(RightOp,Names[I+1],I) ) );
     end;
     Result := BlockOp;
   end;
@@ -1147,18 +1154,18 @@ begin
     //This is converted into a block of individual assignment (position.x=position.x etc)
     ETyp := LeftOp.GetIdentifierInfo;
     if (ETyp.Kind=edtProperty) and (Etyp.Prop.PropertyType in [zptColorf,zptVector3f,zptRectf])  then
-      Exit( InMultiAssign );
+      Exit( InMultiAssign(False) );
   end;
 
-  RightOp := MakeCompatible(RightOp,LeftOp.GetDataType);
-  case Kind of
-    atMulAssign,atDivAssign,atPlusAssign,atMinusAssign :  //Convert x*=2 to x=x*2
-      begin
-        //Note: op1 becomes inserted at a second position in the tree
-        //This works because nodes do not own each other
-        RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
-      end;
-  end;
+  LeftTyp := LeftOp.GetDataType;
+  if (LeftTyp.Kind in [zctVec2,zctVec3,zctVec4]) and (RightOp.Kind=zcSelect) then
+    Exit( InMultiAssign(True) );
+
+  RightOp := MakeCompatible(RightOp,LeftTyp);
+
+  if Kind in [atMulAssign,atDivAssign,atPlusAssign,atMinusAssign] then  //Convert x*=2 to x=x*2
+    RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
+
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
 
@@ -1545,6 +1552,12 @@ begin
   end;
 end;
 
+function TZcOpArrayAccess.Optimize: TZcOp;
+begin
+  Self.ArrayOp := Self.ArrayOp.Optimize;
+  Result := inherited Optimize;
+end;
+
 function TZcOpArrayAccess.ToString: string;
 var
   I : integer;
@@ -1582,15 +1595,15 @@ begin
 
   if ArrayOp.Kind=zcArrayAccess then
   begin
-   //Array of arrays
-   Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type);
-   TZcOpArrayAccess(Op).IsRawMem := True;
+    //Array of arrays
+    Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type);
+    TZcOpArrayAccess(Op).IsRawMem := True;
   end;
 
   if ArrayOp.Kind=zcFuncCall then
   begin
-   //Function returning array
-   Op.Ref := GetArray((ArrayOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
+    //Function returning array
+    Op.Ref := GetArray((ArrayOp.Ref as TZcOpFunctionBase).ReturnType.Kind);
   end;
 
   if ArrayOp.Kind=zcSelect then
@@ -1601,6 +1614,17 @@ begin
 
   Result := Op;
 end;
+
+function MakeTemp(Kind : TZcDataTypeKind) : TZcOpLocalVar;
+const
+  TempCounter : integer = 0;
+begin
+  Result := TZcOpLocalVar.Create(nil);
+  Inc(TempCounter);
+  Result.Id := '#temp' + IntToStr(TempCounter);
+  Result.Typ.Kind := Kind;
+end;
+
 
 initialization
 
