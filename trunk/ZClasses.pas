@@ -3148,6 +3148,45 @@ var
     C.SetProperty(C.GetProperties.GetByName('FileFormat'),Value);
   end;
 
+  function PatchOldPropRef(const S : ansistring) : ansistring;
+  var
+    C : ansichar;
+    SpaceCount,SpecialCount : integer;
+    L  : TStringList;
+  begin
+    Result := S;
+    if (Length(S)>0) and (UpCase(S[1]) in ['A'..'Z']) then
+    begin
+      SpaceCount := 0; SpecialCount := 0;
+      for C in S do
+      begin
+        if C=' ' then
+          Inc(SpaceCount);
+        if C in ['.','+','-','*','/'] then
+          Inc(SpecialCount);
+      end;
+      if (SpaceCount>0) and (SpaceCount<3) and (SpecialCount=0) then
+      begin
+        L := TStringList.Create;
+        L.Delimiter := ' ';
+        L.DelimitedText := S;
+        if LowerCase(L[L.Count-1])='value' then
+          L.Delete(L.Count-1)
+        else if StrToIntDef(L[L.Count-1],99) in [0..3] then
+          L[L.Count-1] := Copy('XYZW',StrToInt(L[L.Count-1])+1,1)
+        else if (L.Count>1) and (SameText(L[L.Count-1],'Color') or SameText(L[L.Count-1],'Translate')
+          or SameText(L[L.Count-1],'Rotate')
+          or SameText(L[L.Count-1],'Scale')
+          ) then
+          L.Add('X');
+        L.Delimiter := '.';
+        Result := L.DelimitedText;
+        GetLog(Self.ClassName).Write('Patched propref: ' + S + ' -> ' + Result );
+        L.Free;
+      end;
+    end;
+  end;
+
 begin
   ZClassName := string(Xml.CurName);
 
@@ -3235,15 +3274,7 @@ begin
             zptExpression :
               begin
                 if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
-                begin  //todo
-                  L.DelimitedText := String(S);
-                  if L.Count=3 then
-                  begin
-                    L.Delimiter := '.';
-                    S := AnsiString(L.DelimitedText);
-                    L.Delimiter := ' ';
-                  end;
-                end;
+                  S := PatchOldPropRef(S);
                 Value.ExpressionValue.Source := String(S);
               end
           else
