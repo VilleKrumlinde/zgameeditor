@@ -1307,14 +1307,6 @@ begin
         raise;
       end;
 
-      if (Target.Count>1) then
-      begin
-        //Remove "jump to return" that is not needed
-        if (Target.Items[Target.Count-1] is TExpReturn) and
-          (Target.Items[Target.Count-2] is TExpJump) then
-          Target.Items[Target.Count-2].Free;
-      end;
-
       if (Target.Count>0) and (ExpKind=ekiGetPointer) then
       begin  //Only keep the 'get lvalue address' code (and code to return from expression)
         I := Target.Count;
