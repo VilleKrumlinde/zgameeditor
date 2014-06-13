@@ -33,7 +33,7 @@ type
     procedure InitAfterPropsAreSet; override;
   public
     FileName : TPropString;
-    FileNameFloatRef : TZPropertyRef;
+    FileNameFloatRef : TZExpressionPropValue;
     FileEmbedded : TZBinaryPropValue;
     FilePosition,FileSize : integer;
     Encoding : (feChar,feBinary);
@@ -59,7 +59,7 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    ZProperty : TZPropertyRef;
+    ZProperty : TZExpressionPropValue;
     procedure Execute; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
@@ -102,7 +102,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'FileName',{$ENDIF}(@FileName), zptString);
     List.GetLast.IsManagedTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}(@FileNameFloatRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'FileNameFloatRef',{$ENDIF}(@FileNameFloatRef), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetValue;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'FileEmbedded',{$ENDIF}(@FileEmbedded), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'Encoding',{$ENDIF}(@Encoding), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Char','Binary']);{$endif}
@@ -201,11 +202,11 @@ begin
   else
   begin
     //Open external file
-    if ZFile.FileNameFloatRef.Component<>nil then
+    if ZFile.FileNameFloatRef.Code.Count>0 then
     begin
       //If ref is set then convert float-value to string
       ZStrConvertInt(
-        Trunc(PFloat(ZFile.FileNameFloatRef.Component.GetPropertyPtr(ZFile.FileNameFloatRef.Prop,ZFile.FileNameFloatRef.Index))^),
+        Trunc( ExpGetValue(ZFile.FileNameFloatRef.Code) ),
         PAnsiChar(@FloatBuf));
       ZStrCopy(NameBuf,PAnsiChar(ZFile.FileName));
       ZStrCat(NameBuf,PAnsiChar(@FloatBuf));
@@ -300,7 +301,8 @@ end;
 procedure TFileMoveData.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}(@ZProperty), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Property',{$ENDIF}(@ZProperty), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetPointer;{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
 
@@ -313,10 +315,10 @@ begin
   {$ifndef minimal}
   if (CurFileState=fsNone) then
     ZHalt('FileMoveData failed. No file active.');
-  if (ZProperty.Component=nil) then
+  if (ZProperty.Code.Count=0) then
     ZHalt('FileMoveData failed. No target property set.');
   {$endif}
-  PropValuePtr := ZProperty.Component.GetPropertyPtr(ZProperty.Prop,ZProperty.Index);
+  PropValuePtr := ExpGetPointer(Self.ZProperty.Code);
   case CurFileState of
     fsReading :
       begin
@@ -363,8 +365,7 @@ end;
 function TFileMoveData.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  if Assigned(ZProperty.Component) then
-    Result := Result + '  ' + ZProperty.Component.Name + '.' + AnsiString(ZProperty.Prop.Name);
+  Result := Result + '  ' + AnsiString(ZProperty.Source);
 end;
 {$endif}
 

@@ -167,7 +167,7 @@ begin
     while True do
     begin
       ZExpressions.RunCode(WhileExp.Code);
-      if ZExpressions.gReturnValue=0 then
+      if PSingle(@ZExpressions.gReturnValue)^=0 then
         Break;
       OnIteration.ExecuteCommands;
       Inc(Iteration);
@@ -207,7 +207,7 @@ end;
 procedure TCondition.Execute;
 begin
   ZExpressions.RunCode(Expression.Code);
-  if ZExpressions.gReturnValue<>0 then
+  if PSingle(@ZExpressions.gReturnValue)^<>0 then
     OnTrue.ExecuteCommands
   else
     OnFalse.ExecuteCommands;
