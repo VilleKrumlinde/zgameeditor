@@ -929,7 +929,6 @@ var
   Model : TZComponent;
   S : string;
   DefContent : TStringList;
-  AllowFuncDefs : boolean;
 begin
   //ExternalLibrary can have definitions in separate file
   if (C is TZExternalLibrary) and (Prop.Name='Source') then
@@ -972,12 +971,9 @@ begin
   if Assigned(Model) then
     SymTab.Add('CurrentModel',Model);
 
-  //allow function definitions if compiling a library
-  AllowFuncDefs := (C is TZLibrary) or ((C is TZExternalLibrary) and (Prop.Name='Source'));
-
   SymTab.Add('this',C);
   try
-    Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,AllowFuncDefs);
+    Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,Prop.ExpressionKind);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');

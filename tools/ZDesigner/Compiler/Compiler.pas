@@ -45,13 +45,7 @@ procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   SymTab : TSymbolTable;
   ReturnType : TZcDataType;
   GlobalNames : TObjectList;
-  AllowFuncDefs : boolean);
-
-function ParsePropRef(SymTab : TSymbolTable;
-  ThisC : TZComponent;
-  const VarName: string;
-  var Ref : TZPropertyRef) : boolean;
-
+  ExpKind : TExpressionKind);
 
 var
   CompileDebugString : string;
@@ -59,104 +53,6 @@ var
 implementation
 
 uses Zc,Zc_Ops, Vcl.Dialogs, Generics.Collections;
-
-
-//ThisC = object som är 'this'
-function ParsePropRef(SymTab : TSymbolTable;
-  ThisC : TZComponent;
-  const VarName: string;
-  var Ref : TZPropertyRef) : boolean;
-var
-  I : integer;
-  CName,PName,IName : string;
-  C : TZComponent;
-  Prop : TZProperty;
-begin
-  Result := False;
-
-  //bryt upp i objektnamn och propnamn, split '.'
-
-  I := Pos('.',VarName);
-  if I=0 then
-  begin
-    CName := '';
-    PName := VarName;
-  end
-  else
-  begin
-    CName := Copy(VarName,1,I-1);
-    PName := Copy(VarName,I+1,200);
-  end;
-
-  //Ta ev Propindex
-  I := Pos('.',PName);
-  if I=0 then
-  begin
-    Ref.Index := 0;
-    Ref.HasPropIndex := False;
-  end
-  else
-  begin
-    IName := Copy(PName,I+1,200);
-    PName := Copy(PName,1,I-1);
-    if Length(IName)<>1 then
-      Exit;
-    //todo: testa typ av prop och sätt verifiera propindex
-    //"color.x" t.ex. ska ej gå
-    case Upcase(IName[1]) of
-      'X','R' : I := 0;
-      'Y','G' : I := 1;
-      'Z','B' : I := 2;
-      'W','A' : I := 3;
-    else
-      Exit;
-    end;
-    Ref.Index := I;
-    Ref.HasPropIndex := True;
-  end;
-
-  C := nil;
-  if (CName='this') then
-    C := ThisC
-  else if (Length(CName)=0) then
-  begin
-    if SymTab.Contains(PName) then
-    begin
-      C := TZComponent(SymTab.Lookup(PName));
-      if (C is TDefineVariable) or (C is TDefineConstant) then
-      begin
-        PName := 'Value';
-        case (C as TDefineVariableBase)._Type of
-          zctInt : PName := 'IntValue';
-          zctString :
-            if C is TDefineVariable then
-              PName := 'ManagedValue'
-            else
-              PName := 'StringValue';
-        end;
-      end else
-        C := nil;
-    end
-    else
-      C := ThisC;
-  end
-  else
-  begin
-    if SymTab.Contains(CName) then
-      C := TZComponent(SymTab.Lookup(CName));
-  end;
-
-  if Assigned(C) then
-  begin
-    Prop := C.GetProperties.GetByName(PName);
-    if Assigned(Prop) then
-    begin
-      Ref.Component := C;
-      Ref.Prop := Prop;
-      Result := True;
-    end;
-  end;
-end;
 
 
 type
@@ -1348,7 +1244,7 @@ end;
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable; ReturnType : TZcDataType;
   GlobalNames : TObjectList;
-  AllowFuncDefs : boolean);
+  ExpKind : TExpressionKind);
 var
   Compiler : TZc;
   CodeGen : TZCodeGen;
@@ -1364,6 +1260,22 @@ begin
 
   Compiler := TZc.Create(nil);
   try
+    case ExpKind of
+      ekiNormal: ;
+      ekiLibrary:
+        Compiler.AllowFunctions := True;
+      ekiGetValue:
+        begin
+          S := 'return ' + S + ';';
+          ReturnType.Kind := zctFloat;
+        end;
+      ekiGetPointer:
+        begin
+          ReturnType.Kind := zctModel;
+          S := '__getLValue( ' + S + ' ); return null;';
+        end;
+    end;
+
     Compiler.SymTab := SymTab;
     Compiler.ReturnType := ReturnType;
     Compiler.GlobalNames := GlobalNames;
@@ -1371,7 +1283,6 @@ begin
 
     Compiler.SetSource(S);
 
-    Compiler.AllowFunctions := AllowFuncDefs;
     Compiler.Execute;
 
     if Compiler.Successful then
@@ -1394,6 +1305,30 @@ begin
         //Om något går fel under kodgenereringen så rensa koden så att den inte körs
         Target.Clear;
         raise;
+      end;
+
+      if (Target.Count>1) then
+      begin
+        //Remove "jump to return" that is not needed
+        if (Target.Items[Target.Count-1] is TExpReturn) and
+          (Target.Items[Target.Count-2] is TExpJump) then
+          Target.Items[Target.Count-2].Free;
+      end;
+
+      if (Target.Count>0) and (ExpKind=ekiGetPointer) then
+      begin  //Only keep the 'get lvalue address' code (and code to return from expression)
+        I := Target.Count;
+        while (I>0) do
+        begin
+          Dec(I);
+          if Target.Items[I] is TExpConstantInt then
+            Target.Items[I].Free;  //remove the "null" from "return null"
+          if Target.Items[I] is TExpFuncCall then
+          begin //remove the __getLValue call. This will make the code return the lvalue instead of null.
+            Target.Items[I].Free;
+            Break;
+          end;
+        end;
       end;
 
       //Show tree as source-code for debugging

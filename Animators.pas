@@ -89,14 +89,13 @@ type
     IsGoingForward : boolean;
     CurrentIteration : integer;
     LastBeginTime : single;
-    TargetPropPtr : pointer;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     function SetLocalTime: Boolean; override;
   public
     AutoReverse : boolean;
     RepeatCount : integer;
-    Target : TZPropertyRef;
+    Target : TZExpressionPropValue;
     procedure Start; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
@@ -341,7 +340,6 @@ procedure TAnimatorSimple.DoAnimate;
 var
   X : single;
 begin
-  {$ifndef minimal}if Target.Component=nil then exit;{$endif}
   X:=LocalTime/Duration;  //0..1 in animation
 
   if Smooth then
@@ -352,20 +350,23 @@ begin
   if not IsGoingForward then
     X := 1-X;
 
-  PFloat(TargetPropPtr)^ := InternalFromValue + ( (ToValue-InternalFromValue) * X );
+  if Self.Target.Code.Count>0 then
+    ExpGetPointer(Self.Target.Code)^ := InternalFromValue + ( (ToValue-InternalFromValue) * X );
 end;
 
 procedure TAnimatorSimple.Start;
 begin
   inherited;
+  if Self.Target.Code.Count=0 then
+    Exit;
   case FromKind of
     frkUseFromValue :
       begin
         InternalFromValue := FromValue;
-        PFloat(TargetPropPtr)^ := FromValue;
+        ExpGetPointer(Self.Target.Code)^ := FromValue;
       end;
     frkUseTargetValue :
-      InternalFromValue := PFloat(TargetPropPtr)^;
+      InternalFromValue := ExpGetPointer(Self.Target.Code)^;
   end;
 end;
 
@@ -374,7 +375,8 @@ end;
 procedure TAnimatorWithTargetBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}(@Target), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}(@Target), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetPointer;{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'AutoReverse',{$ENDIF}(@AutoReverse), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}(@RepeatCount), zptInteger);
@@ -384,16 +386,13 @@ end;
 function TAnimatorWithTargetBase.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;
-  if Assigned(Target.Component) then
-    Result := Result + '  ' + AnsiString(ZClasses.GetPropRefAsString(Target));
+  Result := Result + '  ' + AnsiString(Target.Source);
 end;
 {$endif}
 
 procedure TAnimatorWithTargetBase.Start;
 begin
   inherited;
-  {$ifndef minimal}if Target.Component=nil then exit;{$endif}
-  TargetPropPtr := Target.Component.GetPropertyPtr(Target.Prop,Target.Index);
   IsGoingForward := True;
   LastBeginTime := BeginTime;
   CurrentIteration := 0;
@@ -540,13 +539,13 @@ procedure TAnimatorCurve.DoAnimate;
 var
   T : single;
 begin
-  {$ifndef minimal}if (Target.Component=nil) or (Curve=nil) then exit;{$endif}
+  {$ifndef minimal}if (Target.Code.Count=0) or (Curve=nil) then exit;{$endif}
 
   T := LocalTime;
   if not IsGoingForward then
     T := Duration-T;
 
-  PFloat(TargetPropPtr)^ := Curve.GetValueAt(T);
+  ExpGetPointer(Target.Code)^:= Curve.GetValueAt(T);
 end;
 
 initialization

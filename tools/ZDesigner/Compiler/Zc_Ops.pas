@@ -1362,6 +1362,10 @@ begin
   MakeOne('vector3',fcVec3,'v3FFF');
   MakeOne('vector4',fcVec4,'v4FFFF');
 
+  //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
+  MakeOne('__getLValue',fcGenLValue,'VF');
+  TZcOpFunctionBuiltIn(BuiltInFunctions.Last).Arguments.Last.Typ.IsPointer := True;
+
   BuiltInConstants := TObjectList.Create(True);
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','PI');

@@ -3729,7 +3729,7 @@ begin
         for I := 0 to PropList.Count - 1 do
         begin
           Prop := TZProperty(PropList[I]);
-          if (Prop.PropertyType in [zptPropertyRef,zptComponentList,zptExpression]) or
+          if (Prop.PropertyType in [zptComponentList,zptExpression]) or
             (Prop.Name='ObjId') then
             Continue;
           if Prop.ExcludeFromBinary then

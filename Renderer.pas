@@ -75,7 +75,7 @@ type
   public
     VariableName : TPropString;
     Value : single;
-    ValuePropRef : TZPropertyRef;
+    ValuePropRef : TZExpressionPropValue;
     ValueArrayRef : TDefineArray;
     ArrayKind : (sakTexture1D,sakMat4);
     VariableRef : TDefineVariable;
@@ -205,7 +205,7 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Text : TPropString;               //Text att printa
-    TextFloatRef : TZPropertyRef;     //Propvalue att printa, en av dessa gäller
+    TextFloatRef : TZExpressionPropValue;     //Propvalue att printa, en av dessa gäller
     TextArrayRef : pointer;           //DefineArray to print
     X,Y,Scale : single;
     Align : (alCenter,alLeft);
@@ -763,7 +763,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Text',{$ENDIF}(@Text), zptString);
     List.GetLast.IsManagedTarget := True;
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}(@TextFloatRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'TextFloatRef',{$ENDIF}(@TextFloatRef), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetValue;{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'TextArray',{$ENDIF}(@TextArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
@@ -841,12 +842,12 @@ begin
   end;
   CurFont.Prepare;
 
-  if TextFloatRef.Component<>nil then
+  if TextFloatRef.Code.Count>0 then
   begin
     //If textref is set then convert float-value to string
     ZStrConvertInt(
       Trunc(
-        PFloat(TextFloatRef.Component.GetPropertyPtr(TextFloatRef.Prop,TextFloatRef.Index))^
+        ExpGetValue(TextFloatRef.Code)
         * Self.FloatMultiply
       ),
       PAnsiChar(@FloatBuf));
@@ -993,8 +994,7 @@ begin
   Result := inherited GetDisplayName;
   if Text<>'' then
     Result := Result + '  ' + Text;
-  if TextFloatRef.Component<>nil then
-    Result := Result + '  ' + AnsiString(GetPropRefAsString(TextFloatRef));
+  Result := Result + '  ' + AnsiString(TextFloatRef.Source);
 end;
 {$endif}
 
@@ -1769,8 +1769,8 @@ begin
       UpdateVariableRef
     else
     begin
-      if Sv.ValuePropRef.Component<>nil then
-        V := PFloat(Sv.ValuePropRef.Component.GetPropertyPtr(Sv.ValuePropRef.Prop,Sv.ValuePropRef.Index))^
+      if Sv.ValuePropRef.Code.Count>0 then
+        V := ExpGetValue(Sv.ValuePropRef.Code)
       else
         V := Sv.Value;
       glUniform1f(Sv.Location,V);
@@ -1880,7 +1880,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'VariableName',{$ENDIF}(@VariableName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}(@ValuePropRef), zptPropertyRef);
+  List.AddProperty({$IFNDEF MINIMAL}'ValuePropRef',{$ENDIF}(@ValuePropRef), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetValue;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}(@ValueArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}(@ArrayKind), zptByte);

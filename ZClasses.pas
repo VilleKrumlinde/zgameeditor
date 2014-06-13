@@ -54,7 +54,7 @@ type
  ApplicationClassId,AppStateClassId,SetAppStateClassId,CallComponentClassId,CameraClassId,
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
  ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,
- ExpPropPtrClassId,ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
+ ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
  ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
@@ -213,18 +213,6 @@ type
   end;
 
 
-  //Info om en referens till en property på en komponent
-  PZPropertyRef = ^TZPropertyRef;
-  TZPropertyRef = record
-    Component : TZComponent;
-    Prop : TZProperty;
-    //index för indexed properties (för att välja x,y,z i en vector)
-    Index : integer;
-    {$ifndef minimal}
-    HasPropIndex : boolean;
-    {$endif}
-  end;
-
   //Expression är en egen propertytyp
   //I designläge så används både Source-sträng och lista med kompilerad kod
   //I minimal endast kompilerad kod (i nästlad komponentlista)
@@ -262,6 +250,8 @@ type
     {$endif}
   end;
 
+  TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer);
+
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
     Size : integer;
@@ -281,7 +271,6 @@ type
       4 : (IntegerValue : integer);
       5 : (ComponentValue : TZComponent);
       {$ifdef minimal}6 : (StringValue : PAnsiChar);{$endif}
-      7 : (PropertyValue : TZPropertyRef);
       8 : (Vector3fValue : TZVector3f);
       9 : (ComponentListValue : TZComponentList);
      10 : (GenericValue : array[0..2] of integer); //för default-data test
@@ -295,7 +284,7 @@ type
 
   //zptScalar = float with 0..1 range
   TZPropertyType = (zptFloat,zptScalar,zptRectf,zptColorf,zptString,zptComponentRef,zptInteger,
-    zptPropertyRef,zptVector3f,zptComponentList,zptByte,zptBoolean,
+    zptVector3f,zptComponentList,zptByte,zptBoolean,
     zptExpression,zptBinary);
 
   TZProperty = class
@@ -319,6 +308,7 @@ type
     Options : array of string;  //För bytes: Valbara alternativ
     HideInGui : boolean;        //Visa inte denna prop i gui
     ReturnType : TZcDataType;      //For expresssions: return type of expression
+    ExpressionKind : TExpressionKind;  //For expressions: kind of expression
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
     constructor Create;
@@ -521,7 +511,6 @@ type
   end;
 
 
-function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
 function MakeColorf(const R,G,B,A : single) : TZColorf;
 
 {.$IFNDEF MINIMAL}
@@ -565,7 +554,6 @@ const
  ('void'),('#reference'),('null'),('xptr'),('#array'));
 
 
-function GetPropRefAsString(const PRef : TZPropertyRef) : string;
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
 function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
@@ -649,7 +637,7 @@ type
   private
     PStreams : array[TZPropertyType] of TZInputStream;
     Stream : TZInputStream;
-    FixUps,PropFixUps : TZArrayList;
+    FixUps : TZArrayList;
     ObjIds : TZArrayList;
     procedure OnDocumentStart; override;
     procedure OnDocumentEnd; override;
@@ -883,12 +871,6 @@ begin
             begin
               C.GetProperty(Prop,Value);
               if Value.ComponentValue=Target then
-                List.Add(C);
-            end;
-          zptPropertyRef :
-            begin
-              C.GetProperty(Prop,Value);
-              if Value.PropertyValue.Component=Target then
                 List.Add(C);
             end;
         end;
@@ -1131,8 +1113,6 @@ begin
       Value.RectfValue := PRectf(P)^;
     zptColorf :
       Value.ColorfValue := PColorf(P)^;
-    zptPropertyRef :
-      Value.PropertyValue := PZPropertyRef(PPointer(P))^;
     zptVector3f :
       Value.Vector3fValue := PZVector3f(P)^;
     zptComponentList :
@@ -1189,8 +1169,6 @@ begin
       PRectf(P)^ := Value.RectfValue;
     zptColorf :
       PColorf(P)^ := Value.ColorfValue;
-    zptPropertyRef :
-      PZPropertyRef(P)^ := Value.PropertyValue;
     zptVector3f :
       PZVector3f(P)^ := Value.Vector3fValue;
     zptComponentList :
@@ -1374,12 +1352,6 @@ begin
         begin
           Result.SetProperty(Prop,Value);
           if (Value.ComponentValue<>nil) and (Value.ComponentValue.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
-        end;
-      zptPropertyRef :
-        begin
-          Result.SetProperty(Prop,Value);
-          if (Value.PropertyValue.Component<>nil) and (Value.PropertyValue.Component.ObjId<>0) then
             FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
         end;
       zptComponentList :
@@ -2204,17 +2176,6 @@ begin
           WriteNulls(PStream,4)
         else
           PStream.Write(Value.ComponentValue.ObjId,4);
-      zptPropertyRef :
-        if Value.PropertyValue.Component=nil then
-          //todo: should not need to test for nil, när vi har defaultfiltrering
-          WriteNulls(PStream,6)
-        else
-        begin
-          PStream.Write(Value.PropertyValue.Component.ObjId,4);
-          WriteVarLength(PStream,Value.PropertyValue.Prop.PropId);
-          B := Value.PropertyValue.Index;
-          PStream.Write(B,1);
-        end;
       zptVector3f :
         PStream.Write(Value.Vector3fValue,SizeOf(TZVector3f));
       zptByte :
@@ -2318,11 +2279,6 @@ var
           begin
             C.GetProperty(Prop,Value);
             InGiveOne(Value.ComponentValue);
-          end;
-        zptPropertyRef :
-          begin
-            C.GetProperty(Prop,Value);
-            InGiveOne(Value.PropertyValue.Component);
           end;
         zptComponentList :
           begin
@@ -2488,12 +2444,6 @@ begin
         zptColorf : V := InArray(Value.ColorfValue.V);
         zptInteger : V := IntToStr(Value.IntegerValue);
         zptComponentRef : V := String(Value.ComponentValue.Name);
-        zptPropertyRef :
-          begin
-            V := String(Value.PropertyValue.Component.Name) + ' ' + Value.PropertyValue.Prop.Name;
-            if Value.PropertyValue.Index>0 then
-              V := V + ' ' + IntToStr(Value.PropertyValue.Index);
-          end;
         zptVector3f : V := InArray(Value.Vector3fValue);
         zptByte : V := IntToStr(Value.ByteValue);
         zptBoolean : V := IntToStr( byte(Value.BooleanValue) );
@@ -2643,7 +2593,6 @@ begin
     zptByte : Result := Value.ByteValue=DefaultValue.ByteValue;
     zptInteger : Result := Value.IntegerValue=DefaultValue.IntegerValue;
     zptComponentRef : Result := Value.ComponentValue=nil;
-    zptPropertyRef : Result := Value.PropertyValue.Component=nil;
     zptComponentList : Result := Value.ComponentListValue.Count=0;
     zptBoolean : Result := Value.BooleanValue=DefaultValue.BooleanValue;
     zptColorf : Result := ZMath.VecIsEqual4( TZVector4f(Value.ColorfValue),TZVector4f(DefaultValue.ColorfValue));
@@ -2878,16 +2827,6 @@ begin
           if Value.ComponentValue<>nil then
             FixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
         end;
-      zptPropertyRef :
-        begin
-          PStream.Read(Value.PropertyValue.Component,4);
-          PInteger(@Value.PropertyValue.Prop)^ := ReadVarLength(PStream);
-          //PStream.Read(Value.PropertyValue.Prop,1);
-          PStream.Read(B,1);
-          Value.PropertyValue.Index := B;
-          if Value.PropertyValue.Component<>nil then
-            PropFixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
-        end;
       zptVector3f :
         PStream.Read(Value.Vector3fValue,SizeOf(TZVector3f));
       zptComponentList,zptExpression :
@@ -2956,8 +2895,6 @@ procedure TZBinaryReader.OnDocumentEnd;
 var
   I,ObjId : integer;
   P : PPointer;
-  PRef : PZPropertyRef;
-  PropId : integer;
 begin
   //component references
   for I := 0 to FixUps.Count-1 do
@@ -2967,17 +2904,6 @@ begin
     P^ := ObjIds[ObjId];
   end;
   FixUps.Free;
-
-  //property references
-  for I := 0 to PropFixUps.Count-1 do
-  begin
-    PRef := PZPropertyRef(PropFixUps[I]);
-    ObjId := integer(PRef^.Component);
-    PRef^.Component := TZComponent(ObjIds[ObjId]);
-    PropId := PInteger(@PRef^.Prop)^;
-    PRef^.Prop := PRef^.Component.GetProperties.GetById(PropId);
-  end;
-  PropFixUps.Free;
 
   //nolla ut tilldelade objids så att de kan användas runtime för clone
   for I := 0 to ObjIds.Count-1 do
@@ -3020,8 +2946,6 @@ begin
 
   FixUps := TZArrayList.Create;
   FixUps.ReferenceOnly := True;
-  PropFixUps := TZArrayList.Create;
-  PropFixUps.ReferenceOnly := True;
   ObjIds := TZArrayList.Create;
   ObjIds.ReferenceOnly := True;
 end;
@@ -3308,24 +3232,20 @@ begin
                 Fix.Obj := C;
                 FixUps.Add( Fix );
               end;
-            zptPropertyRef :
-              begin
-                L.DelimitedText := String(S);
-                if L.Count<2 then
-                  raise Exception.Create('TZXmlReader: Bad property ref ' + String(S));
-                Fix := TZXmlFixUp.Create;
-                Fix.Name := String(LowerCase(L[0]));
-                Fix.PropName := String(LowerCase(L[1]));
-                if L.Count>2 then
-                  Value.PropertyValue.Index := StrToIntDef(L[2],0)
-                else
-                  Value.PropertyValue.Index := 0;
-                Fix.Prop := Prop;
-                Fix.Obj := C;
-                FixUps.Add( Fix );
-              end;
             zptExpression :
-              Value.ExpressionValue.Source := String(S);
+              begin
+                if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
+                begin  //todo
+                  L.DelimitedText := String(S);
+                  if L.Count=3 then
+                  begin
+                    L.Delimiter := '.';
+                    S := AnsiString(L.DelimitedText);
+                    L.Delimiter := ' ';
+                  end;
+                end;
+                Value.ExpressionValue.Source := String(S);
+              end
           else
             ZHalt('TZXmlReader: No readhandler');
           end;
@@ -3448,13 +3368,6 @@ begin
     case Fix.Prop.PropertyType of
       zptComponentRef :
         Value.ComponentValue := C;
-      zptPropertyRef :
-        begin
-          Fix.Obj.GetProperty(Fix.Prop,Value);
-          Value.PropertyValue.Component := C;
-          Value.PropertyValue.Prop := C.GetProperties.GetByName(Fix.PropName);
-          Assert(Value.PropertyValue.Prop<>nil,'Unknown reference: ' + Fix.PropName);
-        end;
     end;
     Fix.Obj.SetProperty(Fix.Prop,Value);
   end;
@@ -3695,11 +3608,6 @@ end;
 
 ///////////////////
 
-function GetPropertyRef(const Prop : TZPropertyRef) : pointer;
-begin
-  Result := Prop.Component.GetPropertyPtr(Prop.Prop,Prop.Index);
-end;
-
 { TZOutputStream }
 
 {$ifndef minimal}
@@ -3871,18 +3779,6 @@ begin
 end;
 
 
-
-{$ifndef minimal}
-function GetPropRefAsString(const PRef : TZPropertyRef) : string;
-begin
-  Result := String(PRef.Component.Name) + '.' + PRef.Prop.Name;
-  case PRef.Component.GetProperties.GetByName(PRef.Prop.Name).PropertyType of
-    zptColorf : Result := Result + '.' + Copy('RGBA',PRef.Index+1,1);
-    zptVector3f : Result := Result + '.' + Copy('XYZ',PRef.Index+1,1);
-    zptRectf : Result := Result + '.' + Copy('XYZW',PRef.Index+1,1);
-  end;
-end;
-{$endif}
 
 procedure TStateBase.Update;
 begin

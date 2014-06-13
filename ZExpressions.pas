@@ -151,15 +151,6 @@ type
     {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
   end;
 
-  //Load pointer to prop on stack, used with assign
-  TExpPropPtr = class(TExpBase)
-  protected
-    procedure Execute; override;
-    procedure DefineProperties(List: TZPropertyList); override;
-  public
-    Target : TZPropertyRef;
-  end;
-
   TExpConstantFloat = class(TExpBase)
   protected
     procedure Execute; override;
@@ -232,6 +223,9 @@ type
      //Mat4
      fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix,
      fcVec2,fcVec3,fcVec4
+     {$ifndef minimal}
+     ,fcGenLValue
+     {$endif}
      );
 
 
@@ -464,6 +458,9 @@ type
 //Uses global vars for state.
 procedure RunCode(Code : TZComponentList);
 
+function ExpGetValue(Code : TZComponentList) : single;
+function ExpGetPointer(Code : TZComponentList) : PFloat;
+
 {$ifndef minimal}
 procedure ResetScriptState;
 function GetStackSlots(const Bytes : integer) : integer;
@@ -471,7 +468,7 @@ function GetStackSlots(const Bytes : integer) : integer;
 
 var
   //Return value of last executed expression
-  gReturnValue : single;
+  gReturnValue : pointer;
 
 
 implementation
@@ -503,6 +500,20 @@ const
   ZcStackBegin : PStackElement = @ZcStack;
 
 {$POINTERMATH ON}
+
+procedure StackPopToPointer(var X); forward;
+
+function ExpGetValue(Code : TZComponentList) : single;
+begin
+  RunCode(Code);
+  Result := PSingle(@gReturnValue)^;
+end;
+
+function ExpGetPointer(Code : TZComponentList) : PFloat;
+begin
+  RunCode(Code);
+  Result := gReturnValue;
+end;
 
 function StackGetDepth : integer; inline;
 begin
@@ -644,7 +655,7 @@ begin
     {$endif}
   end;
   if StackGetDepth-SaveDepth=1 then
-    StackPopTo(gReturnValue);
+    StackPopToPointer(gReturnValue);
   {$ifndef minimal}
   if StackGetDepth-SaveDepth>0 then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
@@ -806,19 +817,6 @@ begin
   StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
-
-{ TExpPropPtr }
-
-procedure TExpPropPtr.DefineProperties(List: TZPropertyList);
-begin
-  inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Target',{$ENDIF}(@Target), zptPropertyRef);
-end;
-
-procedure TExpPropPtr.Execute;
-begin
-  StackPushValue(GetPropertyRef(Target));
-end;
 
 { TExpJump }
 
@@ -1501,12 +1499,6 @@ begin
               S := Value.ComponentValue.ClassName;
           end;
         end;
-      zptPropertyRef :
-        begin
-          S := String(Value.PropertyValue.Component.Name) + ' ' + String(Value.PropertyValue.Prop.Name);
-          if Value.PropertyValue.Index>0 then
-            S := S + ' ' + IntToStr(Value.PropertyValue.Index);
-        end;
       zptByte : S := IntToStr(Value.ByteValue);
       zptBoolean : S := IntToStr( byte(Value.BooleanValue) );
     else
@@ -1588,6 +1580,7 @@ procedure TZLibrary.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}(@Source), zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiLibrary;{$endif}
 end;
 
 { TExpUserFuncCall }
@@ -1809,6 +1802,7 @@ begin
 '//  int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { } '#13#10 +
 '//  int SetWindowTextA(int hWnd,string lpString) { }';
     List.GetLast.ExcludeFromBinary := True;
+    List.GetLast.ExpressionKind := ekiLibrary;
     {$endif}
 
   {$ifndef minimal}
@@ -2580,8 +2574,6 @@ initialization
   ZClasses.Register(TExpOpBinaryFloat,ExpOpBinaryFloatClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpOpBinaryInt,ExpOpBinaryIntClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpPropPtr,ExpPropPtrClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpJump,ExpJumpClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}

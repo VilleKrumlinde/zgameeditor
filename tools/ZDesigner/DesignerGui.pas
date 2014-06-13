@@ -186,12 +186,6 @@ type
     procedure OnChange(Sender : TObject);
   end;
 
-  TZPropertyPropRefEdit = class(TZPropertyEditBase)
-  private
-    procedure SetProp(C : TZComponent; Prop : TZProperty); override;
-    procedure OnStoreValue(Sender : TObject);
-  end;
-
   TZBinaryPropEdit = class(TZPropertyEditBase)
   private
     ClearButton : TButton;
@@ -288,7 +282,6 @@ begin
       zptVector3f : PEditor := TZPropertyFloatsEdit.Create(Self);
       zptBoolean : PEditor := TZPropertyBooleanEdit.Create(Self);
       zptByte : PEditor := TZPropertyByteEdit.Create(Self);
-      zptPropertyRef : PEditor := TZPropertyPropRefEdit.Create(Self);
       zptBinary : PEditor := TZBinaryPropEdit.Create(Self);
     else
       Continue;
@@ -1122,12 +1115,6 @@ begin
               if Value.ComponentValue=Target then
                 List.Add(C);
             end;
-          zptPropertyRef :
-            begin
-              C.GetProperty(Prop,Value);
-              if Value.PropertyValue.Component=Target then
-                List.Add(C);
-            end;
         end;
       end;
     end;
@@ -1288,53 +1275,6 @@ begin
     Cb.Style := csDropDown;
     Cb.Text := IntToStr(Value.ByteValue);
   end;
-end;
-
-{ TZPropertyPropRefEdit }
-
-procedure TZPropertyPropRefEdit.SetProp(C: TZComponent; Prop: TZProperty);
-var
-  Edit : TEdit;
-begin
-  inherited;
-  Edit := TEdit.Create(Self);
-  Edit.Align := alClient;
-
-  if (Value.PropertyValue.Component<>nil) then
-    Edit.Text := ZClasses.GetPropRefAsString(Value.PropertyValue);
-
-  Edit.Parent := ValuePanel;
-  Edit.OnEnter := OnFocusControl;
-  Edit.OnExit := OnStoreValue;
-//  NameLabel.FocusControl := Edit;
-end;
-
-procedure TZPropertyPropRefEdit.OnStoreValue(Sender: TObject);
-var
-  S : string;
-begin
-  if not TEdit(Sender).Modified then
-    Exit;
-
-  S := TEdit(Sender).Text;
-
-  if Trim(S)='' then
-    Value.PropertyValue.Component := nil
-  else
-  begin
-    if not ParsePropRef( ((Owner as TZPropertyEditor).RootComponent as TZApplication).SymTab,nil,S,Value.PropertyValue) then
-    begin
-      ShowMessage('Invalid propname: ' + S);
-      Exit;
-    end;
-    if not (Value.PropertyValue.Prop.PropertyType in ZClasses.FloatTypes) then
-    begin
-      ShowMessage('Must be float property: ' + S);
-      Exit;
-    end;
-  end;
-
-  UpdateProp;
 end;
 
 { TZComponentTreeNode }
