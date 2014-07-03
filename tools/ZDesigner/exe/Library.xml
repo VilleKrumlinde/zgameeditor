@@ -1057,7 +1057,7 @@ else return Culling[U,V];]]>
             <SpawnModel Model="o_test"/>
           </OnStart>
           <OnUpdate>
-            <AnimatorSimple Duration="3" AutoStart="255" Target="App CameraPosition 2" AutoReverse="255" RepeatCount="-1" FromValue="30" ToValue="130" Smooth="255"/>
+            <AnimatorSimple Duration="3" AutoStart="255" Target="App.CameraPosition.Z" AutoReverse="255" RepeatCount="-1" FromValue="30" ToValue="130" Smooth="255"/>
           </OnUpdate>
           <Definitions>
             <Bitmap Name="b_cells">
@@ -2157,7 +2157,7 @@ rtg_TestBox.Translate.Z = VFCMatrix[ 0, 2, 0 ];]]>
               </Children>
             </RenderTransformGroup>
             <UseMaterial Material="matSmooth"/>
-            <RenderText TextFloatRef="App FpsCounter" X="-1" Y="0.95" Align="1"/>
+            <RenderText TextFloatRef="App.FpsCounter" X="-1" Y="0.95" Align="1"/>
           </OnRender>
           <Definitions>
             <Mesh Name="meshFrustrum">
@@ -3302,6 +3302,264 @@ int sv_pattern_mute(int slot, int pat_num, int mute) {}
   // Use it with sv_lock_slot() and sv_unlock_slot()]]>
           </Source>
         </ZExternalLibrary>
+        <ZExternalLibrary Comment="MikMod sound library" ModuleName="libmikmod" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libmikmod.so&quot;;">
+          <Source>
+<![CDATA[/*
+  Adapter to the MikMod Library.
+  http://mikmod.sourceforge.net
+
+  Created by Radovan Cervenka (c) 2014
+
+  Download the library from:
+  http://googledrive.com/host/0BxwfQ8la88ouSTM1TWNPRlFueTg
+
+  More info on forum:
+  http://www.emix8.org/forum/viewtopic.php?t=1116
+
+*/
+
+
+// Library initialization and core functions
+
+
+// Registers all the available drivers.
+void MikMod_RegisterAllDrivers() {}
+
+// Registers all the available module loaders.
+void MikMod_RegisterAllLoaders() {}
+
+// Initializes the library. The function also chooses the more
+// adequate driver and initializes it.
+// Returns 0 if succesful or nonzero if an error occurred.
+int MikMod_Init(string cmdline) {}
+
+// Deinitializes the sound hardware and frees all the memory and resources
+// used by MikMod. Called at application end.
+void MikMod_Exit() {}
+
+// Resets MikMod and reinitializes the sound hardware.
+// Returns 0 if succesful or nonzero if an error occurred.
+int MikMod_Reset(string cmdline) {}
+
+// Sets the number of mixed voices which can be used for music and sound
+// effects playback.
+// Returns 0 if succesful or nonzero if an error occurred.
+int MikMod_SetNumVoices(int musicvoices, int samplevoices) {}
+
+// Starts the sound mixing.
+// Returns 0 if sound mixing is ready or nonzero if an error occurred.
+int MikMod_EnableOutput() {}
+
+// Stops the sound mixing.
+void MikMod_DisableOutput() {}
+
+// Returns 1 if sound output is enabled or 0 if not.
+int MikMod_Active() {}
+
+// Updates the sound. It should be called on a regular basis.
+void MikMod_Update() {}
+
+// Frees data allocated by MikMod.
+void MikMod_free(xptr data) {}
+
+
+// Module player
+
+
+// Loads a music module from a file. The maxchan parameter is the maximum
+// number of channels the song is allowed to request from the mixer. The curious
+// parameter is the curiosity level to use - recommended value is 0; for details
+// see the MikMod documentation.
+// Returns a pointer to (ID of) the loaded module, or 0 if an error occurs.
+int Player_Load(string filename, int maxchan, int curious) {}
+
+// Loads a music module from memory (array or embedded file). The len parameter
+// is the length of the buffer. The maxchan parameter is the maximum number of
+// channels the song is allowed to request from the mixer. The curious parameter
+// is the curiosity level to use - recommended value is 0; for details see the
+// MikMod documentation.
+// Returns a pointer to (ID of) the loaded module, or 0 if an error occurs.
+int Player_LoadMem(xptr buffer, int len, int maxchan, int curious) {}
+
+// Retrieves the title of a module file. The caller must free the returned
+// string with MikMod_free function when it is no longer necessary.
+// Returns the module title string, or NULL if an error occurs.
+string Player_LoadTitle(string filename) {}
+
+// Retrieves the title of a module from memory buffer. The len parameter
+// is the length of the buffer. The caller must free the returned string with
+// MikMod_free function when it is no longer necessary.
+// Returns the module title string, or NULL if an error occurs.
+string Player_LoadTitleMem(xptr buffer, int len) {}
+
+//  Stops the module if it is playing and unloads it from memory.
+void Player_Free(int module) {}
+
+// starts the specified module playback.
+void Player_Start(int module) {}
+
+// Returns 0 if no module is playing, or nonzero if a module is currently
+// playing. This function will still report that the player is active if the
+// playing module is paused.
+int Player_Active() {}
+
+// Stops the currently playing module.
+void Player_Stop() {}
+
+// Toggles the playing/paused status of the module.
+void Player_TogglePause() {}
+
+// Returns 0 if the module is not paused, or 1 if the module is paused.
+int Player_Paused() {}
+
+// Jumps to the next position in the module.
+// All playing samples and active song voices are cut to avoid hanging notes.
+void Player_NextPosition() {}
+
+// Jumps to the previous position in the module.
+// All playing samples and active song voices are cut to avoid hanging notes.
+void Player_PrevPosition() {}
+
+// Jumps to the specified position in the module.
+// All playing samples and active song voices are cut to avoid hanging notes.
+void Player_SetPosition(int pos) {}
+
+// Returns 0 if the channel is not muted, or 1 if the channel is muted.
+int Player_Muted(int channel) {}
+
+// Sets the module volume. The volume parameter is the new overall module
+// playback volume, in the range 0-128.
+void Player_SetVolume(int volume) {}
+
+// Returns a pointer to (ID of) the module currently being played, or NULL
+// if no module is playing.
+int Player_GetModule() {}
+
+// Sets the module speed. The new module speed is in the range 1-32.
+void Player_SetSpeed(int speed) {}
+
+// Sets the module tempo. The new module tempo is in the range 32-255.
+void Player_SetTempo(int tempo) {}
+
+// Returns the voice corresponding to the specified module channel.
+int Player_GetChannelVoice(int channel) {}
+
+
+// Samples
+
+
+// Sample playback should not be interrupted
+const int SFX_CRITICAL = 1;
+
+// Sample format [loading and in-memory] flags:
+const int SF_16BITS = 0x0001;
+const int SF_STEREO = 0x0002;
+const int SF_SIGNED = 0x0004;
+const int SF_BIG_ENDIAN = 0x0008;
+const int SF_DELTA = 0x0010;
+const int SF_ITPACKED = 0x0020;
+const int SF_FORMATMASK = 0x003F;
+
+// General Playback flags:
+const int SF_LOOP = 0x0100;
+const int SF_BIDI = 0x0200;
+const int SF_REVERSE = 0x0400;
+const int SF_SUSTAIN = 0x0800;
+const int SF_PLAYBACKMASK = 0x0C00;
+
+// Module-only playback flags:
+const int SF_OWNPAN = 0x1000;
+const int SF_UST_LOOP = 0x2000;
+const int SF_EXTRAPLAYBACKMASK = 0x3000;
+
+// Panning constants:
+const int PAN_LEFT = 0;
+const int PAN_HALFLEFT = 64;
+const int PAN_CENTER = 128;
+const int PAN_HALFRIGHT = 192;
+const int PAN_RIGHT = 255;
+const int PAN_SURROUND = 512; /* panning value for Dolby Surround */
+
+
+// Loads a RAW sample from a file. The parameters represent the the sampling
+// rate, the channel to load the sample to, and sample flags.
+// Returns a pointer to (ID of) the loaded sample, or 0 if an error occurs.
+int Sample_LoadRaw(string filename, int rate, int channel, int flags) {}
+
+// Loads a RAW sample from memory (array or embedded file). The parameters
+// represent the sample length, sampling rate, the channel to load the
+// sample to, and sample flags.
+// Returns a pointer to (ID of) the loaded sample, or 0 if an error occurs.
+int Sample_LoadRawMem(xptr buffer, int len, int rate, int channel, int flags) {}
+
+// Loads a WAV sample from a file.
+// Returns a pointer to (ID of) the loaded sample, or 0 if an error occurs.
+int Sample_Load(string filename) {}
+
+// Loads a WAV sample from  memory (array or embedded file). The parameter len
+// represents the sample length.
+// Returns a pointer to (ID of) the loaded sample, or 0 if an error occurs.
+int Sample_LoadMem(xptr buffer, int len) {}
+
+// Unloads a sample from memory.
+void Sample_Free(int sample) {}
+
+// Plays a sample as a sound effect. The start patameter determines the starting
+// position in sample. The flags parameter is either zero, for normal sound
+// effects, or SFX_CRITICAL, for critical sound effects which must not be
+// interrupted. Returns the voice number corresponding to the voice which will
+// play the sample.
+int Sample_Play(int sample, int start, int flags) {}
+
+
+// Voices
+
+
+// Sets the volume of the specified voice.
+// The volume parameter is in the range 0-256.
+void Voice_SetVolume(int voice, int volume) {}
+
+// Returns the volume of the sample currently playing on the specified voice,
+// or zero if no sample is currently playing on the voice.
+int Voice_GetVolume(int voice) {}
+
+// Sets the frequency (pitch) of the specified voice. The frequency parameter
+// is the new frequency of the voice, in hertz.
+void Voice_SetFrequency(int voice, int frequency) {}
+
+// Returns the current frequency of the sample playing on the specified voice,
+// or zero if no sample is currently playing on the voice.
+int Voice_GetFrequency(int voice) {}
+
+// Sets the panning position of the specified voice.
+// Panning can vary between 0 (PAN_LEFT) and 255 (PAN_RIGHT).
+void Voice_SetPanning(int voice, int panning) {}
+
+// Returns the current panning position of the sample playing on the specified
+// voice, or PAN_CENTER if no sample is currently playing on the voice.
+int Voice_GetPanning(int voice) {}
+
+// Starts a new sample in the specified voice. The start parameter is the
+// starting position (in samples).
+void Voice_Play(int voice, int sample, int start) {}
+
+// Stops the playing sample of the specified voice.
+void Voice_Stop(int voice) {}
+
+// Returns 0 if the voice is stopped or has no sample assigned, or nonzero
+// if the voice is playing a sample.
+int Voice_Stopped(int voice) {}
+
+// Returns the current play location of the sample playing on the specified
+// voice, or 0 if the position can not be determined or if no sample is
+// currently playing on the voice.
+int Voice_GetPosition(int voice) {}
+
+// Returns the real volume of the voice in the range 0-65535. This is not
+// related to the volume constraint specified with Voice_SetVolume.
+int Voice_RealVolume(int voice) {}]]>
+          </Source>
+        </ZExternalLibrary>
         <ZExternalLibrary Comment="Android sensor library" ModuleName="./libZGESensor.so" CallingConvention="1">
           <Source>
 <![CDATA[/*
@@ -3554,6 +3812,7 @@ External Libraries
   Skeletal animation library (http://www.emix8.org/forum/viewtopic.php?t=1106) Rado1
   BASS audio library () Rado1
   SunVox music library (http://www.emix8.org/forum/viewtopic.php?t=911) Rado1
+  MikMod sound library (http://www.emix8.org/forum/viewtopic.php?t=1116) Rado1
   Android sensor library (http://www.emix8.org/forum/viewtopic.php?t=1006) Rado1
   OUYA library (http://www.emix8.org/forum/viewtopic.php?t=1097) Rado1
 */]]>
