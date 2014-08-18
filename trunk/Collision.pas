@@ -243,32 +243,26 @@ var
     Result := False;
     for J := 0 to HitList.Count - 1 do
       if Test(Act1,TModel(HitList[J])) then
-      begin
-        Result := True;
-        Exit;
-      end;
+        Exit(True);
     //No hit against hitlist, but tests still need to be made against
     //the complete original list because axis-adjusted movement may
     //have moved the actor into a new objects bounding box.
     L := Models.Get(Self.HitListCat);
     for J := 0 to L.Count - 1 do
-    begin
       if Test(Act1,TModel(L[J])) then
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
+        Exit(True);
   end;
 
   procedure InStopMovement;
   //Act1 har slagit i väggen mot objekten i HitList, försök backa position så att kollision ej sker
   //Testar hela tiden mot listan med alla träff-objekt, det är enda sättet att få det
   //att stämma.
+  const
+    MaxSteps = 20;
   var
     MoveV,StartV : TZVector3f;
     I,ProblemAxis : integer;
-    {Scale,}Tmp : single;
+    Scale,Tmp : single;
   begin
     VecSub3(Act1.Position,Act1.LastPosition,MoveV);
     //VecSub3(Act1.Position,MoveV,StartV);
@@ -298,6 +292,16 @@ var
 
     if ProblemAxis>=0 then
     begin
+      //Step back until no collision occurs
+      for I := 1 to MaxSteps do
+      begin
+        //Note: Scale must be zero on last iteration so that movement is completely reversed (object already in contact when movement started)
+        Scale := 1.0 - I*(1.0/MaxSteps);
+        Act1.Position[ProblemAxis] := StartV[ProblemAxis] + MoveV[ProblemAxis] * Scale;
+        Act1.CollisionCoordinatesUpdatedTime := 0;
+        if not InTestAll then
+          Break;
+      end;
       //Act1.LastPosition[ ProblemAxis ] := Act1.Position[ ProblemAxis ];
       Act1.Velocity[ ProblemAxis ] := 0.0;
     end
@@ -321,28 +325,6 @@ var
       if Scale<0.5 then
         VecCopy3(StartV,Act1.Position);}
     end;
-
-{
-  startPos=lastPos
-  problemAxis=-1
-  loop axis
-    pos=startPos
-    pos[axis]=move[axis]
-    om ej kollision
-      problemAxis=axis
-      break
-  if problemAxis>=0
-    lastPos[problemAxis]=pos[problemAxis]
-  else
-    Scale=1
-    loop while scale>0
-      pos=startPos+MoveV*Scale
-      if ej kollision
-        break
-      scale=scale - 0.1
-    om scale=0
-      pos=startpos  //ge upp
-}
   end;
 
 begin

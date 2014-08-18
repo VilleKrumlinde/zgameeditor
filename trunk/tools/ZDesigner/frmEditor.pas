@@ -1520,6 +1520,8 @@ begin
 //    B := (ShowNode as TBitmapProducer).ProduceOutput as TZBitmap;
   end;
 
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
   UseAlpha := BitmapEditFrame1.UseAlphaCheckBox.Checked;
 
   //Make sure texture matrix is reset
@@ -1633,6 +1635,8 @@ begin
     B.Free;
 
   glPopMatrix;
+
+  glPopAttrib();
 
   glFlush;
 end;

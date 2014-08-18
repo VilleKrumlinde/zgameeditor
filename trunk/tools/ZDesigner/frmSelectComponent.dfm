@@ -2,8 +2,8 @@ object SelectComponentForm: TSelectComponentForm
   Left = 787
   Top = 88
   Caption = 'Select component to add'
-  ClientHeight = 481
-  ClientWidth = 785
+  ClientHeight = 592
+  ClientWidth = 966
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,15 +15,19 @@ object SelectComponentForm: TSelectComponentForm
   ShowHint = True
   OnCreate = FormCreate
   DesignSize = (
-    785
-    481)
+    966
+    592)
   PixelsPerInch = 96
-  TextHeight = 13
+  TextHeight = 16
   object CompListView: TListView
-    Left = 8
-    Top = 8
-    Width = 768
-    Height = 427
+    Left = 10
+    Top = 10
+    Width = 945
+    Height = 525
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <>
     HideSelection = False
@@ -39,10 +43,14 @@ object SelectComponentForm: TSelectComponentForm
     OnSelectItem = CompListViewSelectItem
   end
   object OkButton: TButton
-    Left = 618
-    Top = 443
-    Width = 75
-    Height = 25
+    Left = 761
+    Top = 545
+    Width = 92
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = 'OK'
     Default = True
@@ -51,10 +59,14 @@ object SelectComponentForm: TSelectComponentForm
     TabOrder = 1
   end
   object Button2: TButton
-    Left = 701
-    Top = 443
-    Width = 75
-    Height = 25
+    Left = 863
+    Top = 545
+    Width = 92
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Cancel = True
     Caption = 'Cancel'
@@ -62,10 +74,14 @@ object SelectComponentForm: TSelectComponentForm
     TabOrder = 2
   end
   object HelpButton: TButton
-    Left = 8
-    Top = 443
-    Width = 75
-    Height = 25
+    Left = 10
+    Top = 545
+    Width = 92
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Anchors = [akLeft, akBottom]
     Caption = '&Help'
     TabOrder = 3

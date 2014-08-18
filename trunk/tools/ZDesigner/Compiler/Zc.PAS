@@ -964,6 +964,7 @@ begin
         end;
 
         V.SetString('Name', AnsiString(Name));
+        V.DesignerReset; //Needed to init managed variables
         SymTab.Add(Name,V);
      
 end;
