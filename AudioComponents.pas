@@ -142,7 +142,7 @@ var
 
 implementation
 
-uses ZApplication,ZExpressions,ZMath, ZPlatform
+uses ZApplication,ZExpressions,ZMath, ZPlatform, BeroAudioOGGVorbisTremor
   {$ifndef minimal}
   ,SysUtils
   {$endif}
