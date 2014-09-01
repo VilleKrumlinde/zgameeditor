@@ -1474,23 +1474,35 @@ var
     Result := False;
     D := TOpenDialog.Create(Self);
     try
-      D.Title := '*** Only raw PCM sound files accepted ***';
-      D.Filter := 'Raw-files (*.raw)|*.raw';
-      D.DefaultExt := '*.raw';
+      D.Title := 'Pick audio file to import';
+      D.Filter := 'OGG-files (*.ogg)|*.ogg|Raw-files (*.raw)|*.raw';
+      D.DefaultExt := '*.ogg';
       if not D.Execute then
         Exit;
 
-      if ImportRawAudioForm=nil then
-        ImportRawAudioForm := TImportRawAudioForm.Create(Application);
+      if SameText(ExtractFileExt(D.FileName),'.raw') then
+      begin
+        if ImportRawAudioForm=nil then
+          ImportRawAudioForm := TImportRawAudioForm.Create(Application);
 
-      if ImportRawAudioForm.ShowModal=mrCancel then
-        Exit;
+        if ImportRawAudioForm.ShowModal=mrCancel then
+          Exit;
 
-      Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
-      (Self.Component as TSampleImport).SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
-      PByte(@(Self.Component as TSampleImport).SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
-      M.LoadFromFile(D.FileName);
-      Result := True;
+        Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
+        (Self.Component as TSampleImport).SampleRate := StrToFloatDef(ImportRawAudioForm.sampleRateComboBox.Text,8000);
+        PByte(@(Self.Component as TSampleImport).SampleFormat)^ := ImportRawAudioForm.sampleFormatListBox.ItemIndex;
+        (Self.Component as TSampleImport).SampleFileFormat := sffRAW;
+        M.LoadFromFile(D.FileName);
+        Result := True;
+      end;
+
+      if SameText(ExtractFileExt(D.FileName),'.ogg') then
+      begin
+        Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(D.FileName)));
+        (Self.Component as TSampleImport).SampleFileFormat := sffOGG;
+        M.LoadFromFile(D.FileName);
+        Result := True;
+      end;
     finally
       D.Free;
     end;

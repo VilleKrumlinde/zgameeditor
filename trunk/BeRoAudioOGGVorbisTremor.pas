@@ -6305,6 +6305,7 @@ begin
  end;
 end;
 
+{$ifndef minimal}
 const crc_lookup:array[0..255] of ogg_uint32_t=($00000000,$04c11db7,$09823b6e,$0d4326d9,
                                                 $130476dc,$17c56b6b,$1a864db2,$1e475005,
                                                 $2608edb8,$22c9f00f,$2f8ad6d6,$2b4bcb61,
@@ -6369,6 +6370,7 @@ const crc_lookup:array[0..255] of ogg_uint32_t=($00000000,$04c11db7,$09823b6e,$0
                                                 $9abc8bd5,$9e7d9662,$933eb0bb,$97ffad0c,
                                                 $afb010b1,$ab710d06,$a6322bdf,$a2f33668,
                                                 $bcb4666d,$b8757bda,$b5365d03,$b1f740b4);
+{$endif}
 
 function ogg_sync_create:Pogg_sync_state;
 begin
@@ -6430,6 +6432,7 @@ begin
  result:=OGG_SUCCESS;
 end;
 
+{$ifndef minimal}
 function _checksum(r:Pogg_reference;bytes:longint):ogg_uint32_t;
 var j,post:longint;
     data:PAnsiChar;
@@ -6449,6 +6452,7 @@ begin
   r:=r^.next;
  end;
 end;
+{$endif}
 
 function ogg_sync_pageseek(oy:Pogg_sync_state;og:Pogg_page):longint;
 label sync_out,sync_fail;
@@ -6488,10 +6492,12 @@ begin
 
  chksum:=oggbyte_read4(@page,22);
  oggbyte_set4(@page,0,22);
+ {$ifndef minimal}
  if chksum<>_checksum(oy^.fifo_tail,oy^.bodybytes+oy^.headerbytes) then begin
   oggbyte_set4(@page,chksum,22);
   goto sync_fail;
  end;
+ {$endif}
  oggbyte_set4(@page,chksum,22);
 
  if assigned(og) then begin
