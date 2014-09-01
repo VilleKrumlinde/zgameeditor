@@ -1145,6 +1145,7 @@ begin
   begin
     ZApp.ScreenWidth := Glp.Width;
     ZApp.ScreenHeight := Glp.Height;
+    ZApp.WindowHandle := Glp.Handle;
   end;
 
   try
@@ -3827,12 +3828,13 @@ type
     Name,MapUnitName,MapClassName,MapMethodName : string;
     Start : integer;
     Size : integer;
+    Section : integer;
   end;
 
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
-  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine : integer;
-  Section : TImageSection;
+  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine,SectionNr : integer;
+  Section,DataSection : TImageSection;
   Stream : TMemoryStream;
   MapNames : TObjectList;
   B : byte;
@@ -3843,14 +3845,15 @@ var
 
   Infos : PComponentInfoArray;
   Ci : TZComponentInfo;
-  UsedComponents,ClassesToRemove,NamesToRemove : TStringList;
+  UsedComponents,ClassesToRemove,NamesToRemove,UnitsToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
-  NeedJpeg,NeedArray,DisplayDetailedReport : boolean;
+  NeedJpeg,NeedArray,NeedOgg,DisplayDetailedReport : boolean;
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
   Section := Module.ImageSection[0];
-  if Section.SectionName<>'.text' then
+  DataSection := Module.ImageSection[2];
+  if (Section.SectionName<>'.text') or (DataSection.SectionName<>'.data') then
   begin
     Log.Warning('wrong section');
     Exit;
@@ -3868,6 +3871,7 @@ begin
   NamesToRemove := TStringList.Create;
   ClassesToRemove := TStringList.Create;
   UsedComponents := TStringList.Create;
+  UnitsToRemove := TStringList.Create;
   Splitter := TStringList.Create;
   Splitter.Delimiter := '.';
   try
@@ -3883,11 +3887,15 @@ begin
       S := Trim(Lines[I]);
       if Length(S)=0 then
         Break;
-      if Copy(S,1,4)<>'0001' then
+
+      SectionNr := StrToIntDef(Copy(S,1,4),-1);
+      if (SectionNr<>1) and (SectionNr<>3) then
         Continue;
+
       Item := TMapName.Create;
       Item.Name := Copy(S,21,255);
       Item.Start := StrToInt('$' + Copy(S,6,8));
+      Item.Section := SectionNr;
       Splitter.DelimitedText := Item.Name;
       if Splitter.Count=3 then
       begin
@@ -3911,8 +3919,8 @@ begin
       begin
         N1 := TMapName(Item1);
         N2 := TMapName(Item2);
-        I1 := N1.Start;
-        I2 := N2.Start;
+        I1 := (N1.Section shl 24) + N1.Start;
+        I2 := (N2.Section shl 24) + N2.Start;
         Result := I1-I2;
       end
     );
@@ -3926,6 +3934,7 @@ begin
     //Get names of used classes
     NeedJpeg := False;
     NeedArray := False;
+    NeedOgg := False;
     AllObjects := TObjectList.Create(False);
     try
       GetAllObjects(Self.Root,AllObjects);
@@ -3941,7 +3950,9 @@ begin
         else if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName)
         else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
-          NeedArray := True;
+          NeedArray := True
+        else if (AllObjects[I] is TSampleImport) and ((AllObjects[I] as TSampleImport).SampleFileFormat=sffOGG) then
+          NeedOgg := True
       end;
     finally
       AllObjects.Free;
@@ -4005,13 +4016,16 @@ begin
       NamesToRemove.Add('ZPlatform.Platform_NetRead');
     end;
 
+    if not NeedOGG then
+      UnitsToRemove.Add('BeRoAudioOGGVorbisTremor');
+
     //NamesToRemove.Add('System.@HandleAnyException');
     //NamesToRemove.Add('System.@FinalizeArray');
 
     //ok, start removing
     NamesKept := TObjectList.Create(False);
-    Stream := Section.RawData;
     TotalRemovedBytes := 0;
+    Stream := nil;
     for I := 0 to MapNames.Count - 1 do
     begin
       Item := TMapName(MapNames[I]);
@@ -4022,11 +4036,18 @@ begin
         Continue;
       end;
       if (ClassesToRemove.IndexOf(Item.MapClassName)=-1) and
-        (NamesToRemove.IndexOf(Item.Name)=-1) then
+        (NamesToRemove.IndexOf(Item.Name)=-1) and
+        (UnitsToRemove.IndexOf(Item.MapUnitName)=-1) then
       begin
         if DisplayDetailedReport then
           NamesKept.Add(Item);
         Continue;
+      end;
+      case Item.Section of
+        1 : Stream := Section.RawData;
+        3 : Stream := DataSection.RawData;
+      else
+        Assert(false);
       end;
       Stream.Seek(Item.Start,soBeginning);
       B := $90; //nop
@@ -4073,6 +4094,7 @@ begin
     MapNames.Free;
     ClassesToRemove.Free;
     NamesToRemove.Free;
+    UnitsToRemove.Free;
     UsedComponents.Free;
     Splitter.Free;
   end;
