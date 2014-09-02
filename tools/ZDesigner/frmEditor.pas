@@ -3848,6 +3848,14 @@ var
   UsedComponents,ClassesToRemove,NamesToRemove,UnitsToRemove : TStringList;
   NamesKept,AllObjects : TObjectList;
   NeedJpeg,NeedArray,NeedOgg,DisplayDetailedReport : boolean;
+
+  function MakeFastList : TStringList;
+  begin
+    Result := TStringList.Create;
+    Result.Sorted := True;
+    Result.Duplicates := dupIgnore;
+  end;
+
 begin
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
@@ -3868,10 +3876,10 @@ begin
 
   Lines := TStringList.Create;
   MapNames := TObjectList.Create(True);
-  NamesToRemove := TStringList.Create;
-  ClassesToRemove := TStringList.Create;
-  UsedComponents := TStringList.Create;
-  UnitsToRemove := TStringList.Create;
+  NamesToRemove := MakeFastList;
+  ClassesToRemove := MakeFastList;
+  UsedComponents := MakeFastList;
+  UnitsToRemove := MakeFastList;
   Splitter := TStringList.Create;
   Splitter.Delimiter := '.';
   try
@@ -4017,7 +4025,13 @@ begin
     end;
 
     if not NeedOGG then
+    begin
       UnitsToRemove.Add('BeRoAudioOGGVorbisTremor');
+      NamesToRemove.Add('AudioComponents.ogg_fread');
+      NamesToRemove.Add('AudioComponents.ogg_fseek');
+      NamesToRemove.Add('AudioComponents.ogg_ftell');
+      NamesToRemove.Add('AudioComponents.ogg_fclose');
+    end;
 
     //NamesToRemove.Add('System.@HandleAnyException');
     //NamesToRemove.Add('System.@FinalizeArray');
