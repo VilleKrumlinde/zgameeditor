@@ -138,7 +138,8 @@ type
     //Sampled waveform
     SampleRef : pointer;  //Pointer to TSample-component
     SampleData : pointer;
-    SampleRepeatPosition,SampleStep,SamplePosition : integer;
+    SampleRepeatPosition,SampleStep : integer;
+    SamplePosition : NativeUInt;
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
     UseSampleHz : boolean;
 
@@ -233,7 +234,7 @@ const
   VoiceFullRange = (1 shl VoicePBits);
   VoiceVolBits = 6;
 
-  SamplePosPBits = 12;
+  SamplePosPBits = 8;
 
   //Antal bits för hur många steg channel volume går i
   ChannelVolBits = 6;
@@ -583,7 +584,6 @@ begin
         Sample2 := (Sample2 * SampleFraction) div (1 shl SamplePosPBits);
 
         Value1 := Sample1 + Sample2;
-
         Inc(V.SamplePosition,V.SampleStep);
         if (V.SamplePosition shr SamplePosPBits>=V.SampleCount) and
           (V.SampleRepeatPosition>=0) then

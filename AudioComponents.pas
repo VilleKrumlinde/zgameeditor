@@ -736,123 +736,128 @@ var vf:POggVorbis_File;
 
   function GetSample(const I : integer) : single;
   begin
-      case Channels of
-       1: Exit( Data^[i] / High(smallint) );
-       2: Exit( (Data^[(i*2)+0]+Data^[(i*2)+1]) / 2 / High(smallint) );
-       else
-         Exit( Data^[(i*Channels)+0] / High(smallint) );
-       end;
+    case Channels of
+     1: Exit( Data^[i] / High(smallint) );
+     2: Exit( (Data^[(i*2)+0]+Data^[(i*2)+1]) / 2 / High(smallint) );
+     else
+       Exit( Data^[(i*Channels)+0] / High(smallint) );
+     end;
   end;
 
-var
-  debugf : file;
 begin
-  Stream := TZInputStream.CreateFromMemory(DataP,DataSize);
+  Stream := TZInputStream.CreateFromMemory(DataP, DataSize);
 
-  result:=false;
+  Result := False;
   New(vf);
 
-    if ov_open_callbacks(Stream,vf,nil,0,_ov_open_callbacks)=0 then begin
-     info:=ov_info(vf,-1);
-     Channels:=info^.channels;
-     SampleRate:=info^.rate;
-     TotalSamples:=ov_pcm_total(vf,-1);
-     GetMem(Data,(TotalSamples+4096)*Channels*sizeof(smallint));
-     Bytes:=TotalSamples*Channels*sizeof(smallint);
-     FillChar(Data^,Bytes,0);
-     DataEx:=@Data[0];
-     Total:=0;
-     bitstream:=0;
-     while Total<Bytes do begin
-      BytesIn:=ov_read(vf,DataEx,Bytes-Total,@bitstream);
-      if BytesIn=OV_HOLE then begin
-       continue;
-      end else if (BytesIn=OV_EBADLINK) or (BytesIn=OV_EINVAL) or (BytesIn=0) then begin
-       break;
+  if ov_open_callbacks(Stream, vf, nil, 0, _ov_open_callbacks) = 0 then
+  begin
+    info := ov_info(vf, -1);
+    Channels := info^.Channels;
+    SampleRate := info^.rate;
+    TotalSamples := ov_pcm_total(vf, -1);
+    GetMem(Data, (TotalSamples + 4096) * Channels * SizeOf(smallint));
+    bytes := TotalSamples * Channels * SizeOf(smallint);
+    FillChar(Data^, bytes, 0);
+    DataEx := @Data[0];
+    Total := 0;
+    bitstream := 0;
+    while Total < bytes do
+    begin
+      BytesIn := ov_read(vf, DataEx, bytes - Total, @bitstream);
+      if BytesIn = OV_HOLE then
+      begin
+        continue;
+      end
+      else if (BytesIn = OV_EBADLINK) or (BytesIn = OV_EINVAL) or (BytesIn = 0)
+      then
+      begin
+        break;
       end;
-      inc(PAnsiChar(pointer(DataEx)),BytesIn);
-      inc(Total,BytesIn);
-     end;
-
-     if Total>0 then begin
-        if S.Length=0 then
-          S.Length := TotalSamples / AudioRate;
-
-        P := S.GetMemory;
-
-        SourcePosFloat := 0.0;
-      //  SampleFraction := 0.0;
-        SourcePos := 0;
-        OutputPos := 0;
-
-        SourceStep := SampleRate / AudioRate;
-
-        //Upsample to target rate
-        //(quality improves when not using fractions strangely enough)
-        while (OutputPos<S.SampleCount) and (SourcePos<TotalSamples-1) do
-        begin
-          P^ := GetSample(SourcePos);// * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
-          Inc(P);
-          Inc(OutputPos);
-          SourcePosFloat := SourcePosFloat + SourceStep;
-          SourcePos := Trunc(SourcePosFloat);
-        end;
-
-//       3:begin
-//        // Left, middle, right
-//        for i:=0 to TotalSamples-1 do begin
-//         FinalData^[(i*2)+0]:=SARLongint(Data^[(i*3)+0]+Data^[(i*3)+1],1);
-//         FinalData^[(i*2)+1]:=SARLongint(Data^[(i*3)+2]+Data^[(i*3)+1],1);
-//        end;
-//       end;
-//       4:begin
-//        // Front left, front right, back left, back right
-//        for i:=0 to TotalSamples-1 do begin
-//         FinalData^[(i*2)+0]:=SARLongint(Data^[(i*4)+0]+Data^[(i*4)+2],1);
-//         FinalData^[(i*2)+1]:=SARLongint(Data^[(i*4)+1]+Data^[(i*4)+3],1);
-//        end;
-//       end;
-//       5:begin
-//        // Front left, front middle, front right, back left, back right
-//        for i:=0 to TotalSamples-1 do begin
-//         FinalData^[(i*2)+0]:=(Data^[(i*5)+0]+Data^[(i*5)+1]+Data^[(i*5)+3]) div 3;
-//         FinalData^[(i*2)+1]:=(Data^[(i*5)+2]+Data^[(i*5)+1]+Data^[(i*5)+4]) div 3;
-//        end;
-//       end;
-//       6:begin
-//        // Front left, front middle, front right, back left, back right, LFE channel (subwoofer)
-//        for i:=0 to TotalSamples-1 do begin
-//         FinalData^[(i*2)+0]:=SARLongint(Data^[(i*6)+0]+Data^[(i*6)+1]+Data^[(i*6)+3]+Data^[(i*6)+5],2);
-//         FinalData^[(i*2)+1]:=SARLongint(Data^[(i*6)+2]+Data^[(i*6)+1]+Data^[(i*6)+4]+Data^[(i*6)+5],2);
-//        end;
-//       end;
-//       else begin
-//        // Undefined, so get only the first two channels in account
-//        for i:=0 to TotalSamples-1 do begin
-//         FinalData^[(i*2)+0]:=Data^[(i*Channels)+0];
-//         FinalData^[(i*2)+1]:=Data^[(i*Channels)+1];
-//        end;
-//       end;
-//      end;
-      FreeMem(Data);
-//      DestSample.SampleLength:=TotalSamples;
-//      DestSample.SampleRate:=SampleRate;
-//      DestSample.Loop.Mode:=SoundLoopModeNONE;
-//      DestSample.Loop.StartSample:=0;
-//      DestSample.Loop.EndSample:=0;
-//      DestSample.SustainLoop.Mode:=SoundLoopModeNONE;
-//      DestSample.SustainLoop.StartSample:=0;
-//      DestSample.SustainLoop.EndSample:=0;
-//      DestSample.Data:=pointer(FinalData);
-//      result:=true;
-     end else begin
-      FreeMem(Data);
-     end;
-     ov_clear(vf);
+      Inc(PAnsiChar(pointer(DataEx)), BytesIn);
+      Inc(Total, BytesIn);
     end;
-   Dispose(vf);
-   Stream.Free;
- end;
+
+    if Total > 0 then
+    begin
+      if S.Length = 0 then
+        S.Length := TotalSamples / AudioRate;
+
+      P := S.GetMemory;
+
+      SourcePosFloat := 0.0;
+      // SampleFraction := 0.0;
+      SourcePos := 0;
+      OutputPos := 0;
+
+      SourceStep := SampleRate / AudioRate;
+
+      // Upsample to target rate
+      // (quality improves when not using fractions strangely enough)
+      while (OutputPos < S.SampleCount) and (SourcePos < TotalSamples - 1) do
+      begin
+        P^ := GetSample(SourcePos);
+        // * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
+        Inc(P);
+        Inc(OutputPos);
+        SourcePosFloat := SourcePosFloat + SourceStep;
+        SourcePos := Trunc(SourcePosFloat);
+      end;
+
+      // 3:begin
+      // // Left, middle, right
+      // for i:=0 to TotalSamples-1 do begin
+      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*3)+0]+Data^[(i*3)+1],1);
+      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*3)+2]+Data^[(i*3)+1],1);
+      // end;
+      // end;
+      // 4:begin
+      // // Front left, front right, back left, back right
+      // for i:=0 to TotalSamples-1 do begin
+      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*4)+0]+Data^[(i*4)+2],1);
+      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*4)+1]+Data^[(i*4)+3],1);
+      // end;
+      // end;
+      // 5:begin
+      // // Front left, front middle, front right, back left, back right
+      // for i:=0 to TotalSamples-1 do begin
+      // FinalData^[(i*2)+0]:=(Data^[(i*5)+0]+Data^[(i*5)+1]+Data^[(i*5)+3]) div 3;
+      // FinalData^[(i*2)+1]:=(Data^[(i*5)+2]+Data^[(i*5)+1]+Data^[(i*5)+4]) div 3;
+      // end;
+      // end;
+      // 6:begin
+      // // Front left, front middle, front right, back left, back right, LFE channel (subwoofer)
+      // for i:=0 to TotalSamples-1 do begin
+      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*6)+0]+Data^[(i*6)+1]+Data^[(i*6)+3]+Data^[(i*6)+5],2);
+      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*6)+2]+Data^[(i*6)+1]+Data^[(i*6)+4]+Data^[(i*6)+5],2);
+      // end;
+      // end;
+      // else begin
+      // // Undefined, so get only the first two channels in account
+      // for i:=0 to TotalSamples-1 do begin
+      // FinalData^[(i*2)+0]:=Data^[(i*Channels)+0];
+      // FinalData^[(i*2)+1]:=Data^[(i*Channels)+1];
+      // end;
+      // end;
+      // end;
+      // DestSample.SampleLength:=TotalSamples;
+      // DestSample.SampleRate:=SampleRate;
+      // DestSample.Loop.Mode:=SoundLoopModeNONE;
+      // DestSample.Loop.StartSample:=0;
+      // DestSample.Loop.EndSample:=0;
+      // DestSample.SustainLoop.Mode:=SoundLoopModeNONE;
+      // DestSample.SustainLoop.StartSample:=0;
+      // DestSample.SustainLoop.EndSample:=0;
+      // DestSample.Data:=pointer(FinalData);
+      // result:=true;
+    end;
+
+    FreeMem(Data);
+    ov_clear(vf);
+  end;
+  Dispose(vf);
+  Stream.Free;
+end;
 
 procedure TSampleImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
