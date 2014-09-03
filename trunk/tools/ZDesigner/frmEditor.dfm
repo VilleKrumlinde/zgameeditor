@@ -238,6 +238,10 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -769,6 +773,7 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
+                ExplicitLeft = 4
                 ExplicitTop = 27
                 ExplicitWidth = 615
                 ExplicitHeight = 762
