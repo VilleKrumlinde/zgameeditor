@@ -487,9 +487,9 @@ begin
 end;
 
 //Read a sample value. Only called from RenderVoice.
-function GetSample(V : PVoiceEntry; SamplePos : integer) : TSoundMixUnit;
+function GetSample(V : PVoiceEntry; SamplePos : integer) : TSoundMixUnit; inline;
 begin
-  Result := Round(PSampleUnits(V.SampleData)^[SamplePos] * (1 shl (VoicePBits-1)) );
+  Result := PSampleUnits(V.SampleData)^[SamplePos];
 end;
 
 procedure RenderVoice(V : PVoiceEntry; Count : integer);

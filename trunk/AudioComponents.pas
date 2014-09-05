@@ -100,9 +100,10 @@ type
     procedure Execute; override;
   end;
 
-  TSampleUnit = single;
+  TSampleUnit = smallint;
   PSampleUnit = ^TSampleUnit;
-  PSampleUnits = PFloatArray;
+  TSampleUnits = array[0..10000] of TSampleUnit;
+  PSampleUnits = ^TSampleUnits;
   TSample = class(TContent)
   private
     Memory : PSampleUnit;
@@ -652,9 +653,9 @@ begin
     TimeStep := S.Length/S.SampleCount;
     for I := 0 to S.SampleCount-1 do
     begin
-      Self.Sample := P^;
+      Self.Sample := P^ / High(TSampleUnit);
       ZExpressions.RunCode(Expression.Code);
-      P^ := Clamp(Self.Sample,-1,1);
+      P^ := Round(Clamp(Self.Sample,-1,1) * High(TSampleUnit));
       Inc(P);
       Self.Time := Self.Time + TimeStep;
     end;
@@ -734,13 +735,13 @@ var vf:POggVorbis_File;
   SourcePos,OutputPos : integer;
   P : PSampleUnit;
 
-  function GetSample(const I : integer) : single;
+  function GetSample(const I : integer) : TSampleUnit;
   begin
     case Channels of
-     1: Exit( Data^[i] / High(smallint) );
-     2: Exit( (Data^[(i*2)+0]+Data^[(i*2)+1]) / 2 / High(smallint) );
+     1: Exit( Data^[i] );
+     2: Exit( (Data^[(i*2)+0]+Data^[(i*2)+1]) shr 1 );
      else
-       Exit( Data^[(i*Channels)+0] / High(smallint) );
+       Exit( Data^[(i*Channels)+0] );
      end;
   end;
 
@@ -866,13 +867,13 @@ var
   SourceCount,SourcePos,OutputPos : integer;
   P : PSampleUnit;
 
-  function GetSample(const I : integer) : single;
+  function GetSample(const I : integer) : TSampleUnit;
   begin
     case Self.SampleFormat of
       sfoSigned8bit :
-        Result := ShortInt(PBytes(Self.SampleData.Data)^[ I ]) / High(ShortInt);
+        Exit( ShortInt(PBytes(Self.SampleData.Data)^[ I ]) shl 8)
       else //sfoSigned16bit :
-        Result := SmallInt(PWords(Self.SampleData.Data)^[ I ]) / High(SmallInt);
+        Exit( SmallInt(PWords(Self.SampleData.Data)^[ I ]) );
     end;
   end;
 
