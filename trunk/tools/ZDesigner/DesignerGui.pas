@@ -22,7 +22,7 @@ unit DesignerGui;
 
 interface
 
-uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,Windows;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -55,8 +55,9 @@ type
   strict private
     RootComponent : TZComponent;
     procedure RebuildGui;
-    procedure MyCustomDrawItem(Sender: TCustomTreeView; Node: TTreeNode; State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure MyExpanded(Sender: TObject; Node: TTreeNode);
+    procedure MyCustomAdvancedDrawItem(Sender: TCustomTreeView; Node: TTreeNode;
+       State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages, DefaultDraw: Boolean);
   protected
     function CreateNode: TTreeNode; override;
     function GetPopupMenu: TPopupMenu; override;
@@ -92,7 +93,7 @@ function ColorToZColor(C : TColor) : TZColorf;
 implementation
 
 uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
-  ExtDlgs,Windows,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
+  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
   Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles;
@@ -898,7 +899,7 @@ function TZComponentTreeView.SortSelections : TObjectList;
 var
   I : integer;
 begin
-  //Sort selected sibling-nodes in their child-order to the parent 
+  //Sort selected sibling-nodes in their child-order to the parent
   Result := TObjectList.Create(False);
   for I := 0 to Self.SelectionCount-1 do
     Result.Add(Self.Selections[I]);
@@ -910,13 +911,19 @@ begin
   inherited Create(AOwner);
   HideSelection := False;
   ShowRoot := False;
-  OnCustomDrawItem := MyCustomDrawItem;
+//  OnCustomDrawItem := MyCustomDrawItem;
+  OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
   ReadOnly := True;
   OnExpanded := MyExpanded;
 end;
 
-procedure TZComponentTreeView.MyCustomDrawItem(Sender: TCustomTreeView;
-  Node: TTreeNode; State: TCustomDrawState; var DefaultDraw: Boolean);
+procedure TZComponentTreeView.MyCustomAdvancedDrawItem(Sender: TCustomTreeView; Node: TTreeNode;
+    State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages,
+    DefaultDraw: Boolean);
+var
+  NodeRect: TRect;
+  cy,I: Integer;
+  MyCaption,Comment : string;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
@@ -924,7 +931,36 @@ begin
     Canvas.Font.Style := [fsStrikeOut]
   else
     Canvas.Font.Style := [];
-  DefaultDraw:=True;
+
+  if (Stage=cdPostPaint) and (not (cdsSelected in State)) then
+  begin
+    NodeRect := Node.DisplayRect(True);
+
+    cy := NodeRect.Top + (NodeRect.Bottom - NodeRect.Top) div 2;
+
+    // TStyleManager.ActiveStyle.DrawElement()
+    MyCaption := Node.Text;
+    I := Pos('"', MyCaption);
+    if I > 0 then
+    begin
+      Comment := Copy(MyCaption, I - 1, Length(MyCaption) - I + 2);
+      MyCaption := Copy(MyCaption, 1, I - 2);
+    end
+    else
+      Comment := '';
+
+    if Length(Comment) > 0 then
+    begin
+      Canvas.Brush.Style := bsSolid;
+      Canvas.Brush.Color := TStyleManager.ActiveStyle.GetStyleColor(scTreeView);
+      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clGrayText);
+      Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + 2,
+        NodeRect.Top + 1, Comment);
+      // Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
+    end;
+  end;
+
+  DefaultDraw := True;
 end;
 
 function TZComponentTreeView.CreateNode: TTreeNode;

@@ -782,7 +782,7 @@ begin
     if Total > 0 then
     begin
       if S.Length = 0 then
-        S.Length := TotalSamples / AudioRate;
+        S.Length := TotalSamples / SampleRate;
 
       P := S.GetMemory;
 
@@ -798,7 +798,8 @@ begin
       while (OutputPos < S.SampleCount) and (SourcePos < TotalSamples - 1) do
       begin
         P^ := GetSample(SourcePos);
-        // * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
+
+//        P^ := GetSample(SourcePos) * (1.0-SampleFraction) + GetSample(SourcePos+1) * SampleFraction;
         Inc(P);
         Inc(OutputPos);
         SourcePosFloat := SourcePosFloat + SourceStep;
