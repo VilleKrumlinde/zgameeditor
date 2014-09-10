@@ -302,6 +302,8 @@ end;
 procedure TZApplication.Shutdown;
 begin
   {$ifdef minimal}
+  if (Self.CurrentState<>nil) then
+    Self.CurrentState.OnLeave.ExecuteCommands;
   OnClose.ExecuteCommands;
   Platform_ShutdownScreen;
   if not NoSound then
@@ -1160,6 +1162,8 @@ end;
 procedure TZApplication.DesignerStop;
 begin
 //  Assert(ZApp=Self);
+  if (Self.CurrentState<>nil) then
+    Self.CurrentState.OnLeave.ExecuteCommands;
   DesignerIsRunning := False;
   Models.RemoveAll;
   Models.FlushRemoveList;

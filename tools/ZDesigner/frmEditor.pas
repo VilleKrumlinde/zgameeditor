@@ -3936,7 +3936,8 @@ begin
     for I := 0 to MapNames.Count - 2 do
     begin
       Item := MapNames[I] as TMapName;
-      Item.Size := TMapName(MapNames[I+1]).Start - Item.Start;
+      if Item.Section=TMapName(MapNames[I+1]).Section then
+        Item.Size := TMapName(MapNames[I+1]).Start - Item.Start;
     end;
 
     //Get names of used classes
@@ -3958,6 +3959,8 @@ begin
         else if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName)
         else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
+          NeedArray := True
+        else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
           NeedArray := True
         else if (AllObjects[I] is TSampleImport) and ((AllObjects[I] as TSampleImport).SampleFileFormat=sffOGG) then
           NeedOgg := True
