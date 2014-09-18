@@ -3363,8 +3363,10 @@ var
   Tmp : TPoint;
   DeltaX,DeltaY : integer;
 begin
-  if (not Glp.MouseCapture) or IsAppRunning then
+  //Skip mouse capture because it does not work well with tablets (according to Kjell)
+  if {(not Glp.MouseCapture) or }(not ((ssLeft in Shift) or (ssRight in Shift))) or  IsAppRunning then
     Exit;
+
   //From ESS-doll
 
   Tmp := Glp.ClientToScreen( Point(X,Y) );
@@ -3387,7 +3389,9 @@ begin
     begin
       ViewTranslate[2] := ViewTranslate[2] - (deltaY/120);
     end;
-    SetCursorPos(LockMouse.X,LockMouse.Y);
+//    SetCursorPos(LockMouse.X,LockMouse.Y);
+
+    LockMouse := Tmp;
   end;
 
 end;
@@ -3413,9 +3417,9 @@ procedure TEditorForm.OnGLPanelMouseDown(Sender: TObject;
 begin
   if not IsAppRunning then
   begin
-    Glp.MouseCapture := True;
+//    Glp.MouseCapture := True;
     LockMouse := Glp.ClientToScreen( Point(X,Y) );
-    ShowCursor(False);
+//    ShowCursor(False);
   end;
 end;
 
@@ -3424,8 +3428,8 @@ procedure TEditorForm.OnGLPanelMouseUp(Sender: TObject; Button: TMouseButton;
 begin
   if not IsAppRunning then
   begin
-    Glp.MouseCapture := False;
-    ShowCursor(True);
+//    Glp.MouseCapture := False;
+//    ShowCursor(True);
   end;
   Glp.SetFocus;
 end;

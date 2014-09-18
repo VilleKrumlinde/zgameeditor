@@ -224,15 +224,16 @@ destructor TZApplication.Destroy;
 begin
   Terminating := True;
 
-  //ev problem med models.free, borde göra models.removeall vid terminate först
-  //annars kan models referera modeller som redan har gjorts free på
-  Models.Free;
+  Models.RemoveAll;
 
   Collisions.Free;
   DepthList.Free;
   if not HasShutdown then
     Shutdown;
 
+  //ev problem med models.free, borde göra models.removeall vid terminate först
+  //annars kan models referera modeller som redan har gjorts free på
+  Models.Free;
   Driver.Free;
 
   {$ifndef minimal}
@@ -302,12 +303,12 @@ end;
 procedure TZApplication.Shutdown;
 begin
   {$ifdef minimal}
+  if not NoSound then
+    Platform_ShutdownAudio;
   if (Self.CurrentState<>nil) then
     Self.CurrentState.OnLeave.ExecuteCommands;
   OnClose.ExecuteCommands;
   Platform_ShutdownScreen;
-  if not NoSound then
-    Platform_ShutdownAudio;
   {$endif}
   HasShutdown:=True;
 end;

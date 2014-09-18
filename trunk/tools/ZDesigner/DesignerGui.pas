@@ -96,7 +96,7 @@ uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,BitmapProducers,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
-  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles;
+  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -365,7 +365,7 @@ begin
   NamePanel := TPanel.Create(Self);
   NamePanel.Align := alLeft;
   NamePanel.BevelOuter := bvNone;
-  NamePanel.Width := Max(120, (Owner as TWinControl).Width div 3);
+  NamePanel.Width := Math.Max(120, (Owner as TWinControl).Width div 3);
   NamePanel.Parent := Self;
   NamePanel.Alignment := taLeftJustify;
 
@@ -911,7 +911,6 @@ begin
   inherited Create(AOwner);
   HideSelection := False;
   ShowRoot := False;
-//  OnCustomDrawItem := MyCustomDrawItem;
   OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
   ReadOnly := True;
   OnExpanded := MyExpanded;
@@ -922,8 +921,9 @@ procedure TZComponentTreeView.MyCustomAdvancedDrawItem(Sender: TCustomTreeView; 
     DefaultDraw: Boolean);
 var
   NodeRect: TRect;
-  cy,I: Integer;
+  I: Integer;
   MyCaption,Comment : string;
+  Col : TZColorf;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
@@ -935,8 +935,6 @@ begin
   if (Stage=cdPostPaint) and (not (cdsSelected in State)) then
   begin
     NodeRect := Node.DisplayRect(True);
-
-    cy := NodeRect.Top + (NodeRect.Bottom - NodeRect.Top) div 2;
 
     // TStyleManager.ActiveStyle.DrawElement()
     MyCaption := Node.Text;
@@ -953,10 +951,18 @@ begin
     begin
       Canvas.Brush.Style := bsSolid;
       Canvas.Brush.Color := TStyleManager.ActiveStyle.GetStyleColor(scTreeView);
-      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clGrayText);
+
+      //Make a guess at what color makes good contrast to background and normal text
+//      Col := ColorToZColor(TStyleManager.ActiveStyle.GetStyleColor(scTreeView));
+//      if TStyleManager.ActiveStyle.GetStyleColor(scTreeView)=clWhite then //Math.Sum(PZVector3f(@Col.V)^)<1 then
+//        Canvas.Font.Color := $00FFFF00
+//      else
+//        Canvas.Font.Color := $00303030;
+
+      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
       Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + 2,
         NodeRect.Top + 1, Comment);
-      // Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
+      //Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
     end;
   end;
 
