@@ -781,7 +781,7 @@ begin
 
     if Total > 0 then
     begin
-      if S.Length = 0 then
+//      if S.Length = 0 then
         S.Length := TotalSamples / SampleRate;
 
       P := S.GetMemory;
@@ -886,7 +886,7 @@ begin
     sffRaw :
       begin
         SourceCount := Self.SampleData.Size shr (ord(Self.SampleFormat));
-        if S.Length=0 then
+//        if S.Length=0 then
           S.Length := SourceCount / AudioRate;
 
         P := S.GetMemory;
