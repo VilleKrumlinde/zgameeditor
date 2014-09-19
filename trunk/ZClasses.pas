@@ -3329,7 +3329,7 @@ begin
                       zptComponentList : DoReadComponent(Value.ComponentListValue);
                       zptString :
                         begin
-                          Value.StringValue := Trim(Xml.CurContent);
+                          Value.StringValue := Xml.CurContent;
                           C.SetProperty(NestedProp,Value);
                         end;
                       zptExpression :
