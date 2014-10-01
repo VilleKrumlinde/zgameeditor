@@ -165,28 +165,50 @@ end;
 
 procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
-  Buf : array[0..511] of AnsiChar;
+  Buf,MkBuf : array[0..511] of AnsiChar;
   Written : longint;
+  I : integer;
   F : file;
+
+  function TryCreate : boolean;
+  begin
+    System.Assign(F,FileName);
+
+    if Append then
+    begin
+      System.Reset(F,1);
+      System.Seek(F,System.FileSize(F));
+    end
+    else
+      System.Rewrite(F,1);
+
+    Result := IOResult=0;
+    if not Result  then
+    begin
+      Platform_Error( PAnsiChar('File could not be created: ' + FileName) );
+      System.Close(F);
+    end;
+  end;
+
 begin
   MakeFullPath(FileName,AndroidDataPath,Buf);
   FileName := @Buf;
 
   System.FileMode := 2;
-  System.Assign(F,FileName);
-
-  if Append then
+  if not TryCreate then
   begin
-    System.Reset(F,1);
-    System.Seek(F,System.FileSize(F));
-  end
-  else
-    System.Rewrite(F,1);
-
-  if IOResult<>0 then
-  begin
-    Platform_Error( PAnsiChar('File could not be created: ' + FileName) );
-    Exit;
+    ZStrCopy(PAnsiChar(@MkBuf),FileName);
+    I := ZStrLength(PAnsiChar(@MkBuf))-1;
+    while (I>0) and (MkBuf[I]<>'/') do
+      Dec(I);
+    if I>0 then
+    begin
+      MkBuf[I]:=#0;
+      AndroidLog( PAnsiChar('Trying to create folder: ' + PAnsiChar(MkBuf)) );
+      MkDir(PAnsiChar(MkBuf));
+      if not TryCreate then
+        Exit;
+    end;
   end;
 
   System.BlockWrite(F,Memory^,Size,Written);
