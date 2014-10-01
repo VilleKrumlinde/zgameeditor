@@ -959,7 +959,15 @@ begin
 //      else
 //        Canvas.Font.Color := $00303030;
 
-      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
+
+//      if TStyleManager.ActiveStyle.GetStyleColor(scTreeView)=clWhite then //Math.Sum(PZVector3f(@Col.V)^)<1 then
+//        Canvas.Font.Color := RGB(255,162,0)
+//      else
+
+      //Use a fixed color for now that works in both dark and light backgrounds
+      Canvas.Font.Color := RGB(0, 136, 18); //$00,$B5,$12);
+
+//      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
       Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + 2,
         NodeRect.Top + 1, Comment);
       //Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
