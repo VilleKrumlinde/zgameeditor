@@ -1145,6 +1145,8 @@ begin
   begin
     ZApp.ScreenWidth := Glp.Width;
     ZApp.ScreenHeight := Glp.Height;
+    ZApp.ViewportWidth := Glp.Width;
+    ZApp.ViewportHeight := Glp.Height;
     ZApp.WindowHandle := Glp.Handle;
   end;
 
