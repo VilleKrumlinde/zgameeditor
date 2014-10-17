@@ -3225,35 +3225,35 @@ begin
             zptString :
               Value.StringValue := S;
             zptFloat,zptScalar :
-              Value.FloatValue := StrToFloat( String(S) );
+              Value.FloatValue := StrToFloatDef(String(S),0);
             zptRectf :
               begin
                 L.DelimitedText := String(S);
-                Value.RectfValue.Area[0] := StrToFloat(L[0]);
-                Value.RectfValue.Area[1] := StrToFloat(L[1]);
-                Value.RectfValue.Area[2] := StrToFloat(L[2]);
-                Value.RectfValue.Area[3] := StrToFloat(L[3]);
+                Value.RectfValue.Area[0] := StrToFloatDef(L[0],0);
+                Value.RectfValue.Area[1] := StrToFloatDef(L[1],0);
+                Value.RectfValue.Area[2] := StrToFloatDef(L[2],0);
+                Value.RectfValue.Area[3] := StrToFloatDef(L[3],0);
               end;
             zptColorf :
               begin
                 L.DelimitedText := String(S);
-                Value.ColorfValue.V[0] := StrToFloat(L[0]);
-                Value.ColorfValue.V[1] := StrToFloat(L[1]);
-                Value.ColorfValue.V[2] := StrToFloat(L[2]);
-                Value.ColorfValue.V[3] := StrToFloat(L[3]);
+                Value.ColorfValue.V[0] := StrToFloatDef(L[0],0);
+                Value.ColorfValue.V[1] := StrToFloatDef(L[1],0);
+                Value.ColorfValue.V[2] := StrToFloatDef(L[2],0);
+                Value.ColorfValue.V[3] := StrToFloatDef(L[3],0);
               end;
             zptVector3f :
               begin
                 L.DelimitedText := String(S);
-                Value.Vector3fValue[0] := StrToFloat(L[0]);
+                Value.Vector3fValue[0] := StrToFloatDef(L[0],0);
                 //Allow a single value to be specified, this is copied to all three elements
                 //Used when switching type from float to vector3d (material.texturescale)
                 if L.Count>1 then
-                  Value.Vector3fValue[1] := StrToFloat(L[1])
+                  Value.Vector3fValue[1] := StrToFloatDef(L[1],0)
                 else
                   Value.Vector3fValue[1] := Value.Vector3fValue[0];
                 if L.Count>2 then
-                  Value.Vector3fValue[2] := StrToFloat(L[2])
+                  Value.Vector3fValue[2] := StrToFloatDef(L[2],0)
                 else
                   Value.Vector3fValue[2] := Value.Vector3fValue[0];
               end;

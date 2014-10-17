@@ -62,6 +62,7 @@ type
     function CreateNode: TTreeNode; override;
     function GetPopupMenu: TPopupMenu; override;
     procedure CreateWnd; override;
+    procedure ChangeScale(M: Integer; D: Integer); override;
   public
     ShowOpCodes : boolean;
     LockShowNode : TTreeNode;
@@ -906,6 +907,12 @@ begin
   Result.Sort(SortNodes);
 end;
 
+procedure TZComponentTreeView.ChangeScale(M, D: Integer);
+begin
+  inherited;
+
+end;
+
 constructor TZComponentTreeView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -968,7 +975,7 @@ begin
       Canvas.Font.Color := RGB(0, 136, 18); //$00,$B5,$12);
 
 //      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
-      Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + 2,
+      Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + Canvas.TextWidth(' '),
         NodeRect.Top + 1, Comment);
       //Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
     end;

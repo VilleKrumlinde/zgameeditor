@@ -104,6 +104,7 @@ type
     procedure RestoreBreak;
     procedure RestoreContinue;
     procedure GenInvoke(Op: TZcOpInvokeComponent; IsValue: boolean);
+    function GenArrayAddress(Op : TZcOp) : TObject;
   public
     procedure GenRoot(StmtList : TList);
     constructor Create;
@@ -178,6 +179,32 @@ begin
   Op := MakeOp(zcSelect,[Op]);
   Op.Id := 'Value';
   GenValue(Op);
+end;
+
+function TZCodeGen.GenArrayAddress(Op : TZcOp) : TObject;
+//Generates address to element in array
+var
+  A : TObject;
+  I : integer;
+begin
+  A := Op.Ref;
+  if (A is TZcOpVariableBase) then
+    A := TZcOpVariableBase(A).Typ.TheArray;
+  if (A=nil) or (not (A is TDefineArray)) then
+    raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
+  if Ord((A as TDefineArray).Dimensions)+1<>Op.Children.Count then
+    raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
+  for I := 0 to Op.Children.Count-1 do
+    GenValue(Op.Child(I));//Indices
+  GenValue((Op as TZcOpArrayAccess).ArrayOp);
+
+  if (Op as TZcOpArrayAccess).IsRawMem then
+    with TExpGetRawMemElement.Create(Target) do
+      _Type := TZcOpArrayAccess(Op).ArrayOp.GetDataType.Kind
+  else
+    TExpArrayGetElement.Create(Target);
+
+  Result := A;
 end;
 
 //Genererar en op som skapar ett värde på stacken
@@ -294,27 +321,8 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   procedure DoGenArrayRead;
   var
     A : TObject;
-    I : integer;
   begin
-    A := Op.Ref;
-    if (A is TZcOpVariableBase) then
-      A := TZcOpVariableBase(A).Typ.TheArray;
-    if (A=nil) or (not (A is TDefineArray)) then
-      raise ECodeGenError.Create('Identifier is not an array: ' + Op.Id);
-    if Ord((A as TDefineArray).Dimensions)+1<>Op.Children.Count then
-      raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
-    for I := 0 to Op.Children.Count-1 do
-      GenValue(Op.Child(I));//Indices
-    GenValue((Op as TZcOpArrayAccess).ArrayOp);
-    if (Op as TZcOpArrayAccess).IsRawMem then
-    begin
-      with TExpGetRawMemElement.Create(Target) do
-        _Type := TZcOpArrayAccess(Op).ArrayOp.GetDataType.Kind
-    end
-    else
-    begin
-      TExpArrayGetElement.Create(Target);
-    end;
+    A := GenArrayAddress(Op);
     case TDefineArray(A)._Type of
       zctByte :
         TExpMisc.Create(Target, emPtrDeref1);
@@ -536,6 +544,7 @@ begin
   case Op.Kind of
     zcIdentifier : DoGenIdent;
     zcSelect : DoGenSelect;
+    zcArrayAccess : GenArrayAddress(Op);
   else
     raise ECodeGenError.Create('Cannot get address of expression: ' + Op.ToString);
   end;
@@ -546,7 +555,7 @@ procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
 //  alvPre: Leave the value prior to the assignment (i++)
 //  alvPost: Leave the value after the assignment (++i)
 var
-  I,AssignSize : integer;
+  AssignSize : integer;
 
   A : TObject;
   LeftOp,RightOp : TZcOp;
@@ -614,21 +623,7 @@ begin
   begin
     if LeaveValue=alvPost then
       raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
-    A := LeftOp.Ref;
-    if (A is TZcOpVariableBase) then
-      A := TZcOpVariableBase(A).Typ.TheArray;
-    if (A=nil) or (not (A is TDefineArray)) then
-      raise ECodeGenError.Create('Identifier is not an array: ' + LeftOp.Id);
-    if Ord((A as TDefineArray).Dimensions)+1<>LeftOp.Children.Count then
-      raise ECodeGenError.Create('Wrong nr of array indices: ' + Op.ToString);
-    for I := 0 to LeftOp.Children.Count-1 do
-      GenValue(LeftOp.Child(I)); //Indices
-    GenValue((LeftOp as TZcOpArrayAccess).ArrayOp);
-    if TZcOpArrayAccess(LeftOp).IsRawMem then
-      with TExpGetRawMemElement.Create(Target) do
-        _Type := TZcOpArrayAccess(LeftOp).ArrayOp.GetDataType.Kind
-    else
-      TExpArrayGetElement.Create(Target);
+    A := GenArrayAddress(LeftOp);
     GenValue(Op.Child(1));
     if LeftOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
     begin //These types are copied by value into arrays (to allow VBO arrays with vec3 etc)
