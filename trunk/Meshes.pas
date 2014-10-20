@@ -1204,6 +1204,8 @@ begin
     VecCopy3(Mesh.Normals^[I],Self.N);
     if HasTexCoords then
       PZVector2f(@Self.TexCoord)^ := PTex^;
+    if VertexColors then
+      Self.C := ColorBtoF(PColor^);
     ZExpressions.RunCode(Expression.Code);
     VecCopy3(Self.V,Mesh.Vertices^[I]);
     VecCopy3(Self.N,Mesh.Normals^[I]);

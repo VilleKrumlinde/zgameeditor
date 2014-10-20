@@ -293,6 +293,13 @@ begin
 
     TargetFrameRate := Platform_GetDisplayRefreshRate;
 
+    {$ifdef MSWINDOWS}
+    if (Self.FrameRateStyle=frsSyncedWithMonitor) and Assigned(wglSwapIntervalEXT) then
+    begin
+      wglSwapIntervalEXT(1);
+    end;
+    {$endif}
+
     if Platform_CommandLine('s') then
       NoSound := True;
     if not NoSound then
@@ -416,8 +423,13 @@ begin
   {$ifdef minimal}
   if Now>=NextFrameTime then
   {$endif}
-  begin
-    if FrameRateStyle<>frsFree then
+  begin  //Delay until next frame
+    if (FrameRateStyle<>frsFree)  //But not if set to "Free"
+      {$ifdef MSWINDOWS}
+      //Or if wglSwapIntervalEXT has been called because then vsync-wait is enabled in driver already
+      and not ((Self.FrameRateStyle=frsSyncedWithMonitor) and Assigned(wglSwapIntervalEXT))
+      {$endif}
+      then
     begin
       if FrameRateStyle=frsFixed then
         TargetFrameRate := Self.FixedFrameRate;

@@ -1335,7 +1335,7 @@ var
 
 
 {$if defined(WIN32) or defined(WIN64)}
-function wglGetProcAddress (P : pansichar) : pointer; stdcall; external 'opengl32.dll';
+function wglGetProcAddress(P : pansichar) : pointer; stdcall; external 'opengl32.dll';
 {$ifend}
 
 var
@@ -1466,6 +1466,9 @@ var
   glEnableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glVertexAttribPointer : procedure(index : GLuint; size : GLint; _type : GLenum; normalized : GLboolean; stride : GLsizei; ptr : pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
+  {$ifdef MSWINDOWS}
+  wglSwapIntervalEXT: function(interval: GLint): Boolean; stdcall;
+  {$endif}
 
   ShadersSupported,MultiTextureSupported,VbosSupported,FbosSupported : boolean;
 
@@ -1506,7 +1509,9 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..40{$if (not defined(minimal)) or defined(android)}+5{$ifend}] of
+const ExtFuncArray : packed array[0..40
+  {$if (not defined(minimal)) or defined(android)}+5{$ifend}
+  {$ifdef MSWINDOWS}+1{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1594,6 +1599,10 @@ const ExtFuncArray : packed array[0..40{$if (not defined(minimal)) or defined(an
 (Name : 'glFramebufferTexture2DEXT'; Ptr : @@glFramebufferTexture2DEXT),
 (Name : 'glFramebufferRenderbufferEXT'; Ptr : @@glFramebufferRenderbufferEXT),
 (Name : 'glGenerateMipmap'; Ptr : @@glGenerateMipmap),
+
+{$ifdef MSWINDOWS}
+(Name : 'wglSwapIntervalEXT'; Ptr : @@wglSwapIntervalEXT),
+{$endif}
 
 (Name : 'glDisableVertexAttribArray'; Ptr : @@glDisableVertexAttribArray),
 (Name : 'glEnableVertexAttribArray'; Ptr : @@glEnableVertexAttribArray),

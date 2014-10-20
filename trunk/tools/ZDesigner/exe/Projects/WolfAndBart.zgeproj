@@ -63,7 +63,7 @@
             </RenderTransformGroup>
           </OnRender>
           <OnUpdate>
-            <AnimatorSimple Duration="0.5" AutoStart="255" Target="WolfRt1 Rotate" FromValue="-0.02" ToValue="-0.07" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+            <AnimatorSimple Duration="0.5" AutoStart="255" Target="WolfRt1.Rotate.X" AutoReverse="255" RepeatCount="-1" FromValue="-0.02" ToValue="-0.07" Smooth="255"/>
           </OnUpdate>
         </Model>
       </Children>
