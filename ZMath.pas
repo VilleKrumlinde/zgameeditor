@@ -93,6 +93,7 @@ function Floor(const X: single): integer;
 
 
 function ColorFtoB(const C : TZColorf) : integer;
+function ColorBtoF(const C : integer) : TZColorf;
 
 
 //Matrix-functions. From GL-Scene.
@@ -137,6 +138,13 @@ begin
     (Round( clamp(C.V[0],0,1)*255));
 end;
 
+function ColorBtoF(const C : integer) : TZColorf;
+begin
+  Result.R := ( (C shr 0) and 255) / 255;
+  Result.G := ( (C shr 8) and 255) / 255;
+  Result.B := ( (C shr 16) and 255) / 255;
+  Result.A := ( (C shr 24) and 255) / 255;
+end;
 
 function Min(const A,B : single) : single;  overload;
 begin
