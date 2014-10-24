@@ -918,7 +918,9 @@ begin
   inherited Create(AOwner);
   HideSelection := False;
   ShowRoot := False;
+
   OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
+
   ReadOnly := True;
   OnExpanded := MyExpanded;
 end;
@@ -930,7 +932,7 @@ var
   NodeRect: TRect;
   I: Integer;
   MyCaption,Comment : string;
-  Col : TZColorf;
+  Col1,Col2 : TZColorf;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
@@ -971,8 +973,17 @@ begin
 //        Canvas.Font.Color := RGB(255,162,0)
 //      else
 
+      Col1 := ColorBtoF( ColorToRGB(TStyleManager.ActiveStyle.GetStyleColor(scTreeView)) );
+      Col2 := ColorBtoF( ColorToRGB(TStyleManager.ActiveStyle.GetSystemColor(clWindowText)) );
+
+      //Use a mixture of back and foreground color
+      for I := 0 to 3 do
+        Col1.V[I] := Col1.V[I] + (Col2.V[I]-Col1.V[I])*0.75;
+      Col1.V[3]:=0;
+      Canvas.Font.Color := ColorFtoB(Col1);
+
       //Use a fixed color for now that works in both dark and light backgrounds
-      Canvas.Font.Color := RGB(0, 136, 18); //$00,$B5,$12);
+//      Canvas.Font.Color := RGB(0, 136, 18); //$00,$B5,$12);
 
 //      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
       Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + Canvas.TextWidth(' '),

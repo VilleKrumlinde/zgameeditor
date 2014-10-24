@@ -2025,20 +2025,27 @@ begin
   if TexId=0 then
   begin
     //http://www.songho.ca/opengl/gl_fbo.html
+    //For android: http://blog.shayanjaved.com/2011/05/13/android-opengl-es-2-0-render-to-texture/
     // create a texture object
     glGenTextures(1, @TexId);
     glBindTexture(GL_TEXTURE_2D, TexId);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR{$endif});
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR_MIPMAP_LINEAR{$endif});
+
+    {$ifndef android}
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    {$endif}
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // create a renderbuffer object to store depth info
     glGenRenderbuffersEXT(1, @RboId);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, RboId);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,ActualW, ActualH);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
@@ -2050,6 +2057,13 @@ begin
 
     // attach the renderbuffer to depth attachment point
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
+
+    {$ifdef android}
+    if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+      AndroidLog('fbo fail')
+    else
+      AndroidLog('fbo ok');
+    {$endif}
 
     // check FBO status
     {$ifndef minimal}
@@ -2100,9 +2114,7 @@ begin
     glDeleteTextures(1, @TexId);
     glDeleteFramebuffersEXT(1, @FboId);
     glDeleteRenderbuffersEXT(1, @RboId);
-    {$ifndef minimal}
     TexId := 0;
-    {$endif}
   end;
 end;
 

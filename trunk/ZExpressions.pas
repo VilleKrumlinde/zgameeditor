@@ -2040,7 +2040,7 @@ begin
             P[-1] := Offs;
           end;
       else
-        Assert('This argument type not yet supported on 64-bit:');
+        Assert(False,'This argument type not yet supported on 64-bit:');
       end;
     end else
     begin
@@ -2061,7 +2061,7 @@ begin
             P[-1] := StackOffs;
           end;
       else
-        Assert('This argument type not yet supported on 64-bit');
+        Assert(False,'This argument type not yet supported on 64-bit');
       end;
       Inc(StackOffs, 8);
     end;

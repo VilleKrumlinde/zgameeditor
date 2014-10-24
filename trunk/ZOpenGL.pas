@@ -812,6 +812,7 @@ const
   GL_RGBA                           = $1908;
   GL_LUMINANCE                      = $1909;
   GL_LUMINANCE_ALPHA                = $190A;
+  GL_DEPTH_COMPONENT16              = $81A5;
 
   GL_R32F = $822E; //OpenGL 3+
 
@@ -1587,17 +1588,17 @@ const ExtFuncArray : packed array[0..40
 (Name : 'glBufferData'; Ptr : @@glBufferData),
 (Name : 'glBufferSubData'; Ptr : @@glBufferSubData),
 //FBO
-(Name : 'glIsRenderbufferEXT'; Ptr : @@glIsRenderbufferEXT),
-(Name : 'glBindRenderbufferEXT'; Ptr : @@glBindRenderbufferEXT),
-(Name : 'glDeleteRenderbuffersEXT'; Ptr : @@glDeleteRenderbuffersEXT),
-(Name : 'glGenRenderbuffersEXT'; Ptr : @@glGenRenderbuffersEXT),
-(Name : 'glRenderbufferStorageEXT'; Ptr : @@glRenderbufferStorageEXT),
-(Name : 'glBindFramebufferEXT'; Ptr : @@glBindFramebufferEXT),
-(Name : 'glDeleteFramebuffersEXT'; Ptr : @@glDeleteFramebuffersEXT),
-(Name : 'glGenFramebuffersEXT'; Ptr : @@glGenFramebuffersEXT),
-(Name : 'glCheckFramebufferStatusEXT'; Ptr : @@glCheckFramebufferStatusEXT),
-(Name : 'glFramebufferTexture2DEXT'; Ptr : @@glFramebufferTexture2DEXT),
-(Name : 'glFramebufferRenderbufferEXT'; Ptr : @@glFramebufferRenderbufferEXT),
+(Name : 'glIsRenderbuffer'; Ptr : @@glIsRenderbufferEXT),
+(Name : 'glBindRenderbuffer'; Ptr : @@glBindRenderbufferEXT),
+(Name : 'glDeleteRenderbuffers'; Ptr : @@glDeleteRenderbuffersEXT),
+(Name : 'glGenRenderbuffers'; Ptr : @@glGenRenderbuffersEXT),
+(Name : 'glRenderbufferStorage'; Ptr : @@glRenderbufferStorageEXT),
+(Name : 'glBindFramebuffer'; Ptr : @@glBindFramebufferEXT),
+(Name : 'glDeleteFramebuffers'; Ptr : @@glDeleteFramebuffersEXT),
+(Name : 'glGenFramebuffers'; Ptr : @@glGenFramebuffersEXT),
+(Name : 'glCheckFramebufferStatus'; Ptr : @@glCheckFramebufferStatusEXT),
+(Name : 'glFramebufferTexture2D'; Ptr : @@glFramebufferTexture2DEXT),
+(Name : 'glFramebufferRenderbuffer'; Ptr : @@glFramebufferRenderbufferEXT),
 (Name : 'glGenerateMipmap'; Ptr : @@glGenerateMipmap),
 
 {$ifdef MSWINDOWS}

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application">
+<ZApplication Name="App" Caption="ZGameEditor application" NoSound="1">
   <OnLoaded>
     <SpawnModel Model="WarewolfheadModel" Position="0 0 8"/>
     <SpawnModel Model="BartModel" Position="-2 0 5"/>
   </OnLoaded>
+  <OnUpdate>
+    <ZExpression Expression="App.Caption = intToStr(App.FpsCounter);"/>
+  </OnUpdate>
   <Content>
     <Group Comment="Imported from warewolfhead.3DS">
       <Children>
