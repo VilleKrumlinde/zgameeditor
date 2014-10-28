@@ -461,7 +461,7 @@ begin
     end;
 
     if ManagedHeap_GetAllocCount>0 then
-      ManagedHeap_GarbageCollect(False);
+      ManagedHeap_GarbageCollect;
 
     {$ifdef minimal}
     if FrameRateStyle<>frsFree then

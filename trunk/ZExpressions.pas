@@ -234,6 +234,9 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpFuncCallKind;
+    {$ifndef minimal}
+    function ExpAsText : string; override;
+    {$endif}
   end;
 
   //Built-in function call
@@ -941,6 +944,13 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
 end;
+
+{$ifndef minimal}
+function TExpFuncCallBase.ExpAsText : string;
+begin
+  Result := 'Call ' + Copy(GetEnumName(TypeInfo(TExpFuncCallKind),Ord(Kind)),3,100);
+end;
+{$endif}
 
 { TExpFuncCall }
 
