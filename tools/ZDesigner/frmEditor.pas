@@ -877,7 +877,7 @@ begin
     Tmp.Free;
   end;
   LogListBox.ItemIndex := LogListBox.Items.Count-1;
-  LogListBox.Invalidate;
+//  LogListBox.Invalidate;
 end;
 
 procedure TEditorForm.ReadAppSettingsFromIni;
@@ -1145,8 +1145,7 @@ begin
   begin
     ZApp.ScreenWidth := Glp.Width;
     ZApp.ScreenHeight := Glp.Height;
-    ZApp.ViewportWidth := Glp.Width;
-    ZApp.ViewportHeight := Glp.Height;
+    ZApp.UpdateViewport;
     ZApp.WindowHandle := Glp.Handle;
   end;
 
@@ -1195,6 +1194,10 @@ begin
         glClearColor(ZApp.PreviewClearColor.V[0],ZApp.PreviewClearColor.V[1],ZApp.PreviewClearColor.V[2],0);
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
       end;
+
+      //Run GC because rendering might generate garbage (expressions are executed)
+      if ManagedHeap_GetAllocCount>0 then
+        ManagedHeap_GarbageCollect;
     end;
   except
     on E : Exception do

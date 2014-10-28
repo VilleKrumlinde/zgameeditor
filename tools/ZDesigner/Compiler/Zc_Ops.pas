@@ -1059,6 +1059,11 @@ begin
   T1 := Op1.GetDataType;
   T2 := Op2.GetDataType;
 
+  if (T1.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
+    (Op1.Kind=zcArrayAccess) then
+    //Need convert to cast rawmem to array
+    Op1 := MakeCompatible(Op1,T1);
+
   //Cast to common type that does not lose precision
   if T2.Kind=zctFloat then
     Op1 := MakeCompatible(Op1,T2)

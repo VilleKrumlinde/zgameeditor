@@ -536,7 +536,7 @@ function ZStrToInt(const Str : PAnsiChar) : integer;
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 procedure ManagedHeap_AddValueObject(const O : TObject);
 function ManagedHeap_GetAllocCount : integer;
-procedure ManagedHeap_GarbageCollect(Full : boolean);
+procedure ManagedHeap_GarbageCollect;
 procedure ManagedHeap_AddTarget(const P : pointer);
 procedure ManagedHeap_RemoveTarget(const P : pointer);
 {$ifndef minimal}
@@ -776,7 +776,7 @@ begin
 end;
 {$endif}
 
-procedure ManagedHeap_GarbageCollect(Full : boolean);
+procedure ManagedHeap_GarbageCollect;
 var
   I,J : integer;
   PP : PPointer;
