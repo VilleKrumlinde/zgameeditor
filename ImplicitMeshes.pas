@@ -922,8 +922,7 @@ begin
   Self.X := X;
   Self.Y := Y;
   Self.Z := Z;
-  ZExpressions.RunCode(Expression.Code);
-  Result := PSingle(@ZExpressions.gReturnValue)^;
+  Result := Single(ZExpressions.RunCode(Expression.Code));
 end;
 
 { TImplicitCombine }

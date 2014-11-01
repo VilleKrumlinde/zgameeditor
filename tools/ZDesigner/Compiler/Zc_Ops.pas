@@ -1059,9 +1059,9 @@ begin
   T1 := Op1.GetDataType;
   T2 := Op2.GetDataType;
 
-  if (T1.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
+  if (Kind=zcMul) and (T1.Kind=zctMat4) and
     (Op1.Kind=zcArrayAccess) then
-    //Need convert to cast rawmem to array
+    //Need convert to cast rawmem to array in this case: a = MatrixArray[0] * b
     Op1 := MakeCompatible(Op1,T1);
 
   //Cast to common type that does not lose precision

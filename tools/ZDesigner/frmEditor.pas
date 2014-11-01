@@ -681,7 +681,6 @@ begin
   if E is EZHalted then
   begin
     Log.Error(E.Message);
-    ZExpressions.ResetScriptState;
   end
   else
     Application.ShowException(E);
@@ -2763,7 +2762,6 @@ begin
   if not CompileAll then
     Exit;
   try
-    ZExpressions.ResetScriptState;
     ZApp.DesignerReset;  //Reset timer-components etc
     ZApp.DesignerStart(Glp.Width,Glp.Height);
   except

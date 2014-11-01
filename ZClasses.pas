@@ -3632,7 +3632,7 @@ begin
   GlobalContent := Save;
 
   {$if (not defined(minimal)) and (not defined(zgeviz))}
-  if (Producers.Count>0) and Assigned(Self._ZApp) and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
+  if (Producers.Count>0) {and Assigned(Self._ZApp) }and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
   {$ifend}
 end;
