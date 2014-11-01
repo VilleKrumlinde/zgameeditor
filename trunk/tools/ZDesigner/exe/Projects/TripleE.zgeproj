@@ -41,25 +41,25 @@ PlayerLives=3;]]>
     <AudioMixer Ch0Active="1" Ch0Volume="0.31" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.38" Ch1UseDelay="1" Ch1DelayLength="0.26" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
     <Group Name="Globals">
       <Children>
-        <DefineVariable Name="Temp1"/>
-        <DefineConstant Name="ScrollSpeed" Value="2"/>
-        <DefineVariable Name="LevelNo"/>
-        <DefineVariable Name="EnemiesOnScreen"/>
-        <DefineVariable Name="Difficulty"/>
-        <DefineVariable Name="BaseDifficulty"/>
-        <DefineConstant Name="RightEdge" Value="6"/>
-        <DefineConstant Name="TopEdge" Comment="0" Value="5"/>
-        <DefineVariable Name="Temp2"/>
-        <DefineVariable Name="Temp3"/>
-        <DefineVariable Name="Temp4"/>
-        <DefineConstant Name="LeftEdge" Value="-6"/>
-        <DefineConstant Name="BottomEdge" Value="-5"/>
-        <DefineConstant Name="PlayerShotSpeed" Value="24"/>
-        <DefineVariable Name="PlayerScore"/>
-        <DefineConstant Name="EnemyShotCategory" Value="3"/>
-        <DefineConstant Name="PlayerCategory" Value="4"/>
-        <DefineConstant Name="DefaultDifficulty" Value="0.5"/>
-        <DefineVariable Name="PlayerLives"/>
+        <Variable Name="Temp1"/>
+        <Constant Name="ScrollSpeed" Value="2"/>
+        <Variable Name="LevelNo"/>
+        <Variable Name="EnemiesOnScreen"/>
+        <Variable Name="Difficulty"/>
+        <Variable Name="BaseDifficulty"/>
+        <Constant Name="RightEdge" Value="6"/>
+        <Constant Name="TopEdge" Comment="0" Value="5"/>
+        <Variable Name="Temp2"/>
+        <Variable Name="Temp3"/>
+        <Variable Name="Temp4"/>
+        <Constant Name="LeftEdge" Value="-6"/>
+        <Constant Name="BottomEdge" Value="-5"/>
+        <Constant Name="PlayerShotSpeed" Value="24"/>
+        <Variable Name="PlayerScore"/>
+        <Constant Name="EnemyShotCategory" Value="3"/>
+        <Constant Name="PlayerCategory" Value="4"/>
+        <Constant Name="DefaultDifficulty" Value="0.5"/>
+        <Variable Name="PlayerLives"/>
       </Children>
     </Group> <!-- Globals -->
 
@@ -86,8 +86,8 @@ this.V.Y*=1+Temp1;]]>
         </Mesh>
         <Model Name="PlayerModel" Position="-3.9142 3.9932 0" Velocity="0.0183 0.0685 0" Category="4" CollisionBounds="0.1 0.4 0 0">
           <Definitions>
-            <DefineVariable Name="PlayerAngle"/>
-            <DefineVariable Name="PlayerShieldTime"/>
+            <Variable Name="PlayerAngle"/>
+            <Variable Name="PlayerShieldTime"/>
           </Definitions>
           <States>
             <ModelState Name="PlayerState_Playing">
@@ -226,7 +226,7 @@ PlayerModel.Rotation.Z=0;]]>
         </Material>
         <Model Name="PlayerShotModel" Scale="1.5 1 1" Category="1" CollisionBounds="0.1 0.1 0 0">
           <Definitions>
-            <DefineVariable Name="PlayerShotPersonality"/>
+            <Variable Name="PlayerShotPersonality"/>
           </Definitions>
           <OnRender>
             <UseMaterial Material="PlayerShotMaterial"/>
@@ -284,14 +284,14 @@ PlayerShotModel.Rotation.Z = PlayerAngle;
       <Children>
         <Model Name="LevelModel">
           <Definitions>
-            <DefineVariable Name="LevelEmitCounter" Comment="Hur många enemies att emitta just nu"/>
-            <DefineVariable Name="LevelMaxOnScreen"/>
-            <DefineVariable Name="LevelEmitDelay"/>
-            <DefineVariable Name="LevelEmitTimer"/>
-            <DefineVariable Name="LevelEmitTreeTimer"/>
-            <DefineVariable Name="LevelLastScore"/>
-            <DefineVariable Name="LevelScoreVibrate"/>
-            <DefineVariable Name="LevelEmitDelayDecrease"/>
+            <Variable Name="LevelEmitCounter" Comment="Hur många enemies att emitta just nu"/>
+            <Variable Name="LevelMaxOnScreen"/>
+            <Variable Name="LevelEmitDelay"/>
+            <Variable Name="LevelEmitTimer"/>
+            <Variable Name="LevelEmitTreeTimer"/>
+            <Variable Name="LevelLastScore"/>
+            <Variable Name="LevelScoreVibrate"/>
+            <Variable Name="LevelEmitDelayDecrease"/>
           </Definitions>
           <States>
             <ModelState Name="Stage0_LevelState">
@@ -471,10 +471,10 @@ LevelNo+=1;]]>
             </RenderTransformGroup>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
-            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore Value" X="0.75" Y="0.92" Scale="0.9059"/>
+            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore" X="0.75" Y="0.92" Scale="0.9059"/>
             <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
-            <RenderText TextFloatRef="PlayerLives Value" X="-0.51" Y="0.92" Scale="0.66"/>
-            <RenderText Text="FPS " TextFloatRef="App FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
+            <RenderText TextFloatRef="PlayerLives" X="-0.51" Y="0.92" Scale="0.66"/>
+            <RenderText Text="FPS " TextFloatRef="App.FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
           </OnRender>
           <OnUpdate>
             <ZExpression>
@@ -597,7 +597,7 @@ if(this.V.Y>1)
                 </MeshExpression>
               </Producers>
             </Mesh>
-            <DefineVariable Name="TreePersonality"/>
+            <Variable Name="TreePersonality"/>
           </Definitions>
           <OnRender>
             <UseMaterial Material="TreeMaterial"/>
@@ -660,7 +660,7 @@ if(abs(this.V.X)>0.3)
                 </MeshExpression>
               </Producers>
             </Mesh>
-            <DefineVariable Name="CaveDecorBaseY"/>
+            <Variable Name="CaveDecorBaseY"/>
             <Material Name="CaveDecorMaterial">
               <Textures>
                 <MaterialTexture Name="CaveDecorMaterialTexture" Texture="CaveDecorBitmap"/>
@@ -754,7 +754,7 @@ this.Pixel.B=Temp1*0.5;
         <Model Name="LevelEnterModel">
           <OnRender>
             <UseMaterial Material="TextMaterial"/>
-            <RenderText Text="ENTER LEVEL " TextFloatRef="LevelNo Value" Scale="1.02"/>
+            <RenderText Text="ENTER LEVEL " TextFloatRef="LevelNo" Scale="1.02"/>
           </OnRender>
           <OnUpdate>
             <Timer Interval="1.5">
@@ -829,19 +829,19 @@ this.V.Y*=Temp1;]]>
                     <MeshSphere Scale="0.1 0.1 0.1" ZSamples="4"/>
                   </Producers>
                 </Mesh>
-                <DefineVariable Name="MonkeyPersonality"/>
-                <DefineVariable Name="MonkeyFleeTimeout"/>
-                <DefineVariable Name="MonkeyIsFalling"/>
-                <DefineVariable Name="MonkeyIsFleeing"/>
+                <Variable Name="MonkeyPersonality"/>
+                <Variable Name="MonkeyFleeTimeout"/>
+                <Variable Name="MonkeyIsFalling"/>
+                <Variable Name="MonkeyIsFleeing"/>
                 <Mesh Name="MonkeyLeg">
                   <Producers>
                     <MeshBox Scale="0.1 0.4 0.1"/>
                   </Producers>
                 </Mesh>
-                <DefineVariable Name="MonkeyLife"/>
-                <DefineVariable Name="MonkeyEmitSmokeTime"/>
-                <DefineVariable Name="MonkeyEmitNutTimer"/>
-                <DefineVariable Name="MonkeyIsNutEmitter"/>
+                <Variable Name="MonkeyLife"/>
+                <Variable Name="MonkeyEmitSmokeTime"/>
+                <Variable Name="MonkeyEmitNutTimer"/>
+                <Variable Name="MonkeyIsNutEmitter"/>
               </Definitions>
               <States>
                 <ModelState Name="MonkeyState_Idling">
@@ -922,7 +922,7 @@ if( (MonkeyShotCount>0) && (MonkeyEmitNutTimer<=0) ) {
                     </Condition>
                   </OnUpdate>
                   <Definitions>
-                    <DefineVariable Name="MonkeyShotCount"/>
+                    <Variable Name="MonkeyShotCount"/>
                   </Definitions>
                 </ModelState>
                 <ModelState Name="MonkeyState_Flee">
@@ -1218,7 +1218,7 @@ CurrentModel.Velocity.Y=sin(Temp3)*Temp2;]]>
             <Sound Name="MonkeyThrowNutSound" Comment="note 26, borde vara sine" Length="0.1" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.18"/>
             <Model Name="MonkeyHitModel">
               <Definitions>
-                <DefineVariable Name="MonkeyHitLife"/>
+                <Variable Name="MonkeyHitLife"/>
               </Definitions>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
@@ -1348,7 +1348,7 @@ this.Pixel.A=Temp1;]]>
             </Material>
             <Model Name="SmokeModel">
               <Definitions>
-                <DefineVariable Name="SmokeLife"/>
+                <Variable Name="SmokeLife"/>
               </Definitions>
               <OnRender>
                 <UseMaterial Material="SmokeMaterial"/>
@@ -1547,7 +1547,7 @@ this.Pixel.A=Temp1;]]>
             </Mesh>
             <Model Name="EyeModel" Category="2" CollisionBounds="0.4 0.4 0 0">
               <Definitions>
-                <DefineVariable Name="EyeLife"/>
+                <Variable Name="EyeLife"/>
               </Definitions>
               <States>
                 <ModelState Name="EyeState_FlyLeft">
@@ -1653,9 +1653,9 @@ EyeStrafeShootTimeout-=App.DeltaTime;]]>
                     </Condition>
                   </OnUpdate>
                   <Definitions>
-                    <DefineVariable Name="EyeStrafeBaseDistance"/>
-                    <DefineVariable Name="EyeStrafeTimeout"/>
-                    <DefineVariable Name="EyeStrafeShootTimeout"/>
+                    <Variable Name="EyeStrafeBaseDistance"/>
+                    <Variable Name="EyeStrafeTimeout"/>
+                    <Variable Name="EyeStrafeShootTimeout"/>
                   </Definitions>
                 </ModelState>
               </States>
@@ -1790,7 +1790,7 @@ EyeExplodeP1.Speed*=random(1,0.3);*/]]>
               <Definitions>
                 <Model Name="EyeWormTailModel" Scale="0.6 0.6 1">
                   <Definitions>
-                    <DefineVariable Name="EyeWormTailDelay"/>
+                    <Variable Name="EyeWormTailDelay"/>
                   </Definitions>
                   <OnRender>
                     <UseMaterial Material="TextMaterial"/>
@@ -1987,8 +1987,8 @@ this.V.Z+=Temp2;]]>
                         </MeshExpression>
                       </Producers>
                     </Mesh>
-                    <DefineVariable Name="BossSegmentAngle"/>
-                    <DefineVariable Name="BossSegmentLife"/>
+                    <Variable Name="BossSegmentAngle"/>
+                    <Variable Name="BossSegmentLife"/>
                   </Definitions>
                   <OnRender>
                     <UseMaterial Material="PlayerMaterial"/>
@@ -2056,12 +2056,12 @@ CurrentModel.Position.X += random(0,0.15);]]>
                     </Condition>
                   </OnCollision>
                 </Model>
-                <DefineConstant Name="BossSegmentCount" Value="12"/>
-                <DefineVariable Name="BossSegmentDistance"/>
-                <DefineVariable Name="BossIdleLocalTime"/>
-                <DefineVariable Name="BossNextShotTimer"/>
-                <DefineVariable Name="BossSegmentsRemaining"/>
-                <DefineVariable Name="BossLife"/>
+                <Constant Name="BossSegmentCount" Value="12"/>
+                <Variable Name="BossSegmentDistance"/>
+                <Variable Name="BossIdleLocalTime"/>
+                <Variable Name="BossNextShotTimer"/>
+                <Variable Name="BossSegmentsRemaining"/>
+                <Variable Name="BossLife"/>
                 <Mesh Name="BossBodyMesh">
                   <Producers>
                     <MeshSphere ZSamples="20" RadialSamples="25"/>
@@ -2151,7 +2151,7 @@ BossNextStateTimer-=App.DeltaTime;]]>
                     </Condition>
                   </OnUpdate>
                   <Definitions>
-                    <DefineVariable Name="BossNextStateTimer"/>
+                    <Variable Name="BossNextStateTimer"/>
                   </Definitions>
                 </ModelState>
                 <ModelState Name="BossState_Expanding">
@@ -2183,8 +2183,8 @@ BossExpandingTimer-=App.DeltaTime;]]>
                     </Condition>
                   </OnUpdate>
                   <Definitions>
-                    <DefineVariable Name="BossExpandingTimer"/>
-                    <DefineConstant Name="BossExpandingDuration" Value="5"/>
+                    <Variable Name="BossExpandingTimer"/>
+                    <Constant Name="BossExpandingDuration" Value="5"/>
                   </Definitions>
                 </ModelState>
                 <ModelState Name="BossState_Appearing">
@@ -2609,10 +2609,10 @@ this.PColor.A=1.0;]]>
       <Children>
         <Model Name="TitleScreenModel">
           <Definitions>
-            <DefineVariable Name="TitleIntroTime"/>
-            <DefineConstant Name="TitleStartTextX" Value="0.62"/>
-            <DefineConstant Name="TitleStartTextY" Value="-0.83"/>
-            <DefineConstant Name="TitleStartTextScale" Value="1.5"/>
+            <Variable Name="TitleIntroTime"/>
+            <Constant Name="TitleStartTextX" Value="0.62"/>
+            <Constant Name="TitleStartTextY" Value="-0.83"/>
+            <Constant Name="TitleStartTextScale" Value="1.5"/>
           </Definitions>
           <States>
             <ModelState Name="TitleState_Appear">
@@ -2740,7 +2740,7 @@ return
             <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
           </OnSpawn>
         </Model>
-        <Model Name="TitleMouseCursor" Position="-2.6302 -1.3677 0" Velocity="0.0036 -0.0003 0">
+        <Model Name="TitleMouseCursor" Position="-4.7161 4 0" Velocity="0.0003 0 0">
           <Definitions>
             <Mesh Name="TitleMouseMesh1">
               <Producers>
@@ -2768,7 +2768,7 @@ return
         </Model>
         <Model Name="GameOverModel">
           <Definitions>
-            <DefineVariable Name="GameOverIntroTime"/>
+            <Variable Name="GameOverIntroTime"/>
           </Definitions>
           <States>
             <ModelState Name="GameOverState_Appear">
@@ -2810,7 +2810,7 @@ return
             <UseMaterial Material="TextMaterial"/>
             <RenderSetColor Color="0 0 0 1"/>
             <RenderText Name="GameOverText1" Text="FINAL SCORE" X="3" Scale="0.7"/>
-            <RenderText Name="GameOverText2" TextFloatRef="PlayerScore Value" X="3" Y="-0.48" Scale="1.16">
+            <RenderText Name="GameOverText2" TextFloatRef="PlayerScore" X="3" Y="-0.48" Scale="1.16">
               <RenderCharExpression>
 <![CDATA[//Modify current character before render.
 //CharX,CharY : current coordinate

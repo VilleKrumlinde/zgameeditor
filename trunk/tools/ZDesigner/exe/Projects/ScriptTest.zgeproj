@@ -805,7 +805,7 @@ else
     </ZExpression>
   </OnUpdate>
   <OnRender>
-    <RenderText TextFloatRef="Error Value"/>
+    <RenderText TextFloatRef="Error"/>
   </OnRender>
   <Content>
     <Model Name="Model1" Position="1 2 3" Category="5">

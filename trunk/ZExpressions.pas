@@ -32,6 +32,35 @@ interface
 uses ZClasses;
 
 type
+  TExpBase = class;
+
+  //Expression execution context
+  PExecutionEnvironment = ^TExecutionEnvironment;
+  TExecutionEnvironment = record
+  const
+    ZcStackSize=16384;
+  private
+    gCurrentPc : ^TExpBase;
+    gCurrentBP : integer;
+  type
+    TStackElement = NativeUInt;
+    PStackElement = ^TStackElement;
+  var
+    ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
+    ZcStackPtr : PStackElement;
+  private
+    procedure Init;
+    function StackGetDepth : integer; inline;
+    procedure StackPush(const X);
+    procedure StackPushPointer(const X);
+    procedure StackPopTo(var X);
+    procedure StackPopToPointer(var X);
+    function StackPopFloat : single;
+    function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
+    function GetStackSlots(const Bytes : integer) : integer;
+  end;
+
+
   //Klass med en expression-prop
   TZExpression = class(TCommand)
   protected
@@ -130,7 +159,7 @@ type
     procedure CleanUpManagedValues(TheType : TZcDataTypeKind; Count : integer; P : PPointer);
     procedure AllocData;
   private
-    function PopAndGetElement : PFloat;
+    function PopAndGetElement(Env : PExecutionEnvironment) : PFloat;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -147,13 +176,13 @@ type
   //Virtual machine instruction baseclass
   TExpBase = class(TZComponent)
   protected
-    procedure Execute; virtual; abstract;
+    procedure Execute(Env : PExecutionEnvironment); virtual; abstract;
     {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
   end;
 
   TExpConstantFloat = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Constant : single;
@@ -164,7 +193,7 @@ type
 
   TExpConstantInt = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Constant : integer;
@@ -189,18 +218,18 @@ type
 
   TExpOpBinaryFloat = class(TExpOpBinaryBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   TExpOpBinaryInt = class(TExpOpBinaryBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   TExpOpJumpKind = (jsJumpAlways,jsJumpLT,jsJumpGT,jsJumpLE,jsJumpGE,jsJumpNE,jsJumpEQ);
   TExpJump = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpOpJumpKind;
@@ -242,37 +271,37 @@ type
   //Built-in function call
   TExpFuncCall = class(TExpFuncCallBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Built-in functions that return pointer
   TExpPointerFuncCall = class(TExpFuncCallBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Matrix functions
   TExpMat4FuncCall = class(TExpFuncCallBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Read value from array and push on stack
   TExpArrayRead = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Push ptr to element in array on stack, used with assign
   TExpArrayGetElement = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Setup local stack frame
   TExpStackFrame = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Size : integer;
@@ -281,7 +310,7 @@ type
   //Load/store local value
   TExpAccessLocal = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : (loLoad,loStore,loGetAddress);
@@ -294,7 +323,7 @@ type
   //Return from function
   TExpReturn = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     HasFrame : boolean;
@@ -306,7 +335,7 @@ type
     emPtrDerefPointer);
   TExpMisc = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpMiscKind;
@@ -318,7 +347,7 @@ type
 
   TExpUserFuncCall = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Lib : TZLibrary;
@@ -332,7 +361,7 @@ type
     Trampoline : pointer;
     {$endif}
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Lib : TZExternalLibrary;
@@ -351,7 +380,7 @@ type
   TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckBinaryToXptr);
   TExpConvert = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : TExpConvertKind;
@@ -360,30 +389,30 @@ type
   //Assign ptr to 4-byte value, both on stack
   TExpAssign4 = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Assign ptr to 1-byte value, both on stack
   TExpAssign1 = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Assign ptr to Pointersize value, both on stack
   TExpAssignPointer = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   //Join two strings
   TExpStringConCat = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   TExpLoadComponent = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Component : TZComponent;
@@ -394,7 +423,7 @@ type
     IsInit : boolean;
     Offset : integer;
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     PropId : integer;
@@ -402,7 +431,7 @@ type
 
   TExpLoadModelDefined = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     DefinedIndex : integer;
@@ -413,14 +442,14 @@ type
 
   TExpAddToPointer = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
   TExpInvokeComponent = class(TExpBase)
   strict private
     InvokeC : TZComponent;
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     InvokedItemList : TZComponentList;
@@ -431,7 +460,7 @@ type
 
   TExpInitLocalArray = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     StackSlot : integer;
@@ -442,7 +471,7 @@ type
 
   TExpGetRawMemElement = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     _Type : TZcDataTypeKind;
@@ -450,7 +479,7 @@ type
 
   TExpArrayUtil = class(TExpBase)
   protected
-    procedure Execute; override;
+    procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Kind : (auArrayToRawMem, auRawMemToArray);
@@ -459,19 +488,10 @@ type
 
 //Run a compiled expression
 //Uses global vars for state.
-procedure RunCode(Code : TZComponentList);
+function RunCode(Code : TZComponentList) : pointer;
 
 function ExpGetValue(Code : TZComponentList) : single;
 function ExpGetPointer(Code : TZComponentList) : PFloat;
-
-{$ifndef minimal}
-procedure ResetScriptState;
-function GetStackSlots(const Bytes : integer) : integer;
-{$endif}
-
-var
-  //Return value of last executed expression
-  gReturnValue : pointer;
 
 
 implementation
@@ -482,50 +502,33 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
 {$if (not defined(minimal))}, System.SysUtils, System.Math, System.TypInfo{$ifend}
 {$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 
-var
-  //Expression execution context
-  gCurrentPc : ^TExpBase;
-  gCurrentBP : integer;
-
-
-const
-  ZcStackSize=16384;
-
-type
-  TStackElement = NativeUInt;
-  PStackElement = ^TStackElement;
-
-var
-  ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
-  ZcStackPtr : PStackElement;
-
-const
-  ZcStackBegin : PStackElement = @ZcStack;
-
 {$POINTERMATH ON}
-
-procedure StackPopToPointer(var X); forward;
 
 function ExpGetValue(Code : TZComponentList) : single;
 begin
-  RunCode(Code);
-  Result := PSingle(@gReturnValue)^;
+  Result := Single(RunCode(Code));
 end;
 
 function ExpGetPointer(Code : TZComponentList) : PFloat;
 begin
-  RunCode(Code);
-  Result := gReturnValue;
+  Result := RunCode(Code);
 end;
 
-function StackGetDepth : integer; inline;
+
+procedure TExecutionEnvironment.Init;
+begin
+  ZcStackPtr := @ZcStack;
+  gCurrentBP := 0;
+end;
+
+function TExecutionEnvironment.StackGetDepth : integer;
 begin
   //Returns the number of stack elements from start of stack
-  Result := (ZcStackPtr - ZcStackBegin);
+  Result := (ZcStackPtr - PStackElement(@ZcStack));
 end;
 
 //Push 32-bit value
-procedure StackPush(const X);
+procedure TExecutionEnvironment.StackPush(const X);
 begin
   {$ifndef minimal}
   if StackGetDepth>=High(ZcStack) then
@@ -536,7 +539,7 @@ begin
 end;
 
 //Push 32 or 64-bit value depending on architechture
-procedure StackPushPointer(const X);
+procedure TExecutionEnvironment.StackPushPointer(const X);
 begin
   {$ifndef minimal}
   if StackGetDepth>=High(ZcStack) then
@@ -546,13 +549,8 @@ begin
   Inc(ZcStackPtr);
 end;
 
-procedure StackPushValue(X : pointer); inline;
-begin
-  StackPush(X);
-end;
-
 //Pop 32-bit value
-procedure StackPopTo(var X);
+procedure TExecutionEnvironment.StackPopTo(var X);
 begin
   {$ifndef minimal}
   if StackGetDepth=0 then
@@ -563,7 +561,7 @@ begin
 end;
 
 //Pop 32 or 64-bit value depending on architechture
-procedure StackPopToPointer(var X);
+procedure TExecutionEnvironment.StackPopToPointer(var X);
 begin
   {$ifndef minimal}
   if StackGetDepth=0 then
@@ -573,71 +571,39 @@ begin
   PPointer(@X)^ := pointer(ZcStackPtr^);
 end;
 
-function StackPopFloat : single;
+function TExecutionEnvironment.StackPopFloat : single;
 begin
   StackPopTo(Result);
 end;
 
-function GetStackSlots(const Bytes : integer) : integer;
-begin
-  Result := Bytes div SizeOf(TStackElement);
-end;
-
-procedure StackPopXBytes(var X; const Bytes : integer);
-begin
-  {$ifndef minimal}
-  if StackGetDepth=0 then
-    ZHalt('Zc Stack Underflow');
-  {$endif}
-  Dec(ZcStackPtr, GetStackSlots(Bytes) );
-  Move(ZcStackPtr^, Pointer(@X)^, Bytes);
-end;
-
-function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
+function TExecutionEnvironment.StackGetPtrToItem(const Index : integer) : PStackElement;
 begin
   Result := @ZcStack;
   Inc(Result,Index);
 end;
 
-procedure SaveExecutionState;
+function TExecutionEnvironment.GetStackSlots(const Bytes : integer) : integer;
 begin
-  StackPushPointer(gCurrentPc);
-  StackPush(gCurrentBp);
+  Result := Bytes div SizeOf(TStackElement);
 end;
 
-procedure RestoreExecutionState;
-begin
-  StackPopTo(gCurrentBp);
-  StackPopToPointer(gCurrentPc);
-end;
-
-{$ifndef minimal}
-procedure ResetScriptState;
-begin
-  //Reset stack
-  ZcStackPtr := ZcStackBegin;
-  gCurrentBP := 0;
-end;
-{$endif}
-
-procedure RunCode(Code : TZComponentList);
+function RunCode(Code : TZComponentList) : pointer;
 const
   NilP : pointer = nil;
 var
 {$ifndef minimal}
   GuardLimit,GuardAllocLimit : integer;
 {$endif}
-  SaveDepth : integer;
+  Env : TExecutionEnvironment;
 begin
   //Pc can be modified in jump-code
   if Code.Count=0 then
     Exit;
-  gCurrentPc := Code.GetPtrToItem(0);
-  gCurrentBP := 0;
 
-  SaveDepth := StackGetDepth;
+  Env.Init;
+  Env.gCurrentPc := Code.GetPtrToItem(0);
 
-  StackPushPointer(NilP); //Push return adress nil
+  Env.StackPushPointer(NilP); //Push return adress nil
 
   {$ifndef minimal}
   GuardLimit := 500 * 1000000;
@@ -645,10 +611,10 @@ begin
   {$endif}
   while True do
   begin
-    TExpBase(gCurrentPc^).Execute;
-    if gCurrentPc=nil then
+    TExpBase(Env.gCurrentPc^).Execute(@Env);
+    if Env.gCurrentPc=nil then
        break;
-    Inc(gCurrentPc);
+    Inc(Env.gCurrentPc);
     {$ifndef minimal}
     Dec(GuardLimit);
     if GuardLimit=0 then
@@ -657,10 +623,10 @@ begin
       ZHalt('Ten million strings allocated. Infinite loop?');
     {$endif}
   end;
-  if StackGetDepth-SaveDepth=1 then
-    StackPopToPointer(gReturnValue);
+  if Env.StackGetDepth=1 then
+    Env.StackPopToPointer(Result);
   {$ifndef minimal}
-  if StackGetDepth-SaveDepth>0 then
+  if Env.StackGetDepth>0 then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
@@ -720,9 +686,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}(@Constant), zptFloat);
 end;
 
-procedure TExpConstantFloat.Execute;
+procedure TExpConstantFloat.Execute(Env : PExecutionEnvironment);
 begin
-  StackPush( Constant );
+  Env.StackPush( Constant );
 end;
 
 {$ifndef minimal}
@@ -740,9 +706,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}(@Constant), zptInteger);
 end;
 
-procedure TExpConstantInt.Execute;
+procedure TExpConstantInt.Execute(Env : PExecutionEnvironment);
 begin
-  StackPush( Constant );
+  Env.StackPush( Constant );
 end;
 
 {$ifndef minimal}
@@ -776,12 +742,12 @@ end;
 {$endif}
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
-procedure TExpOpBinaryFloat.Execute;
+procedure TExpOpBinaryFloat.Execute(Env : PExecutionEnvironment);
 var
   A1,A2,V : single;
 begin
-  StackPopTo(A1);
-  StackPopTo(A2);
+  Env.StackPopTo(A1);
+  Env.StackPopTo(A2);
   case Kind of
     vbkPlus : V := A1 + A2;
     vbkMinus : V := A2 - A1;
@@ -789,17 +755,17 @@ begin
     vbkDiv : V := A2 / A1;
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
-  StackPush(V);
+  Env.StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
-procedure TExpOpBinaryInt.Execute;
+procedure TExpOpBinaryInt.Execute(Env : PExecutionEnvironment);
 var
   A1,A2,V : integer;
 begin
-  StackPopTo(A1);
-  StackPopTo(A2);
+  Env.StackPopTo(A1);
+  Env.StackPopTo(A2);
   case Kind of
     vbkPlus : V := A1 + A2;
     vbkMinus : V := A2 - A1;
@@ -817,7 +783,7 @@ begin
         V := 0; //avoid runtime div by zero error
     {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
   end;
-  StackPush(V);
+  Env.StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
@@ -831,7 +797,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
 end;
 
-procedure TExpJump.Execute;
+procedure TExpJump.Execute(Env : PExecutionEnvironment);
 var
   L,R : single;
   Li,Ri : integer;
@@ -846,8 +812,8 @@ begin
       case _Type of
         jutFloat:
           begin
-            StackPopTo(R);
-            StackPopTo(L);
+            Env.StackPopTo(R);
+            Env.StackPopTo(L);
             case Kind of
               jsJumpLT : Jump := L<R;
               jsJumpGT : Jump := L>R;
@@ -860,8 +826,8 @@ begin
           end;
         jutInt:
           begin
-            StackPopTo(Ri);
-            StackPopTo(Li);
+            Env.StackPopTo(Ri);
+            Env.StackPopTo(Li);
             case Kind of
               jsJumpLT : Jump := Li<Ri;
               jsJumpGT : Jump := Li>Ri;
@@ -874,8 +840,8 @@ begin
           end;
         jutString:
           begin
-            StackPopToPointer(Rp);
-            StackPopToPointer(Lp);
+            Env.StackPopToPointer(Rp);
+            Env.StackPopToPointer(Lp);
             Jump := ZStrCompare(PAnsiChar(Lp),PAnsiChar(Rp));
             if Kind=jsJumpNE then
                Jump := not Jump;
@@ -885,7 +851,7 @@ begin
     end;
   end;
   if Jump then
-    Inc(gCurrentPc,Destination);
+    Inc(Env.gCurrentPc,Destination);
 end;
 
 {$ifndef minimal}
@@ -955,7 +921,7 @@ end;
 { TExpFuncCall }
 
 {$ifdef minimal} {$WARNINGS OFF} {$endif}
-procedure TExpFuncCall.Execute;
+procedure TExpFuncCall.Execute(Env : PExecutionEnvironment);
 var
   V,A1,A2,A3 : single;
   I1,I2 : integer;
@@ -967,57 +933,57 @@ var
 begin
   HasReturnValue := True;
   case Kind of
-    fcSin :  V := Sin(StackPopFloat);
-    fcSqrt : V := Sqrt(StackPopFloat);
-    fcCos : V := Cos(StackPopFloat);
-    fcAbs : V := Abs(StackPopFloat);
+    fcSin :  V := Sin(Env.StackPopFloat);
+    fcSqrt : V := Sqrt(Env.StackPopFloat);
+    fcCos : V := Cos(Env.StackPopFloat);
+    fcAbs : V := Abs(Env.StackPopFloat);
     fcRnd : V := System.Random;
-    fcFrac : V := Frac(StackPopFloat);
-    fcExp : V := Exp(StackPopFloat);
-    fcTan : V := Tan(StackPopFloat);
-    fcCeil : V := Ceil(StackPopFloat);
-    fcFloor : V := Floor(StackPopFloat);
-    fcAcos : V := ArcCos(StackPopFloat);
-    fcAsin : V := ArcSin(StackPopFloat);
-    fcLog2 : V := Log2(StackPopFloat);
-    fcRound : PInteger(@V)^ := Round(StackPopFloat);
+    fcFrac : V := Frac(Env.StackPopFloat);
+    fcExp : V := Exp(Env.StackPopFloat);
+    fcTan : V := Tan(Env.StackPopFloat);
+    fcCeil : V := Ceil(Env.StackPopFloat);
+    fcFloor : V := Floor(Env.StackPopFloat);
+    fcAcos : V := ArcCos(Env.StackPopFloat);
+    fcAsin : V := ArcSin(Env.StackPopFloat);
+    fcLog2 : V := Log2(Env.StackPopFloat);
+    fcRound : PInteger(@V)^ := Round(Env.StackPopFloat);
 
     fcRandom :
       begin
-        StackPopTo(A2); //Variance
-        StackPopTo(A1); //Base
+        Env.StackPopTo(A2); //Variance
+        Env.StackPopTo(A1); //Base
         V := A1 + ((2*System.Random-1.0) * A2);
       end;
     fcAtan2 :
       begin
-        StackPopTo(A2);
-        StackPopTo(A1);
+        Env.StackPopTo(A2);
+        Env.StackPopTo(A1);
         V := ArcTan2(A1,A2);
       end;
     fcNoise2 :
       begin
-        StackPopTo(A2);
-        StackPopTo(A1);
+        Env.StackPopTo(A2);
+        Env.StackPopTo(A1);
         V := PerlinNoise2(A1,A2);
       end;
     fcNoise3 :
       begin
-        StackPopTo(A3);
-        StackPopTo(A2);
-        StackPopTo(A1);
+        Env.StackPopTo(A3);
+        Env.StackPopTo(A2);
+        Env.StackPopTo(A1);
         V := PerlinNoise3(A1,A2,A3);
       end;
     fcClamp :
       begin
-        StackPopTo(A3);
-        StackPopTo(A2);
-        StackPopTo(A1);
+        Env.StackPopTo(A3);
+        Env.StackPopTo(A2);
+        Env.StackPopTo(A1);
         V := Clamp(A1,A2,A3);
       end;
     fcPow :
       begin
-        StackPopTo(A2);
-        StackPopTo(A1);
+        Env.StackPopTo(A2);
+        Env.StackPopTo(A1);
         V := ZMath.Power(A1,A2);
       end;
     fcCenterMouse :
@@ -1028,7 +994,7 @@ begin
     fcSetRandomSeed :
       begin
         V := System.RandSeed; //int to float
-        System.RandSeed := Round(StackPopFloat); //float to int
+        System.RandSeed := Round(Env.StackPopFloat); //float to int
       end;
     fcQuit :
       begin
@@ -1041,19 +1007,19 @@ begin
       end;
     fcJoyGetAxis :
       begin
-        StackPopTo(I2);
-        StackPopTo(I1);
+        Env.StackPopTo(I2);
+        Env.StackPopTo(I1);
         V := Platform_GetJoystickAxis(I1,I2);
       end;
     fcJoyGetButton :
       begin
-        StackPopTo(I2);
-        StackPopTo(I1);
+        Env.StackPopTo(I2);
+        Env.StackPopTo(I1);
         PInteger(@V)^ := Ord(Platform_GetJoystickButton(I1,I2)) and 1;
       end;
     fcJoyGetPOV :
       begin
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         V := Platform_GetJoystickPOV(I1);
       end;
     fcSystemTime :
@@ -1062,32 +1028,32 @@ begin
       end;
     fcStringLength :
       begin
-        StackPopToPointer(P1);
+        Env.StackPopToPointer(P1);
         PInteger(@V)^ := ZStrLength(PAnsiChar(P1));
       end;
     fcStringIndexOf :
       begin
         //x=indexOf("lo","hello",2)
-        StackPopTo(I1);
-        StackPopToPointer(P1);
-        StackPopToPointer(P2);
+        Env.StackPopTo(I1);
+        Env.StackPopToPointer(P1);
+        Env.StackPopToPointer(P2);
         PInteger(@V)^ := ZStrPos(PAnsiChar(P2),PAnsiChar(P1),I1);
       end;
     fcStrToInt :
       begin
-        StackPopToPointer(P1);
+        Env.StackPopToPointer(P1);
         PInteger(@V)^ := ZStrToInt(PAnsiChar(P1));
       end;
     fcOrd :
       begin
         //i=ord("A")
-        StackPopToPointer(P1);
+        Env.StackPopToPointer(P1);
         PInteger(@V)^ := PByte(P1)^;
       end;
     fcTrace :
       begin
         HasReturnValue := False;
-        StackPopToPointer(P1);
+        Env.StackPopToPointer(P1);
         {$ifndef minimal}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
@@ -1101,31 +1067,31 @@ begin
       end;
     fcTouchGetX :
       begin
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         V := ZApp.NormalizeToScreen( Platform_TouchGetPos(I1) )[0];
       end;
     fcTouchGetY :
       begin
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         V := ZApp.NormalizeToScreen( Platform_TouchGetPos(I1) )[1];
       end;
     fcTouchGetID :
       begin
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         PInteger(@V)^ := Platform_TouchGetID(I1);
       end;
     fcGetBinaryProp :
       begin
-        StackPopToPointer(A);
-        StackPopToPointer(Bp);
+        Env.StackPopToPointer(A);
+        Env.StackPopToPointer(Bp);
         A.SizeDim1 := Bp.Size div A.GetElementSize;
         Move(Bp^.Data^, A.GetData^, Bp^.Size);
         HasReturnValue := False;
       end;
     fcSetBinaryProp :
       begin
-        StackPopToPointer(A);
-        StackPopToPointer(Bp);
+        Env.StackPopToPointer(A);
+        Env.StackPopToPointer(Bp);
         Bp^.Size := A.CalcLimit * A.GetElementSize;
         ReallocMem(Bp^.Data,Bp^.Size);
         Move(A.GetData^ , Bp^.Data^, Bp^.Size);
@@ -1133,8 +1099,8 @@ begin
       end;
     fcGetModels :
       begin
-        StackPopTo(I1);
-        StackPopToPointer(A);
+        Env.StackPopTo(I1);
+        Env.StackPopToPointer(A);
         L := ZApp.Models.Get(I1);
         A.SizeDim1 := L.Count;
         P1 := A.GetData;
@@ -1148,7 +1114,7 @@ begin
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
   end;
   if HasReturnValue then
-    StackPush(V);
+    Env.StackPush(V);
 end;
 {$ifdef minimal} {$WARNINGS ON} {$endif}
 
@@ -1191,15 +1157,15 @@ end;
 
 { TExpArrayRead }
 
-procedure TExpArrayRead.Execute;
+procedure TExpArrayRead.Execute(Env : PExecutionEnvironment);
 var
   V : single;
   P : PFloat;
   I : integer;
   A : TDefineArray;
 begin
-  StackPopToPointer(A);
-  P := A.PopAndGetElement;
+  Env.StackPopToPointer(A);
+  P := A.PopAndGetElement(Env);
   {$ifndef minimal}
   if P=nil then
     ZHalt('Array read outside range: ' + String(A.Name));
@@ -1207,13 +1173,13 @@ begin
   if A._Type=zctByte then
   begin
     I := PByte(P)^;
-    StackPush(I);
+    Env.StackPush(I);
   end
   else
   begin
     V := P^;
     //todo: 64 bit
-    StackPush( V );
+    Env.StackPush( V );
   end;
 end;
 
@@ -1326,18 +1292,18 @@ begin
   end;
 end;
 
-function TDefineArray.PopAndGetElement : PFloat;
+function TDefineArray.PopAndGetElement(Env : PExecutionEnvironment) : PFloat;
 var
   Index,I1,I2,I3 : integer;
   P : PBytes;
 begin
-  StackPopTo(I3);
+  Env.StackPopTo(I3);
   if Self.Dimensions>=dadTwo then
-    StackPopTo(I2)
+    Env.StackPopTo(I2)
   else
     I2 := 0;
   if Self.Dimensions=dadThree then
-    StackPopTo(I1)
+    Env.StackPopTo(I1)
   else
     I1 := 0;
 
@@ -1369,18 +1335,18 @@ end;
 
 { TExpArrayWrite }
 
-procedure TExpArrayGetElement.Execute;
+procedure TExpArrayGetElement.Execute(Env : PExecutionEnvironment);
 var
   P : Pointer;
   A : TDefineArray;
 begin
-  StackPopToPointer(A);
-  P := A.PopAndGetElement;
+  Env.StackPopToPointer(A);
+  P := A.PopAndGetElement(Env);
   {$ifndef minimal}
   if P=nil then
     ZHalt('Array assign outside range: ' + String(A.Name));
   {$endif}
-  StackPush(P);
+  Env.StackPush(P);
 end;
 
 { TExpStackFrame }
@@ -1391,15 +1357,15 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}(@Size), zptInteger);
 end;
 
-procedure TExpStackFrame.Execute;
+procedure TExpStackFrame.Execute(Env : PExecutionEnvironment);
 //http://en.wikipedia.org/wiki/Function_prologue
 begin
-  StackPush(gCurrentBP);
-  gCurrentBP := StackGetDepth;
+  Env.StackPush(Env.gCurrentBP);
+  Env.gCurrentBP := Env.StackGetDepth;
   //Null-initialize stack frame
-  FillChar(ZcStackPtr^,Self.Size * SizeOf(ZcStackPtr^),0);
+  FillChar(Env.ZcStackPtr^,Self.Size * SizeOf(Env.ZcStackPtr^),0);
   //Add frame to stack
-  Inc(ZcStackPtr,Self.Size);
+  Inc(Env.ZcStackPtr,Self.Size);
 end;
 
 { TExpAccessLocal }
@@ -1411,16 +1377,16 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}(@Index), zptInteger);
 end;
 
-procedure TExpAccessLocal.Execute;
+procedure TExpAccessLocal.Execute(Env : PExecutionEnvironment);
 var
-  P : PStackElement;
+  P : TExecutionEnvironment.PStackElement;
 begin
   //Use pointer size to get all bits in 64-bit mode
-  P := StackGetPtrToItem( gCurrentBP + Self.Index );
+  P := Env.StackGetPtrToItem( Env.gCurrentBP + Self.Index );
   case Kind of
-    loLoad: StackPushPointer(P^);
-    loStore: StackPopToPointer(P^);
-    loGetAddress: StackPushPointer(P);
+    loLoad: Env.StackPushPointer(P^);
+    loStore: Env.StackPopToPointer(P^);
+    loGetAddress: Env.StackPushPointer(P);
   end;
 end;
 
@@ -1448,7 +1414,7 @@ begin
 end;
 
 {$warnings off}
-procedure TExpReturn.Execute;
+procedure TExpReturn.Execute(Env : PExecutionEnvironment);
 var
   RetVal : pointer;
 begin
@@ -1456,24 +1422,24 @@ begin
   begin
     //Local0 holds returnvalue
     //Treat return value as pointer to get all bits in 64-bit mode
-    RetVal := PPointer( StackGetPtrToItem( gCurrentBP ) )^;
+    RetVal := PPointer( Env.StackGetPtrToItem( Env.gCurrentBP ) )^;
   end;
 
   if HasFrame then
   begin
-    Dec(ZcStackPtr,StackGetDepth-gCurrentBP);
-    StackPopTo(gCurrentBP);
+    Dec(Env.ZcStackPtr,Env.StackGetDepth-Env.gCurrentBP);
+    Env.StackPopTo(Env.gCurrentBP);
   end;
 
   //Get return adress
-  StackPopToPointer(gCurrentPc);
+  Env.StackPopToPointer(Env.gCurrentPc);
 
   //Clean stack of function arguments
-  Dec(ZcStackPtr,Arguments);
+  Dec(Env.ZcStackPtr,Arguments);
 
   if HasReturnValue then
   begin
-    StackPushPointer(RetVal);
+    Env.StackPushPointer(RetVal);
   end;
 end;
 {$warnings on}
@@ -1527,46 +1493,46 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
 end;
 
-procedure TExpMisc.Execute;
+procedure TExpMisc.Execute(Env : PExecutionEnvironment);
 var
   V : integer;
   P : pointer;
 begin
   case Kind of
-    emPop: StackPopFloat;  //Pop, discard value from top of stack
+    emPop: Env.StackPopFloat;  //Pop, discard value from top of stack
     emDup :
       begin
-        StackPopTo(V);
-        StackPush(V);
-        StackPush(V);
+        Env.StackPopTo(V);
+        Env.StackPush(V);
+        Env.StackPush(V);
       end;
     emLoadCurrentModel :
-      StackPushPointer( Meshes.CurrentModel );
+      Env.StackPushPointer( Meshes.CurrentModel );
     emPtrDeref4 :
       begin
-        StackPopToPointer(P);
+        Env.StackPopToPointer(P);
         {$ifndef MINIMAL}
         CheckNilDeref(P);
         {$endif}
         V := PInteger(P)^;
-        StackPush(V);
+        Env.StackPush(V);
       end;
     emPtrDeref1 :
       begin
-        StackPopToPointer(P);
+        Env.StackPopToPointer(P);
         {$ifndef MINIMAL}
         CheckNilDeref(P);
         {$endif}
         V := PByte(P)^;
-        StackPush(V);
+        Env.StackPush(V);
       end;
     emPtrDerefPointer :
       begin
-        StackPopToPointer(P);
+        Env.StackPopToPointer(P);
         {$ifndef MINIMAL}
         CheckNilDeref(P);
         {$endif}
-        StackPushPointer(P^);
+        Env.StackPushPointer(P^);
       end;
   end;
 end;
@@ -1602,11 +1568,11 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}(@Index), zptInteger);
 end;
 
-procedure TExpUserFuncCall.Execute;
+procedure TExpUserFuncCall.Execute(Env : PExecutionEnvironment);
 begin
-  StackPushPointer(gCurrentPC);
-  gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
-  Dec(gCurrentPc);
+  Env.StackPushPointer(Env.gCurrentPC);
+  Env.gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
+  Dec(Env.gCurrentPc);
 end;
 
 { TExpConvert }
@@ -1617,7 +1583,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
 end;
 
-procedure TExpConvert.Execute;
+procedure TExpConvert.Execute(Env : PExecutionEnvironment);
 var
   V : single;
   I : integer;
@@ -1628,65 +1594,65 @@ begin
   case Kind of
     eckFloatToInt:
       begin
-        I := Trunc(StackPopFloat);
-        StackPush(I);
+        I := Trunc(Env.StackPopFloat);
+        Env.StackPush(I);
       end;
     eckIntToFloat :
       begin
-        StackPopTo(I);
+        Env.StackPopTo(I);
         V := I;
-        StackPush(V);
+        Env.StackPush(V);
       end;
     eckArrayToXptr :
       begin
-        StackPopToPointer(D);
+        Env.StackPopToPointer(D);
         P := D.GetData;
-        StackPushPointer(P);
+        Env.StackPushPointer(P);
       end;
     eckBinaryToXptr :
       begin
-        StackPopToPointer(Bp);
+        Env.StackPopToPointer(Bp);
         P := Bp.Data;
-        StackPushPointer(P);
+        Env.StackPushPointer(P);
       end;
   end;
 end;
 
 { TExpAssign4 }
 
-procedure TExpAssign4.Execute;
+procedure TExpAssign4.Execute(Env : PExecutionEnvironment);
 var
   I : integer;
   P : pointer;
 begin
-  StackPopTo(I);
-  StackPopToPointer(P);
+  Env.StackPopTo(I);
+  Env.StackPopToPointer(P);
   PInteger(P)^ := I;
 end;
 
 { TExpAssign1 }
 
-procedure TExpAssign1.Execute;
+procedure TExpAssign1.Execute(Env : PExecutionEnvironment);
 var
   V : integer;
   B : byte;
   P : pointer;
 begin
   //Cast integer to byte before assigning
-  StackPopTo(V);
-  StackPopToPointer(P);
+  Env.StackPopTo(V);
+  Env.StackPopToPointer(P);
   B := V;
   PByte(P)^ := B;
 end;
 
 { TExpAssignPointer }
 
-procedure TExpAssignPointer.Execute;
+procedure TExpAssignPointer.Execute(Env : PExecutionEnvironment);
 var
   V,P : pointer;
 begin
-  StackPopToPointer(V);
-  StackPopToPointer(P);
+  Env.StackPopToPointer(V);
+  Env.StackPopToPointer(P);
   PPointer(P)^ := V;
 end;
 
@@ -1725,13 +1691,13 @@ end;
 
 { TExpStringConCat }
 
-procedure TExpStringConCat.Execute;
+procedure TExpStringConCat.Execute(Env : PExecutionEnvironment);
 var
   P1,P2,Dest : PAnsiChar;
   I : integer;
 begin
-  StackPopToPointer(P2);
-  StackPopToPointer(P1);
+  Env.StackPopToPointer(P2);
+  Env.StackPopToPointer(P1);
 
   I := ZStrLength(P1) + ZStrLength(P2);
 
@@ -1741,12 +1707,12 @@ begin
   ZStrCopy(Dest,P1);
   ZStrCat(Dest,P2);
 
-  StackPushPointer(Dest);
+  Env.StackPushPointer(Dest);
 end;
 
 { TExpPointerFuncCall }
 
-procedure TExpPointerFuncCall.Execute;
+procedure TExpPointerFuncCall.Execute(Env : PExecutionEnvironment);
 var
   I1,I2 : integer;
   Buf : array[0..15] of ansichar;
@@ -1756,7 +1722,7 @@ begin
   case Kind of
     fcIntToStr:
       begin
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         ZStrConvertInt(I1,PAnsiChar(@Buf));
         Dest := ManagedHeap_Alloc(ZStrLength(@Buf)+1);
         ZStrCopy(Dest,@Buf);
@@ -1764,32 +1730,30 @@ begin
     fcSubStr :
       begin
         //s=subStr("hello",0,2)
-        StackPopTo(I1);
-        StackPopTo(I2);
-        StackPopToPointer(P1);
+        Env.StackPopTo(I1);
+        Env.StackPopTo(I2);
+        Env.StackPopToPointer(P1);
         Dest := ManagedHeap_Alloc(I1+1);
         ZStrSubString(P1,Dest,I2,I1);
       end;
     fcChr :
       begin
         //s=chr(65);
-        StackPopTo(I1);
+        Env.StackPopTo(I1);
         Dest := ManagedHeap_Alloc(2);
         Dest^ := PAnsiChar(@I1)^;
         PBytes(Dest)^[1] := 0;
       end;
     fcCreateModel :
       begin
-        StackPopToPointer(M);
-        SaveExecutionState;
+        Env.StackPopToPointer(M);
           //AddToScene will call m.OnSpawn which in turn can run expressions
           M := TModel(M.CloneModel);
           M.AddToScene(ZApp);
-        RestoreExecutionState;
         Dest := pointer(M);
       end;
   end;
-  StackPushPointer(Dest);
+  Env.StackPushPointer(Dest);
 end;
 
 { TExternalLibrary }
@@ -1825,9 +1789,7 @@ function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
 begin
   if ModuleHandle=0 then
   begin
-    SaveExecutionState;
-      ZExpressions.RunCode(BeforeInitExp.Code);
-    RestoreExecutionState;
+    ZExpressions.RunCode(BeforeInitExp.Code);
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}
@@ -1890,7 +1852,7 @@ end;
 {$endif}
 
 {$if defined(android)}
-procedure TExpExternalFuncCall.Execute;
+procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 const
   MaxArgs = 16;
 type
@@ -1922,7 +1884,7 @@ begin
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
-    StackPopTo(Args[ArgCount-I-1]);
+    Env.StackPopTo(Args[ArgCount-I-1]);
 
   //http://en.wikipedia.org/wiki/Calling_convention#ARM
   //First params in r-registers
@@ -1967,7 +1929,7 @@ begin
 //	  str	r4,[r13, #12]
 
   if Self.ReturnType.Kind<>zctVoid then
-    StackPush(RetVal);
+    Env.StackPush(RetVal);
 end;
 
 {$elseif defined(cpux64)}
@@ -2085,7 +2047,7 @@ begin
   VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
 end;
 
-procedure TExpExternalFuncCall.Execute;
+procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 type
   TFunc = function(Args : pointer) : NativeInt;
   PFunc = ^TFunc;
@@ -2106,18 +2068,18 @@ begin
   //Transfer arguments from Zc-stack to hardware stack
   for I := ArgCount-1 downto 0 do
     if GetZcTypeSize(TZcDataTypeKind(Self.ArgTypes[I]))=SizeOf(Pointer) then
-      StackPopToPointer(Args[I])
+      Env.StackPopToPointer(Args[I])
     else
-      StackPopTo(Args[I]);
+      Env.Env.StackPopTo(Args[I]);
 
   Retval := TFunc(Self.Trampoline)(@Args);
 
   if Self.ReturnType.Kind<>zctVoid then
   begin
     if GetZcTypeSize(Self.ReturnType.Kind)=SizeOf(Pointer) then
-      StackPushPointer(RetVal)
+      Env.StackPushPointer(RetVal)
     else
-      StackPush(RetVal);
+      Env.StackPush(RetVal);
   end;
 end;
 
@@ -2128,7 +2090,7 @@ end;
 
 {$elseif defined(cpux86) or defined(CPU32)}  //CPU32 is for Freepascal
 
-procedure TExpExternalFuncCall.Execute;
+procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 {.$define darwin}
 type
   TFunc = procedure();
@@ -2155,7 +2117,7 @@ begin
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
-    StackPopTo(Args[I]);
+    Env.StackPopTo(Args[I]);
 
   {$ifndef minimal}
   asm
@@ -2241,7 +2203,7 @@ begin
   {$endif}
 
   if Self.ReturnType.Kind<>zctVoid then
-    StackPush(RetVal);
+    Env.StackPush(RetVal);
 end;
 {$ifend}
 
@@ -2253,9 +2215,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}(@Component), zptComponentRef);
 end;
 
-procedure TExpLoadComponent.Execute;
+procedure TExpLoadComponent.Execute(Env : PExecutionEnvironment);
 begin
-  StackPushPointer(Self.Component);
+  Env.StackPushPointer(Self.Component);
 end;
 
 { TExpLoadPropOffset }
@@ -2266,21 +2228,21 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'PropId',{$ENDIF}(@PropId), zptInteger);
 end;
 
-procedure TExpLoadPropOffset.Execute;
+procedure TExpLoadPropOffset.Execute(Env : PExecutionEnvironment);
 var
   C : TZComponent;
 begin
   if not IsInit then
   begin
-    StackPopToPointer(C);
+    Env.StackPopToPointer(C);
     {$ifndef minimal}
     CheckNilDeref(C);
     {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
-    StackPushPointer(C);
+    Env.StackPushPointer(C);
     IsInit := True;
   end;
-  StackPush(Self.Offset);
+  Env.StackPush(Self.Offset);
 end;
 
 { TExpLoadModelDefined }
@@ -2295,12 +2257,12 @@ begin
   {$endif}
 end;
 
-procedure TExpLoadModelDefined.Execute;
+procedure TExpLoadModelDefined.Execute(Env : PExecutionEnvironment);
 var
   M : TModel;
   C : TZComponent;
 begin
-  StackPopToPointer(M);
+  Env.StackPopToPointer(M);
   {$ifndef minimal}
   CheckNilDeref(M);
   if (Self.DefinedIndex>=M.Definitions.Count) or
@@ -2310,21 +2272,21 @@ begin
   end;
   {$endif}
   C := TZComponent(M.Definitions[Self.DefinedIndex]);
-  StackPushPointer( C );
+  Env.StackPushPointer( C );
 end;
 
 { TExpAddToPointer }
 
-procedure TExpAddToPointer.Execute;
+procedure TExpAddToPointer.Execute(Env : PExecutionEnvironment);
 //Add 32-bit value to pointer and store the result as pointer
 var
   V : integer;
   P : pbyte;
 begin
-  StackPopTo(V);
-  StackPopToPointer(P);
+  Env.StackPopTo(V);
+  Env.StackPopToPointer(P);
   Inc(P,V);
-  StackPushPointer(P);
+  Env.StackPushPointer(P);
 end;
 
 { TExpInvokeComponent }
@@ -2339,7 +2301,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'IsValue',{$ENDIF}(@IsValue), zptBoolean);
 end;
 
-procedure TExpInvokeComponent.Execute;
+procedure TExpInvokeComponent.Execute(Env : PExecutionEnvironment);
 var
   Ci : TZComponentInfo;
   I,PropId,RawValue : integer;
@@ -2356,8 +2318,8 @@ begin
 
   for I := 0 to InvokeArgCount-1 do
   begin
-    StackPopTo(PropId);
-    StackPopTo(RawValue);
+    Env.StackPopTo(PropId);
+    Env.StackPopTo(RawValue);
     Prop := InvokeC.GetProperties.GetById(PropId);
     //todo: Pointer properties need separate treatment for 64-bit compilation
     case Prop.PropertyType of
@@ -2378,12 +2340,10 @@ begin
 
   if IsValue then
   begin
-    StackPushPointer(Self.InvokeC);
+    Env.StackPushPointer(Self.InvokeC);
   end else
   begin
-    SaveExecutionState;
-      TCommand(InvokeC).Execute;
-    RestoreExecutionState;
+    TCommand(InvokeC).Execute;
   end;
 end;
 
@@ -2400,13 +2360,13 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Size3',{$ENDIF}(@Size3), zptInteger);
 end;
 
-procedure TExpInitLocalArray.Execute;
+procedure TExpInitLocalArray.Execute(Env : PExecutionEnvironment);
 var
-  P : PStackElement;
+  P : TExecutionEnvironment.PStackElement;
   A : TDefineArray;
 begin
   //Use pointer size to get all bits in 64-bit mode
-  P := StackGetPtrToItem( gCurrentBP + Self.StackSlot );
+  P := Env.StackGetPtrToItem( Env.gCurrentBP + Self.StackSlot );
   A := TDefineArray.Create(nil);
   ManagedHeap_AddValueObject(A);
   A.Dimensions := Self.Dimensions;
@@ -2419,7 +2379,7 @@ end;
 
 { TExpMat4 }
 
-procedure TExpMat4FuncCall.Execute;
+procedure TExpMat4FuncCall.Execute(Env : PExecutionEnvironment);
 var
   M1,M2 : PZMatrix4f;
   V1 : PZVector3f;
@@ -2430,62 +2390,62 @@ begin
   case Kind of
     fcMatMultiply:
       begin
-        StackPopToPointer(M1);
-        StackPopToPointer(M2);
+        Env.StackPopToPointer(M1);
+        Env.StackPopToPointer(M2);
         A := TDefineArray(CreateManagedValue(zctMat4));
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         M2 := PZMatrix4f(TDefineArray(M2).GetData);
         PZMatrix4f(A.GetData)^ := MatrixMultiply(M1^,M2^);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
     fcMatTransformPoint :
       begin
-        StackPopToPointer(V1);
-        StackPopToPointer(M1);
+        Env.StackPopToPointer(V1);
+        Env.StackPopToPointer(M1);
         A := TDefineArray(CreateManagedValue(zctVec3));
         V1 := PZVector3f(TDefineArray(V1).GetData);
         M1 := PZMatrix4f(TDefineArray(M1).GetData);
         VectorTransform(V1^,M1^,PZVector3f(A.GetData)^);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
     fcGetMatrix :
       begin
-        StackPopToPointer(A);
-        StackPopTo(I);
+        Env.StackPopToPointer(A);
+        Env.StackPopTo(I);
         Self.ZApp.Driver.GetMatrix(I, PZMatrix4f(A.GetData));
       end;
     fcSetMatrix :
       begin
-        StackPopToPointer(A);
-        StackPopTo(I);
+        Env.StackPopToPointer(A);
+        Env.StackPopTo(I);
         Self.ZApp.Driver.SetMatrix(I, PZMatrix4f(A.GetData)^);
       end;
     fcVec2 :
       begin
-        StackPopTo(Y);
-        StackPopTo(X);
+        Env.StackPopTo(Y);
+        Env.StackPopTo(X);
         A := TDefineArray(CreateManagedValue(zctVec2));
         PZVector2f(A.GetData)^ := Vector2f(X,Y);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
     fcVec3 :
       begin
-        StackPopTo(Z);
-        StackPopTo(Y);
-        StackPopTo(X);
+        Env.StackPopTo(Z);
+        Env.StackPopTo(Y);
+        Env.StackPopTo(X);
         A := TDefineArray(CreateManagedValue(zctVec3));
         PZVector3f(A.GetData)^ := Vector3f(X,Y,Z);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
     fcVec4 :
       begin
-        StackPopTo(W);
-        StackPopTo(Z);
-        StackPopTo(Y);
-        StackPopTo(X);
+        Env.StackPopTo(W);
+        Env.StackPopTo(Z);
+        Env.StackPopTo(Y);
+        Env.StackPopTo(X);
         A := TDefineArray(CreateManagedValue(zctVec4));
         PColorf(A.GetData)^ := MakeColorf(X,Y,Z,W);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
   end;
 end;
@@ -2499,23 +2459,23 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
 end;
 
-procedure TExpGetRawMemElement.Execute;
+procedure TExpGetRawMemElement.Execute(Env : PExecutionEnvironment);
 var
   I3,I2,Index : integer;
   P : PBytes;
 begin
-  StackPopToPointer(P);
+  Env.StackPopToPointer(P);
 
   case Self._Type of
     zctMat4:
       begin
-        StackPopTo(I3);
-        StackPopTo(I2);
+        Env.StackPopTo(I3);
+        Env.StackPopTo(I2);
         Index := (I2*4) + I3;
       end;
     zctVec2..zctVec4:
       begin
-        StackPopTo(I3);
+        Env.StackPopTo(I3);
         Index := I3;
       end;
   else
@@ -2523,7 +2483,7 @@ begin
   end;
 
   P := @P^[Index * 4];
-  StackPushPointer(P);
+  Env.StackPushPointer(P);
 end;
 
 { TExpArrayUtil }
@@ -2535,7 +2495,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
 end;
 
-procedure TExpArrayUtil.Execute;
+procedure TExpArrayUtil.Execute(Env : PExecutionEnvironment);
 var
   A : TDefineArray;
   P : pointer;
@@ -2543,23 +2503,21 @@ begin
   case Kind of
     auArrayToRawMem:
       begin
-        StackPopToPointer(A);
-        StackPopToPointer(P);
+        Env.StackPopToPointer(A);
+        Env.StackPopToPointer(P);
         Move(A.GetData^, P^, A.GetElementSize * A.CalcLimit);
       end;
     auRawMemToArray:
       begin
-        StackPopToPointer(P);
+        Env.StackPopToPointer(P);
         A := TDefineArray(CreateManagedValue(Self._Type));
         Move(P^, A.GetData^, A.GetElementSize * A.CalcLimit);
-        StackPushPointer(A);
+        Env.StackPushPointer(A);
       end;
   end;
 end;
 
 initialization
-
-  ZcStackPtr := ZcStackBegin;
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=2;{$endif}
