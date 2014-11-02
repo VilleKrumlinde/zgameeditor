@@ -1269,6 +1269,11 @@ begin
           ReturnType.Kind := zctModel;
           S := '__getLValue( ' + S + ' ); return null;';
         end;
+      ekiBitmap :
+        begin
+          S := 'void __pixel(float x, float y, vec4 pixel) { ' + S + #13#10' }';
+          Compiler.AllowFunctions := True;
+        end;
     end;
 
     Compiler.SymTab := SymTab;
@@ -1298,11 +1303,13 @@ begin
         CodeGen.GenRoot(Compiler.ZFunctions);
       except
         //Om något går fel under kodgenereringen så rensa koden så att den inte körs
+        if (ExpKind=ekiBitmap) then
+          SymTab.Remove('__pixel');
         Target.Clear;
         raise;
       end;
 
-      if (Target.Count>0) and (ExpKind=ekiGetPointer) then
+      if (ExpKind=ekiGetPointer) and (Target.Count>0) then
       begin  //Only keep the 'get lvalue address' code (and code to return from expression)
         I := Target.Count;
         while (I>0) do
@@ -1316,6 +1323,12 @@ begin
             Break;
           end;
         end;
+      end;
+
+      if (ExpKind=ekiBitmap) and (Target.Count>0) then
+      begin
+        SymTab.Remove('__pixel');
+        (Target.Items[Target.Count-1] as TExpReturn).Arguments := 0;
       end;
 
       //Show tree as source-code for debugging

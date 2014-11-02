@@ -57,8 +57,6 @@ type
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
   public
     Expression : TZExpressionPropValue;
-    X,Y : single;
-    Pixel : TZColorf;
   end;
 
   TBitmapFromFile = class(TContentProducer)
@@ -307,16 +305,9 @@ begin
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//X,Y : current coordinate (0..1)'#13#10 +
       '//Pixel : current color (rgb)'#13#10 +
-      '//Sample expression: this.Pixel.R=abs(sin(this.X*16));';
+      '//Sample expression: Pixel.R=abs(sin(X*16));';
+    List.GetLast.ExpressionKind := ekiBitmap;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'X',{$ENDIF}(@X), zptFloat);
-    List.GetLast.NeverPersist := True;
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Y',{$ENDIF}(@Y), zptFloat);
-    List.GetLast.NeverPersist := True;
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Pixel',{$ENDIF}(@Pixel), zptColorf);
-    List.GetLast.NeverPersist := True;
 end;
 
 procedure TBitmapExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
@@ -325,7 +316,9 @@ var
   H,W,I,J : integer;
   Pixels,P : PColorf;
   XStep,YStep : single;
-//  DefaultColor : TZColorf;
+  X,Y : PSingle;
+  Env : TExecutionEnvironment;
+  A : TDefineArray;
 begin
   SourceB := GetOptionalArgument(Stack);
   if SourceB<>nil then
@@ -345,41 +338,46 @@ begin
 
   if Pixels=nil then
   begin
-    GetMem(Pixels,W * H * Sizeof(Pixel) );
-    FillChar(Pixels^, W * H * Sizeof(Pixel), 0);
-//    DefaultColor := MakeColorf(0,0,0,1);
-//    P := Pixels;
-//    for I := 0 to (W * H)-1 do
-//    begin
-//      P^ := DefaultColor;
-//      Inc(P);
-//    end;
+    GetMem(Pixels,W * H * 16 );
+    FillChar(Pixels^,W * H * 16, 0);
   end;
 
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
 
+  A := TDefineArray.Create(nil);
+  A.SizeDim1 := 4;
+
+  Env.Init;
+  Env.StackPush(X);
+  Env.StackPush(Y);
+  Env.StackPush(A);
+
+  X := PSingle(Env.StackGetPtrToItem(0));
+  Y := PSingle(Env.StackGetPtrToItem(1));
+
   P := Pixels;
-  Y := 0;
+  Y^ := 0.0;
   XStep := 1/(W-1);
   YStep := 1/(H-1);
   for I := 0 to H-1 do
   begin
-    X := 0;
+    X^ := 0.0;
     for J := 0 to W-1 do
     begin
-      Self.Pixel := P^;
-      ZExpressions.RunCode(Expression.Code);
-      P^ := Self.Pixel;
+      A.SetExternalData(P);
+      ZExpressions.RunCode(Expression.Code,@Env);
       Inc(P);
-      X := X + XStep;
+      X^ := X^ + XStep;
     end;
-    Y := Y + YStep;
+    Y^ := Y^ + YStep;
   end;
 
   //Needed to send the bitmap to opengl
   B.UseTextureBegin;
 
   FreeMem(Pixels);
+
+  A.Free;
 
   Stack.Push(B);
 end;

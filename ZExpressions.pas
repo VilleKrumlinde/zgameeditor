@@ -49,15 +49,15 @@ type
     ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
     ZcStackPtr : PStackElement;
   private
-    procedure Init;
     function StackGetDepth : integer; inline;
-    procedure StackPush(const X);
-    procedure StackPushPointer(const X);
     procedure StackPopTo(var X);
     procedure StackPopToPointer(var X);
     function StackPopFloat : single;
+  public
     function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
-    function GetStackSlots(const Bytes : integer) : integer;
+    procedure StackPush(const X);
+    procedure StackPushPointer(const X);
+    procedure Init;
   end;
 
 
@@ -156,6 +156,7 @@ type
     AllocItemCount : integer;
     AllocType : TZcDataTypeKind;
     AllocPtr : PPointer;
+    IsExternal : boolean;
     procedure CleanUpManagedValues(TheType : TZcDataTypeKind; Count : integer; P : PPointer);
     procedure AllocData;
   private
@@ -171,6 +172,7 @@ type
     function GetData : PFloat;
     function CalcLimit : integer;
     function GetElementSize : integer;
+    procedure SetExternalData(P : pointer);
   end;
 
   //Virtual machine instruction baseclass
@@ -488,7 +490,7 @@ type
 
 //Run a compiled expression
 //Uses global vars for state.
-function RunCode(Code : TZComponentList) : pointer;
+function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : pointer;
 
 function ExpGetValue(Code : TZComponentList) : single;
 function ExpGetPointer(Code : TZComponentList) : PFloat;
@@ -582,25 +584,25 @@ begin
   Inc(Result,Index);
 end;
 
-function TExecutionEnvironment.GetStackSlots(const Bytes : integer) : integer;
-begin
-  Result := Bytes div SizeOf(TStackElement);
-end;
-
-function RunCode(Code : TZComponentList) : pointer;
+function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : pointer;
 const
   NilP : pointer = nil;
 var
 {$ifndef minimal}
   GuardLimit,GuardAllocLimit : integer;
 {$endif}
-  Env : TExecutionEnvironment;
+  LocalEnv : TExecutionEnvironment;
 begin
   //Pc can be modified in jump-code
   if Code.Count=0 then
     Exit;
 
-  Env.Init;
+  if Env=nil then
+  begin
+    Env := @LocalEnv;
+    Env.Init;
+  end;
+
   Env.gCurrentPc := Code.GetPtrToItem(0);
 
   Env.StackPushPointer(NilP); //Push return adress nil
@@ -611,7 +613,7 @@ begin
   {$endif}
   while True do
   begin
-    TExpBase(Env.gCurrentPc^).Execute(@Env);
+    TExpBase(Env.gCurrentPc^).Execute(Env);
     if Env.gCurrentPc=nil then
        break;
     Inc(Env.gCurrentPc);
@@ -626,7 +628,7 @@ begin
   if Env.StackGetDepth=1 then
     Env.StackPopToPointer(Result);
   {$ifndef minimal}
-  if Env.StackGetDepth>0 then
+  if (Env=@LocalEnv) and (Env.StackGetDepth>0) then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
@@ -1200,7 +1202,7 @@ end;
 destructor TDefineArray.Destroy;
 begin
   CleanUpManagedValues(_Type,Limit,AllocPtr);
-  if Data<>nil then
+  if (Data<>nil) and (not IsExternal) then
     FreeMem(Data);
   inherited;
 end;
@@ -1208,7 +1210,7 @@ end;
 function TDefineArray.GetData: PFloat;
 begin
   //Check if Array size has changed
-  if Limit<>CalcLimit then
+  if (Limit<>CalcLimit) then
     AllocData;
   {$ifndef minimal}
   ZAssert(not (Persistent and (_Type in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
@@ -1250,6 +1252,10 @@ var
 begin
   CleanUpManagedValues(AllocType,AllocItemCount,AllocPtr);
   Self.Limit := CalcLimit;
+
+  if IsExternal then
+    Exit;
+
   ByteSize := Limit * GetElementSize;
   if Persistent then
   begin
@@ -1331,6 +1337,12 @@ begin
   {$endif}
 
   Result := @P^[Index * Self.GetElementSize];
+end;
+
+procedure TDefineArray.SetExternalData(P: pointer);
+begin
+  Self.Data := P;
+  Self.IsExternal := True;
 end;
 
 { TExpArrayWrite }

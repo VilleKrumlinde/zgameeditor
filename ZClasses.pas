@@ -250,7 +250,7 @@ type
     {$endif}
   end;
 
-  TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer);
+  TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record

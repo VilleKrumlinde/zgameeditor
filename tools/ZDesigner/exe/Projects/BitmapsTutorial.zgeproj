@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="ZGameEditor application">
   <OnLoaded>
-    <DefineVariable Name="Temp1"/>
-    <DefineVariable Name="Temp2"/>
+    <Variable Name="Temp1"/>
+    <Variable Name="Temp2"/>
     <SpawnModel Model="Model2"/>
   </OnLoaded>
   <OnUpdate>
@@ -29,8 +29,8 @@ centerMouse();]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-this.Pixel.R=X;
-this.Pixel.G=Y*0.25;]]>
+Pixel.R=X;
+Pixel.G=Y*0.25;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -43,9 +43,9 @@ this.Pixel.G=Y*0.25;]]>
 //Pixel : current color (rgb)
 
 Temp1=noise2(X,Y) * 3;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;]]>
+Pixel.R=Temp1;
+Pixel.G=Temp1;
+Pixel.B=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -58,9 +58,9 @@ this.Pixel.B=Temp1;]]>
 //Pixel : current color (rgb)
 
 Temp1=noise2(X*4,Y*4) * 3;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;]]>
+Pixel.R=Temp1;
+Pixel.G=Temp1;
+Pixel.B=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -73,9 +73,9 @@ this.Pixel.B=Temp1;]]>
 //Pixel : current color (rgb)
 
 Temp1=abs(noise2(X*4,Y*4) * 3);
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;]]>
+Pixel.R=Temp1;
+Pixel.G=Temp1;
+Pixel.B=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -89,9 +89,9 @@ this.Pixel.B=Temp1;]]>
 
 //Temp1=abs(sin((X*16) + Y*2 + noise2(X*16,Y*8)));
 Temp1=abs(frac(noise2(X*1.5,Y*1.25)*20));
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1*0.5;
-this.Pixel.B=0;]]>
+Pixel.R=Temp1;
+Pixel.G=Temp1*0.5;
+Pixel.B=0;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -104,9 +104,9 @@ this.Pixel.B=0;]]>
 //Pixel : current color (rgb)
 
 Temp1=abs(cos(noise2(X*4,Y*4) * 18));
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;]]>
+Pixel.R=Temp1;
+Pixel.G=Temp1;
+Pixel.B=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -120,13 +120,13 @@ this.Pixel.B=Temp1;]]>
 
 Temp1=abs(cos(noise2(X*2,Y*2) * 18));
 if(Temp1>0.75) {
-  this.Pixel.R=Temp1;
-  this.Pixel.G=Temp1;
-  this.Pixel.B=0;
+  Pixel.R=Temp1;
+  Pixel.G=Temp1;
+  Pixel.B=0;
 } else {
-  this.Pixel.R=Temp1;
-  this.Pixel.G=0;
-  this.Pixel.B=Temp1;
+  Pixel.R=Temp1;
+  Pixel.G=0;
+  Pixel.B=Temp1;
 }]]>
               </Expression>
             </BitmapExpression>
@@ -140,7 +140,7 @@ if(Temp1>0.75) {
 //Pixel : current color (rgb)
 
 //this.Pixel.R=(abs(sin(X*16)) + abs(cos(Y*16))) * 0.5;
-this.Pixel.R=sin(X*3.14)*0.5 + sin(Y*3.14)*0.5;
+Pixel.R=sin(X*3.14)*0.5 + sin(Y*3.14)*0.5;
 //this.Pixel.R=sin( (X+noise2(x*2,y*2))*3.14)*0.5 + sin(Y+noise2(x,y)*3.14)*0.5;]]>
               </Expression>
             </BitmapExpression>
@@ -240,9 +240,9 @@ return this.Iteration<128;]]>
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-if(this.X>0.5) {
-  this.pixel.a-=this.x*2;
-  this.pixel.r-=this.x*2;
+if(X>0.5) {
+  pixel.a-=x*2;
+  pixel.r-=x*2;
 }]]>
               </Expression>
             </BitmapExpression>
@@ -255,9 +255,9 @@ if(this.X>0.5) {
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-if(this.X<0.5) {
-  this.pixel.a-=this.x*2;
-  this.pixel.r-=this.x*2;
+if(X<0.5) {
+  pixel.a-=x*2;
+  pixel.r-=x*2;
 }]]>
               </Expression>
             </BitmapExpression>
