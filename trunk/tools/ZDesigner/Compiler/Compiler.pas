@@ -1328,6 +1328,7 @@ begin
       if (ExpKind=ekiBitmap) and (Target.Count>0) then
       begin
         SymTab.Remove('__pixel');
+        //We don't want expreturn to clean up stack on exit
         (Target.Items[Target.Count-1] as TExpReturn).Arguments := 0;
       end;
 

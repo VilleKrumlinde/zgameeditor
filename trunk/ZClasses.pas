@@ -511,6 +511,24 @@ type
   end;
 
 
+  TTaskProc = procedure(Task : pointer) of object;
+  TTasks = class
+  strict private
+    TaskList : pointer;
+    TaskProc : TTaskProc;
+    TaskCount,TaskStride : integer;
+    Lock : pointer;
+    function RunNext : boolean;
+  private
+    class var Instance : TTasks;
+    constructor Create;
+  public
+    procedure Run(TaskProc : TTaskProc; TaskList : pointer; TaskCount,TaskStride : integer);
+    destructor Destroy; override;
+  end;
+
+function Tasks : TTasks;
+
 function MakeColorf(const R,G,B,A : single) : TZColorf;
 
 {.$IFNDEF MINIMAL}
@@ -3169,7 +3187,7 @@ var
       begin
         L := TStringList.Create;
         L.Delimiter := ' ';
-        L.DelimitedText := S;
+        L.DelimitedText := String(S);
         if LowerCase(L[L.Count-1])='value' then
           L.Delete(L.Count-1)
         else if StrToIntDef(L[L.Count-1],99) in [0..3] then
@@ -3180,8 +3198,8 @@ var
           ) then
           L.Add('X');
         L.Delimiter := '.';
-        Result := L.DelimitedText;
-        GetLog(Self.ClassName).Write('Patched propref: ' + S + ' -> ' + Result );
+        Result := AnsiString(L.DelimitedText);
+        GetLog(Self.ClassName).Write(String('Patched propref: ' + S + ' -> ' + Result) );
         L.Free;
       end;
     end;
@@ -3853,6 +3871,57 @@ begin
 end;
 {$endif}
 
+{ TTasks }
+
+constructor TTasks.Create;
+begin
+  Self.Lock := Platform_CreateMutex;
+end;
+
+destructor TTasks.Destroy;
+begin
+  Platform_FreeMutex(Lock);
+  inherited;
+end;
+
+procedure TTasks.Run(TaskProc: TTaskProc; TaskList: pointer; TaskCount,
+  TaskStride: integer);
+begin
+  Self.TaskList := TaskList;
+  Self.TaskProc := TaskProc;
+  Self.TaskCount := TaskCount;
+  Self.TaskStride := TaskStride;
+  {$ifdef zlog}
+  ZLog.GetLog(Self.ClassName).Write('Running tasks: ' + IntToStr(TaskCount));
+  {$endif}
+  while Self.RunNext do ;
+end;
+
+function TTasks.RunNext: boolean;
+var
+  ATask : pointer;
+begin
+  ATask := nil;
+  Platform_EnterMutex(Self.Lock);
+    Dec(TaskCount);
+    Result := TaskCount>=0;
+    if Result then
+    begin
+      ATask := Self.TaskList;
+      Inc(NativeUInt(Self.TaskList),Self.TaskStride);
+    end;
+  Platform_LeaveMutex(Self.Lock);
+  if Result then
+    Self.TaskProc(ATask);
+end;
+
+function Tasks : TTasks;
+begin
+  if TTasks.Instance=nil then
+    TTasks.Instance := TTasks.Create;
+  Result := TTasks.Instance;
+end;
+
 initialization
 
   ManagedHeap_Create;
@@ -3867,6 +3936,7 @@ initialization
 
 finalization
 
+  TTasks.Instance.Free;
   ManagedHeap_Destroy;
 
   Zc_Ops.CleanUp;

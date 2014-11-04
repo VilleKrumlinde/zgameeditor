@@ -52,6 +52,15 @@ type
   end;
 
   TBitmapExpression = class(TBitmapProducerWithOptionalArgument)
+  strict private
+    type
+      PPixelTask = ^TPixelTask;
+      TPixelTask = record
+        P : PColorf;
+        W,H,Y : integer;
+        YStep : single;
+      end;
+    procedure PixelTask(Task : pointer);
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack : TZArrayList); override;
@@ -310,15 +319,57 @@ begin
     {$endif}
 end;
 
+procedure TBitmapExpression.PixelTask(Task: pointer);
+var
+  Env : TExecutionEnvironment;
+  A : TDefineArray;
+  X,Y : PSingle;
+  XStep : single;
+  T : PPixelTask;
+  I,J : integer;
+begin
+  T := PPixelTask(Task);
+
+  A := TDefineArray.Create(nil);
+  A.SizeDim1 := 4;
+
+  Env.Init;
+  Env.StackPush(X);
+  Env.StackPush(Y);
+  Env.StackPush(A);
+
+  X := PSingle(Env.StackGetPtrToItem(0));
+  Y := PSingle(Env.StackGetPtrToItem(1));
+
+  XStep := 1/(T.W-1);
+
+  Y^ := T.Y*T.YStep;
+  for I := 0 to T.H-1 do
+  begin
+    X^ := 0.0;
+    for J := 0 to T.W-1 do
+    begin
+      A.SetExternalData(T.P);
+      ZExpressions.RunCode(Expression.Code,@Env);
+      Inc(T.P);
+      X^ := X^ + XStep;
+    end;
+    Y^ := Y^ + T.YStep;
+  end;
+
+  A.Free;
+end;
+
 procedure TBitmapExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   SourceB,B : TZBitmap;
-  H,W,I,J : integer;
+  H,W,I : integer;
   Pixels,P : PColorf;
-  XStep,YStep : single;
-  X,Y : PSingle;
-  Env : TExecutionEnvironment;
-  A : TDefineArray;
+
+  TaskCount : integer;
+  TaskList : pointer;
+  Task : PPixelTask;
+  TaskH : integer;
 begin
   SourceB := GetOptionalArgument(Stack);
   if SourceB<>nil then
@@ -344,40 +395,32 @@ begin
 
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
 
-  A := TDefineArray.Create(nil);
-  A.SizeDim1 := 4;
 
-  Env.Init;
-  Env.StackPush(X);
-  Env.StackPush(Y);
-  Env.StackPush(A);
+  TaskCount := 4;
+  GetMem(TaskList,TaskCount*SizeOf(TPixelTask));
+  Task := TaskList;
 
-  X := PSingle(Env.StackGetPtrToItem(0));
-  Y := PSingle(Env.StackGetPtrToItem(1));
-
+  TaskH := H div TaskCount;
   P := Pixels;
-  Y^ := 0.0;
-  XStep := 1/(W-1);
-  YStep := 1/(H-1);
-  for I := 0 to H-1 do
+  for I := 0 to TaskCount-1 do
   begin
-    X^ := 0.0;
-    for J := 0 to W-1 do
-    begin
-      A.SetExternalData(P);
-      ZExpressions.RunCode(Expression.Code,@Env);
-      Inc(P);
-      X^ := X^ + XStep;
-    end;
-    Y^ := Y^ + YStep;
+    Task.P := P;
+    Task.W := W;
+    Task.H := TaskH;
+    Task.Y := I*TaskH;
+    Task.YStep := 1/(H-1);
+    Inc(Task);
+    Inc(P,W*TaskH);
   end;
+
+  Tasks.Run(Self.PixelTask,TaskList,TaskCount,SizeOf(TPixelTask));
+
+  FreeMem(TaskList);
 
   //Needed to send the bitmap to opengl
   B.UseTextureBegin;
 
   FreeMem(Pixels);
-
-  A.Free;
 
   Stack.Push(B);
 end;
