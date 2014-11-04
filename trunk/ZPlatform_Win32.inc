@@ -1850,6 +1850,57 @@ begin
   Result := 0;
 end;
 
+function ThreadWrapper(Parameter: Pointer): Integer; stdcall;
+begin
+  TZThread(Parameter).Execute;
+  Result := 0;
+end;
+
+function Platform_CreateThread(ZThread : TZThread) : pointer;
+var
+  ThreadId : DWord;
+begin
+  Result := pointer(CreateThread(nil,
+    0,
+    @ThreadWrapper,
+    ZThread, //param
+    0,
+    ThreadId));
+end;
+
+procedure Platform_FreeThread(T : pointer);
+begin
+  CloseHandle(NativeUInt(T));
+end;
+
+function Platform_CreateEvent : pointer;
+begin
+  Result := Pointer(CreateEvent(nil, False, False, nil));
+end;
+
+procedure Platform_SignalEvent(E : pointer);
+begin
+  SetEvent(NativeUInt(E));
+end;
+
+procedure Platform_WaitEvent(E : pointer);
+begin
+  WaitForSingleObject(NativeUInt(E),INFINITE);
+end;
+
+procedure Platform_FreeEvent(E : pointer);
+begin
+  CloseHandle(NativeUInt(E));
+end;
+
+function Platform_GetCpuCount : integer;
+var
+  sysinfo : SYSTEM_INFO;
+begin
+  GetSystemInfo( sysinfo );
+  Result := sysinfo.dwNumberOfProcessors;
+end;
+
 {initialization
 
 finalization}

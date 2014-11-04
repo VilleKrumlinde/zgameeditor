@@ -406,6 +406,7 @@ type
     function OnGetLibraryPath: string;
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
+    procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -838,46 +839,49 @@ type
     Msg : string;
   end;
 
-procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
+procedure TEditorForm.AddOneLogString(const S : string; Log : TLog; Level : TLogLevel);
 var
-  I : integer;
-  Tmp : TStringList;
-
-  procedure InAddOne(const S : String);
-  var
-    Data : TListLogItem;
-  begin
-    while LogListBox.Items.Count>2000 do
-    begin
-      LogListBox.Items.Objects[0].Free;
-      LogListBox.Items.Delete(0);
-    end;
-    Data := TListLogItem.Create;
-    Data.Log := Log;
-    Data.Msg := Mess;
-    Data.Level := Level;
-    LogListBox.Items.AddObject(S,Data);
-  end;
-
+  Data : TListLogItem;
 begin
-  if Pos(#12,Mess)>0 then
+  while LogListBox.Items.Count>2000 do
   begin
-    LogClearMenuItemClick(nil);
-    Mess := StringReplace(Mess,#12,'',[rfReplaceAll]);
+    LogListBox.Items.Objects[0].Free;
+    LogListBox.Items.Delete(0);
   end;
-  if Pos(#10,Mess)=0 then
-    InAddOne(Mess)
-  else
-  begin
-    Tmp := TStringList.Create;
-    Tmp.Text := Mess;
-    for I := 0 to Tmp.Count - 1 do
-      InAddOne(Tmp[I]);
-    Tmp.Free;
-  end;
-  LogListBox.ItemIndex := LogListBox.Items.Count-1;
-//  LogListBox.Invalidate;
+  Data := TListLogItem.Create;
+  Data.Log := Log;
+  Data.Msg := S;
+  Data.Level := Level;
+  LogListBox.Items.AddObject(S,Data);
 end;
+
+procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
+//begin
+//  TThread.Synchronize(nil,
+//    procedure
+    var
+      I : integer;
+      Tmp : TStringList;
+    begin
+      if Pos(#12,Mess)>0 then
+      begin
+        LogClearMenuItemClick(nil);
+        Mess := StringReplace(Mess,#12,'',[rfReplaceAll]);
+      end;
+      if Pos(#10,Mess)=0 then
+        AddOneLogString(Mess,Log,Level)
+      else
+      begin
+        Tmp := TStringList.Create;
+        Tmp.Text := Mess;
+        for I := 0 to Tmp.Count - 1 do
+          AddOneLogString(Tmp[I],Log,Level);
+        Tmp.Free;
+      end;
+      LogListBox.ItemIndex := LogListBox.Items.Count-1;
+    end;
+//  );
+//end;
 
 procedure TEditorForm.ReadAppSettingsFromIni;
 var
@@ -3968,6 +3972,8 @@ begin
         else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
           NeedArray := True
         else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
+          NeedArray := True
+        else if (AllObjects[I] is TBitmapExpression) then
           NeedArray := True
         else if (AllObjects[I] is TSampleImport) and ((AllObjects[I] as TSampleImport).SampleFileFormat=sffOGG) then
           NeedOgg := True
