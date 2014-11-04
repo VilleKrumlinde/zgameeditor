@@ -510,19 +510,40 @@ type
     procedure BitsEnd;
   end;
 
+  //Threading support
+  TZThread = class
+  public
+    Handle : pointer;
+    Terminated : boolean;
+    procedure Execute; virtual; abstract;
+  end;
 
   TTaskProc = procedure(Task : pointer) of object;
   TTasks = class
   strict private
+    type
+      TWorkerThread = class(TZThread)
+      private
+        Tasks : TTasks;
+      public
+        procedure Execute; override;
+      end;
+    PWorkerThread = ^TWorkerThread;
+  var
     TaskList : pointer;
     TaskProc : TTaskProc;
-    TaskCount,TaskStride : integer;
+    InitialTaskCount,TaskCount,TaskStride : integer;
+    FinishedTaskCount : integer;
     Lock : pointer;
+    Event : pointer;
+    ThreadCount : integer;
+    Threads : PWorkerThread;
     function RunNext : boolean;
   private
     class var Instance : TTasks;
     constructor Create;
   public
+    WorkerCount : integer;
     procedure Run(TaskProc : TTaskProc; TaskList : pointer; TaskCount,TaskStride : integer);
     destructor Destroy; override;
   end;
@@ -3650,7 +3671,7 @@ begin
   GlobalContent := Save;
 
   {$if (not defined(minimal)) and (not defined(zgeviz))}
-  if (Producers.Count>0) {and Assigned(Self._ZApp) }and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
+  if (Producers.Count>0) and Self.HasZApp and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
   {$ifend}
 end;
@@ -3876,25 +3897,80 @@ end;
 constructor TTasks.Create;
 begin
   Self.Lock := Platform_CreateMutex;
+  Self.Event := Platform_CreateEvent;
+  WorkerCount := Platform_GetCpuCount;
+  ThreadCount := WorkerCount-1;
 end;
 
 destructor TTasks.Destroy;
+var
+  PT : PWorkerThread;
+  I : integer;
 begin
+  if Threads<>nil then
+  begin
+    PT := Threads;
+    for I := 0 to ThreadCount-1 do
+    begin
+      PT^.Terminated := True;
+      Platform_SignalEvent(Event);
+      Platform_FreeThread(PT^.Handle);
+      PT^.Free;
+      Inc(PT);
+    end;
+    FreeMem(Threads);
+  end;
   Platform_FreeMutex(Lock);
+  Platform_FreeEvent(Event);
   inherited;
 end;
 
 procedure TTasks.Run(TaskProc: TTaskProc; TaskList: pointer; TaskCount,
   TaskStride: integer);
+var
+  I : integer;
+  PT : PWorkerThread;
+  T : TWorkerThread;
 begin
   Self.TaskList := TaskList;
   Self.TaskProc := TaskProc;
   Self.TaskCount := TaskCount;
+  Self.InitialTaskCount := TaskCount;
   Self.TaskStride := TaskStride;
+  FinishedTaskCount := 0;
   {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write('Running tasks: ' + IntToStr(TaskCount));
   {$endif}
+
+  if (ThreadCount>0) then
+  begin
+    if Threads=nil then
+    begin
+      {$ifndef minimal}
+      IsMultiThread:=True; //Tell the Delphi mm that we are multithreaded
+      {$endif}
+      //Create threads
+      GetMem(Threads,ThreadCount*SizeOf(Pointer));
+      PT := Threads;
+      for I := 0 to ThreadCount-1 do
+      begin
+        T := TWorkerThread.Create;
+        T.Tasks := Self;
+        T.Handle := Platform_CreateThread(T);
+        PT^ := T;
+        Inc(PT);
+      end;
+    end else
+    begin
+      //wake up threads
+      for I := 0 to ThreadCount-1 do
+        Platform_SignalEvent(Event);
+    end;
+  end;
+
   while Self.RunNext do ;
+
+  while (FinishedTaskCount<InitialTaskCount) do Platform_Sleep(0);
 end;
 
 function TTasks.RunNext: boolean;
@@ -3912,7 +3988,10 @@ begin
     end;
   Platform_LeaveMutex(Self.Lock);
   if Result then
+  begin
     Self.TaskProc(ATask);
+    Inc(FinishedTaskCount);
+  end;
 end;
 
 function Tasks : TTasks;
@@ -3920,6 +3999,17 @@ begin
   if TTasks.Instance=nil then
     TTasks.Instance := TTasks.Create;
   Result := TTasks.Instance;
+end;
+
+{ TTasks.TWorkerThread }
+
+procedure TTasks.TWorkerThread.Execute;
+begin
+  while not Terminated do
+  begin
+    Self.Tasks.RunNext;
+    Platform_WaitEvent(Self.Tasks.Event);
+  end;
 end;
 
 initialization

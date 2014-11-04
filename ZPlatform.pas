@@ -66,6 +66,16 @@ procedure Platform_EnterMutex(P : pointer);
 procedure Platform_LeaveMutex(P : pointer);
 procedure Platform_Sleep(time : integer);
 
+function Platform_CreateThread(ZThread : TZThread) : pointer;
+procedure Platform_FreeThread(T : pointer);
+
+function Platform_CreateEvent : pointer;
+procedure Platform_WaitEvent(E : pointer);
+procedure Platform_SignalEvent(E : pointer);
+procedure Platform_FreeEvent(E : pointer);
+
+function Platform_GetCpuCount : integer;
+
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
 //function Platform_GenerateFontTexture(Char : integer) : integer;
 

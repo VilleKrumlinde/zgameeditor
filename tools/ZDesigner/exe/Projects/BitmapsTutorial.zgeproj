@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application">
+<ZApplication Name="App" Caption="ZGameEditor application" NoSound="1">
   <OnLoaded>
     <Variable Name="Temp1"/>
     <Variable Name="Temp2"/>
@@ -42,10 +42,10 @@ Pixel.G=Y*0.25;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=noise2(X,Y) * 3;
-Pixel.R=Temp1;
-Pixel.G=Temp1;
-Pixel.B=Temp1;]]>
+float temp=noise2(X,Y) * 3;
+Pixel.R=temp;
+Pixel.G=temp;
+Pixel.B=temp;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -88,9 +88,9 @@ Pixel.B=Temp1;]]>
 //Pixel : current color (rgb)
 
 //Temp1=abs(sin((X*16) + Y*2 + noise2(X*16,Y*8)));
-Temp1=abs(frac(noise2(X*1.5,Y*1.25)*20));
-Pixel.R=Temp1;
-Pixel.G=Temp1*0.5;
+float temp=abs(frac(noise2(X*1.5,Y*1.25)*20));
+Pixel.R=temp;
+Pixel.G=temp*0.5;
 Pixel.B=0;]]>
               </Expression>
             </BitmapExpression>
@@ -117,16 +117,16 @@ Pixel.B=Temp1;]]>
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-
-Temp1=abs(cos(noise2(X*2,Y*2) * 18));
+float temp;
+Temp=abs(cos(noise2(X*2,Y*2) * 18));
 if(Temp1>0.75) {
-  Pixel.R=Temp1;
-  Pixel.G=Temp1;
+  Pixel.R=Temp;
+  Pixel.G=Temp;
   Pixel.B=0;
 } else {
-  Pixel.R=Temp1;
+  Pixel.R=Temp;
   Pixel.G=0;
-  Pixel.B=Temp1;
+  Pixel.B=Temp;
 }]]>
               </Expression>
             </BitmapExpression>
@@ -343,7 +343,7 @@ this.V.X*=2;
       <Children>
         <Material Name="NoiseMaterial">
           <Textures>
-            <MaterialTexture Texture="NoiseBitmap" TextureWrapMode="1"/>
+            <MaterialTexture Texture="SimpleNoise" TextureWrapMode="1"/>
           </Textures>
         </Material>
         <Bitmap Name="NoiseBitmap" Width="4" Height="4" Filter="2">

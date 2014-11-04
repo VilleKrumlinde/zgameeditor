@@ -174,6 +174,9 @@ type
   TComponentHelper = class helper for TZComponent
   public
     function ZApp : TZApplication;
+    {$ifndef minimal}
+    function HasZApp: boolean;
+    {$endif}
   end;
 
   TSetAppState = class(TCommand)
@@ -1318,6 +1321,23 @@ begin
   end;
   Result := _ZApp;
 end;
+
+{$ifndef minimal}
+function TComponentHelper.HasZApp: boolean;
+begin
+  if _ZApp=nil then
+  begin
+    if Self is TZApplication then
+      Exit(True)
+    else
+    begin
+      if (Self.OwnerList=nil) or (Self.OwnerList.Owner=nil) then
+        Exit(False);
+      Exit( Self.OwnerList.Owner.HasZApp );
+    end;
+  end;
+end;
+{$endif}
 
 initialization
 
