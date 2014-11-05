@@ -396,7 +396,7 @@ begin
   B.SetMemory(Pixels,GL_RGBA,GL_FLOAT);
 
 
-  TaskCount := Tasks.WorkerCount;
+  TaskCount := ZMath.Min(H, Tasks.WorkerCount);
   GetMem(TaskList,TaskCount*SizeOf(TPixelTask));
   Task := TaskList;
 

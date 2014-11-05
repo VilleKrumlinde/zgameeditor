@@ -233,6 +233,7 @@ type
     AndroidBuildAPKrelease1: TMenuItem;
     LogClearMenuItem: TMenuItem;
     GamutImage: TImage;
+    EnableThreadedProcessingMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -310,6 +311,7 @@ type
     procedure AndroidBuildReleaseApkActionExecute(Sender: TObject);
     procedure LogClearMenuItemClick(Sender: TObject);
     procedure FileOpenActionBeforeExecute(Sender: TObject);
+    procedure EnableThreadedProcessingMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -2321,6 +2323,11 @@ begin
   finally
     SymTemp.Free;
   end;
+end;
+
+procedure TEditorForm.EnableThreadedProcessingMenuItemClick(Sender: TObject);
+begin
+  ZClasses.Tasks.Enabled := (Sender as TMenuItem).Checked;
 end;
 
 procedure TEditorForm.ExecToolAndWait(const ExeFile,ParamString : string);
