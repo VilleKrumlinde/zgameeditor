@@ -32,22 +32,22 @@ Temp1=0;]]>
   <Content>
     <Group Name="Globals">
       <Children>
-        <DefineVariable Name="Temp1"/>
-        <DefineVariable Name="Temp2"/>
-        <DefineVariable Name="Temp3"/>
-        <DefineVariable Name="Temp4"/>
-        <DefineVariable Name="ParamIndex"/>
-        <DefineConstant Name="ParamCount" Value="8"/>
-        <DefineConstant Name="MaxPatterns" Value="4"/>
-        <DefineConstant Name="MaxColors" Value="3"/>
-        <DefineConstant Name="MaxSize" Value="2"/>
-        <DefineConstant Name="MaxGraphic" Value="3"/>
-        <DefineConstant Name="MaxLifeTime" Value="8"/>
-        <DefineConstant Name="MaxPCount" Value="800"/>
-        <DefineVariable Name="HideGui"/>
-        <DefineConstant Name="BitmapAlpha" Comment="Max alpha for cursor textures" Value="0.25"/>
-        <DefineVariable Name="CloneCount"/>
-        <DefineConstant Name="IsScreenSaver" Comment="1 for running in screensaver more"/>
+        <Variable Name="Temp1"/>
+        <Variable Name="Temp2"/>
+        <Variable Name="Temp3"/>
+        <Variable Name="Temp4"/>
+        <Variable Name="ParamIndex"/>
+        <Constant Name="ParamCount" Value="8"/>
+        <Constant Name="MaxPatterns" Value="4"/>
+        <Constant Name="MaxColors" Value="3"/>
+        <Constant Name="MaxSize" Value="2"/>
+        <Constant Name="MaxGraphic" Value="3"/>
+        <Constant Name="MaxLifeTime" Value="8"/>
+        <Constant Name="MaxPCount" Value="800"/>
+        <Variable Name="HideGui"/>
+        <Constant Name="BitmapAlpha" Comment="Max alpha for cursor textures" Value="0.25"/>
+        <Variable Name="CloneCount"/>
+        <Constant Name="IsScreenSaver" Comment="1 for running in screensaver more"/>
       </Children>
     </Group> <!-- Globals -->
 
@@ -57,12 +57,12 @@ Temp1=0;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[this.Pixel.R=
+<![CDATA[pixel.R=
   (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
   (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
-this.Pixel.G=this.Pixel.R;
-this.Pixel.B=this.Pixel.R;
-this.Pixel.A=this.Pixel.R;
+pixel.G=pixel.R;
+pixel.B=pixel.R;
+pixel.A=pixel.R;
 
 /*
 Temp2=X-0.5;
@@ -74,10 +74,10 @@ Temp2 = (1 + (atan2(Temp3,Temp2) / 33.14)) * 0.5;
 //Temp1 = Temp1 + Temp2*0.5;
 
 Temp1=Temp1*1.6 + noise2(Temp2*33,Temp2*27) * 0.8;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1;
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1;
 */]]>
               </Expression>
             </BitmapExpression>
@@ -89,23 +89,23 @@ this.Pixel.A=Temp1;
               <Expression>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
-this.Pixel.R=1;
+pixel.R=1;
 
-Temp2=X-0.5;
-Temp3=Y-0.5;
+float Temp2=X-0.5;
+float Temp3=Y-0.5;
 //Distance from center 1..0
-Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
+float Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) );
 Temp1+=noise2(X*5,Y*3)*0.2;
 if(Temp1<0.6)
   Temp1=0;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
 
 if(Temp1==0)
-  this.Pixel.A=0;
+  pixel.A=0;
 else
-  this.Pixel.A=Temp1;]]>
+  pixel.A=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -114,17 +114,17 @@ else
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[this.Pixel.R=1;
+<![CDATA[pixel.R=1;
 
-Temp2=X-0.5;
-Temp3=Y-0.5;
+float Temp2=X-0.5;
+float Temp3=Y-0.5;
 //Distance from center 1..0
-Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+float Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
 
-this.Pixel.R=Temp1;//*0.2;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1*BitmapAlpha;]]>
+pixel.R=Temp1;//*0.2;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1*BitmapAlpha;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -133,17 +133,17 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
+<![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*1.8;
 
 Temp1+=1-Temp2;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1*BitmapAlpha;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1*BitmapAlpha;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -152,17 +152,17 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[Temp2=X-0.5;
-Temp3=Y-0.5;
+<![CDATA[float Temp2=X-0.5;
+float Temp3=Y-0.5;
 //Distance from center 1..0
-Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+float Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
 
 Temp1=sin(Temp1*5);
 
-this.Pixel.R=Temp1;//*0.2;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1*BitmapAlpha;]]>
+pixel.R=Temp1;//*0.2;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1*BitmapAlpha;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -171,17 +171,17 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[Temp1=abs(noise2(this.X*4,this.Y*4));
+<![CDATA[float Temp1=abs(noise2(x*4,y*4));
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*2.5;
 
 Temp1+=1-Temp2;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1*BitmapAlpha;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1*BitmapAlpha;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -190,17 +190,17 @@ this.Pixel.A=Temp1*BitmapAlpha;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[Temp2=X-0.5 + noise2(X*3,Y*3)*0.1;;
-Temp3=Y-0.5 + noise2(X*3,Y*3)*0.1;
+<![CDATA[float Temp2=X-0.5 + noise2(X*3,Y*3)*0.1;;
+float Temp3=Y-0.5 + noise2(X*3,Y*3)*0.1;
 //Distance from center 1..0
-Temp1 = 1 - sqrt ( pow(Temp2*Temp2,1.5) + pow(Temp3*Temp3,1.5) ) * 2.75;
+float Temp1 = 1 - sqrt ( pow(Temp2*Temp2,1.5) + pow(Temp3*Temp3,1.5) ) * 2.75;
 
 Temp1=sin(Temp1*8);
 
-this.Pixel.R=Temp1;//*0.2;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1*BitmapAlpha;]]>
+pixel.R=Temp1;//*0.2;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1*BitmapAlpha;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -265,16 +265,16 @@ CurrentModel.Position.Y=Temp1*1;]]>
           <Producers>
             <BitmapExpression>
               <Expression>
-<![CDATA[Temp2=X-0.5;
-Temp3=Y-0.5;
+<![CDATA[float Temp2=X-0.5;
+float Temp3=Y-0.5;
 //Distance from center 1..0
-Temp1 = 1.0 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.5;
+float Temp1 = 1.0 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.5;
 
 Temp1-=noise2(X*8,Y*8)*0.25;
-this.Pixel.R=Temp1;//*0.2;
-this.Pixel.G=1-Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=1-Temp1*0.5;]]>
+pixel.R=Temp1;//*0.2;
+pixel.G=1-Temp1;
+pixel.B=Temp1;
+pixel.A=1-Temp1*0.5;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -286,18 +286,18 @@ this.Pixel.A=1-Temp1*0.5;]]>
       <Children>
         <Model Name="GuiModel" Category="3">
           <Definitions>
-            <DefineVariable Name="HeartTimer"/>
-            <DefineVariable Name="HeartSoundSwitch"/>
-            <DefineVariable Name="IsAutoPilot" Comment="1=If autopilot active"/>
-            <DefineVariable Name="AutoPilotRandomTimer"/>
-            <DefineConstant Name="AutoPilotSpeed" Value="0.2"/>
+            <Variable Name="HeartTimer"/>
+            <Variable Name="HeartSoundSwitch"/>
+            <Variable Name="IsAutoPilot" Comment="1=If autopilot active"/>
+            <Variable Name="AutoPilotRandomTimer"/>
+            <Constant Name="AutoPilotSpeed" Value="0.2"/>
           </Definitions>
           <OnRender>
             <Condition Expression="return HideGui==0;">
               <OnTrue>
                 <UseMaterial Material="TextMaterial"/>
                 <RenderText Text="FPS" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
-                <RenderText TextFloatRef="App FpsCounter" X="-0.74" Y="-0.92" Scale="0.4"/>
+                <RenderText TextFloatRef="App.FpsCounter" X="-0.74" Y="-0.92" Scale="0.4"/>
                 <RenderTransformGroup>
                   <Children>
                     <RenderSetColor Color="0.67 0 0 1"/>
@@ -594,7 +594,7 @@ if(IsScreenSaver==1) {
         <Material Name="TextMaterial" Color="0.82 0.82 0.82 1" Light="0" ZBuffer="0"/>
         <Model Name="ParamModel" Comment="One instance per parameter" Category="2">
           <Definitions>
-            <DefineVariable Name="ThisParamIndex"/>
+            <Variable Name="ThisParamIndex"/>
           </Definitions>
           <OnRender>
             <Condition Expression="return HideGui==0;">
@@ -603,31 +603,31 @@ if(IsScreenSaver==1) {
                 <Condition Expression="return (ThisParamIndex==0);">
                   <OnTrue>
                     <RenderText Text="PCOUNT" UseModelSpace="255"/>
-                    <RenderText TextFloatRef="PEmitter1 ParticlesPerSecond" Y="-0.16" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="PEmitter1.ParticlesPerSecond" Y="-0.16" UseModelSpace="255"/>
                   </OnTrue>
                   <OnFalse>
                     <Condition Expression="return (ThisParamIndex==1);">
                       <OnTrue>
                         <RenderText Text="PLIFE" UseModelSpace="255"/>
-                        <RenderText TextFloatRef="PEmitter1 ParticleLifetime" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                        <RenderText TextFloatRef="PEmitter1.ParticleLifetime" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
                       </OnTrue>
                       <OnFalse>
                         <Condition Expression="return (ThisParamIndex==2);">
                           <OnTrue>
                             <RenderText Text="GRAV X" UseModelSpace="255"/>
-                            <RenderText TextFloatRef="PEmitter1 Gravity" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                            <RenderText TextFloatRef="PEmitter1.Gravity" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
                           </OnTrue>
                           <OnFalse>
                             <Condition Expression="return (ThisParamIndex==3);">
                               <OnTrue>
                                 <RenderText Text="GRAV Y" UseModelSpace="255"/>
-                                <RenderText TextFloatRef="PEmitter1 Gravity 1" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                                <RenderText TextFloatRef="PEmitter1.Gravity.Y" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
                               </OnTrue>
                               <OnFalse>
                                 <Condition Expression="return (ThisParamIndex==4);">
                                   <OnTrue>
                                     <RenderText Text="BITMAP" UseModelSpace="255"/>
-                                    <RenderText TextFloatRef="CursorGraphic Value" Y="-0.16" UseModelSpace="255"/>
+                                    <RenderText TextFloatRef="CursorGraphic" Y="-0.16" UseModelSpace="255"/>
                                   </OnTrue>
                                 </Condition>
                               </OnFalse>
@@ -641,19 +641,19 @@ if(IsScreenSaver==1) {
                 <Condition Expression="return (ThisParamIndex==5);">
                   <OnTrue>
                     <RenderText Text="SIZE" UseModelSpace="255"/>
-                    <RenderText TextFloatRef="CursorSize Value" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorSize" Y="-0.16" FloatMultiply="100" UseModelSpace="255"/>
                   </OnTrue>
                 </Condition>
                 <Condition Expression="return (ThisParamIndex==6);">
                   <OnTrue>
                     <RenderText Text="COLOR" UseModelSpace="255"/>
-                    <RenderText TextFloatRef="CursorColor Value" Y="-0.16" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorColor" Y="-0.16" UseModelSpace="255"/>
                   </OnTrue>
                 </Condition>
                 <Condition Expression="return (ThisParamIndex==7);">
                   <OnTrue>
                     <RenderText Text="PATT" UseModelSpace="255"/>
-                    <RenderText TextFloatRef="CursorPattern Value" Y="-0.16" UseModelSpace="255"/>
+                    <RenderText TextFloatRef="CursorPattern" Y="-0.16" UseModelSpace="255"/>
                   </OnTrue>
                 </Condition>
               </OnTrue>
@@ -697,11 +697,11 @@ CurrentModel.Position.Y=3;]]>
       <Children>
         <Model Name="CursorModel" Position="-3.7155 4 0" Category="1" CollisionBounds="0.75 0.75 0 0">
           <Definitions>
-            <DefineVariable Name="CursorRotation"/>
-            <DefineVariable Name="CursorGraphic"/>
-            <DefineVariable Name="CursorSize"/>
-            <DefineVariable Name="CursorColor"/>
-            <DefineVariable Name="CursorPattern"/>
+            <Variable Name="CursorRotation"/>
+            <Variable Name="CursorGraphic"/>
+            <Variable Name="CursorSize"/>
+            <Variable Name="CursorColor"/>
+            <Variable Name="CursorPattern"/>
           </Definitions>
           <States>
             <ModelState Name="ActiveClone_CursorState">
@@ -762,10 +762,10 @@ if(CursorEnergy<0.1) {
                 </Condition>
               </OnUpdate>
               <Definitions>
-                <DefineVariable Name="CursorEnergy"/>
-                <DefineVariable Name="CursorEnergyBoost"/>
-                <DefineVariable Name="CursorInitialPLife"/>
-                <DefineVariable Name="CursorInitialPCount"/>
+                <Variable Name="CursorEnergy"/>
+                <Variable Name="CursorEnergyBoost"/>
+                <Variable Name="CursorInitialPLife"/>
+                <Variable Name="CursorInitialPCount"/>
               </Definitions>
               <OnCollision>
                 <PlaySound Sound="CursorHitCursorSound" NoteNr="36" ReplayDelay="0.2"/>
@@ -901,22 +901,22 @@ this.PColor.B+=Temp1;
         <Sound Name="CursorHitCursorSound" Length="0.05" Volume="0.35" Osc2Waveform="1" UseFilter="1" FilterCutoff="0.61" FilterQ="0.83" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Mod2Active="1" Mod2Source="4" Mod2Amount="0.11" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.05" Lfo0Active="1" Lfo0Speed="0.02"/>
         <Group Name="CursorMaterialGroup">
           <Children>
-            <Material Name="CursorMaterial1" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+            <Material Name="CursorMaterial1" Light="0" Blend="2" ZBuffer="0">
               <Textures>
                 <MaterialTexture Texture="BeamBitmap" TexCoords="1"/>
               </Textures>
             </Material>
-            <Material Name="CursorMaterial2" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+            <Material Name="CursorMaterial2" Light="0" Blend="2" ZBuffer="0">
               <Textures>
                 <MaterialTexture Texture="AbsNoiseBitmap" TexCoords="1"/>
               </Textures>
             </Material>
-            <Material Name="CursorMaterial3" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+            <Material Name="CursorMaterial3" Light="0" Blend="2" ZBuffer="0">
               <Textures>
                 <MaterialTexture Texture="RingBitmap" TexCoords="1"/>
               </Textures>
             </Material>
-            <Material Name="CursorMaterial4" Color="1 1 1 1" Light="0" Blend="2" ZBuffer="0">
+            <Material Name="CursorMaterial4" Light="0" Blend="2" ZBuffer="0">
               <Textures>
                 <MaterialTexture Texture="SpaceRingBitmap" TexCoords="1"/>
               </Textures>

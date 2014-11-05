@@ -185,10 +185,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -197,10 +193,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -240,10 +232,6 @@ object EditorForm: TEditorForm
           Caption = 'Expression'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -322,10 +310,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -430,10 +414,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -775,7 +755,6 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 4
                 ExplicitTop = 27
                 ExplicitWidth = 615
                 ExplicitHeight = 762
@@ -1441,9 +1420,7 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 0
                 ExplicitTop = 27
-                ExplicitWidth = 0
                 ExplicitHeight = 566
                 inherited Label10: TLabel
                   Left = 10
@@ -1570,10 +1547,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerMusicTabSheet'
           ImageIndex = 2
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           inline MusicEditFrame1: TMusicEditFrame
             Left = 0
             Top = 0
@@ -1626,10 +1599,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           Margins.Left = 4
@@ -2976,6 +2945,12 @@ object EditorForm: TEditorForm
       end
       object N10: TMenuItem
         Action = ShowCompilerDetailsAction
+      end
+      object EnableThreadedProcessingMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Enable threaded processing'
+        Checked = True
+        OnClick = EnableThreadedProcessingMenuItemClick
       end
     end
     object StyleMenuItem: TMenuItem

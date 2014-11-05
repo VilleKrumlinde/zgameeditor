@@ -504,10 +504,10 @@ LevelScoreVibrate*=0.9;
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=1-(abs(noise2(X*8,Y*10))*0.2);
-this.Pixel.R=Temp1*0.98;
-this.Pixel.G=Temp1*0.98;
-this.Pixel.B=Temp1*0.98;]]>
+float Temp1=1-(abs(noise2(X*8,Y*10))*0.2);
+pixel.R=Temp1*0.98;
+pixel.G=Temp1*0.98;
+pixel.B=Temp1*0.98;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -525,14 +525,14 @@ this.Pixel.B=Temp1*0.98;]]>
 //Pixel : current color (rgb)
 
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 
-Temp4=sqrt(Temp2*Temp2 + Temp3*Temp3);
+float Temp4=sqrt(Temp2*Temp2 + Temp3*Temp3);
 Temp2=atan2(Temp2*4,Temp3*5)*8;
 
 
-Temp1=1-(sin(Temp2)*(1-Temp4*1.9));
+float Temp1=1-(sin(Temp2)*(1-Temp4*1.9));
 //Temp1*=Temp1*0.2;
 
 if(Temp1<=0.9)
@@ -542,14 +542,14 @@ if(Temp4>=0.5)
 //Temp1=1-Temp1;
 
 if(Temp1>=0.9)
-  this.Pixel.A=0;
+  pixel.A=0;
 else
-  this.Pixel.A=0.15;
+  pixel.A=0.15;
   
 Temp1=1-Temp1;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -726,14 +726,14 @@ CaveDecorMaterialTexture.TextureY = random(1,0.3);]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=
-  (noise2(this.X*3.4,this.Y*3.5) +
-  noise2(this.X*6,this.Y*6.6)) * 1.8;
+float Temp1=
+  (noise2(x*3.4,y*3.5) +
+  noise2(x*6,y*6.6)) * 1.8;
 Temp1=abs(Temp1)*9.9;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1*0.5;
-this.Pixel.B=Temp1*0.5;
-//this.Pixel.A=0.6;]]>
+pixel.R=Temp1;
+pixel.G=Temp1*0.5;
+pixel.B=Temp1*0.5;
+//pixel.A=0.6;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -1326,17 +1326,17 @@ EyeExplodeP1.Speed*=random(1,0.3);*/]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
+<![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+Temp2=x-0.5;
+Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*1.8;
 
 Temp1+=1-Temp2;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1;]]>
                   </Expression>
                 </BitmapExpression>
               </Producers>
@@ -1376,10 +1376,10 @@ SmokeModel.Scale.Y+=App.DeltaTime;]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
+<![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+Temp2=x-0.5;
+Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*2.25;
 
 Temp1+=Temp2;
@@ -1390,10 +1390,10 @@ if(Temp1<=0.9)
 
 //Temp1=1-Temp1;
 Temp1=1-Temp1;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1;]]>
                   </Expression>
                 </BitmapExpression>
               </Producers>
@@ -1429,12 +1429,12 @@ this.PColor.R=0.5;]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[this.Pixel.R=
+<![CDATA[pixel.R=
   (0.5-abs(X-0.5)*1.6 + cos(random(0,0.05))*0.4 ) +
   (0.5-abs(Y-0.5)*1.8 + random(0,0.08) );
-this.Pixel.G=this.Pixel.R;
-this.Pixel.B=this.Pixel.R;
-this.Pixel.A=this.Pixel.R;
+pixel.G=pixel.R;
+pixel.B=pixel.R;
+pixel.A=pixel.R;
 
 /*
 Temp2=X-0.5;
@@ -1446,10 +1446,10 @@ Temp2 = (1 + (atan2(Temp3,Temp2) / 33.14)) * 0.5;
 //Temp1 = Temp1 + Temp2*0.5;
 
 Temp1=Temp1*1.6 + noise2(Temp2*33,Temp2*27) * 0.8;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1;
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1;
 */]]>
                   </Expression>
                 </BitmapExpression>
@@ -1510,17 +1510,17 @@ this.V.Y-=1;]]>
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[this.Pixel.R=1;
+<![CDATA[pixel.R=1;
 
-Temp2=X-0.5;
-Temp3=Y-0.5;
+float Temp2=X-0.5;
+float Temp3=Y-0.5;
 //Distance from center 1..0
-Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
+float Temp1 = 1 - sqrt ( (Temp2*Temp2) + (Temp3*Temp3) ) * 1.9;
 
-this.Pixel.R=Temp1;//*0.2;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=Temp1;]]>
+pixel.R=Temp1;//*0.2;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=Temp1;]]>
                   </Expression>
                 </BitmapExpression>
               </Producers>
@@ -2520,10 +2520,10 @@ if(rnd()<0.5) {
               <Producers>
                 <BitmapExpression>
                   <Expression>
-<![CDATA[Temp1=noise2(this.X*4,this.Y*4);
+<![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=this.X-0.5;
-Temp3=this.Y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*2.25;
 
 Temp1+=Temp2;
@@ -2534,10 +2534,10 @@ if(Temp1<=0.9)
 
 //Temp1=1-Temp1;
 Temp1=1-Temp1;
-this.Pixel.R=Temp1;
-this.Pixel.G=Temp1;
-this.Pixel.B=Temp1;
-this.Pixel.A=1-Temp1;]]>
+pixel.R=Temp1;
+pixel.G=Temp1;
+pixel.B=Temp1;
+pixel.A=1-Temp1;]]>
                   </Expression>
                 </BitmapExpression>
               </Producers>

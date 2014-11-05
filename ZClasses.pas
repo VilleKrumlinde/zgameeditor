@@ -544,6 +544,9 @@ type
     constructor Create;
   public
     WorkerCount : integer;
+    {$ifndef minimal}
+    Enabled : boolean;
+    {$endif}
     procedure Run(TaskProc : TTaskProc; TaskList : pointer; TaskCount,TaskStride : integer);
     destructor Destroy; override;
   end;
@@ -3226,6 +3229,25 @@ var
     end;
   end;
 
+  function PatchBitmapExp(const S : ansistring) : ansistring;
+  var
+    L : ansistring;
+
+    procedure One(const Name,NewName : ansistring);
+    begin
+      if AnsiPos(Name,L)=0 then
+        Exit;
+      Result := AnsiReplaceText(Result,Name,NewName);
+    end;
+
+  begin
+    Result := S;
+    L := LowerCase(S);
+    One('this.x','x');
+    One('this.y','y');
+    One('this.pixel','pixel');
+  end;
+
 begin
   ZClassName := string(Xml.CurName);
 
@@ -3313,7 +3335,9 @@ begin
             zptExpression :
               begin
                 if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
-                  S := PatchOldPropRef(S);
+                  S := PatchOldPropRef(S)
+                else if (Prop.ExpressionKind=ekiBitmap) then
+                  S := PatchBitmapExp(S);
                 Value.ExpressionValue.Source := String(S);
               end
           else
@@ -3373,7 +3397,10 @@ begin
                         end;
                       zptExpression :
                         begin
-                          Value.ExpressionValue.Source := String(Trim(Xml.CurContent));
+                          S := Trim(Xml.CurContent);
+                          if Prop.ExpressionKind=ekiBitmap then
+                            S := PatchBitmapExp(S);
+                          Value.ExpressionValue.Source := String(S);
                           C.SetProperty(NestedProp,Value);
                         end;
                       zptBinary :
@@ -3900,6 +3927,12 @@ begin
   Self.Event := Platform_CreateEvent;
   WorkerCount := Platform_GetCpuCount;
   ThreadCount := WorkerCount-1;
+  {$ifdef zlog}
+  ZLog.GetLog(Self.ClassName).Write('Worker count: ' + IntToStr(WorkerCount));
+  {$endif}
+  {$ifndef minimal}
+  Self.Enabled := True;
+  {$endif}
 end;
 
 destructor TTasks.Destroy;
@@ -3938,11 +3971,8 @@ begin
   Self.InitialTaskCount := TaskCount;
   Self.TaskStride := TaskStride;
   FinishedTaskCount := 0;
-  {$ifdef zlog}
-  ZLog.GetLog(Self.ClassName).Write('Running tasks: ' + IntToStr(TaskCount));
-  {$endif}
 
-  if (ThreadCount>0) then
+  if (ThreadCount>0) {$ifndef minimal}and Self.Enabled{$endif} then
   begin
     if Threads=nil then
     begin
@@ -4007,7 +4037,7 @@ procedure TTasks.TWorkerThread.Execute;
 begin
   while not Terminated do
   begin
-    Self.Tasks.RunNext;
+    while Self.Tasks.RunNext do ;
     Platform_WaitEvent(Self.Tasks.Event);
   end;
 end;
