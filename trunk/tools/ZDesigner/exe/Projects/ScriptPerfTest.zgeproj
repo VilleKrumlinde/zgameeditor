@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="7" NoSound="1">
+  <OnLoaded>
+    <ZExpression>
+      <Expression>
+<![CDATA[//i7 quad core on battery Fps: 10
+//after move to ExecutionEnvironment: 9
+for(int i=0; i<1000; i++)
+  @SpawnModel(Model:Model1);]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression Expression="App.Caption=intToStr(App.FpsCounter);"/>
+  </OnUpdate>
+  <Content>
+    <Model Name="Model1">
+      <OnUpdate>
+        <ZExpression>
+          <Expression>
+<![CDATA[int i,j,k;
+float f1,f2;
+for(int x=0; x<100; x++) {
+
+   i=x;
+   i+=j+k;
+   k=i+x+i+42;
+
+
+   f1=x;
+   f2=f1+42;
+}]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+    </Model>
+    <Bitmap Comment="glowDesigner" Width="6" Height="6">
+      <Producers>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[//1024x1024
+//i7 quad core on battery: 7.1 seconds
+//after TExecutionEnvironment 8.5
+//after __pixel instead of properties: 7.5
+//tasks: 1.34
+
+//glow designer - jph2011
+
+//trace("X: " + intToStr(X));
+//trace("Y: " + intToStr(Y));
+//return;
+
+float posX = 0.5;
+float posY = 0.4;
+float focus=2.0;
+float sz=2.8;
+
+Pixel.R = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+posY=0.6;
+Pixel.B = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+posY=0.5; //sz=4.0;
+Pixel.G = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+
+sz=2.2;
+Pixel.a=focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;]]>
+          </Expression>
+        </BitmapExpression>
+      </Producers>
+    </Bitmap>
+  </Content>
+</ZApplication>

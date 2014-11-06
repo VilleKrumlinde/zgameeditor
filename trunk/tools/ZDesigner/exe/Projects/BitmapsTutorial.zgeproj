@@ -57,7 +57,7 @@ Pixel.B=temp;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=noise2(X*4,Y*4) * 3;
+float Temp1=noise2(X*4,Y*4) * 3;
 Pixel.R=Temp1;
 Pixel.G=Temp1;
 Pixel.B=Temp1;]]>
@@ -72,7 +72,7 @@ Pixel.B=Temp1;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=abs(noise2(X*4,Y*4) * 3);
+float Temp1=abs(noise2(X*4,Y*4) * 3);
 Pixel.R=Temp1;
 Pixel.G=Temp1;
 Pixel.B=Temp1;]]>
@@ -103,7 +103,7 @@ Pixel.B=0;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-Temp1=abs(cos(noise2(X*4,Y*4) * 18));
+float Temp1=abs(cos(noise2(X*4,Y*4) * 18));
 Pixel.R=Temp1;
 Pixel.G=Temp1;
 Pixel.B=Temp1;]]>
@@ -139,9 +139,9 @@ if(Temp1>0.75) {
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-//this.Pixel.R=(abs(sin(X*16)) + abs(cos(Y*16))) * 0.5;
+//pixel.R=(abs(sin(X*16)) + abs(cos(Y*16))) * 0.5;
 Pixel.R=sin(X*3.14)*0.5 + sin(Y*3.14)*0.5;
-//this.Pixel.R=sin( (X+noise2(x*2,y*2))*3.14)*0.5 + sin(Y+noise2(x,y)*3.14)*0.5;]]>
+//pixel.R=sin( (X+noise2(x*2,y*2))*3.14)*0.5 + sin(Y+noise2(x,y)*3.14)*0.5;]]>
               </Expression>
             </BitmapExpression>
           </Producers>

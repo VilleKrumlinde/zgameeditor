@@ -684,4 +684,42 @@ begin
     Result := AndroidTouch[TouchIndex].Id;
 end;
 
+function Platform_CreateThread(ZThread : TZThread) : pointer;
+begin
+  WriteLn('not implemented');
+  Result := nil;
+end;
+
+procedure Platform_FreeThread(T : pointer);
+begin
+  WriteLn('not implemented');
+end;
+
+function Platform_CreateEvent : pointer;
+begin
+  WriteLn('not implemented');
+  Result := nil;
+end;
+
+procedure Platform_WaitEvent(E : pointer);
+begin
+  WriteLn('not implemented');
+end;
+
+procedure Platform_SignalEvent(E : pointer);
+begin
+  WriteLn('not implemented');
+end;
+
+procedure Platform_FreeEvent(E : pointer);
+begin
+  WriteLn('not implemented');
+end;
+
+function Platform_GetCpuCount : integer;
+begin
+  WriteLn('not implemented');
+  Result := 1;
+end;
+
 end.

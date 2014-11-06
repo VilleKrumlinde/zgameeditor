@@ -3965,6 +3965,7 @@ var
   PT : PWorkerThread;
   T : TWorkerThread;
 begin
+  //TODO: test if already busy, if so spawn to another singleprocess tasks
   Self.TaskList := TaskList;
   Self.TaskProc := TaskProc;
   Self.TaskCount := TaskCount;
@@ -3993,7 +3994,7 @@ begin
     end else
     begin
       //wake up threads
-      for I := 0 to ThreadCount-1 do
+      for I := 0 to ZMath.Min(TaskCount,ThreadCount)-1 do
         Platform_SignalEvent(Event);
     end;
   end;
@@ -4020,7 +4021,9 @@ begin
   if Result then
   begin
     Self.TaskProc(ATask);
-    Inc(FinishedTaskCount);
+    Platform_EnterMutex(Self.Lock);
+      Inc(FinishedTaskCount);
+    Platform_LeaveMutex(Self.Lock);
   end;
 end;
 

@@ -9,22 +9,22 @@
               <Expression>
 <![CDATA[// Local variables
 
-float X, Y, B, S;
+float B, S;
 
 // Distance from center ( per axis )
 
-X = 0.5-this.X;
-Y = 0.5-this.Y;
+X = 0.5-X;
+Y = 0.5-Y;
 
 B = 64/2; // 64 = BitmapSize | 2 = Anti-Aliasing bias ( in pixels )
 
-this.Pixel.A = B*0.5-sqrt(X*X+Y*Y)*B;
+Pixel.A = B*0.5-sqrt(X*X+Y*Y)*B;
 
 // Set RGB to white
 
-this.Pixel.R = 1;
-this.Pixel.G = 1;
-this.Pixel.B = 1;]]>
+Pixel.R = 1;
+Pixel.G = 1;
+Pixel.B = 1;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -48,10 +48,10 @@ int centeroffset = 1;
 
 // default color
 
-this.pixel.r = 1;
-this.Pixel.g = 1;
-this.pixel.b = 1;
-this.Pixel.A = 0;
+pixel.r = 1;
+Pixel.g = 1;
+pixel.b = 1;
+Pixel.A = 0;
 
 //
 
@@ -70,10 +70,10 @@ float center = 0.5 -( 1.0 * centeroffset / width );
 //
 
 // determine angle of current pixel to center
-if( this.x - 0.5 >= 0 )
-  this_angle = atan2(( this.x - 0.5 ),( this.y - center ));
+if( x - 0.5 >= 0 )
+  this_angle = atan2(( x - 0.5 ),( y - center ));
 else
-  this_angle = PI + atan2(( 0.5 - this.x ),( center - this.y  ));
+  this_angle = PI + atan2(( 0.5 - x ),( center - y  ));
 
 // determine sprocket of current pixel
 this_sprocket = (( this_angle )/ angle );
@@ -83,14 +83,14 @@ normalx = sin(( angle * this_sprocket )+( angle / 2.0 ));
 normaly = cos(( angle * this_sprocket )+( angle / 2.0 ));
 
 // calculate distance of current pixel by dot product with normal
-distance =(( this.x - 0.5 )* normalx )+(( this.Y - center )* normaly );
+distance =(( x - 0.5 )* normalx )+(( Y - center )* normaly );
 
 // set alpha accordingly
-if( distance < maxdist ) this.pixel.a = ( maxdist - distance )/ aadist;
+if( distance < maxdist ) pixel.a = ( maxdist - distance )/ aadist;
 
-this.Pixel.R *= this.Pixel.A;
-this.Pixel.G *= this.Pixel.A;
-this.Pixel.B *= this.Pixel.A;]]>
+Pixel.R *= Pixel.A;
+Pixel.G *= Pixel.A;
+Pixel.B *= Pixel.A;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -106,16 +106,16 @@ float posY = 0.4;
 float focus=2.0;
 float sz=2.8;
 
-this.Pixel.R = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+Pixel.R = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
 
 posY=0.6;
-this.Pixel.B = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+Pixel.B = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
 
 posY=0.5; //sz=4.0;
-this.Pixel.G = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+Pixel.G = focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
 
 sz=2.2;
-this.Pixel.a=focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
+Pixel.a=focus-sqrt((posX-X)*(posX-X)+(posY-Y)*(posY-Y))*focus*sz;
 
 
 /*
@@ -132,14 +132,14 @@ this.Pixel+=.6;]]>
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=1; N1=8; N2=4; N3=4; S=5; Z=2.2;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(0-S);
- this.Pixel.g=Tp*(0-S);
- this.Pixel.b=Tp*(0-S);
- this.Pixel.a=Tp*(0-S);
+ Pixel.r=Tp*(0-S);
+ Pixel.g=Tp*(0-S);
+ Pixel.b=Tp*(0-S);
+ Pixel.a=Tp*(0-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -152,14 +152,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=4; N1=8; N2=4; N3=4; S=5; Z=2.1;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(1-S);
- this.Pixel.g=Tp*(3-S);
- this.Pixel.b=Tp*(2-S);
- this.Pixel.a=Tp*(4-S);
+ Pixel.r=Tp*(1-S);
+ Pixel.g=Tp*(3-S);
+ Pixel.b=Tp*(2-S);
+ Pixel.a=Tp*(4-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -172,14 +172,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=10; N1=8; N2=8; N3=8; S=1.9; Z=2.5;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(1-S);
- this.Pixel.g=Tp*(0-S);
- this.Pixel.b=Tp*(2-S);
- this.Pixel.a=Tp*(0-S);
+ Pixel.r=Tp*(1-S);
+ Pixel.g=Tp*(0-S);
+ Pixel.b=Tp*(2-S);
+ Pixel.a=Tp*(0-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -192,14 +192,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=5; N1=1.8; N2=1; N3=1; S=2; Z=2;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(0-S);
- this.Pixel.g=Tp*(1-S);
- this.Pixel.b=Tp*(2-S);
- this.Pixel.a=Tp*(0-S);
+ Pixel.r=Tp*(0-S);
+ Pixel.g=Tp*(1-S);
+ Pixel.b=Tp*(2-S);
+ Pixel.a=Tp*(0-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -212,14 +212,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=7; N1=1.5; N2=8; N3=8; S=2; Z=8;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(1-S);
- this.Pixel.g=Tp*(0-S);
- this.Pixel.b=Tp*(0-S);
- this.Pixel.a=Tp*(0-S);
+ Pixel.r=Tp*(1-S);
+ Pixel.g=Tp*(0-S);
+ Pixel.b=Tp*(0-S);
+ Pixel.a=Tp*(0-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -232,14 +232,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 <![CDATA[float R, T, Xp, Yp, N1, N2, N3, M, Tp, S, Z;
 M=0; N1=2.8; N2=3; N3=3; S=2; Z=2;
 
-Xp=(this.Y-.5)*z; Yp=(this.X-0.5)*z;
+Xp=(Y-.5)*z; Yp=(X-0.5)*z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.r=Tp*(0-S);
- this.Pixel.g=Tp*(1-S);
- this.Pixel.b=Tp*(0-S);
- this.Pixel.a=Tp*(0-S);
+ Pixel.r=Tp*(0-S);
+ Pixel.g=Tp*(1-S);
+ Pixel.b=Tp*(0-S);
+ Pixel.a=Tp*(0-S);
  }]]>
               </Expression>
             </BitmapExpression>
@@ -253,13 +253,13 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 M=4; N1=10; N2=10; N3=10; S=-6; Z=1.9;
 
 posX=.495;posY=0.495;  // sets position
-this.Pixel=1; this.Pixel.a=0; // color all for alpha
+Pixel=1; Pixel.a=0; // color all for alpha
 
-Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+Xp=(Y-posY)*Z; Yp=(X-posX)*Z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 
-this.Pixel.A=Tp*S;]]>
+Pixel.A=Tp*S;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -271,9 +271,9 @@ this.Pixel.A=Tp*S;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-this.pixel=1-abs(sin(.5-x))*2.3;
-this.pixel-=noise2(x*8,y*8)*.5;
-this.pixel-=rnd()*.3;]]>
+pixel=1-abs(sin(.5-x))*2.3;
+pixel-=noise2(x*8,y*8)*.5;
+pixel-=rnd()*.3;]]>
               </Expression>
             </BitmapExpression>
             <BitmapBlur Radius="5" Kind="2"/>
@@ -282,7 +282,7 @@ this.pixel-=rnd()*.3;]]>
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 
-this.pixel.a=1-abs(sin(.5-x))*2.3;]]>
+pixel.a=1-abs(sin(.5-x))*2.3;]]>
               </Expression>
             </BitmapExpression>
           </Producers>
@@ -295,14 +295,14 @@ this.pixel.a=1-abs(sin(.5-x))*2.3;]]>
 M=2; N1=6; N2=2; N3=7; S=-2; Z=4;
 posX=.495;posY=0.6;
 
-Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+Xp=(Y-posY)*Z; Yp=(X-posX)*Z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.a+=Tp*S;
- this.Pixel.r+=Tp*S;
- this.Pixel.g+=Tp*S;
- this.Pixel.b+=Tp*S;
+ Pixel.a+=Tp*S;
+ Pixel.r+=Tp*S;
+ Pixel.g+=Tp*S;
+ Pixel.b+=Tp*S;
  }]]>
               </Expression>
             </BitmapExpression>
@@ -312,14 +312,14 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 M=4; N1=6; N2=3; N3=3; S=-3; Z=2;
 posX=.495;posY=0.495;
 
-Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+Xp=(Y-posY)*Z; Yp=(X-posX)*Z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.a=Tp*S;
- this.Pixel.r=Tp*S;
- this.Pixel.g=Tp*S;
- this.Pixel.b=Tp*S;
+ Pixel.a=Tp*S;
+ Pixel.r=Tp*S;
+ Pixel.g=Tp*S;
+ Pixel.b=Tp*S;
  }]]>
               </Expression>
             </BitmapExpression>
@@ -334,16 +334,16 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
 M=2; N1=21; N2=3; N3=3; S=-4; Z=2;
 posX=.495;posY=0.495;
 
-Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+Xp=(Y-posY)*Z; Yp=(X-posX)*Z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.a+=Tp*S-rnd();
- this.Pixel.r+=Tp*S;
- this.Pixel.g+=Tp*S;
- this.Pixel.b+=Tp*S;
+ Pixel.a+=Tp*S-rnd();
+ Pixel.r+=Tp*S;
+ Pixel.g+=Tp*S;
+ Pixel.b+=Tp*S;
  }
-this.Pixel-=rnd();]]>
+Pixel-=rnd();]]>
               </Expression>
             </BitmapExpression>
             <BitmapExpression UseBlankSource="1">
@@ -352,21 +352,21 @@ this.Pixel-=rnd();]]>
 M=2; N1=21; N2=3; N3=3; S=-2; Z=2;
 posX=.495;posY=0.495;
 
-Xp=(this.Y-posY)*Z; Yp=(this.X-posX)*Z;
+Xp=(Y-posY)*Z; Yp=(X-posX)*Z;
 T=atan2(Yp,Xp); R=sqrt(Xp*Xp + Yp*Yp);
 Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
  if (Tp<0) {
- this.Pixel.a+=Tp*S-rnd();
- this.Pixel.r+=Tp*S;
- this.Pixel.g+=Tp*S;
- this.Pixel.b+=Tp*S;
+ Pixel.a+=Tp*S-rnd();
+ Pixel.r+=Tp*S;
+ Pixel.g+=Tp*S;
+ Pixel.b+=Tp*S;
  }
-this.Pixel=this.Pixel-rnd();]]>
+Pixel=Pixel-rnd();]]>
               </Expression>
             </BitmapExpression>
             <BitmapCombine Method="1"/>
             <BitmapBlur Radius="2" Amplify="1.2"/>
-            <BitmapExpression Expression="this.Pixel.a=this.Pixel.r*8;"/>
+            <BitmapExpression Expression="Pixel.a=Pixel.r*8;"/>
           </Producers>
         </Bitmap>
         <Bitmap Comment="Superformula" Width="4" Height="4">
@@ -386,9 +386,9 @@ float VarN3 = 18;
 float VarR, VarT, VarX, VarY, VarTemp;
 
 
-if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2x2)
-    VarX = (this.X-0.5)*7;  //Use the constant multiplying the expression
-    VarY = (this.Y-0.5)*7;  //to scale your image (zoom in and out) ;)
+if (X!=0 || Y!=0) { //this is always true (textures are multiples of 2x2)
+    VarX = (X-0.5)*7;  //Use the constant multiplying the expression
+    VarY = (Y-0.5)*7;  //to scale your image (zoom in and out) ;)
     VarT = atan2(VarY,VarX);
     VarR = sqrt(VarX*VarX + VarY*VarY);
     VarTemp = VarR - pow(
@@ -397,11 +397,11 @@ if (this.X!=0 || this.Y!=0) { //this is always true (textures are multiples of 2
         -1/VarN1);
 
     if (VarTemp < 0) { //If it does belong to the figure
-            this.Pixel.G = VarTemp*(-2.5);
+            Pixel.G = VarTemp*(-2.5);
             //The higher the multiplyer is,
             //the sharper the image :)
             //If you need a very sharp image just use:
-            //this.Pixel.G = 1;
+            //Pixel.G = 1;
             }
 }   // X or Y different by zero
     //Else is not needed since X or Y will be never equal to zero. if it happens, just add them]]>
