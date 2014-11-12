@@ -336,7 +336,7 @@ begin
   Env.Init;
   Env.StackPush(X);
   Env.StackPush(Y);
-  Env.StackPush(A);
+  Env.StackPushPointer(A);
 
   X := PSingle(Env.StackGetPtrToItem(0));
   Y := PSingle(Env.StackGetPtrToItem(1));

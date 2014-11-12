@@ -1400,7 +1400,7 @@ begin
     Tree.ZSelected.ComponentList.Change
   else if Assigned(Tree.ZSelected.Component) then
   begin
-    if (Tree.ZSelected.Component is TCommand) then
+    if (Tree.ZSelected.Component is TCommand) and (not (Tree.ZSelected.Component is TContentProducer)) then
       TCommand(Tree.ZSelected.Component).Execute
     else
       Tree.ZSelected.Component.Change;
@@ -3849,6 +3849,28 @@ type
     Section : integer;
   end;
 
+function BytePos(const Pattern: PByte; PatternLength : integer; const Buffer: PByte; const BufLen: cardinal): PByte;
+var
+  i: cardinal;
+  j: cardinal;
+  OK: boolean;
+begin
+  result := nil;
+  for i := 0 to BufLen - PatternLength do
+    if PByte(Buffer + i)^ = Pattern[0] then
+    begin
+      OK := true;
+      for j := 1 to PatternLength - 1 do
+        if PByte(Buffer + i + j)^ <> Pattern[j] then
+        begin
+          OK := false;
+          break
+        end;
+      if OK then
+        Exit(Buffer + i);
+    end;
+end;
+
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
   TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine,SectionNr : integer;
@@ -3860,6 +3882,8 @@ var
   Splitter,Lines : TStringList;
   Item : TMapName;
   Id : TZClassIds;
+  NameAnsi : ansistring;
+  P : PByte;
 
   Infos : PComponentInfoArray;
   Ci : TZComponentInfo;
@@ -4134,6 +4158,25 @@ begin
     UnitsToRemove.Free;
     UsedComponents.Free;
     Splitter.Free;
+  end;
+
+
+  //Remove type names
+  Stream := Section.RawData;
+  Stream.Position := 0;
+  Infos := ZClasses.ComponentManager.GetAllInfos;
+  for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
+  begin
+    Ci := TZComponentInfo(Infos[Id]);
+    NameAnsi := AnsiString(Ci.ZClass.ClassName);
+    while True do
+    begin
+      P := BytePos( PByte(@NameAnsi[1]), Length(NameAnsi) ,Stream.Memory, Stream.Size);
+      if P<>nil then
+        FillChar(P^, Length(NameAnsi), 0)
+      else
+        Break;
+    end;
   end;
 
 end;

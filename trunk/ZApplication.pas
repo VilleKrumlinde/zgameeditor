@@ -1335,7 +1335,8 @@ begin
         Exit(False);
       Exit( Self.OwnerList.Owner.HasZApp );
     end;
-  end;
+  end else
+    Exit(True);
 end;
 {$endif}
 
