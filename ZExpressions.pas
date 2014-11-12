@@ -172,7 +172,7 @@ type
     function GetData : PFloat;
     function CalcLimit : integer;
     function GetElementSize : integer;
-    procedure SetExternalData(P : pointer);
+    function SetExternalData(P: pointer) : PPointer;
   end;
 
   //Virtual machine instruction baseclass
@@ -1339,10 +1339,11 @@ begin
   Result := @P^[Index * Self.GetElementSize];
 end;
 
-procedure TDefineArray.SetExternalData(P: pointer);
+function TDefineArray.SetExternalData(P: pointer) : PPointer;
 begin
   Self.Data := P;
   Self.IsExternal := True;
+  Result := @Self.Data;
 end;
 
 { TExpArrayWrite }

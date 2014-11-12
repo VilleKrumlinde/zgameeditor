@@ -250,7 +250,8 @@ type
     {$endif}
   end;
 
-  TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap);
+  TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap,
+    ekiMesh);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -3243,9 +3244,19 @@ var
   begin
     Result := S;
     L := LowerCase(S);
-    One('this.x','x');
-    One('this.y','y');
-    One('this.pixel','pixel');
+    if Prop.ExpressionKind=ekiBitmap then
+    begin
+      One('this.x','x');
+      One('this.y','y');
+      One('this.pixel','pixel');
+    end
+    else if Prop.ExpressionKind=ekiMesh then
+    begin
+      One('this.v','v');
+      One('this.n','n');
+      One('this.c','c');
+      One('this.texcoord','texcoord');
+    end;
   end;
 
 begin
@@ -3336,7 +3347,7 @@ begin
               begin
                 if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
                   S := PatchOldPropRef(S)
-                else if (Prop.ExpressionKind=ekiBitmap) then
+                else if (Prop.ExpressionKind in [ekiBitmap,ekiMesh]) then
                   S := PatchBitmapExp(S);
                 Value.ExpressionValue.Source := String(S);
               end
@@ -3398,7 +3409,7 @@ begin
                       zptExpression :
                         begin
                           S := Trim(Xml.CurContent);
-                          if Prop.ExpressionKind=ekiBitmap then
+                          if Prop.ExpressionKind in [ekiBitmap,ekiMesh] then
                             S := PatchBitmapExp(S);
                           Value.ExpressionValue.Source := String(S);
                           C.SetProperty(NestedProp,Value);

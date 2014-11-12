@@ -963,11 +963,11 @@ LevelGruntCount-=1;]]>
                     <MeshExpression>
                       <Expression>
 <![CDATA[//V : current vertex
-//this.V.X += cos(abs(this.V.Y*10000));
-if(this.V.Y>0)
-  this.V.X*=this.V.Y*22;
-if(this.V.Y<-0.3)
-  this.V.X=this.V.X*0.3;]]>
+//v.X += cos(abs(v.Y*10000));
+if(v.Y>0)
+  v.X*=v.Y*22;
+if(v.Y<-0.3)
+  v.X=v.X*0.3;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -1237,8 +1237,8 @@ else
                     <MeshExpression Scale="0.4 0.4 1">
                       <Expression>
 <![CDATA[//V : current vertex
-if(this.V.Y<-0.85)
-  this.V.Y*=1.6;]]>
+if(v.Y<-0.85)
+  v.Y*=1.6;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -1678,39 +1678,40 @@ pixel.B=0;//Temp1*1.4;]]>
                 </Material>
                 <Mesh Name="SpikesMesh">
                   <Producers>
-                    <MeshSphere ZSamples="20" RadialSamples="20"/>
+                    <MeshSphere ZSamples="16" RadialSamples="16"/>
                     <MeshExpression>
                       <Expression>
 <![CDATA[//http://mathworld.wolfram.com/SphericalCoordinates.html
+float temp1,temp2,temp3,temp4;
 
-Temp2=atan2(this.V.Y,this.V.X);
+Temp2=atan2(v.Y,v.X);
 
-Temp4=this.V.Z;
+Temp4=v.Z;
 Temp3=atan2(sqrt(1 - Temp4 * Temp4), Temp4);
 
 /*if( (Temp2>0.1) && (Temp2<0.2) )
-  this.V.X*=2;
+  v.X*=2;
 
 if( (Temp3>0.1) && (Temp3<0.2) )
-  this.V.X*=2;*/
+  v.X*=2;*/
 
 //Temp1=1+clamp(cos(Temp2*10),0,1) * 0.3;
-//this.V.X*=Temp1;
+//v.X*=Temp1;
 //Temp1=1+clamp(sin(Temp3*10),0,1) * 0.3;
-//this.V.Y*=Temp1;
+//v.Y*=Temp1;
 Temp1=
  clamp(-0.8+
   (cos(Temp2*4) +
   sin(Temp3*8)) * 0.9,0,1);
-this.V.X*=1 + Temp1;
-this.V.Y*=1 + Temp1;
-this.V.Z*=1 + Temp1;
-//this.V.Z*=Temp1+Temp2;
+v.X*=1 + Temp1;
+v.Y*=1 + Temp1;
+v.Z*=1 + Temp1;
+//v.Z*=Temp1+Temp2;
 
 //Final scaling
-this.V.X*=0.2;
-this.V.Y*=0.2;
-this.V.Z*=0.2;]]>
+v.X*=0.2;
+v.Y*=0.2;
+v.Z*=0.2;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -1900,11 +1901,11 @@ pixel.G=pixel.B*0.2;]]>
             <MeshNoise NoiseSpeed="1 1 2"/>
             <MeshExpression>
               <Expression>
-<![CDATA[//this.V.Z+=noise2(this.V.X,this.V.Y*1000);
-if(this.V.Y>0.4) {
-  this.V.X *= sin(this.V.Y);
-  this.V.Z *= 4;//sin(this.V.Y);
-  this.V.Y *= this.V.Y*10;
+<![CDATA[//v.Z+=noise2(v.X,v.Y*1000);
+if(v.Y>0.4) {
+  v.X *= sin(v.Y);
+  v.Z *= 4;//sin(v.Y);
+  v.Y *= v.Y*10;
 }]]>
               </Expression>
             </MeshExpression>
@@ -1944,11 +1945,11 @@ pixel.G=1-pixel.R*3;
             <MeshExpression>
               <Expression>
 <![CDATA[//V : current vertex
-if( (abs(this.V.X)>0.02) &&
-(abs(this.V.Y)>0.02) )
+if( (abs(v.X)>0.02) &&
+(abs(v.Y)>0.02) )
 {
-  this.V.X*=4;
-  this.V.Y*=4;
+  v.X*=4;
+  v.Y*=4;
 }]]>
               </Expression>
             </MeshExpression>
@@ -1959,18 +1960,18 @@ if( (abs(this.V.X)>0.02) &&
             <MeshSphere ZSamples="20" RadialSamples="20"/>
             <MeshExpression>
               <Expression>
-<![CDATA[Temp1=noise3(this.V.X, this.V.Y, this.V.Z);
-Temp1=atan2(this.V.Y,this.V.X);
+<![CDATA[float Temp1=noise3(v.X, v.Y, v.Z);
+Temp1=atan2(v.Y,v.X);
 
 Temp1=(0.5+sin(Temp1*4)*0.5) *0.8;
-this.V.X*=(1 + Temp1);
+v.X*=(1 + Temp1);
 
 Temp1=(0.5+cos(Temp1*16)*0.5)*0.8;
-this.V.Y*=1 + Temp1;
+v.Y*=1 + Temp1;
 
-//Temp1=atan2(this.V.Y+this.V.X,this.V.Z);
+//Temp1=atan2(v.Y+v.X,v.Z);
 //Temp1=(0.5+sin(Temp1*6)*0.5)*0.8;
-//this.V.Z*=1 + Temp1;]]>
+//v.Z*=1 + Temp1;]]>
               </Expression>
             </MeshExpression>
           </Producers>

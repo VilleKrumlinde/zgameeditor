@@ -38,7 +38,7 @@ PlayerLives=3;]]>
     </AppState>
   </States>
   <Content>
-    <AudioMixer Ch0Active="1" Ch0Volume="0.31" Ch0UseDelay="1" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.38" Ch1UseDelay="1" Ch1DelayLength="0.26" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.05" Lfo1Active="1" Lfo1IsBipolar="1" Lfo1Speed="0.01"/>
+    <AudioMixer Ch0Active="1" Ch0Volume="0.5" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
     <Group Name="Globals">
       <Children>
         <Variable Name="Temp1"/>
@@ -71,15 +71,15 @@ PlayerLives=3;]]>
             <MeshExpression Scale="0.5 0.2 0.5">
               <Expression>
 <![CDATA[//V : current vertex
-Temp1=1-abs(this.V.X);
-this.V.X*=1+Temp1;
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;
 
-Temp1=1-abs(this.V.Y);
-if(this.V.Y>0) {
-  Temp1 += noise2(this.V.X,0)*1.2;
-  Temp1-= (1 - this.V.X) * 0.45;
+Temp1=1-abs(v.Y);
+if(v.Y>0) {
+  Temp1 += noise2(v.X,0)*1.2;
+  Temp1-= (1 - v.X) * 0.45;
 }
-this.V.Y*=1+Temp1;]]>
+v.Y*=1+Temp1;]]>
               </Expression>
             </MeshExpression>
           </Producers>
@@ -589,10 +589,10 @@ this.TexCoord.Y=clamp(this.TexCoord.Y+sin(Temp1)*0.05,0,1);]]>
 <![CDATA[//V : current vertex
 
 //Move pivot
-this.V.Y+=1;
+v.Y+=1;
 
-if(this.V.Y>1)
-  this.V.X*=1.25;]]>
+if(v.Y>1)
+  v.X*=1.25;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -650,12 +650,12 @@ TreeModel.Scale.Y=1+(TreePersonality*0.5);]]>
                 <MeshExpression Scale="0.25 1 0.1">
                   <Expression>
 <![CDATA[//V : current vertex
-this.V.Y+=1;
-if(this.V.Y<0.5)
-  this.V.Y*=0.5;
-this.V.X*= 1-abs(this.V.Y*0.4);
-if(abs(this.V.X)>0.3)
-  this.V.X*=1 + clamp(abs(noise2(this.V.X*26+CurrentModel.Personality*4,this.V.Y*137.7))*2.5,0,0.65);// random(0,0.1);]]>
+v.Y+=1;
+if(v.Y<0.5)
+  v.Y*=0.5;
+v.X*= 1-abs(v.Y*0.4);
+if(abs(v.X)>0.3)
+  v.X*=1 + clamp(abs(noise2(v.X*26+CurrentModel.Personality*4,v.Y*137.7))*2.5,0,0.65);// random(0,0.1);]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -783,29 +783,14 @@ pixel.B=Temp1*0.5;
 
 
 //Make square
-Temp1=1-abs(this.V.X);
-this.V.X*=1+Temp1;
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;
 
-Temp1=1-abs(this.V.Y);
-if( abs(this.V.X)<0.8 ) {
-  Temp1 += abs(noise2(this.V.X*7344.1512,MonkeyPersonality*333.3))*3.5;
+Temp1=1-abs(v.Y);
+if( abs(v.X)<0.8 ) {
+  Temp1 += abs(noise2(v.X*7344.1512,MonkeyPersonality*333.3))*3.5;
 }
-this.V.Y*=0.5+Temp1;
-
-/*
-Temp2=atan2(this.V.Y + MonkeyPersonality,this.V.X + MonkeyPersonality);
-
-Temp4=this.V.Z;
-Temp3=atan2(sqrt(1 - Temp4 * Temp4), Temp4);
-
-Temp1=
- clamp(-0.8+
-  (cos(Temp2*4) +
-  sin(Temp3*8)) * 0.8,0,0.5);
-this.V.X*=1 + Temp1;
-this.V.Y*=1 + Temp1;
-this.V.Z*=1 + Temp1;
-*/]]>
+v.Y*=0.5+Temp1;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -816,10 +801,10 @@ this.V.Z*=1 + Temp1;
                     <MeshExpression>
                       <Expression>
 <![CDATA[//V : current vertex
-Temp1=atan2(this.V.X,this.V.Y) + MonkeyPersonality;
+float Temp1=atan2(v.X,v.Y) + MonkeyPersonality;
 Temp1=1 + (cos(Temp1*42) * 0.15);
-this.V.X*=Temp1;
-this.V.Y*=Temp1;]]>
+v.X*=Temp1;
+v.Y*=Temp1;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -1147,10 +1132,10 @@ CurrentModel.Rotation.Z += random(0,0.015);]]>
                 <MeshExpression>
                   <Expression>
 <![CDATA[//V : current vertex
-Temp1=noise3(this.V.X*3,this.V.Y*27,this.V.Z*12) * 0.2;
-this.V.X+=Temp1;
-this.V.Y+=Temp1;
-this.V.Z+=Temp1;]]>
+float Temp1=noise3(v.X*3,v.Y*27,v.Z*12) * 0.2;
+v.X+=Temp1;
+v.Y+=Temp1;
+v.Z+=Temp1;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -1328,8 +1313,8 @@ EyeExplodeP1.Speed*=random(1,0.3);*/]]>
                   <Expression>
 <![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=x-0.5;
-Temp3=y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*1.8;
 
 Temp1+=1-Temp2;
@@ -1466,12 +1451,12 @@ pixel.A=Temp1;
                 <MeshExpression Scale="1 2 0.5">
                   <Expression>
 <![CDATA[//V : current vertex
-Temp1=exp(abs(this.V.Y));
-this.V.X -= sin(Temp1*1.5)*1.5;
-if(this.V.Z>0.1)
-  this.V.Z=1;
-if(this.V.Z<-0.1)
-  this.V.Z=-1;]]>
+float Temp1=exp(abs(v.Y));
+v.X -= sin(Temp1*1.5)*1.5;
+if(v.Z>0.1)
+  v.Z=1;
+if(v.Z<-0.1)
+  v.Z=-1;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -1482,21 +1467,21 @@ if(this.V.Z<-0.1)
                 <MeshExpression Scale="0.1 0.52 0.1">
                   <Expression>
 <![CDATA[//Make square
-Temp1=1-abs(this.V.X);
-this.V.X*=1+Temp1;
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;
 
-Temp1=1-abs(this.V.Y);
-this.V.Y*=1+Temp1;
+Temp1=1-abs(v.Y);
+v.Y*=1+Temp1;
 
-//if((this.V.X>0) && (this.V.Y<=0) && (this.V.Y>=-0.1))
-//  this.V.Y-=0.4;
+//if((v.X>0) && (v.Y<=0) && (v.Y>=-0.1))
+//  v.Y-=0.4;
 
-if( (this.V.Y<=-0.5) && (this.V.X>0) ){
-  this.V.X=4;
+if( (v.Y<=-0.5) && (v.X>0) ){
+  v.X=4;
 }
 
 //Sätt pivotpunkt uppåt
-this.V.Y-=1;]]>
+v.Y-=1;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -1727,13 +1712,13 @@ CurrentModel.Velocity.X*=0.85;]]>
                 <MeshExpression Scale="0.25 0.38 0.25">
                   <Expression>
 <![CDATA[//V : current vertex
-this.V.Y-=1;
-Temp1=exp(abs(this.V.Y));
-this.V.X -= sin(Temp1*0.5)*1.1;
-//if(this.V.Z>0.1)
-  //this.V.Z=1;
-//if(this.V.Z<-0.1)
-  //this.V.Z=-1;]]>
+v.Y-=1;
+float Temp1=exp(abs(v.Y));
+v.X -= sin(Temp1*0.5)*1.1;
+//if(v.Z>0.1)
+  //v.Z=1;
+//if(v.Z<-0.1)
+  //v.Z=-1;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
@@ -1967,22 +1952,15 @@ if(rnd()<0.5) {
                           <Expression>
 <![CDATA[//V : current vertex
 
-//Make square
-/*Temp1=1-abs(this.V.X);
-this.V.X*=1+Temp1;
-
-Temp1=1-abs(this.V.Z);
-this.V.Z*=1+Temp1;*/
-
-Temp1=
-  sin(CurrentModel.Personality+ this.V.X*2.2)+cos(this.V.Y*3.223)+sin(this.V.Z*2);
-Temp2=
-  sin(CurrentModel.Personality+ this.V.X*0.3434)+cos(this.V.Y*5.223)+sin(this.V.Z*2.22);
+float Temp1=
+  sin(CurrentModel.Personality+ v.X*2.2)+cos(v.Y*3.223)+sin(v.Z*2);
+float Temp2=
+  sin(CurrentModel.Personality+ v.X*0.3434)+cos(v.Y*5.223)+sin(v.Z*2.22);
 
 Temp2=noise2(Temp1*0.8,Temp2 + CurrentModel.Personality*3.333) * 0.8;
-this.V.X+=Temp2;
-this.V.Y+=Temp2;
-this.V.Z+=Temp2;]]>
+v.X+=Temp2;
+v.Y+=Temp2;
+v.Z+=Temp2;]]>
                           </Expression>
                         </MeshExpression>
                       </Producers>
@@ -2072,29 +2050,8 @@ CurrentModel.Position.X += random(0,0.15);]]>
 
 
 //Make square
-Temp1=1-abs(this.V.X);
-this.V.X*=1+Temp1;
-
-/*Temp1=1-abs(this.V.Y);
-if( abs(this.V.X)<0.8 ) {
-  Temp1 += abs(noise2(this.V.X*7344.1512,MonkeyPersonality*333.3))*1.5;
-}
-this.V.Y*=1+Temp1; */
-
-/*
-Temp2=atan2(this.V.Y + MonkeyPersonality,this.V.X + MonkeyPersonality);
-
-Temp4=this.V.Z;
-Temp3=atan2(sqrt(1 - Temp4 * Temp4), Temp4);
-
-Temp1=
- clamp(-0.8+
-  (cos(Temp2*4) +
-  sin(Temp3*8)) * 0.8,0,0.5);
-this.V.X*=1 + Temp1;
-this.V.Y*=1 + Temp1;
-this.V.Z*=1 + Temp1;
-*/]]>
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -2105,13 +2062,13 @@ this.V.Z*=1 + Temp1;
                     <MeshExpression Scale="1 1 0.5">
                       <Expression>
 <![CDATA[//V : current vertex
-Temp1=this.V.X;
+float Temp1=v.X;
 if(Temp1==0)
   Temp1=0.0001;
-Temp1=atan2(this.V.Y,Temp1);// + CurrentModel.Personality;
+Temp1=atan2(v.Y,Temp1);// + CurrentModel.Personality;
 Temp1=1 + abs(tan(Temp1*2.3) * 0.01);
-this.V.X*=Temp1;
-this.V.Y*=Temp1;]]>
+v.X*=Temp1;
+v.Y*=Temp1;]]>
                       </Expression>
                     </MeshExpression>
                   </Producers>
@@ -2423,12 +2380,12 @@ CurrentModel.Velocity.Y=sin(Temp3)*Temp2;
                 <MeshExpression Scale="0.4 0.3 0.3">
                   <Expression>
 <![CDATA[//V : current vertex
-/*Temp1=exp(abs(this.V.Y));
-this.V.X -= sin(Temp1*1.5)*1.5;
-if(this.V.Z>0.1)
-  this.V.Z=1;
-if(this.V.Z<-0.1)
-  this.V.Z=-1;*/]]>
+/*Temp1=exp(abs(v.Y));
+v.X -= sin(Temp1*1.5)*1.5;
+if(v.Z>0.1)
+  v.Z=1;
+if(v.Z<-0.1)
+  v.Z=-1;*/]]>
                   </Expression>
                 </MeshExpression>
               </Producers>

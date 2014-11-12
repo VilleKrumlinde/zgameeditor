@@ -1271,7 +1271,12 @@ begin
         end;
       ekiBitmap :
         begin
-          S := 'void __pixel(float x, float y, vec4 pixel) { ' + S + #13#10' }';
+          S := 'void __f(float x, float y, vec4 pixel) { ' + S + #13#10' }';
+          Compiler.AllowFunctions := True;
+        end;
+      ekiMesh :
+        begin
+          S := 'void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + S + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
     end;
@@ -1283,7 +1288,11 @@ begin
 
     Compiler.SetSource(S);
 
-    Compiler.Execute;
+    try
+      Compiler.Execute;
+    finally
+      SymTab.Remove('__f');
+    end;
 
     if Compiler.Successful then
     begin
@@ -1303,8 +1312,6 @@ begin
         CodeGen.GenRoot(Compiler.ZFunctions);
       except
         //Om något går fel under kodgenereringen så rensa koden så att den inte körs
-        if (ExpKind=ekiBitmap) then
-          SymTab.Remove('__pixel');
         Target.Clear;
         raise;
       end;
@@ -1325,9 +1332,8 @@ begin
         end;
       end;
 
-      if (ExpKind=ekiBitmap) and (Target.Count>0) then
+      if (ExpKind in [ekiBitmap,ekiMesh]) and (Target.Count>0) then
       begin
-        SymTab.Remove('__pixel');
         //We don't want expreturn to clean up stack on exit
         (Target.Items[Target.Count-1] as TExpReturn).Arguments := 0;
       end;

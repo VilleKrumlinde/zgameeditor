@@ -60,7 +60,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer;
+uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, SyncObjs;
 
 {$i-}  //No io-test on files, code tests ioresult
 
@@ -684,36 +684,43 @@ begin
     Result := AndroidTouch[TouchIndex].Id;
 end;
 
-function Platform_CreateThread(ZThread : TZThread) : pointer;
+function ThreadWrapper(Data : pointer) : longint;
 begin
-  WriteLn('not implemented');
-  Result := nil;
+  TZThread(Data).Execute;
+  EndThread( 0 );
+end;
+
+function Platform_CreateThread(ZThread : TZThread) : pointer;
+var
+  id : LongWord;
+begin
+  BeginThread(ThreadWrapper, ZThread, id);
+  Result := pointer(id);
 end;
 
 procedure Platform_FreeThread(T : pointer);
 begin
-  WriteLn('not implemented');
+
 end;
 
 function Platform_CreateEvent : pointer;
 begin
-  WriteLn('not implemented');
-  Result := nil;
+  Result := TEventObject.Create(nil,False,False,'');
 end;
 
 procedure Platform_WaitEvent(E : pointer);
 begin
-  WriteLn('not implemented');
+  TEventObject(E).WaitFor(INFINITE);
 end;
 
 procedure Platform_SignalEvent(E : pointer);
 begin
-  WriteLn('not implemented');
+  TEventObject(E).SetEvent;
 end;
 
 procedure Platform_FreeEvent(E : pointer);
 begin
-  WriteLn('not implemented');
+  TEventObject(E).Free;
 end;
 
 function Platform_GetCpuCount : integer;

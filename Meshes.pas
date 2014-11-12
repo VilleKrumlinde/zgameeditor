@@ -115,14 +115,21 @@ type
 
   //Change vertices using a zexpression
   TMeshExpression = class(TMeshProducer)
+  strict private
+    type
+      PVertexTask = ^TVertexTask;
+      TVertexTask = record
+        PVert,PNorm : PZVector3f;
+        PColor : PMeshVertexColor;
+        PTex : PZVector2f;
+        Count : integer;
+      end;
+    procedure VertexTask(Task : pointer);
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
   public
     Expression : TZExpressionPropValue;
-    V,N : TZVector3f;
-    C : TZColorf;
-    TexCoord : TZVector2f;
     AutoNormals,VertexColors,HasTexCoords : boolean;
   end;
 
@@ -1163,27 +1170,80 @@ begin
       '//N : current normal (turn off AutoNormals when modifying normals)'#13#10+
       '//C : current color (turn on VertexColors)'#13#10 +
       '//TexCoord : current texture coordinate (turn on HasTexCoords)';
+    List.GetLast.ExpressionKind := ekiMesh;
     {$endif}
   List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}(@AutoNormals), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
   List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}(@VertexColors), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasTexCoords',{$ENDIF}(@HasTexCoords), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'V',{$ENDIF}(@V), zptVector3f);
-    List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'N',{$ENDIF}(@N), zptVector3f);
-    List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'C',{$ENDIF}(@C), zptColorf);
-    List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'TexCoord',{$ENDIF}(@TexCoord), zptVector3f);
-    List.GetLast.NeverPersist := True;
+end;
+
+procedure TMeshExpression.VertexTask(Task: pointer);
+var
+  Env : TExecutionEnvironment;
+  Av,An,Ac,At : TDefineArray;
+  T : PVertexTask;
+  I : integer;
+  V,N,Tex : PPointer;
+  C : PColorf;
+begin
+  T := PVertexTask(Task);
+
+  //void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord)
+
+  Av := TDefineArray.Create(nil);
+  Av.SizeDim1 := 3;
+  An := TDefineArray.Create(nil);
+  An.SizeDim1 := 3;
+  Ac := TDefineArray.Create(nil);
+  Ac.SizeDim1 := 4;
+  At := TDefineArray.Create(nil);
+  At.SizeDim1 := 2;
+
+  Env.Init;
+  Env.StackPushPointer(Av);
+  Env.StackPushPointer(An);
+  Env.StackPushPointer(Ac);
+  Env.StackPushPointer(At);
+
+  V := Av.SetExternalData(T.PVert);
+  N := An.SetExternalData(T.PNorm);
+  C := PColorf(Ac.GetData);
+  Tex := At.SetExternalData(T.PTex);
+  for I := 0 to T.Count-1 do
+  begin
+    if VertexColors then
+      C^ := ColorBtoF(T.PColor^);
+    ZExpressions.RunCode(Expression.Code,@Env);
+    Inc(PZVector3f(V^));
+    Inc(PZVector3f(N^));
+    if VertexColors then
+    begin
+      T.PColor^ := ColorFtoB(C^);
+      Inc(T.PColor);
+    end;
+    if HasTexCoords then
+      Inc(PZVector2f(Tex^));
+  end;
+
+
+  Av.Free;
+  An.Free;
+  Ac.Free;
+  At.Free;
 end;
 
 procedure TMeshExpression.ProduceOutput(Content : TContent; Stack: TZArrayList);
 var
   Mesh : TMesh;
-  I : integer;
+  I,J : integer;
   PColor : PMeshVertexColor;
   PTex : PZVector2f;
+
+  TaskCount : integer;
+  TaskList : pointer;
+  Task : PVertexTask;
+  TaskBlockSize : integer;
 begin
   {$ifndef minimal}
   if Stack.Count=0 then exit;
@@ -1198,28 +1258,31 @@ begin
     GetMem(Mesh.TexCoords,SizeOf(TZVector2f) * Mesh.VerticesCount);
   PTex := pointer(Mesh.TexCoords);
 
-  for I := 0 to Mesh.VerticesCount-1 do
+  TaskCount := ZMath.Min(Mesh.VerticesCount div 8 + 1, Tasks.WorkerCount);
+  GetMem(TaskList,TaskCount*SizeOf(TVertexTask));
+  Task := TaskList;
+
+  J := Mesh.VerticesCount;
+  TaskBlockSize := J div TaskCount;
+  for I := 0 to TaskCount-1 do
   begin
-    VecCopy3(Mesh.Vertices^[I],Self.V);
-    VecCopy3(Mesh.Normals^[I],Self.N);
-    if HasTexCoords then
-      PZVector2f(@Self.TexCoord)^ := PTex^;
-    if VertexColors then
-      Self.C := ColorBtoF(PColor^);
-    ZExpressions.RunCode(Expression.Code);
-    VecCopy3(Self.V,Mesh.Vertices^[I]);
-    VecCopy3(Self.N,Mesh.Normals^[I]);
-    if VertexColors then
-    begin
-      PColor^ := ColorFtoB(Self.C);
-      Inc(PColor);
-    end;
-    if HasTexCoords then
-    begin
-      PTex^ := Self.TexCoord;
-      Inc(PTex);
-    end;
+    if J>=TaskBlockSize then
+      Task.Count := TaskBlockSize
+    else
+      Task.Count := J;
+    Task.PVert := @Mesh.Vertices[I*TaskBlockSize];
+    Task.PNorm := @Mesh.Normals[I*TaskBlockSize];
+    Task.PColor := PColor;
+    Task.PTex := PTex;
+    Dec(J,TaskBlockSize);
+    Inc(PColor,Task.Count);
+    Inc(PTex,Task.Count);
+    Inc(Task);
   end;
+
+  Tasks.Run(Self.VertexTask,TaskList,TaskCount,SizeOf(TVertexTask));
+
+  FreeMem(TaskList);
 
   Mesh.Scale( Self.Scale );
 

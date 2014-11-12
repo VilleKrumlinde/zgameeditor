@@ -919,12 +919,13 @@ begin
   HideSelection := False;
   ShowRoot := False;
 
-  OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
+//  OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
 
   ReadOnly := True;
   OnExpanded := MyExpanded;
 end;
 
+//** The code below is currently not used **
 procedure TZComponentTreeView.MyCustomAdvancedDrawItem(Sender: TCustomTreeView; Node: TTreeNode;
     State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages,
     DefaultDraw: Boolean);
@@ -961,18 +962,6 @@ begin
       Canvas.Brush.Style := bsSolid;
       Canvas.Brush.Color := TStyleManager.ActiveStyle.GetStyleColor(scTreeView);
 
-      //Make a guess at what color makes good contrast to background and normal text
-//      Col := ColorToZColor(TStyleManager.ActiveStyle.GetStyleColor(scTreeView));
-//      if TStyleManager.ActiveStyle.GetStyleColor(scTreeView)=clWhite then //Math.Sum(PZVector3f(@Col.V)^)<1 then
-//        Canvas.Font.Color := $00FFFF00
-//      else
-//        Canvas.Font.Color := $00303030;
-
-
-//      if TStyleManager.ActiveStyle.GetStyleColor(scTreeView)=clWhite then //Math.Sum(PZVector3f(@Col.V)^)<1 then
-//        Canvas.Font.Color := RGB(255,162,0)
-//      else
-
       Col1 := ColorBtoF( ColorToRGB(TStyleManager.ActiveStyle.GetStyleColor(scTreeView)) );
       Col2 := ColorBtoF( ColorToRGB(TStyleManager.ActiveStyle.GetSystemColor(clWindowText)) );
 
@@ -982,13 +971,8 @@ begin
       Col1.V[3]:=0;
       Canvas.Font.Color := ColorFtoB(Col1);
 
-      //Use a fixed color for now that works in both dark and light backgrounds
-//      Canvas.Font.Color := RGB(0, 136, 18); //$00,$B5,$12);
-
-//      Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
       Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + Canvas.TextWidth(' '),
         NodeRect.Top + 1, Comment);
-      //Canvas.Font.Color := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
     end;
   end;
 

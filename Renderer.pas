@@ -189,7 +189,7 @@ type
   private
     procedure Prepare;
   protected
-    procedure RenderCharacter(Char : integer; Size : integer);
+    procedure RenderCharacter(Char : integer; Size : integer; const IsFirst : boolean);
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Bitmap : TZBitmap;
@@ -956,7 +956,7 @@ begin
       Driver.Translate(CharX,CharY,0);
       Driver.Scale(CharScale,CharScale,1);
       Driver.Rotate(CharRotate*180/PI,0,0,1);
-      CurFont.RenderCharacter(CurChar,FontSize);
+      CurFont.RenderCharacter(CurChar,FontSize, P=pointer(TheText));
     Driver.PopMatrix;
 
     CharX := CharX + XStep;
@@ -1057,7 +1057,7 @@ begin
   BmStruct.TopLeftY := 1.0 + Self.BorderPixels * Py;
 end;
 
-procedure TFont.RenderCharacter(Char, Size : integer);
+procedure TFont.RenderCharacter(Char, Size : integer; const IsFirst : boolean);
 var
   Characters : TZComponentList;
   CurSize,FontSize : integer;
@@ -1108,7 +1108,8 @@ begin
           BmStruct.TopLeftY - (BmStruct.TransY*((Char div BmStruct.CharsPerRow)+1)),0);
       Driver.Scale(BmStruct.ScaleX,BmStruct.ScaleY,1);
       Driver.MatrixMode(GL_MODELVIEW);
-        Bitmap.UseTextureBegin;
+        if IsFirst then
+          Bitmap.UseTextureBegin;  //Only switch texture on first call to reduce state changes
         Driver.RenderUnitQuad;
         //Bitmap.UseTextureEnd;
       Driver.MatrixMode(GL_TEXTURE);
