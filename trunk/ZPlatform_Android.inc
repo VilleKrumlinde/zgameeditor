@@ -60,7 +60,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, SyncObjs;
+uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, SyncObjs, SysUtils;
 
 {$i-}  //No io-test on files, code tests ioresult
 
@@ -724,9 +724,22 @@ begin
 end;
 
 function Platform_GetCpuCount : integer;
+var
+  Env : PJNIEnv;
+  RunClass : JClass;
+  Mid : JMethodID;
+  RunObj : JObject;
 begin
-  WriteLn('not implemented');
-  Result := 1;
+  CurVM^.GetEnv(CurVM,@Env,JNI_VERSION_1_6);
+
+  RunClass := Env^.FindClass(Env, 'java/lang/Runtime');
+
+  Mid := Env^.GetStaticMethodID(Env, RunClass , 'getRuntime', '()Ljava/lang/Runtime;');
+  RunObj := Env^.CallStaticObjectMethodV(Env, Jobject(AndroidThis), Mid, nil);
+
+  Mid := Env^.GetMethodID(Env, RunClass , 'availableProcessors', '()I');
+  Result := Env^.CallIntMethod(Env,RunObj,Mid);
+  AndroidLog( PChar('CPUs: ' + IntToStr(Result)) );
 end;
 
 end.

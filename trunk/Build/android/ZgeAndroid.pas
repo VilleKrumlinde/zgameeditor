@@ -29,7 +29,8 @@ library zgeandroid;
 
 {$MODE DELPHI}
 
-uses jni, ZOpenGL,
+uses jni, cthreads,
+  ZOpenGL,
   ZClasses,
   ZApplication,
   ZPlatform,
