@@ -1163,7 +1163,7 @@ begin
   end;
 
   LeftTyp := LeftOp.GetDataType;
-  if (LeftTyp.Kind in [zctVec2,zctVec3,zctVec4]) and (RightOp.Kind=zcSelect) then
+  if (LeftTyp.Kind in [zctVec2,zctVec3,zctVec4]) then
     Exit( InMultiAssign(True) );
 
   RightOp := MakeCompatible(RightOp,LeftTyp);

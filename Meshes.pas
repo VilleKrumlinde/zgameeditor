@@ -179,11 +179,11 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Count : integer;
-    RecursionCount : integer;
     OnIteration : TZComponentList;
     Iteration : integer;
     Position : TZVector3f;
     Rotation : TZVector3f;
+    RecursionCount : integer;
   end;
 
   //State for models
@@ -1258,12 +1258,12 @@ begin
     GetMem(Mesh.TexCoords,SizeOf(TZVector2f) * Mesh.VerticesCount);
   PTex := pointer(Mesh.TexCoords);
 
-  TaskCount := ZMath.Min(Mesh.VerticesCount div 8 + 1, Tasks.WorkerCount);
+  TaskCount := ZMath.Min(Mesh.VerticesCount div 512 + 1, Tasks.WorkerCount);
   GetMem(TaskList,TaskCount*SizeOf(TVertexTask));
   Task := TaskList;
 
   J := Mesh.VerticesCount;
-  TaskBlockSize := J div TaskCount;
+  TaskBlockSize := Round(J/TaskCount+0.5);
   for I := 0 to TaskCount-1 do
   begin
     if J>=TaskBlockSize then

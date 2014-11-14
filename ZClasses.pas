@@ -3977,12 +3977,14 @@ var
   T : TWorkerThread;
 begin
   //TODO: test if already busy, if so spawn to another singleprocess tasks
-  Self.TaskList := TaskList;
-  Self.TaskProc := TaskProc;
-  Self.TaskCount := TaskCount;
-  Self.InitialTaskCount := TaskCount;
-  Self.TaskStride := TaskStride;
-  FinishedTaskCount := 0;
+  Platform_EnterMutex(Self.Lock);
+    Self.TaskList := TaskList;
+    Self.TaskProc := TaskProc;
+    Self.TaskCount := TaskCount;
+    Self.InitialTaskCount := TaskCount;
+    Self.TaskStride := TaskStride;
+    FinishedTaskCount := 0;
+  Platform_LeaveMutex(Self.Lock);
 
   if (ThreadCount>0) {$ifndef minimal}and Self.Enabled{$endif} then
   begin
@@ -4002,12 +4004,10 @@ begin
         PT^ := T;
         Inc(PT);
       end;
-    end else
-    begin
-      //wake up threads
-      for I := 0 to ZMath.Min(TaskCount,ThreadCount)-1 do
-        Platform_SignalEvent(Event);
     end;
+    //wake up threads
+    for I := 0 to ZMath.Min(TaskCount,ThreadCount)-1 do
+      Platform_SignalEvent(Event);
   end;
 
   while Self.RunNext do ;
@@ -4051,8 +4051,8 @@ procedure TTasks.TWorkerThread.Execute;
 begin
   while not Terminated do
   begin
-    while Self.Tasks.RunNext do ;
     Platform_WaitEvent(Self.Tasks.Event);
+    while (not Terminated) and Self.Tasks.RunNext do ;
   end;
 end;
 
