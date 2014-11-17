@@ -858,9 +858,9 @@ begin
 end;
 
 procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
-//begin
-//  TThread.Synchronize(nil,
-//    procedure
+begin
+  TThread.Synchronize(nil,
+    procedure
     var
       I : integer;
       Tmp : TStringList;
@@ -881,9 +881,9 @@ procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level :
         Tmp.Free;
       end;
       LogListBox.ItemIndex := LogListBox.Items.Count-1;
-    end;
-//  );
-//end;
+    end
+  );
+end;
 
 procedure TEditorForm.ReadAppSettingsFromIni;
 var
@@ -3849,10 +3849,10 @@ type
     Section : integer;
   end;
 
-function BytePos(const Pattern: PByte; PatternLength : integer; const Buffer: PByte; const BufLen: cardinal): PByte;
+function BytePos(const Pattern: PByte; PatternLength : integer; const Buffer: PByte; const BufLen: integer): PByte;
 var
-  i: cardinal;
-  j: cardinal;
+  i: integer;
+  j: integer;
   OK: boolean;
 begin
   result := nil;
@@ -3869,6 +3869,11 @@ begin
       if OK then
         Exit(Buffer + i);
     end;
+end;
+
+function SortOnLength(List: TStringList; Index1, Index2: Integer): Integer;
+begin
+  Result := Length(List[Index2])-Length(List[Index1]);
 end;
 
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
@@ -4120,7 +4125,7 @@ begin
       Inc(TotalRemovedBytes,Item.Size);
       //Log.Write(Item.Name);
     end;
-    Log.Write('Removed: ' + IntToStr(TotalRemovedBytes) );
+    Log.Write('Removed code: ' + IntToStr(TotalRemovedBytes) );
 
     if DisplayDetailedReport then
     begin
@@ -4160,25 +4165,39 @@ begin
     Splitter.Free;
   end;
 
+  //--
 
   //Remove type names
-  Stream := Section.RawData;
-  Stream.Position := 0;
+  NamesToRemove := TStringList.Create;
   Infos := ZClasses.ComponentManager.GetAllInfos;
   for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
     Ci := TZComponentInfo(Infos[Id]);
-    NameAnsi := AnsiString(Ci.ZClass.ClassName);
+    NamesToRemove.Add(Ci.ZClass.ClassName)
+  end;
+  NamesToRemove.CustomSort(SortOnLength);
+
+  TotalRemovedBytes := 0;
+  Stream := Section.RawData;
+  Stream.Position := 0;
+  for I := 0 to NamesToRemove.Count-1 do
+  begin
+    NameAnsi := AnsiString(NamesToRemove[I]);
     while True do
     begin
       P := BytePos( PByte(@NameAnsi[1]), Length(NameAnsi) ,Stream.Memory, Stream.Size);
       if P<>nil then
-        FillChar(P^, Length(NameAnsi), 0)
+      begin
+        FillChar(P^, Length(NameAnsi), 0);
+        Inc(TotalRemovedBytes,Length(NameAnsi));
+      end
       else
         Break;
     end;
   end;
+  Log.Write('Removed type names: ' + IntToStr(TotalRemovedBytes) );
 
+  NamesToRemove.Free;
 end;
 
 procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);

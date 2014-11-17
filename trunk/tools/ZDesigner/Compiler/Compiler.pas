@@ -1235,6 +1235,16 @@ end;
 //////////////////////////
 
 
+function CloseComment(const S: string) : string;
+var
+  I : integer;
+begin
+  Result := S;
+  I := S.LastIndexOf('/*');
+  if I>-1 then
+    if S.LastIndexOf('*/')<I then
+      Result := S + '*/';
+end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable; ReturnType : TZcDataType;
@@ -1271,12 +1281,17 @@ begin
         end;
       ekiBitmap :
         begin
-          S := 'void __f(float x, float y, vec4 pixel) { ' + S + #13#10' }';
+          S := 'void __f(float x, float y, vec4 pixel) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
       ekiMesh :
         begin
-          S := 'void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + S + #13#10' }';
+          S := 'void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + CloseComment(S) + #13#10' }';
+          Compiler.AllowFunctions := True;
+        end;
+      ekiThread :
+        begin
+          S := 'void __f(int param) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
     end;
@@ -1332,7 +1347,7 @@ begin
         end;
       end;
 
-      if (ExpKind in [ekiBitmap,ekiMesh]) and (Target.Count>0) then
+      if (ExpKind > ekiLibrary) and (Target.Count>0) then
       begin
         //We don't want expreturn to clean up stack on exit
         (Target.Items[Target.Count-1] as TExpReturn).Arguments := 0;
