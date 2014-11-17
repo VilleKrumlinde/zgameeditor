@@ -250,7 +250,7 @@ type
      fcStringLength,fcStringIndexOf,fcStrToInt,fcOrd,
      fcIntToStr,fcSubStr,fcChr,fcCreateModel,fcTrace,
      fcTouchGetCount,fcTouchGetX,fcTouchGetY,fcTouchGetID,
-     fcGetBinaryProp,fcSetBinaryProp,fcGetModels,
+     fcGetBinaryProp,fcSetBinaryProp,fcGetModels,fcSleep,fcStartThread,
      //Mat4
      fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix,
      fcVec2,fcVec3,fcVec4
@@ -1111,6 +1111,19 @@ begin
           PPointer(P1)^ := L[I2];
           Inc(PPointer(P1));
         end;
+        HasReturnValue := False;
+      end;
+    fcSleep :
+      begin
+        Env.StackPopTo(I1);
+        Platform_Sleep(I1);
+        HasReturnValue := False;
+      end;
+    fcStartThread :
+      begin
+        Env.StackPopTo(I1);
+        Env.StackPopToPointer(P1);
+        TZThreadComponent(P1).Start(I1);
         HasReturnValue := False;
       end;
   {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}

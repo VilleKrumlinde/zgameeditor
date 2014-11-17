@@ -67,7 +67,8 @@ type
  MusicClassId,MusicControlClassId,
  SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
- ZFileClassId,FileActionClassId,FileMoveDataClassId
+ ZFileClassId,FileActionClassId,FileMoveDataClassId,
+ ThreadClassId
 );
 
   TZComponent = class;
@@ -251,7 +252,7 @@ type
   end;
 
   TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap,
-    ekiMesh);
+    ekiMesh,ekiThread);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -512,13 +513,36 @@ type
   end;
 
   //Threading support
+
+  //Basic thread wrapper
   TZThread = class
   public
     Handle : pointer;
     Terminated : boolean;
     procedure Execute; virtual; abstract;
+    procedure Start;
+    destructor Destroy; override;
   end;
 
+  //Thread component
+  TZThreadComponent = class(TZComponent)
+  strict private
+    type
+      TUserThread = class(TZThread)
+      private
+        Owner : TZThreadComponent;
+        Parameter : integer;
+      public
+        procedure Execute; override;
+      end;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Expression : TZExpressionPropValue;
+    procedure Start(Param : integer);
+  end;
+
+  //Threaded task execution
   TTaskProc = procedure(Task : pointer) of object;
   TTasks = class
   strict private
@@ -551,6 +575,7 @@ type
     procedure Run(TaskProc : TTaskProc; TaskList : pointer; TaskCount,TaskStride : integer);
     destructor Destroy; override;
   end;
+
 
 function Tasks : TTasks;
 
@@ -609,7 +634,7 @@ var
 
 implementation
 
-uses ZMath,ZLog,ZPlatform, ZApplication
+uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
   {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib,
   Generics.Collections,Zc_Ops
   {$endif}
@@ -3958,7 +3983,6 @@ begin
     begin
       PT^.Terminated := True;
       Platform_SignalEvent(Event);
-      Platform_FreeThread(PT^.Handle);
       PT^.Free;
       Inc(PT);
     end;
@@ -4000,7 +4024,7 @@ begin
       begin
         T := TWorkerThread.Create;
         T.Tasks := Self;
-        T.Handle := Platform_CreateThread(T);
+        T.Start;
         PT^ := T;
         Inc(PT);
       end;
@@ -4056,14 +4080,74 @@ begin
   end;
 end;
 
+{ TZThread }
+
+destructor TZThread.Destroy;
+begin
+  if Handle<>nil then
+    Platform_FreeThread(Handle);
+  inherited;
+end;
+
+procedure TZThread.Start;
+begin
+  Handle := Platform_CreateThread(Self);
+end;
+
+{ TZThreadComponent }
+
+procedure TZThreadComponent.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
+    {$ifndef minimal}
+    List.GetLast.DefaultValue.ExpressionValue.Source :=
+      '//int param : parameter passed in the createThread call';
+    List.GetLast.ExpressionKind := ekiThread;
+    {$endif}
+end;
+
+procedure TZThreadComponent.Start(Param: integer);
+var
+  T : TUserThread;
+begin
+  T := TUserThread.Create;
+  T.Owner := Self;
+  T.Parameter := Param;
+  T.Start;
+end;
+
+{ TZThreadComponent.TUserThread }
+
+procedure TZThreadComponent.TUserThread.Execute;
+var
+  Env : TExecutionEnvironment;
+begin
+  {$ifndef minimal}
+  GetLog(Self.ClassName).Write('Starting thread, parameter: ' + IntToStr(Self.Parameter));
+  {$endif}
+
+  Env.Init;
+  Env.StackPush(Self.Parameter);
+
+  ZExpressions.RunCode(Owner.Expression.Code,@Env);
+
+  {$ifndef minimal}
+  GetLog(Self.ClassName).Write('Exiting thread, parameter: ' + IntToStr(Self.Parameter));
+  {$endif}
+  Free;
+end;
+
 initialization
 
   ManagedHeap_Create;
 
-  //todo really need to register TLogicalGroup?
   Register(TLogicalGroup,LogicalGroupClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=4;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Group';{$endif}
+  Register(TZThreadComponent,ThreadClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Thread';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
 
 {$ifndef minimal}
   StringCache := TDictionary<AnsiString,AnsiString>.Create;

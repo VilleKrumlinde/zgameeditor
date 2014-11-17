@@ -1366,6 +1366,8 @@ begin
   MakeOne('vector2',fcVec2,'v2FF');
   MakeOne('vector3',fcVec3,'v3FFF');
   MakeOne('vector4',fcVec4,'v4FFFF');
+  MakeOne('sleep',fcSleep,'VI');
+  MakeOne('startThread',fcStartThread,'VR{Thread}I');
 
   //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
   MakeOne('__getLValue',fcGenLValue,'VF');
