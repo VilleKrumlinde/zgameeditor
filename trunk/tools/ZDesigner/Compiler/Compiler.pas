@@ -1241,7 +1241,7 @@ var
 begin
   Result := S;
   I := S.LastIndexOf('/*');
-  if I>-1 then
+  if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
 end;

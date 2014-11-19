@@ -4009,7 +4009,7 @@ begin
           NeedArray := True
         else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
           NeedArray := True
-        else if (AllObjects[I] is TBitmapExpression) then
+        else if (AllObjects[I] is TBitmapExpression) or (AllObjects[I] is TMeshExpression) then
           NeedArray := True
         else if (AllObjects[I] is TSampleImport) and ((AllObjects[I] as TSampleImport).SampleFileFormat=sffOGG) then
           NeedOgg := True
