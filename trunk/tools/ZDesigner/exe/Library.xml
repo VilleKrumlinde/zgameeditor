@@ -1196,103 +1196,221 @@ DebugHSV.Color.B = ColorExample[2];]]>
             <Material Name="DefaultMaterialHSV" Shading="1" Light="0" ZBuffer="0"/>
           </Definitions>
         </AppState>
-        <AppState Comment="MatrixExample Library Example">
+        <AppState Comment="Matrix Library Example">
           <OnStart>
-            <ZLibrary Comment="MatrixExample Library">
+            <ZLibrary Comment="Matrix Library">
               <Source>
-<![CDATA[//
+<![CDATA[// Returns a identity matrix.
 
-void RotationMatrixX(int K, float Angle)
+mat4 matrixIdentity()
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = 1;
+  m[1,1] = 1;
+  m[2,2] = 1;
+  m[3,3] = 1;
 
-  MatrixExample[K,0,0] = 1;
-  MatrixExample[K,0,1] = 0;
-  MatrixExample[K,0,2] = 0;
-
-  MatrixExample[K,1,0] = 0;
-  MatrixExample[K,1,1] = C;
-  MatrixExample[K,1,2] = S*-1;
-
-  MatrixExample[K,2,0] = 0;
-  MatrixExample[K,2,1] = S;
-  MatrixExample[K,2,2] = C;
+  return m;
 }
 
-void RotationMatrixY(int K, float Angle)
+// Returns a translation matrix.
+
+mat4 matrixFromTranslation(vec3 translation)
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = 1;
+  m[1,1] = 1;
+  m[2,2] = 1;
+  m[3,3] = 1;
 
-  MatrixExample[K,0,0] = C;
-  MatrixExample[K,0,1] = 0;
-  MatrixExample[K,0,2] = S;
+  m[3,0] = translation.x;
+  m[3,1] = translation.y;
+  m[3,2] = translation.z;
 
-  MatrixExample[K,1,0] = 0;
-  MatrixExample[K,1,1] = 1;
-  MatrixExample[K,1,2] = 0;
-
-  MatrixExample[K,2,0] = S*-1;
-  MatrixExample[K,2,1] = 0;
-  MatrixExample[K,2,2] = C;
+  return m;
 }
 
-void RotationMatrixZ(int K, float Angle)
+// Returns a scale matrix.
+
+mat4 matrixFromScale(vec3 scale)
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = scale.x;
+  m[1,1] = scale.y;
+  m[2,2] = scale.z;
+  m[3,3] = 1;
 
-  MatrixExample[K,0,0] = C;
-  MatrixExample[K,0,1] = S*-1;
-  MatrixExample[K,0,2] = 0;
-
-  MatrixExample[K,1,0] = S;
-  MatrixExample[K,1,1] = C;
-  MatrixExample[K,1,2] = 0;
-
-  MatrixExample[K,2,0] = 0;
-  MatrixExample[K,2,1] = 0;
-  MatrixExample[K,2,2] = 1;
+  return m;
 }
 
-//
+// Returns a x-axis rotation matrix.
 
-void MultiplyMatrix(int K, int A, int B)
+mat4 matrixFromRotationX(float angle)
 {
-  MatrixExample[K,0,0] = MatrixExample[A,0,0]*MatrixExample[B,0,0]+MatrixExample[A,0,1]*MatrixExample[B,1,0]+MatrixExample[A,0,2]*MatrixExample[B,2,0];
-  MatrixExample[K,0,1] = MatrixExample[A,0,0]*MatrixExample[B,0,1]+MatrixExample[A,0,1]*MatrixExample[B,1,1]+MatrixExample[A,0,2]*MatrixExample[B,2,1];
-  MatrixExample[K,0,2] = MatrixExample[A,0,0]*MatrixExample[B,0,2]+MatrixExample[A,0,1]*MatrixExample[B,1,2]+MatrixExample[A,0,2]*MatrixExample[B,2,2];
+  angle *= PI*2;
 
-  MatrixExample[K,1,0] = MatrixExample[A,1,0]*MatrixExample[B,0,0]+MatrixExample[A,1,1]*MatrixExample[B,1,0]+MatrixExample[A,1,2]*MatrixExample[B,2,0];
-  MatrixExample[K,1,1] = MatrixExample[A,1,0]*MatrixExample[B,0,1]+MatrixExample[A,1,1]*MatrixExample[B,1,1]+MatrixExample[A,1,2]*MatrixExample[B,2,1];
-  MatrixExample[K,1,2] = MatrixExample[A,1,0]*MatrixExample[B,0,2]+MatrixExample[A,1,1]*MatrixExample[B,1,2]+MatrixExample[A,1,2]*MatrixExample[B,2,2];
+  float s = sin(angle);
+  float c = cos(angle);
 
-  MatrixExample[K,2,0] = MatrixExample[A,2,0]*MatrixExample[B,0,0]+MatrixExample[A,2,1]*MatrixExample[B,1,0]+MatrixExample[A,2,2]*MatrixExample[B,2,0];
-  MatrixExample[K,2,1] = MatrixExample[A,2,0]*MatrixExample[B,0,1]+MatrixExample[A,2,1]*MatrixExample[B,1,1]+MatrixExample[A,2,2]*MatrixExample[B,2,1];
-  MatrixExample[K,2,2] = MatrixExample[A,2,0]*MatrixExample[B,0,2]+MatrixExample[A,2,1]*MatrixExample[B,1,2]+MatrixExample[A,2,2]*MatrixExample[B,2,2];
+  mat4 m;
+
+  m[1,1] = c; m[2,1] = 0-s;
+  m[1,2] = s; m[2,2] = c;
+
+  m[0,0] = 1;
+  m[3,3] = 1;
+
+  return m;
 }
 
-//
+// Returns a y-axis rotation matrix.
 
-void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
+mat4 matrixFromRotationY(float angle)
 {
-  RotationMatrixX(1,AX);
-  RotationMatrixY(2,AY);
-  RotationMatrixZ(3,AZ);
+  angle *= PI*2;
 
-  MultiplyMatrix(4,1,2);
-  MultiplyMatrix(5,4,3);
+  float s = sin(angle);
+  float c = cos(angle);
 
-  MatrixExample[0,0,0] = VX*MatrixExample[5,0,0]+VY*MatrixExample[5,0,1]+VZ*MatrixExample[5,0,2];
-  MatrixExample[0,1,0] = VX*MatrixExample[5,1,0]+VY*MatrixExample[5,1,1]+VZ*MatrixExample[5,1,2];
-  MatrixExample[0,2,0] = VX*MatrixExample[5,2,0]+VY*MatrixExample[5,2,1]+VZ*MatrixExample[5,2,2];
+  mat4 m;
+
+  m[0,0] = c;   m[2,0] = s;
+  m[0,2] = 0-s; m[2,2] = c;
+
+  m[1,1] = 1;
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a z-axis rotation matrix.
+
+mat4 matrixFromRotationZ(float angle)
+{
+  angle *= PI*2;
+
+  float s = sin(angle);
+  float c = cos(angle);
+
+  mat4 m;
+
+  m[0,0] = c; m[1,0] = 0-s;
+  m[0,1] = s; m[1,1] = c;
+
+  m[2,2] = 1;
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a euler-angles matrix.
+
+mat4 matrixFromEuler(vec3 rotation)
+{
+  float sx, cx, sy, cy, sz, cz;
+
+  // Would have been nice if you could do "rotation *= PI*2" :-(
+  rotation.x *= PI*2;
+  rotation.y *= PI*2;
+  rotation.z *= PI*2;
+
+  sx = sin(rotation.x);
+  cx = cos(rotation.x);
+
+  sy = sin(rotation.y);
+  cy = cos(rotation.y);
+
+  sz = sin(rotation.z);
+  cz = cos(rotation.z);
+
+  mat4 m;
+
+  m[0,0] = cy*cz; m[1,0] = sx*cz*sy-cx*sz; m[2,0] = cx*cz*sy+sx*sz;
+  m[0,1] = cy*sz; m[1,1] = sx*sz*sy+cx*cz; m[2,1] = cx*sz*sy-sx*cz;
+  m[0,2] = 0-sy;  m[1,2] = sx*cy;          m[2,2] = cx*cy;
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a axis-angle matrix.
+
+mat4 matrixFromAxisAngle(vec3 axis, float angle)
+{
+  float s, c, x, y, z, t;
+
+  angle *= PI*2;
+
+  s = sin(angle);
+  c = cos(angle);
+
+  x = axis.x;
+  y = axis.y;
+  z = axis.z;
+
+  t = 1-c;
+
+  mat4 m;
+
+  m[0,0] = t*x*x+c;   m[1,0] = t*x*y-s*z; m[2,0] = t*x*z+s*y;
+  m[0,1] = t*x*y+s*z; m[1,1] = t*y*y+c;   m[2,1] = t*y*z-s*x;
+  m[0,2] = t*x*z-s*y; m[1,2] = t*y*z+s*x; m[2,2] = t*z*z+c;
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a quaternion matrix.
+
+mat4 matrixFromQuaternion(vec4 quaternion)
+{
+  float x, y, z, w, x2, y2, z2;
+
+  x = quaternion.x;
+  y = quaternion.y;
+  z = quaternion.z;
+  w = quaternion.w;
+
+  x2 = x+x;
+  y2 = y+y;
+  z2 = z+z;
+
+  mat4 m;
+
+  m[0,0] = 1-(y*y2+z*z2); m[1,0] =    x*y2-w*z2;  m[2,0] =    x*z2+w*y2;
+  m[0,1] =    x*y2-w*z2;  m[1,1] = 1-(x*x2+z*z2); m[2,1] =    y*z2-w*x2;
+  m[0,2] =    x*z2-w*y2;  m[1,2] =    y*z2+w*x2;  m[2,2] = 1-(x*x2+y*y2);
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a model matrix.
+
+mat4 matrixFromModel(model q)
+{
+  // Would have been nice if you could do "mat4 m = matrixFromEuler(q.rotation)" :-(
+  vec3 rotation = vector3(q.rotation.x, q.rotation.y, q.rotation.z);
+  mat4 m = matrixFromEuler(rotation);
+
+  m[3,0] = q.position.x;
+  m[3,1] = q.position.y;
+  m[3,2] = q.position.z;
+
+  for(int i=0; i<3; i++)
+  {
+    m[0,i] *= q.scale.x;
+    m[1,i] *= q.scale.y;
+    m[2,i] *= q.scale.z;
+  }
+
+  return m;
 }]]>
               </Source>
             </ZLibrary>
@@ -1302,31 +1420,27 @@ void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
               <Expression>
 <![CDATA[//
 
-Sprite.Rotate.X = App.Time/4;
-Sprite.Rotate.Y = App.Time/4;
-Sprite.Rotate.Z = App.Time/4;
+Sprite.Rotate = App.Time/4;
 
 //
 
-Rotate(0.5,0.5,0,Sprite.Rotate.X*Pi*2,Sprite.Rotate.Y*Pi*2, Sprite.Rotate.Z*Pi*2);
+mat4 m = matrixFromEuler(vector3(Sprite.Rotate.X, Sprite.Rotate.Y, Sprite.Rotate.Z));
 
 //
 
-Debug.Translate.X = MatrixExample[0,0,0];
-Debug.Translate.Y = MatrixExample[0,1,0];
-Debug.Translate.Z = MatrixExample[0,2,0];]]>
+Debug.Translate = transformPoint(m, vector3(0.5, 0.5, 0));]]>
               </Expression>
             </ZExpression>
           </OnUpdate>
           <OnRender>
             <UseMaterial Material="MatrixMaterial"/>
-            <RenderTransformGroup Name="Sprite">
+            <RenderTransformGroup Name="Sprite" Rotate="1.149 1.149 1.149">
               <Children>
                 <RenderSetColor Color="1 1 1 1"/>
                 <RenderSprite/>
               </Children>
             </RenderTransformGroup>
-            <RenderTransformGroup Name="Debug" Scale="0.25 0.25 1" Translate="0.5 0.5 0">
+            <RenderTransformGroup Name="Debug" Scale="0.25 0.25 1" Translate="0.1292 0.6756 -0.164">
               <Children>
                 <RenderSetColor Color="1 0 0.502 1"/>
                 <RenderSprite/>
@@ -1334,7 +1448,6 @@ Debug.Translate.Z = MatrixExample[0,2,0];]]>
             </RenderTransformGroup>
           </OnRender>
           <Definitions>
-            <Array Name="MatrixExample" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
             <Material Name="MatrixMaterial" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
           </Definitions>
         </AppState>
@@ -2350,102 +2463,219 @@ void hsv(float H, float S, float V)
 
         <Group Name="MatrixLibraryGroup" Comment="Matrix Library">
           <Children>
-            <Array Name="Matrix" Dimensions="2" SizeDim1="6" SizeDim2="3" SizeDim3="3"/>
             <ZLibrary Comment="Matrix Library">
               <Source>
-<![CDATA[//
+<![CDATA[// Returns a identity matrix.
 
-void RotationMatrixX(int K, float Angle)
+mat4 matrixIdentity()
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = 1;
+  m[1,1] = 1;
+  m[2,2] = 1;
+  m[3,3] = 1;
 
-  Matrix[K,0,0] = 1;
-  Matrix[K,0,1] = 0;
-  Matrix[K,0,2] = 0;
-
-  Matrix[K,1,0] = 0;
-  Matrix[K,1,1] = C;
-  Matrix[K,1,2] = S*-1;
-
-  Matrix[K,2,0] = 0;
-  Matrix[K,2,1] = S;
-  Matrix[K,2,2] = C;
+  return m;
 }
 
-void RotationMatrixY(int K, float Angle)
+// Returns a translation matrix.
+
+mat4 matrixFromTranslation(vec3 translation)
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = 1;
+  m[1,1] = 1;
+  m[2,2] = 1;
+  m[3,3] = 1;
 
-  Matrix[K,0,0] = C;
-  Matrix[K,0,1] = 0;
-  Matrix[K,0,2] = S;
+  m[3,0] = translation.x;
+  m[3,1] = translation.y;
+  m[3,2] = translation.z;
 
-  Matrix[K,1,0] = 0;
-  Matrix[K,1,1] = 1;
-  Matrix[K,1,2] = 0;
-
-  Matrix[K,2,0] = S*-1;
-  Matrix[K,2,1] = 0;
-  Matrix[K,2,2] = C;
+  return m;
 }
 
-void RotationMatrixZ(int K, float Angle)
+// Returns a scale matrix.
+
+mat4 matrixFromScale(vec3 scale)
 {
-  float C, S;
+  mat4 m;
 
-  C = cos(Angle);
-  S = sin(Angle);
+  m[0,0] = scale.x;
+  m[1,1] = scale.y;
+  m[2,2] = scale.z;
+  m[3,3] = 1;
 
-  Matrix[K,0,0] = C;
-  Matrix[K,0,1] = S*-1;
-  Matrix[K,0,2] = 0;
-
-  Matrix[K,1,0] = S;
-  Matrix[K,1,1] = C;
-  Matrix[K,1,2] = 0;
-
-  Matrix[K,2,0] = 0;
-  Matrix[K,2,1] = 0;
-  Matrix[K,2,2] = 1;
+  return m;
 }
 
-//
+// Returns a x-axis rotation matrix.
 
-void MultiplyMatrix(int K, int A, int B)
+mat4 matrixFromRotationX(float angle)
 {
-  Matrix[K,0,0] = Matrix[A,0,0]*Matrix[B,0,0]+Matrix[A,0,1]*Matrix[B,1,0]+Matrix[A,0,2]*Matrix[B,2,0];
-  Matrix[K,0,1] = Matrix[A,0,0]*Matrix[B,0,1]+Matrix[A,0,1]*Matrix[B,1,1]+Matrix[A,0,2]*Matrix[B,2,1];
-  Matrix[K,0,2] = Matrix[A,0,0]*Matrix[B,0,2]+Matrix[A,0,1]*Matrix[B,1,2]+Matrix[A,0,2]*Matrix[B,2,2];
+  angle *= PI*2;
 
-  Matrix[K,1,0] = Matrix[A,1,0]*Matrix[B,0,0]+Matrix[A,1,1]*Matrix[B,1,0]+Matrix[A,1,2]*Matrix[B,2,0];
-  Matrix[K,1,1] = Matrix[A,1,0]*Matrix[B,0,1]+Matrix[A,1,1]*Matrix[B,1,1]+Matrix[A,1,2]*Matrix[B,2,1];
-  Matrix[K,1,2] = Matrix[A,1,0]*Matrix[B,0,2]+Matrix[A,1,1]*Matrix[B,1,2]+Matrix[A,1,2]*Matrix[B,2,2];
+  float s = sin(angle);
+  float c = cos(angle);
 
-  Matrix[K,2,0] = Matrix[A,2,0]*Matrix[B,0,0]+Matrix[A,2,1]*Matrix[B,1,0]+Matrix[A,2,2]*Matrix[B,2,0];
-  Matrix[K,2,1] = Matrix[A,2,0]*Matrix[B,0,1]+Matrix[A,2,1]*Matrix[B,1,1]+Matrix[A,2,2]*Matrix[B,2,1];
-  Matrix[K,2,2] = Matrix[A,2,0]*Matrix[B,0,2]+Matrix[A,2,1]*Matrix[B,1,2]+Matrix[A,2,2]*Matrix[B,2,2];
+  mat4 m;
+
+  m[1,1] = c; m[2,1] = 0-s;
+  m[1,2] = s; m[2,2] = c;
+
+  m[0,0] = 1;
+  m[3,3] = 1;
+
+  return m;
 }
 
-//
+// Returns a y-axis rotation matrix.
 
-void Rotate(float VX, float VY, float VZ, float AX, float AY, float AZ)
+mat4 matrixFromRotationY(float angle)
 {
-  RotationMatrixX(1,AX);
-  RotationMatrixY(2,AY);
-  RotationMatrixZ(3,AZ);
+  angle *= PI*2;
 
-  MultiplyMatrix(4,1,2);
-  MultiplyMatrix(5,4,3);
+  float s = sin(angle);
+  float c = cos(angle);
 
-  Matrix[0,0,0] = VX*Matrix[5,0,0]+VY*Matrix[5,0,1]+VZ*Matrix[5,0,2];
-  Matrix[0,1,0] = VX*Matrix[5,1,0]+VY*Matrix[5,1,1]+VZ*Matrix[5,1,2];
-  Matrix[0,2,0] = VX*Matrix[5,2,0]+VY*Matrix[5,2,1]+VZ*Matrix[5,2,2];
+  mat4 m;
+
+  m[0,0] = c;   m[2,0] = s;
+  m[0,2] = 0-s; m[2,2] = c;
+
+  m[1,1] = 1;
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a z-axis rotation matrix.
+
+mat4 matrixFromRotationZ(float angle)
+{
+  angle *= PI*2;
+
+  float s = sin(angle);
+  float c = cos(angle);
+
+  mat4 m;
+
+  m[0,0] = c; m[1,0] = 0-s;
+  m[0,1] = s; m[1,1] = c;
+
+  m[2,2] = 1;
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a euler-angles matrix.
+
+mat4 matrixFromEuler(vec3 rotation)
+{
+  float sx, cx, sy, cy, sz, cz;
+
+  // Would have been nice if you could do "rotation *= PI*2" :-(
+  rotation.x *= PI*2;
+  rotation.y *= PI*2;
+  rotation.z *= PI*2;
+
+  sx = sin(rotation.x);
+  cx = cos(rotation.x);
+
+  sy = sin(rotation.y);
+  cy = cos(rotation.y);
+
+  sz = sin(rotation.z);
+  cz = cos(rotation.z);
+
+  mat4 m;
+
+  m[0,0] = cy*cz; m[1,0] = sx*cz*sy-cx*sz; m[2,0] = cx*cz*sy+sx*sz;
+  m[0,1] = cy*sz; m[1,1] = sx*sz*sy+cx*cz; m[2,1] = cx*sz*sy-sx*cz;
+  m[0,2] = 0-sy;  m[1,2] = sx*cy;          m[2,2] = cx*cy;
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a axis-angle matrix.
+
+mat4 matrixFromAxisAngle(vec3 axis, float angle)
+{
+  float s, c, x, y, z, t;
+
+  angle *= PI*2;
+
+  s = sin(angle);
+  c = cos(angle);
+
+  x = axis.x;
+  y = axis.y;
+  z = axis.z;
+
+  t = 1-c;
+
+  mat4 m;
+
+  m[0,0] = t*x*x+c;   m[1,0] = t*x*y-s*z; m[2,0] = t*x*z+s*y;
+  m[0,1] = t*x*y+s*z; m[1,1] = t*y*y+c;   m[2,1] = t*y*z-s*x;
+  m[0,2] = t*x*z-s*y; m[1,2] = t*y*z+s*x; m[2,2] = t*z*z+c;
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a quaternion matrix.
+
+mat4 matrixFromQuaternion(vec4 quaternion)
+{
+  float x, y, z, w, x2, y2, z2;
+
+  x = quaternion.x;
+  y = quaternion.y;
+  z = quaternion.z;
+  w = quaternion.w;
+
+  x2 = x+x;
+  y2 = y+y;
+  z2 = z+z;
+
+  mat4 m;
+
+  m[0,0] = 1-(y*y2+z*z2); m[1,0] =    x*y2-w*z2;  m[2,0] =    x*z2+w*y2;
+  m[0,1] =    x*y2-w*z2;  m[1,1] = 1-(x*x2+z*z2); m[2,1] =    y*z2-w*x2;
+  m[0,2] =    x*z2-w*y2;  m[1,2] =    y*z2+w*x2;  m[2,2] = 1-(x*x2+y*y2);
+
+  m[3,3] = 1;
+
+  return m;
+}
+
+// Returns a model matrix.
+
+mat4 matrixFromModel(model q)
+{
+  // Would have been nice if you could do "mat4 m = matrixFromEuler(q.rotation)" :-(
+  vec3 rotation = vector3(q.rotation.x, q.rotation.y, q.rotation.z);
+  mat4 m = matrixFromEuler(rotation);
+
+  m[3,0] = q.position.x;
+  m[3,1] = q.position.y;
+  m[3,2] = q.position.z;
+
+  for(int i=0; i<3; i++)
+  {
+    m[0,i] *= q.scale.x;
+    m[1,i] *= q.scale.y;
+    m[2,i] *= q.scale.z;
+  }
+
+  return m;
 }]]>
               </Source>
             </ZLibrary>
