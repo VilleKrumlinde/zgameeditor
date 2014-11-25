@@ -789,24 +789,26 @@ begin
 
   ViewerPageControl.ActivePage := ViewerBlankTabSheet;
 
-  //Must compile directly after load because no zc-instructions are saved in the xml
-  CompileAll;
-
-  TThread.Synchronize(nil,
-    procedure
-    begin
-      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-      try
-        //App needs driver to allow editor to preview graphics
-        ZApp.Driver := GLDrivers.CreateDriver(ZApp.GLBase);
-        //ZApp.DesignerStart(Glp.Width,Glp.Height);
-        //ZApp.DesignerStop;
-      except
-        on E : EZHalted do ;
-      end;
-      CheckGLError;
-    end
-  );
+  try
+    //Must compile directly after load because no zc-instructions are saved in the xml
+    CompileAll;
+  finally
+    TThread.Synchronize(nil,
+      procedure
+      begin
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+        try
+          //App needs driver to allow editor to preview graphics
+          ZApp.Driver := GLDrivers.CreateDriver(ZApp.GLBase);
+          //ZApp.DesignerStart(Glp.Width,Glp.Height);
+          //ZApp.DesignerStop;
+        except
+          on E : EZHalted do ;
+        end;
+        CheckGLError;
+      end
+    );
+  end;
 end;
 
 procedure TEditorForm.ResetCamera;
@@ -3993,6 +3995,7 @@ begin
     NeedOgg := False;
     AllObjects := TObjectList.Create(False);
     try
+      AllObjects.Capacity := 1024;
       GetAllObjects(Self.Root,AllObjects);
       UsedComponents.Sorted := True;
       UsedComponents.Add('TAudioMixer');
@@ -4010,6 +4013,8 @@ begin
         else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
           NeedArray := True
         else if (AllObjects[I] is TBitmapExpression) or (AllObjects[I] is TMeshExpression) then
+          NeedArray := True
+        else if (AllObjects[I] is TExpConvert) and (TExpConvert(AllObjects[I]).Kind in [eckPropToVec3,eckPropToVec4]) then
           NeedArray := True
         else if (AllObjects[I] is TSampleImport) and ((AllObjects[I] as TSampleImport).SampleFileFormat=sffOGG) then
           NeedOgg := True

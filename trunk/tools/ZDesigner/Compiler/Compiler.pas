@@ -359,6 +359,30 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
               GenAddress(Op.Child(0));
               Exit;
             end;
+          zctVec3 : //convert component properties to vec3
+            begin
+              if (FromOp.Kind=zcSelect) then
+              begin
+                IdInfo := FromOp.GetIdentifierInfo;
+                if (IdInfo.Kind=edtProperty) and (IdInfo.Prop.PropertyType in [zptVector3f]) then
+                begin
+                  Kind := eckPropToVec3;
+                  IsValue := False;
+                end;
+              end;
+            end;
+          zctVec4 :
+            begin
+              if (FromOp.Kind=zcSelect) then
+              begin
+                IdInfo := FromOp.GetIdentifierInfo;
+                if (IdInfo.Kind=edtProperty) and (IdInfo.Prop.PropertyType in [zptColorf]) then
+                begin
+                  Kind := eckPropToVec4;
+                  IsValue := False;
+                end;
+              end;
+            end;
         end;
       zctByte, zctInt :
         case Cop.ToType.Kind of
@@ -579,6 +603,16 @@ begin
     Target.AddComponent( MakeAssignOp(4) ); //todo: need attention in 64-bit mode
     if LeaveValue=alvPost then
       GenValue(LeftOp);
+  end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
+    (LeftOp.Ref is TZcOpArgumentVar) and (LeftOp.GetDataType.Kind in [zctVec3,zctVec4])  then
+  begin
+    //vec3/4 arguments (pixel/mesh expressions)
+    //make sure that expression such as pixel=vector3(..) actually assigns to pixel data
+    //so make assignment by value instead of by reference
+    GenValue(RightOp);
+    GenValue(LeftOp);
+    with TExpArrayUtil.Create(Target) do
+      Kind := auArrayToArray;
   end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
     ((LeftOp.Ref is TZcOpLocalVar) or (LeftOp.Ref is TZcOpArgumentVar))  then
   begin
@@ -1240,10 +1274,12 @@ var
   I : integer;
 begin
   Result := S;
+{$ifndef zgeviz}  //can't use Xe5 features yet with FL-codebase
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
+{$endif}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;

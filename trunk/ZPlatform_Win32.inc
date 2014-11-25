@@ -1389,11 +1389,7 @@ end;
 /////////////////////////////
 //Option dialog code
 
-{$ifdef fpc}
-  {$R OptionsDialog.res}
-{$else}
-  {$R OptionsDialog.res OptionsDialog.rc}
-{$endif}
+
 
 const
   // OptionDialog ID numbers
@@ -1404,7 +1400,7 @@ const
 function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint): Bool; stdcall;
 const
   xstr = 'x'#0;
-  DesktopStr = 'Use Desktop resolution'#0;
+  DesktopStr : ansistring = 'Use Desktop resolution'#0;
   App : TZApplication = nil;
 var
   I : integer;
@@ -1420,7 +1416,7 @@ begin
       for I := 0 to High(ScreenModes) do
       begin
         if I=0 then
-          ZStrCopy(Str,DesktopStr)
+          ZStrCopy(Str,PAnsiChar(DesktopStr))
         else
         begin
           ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Str));
@@ -1428,9 +1424,9 @@ begin
           ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
           ZStrCat(Str,Tmp1);
         end;
-        SendDlgItemMessage(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
+        SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
       end;
-      SendDlgItemMessage(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(App.ScreenMode),0);
+      SendDlgItemMessageA(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(App.ScreenMode),0);
 
       //Center on screen
       GetWindowRect(GetDesktopWindow, R);
@@ -1472,7 +1468,7 @@ end;
 
 function Platform_ShowOptionDialog(App : pointer) : boolean;
 begin
-  Result := DialogBoxParamA(hInstance, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,NativeInt(App))=ID_OK;
+  Result := DialogBoxParamA(0, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,NativeInt(App))=ID_OK;
 end;
 
 function Platform_GetDisplayRefreshRate : integer;

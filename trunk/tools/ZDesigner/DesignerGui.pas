@@ -919,21 +919,20 @@ begin
   HideSelection := False;
   ShowRoot := False;
 
-//  OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
+  OnAdvancedCustomDrawItem := MyCustomAdvancedDrawItem;
 
   ReadOnly := True;
   OnExpanded := MyExpanded;
 end;
 
-//** The code below is currently not used **
 procedure TZComponentTreeView.MyCustomAdvancedDrawItem(Sender: TCustomTreeView; Node: TTreeNode;
     State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages,
     DefaultDraw: Boolean);
-var
-  NodeRect: TRect;
-  I: Integer;
-  MyCaption,Comment : string;
-  Col1,Col2 : TZColorf;
+//var
+//  NodeRect: TRect;
+//  I: Integer;
+//  MyCaption,Comment : string;
+//  Col1,Col2 : TZColorf;
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
@@ -942,7 +941,7 @@ begin
   else
     Canvas.Font.Style := [];
 
-  if (Stage=cdPostPaint) and (not (cdsSelected in State)) then
+(*  if (Stage=cdPostPaint) and (not (cdsSelected in State)) then
   begin
     NodeRect := Node.DisplayRect(True);
 
@@ -974,7 +973,7 @@ begin
       Canvas.TextOut(NodeRect.Left + Canvas.TextWidth(MyCaption) + Canvas.TextWidth(' '),
         NodeRect.Top + 1, Comment);
     end;
-  end;
+  end;*)
 
   DefaultDraw := True;
 end;
