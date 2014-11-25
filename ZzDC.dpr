@@ -29,8 +29,10 @@ program ZzDC;
 {$if defined(Win32) or defined(Win64)}
   {$ifdef fpc}
     {$R Data.res}
+    {$R 'OptionsDialog.res'}
   {$else}
     {$R 'Data.res' 'Data.rc'}
+    {$R 'OptionsDialog.res' 'OptionsDialog.rc'}
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
   {$endif}
 {$ifend}
@@ -47,6 +49,7 @@ program ZzDC;
 
     ZLOG      Logging active (large binary)
 }
+
 
 
 uses

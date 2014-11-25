@@ -379,7 +379,8 @@ type
     {$endif}
   end;
 
-  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckBinaryToXptr);
+  TExpConvertKind = (eckFloatToInt,eckIntToFloat,eckArrayToXptr,eckBinaryToXptr,
+    eckPropToVec3,eckPropToVec4);
   TExpConvert = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -484,7 +485,7 @@ type
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    Kind : (auArrayToRawMem, auRawMemToArray);
+    Kind : (auArrayToRawMem, auRawMemToArray, auArrayToArray);
     _Type : TZcDataTypeKind;
   end;
 
@@ -1641,6 +1642,13 @@ begin
         P := Bp.Data;
         Env.StackPushPointer(P);
       end;
+    eckPropToVec3,eckPropToVec4 :
+      begin
+        Env.StackPopToPointer(P);
+        D := TDefineArray(CreateManagedValue(TZcDataTypeKind(Ord(zctVec3)+Ord(Kind)-Ord(eckPropToVec3))));
+        D.SetExternalData(P);
+        Env.StackPushPointer(D);
+      end;
   end;
 end;
 
@@ -2523,7 +2531,7 @@ end;
 
 procedure TExpArrayUtil.Execute(Env : PExecutionEnvironment);
 var
-  A : TDefineArray;
+  A,A2 : TDefineArray;
   P : pointer;
 begin
   case Kind of
@@ -2539,6 +2547,12 @@ begin
         A := TDefineArray(CreateManagedValue(Self._Type));
         Move(P^, A.GetData^, A.GetElementSize * A.CalcLimit);
         Env.StackPushPointer(A);
+      end;
+    auArrayToArray: //Copy from one array into the memory of another
+      begin
+        Env.StackPopToPointer(A);
+        Env.StackPopToPointer(A2);
+        Move(A2.GetData^, A.GetData^, A.GetElementSize * A.CalcLimit);
       end;
   end;
 end;

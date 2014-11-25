@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="1 2 3" LightPosition="3 2 1" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="0 2 3" LightPosition="3 2 1" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
@@ -90,6 +90,10 @@ void globalF() {
   globalXX[0,0]=42;
   globalS="hugo";
   globalSS[0]="test";
+}
+
+void modv3(vec3 v) {
+  v[0]=1;
 }]]>
       </Source>
     </ZLibrary>
@@ -764,6 +768,12 @@ App.ClearColor=vector4(1,2,3,4);
 App.ClearColor = saveColor;
 
 
+App.CameraPosition.X=0;
+modv3(App.CameraPosition);
+if((App.CameraPosition.X!=1))
+  Error=1911;
+App.CameraPosition.X=0;
+
 
 v[0]=1;
 m1[0,0]=1;
@@ -844,10 +854,10 @@ DefinedVecArray[0][0]=1;]]>
 //C : current color (turn on VertexColors)
 //TexCoord : current texture coordinate (turn on HasTexCoords)
 
-this.C.R=0.5;
-this.C.G=0.7;
+c.R=0.5;
+c.G=0.7;
 
-this.V.X*=1.5;
+v.X*=1.5;
 V.X*=0.5;]]>
           </Expression>
         </MeshExpression>

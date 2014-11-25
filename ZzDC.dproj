@@ -9,7 +9,7 @@
         <Config Condition="'$(Config)'==''">Debug</Config>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>7</TargetedPlatforms>
         <AppType>Console</AppType>
     </PropertyGroup>
@@ -199,6 +199,9 @@
         <DCCReference Include="ZFile.pas"/>
         <DCCReference Include="NanoJpeg.pas"/>
         <DCCReference Include="GLDrivers.pas"/>
+        <RcCompile Include="OptionsDialog.rc">
+            <Form>OptionsDialog.res</Form>
+        </RcCompile>
         <RcCompile Include="Data.rc">
             <Form>Data.res</Form>
         </RcCompile>
