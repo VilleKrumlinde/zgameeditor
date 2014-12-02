@@ -144,7 +144,7 @@ begin
   case Size of
     4 : Result := TExpAssign4.Create(nil);
     1 : Result := TExpAssign1.Create(nil);
-    100 : Result := TExpAssignPointer.Create(nil);
+    100{$ifdef cpux64},SizeOf(Pointer){$endif} : Result := TExpAssignPointer.Create(nil);
   else
     raise ECodeGenError.Create('Wrong datatype for assign');
   end;
@@ -1274,12 +1274,12 @@ var
   I : integer;
 begin
   Result := S;
-{$ifndef zgeviz}  //can't use Xe5 features yet with FL-codebase
+{$if CompilerVersion>=26}  //Xe5 and upwards
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
-{$endif}
+{$ifend}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;

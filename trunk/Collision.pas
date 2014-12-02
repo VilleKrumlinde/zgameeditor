@@ -396,6 +396,8 @@ begin
 
     end; //actor list cat 1
   end; //checks
+
+  Models.FlushRemoveList; //Collisions can cause removal of models, remove them now
 end;
 
 function TCollisionChecks.Test(const Act1, Act2: TModel): boolean;

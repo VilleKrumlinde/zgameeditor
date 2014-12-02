@@ -166,7 +166,7 @@ begin
   begin
     while True do
     begin
-      if Single(ZExpressions.RunCode(WhileExp.Code))=0 then
+      if ZExpressions.RunCode(WhileExp.Code).SingleValue=0 then
         Break;
       OnIteration.ExecuteCommands;
       Inc(Iteration);
@@ -205,7 +205,7 @@ end;
 
 procedure TCondition.Execute;
 begin
-  if Single(ZExpressions.RunCode(Expression.Code))<>0 then
+  if ZExpressions.RunCode(Expression.Code).SingleValue<>0 then
     OnTrue.ExecuteCommands
   else
     OnFalse.ExecuteCommands;
