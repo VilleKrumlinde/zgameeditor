@@ -956,7 +956,7 @@ begin
       Driver.Translate(CharX,CharY,0);
       Driver.Scale(CharScale,CharScale,1);
       Driver.Rotate(CharRotate*180/PI,0,0,1);
-      CurFont.RenderCharacter(CurChar,FontSize, P=pointer(TheText));
+      CurFont.RenderCharacter(CurChar,FontSize, CharI=0);
     Driver.PopMatrix;
 
     CharX := CharX + XStep;
@@ -964,6 +964,9 @@ begin
     Inc(CharI);
     Inc(P);
   end;
+
+  //Need to disable textures again because enable-bit is not saved in pushattrib
+  glDisable(GL_TEXTURE_2D);
 
   glPopAttrib;
 

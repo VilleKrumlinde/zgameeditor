@@ -489,9 +489,15 @@ type
     _Type : TZcDataTypeKind;
   end;
 
+  TCodeReturnValue = record
+  case boolean of
+    True : (PointerValue : pointer);
+    False : (SingleValue : single);
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
-function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : pointer;
+function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
 
 function ExpGetValue(Code : TZComponentList) : single;
 function ExpGetPointer(Code : TZComponentList) : PFloat;
@@ -509,12 +515,12 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
 
 function ExpGetValue(Code : TZComponentList) : single;
 begin
-  Result := Single(RunCode(Code));
+  Result := RunCode(Code).SingleValue;
 end;
 
 function ExpGetPointer(Code : TZComponentList) : PFloat;
 begin
-  Result := RunCode(Code);
+  Result := RunCode(Code).PointerValue;
 end;
 
 
@@ -585,7 +591,7 @@ begin
   Inc(Result,Index);
 end;
 
-function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : pointer;
+function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
 const
   NilP : pointer = nil;
 var
@@ -627,7 +633,7 @@ begin
     {$endif}
   end;
   if Env.StackGetDepth=1 then
-    Env.StackPopToPointer(Result);
+    Env.StackPopToPointer(Result.PointerValue);
   {$ifndef minimal}
   if (Env=@LocalEnv) and (Env.StackGetDepth>0) then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
@@ -2104,7 +2110,7 @@ begin
     if GetZcTypeSize(TZcDataTypeKind(Self.ArgTypes[I]))=SizeOf(Pointer) then
       Env.StackPopToPointer(Args[I])
     else
-      Env.Env.StackPopTo(Args[I]);
+      Env.StackPopTo(Args[I]);
 
   Retval := TFunc(Self.Trampoline)(@Args);
 
