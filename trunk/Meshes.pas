@@ -147,6 +147,9 @@ type
   //Combine the vertexes of two meshes
   TMeshCombine = class(TMeshProducer)
   protected
+    {$ifndef minimal}
+    procedure DefineProperties(List: TZPropertyList); override;
+    {$endif}
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
   public
   end;
@@ -1845,6 +1848,14 @@ begin
 end;
 
 { TMeshCombine }
+
+{$ifndef minimal}
+procedure TMeshCombine.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.GetByName('Scale').HideInGui := True;
+end;
+{$endif}
 
 procedure TMeshCombine.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var

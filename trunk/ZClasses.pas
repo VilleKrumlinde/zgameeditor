@@ -753,6 +753,7 @@ var
 var
   mh_Targets,mh_Allocations,mh_Values : TZArrayList;
   mh_LastCount : integer;
+  mh_Lock : pointer;
 
 const
   NilString : AnsiChar = #0;
@@ -762,6 +763,7 @@ begin
   mh_Targets := TZArrayList.CreateReferenced;
   mh_Allocations := TZArrayList.CreateReferenced;
   mh_Values := TZArrayList.CreateReferenced;
+  mh_Lock := Platform_CreateMutex;
 end;
 
 procedure ManagedHeap_FreeMemAt(const Index : integer);
@@ -783,6 +785,7 @@ begin
   mh_Targets.Free;
   mh_Allocations.Free;
   mh_Values.Free;
+  Platform_FreeMutex(mh_Lock);
 end;
 
 function ManagedHeap_Alloc(const Size : integer) : pointer;
@@ -792,7 +795,9 @@ begin
   ZAssert(Size<1024*1024*128,'Alloc called with size > 128mb');
   {$endif}
   GetMem(Result,Size);
-  mh_Allocations.Add(Result);
+  Platform_EnterMutex(mh_Lock);
+    mh_Allocations.Add(Result);
+  Platform_LeaveMutex(mh_Lock);
   {$ifndef minimal}
   ZAssert(NativeInt(Result) and 1=0,'Alloc fail');
   {$endif}
@@ -805,7 +810,9 @@ begin
   ZAssert(NativeInt(O) and 1=0,'AddValueObject fail');
   {$endif}
   //Use unused lower bits of pointer to flag that this is an object
-  mh_Allocations.Add(Pointer(NativeInt(O) or 1));
+  Platform_EnterMutex(mh_Lock);
+    mh_Allocations.Add(Pointer(NativeInt(O) or 1));
+  Platform_LeaveMutex(mh_Lock);
 end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
@@ -817,7 +824,9 @@ begin
     Exit;
   end;
   {$endif}
-  mh_Targets.Add(P);
+  Platform_EnterMutex(mh_Lock);
+    mh_Targets.Add(P);
+  Platform_LeaveMutex(mh_Lock);
 end;
 
 procedure ManagedHeap_RemoveTarget(const P : pointer);
@@ -829,7 +838,9 @@ begin
     Exit;
   end;
   {$endif}
-  mh_Targets.SwapRemove(P);
+  Platform_EnterMutex(mh_Lock);
+    mh_Targets.SwapRemove(P);
+  Platform_LeaveMutex(mh_Lock);
 end;
 
 function ManagedHeap_GetAllocCount : integer;
@@ -865,6 +876,8 @@ begin
       mh_Values.Add(P);
   end;
 
+  Platform_EnterMutex(mh_Lock);
+
   I := 0;
   while I<mh_Allocations.Count do
   begin
@@ -882,6 +895,8 @@ begin
       Inc(I);
     end;
   end;
+
+  Platform_LeaveMutex(mh_Lock);
 end;
 
 
@@ -4014,9 +4029,7 @@ begin
   begin
     if Threads=nil then
     begin
-      {$ifndef minimal}
       IsMultiThread:=True; //Tell the Delphi mm that we are multithreaded
-      {$endif}
       //Create threads
       GetMem(Threads,ThreadCount*SizeOf(Pointer));
       PT := Threads;
