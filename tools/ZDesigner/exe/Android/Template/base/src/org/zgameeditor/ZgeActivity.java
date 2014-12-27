@@ -59,8 +59,8 @@ public class ZgeActivity extends Activity
     @Override
     protected void onPause()
     {
-        super.onPause();
         zge.onPause();
+        super.onPause();
     }
 
     @Override
