@@ -1680,7 +1680,10 @@ var
   A : PSaveAttribs;
 begin
   if SavedAttrib<>nil then
+  begin
     Platform_Error('Nested attrib push');
+    Exit;
+  end;
   New(A);
 
   glGetIntegerv(GL_VIEWPORT, @A^.Viewport);
@@ -1700,7 +1703,10 @@ var
 begin
   A := SavedAttrib;
   if A=nil then
+  begin
     Platform_Error('Pop attrib without push');
+    Exit;
+  end;
 
   glViewport(A.Viewport[0],A.Viewport[1],A.Viewport[2],A.Viewport[3]);
   if A.Lighting=0 then

@@ -312,6 +312,7 @@ type
     procedure LogClearMenuItemClick(Sender: TObject);
     procedure FileOpenActionBeforeExecute(Sender: TObject);
     procedure EnableThreadedProcessingMenuItemClick(Sender: TObject);
+    procedure WmActivate(var M : TMessage); message WM_ACTIVATE;
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -443,7 +444,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  Generics.Collections, frmAndroidApk;
+  Generics.Collections, frmAndroidApk, Winapi.Imm;
 
 { TEditorForm }
 
@@ -967,6 +968,16 @@ begin
   UndoNodes.Clear;
   UndoIndices.Clear;
   UndoParent := nil;
+end;
+
+procedure TEditorForm.WmActivate(var M: TMessage);
+begin
+  if M.WParam=WA_ACTIVE then
+  begin
+    //From Kjell: Avoid keeping a input method to this window
+    ImmAssociateContext(Self.Handle,0);
+  end;
+  inherited;
 end;
 
 procedure TEditorForm.WriteAppSettingsToIni;
