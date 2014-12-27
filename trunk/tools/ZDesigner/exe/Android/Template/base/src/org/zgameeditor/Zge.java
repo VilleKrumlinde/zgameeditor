@@ -57,6 +57,7 @@ public class Zge extends GLSurfaceView
     private native int NativeGetGLBase();
     private native void NativeInitAppFromSDCard();
 
+    private static final boolean DEBUG = false;
     private boolean IsDestroy;
     private CRenderer Renderer;
     private InputMethodManager InputManager;
@@ -85,7 +86,7 @@ public class Zge extends GLSurfaceView
         getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
 
         if(NativeGetGLBase()==1) {
-          Log.i("ZgeAndroid", "GLES 2");
+          if(DEBUG) Log.i("ZgeAndroid", "GLES 2");
           setEGLContextClientVersion(2);
         }
         Renderer = new CRenderer();
@@ -94,7 +95,8 @@ public class Zge extends GLSurfaceView
         setFocusableInTouchMode( true );
     }
 
-    private void initZApp() {
+    private void initZApp()
+    {
         //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
         byte[] b = openAssetFile("/assets/zzdc.dat");
         if(b.length!=0)
@@ -104,8 +106,9 @@ public class Zge extends GLSurfaceView
     }
 
     //Called from native
-    public void openURL( String url ) {
-        Log.i("ZgeAndroid", "About to open: " + url);
+    public void openURL( String url )
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "About to open: " + url);
         Uri uriUrl = Uri.parse( url );
         Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
         intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
@@ -113,15 +116,16 @@ public class Zge extends GLSurfaceView
     }
 
     //Called from native
-    public byte[] openAssetFile(String name) {
+    public byte[] openAssetFile(String name)
+    {
         name=name.substring(8); //strip "/assets/" from name
-        Log.i("ZgeAndroid", "About to open: " + name);
+        if(DEBUG) Log.i("ZgeAndroid", "About to open: " + name);
         AssetManager assets = getContext().getAssets();
         byte[] data=new byte[0]; //Return zero length to native if file not available
         try {
             InputStream stream = assets.open(name,AssetManager.ACCESS_BUFFER);
             int size = stream.available();
-            Log.i("ZgeAndroid", "Open ok, available: " + size);
+            if(DEBUG) Log.i("ZgeAndroid", "Open ok, available: " + size);
             data = new byte[size];
             stream.read(data);
             stream.close();
@@ -136,28 +140,35 @@ public class Zge extends GLSurfaceView
         return NativeCloseQuery();
     }
 
-    public void onStop() {
-        Log.i("ZgeAndroid", "stop");
+    public void onStop()
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "stop");
         NativeActivate( false );
         //Call drawframe to update zge and give expressions a chance to catch stop event
         NativeDrawFrame();
     }
 
-    public void onStart() {
-        Log.i("ZgeAndroid", "start");
+    public void onStart()
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "start");
         NativeActivate( true );
     }
 
     @Override
     public void onPause()
     {
+        if(DEBUG) Log.i("ZgeAndroid", "pause");
+        NativeActivate( false );
+        NativeDrawFrame();
         super.onPause();
     }
 
     @Override
     public void onResume()
     {
+        if(DEBUG) Log.i("ZgeAndroid", "resume");
         super.onResume();
+        NativeActivate( true );
     }
 
     @Override
@@ -222,15 +233,15 @@ public class Zge extends GLSurfaceView
         return true;
     }
 
-    public void Finish()
-    {
+    public void Finish() {
         NativeDestroy();
         ((Activity)getContext()).finish();
         System.exit( 0 );
     }
 
     @Override
-    public boolean onKeyDown( int keyCode, KeyEvent event ) {
+    public boolean onKeyDown( int keyCode, KeyEvent event )
+    {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getRepeatCount()== 0)) {
             NativeKeydown(253); //Trigger KeyBack in ZGE
             if ( NativeCloseQuery() )
@@ -253,13 +264,13 @@ public class Zge extends GLSurfaceView
     {
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
-            Log.i("ZgeAndroid", "SurfaceCreated: " + gl.glGetString( GL10.GL_VERSION ));
+            if(DEBUG) Log.i("ZgeAndroid", "SurfaceCreated: " + gl.glGetString( GL10.GL_VERSION ));
             NativeSurfaceCreated();
         }
 
         public void onSurfaceChanged( GL10 gl, int width, int height )
         {
-            Log.i("ZgeAndroid", "SurfaceChanged");
+            if(DEBUG) Log.i("ZgeAndroid", "SurfaceChanged");
             NativeSurfaceChanged( width, height );
         }
 
