@@ -1010,17 +1010,19 @@ end;
 procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}(@OnLoaded), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}(@OnClose), zptComponentList);
+
   List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}(@OnLoaded), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}(@OnBeginRenderPass), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}(@OnBeginRenderPass), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}(@OnClose), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}(@Content), zptComponentList);
+
   List.AddProperty({$IFNDEF MINIMAL}'Lights',{$ENDIF}(@Lights), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TLight]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}(@Content), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}(@Caption), zptString);
     List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}(@DeltaTime), zptFloat);

@@ -786,18 +786,20 @@ end;
 procedure TModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+
+  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}(@OnSpawn), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}(@OnCollision), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}(@OnRemove), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
+    {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
+
   List.AddProperty({$IFNDEF MINIMAL}'BaseModel',{$ENDIF}(@BaseModel), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
-    {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}(@OnSpawn), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}(@OnRemove), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}(@OnCollision), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
   List.AddProperty({$IFNDEF MINIMAL}'Velocity',{$ENDIF}(@Velocity), zptVector3f);
