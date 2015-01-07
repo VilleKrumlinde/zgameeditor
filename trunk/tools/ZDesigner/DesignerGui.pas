@@ -22,7 +22,8 @@ unit DesignerGui;
 
 interface
 
-uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,Windows;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,
+  Windows, BitmapProducers;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -90,12 +91,13 @@ function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
 function ZColorToColor(C : TZColorf) : TColor;
 function ColorToZColor(C : TColor) : TZColorf;
+procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
 
 implementation
 
 uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
-  frmRawAudioImportOptions,ZFile,BitmapProducers,
+  frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
   Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath;
 
@@ -194,7 +196,6 @@ type
     procedure DataChanged;
     procedure SetProp(C : TZComponent; Prop : TZProperty); override;
     procedure OnStoreValue(Sender : TObject);
-    procedure GetPictureStream(const Filename: string; Stream: TMemoryStream);
     procedure OnClearValue(Sender: TObject);
   end;
 
@@ -1359,7 +1360,20 @@ begin
   Result := Bmp;
 end;
 
-procedure TZBinaryPropEdit.GetPictureStream(const Filename : string; Stream : TMemoryStream);
+function NextPowerOfTwoBitmap(const I : integer) : TBitmapSize;
+var
+  J : integer;
+begin
+  J := 16;
+  Result := bs16;
+  while (J<I) and (Result<High(TBitmapSize)) do
+  begin
+    Inc(J,J);
+    Inc(Result);
+  end;
+end;
+
+procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
 var
   Pic : TPicture;
   OwnBm : boolean;
@@ -1376,6 +1390,13 @@ begin
   try
     Pic.LoadFromFile(FileName);
 
+    if BmFile=nil then
+    begin
+      Zbm := TZBitmap.Create(nil);
+      Zbm.SetString('Name','Bitmap1');
+      BmFile := TBitmapFromFile.Create(ZBm.Producers);
+    end;
+
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
     if not (Pic.Graphic is Graphics.TBitmap) then
     begin
@@ -1387,37 +1408,34 @@ begin
       Bm := Pic.Bitmap;
     end;
 
-    if (Self.Component.GetOwner is TZBitmap) then
+    BmFile.DataWidth := Bm.Width;
+    BmFile.DataHeight := Bm.Height;
+
+    if (BmFile.GetOwner is TZBitmap) then
     begin
-      ZBm := (Self.Component.GetOwner as TZBitmap);
-      if (ZBm.PixelWidth<>Bm.Width) or  (ZBm.PixelHeight<>Bm.Height) then
+      ZBm := (BmFile.GetOwner as TZBitmap);
+      if (ZBm.PixelWidth<Bm.Width) or  (ZBm.PixelHeight<Bm.Height) then
       begin
-        ShowMessage(
-          Format('Bitmap must have the same dimensions as the bitmap that owns the producer-list.'#13#13 +
-           'The bitmap you try to import is %d x %d.'#13 +
-           'The bitmap-component is %d x %d.',
-              [Bm.Width,Bm.Height,ZBm.PixelWidth,ZBm.PixelHeight])
-           );
-        Abort;
+        ZBm.PropWidth := NextPowerOfTwoBitmap(Bm.Width);
+        ZBm.PropHeight := NextPowerOfTwoBitmap(Bm.Height);
       end;
     end;
 
-    Self.Component.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(FileName)) );
+    BmFile.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(FileName)) );
 
     if Pic.Graphic is TJpegImage then
     begin
-      (Self.Component as TBitmapFromFile).FileFormat := bffJpeg;
+      BmFile.FileFormat := bffJpeg;
       Stream.LoadFromFile(FileName);
       Exit;
-    end;
+    end
+    else
+      BmFile.FileFormat := bffUncompressed;
 
     UseAlpha := Bm.PixelFormat=pf32bit;
 
     if not (Bm.PixelFormat in [pf24Bit,pf32Bit]) then
       Bm.PixelFormat := pf24Bit;
-
-    if UseAlpha then
-      ZLog.GetLog(Self.ClassName).Write('Alpha-channel present');
 
     //Store image upside down, this is how GL wants it
     for Y := Bm.Height - 1 downto 0 do
@@ -1445,11 +1463,11 @@ begin
       end;
     end;
 
-    (Self.Component as TBitmapFromFile).HasAlphaLayer := UseAlpha;
+    BmFile.HasAlphaLayer := UseAlpha;
     if UseAlpha then
-      (Self.Component as TBitmapFromFile).Transparency := btAlphaLayer
+      BmFile.Transparency := btAlphaLayer
     else
-      (Self.Component as TBitmapFromFile).Transparency := btNone;
+      BmFile.Transparency := btNone;
 
   finally
     if OwnBm then
@@ -1483,7 +1501,7 @@ var
 //      D.DefaultExt := '*.bmp';
       if not D.Execute then
         Exit;
-      GetPictureStream(D.FileName,M);
+      GetPictureStream(TBitmapFromFile(Self.Component),D.FileName,M);
       Result := True;
     finally
       D.Free;

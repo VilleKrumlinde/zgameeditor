@@ -887,7 +887,7 @@ end;
 
 function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp;
 const
-  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray];
+  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray,zctString];
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;

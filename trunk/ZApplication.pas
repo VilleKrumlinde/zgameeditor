@@ -1011,9 +1011,9 @@ procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
 
+  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}(@OnLoaded), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TAppState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnLoaded',{$ENDIF}(@OnLoaded), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnBeginRenderPass',{$ENDIF}(@OnBeginRenderPass), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
