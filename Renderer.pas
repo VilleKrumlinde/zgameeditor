@@ -267,7 +267,7 @@ type
     ParticleLifetime : single;
     Speed,SpeedRange : single;
     Radius : single;
-    AnimateAlpha : single;
+    AnimateAlpha,AnimateSize : single;
     Duration : single;
     BeginTime : single;
     Gravity : TZVector3f;
@@ -1448,7 +1448,7 @@ procedure TRenderParticles.Update;
 var
   P : TParticle;
   I,EmitCount : integer;
-  DAlpha,T,DT : single;
+  DAlpha,DSize,T,DT : single;
   ScaledGravity : TZVector2f;
   UseGravity : boolean;
 begin
@@ -1462,6 +1462,7 @@ begin
 
   //Update positions and remove particles
   DAlpha := Self.AnimateAlpha * DT;
+  DSize := Self.AnimateSize * DT;
 
   if UseGravity then
     ScaledGravity := VecScalarMult2(PZVector2f(@Gravity)^,DT);
@@ -1485,6 +1486,12 @@ begin
         VecAdd2_Inplace( PZVector2f(@P.Velocity)^, ScaledGravity );
 
       P.Color.A := Clamp(P.Color.A + DAlpha,0,1);
+
+      if DSize<>0 then
+      begin
+        P.Width := P.Width + DSize;
+        P.Height := P.Height + DSize;
+      end;
 
       Inc(I);
     end;
@@ -1521,6 +1528,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Radius',{$ENDIF}(@Radius), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}(@ParticleLifetime), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}(@AnimateAlpha), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'AnimateSize',{$ENDIF}(@AnimateSize), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}(@Duration), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}(@BeginTime), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}(@OnEmitExpression), zptExpression);

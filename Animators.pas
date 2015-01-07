@@ -99,6 +99,7 @@ type
     procedure Start; override;
     {$ifndef minimal}
     function GetDisplayName: AnsiString; override;
+    procedure DesignerReset; override;
     {$endif}
   end;
 
@@ -383,6 +384,12 @@ begin
 end;
 
 {$ifndef minimal}
+procedure TAnimatorWithTargetBase.DesignerReset;
+begin
+  inherited;
+  LastBeginTime := 0;
+end;
+
 function TAnimatorWithTargetBase.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName;

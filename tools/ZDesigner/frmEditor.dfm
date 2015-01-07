@@ -185,10 +185,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -1424,9 +1420,7 @@ object EditorForm: TEditorForm
                 Margins.Top = 4
                 Margins.Right = 4
                 Margins.Bottom = 4
-                ExplicitLeft = 0
                 ExplicitTop = 27
-                ExplicitWidth = 0
                 ExplicitHeight = 566
                 inherited Label10: TLabel
                   Left = 10
@@ -1605,10 +1599,6 @@ object EditorForm: TEditorForm
           Caption = 'ViewerBlankTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object ViewerBitmapTabSheet: TTabSheet
           Margins.Left = 4
@@ -2178,7 +2168,7 @@ object EditorForm: TEditorForm
       OnExecute = FileNewWindowActionExecute
     end
     object Import3dsAction: TAction
-      Caption = 'Import 3DS-file'
+      Caption = 'Import 3DS-file...'
       OnExecute = Import3dsActionExecute
     end
     object GenerateReleaseOsx86Action: TAction
@@ -2243,6 +2233,10 @@ object EditorForm: TEditorForm
     object AndroidBuildDebugApkAction: TAction
       Caption = 'Android: Build APK (debug)'
       OnExecute = AndroidBuildDebugApkActionExecute
+    end
+    object ImportBitmapAction: TAction
+      Caption = 'Import Bitmaps...'
+      OnExecute = ImportBitmapActionExecute
     end
   end
   object TreePopupMenu: TPopupMenu
@@ -2857,6 +2851,9 @@ object EditorForm: TEditorForm
       end
       object Import3dsAction1: TMenuItem
         Action = Import3dsAction
+      end
+      object Importbitmap1: TMenuItem
+        Action = ImportBitmapAction
       end
       object N7: TMenuItem
         Caption = '-'

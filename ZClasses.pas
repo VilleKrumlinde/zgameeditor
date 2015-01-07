@@ -3907,6 +3907,8 @@ end;
 
 function ZStrCompare(P1,P2 : PAnsiChar) : boolean;
 begin
+  if (P1=nil) or (P2=nil) then
+    Exit(P1=P2);
   while (P1^=P2^) and (P1^<>#0) and (P2^<>#0) do
   begin
     Inc(P1); Inc(P2);

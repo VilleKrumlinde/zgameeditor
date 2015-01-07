@@ -77,6 +77,7 @@ type
     Transparency : (btNone,btBlackColor,btAlphaLayer);
     HasAlphaLayer : boolean;
     FileFormat : (bffUncompressed,bffJpeg);
+    DataWidth,DataHeight : integer;
   end;
 
   TBitmapBlur = class(TContentProducer)
@@ -435,27 +436,51 @@ begin
     {$ifndef minimal}List.GetLast.SetOptions(['None','BlackColor','AlphaLayer']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasAlphaLayer',{$ENDIF}(@HasAlphaLayer), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'FileFormat',{$ENDIF}(@FileFormat), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Uncompressed','Jpeg']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'DataWidth',{$ENDIF}(@DataWidth), zptInteger);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'DataHeight',{$ENDIF}(@DataHeight), zptInteger);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
+{$POINTERMATH ON}
 procedure TBitmapFromFile.ProduceOutput(Content: TContent; Stack: TZArrayList);
 var
   BM : TZBitmap;
-  SP,DP,Mem : PByte;
-  IsTransparent : boolean;
-  PixelCount,Pixel : integer;
-  I : Integer;
-  B : byte;
+  SP,SPStart,DP,Mem : PByte;
   Nj : TNjDecoder;
+
+  SWidth,SHeight,SPixelSize,
+  DWidth,DHeight,
+  X,Y : integer;
 begin
   BM := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
-  Mem := nil;
   Nj := nil;
   SP := nil;
 
-  PixelCount := BM.PixelWidth*BM.PixelHeight;
+  SWidth := BM.PixelWidth;
+  SHeight := BM.PixelHeight;
+  DWidth := SWidth;
+  DHeight := SHeight;
+
+  if Self.DataWidth<>0 then
+  begin
+    SWidth := Self.DataWidth;
+    SHeight := Self.DataHeight;
+  end
+  {$ifndef minimal}
+  else //DataWidth not set (component created before these properties existed), set from owner Bitmap size
+  begin
+    Self.DataWidth := SWidth;
+    Self.DataHeight := SHeight;
+  end
+  {$endif};
 
   //Ifall det behövs format och storleksdata om bitmappen
   //så kan man lägga till properties senare.
@@ -463,8 +488,9 @@ begin
     bffUncompressed:
       begin
         {$ifndef minimal}
-        if BitmapFile.Size<(PixelCount*3) then
+        if BitmapFile.Size<(SWidth*SHeight*3) then
         begin
+          ZLog.GetLog(Self.ClassName).Warning('Incorrect bitmap data size.');
           BM.Free;
           Exit;
         end;
@@ -486,43 +512,38 @@ begin
       end;
   end;
 
-  IsTransparent := Transparency<>btNone;
-  if IsTransparent or HasAlphaLayer then
+  GetMem(Mem,DWidth*DHeight*4);
+  FillChar(Mem^,DWidth*DHeight*4,0);
+
+  if Self.HasAlphaLayer then
+    SPixelSize := 4
+  else
+    SPixelSize := 3;
+
+  //Source image is upside-down. This is how it should be sent to opengl too.
+
+  SPStart := SP;
+  for Y := 0 to Min(SHeight,DHeight)-1 do
   begin
-    GetMem(Mem,PixelCount*4);
-    DP := Mem;
-    Pixel := 0;
-    for I := 0 to (PixelCount*3) - 1 do
+    DP := @Mem[(DHeight-1-Y)*DWidth*4];
+    SP := @SPStart[(SHeight-1-Y)*SWidth*SPixelSize];
+    for X := 0 to Min(SWidth,DWidth)-1 do
     begin
-      B := SP^;
-      DP^ := B;
-      Inc(Pixel,B);
-      Inc(SP);
-      Inc(DP);
-      if (I mod 3)=2 then
-      begin
-        case Transparency of
-          btBlackColor :
-            if Pixel=0 then
-              DP^ := 0
-            else
-              DP^ := High(Byte);
-          btAlphaLayer :
-            begin
-              DP^ := SP^;
-            end;
-        end;
-        if HasAlphaLayer then
-          Inc(SP);
-        Inc(DP);
-        Pixel := 0;
+      Move(SP^,DP^,SPixelSize);
+      case Self.Transparency of
+        btNone : DP[3] := High(Byte);
+        btBlackColor :
+          if PInteger(DP)^=0 then
+            DP[3] := 0
+          else
+            DP[3] := High(Byte);
       end;
+      Inc(SP,SPixelSize);
+      Inc(DP,4);
     end;
-    BM.SetMemory(Mem,GL_RGBA,GL_UNSIGNED_BYTE);
-  end else
-  begin
-    BM.SetMemory(SP,GL_RGB,GL_UNSIGNED_BYTE);
   end;
+
+  BM.SetMemory(Mem,GL_RGBA,GL_UNSIGNED_BYTE);
 
   //Needed to send the bitmap to opengl
   BM.UseTextureBegin;

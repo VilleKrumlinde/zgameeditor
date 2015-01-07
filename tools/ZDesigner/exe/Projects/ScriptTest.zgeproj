@@ -454,7 +454,18 @@ if(ConS!="String")
 if(ConI!=1)
   Error=1011;
 if(ConF!=1.0)
-  Error=1012;]]>
+  Error=1012;
+
+
+//Null-comparisons
+s=null;
+if(s!=null)
+  Error=1013;
+
+string[2] sa;
+
+if(sa[0]!=null)
+  Error=1014;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Model values">
@@ -819,6 +830,18 @@ else
   </OnRender>
   <Content>
     <Model Name="Model1" Position="1 2 3" Category="5">
+      <OnUpdate>
+        <ZExpression>
+          <Expression>
+<![CDATA[currentmodel.position.x=f4()*8;
+
+DefinedVecArray[0][0]=1;]]>
+          </Expression>
+        </ZExpression>
+      </OnUpdate>
+      <OnRender>
+        <RenderSprite/>
+      </OnRender>
       <Definitions>
         <Variable Name="Defined1"/>
         <Variable Name="Defined2"/>
@@ -830,18 +853,6 @@ else
         </Array>
         <Array Name="DefinedVecArray" Type="6" SizeDim1="1"/>
       </Definitions>
-      <OnRender>
-        <RenderSprite/>
-      </OnRender>
-      <OnUpdate>
-        <ZExpression>
-          <Expression>
-<![CDATA[currentmodel.position.x=f4()*8;
-
-DefinedVecArray[0][0]=1;]]>
-          </Expression>
-        </ZExpression>
-      </OnUpdate>
     </Model>
     <Variable Name="Error"/>
     <Mesh Name="Mesh1">

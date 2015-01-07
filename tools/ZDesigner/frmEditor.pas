@@ -234,6 +234,8 @@ type
     LogClearMenuItem: TMenuItem;
     GamutImage: TImage;
     EnableThreadedProcessingMenuItem: TMenuItem;
+    ImportBitmapAction: TAction;
+    Importbitmap1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -313,6 +315,7 @@ type
     procedure FileOpenActionBeforeExecute(Sender: TObject);
     procedure EnableThreadedProcessingMenuItemClick(Sender: TObject);
     procedure WmActivate(var M : TMessage); message WM_ACTIVATE;
+    procedure ImportBitmapActionExecute(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -410,6 +413,10 @@ type
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
+    procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
+    procedure ImportBitmaps(Files: TStringList);
+  protected
+    procedure CreateWnd; override;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
@@ -444,7 +451,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  Generics.Collections, frmAndroidApk, Winapi.Imm;
+  Generics.Collections, frmAndroidApk, Winapi.Imm, ExtDlgs;
 
 { TEditorForm }
 
@@ -628,6 +635,12 @@ begin
   ReadAppSettingsFromIni;
   RefreshMenuFromMruList;
   FillNewMenuTemplateItems;
+end;
+
+procedure TEditorForm.CreateWnd;
+begin
+  inherited;
+  DragAcceptFiles(WindowHandle, True);
 end;
 
 procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
@@ -978,6 +991,32 @@ begin
     ImmAssociateContext(Self.Handle,0);
   end;
   inherited;
+end;
+
+procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
+var
+  i, fileCount: integer;
+  fileName: array[0..MAX_PATH] of char;
+  BitmapFiles : TStringList;
+  Match : string;
+begin
+  BitmapFiles := TStringList.Create;
+
+  Match := '.png .jpg .jpeg .bmp .gif';
+
+  fileCount:=DragQueryFile(msg.Drop, $FFFFFFFF, fileName, MAX_PATH);
+  for i := 0 to fileCount - 1 do
+  begin
+    DragQueryFile(msg.Drop, i, fileName, MAX_PATH);
+    if Pos(LowerCase(ExtractFileExt(FileName)),Match)>0 then
+      BitmapFiles.Add(Filename);
+  end;
+  DragFinish(msg.Drop);
+
+  if BitmapFiles.Count>0 then
+    ImportBitmaps(BitmapFiles);
+
+  BitmapFiles.Free;
 end;
 
 procedure TEditorForm.WriteAppSettingsToIni;
@@ -1917,6 +1956,7 @@ begin
   Driver.Free;
   GamutZBitmap.Free;
 end;
+
 
 procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
 var
@@ -3101,6 +3141,53 @@ begin
     end;
   finally
     D.Free;
+  end;
+end;
+
+procedure TEditorForm.ImportBitmaps(Files: TStringList);
+var
+  Parent: TZComponentTreeNode;
+  BmFile: TBitmapFromFile;
+  Node: TZComponentTreeNode;
+  S: string;
+  M : TMemoryStream;
+begin
+  M := TMemoryStream.Create;
+  for S in Files do
+  begin
+    M.Clear;
+    BmFile := nil;
+    GetPictureStream(BmFile, S, M);
+    if M.Size > 0 then
+    begin
+      BmFile.BitmapFile.Size := M.Size;
+      GetMem(BmFile.BitmapFile.Data, M.Size);
+      Move(M.Memory^, BmFile.BitmapFile.Data^, M.Size);
+    end;
+    Parent := Tree.FindNodeForComponentList(ZApp.Content);
+    Node := InsertAndRenameComponent(BmFile.GetOwner, Parent);
+    Node.Expand(False);
+    Tree.Selected := Node;
+  end;
+  M.Free;
+end;
+
+procedure TEditorForm.ImportBitmapActionExecute(Sender: TObject);
+var
+  D : TOpenPictureDialog;
+  Files : TStringList;
+begin
+  D := TOpenPictureDialog.Create(Self);
+  D.Options := D.Options + [ofAllowMultiSelect];
+  Files := TStringList.Create;
+  try
+    if not D.Execute then
+      Exit;
+    Files.AddStrings( D.Files );
+    ImportBitmaps(Files);
+  finally
+    D.Free;
+    Files.Free;
   end;
 end;
 
