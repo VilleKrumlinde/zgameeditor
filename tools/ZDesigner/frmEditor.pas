@@ -1,4 +1,4 @@
-{Copyright (c) 2008-2012 Ville Krumlinde
+{Copyright (c) 2008- Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ uses
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
   Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
-  Vcl.Imaging.pngimage, ZBitmap;
+  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -61,7 +61,7 @@ type
     Addcomponent2: TMenuItem;
     ViewerPageControl: TPageControl;
     ViewerGlTabSheet: TTabSheet;
-    ViewerSoundTabSheet: TTabSheet;
+    ViewerCompTabSheet: TTabSheet;
     ActionImageList: TImageList;
     RotateModelPanel: TPanel;
     ViewRotateXTrackBar: TTrackBar;
@@ -76,13 +76,11 @@ type
     N1: TMenuItem;
     ResetComponentAction1: TMenuItem;
     ResetModelButton: TButton;
-    ViewerMusicTabSheet: TTabSheet;
     CopyComponentAction: TAction;
     PasteComponentAction: TAction;
     N2: TMenuItem;
     Copy1: TMenuItem;
     Paste1: TMenuItem;
-    MusicEditFrame1: TMusicEditFrame;
     WireframeCheckBox: TCheckBox;
     MoveUpComponentAction: TAction;
     MoveDownComponentAction: TAction;
@@ -145,7 +143,6 @@ type
     ResetCameraButton: TButton;
     Onlinehelp1: TMenuItem;
     N6: TMenuItem;
-    SoundEditFrame1: TSoundEditFrame;
     AppPreviewStartAction: TAction;
     AppPreviewStopAction: TAction;
     Label2: TLabel;
@@ -188,11 +185,7 @@ type
     UndoDeleteAction: TAction;
     Undodelete1: TMenuItem;
     AddFromLibraryMenuItem: TMenuItem;
-    ViewerBitmapTabSheet: TTabSheet;
-    BitmapEditFrame1: TBitmapEditFrame;
     Import3DSfile1: TMenuItem;
-    ViewerMeshTabSheet: TTabSheet;
-    MeshEditFrame1: TMeshEditFrame;
     RemoveUnusedMenuItem: TMenuItem;
     LogPopupMenu: TPopupMenu;
     LogCopytoclipboardMenuItem: TMenuItem;
@@ -236,6 +229,11 @@ type
     EnableThreadedProcessingMenuItem: TMenuItem;
     ImportBitmapAction: TAction;
     Importbitmap1: TMenuItem;
+    ImportAudioAction: TAction;
+    ImportAudio1: TMenuItem;
+    Panel1: TPanel;
+    CompEditorParentPanel: TPanel;
+    DetachCompEditorButton: TButton;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -316,6 +314,8 @@ type
     procedure EnableThreadedProcessingMenuItemClick(Sender: TObject);
     procedure WmActivate(var M : TMessage); message WM_ACTIVATE;
     procedure ImportBitmapActionExecute(Sender: TObject);
+    procedure ImportAudioActionExecute(Sender: TObject);
+    procedure DetachCompEditorButtonClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -345,12 +345,8 @@ type
     SysLibrary : TZComponent;
     AutoComp,ParamComp : TSynCompletionProposal;
     Log : TLog;
-    ZApp : TZApplication;
-    Driver : TGLDriverBase;
-    GamutZBitmap : TZBitmap;
+    DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
     procedure SelectComponent(C : TZComponent);
-    procedure DrawZBitmap;
-    procedure DrawMesh;
     procedure DrawModel;
     procedure OnGlDraw(Sender : TObject);
     procedure OnPropValueChange;
@@ -415,11 +411,17 @@ type
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
     procedure ImportBitmaps(Files: TStringList);
+    procedure ImportAudioFiles(Files: TStringList);
+    function MakeCompEditor(Kind: TCompEditFrameBaseType): TCompEditFrameBase;
+    procedure OnDetachedCompEditorClose(Sender: TObject; var Action: TCloseAction);
   protected
     procedure CreateWnd; override;
   public
     Glp : TGLPanel;
     Tree : TZComponentTreeView;
+    ZApp : TZApplication;
+    GamutZBitmap : TZBitmap;
+    Driver : TGLDriverBase;
     procedure SetFileChanged(Value : Boolean);
     //Custom editors
     procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
@@ -442,6 +444,8 @@ const
   AppVersion = '3.1b';
   ZgeProjExtension = '.zgeproj';
 
+procedure SetupGLShading;
+
 implementation
 
 {$R *.dfm}
@@ -451,7 +455,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  Generics.Collections, frmAndroidApk, Winapi.Imm, ExtDlgs;
+  frmAndroidApk, Winapi.Imm, ExtDlgs;
 
 { TEditorForm }
 
@@ -508,6 +512,7 @@ begin
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 
   LoadGamutBitmap;
+  DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -997,26 +1002,33 @@ procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
 var
   i, fileCount: integer;
   fileName: array[0..MAX_PATH] of char;
-  BitmapFiles : TStringList;
-  Match : string;
+  BitmapFiles,AudioFiles : TStringList;
+  BmMatch,AudioMatch : string;
 begin
   BitmapFiles := TStringList.Create;
+  AudioFiles := TStringList.Create;
 
-  Match := '.png .jpg .jpeg .bmp .gif';
+  BmMatch := '.png .jpg .jpeg .bmp .gif';
+  AudioMatch := '.ogg';
 
   fileCount:=DragQueryFile(msg.Drop, $FFFFFFFF, fileName, MAX_PATH);
   for i := 0 to fileCount - 1 do
   begin
     DragQueryFile(msg.Drop, i, fileName, MAX_PATH);
-    if Pos(LowerCase(ExtractFileExt(FileName)),Match)>0 then
-      BitmapFiles.Add(Filename);
+    if Pos(LowerCase(ExtractFileExt(FileName)),BmMatch)>0 then
+      BitmapFiles.Add(Filename)
+    else if Pos(LowerCase(ExtractFileExt(FileName)),AudioMatch)>0 then
+      AudioFiles.Add(Filename)
   end;
   DragFinish(msg.Drop);
 
   if BitmapFiles.Count>0 then
     ImportBitmaps(BitmapFiles);
+  if AudioFiles.Count>0 then
+    ImportAudioFiles(AudioFiles);
 
   BitmapFiles.Free;
+  AudioFiles.Free;
 end;
 
 procedure TEditorForm.WriteAppSettingsToIni;
@@ -1237,11 +1249,7 @@ begin
         FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
         FloatToStr( RoundTo(ViewTranslate[2],-1) );
 
-      if (ShowNode is TZBitmap)then
-        DrawZBitmap
-      else if (ShowNode is TMesh) then
-        DrawMesh
-      else if (ShowNode is TModel) then
+      if (ShowNode is TModel) then
         DrawModel
       else if IsRenderComponent then
         DrawOnRenderComponent
@@ -1313,37 +1321,54 @@ begin
   end;
 end;
 
+function TEditorForm.MakeCompEditor(Kind : TCompEditFrameBaseType) : TCompEditFrameBase;
+begin
+  Result := Kind.Create(Self);
+  Result.Name := '';
+  Result.Parent := CompEditorParentPanel;
+  Result.Align := alClient;
+  DetachCompEditorButton.Visible := True;
+end;
+
 procedure TEditorForm.SetShowNode(Node : TZComponent);
 begin
   if CompEditor<>nil then
+  begin
     CompEditor.OnEditorClose;
+    FreeAndNil(CompEditor);
+  end;
 
   if IsAppRunning and (not (Node is TZApplication)) then
     AppPreviewStopAction.Execute;
 
-  CompEditor := nil;
   CompEditorTreeNode := nil;
 
   ShowNode := Node;
-  if ShowNode is AudioComponents.TSound then
+
+  if DetachedCompEditors.ContainsKey(ShowNode) then
   begin
-    ViewerPageControl.ActivePage := ViewerSoundTabSheet;
-    CompEditor := SoundEditFrame1;
+    DetachedCompEditors[ShowNode].BringToFront;
+    ViewerPageControl.ActivePage := ViewerBlankTabSheet;
+  end
+  else if ShowNode is AudioComponents.TSound then
+  begin
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TSoundEditFrame);
   end
   else if ShowNode is AudioComponents.TMusic then
   begin
-    ViewerPageControl.ActivePage := ViewerMusicTabSheet;
-    CompEditor := MusicEditFrame1;
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TMusicEditFrame);
   end
   else if ShowNode is TZBitmap then
   begin
-    ViewerPageControl.ActivePage := ViewerBitmapTabSheet;
-    CompEditor := BitmapEditFrame1;
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TBitmapEditFrame);
   end
   else if ShowNode is TMesh then
   begin
-    ViewerPageControl.ActivePage := ViewerMeshTabSheet;
-    CompEditor := MeshEditFrame1;
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TMeshEditFrame);
   end
   else if {(ShowNode is TZBitmap) or}
     {(ShowNode is TMesh) or}
@@ -1361,7 +1386,6 @@ begin
 
   if CompEditor<>nil then
     CompEditor.SetComponent(ShowNode,Tree.ZSelected);
-
 end;
 
 procedure TEditorForm.FileNewWindowActionExecute(Sender: TObject);
@@ -1483,11 +1507,22 @@ begin
 end;
 
 procedure TEditorForm.OnPropValueChange;
+var
+  F : TForm;
+  C : TCompEditFrameBase;
 begin
   //Värde har ändrats i propertyeditorn
   Glp.Invalidate;
+
   if CompEditor<>nil then
     CompEditor.OnPropChanged;
+
+  for F in DetachedCompEditors.Values do
+  begin
+    C := F.Controls[0] as TCompEditFrameBase;
+    C.OnPropChanged;
+  end;
+
   SetFileChanged(True);
 end;
 
@@ -1564,146 +1599,6 @@ begin
   end;
 end;
 
-procedure TEditorForm.DrawZBitmap;
-var
-  W,H : integer;
-  B : TZBitmap;
-  Owns : boolean;
-  UseAlpha : boolean;
-begin
-  if ShowNode is TZBitmap then
-  begin
-    Owns := False;
-    B := (ShowNode as TZBitmap);
-  end
-  else
-  begin
-    Exit;
-//    Owns := True;
-//    B := (ShowNode as TBitmapProducer).ProduceOutput as TZBitmap;
-  end;
-
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-  UseAlpha := BitmapEditFrame1.UseAlphaCheckBox.Checked;
-
-  //Make sure texture matrix is reset
-  ZApp.Driver.EnableMaterial(DefaultMaterial);
-
-  if ShadersSupported then
-    glUseProgram(0);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-  glMatrixMode(GL_TEXTURE);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-
-  glViewport(0, 0, Glp.Width, Glp.Height);
-
-  glClearColor(0.5,0.5,0.5,0);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-  if B=nil then
-    Exit;
-
-  glDisable( GL_LIGHTING );
-  glDisable( GL_CULL_FACE );
-
-  glScalef(2.0 / Glp.Width, -2.0 / Glp.Height, 1.0);
-
-  W := (Min(Glp.Width,Glp.Height) div 2) - 8;
-  H := W;
-
-  W := Min(Round(W * B.PixelWidth/B.PixelHeight),W);
-  H := Min(Round(H * B.PixelHeight/B.PixelWidth),H);
-
-  //rita en quad
-  glPushMatrix;
-
-  glEnable(GL_TEXTURE_2D);
-  if UseAlpha then
-  begin
-    //Draw gamut bitmap
-    Self.GamutZBitmap.UseTextureBegin;
-
-    glBegin(GL_QUADS);
-      //x.
-      //..
-      glTexCoord2f(0.0, H div 16);
-      glVertex2f(-W,-H);
-
-      //..
-      //x.
-      glTexCoord2f(0.0, 0.0);
-      glVertex2f(-W,H);
-
-      //..
-      //.x
-      glTexCoord2f(W div 16, 0.0);
-      glVertex2f(W,H);
-
-      //.x
-      //..
-      glTexCoord2f(W div 16, H div 16);
-      glVertex2f(W,-H);
-    glEnd();
-  end;
-
-  glDisable(GL_DEPTH_TEST);
-
-  if UseAlpha then
-  begin
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  end else
-    glDisable(GL_BLEND);
-
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
-
-  B.UseTextureBegin;
-  //För TexCoords gäller: Y=1 Top, Y=0 Bottom
-  glBegin(GL_QUADS);
-    //x.
-    //..
-    glTexCoord2f(0.0, 1.0);
-    glVertex2f(-W,-H);
-
-    //..
-    //x.
-    glTexCoord2f(0.0, 0.0);
-    glVertex2f(-W,H);
-
-    //..
-    //.x
-    glTexCoord2f(1.0, 0.0);
-    glVertex2f(W,H);
-
-    //.x
-    //..
-    glTexCoord2f(1.0, 1.0);
-    glVertex2f(W,-H);
-  glEnd();
-
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_BLEND);
-
-  //B.UseTextureEnd;
-  if Owns then
-    B.Free;
-
-  glPopMatrix;
-
-  glPopAttrib();
-
-  glFlush;
-end;
-
 procedure SetupGLShading;
 const
   AmbientLight : array[0..3] of single = (0.4, 0.4, 0.4, 1.0);
@@ -1730,65 +1625,6 @@ begin
   glEnable(GL_CULL_FACE);
 
   glEnable(GL_NORMALIZE);
-end;
-
-procedure TEditorForm.DrawMesh;
-var
-  M : TMesh;
-begin
-  if ShowNode is TMesh then
-    M := (ShowNode as TMesh)
-  else
-    Exit;
-
-  if ShadersSupported then
-    glUseProgram(0);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  //calculate the aspect ratio of the window
-  //we'll use a perspective matrix to view our scene
-
-  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
-  glMatrixMode(GL_MODELVIEW);
-
-//  glShadeModel(GL_SMOOTH);
-
-  glViewport(0, 0, Glp.Width, Glp.Height);
-
-  glClearColor(0.5,0.5,0.5,0);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-  if M=nil then
-    Exit;
-
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-    if MeshEditFrame1.WireframeCheckBox.Checked then
-      glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
-    else
-      SetupGLShading;
-
-    // now here is where we'd translate and rotate the cube
-    //reset our modelview matrix
-    glLoadIdentity();
-
-    //translate
-    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
-
-    //rotate
-    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
-    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
-    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
-
-    //set our color to be red
-    glColor3f(1.0, 0.0, 0.0);
-    Self.Driver.RenderMesh(M);
-    glColor3f(1.0, 1.0, 1.0);
-
-  glPopAttrib();
-
-  glFlush;
 end;
 
 
@@ -1948,6 +1784,7 @@ end;
 destructor TEditorForm.Destroy;
 begin
   inherited;
+  DetachedCompEditors.Free;
   MruList.Free;
   Renderer.CleanUp;
   UndoNodes.Free;
@@ -1957,6 +1794,29 @@ begin
   GamutZBitmap.Free;
 end;
 
+
+procedure TEditorForm.OnDetachedCompEditorClose(Sender: TObject; var Action: TCloseAction);
+var
+  C : TCompEditFrameBase;
+begin
+  C := (Sender as TForm).Controls[0] as TCompEditFrameBase;
+  if DetachedCompEditors.ContainsKey(C.Component) then
+    DetachedCompEditors.Remove(C.Component);
+end;
+
+procedure TEditorForm.DetachCompEditorButtonClick(Sender: TObject);
+var
+  F : TForm;
+begin
+  F := TForm.CreateNew(Self);
+  F.Caption := 'Editing: ' + String(CompEditor.Component.GetDisplayName);
+  CompEditor.Parent := F;
+  F.Show;
+  F.OnClose := Self.OnDetachedCompEditorClose;
+  DetachedCompEditors.Add(CompEditor.Component,F);
+  DetachCompEditorButton.Visible := False;
+  CompEditor := nil;
+end;
 
 procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
 var
@@ -2778,6 +2638,9 @@ begin
         LockShow := False;
       end;
 
+      if DetachedCompEditors.ContainsKey(C) then
+        DetachedCompEditors.Remove(C);
+
       //Remove all names from symboltable
       List := TObjectList.Create(False);
       try
@@ -3172,6 +3035,71 @@ begin
   M.Free;
 end;
 
+procedure TEditorForm.ImportAudioActionExecute(Sender: TObject);
+var
+  D : TOpenDialog;
+  Files : TStringList;
+begin
+  D := TOpenDialog.Create(Self);
+  Files := TStringList.Create;
+  try
+    D.Title := 'Pick audio file to import';
+    D.Filter := 'OGG-files (*.ogg)|*.ogg';
+    D.DefaultExt := '*.ogg';
+    D.Options := D.Options + [ofAllowMultiSelect];
+    if not D.Execute then
+      Exit;
+    Files.AddStrings( D.Files );
+    ImportAudioFiles(Files);
+  finally
+    D.Free;
+    Files.Free;
+  end;
+end;
+
+procedure TEditorForm.ImportAudioFiles(Files: TStringList);
+var
+  Parent: TZComponentTreeNode;
+  Snd : TSound;
+  Smp : TSample;
+  Import: TSampleImport;
+  Node: TZComponentTreeNode;
+  S: string;
+  M : TMemoryStream;
+begin
+  M := TMemoryStream.Create;
+  for S in Files do
+  begin
+    M.Clear;
+    M.LoadFromFile(S);
+
+    Snd := TSound.Create(nil);
+    Snd.SetString('Name','Sound1');
+
+    Smp := TSample.Create(nil);
+    Smp.SetString('Name','Sample1');
+    Import := TSampleImport.Create(Smp.Producers);
+    Import.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(S)));
+    Import.SampleFileFormat := sffOGG;
+
+    Import.SampleData.Size := M.Size;
+    GetMem(Import.SampleData.Data, M.Size);
+    Move(M.Memory^, Import.SampleData.Data^, M.Size);
+
+    Snd.Voice.SampleRef := Smp;
+    Snd.Voice.UseSampleHz := True;
+
+    Parent := Tree.FindNodeForComponentList(ZApp.Content);
+
+    InsertAndRenameComponent(Smp, Parent);
+    Node := InsertAndRenameComponent(Snd, Parent);
+
+    Tree.Selected := Node;
+  end;
+  M.Free;
+end;
+
+
 procedure TEditorForm.ImportBitmapActionExecute(Sender: TObject);
 var
   D : TOpenPictureDialog;
@@ -3384,12 +3312,23 @@ begin
 end;
 
 function TEditorForm.CloseProject : boolean;
+var
+  F : TForm;
+  C : TCompEditFrameBase;
 begin
   Result := True;
   if not Assigned(Root) then
     Exit;
 
   WriteProjectSettingsToIni;
+
+  //Close and save all detached editors
+  for F in DetachedCompEditors.Values do
+  begin
+    C := F.Controls[0] as TCompEditFrameBase;
+    C.OnEditorClose;
+  end;
+  DetachedCompEditors.Clear;
 
   //This force current expression-editor to be saved
   Tree.Selected := nil;

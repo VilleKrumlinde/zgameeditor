@@ -146,13 +146,13 @@ procedure TFileAction.Execute;
     P : PInteger;
   begin
     {$ifndef minimal}
-    if not (A._Type in [zctInt,zctByte]) then
+    if not (A._Type in [zctInt,zctFloat,zctByte]) then
     begin
-      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type int or byte.');
+      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type int, float or byte.');
       Exit;
     end;
     {$endif}
-    if (CurFile.Encoding=feBinary) or (A._Type=zctByte) then
+    if (CurFile.Encoding=feBinary) or (A._Type in [zctByte,zctFloat]) then
     begin
       A.SizeDim1 := CurInStream.Size div A.GetElementSize;
       CurInStream.Read(A.GetData^,CurInStream.Size);

@@ -58,6 +58,7 @@ inherited MeshEditFrame: TMeshEditFrame
       Align = alTop
       Caption = 'Wireframe'
       TabOrder = 0
+      OnClick = WireframeCheckBoxClick
     end
     object NormalsCheckBox: TCheckBox
       Left = 2

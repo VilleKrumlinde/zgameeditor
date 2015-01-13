@@ -25,6 +25,8 @@ type
     procedure CreateHandle; override;
     property Color default clBlack;
   public
+    SharedHrc: HGLRC;
+    function GetHrc : HGLRC;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     property MouseCapture;
@@ -93,6 +95,12 @@ procedure TGLPanel.CreateRenderContext;
 begin
   // Create a rendering context.
   SetDCPixelFormat(Canvas.Handle);
+
+  if SharedHrc<>0 then
+    //Use existing hrc
+    //http://stackoverflow.com/questions/13581303/opengl-share-existing-textures-with-future-contexts
+    Hrc := SharedHrc;
+
   if hrc=0 then
     hrc := wglCreateContext(Canvas.Handle);
   if hrc <> 0 then
@@ -114,8 +122,9 @@ begin
       OnGlInit(Self);
   end;
 
-  if (wglGetCurrentContext <> hrc) and (hrc<>0) then
-    wglMakeCurrent(Canvas.Handle,hrc);
+  wglMakeCurrent(Canvas.Handle,hrc);
+
+  Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
 
   if Assigned(OnGLDraw) then
     OnGLDraw(Self);
@@ -136,7 +145,8 @@ begin
   // Clean up and terminate.
   wglMakeCurrent(0,0);
   inherited;
-  if hrc <> 0 then
+  if (hrc <> 0) and (SharedHrc=0) then
+    //Delete context if we owned it
     wglDeleteContext(HRC)
 end;
 
@@ -144,6 +154,11 @@ procedure TGLPanel.ForceInitGL;
 begin
   HandleNeeded;
   Paint;
+end;
+
+function TGLPanel.GetHrc: HGLRC;
+begin
+  Result := Self.Hrc;
 end;
 
 procedure TGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);
@@ -176,7 +191,6 @@ begin
   inherited;
   if Self.Parent<>nil then
   begin
-    Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
     CreateRenderContext;
   end;
 end;
