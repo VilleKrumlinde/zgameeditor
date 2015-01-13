@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2008- Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -138,6 +138,13 @@ type
     Translate : TZVector3f;
     Rotate : TZVector3f;
     procedure Execute; override;
+  end;
+
+  TSpriteSheet = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Bitmap : TZBitmap;
   end;
 
   TRenderSprite = class(TRenderCommand)
@@ -2260,6 +2267,15 @@ begin
     List.GetLast.DefaultValue.FloatValue := 45;
 end;
 
+{ TSpriteSheet }
+
+procedure TSpriteSheet.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}(@Bitmap), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+end;
+
 initialization
 
   ZClasses.Register(TMaterial,MaterialClassId);
@@ -2319,6 +2335,8 @@ initialization
   ZClasses.Register(TLight,LightClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NeedParentList := 'Lights';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=25;{$endif}
+
+  ZClasses.Register(TSpriteSheet,SpriteSheetClassId);
 
   DefaultMaterial := TMaterial.Create(nil);
   DefaultMaterialTexture := TMaterialTexture.Create(nil);

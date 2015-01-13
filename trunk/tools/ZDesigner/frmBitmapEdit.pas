@@ -46,7 +46,6 @@ type
     DragLinkIndex : integer;
     GraphSize : TPoint;
     Glp : TGLPanel;
-    OldGlParent : TWinControl;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -54,6 +53,7 @@ type
     procedure InitPopupMenu;
     procedure OnAddClick(Sender: TObject);
     procedure Layout;
+    procedure OnGlDraw(Sender: TObject);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent) ; override;
@@ -70,7 +70,7 @@ var
 implementation
 
 uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
-  System.Types;
+  System.Types, OpenGL12, Renderer, ZOpenGL;
 
 {$R *.dfm}
 
@@ -611,11 +611,12 @@ begin
   Self.Bitmap := C as TZBitmap;
   ReadFromComponent;
 
-  Glp := (Owner as TEditorForm).Glp;
+  Glp := TGLPanel.Create(Self);
+  Glp.Align := alClient;
+  Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  Glp.OnGLDraw := Self.OnGlDraw;
   Glp.Visible := not DisablePreviewCheckBox.Checked;
-  OldGlParent := Glp.Parent;
   Glp.Parent := PreviewPanel;
-  Glp.Tag := 1;
 
   RepaintPage;
   Glp.Invalidate;
@@ -623,10 +624,6 @@ end;
 
 procedure TBitmapEditFrame.OnEditorClose;
 begin
-  Glp.Visible := True;
-  Glp.Parent:= OldGlParent;
-  Glp.Tag := 0;
-//  Glp.ForceInitGL;
   if DesignerPreviewProducer<>nil then
   begin
     DesignerPreviewProducer := nil;
@@ -963,5 +960,129 @@ begin
   end;
 end;
 
+procedure TBitmapEditFrame.OnGlDraw(Sender : TObject);
+var
+  W,H : integer;
+  B : TZBitmap;
+  UseAlpha : boolean;
+begin
+  B := Self.Component as TZBitmap;
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  UseAlpha := Self.UseAlphaCheckBox.Checked;
+
+  //Make sure texture matrix is reset
+  (Owner as TEditorForm).ZApp.Driver.EnableMaterial(DefaultMaterial);
+
+  if ShadersSupported then
+    glUseProgram(0);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+
+  glViewport(0, 0, Glp.Width, Glp.Height);
+
+  glClearColor(0.5,0.5,0.5,0);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  if B=nil then
+    Exit;
+
+  glDisable( GL_LIGHTING );
+  glDisable( GL_CULL_FACE );
+
+  glScalef(2.0 / Glp.Width, -2.0 / Glp.Height, 1.0);
+
+  W := (Min(Glp.Width,Glp.Height) div 2) - 8;
+  H := W;
+
+  W := Min(Round(W * B.PixelWidth/B.PixelHeight),W);
+  H := Min(Round(H * B.PixelHeight/B.PixelWidth),H);
+
+  //rita en quad
+  glPushMatrix;
+
+  glEnable(GL_TEXTURE_2D);
+  if UseAlpha then
+  begin
+    //Draw gamut bitmap
+    (Owner as TEditorForm).GamutZBitmap.UseTextureBegin;
+
+    glBegin(GL_QUADS);
+      //x.
+      //..
+      glTexCoord2f(0.0, H div 16);
+      glVertex2f(-W,-H);
+
+      //..
+      //x.
+      glTexCoord2f(0.0, 0.0);
+      glVertex2f(-W,H);
+
+      //..
+      //.x
+      glTexCoord2f(W div 16, 0.0);
+      glVertex2f(W,H);
+
+      //.x
+      //..
+      glTexCoord2f(W div 16, H div 16);
+      glVertex2f(W,-H);
+    glEnd();
+  end;
+
+  glDisable(GL_DEPTH_TEST);
+
+  if UseAlpha then
+  begin
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  end else
+    glDisable(GL_BLEND);
+
+  glDisable(GL_TEXTURE_GEN_S);
+  glDisable(GL_TEXTURE_GEN_T);
+
+  B.UseTextureBegin;
+  //För TexCoords gäller: Y=1 Top, Y=0 Bottom
+  glBegin(GL_QUADS);
+    //x.
+    //..
+    glTexCoord2f(0.0, 1.0);
+    glVertex2f(-W,-H);
+
+    //..
+    //x.
+    glTexCoord2f(0.0, 0.0);
+    glVertex2f(-W,H);
+
+    //..
+    //.x
+    glTexCoord2f(1.0, 0.0);
+    glVertex2f(W,H);
+
+    //.x
+    //..
+    glTexCoord2f(1.0, 1.0);
+    glVertex2f(W,-H);
+  glEnd();
+
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_BLEND);
+
+  glPopMatrix;
+
+  glPopAttrib();
+
+  glFlush;
+end;
 
 end.

@@ -68,7 +68,7 @@ type
  SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId,
- ThreadClassId
+ ThreadClassId,SpriteSheetClassId
 );
 
   TZComponent = class;

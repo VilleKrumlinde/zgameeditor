@@ -7,6 +7,7 @@ uses
   StdCtrls, ZClasses, DesignerGUI;
 
 type
+  TCompEditFrameBaseType = class of TCompEditFrameBase;
   TCompEditFrameBase = class(TFrame)
   protected
     procedure RefreshTreeNode;

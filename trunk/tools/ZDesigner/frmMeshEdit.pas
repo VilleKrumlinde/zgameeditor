@@ -37,6 +37,7 @@ type
     procedure PreviewMenuItemClick(Sender: TObject);
     procedure MeshNormalsCheckBoxClick(Sender: TObject);
     procedure SaveMeshToFileButtonClick(Sender: TObject);
+    procedure WireframeCheckBoxClick(Sender: TObject);
   private
     { Private declarations }
     Nodes : TObjectList;
@@ -48,7 +49,7 @@ type
     DragLinkIndex : integer;
     GraphSize : TPoint;
     Glp : TGLPanel;
-    OldGlParent : TWinControl;
+    ViewRotate,ViewTranslate : TZVector3f;
     procedure RepaintPage;
     procedure ReadFromComponent;
     procedure WriteToComponent;
@@ -56,6 +57,16 @@ type
     procedure InitPopupMenu;
     procedure OnAddClick(Sender: TObject);
     procedure Layout;
+    procedure OnGLDraw(Sender: TObject);
+    procedure ResetCamera;
+    procedure OnGLPanelMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure OnGLPanelMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure OnGLPanelMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent) ; override;
@@ -71,7 +82,8 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, System.Types;
+uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, System.Types,
+  OpenGL12,ZOpenGL;
 
 {$R *.dfm}
 
@@ -412,6 +424,7 @@ end;
 procedure TMeshEditFrame.MeshNormalsCheckBoxClick(Sender: TObject);
 begin
   Renderer.NormalsVisible := (Sender as TCheckBox).Checked;
+  Glp.Invalidate;
 end;
 
 destructor TMeshEditFrame.Destroy;
@@ -609,10 +622,17 @@ begin
   Self.Mesh := C as TMesh;
   ReadFromComponent;
 
-  Glp := (Owner as TEditorForm).Glp;
+  Glp := TGLPanel.Create(Self);
+  Glp.Align := alClient;
+  Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  Glp.OnGLDraw := Self.OnGlDraw;
   Glp.Visible := not DisablePreviewCheckBox.Checked;
-  OldGlParent := Glp.Parent;
+  Glp.OnMouseDown := OnGLPanelMouseDown;
+  Glp.OnMouseUp := OnGLPanelMouseUp;
+  Glp.OnMouseMove := OnGLPanelMouseMove;
   Glp.Parent := PreviewPanel;
+
+  ResetCamera;
 
   RepaintPage;
   Glp.Invalidate;
@@ -620,8 +640,6 @@ end;
 
 procedure TMeshEditFrame.OnEditorClose;
 begin
-  Glp.Visible := True;
-  Glp.Parent:= OldGlParent;
   if DesignerPreviewProducer<>nil then
   begin
     DesignerPreviewProducer := nil;
@@ -707,6 +725,11 @@ begin
     Result := 1;}
 end;
 
+
+procedure TMeshEditFrame.WireframeCheckBoxClick(Sender: TObject);
+begin
+  Glp.Invalidate;
+end;
 
 procedure TMeshEditFrame.WriteToComponent;
 var
@@ -927,5 +950,141 @@ begin
   end;
 end;
 
+procedure TMeshEditFrame.OnGLDraw(Sender: TObject);
+var
+  M : TMesh;
+begin
+  M := (Self.Component as TMesh);
+
+  if ShadersSupported then
+    glUseProgram(0);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  //calculate the aspect ratio of the window
+  //we'll use a perspective matrix to view our scene
+
+  gluPerspective(45.0, Glp.Width/Glp.Height, 0.1, 200.0);
+  glMatrixMode(GL_MODELVIEW);
+
+//  glShadeModel(GL_SMOOTH);
+
+  glViewport(0, 0, Glp.Width, Glp.Height);
+
+  glClearColor(0.5,0.5,0.5,0);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  if M=nil then
+    Exit;
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+    if Self.WireframeCheckBox.Checked then
+      glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
+    else
+      SetupGLShading;
+
+    // now here is where we'd translate and rotate the cube
+    //reset our modelview matrix
+    glLoadIdentity();
+
+    //translate
+    glTranslatef(ViewTranslate[0], ViewTranslate[1], ViewTranslate[2]);
+
+    //rotate
+    glRotatef( ViewRotate[0] , 1.0, 0.0, 0.0);
+    glRotatef( ViewRotate[1] , 0.0, 1.0, 0.0);
+    glRotatef( ViewRotate[2] , 0.0, 0.0, 1.0);
+
+    //set our color to be red
+    glColor3f(1.0, 0.0, 0.0);
+    (Owner as TEditorForm).Driver.RenderMesh(M);
+    glColor3f(1.0, 1.0, 1.0);
+
+  glPopAttrib();
+
+  glFlush;
+end;
+
+procedure TMeshEditFrame.ResetCamera;
+var
+  M : TMesh;
+begin
+  FillChar(ViewTranslate,SizeOf(ViewTranslate),0);
+  FillChar(ViewRotate,SizeOf(ViewRotate),0);
+  ViewTranslate[2] := -8;
+
+  M := (Self.Component as TMesh);
+  M.BeforeRender; //force refresh bounds
+  ViewTranslate[0] := -M.BoundSphere.Center[0];
+  ViewTranslate[1] := -M.BoundSphere.Center[1];
+  //http://groups.google.com/group/comp.graphics.api.opengl/browse_thread/thread/1c5ea0c3b5a3dbcb/e7908ba6696ad57c?lnk=st&q=opengl+view+whole+object&rnum=6&hl=en#e7908ba6696ad57c
+  ViewTranslate[2] := -M.BoundSphere.Center[2] - M.BoundSphere.Radius / Tan(45.0 / 2);
+end;
+
+
+var
+  LockMouse : TPoint;
+
+procedure TMeshEditFrame.OnGLPanelMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+  Tmp : TPoint;
+  DeltaX,DeltaY : integer;
+begin
+  //Skip mouse capture because it does not work well with tablets (according to Kjell)
+  if {(not Glp.MouseCapture) or }(not ((ssLeft in Shift) or (ssRight in Shift))) then
+    Exit;
+
+  //From ESS-doll
+
+  Tmp := Glp.ClientToScreen( Point(X,Y) );
+  DeltaX := tmp.X - lockmouse.X;
+  DeltaY := tmp.Y - lockmouse.Y;
+
+  if ((Abs(deltaX)+Abs(deltaY))>2) then
+  begin
+    if (Shift = [ssLeft]) then
+    begin
+      // Moving the mouse on the X axis should move the doll around the Y axis.
+      ViewRotate[1] := Frac((ViewRotate[1] - (deltaX/4))/360)*360;
+      // Moving the mouse on the Y axis should move the doll around the X axis.
+      ViewRotate[0] := Frac((ViewRotate[0] - (deltaY/4))/360)*360;
+    end else if (Shift = [ssRight]) then
+    begin
+      ViewTranslate[0] := ViewTranslate[0] + deltaX/120;
+      ViewTranslate[1] := ViewTranslate[1] - deltaY/120;
+    end else if (Shift = [ssRight,ssLeft]) then
+    begin
+      ViewTranslate[2] := ViewTranslate[2] - (deltaY/120);
+    end;
+    LockMouse := Tmp;
+    Glp.Invalidate;
+  end;
+
+end;
+
+procedure TMeshEditFrame.OnGLPanelMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+  if Glp.MouseInClient then
+  begin
+    ViewTranslate[2] := ViewTranslate[2] + (WheelDelta/240);
+    Handled := True;
+  end
+  else
+    Handled := False;
+end;
+
+procedure TMeshEditFrame.OnGLPanelMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  LockMouse := Glp.ClientToScreen( Point(X,Y) );
+end;
+
+procedure TMeshEditFrame.OnGLPanelMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  Glp.SetFocus;
+end;
 
 end.

@@ -21,7 +21,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
     Align = alLeft
     Caption = 'Graph'
     TabOrder = 0
-    ExplicitHeight = 354
     object ScrollBox1: TScrollBox
       Left = 2
       Top = 15
@@ -33,7 +32,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
       BorderStyle = bsNone
       PopupMenu = PopupMenu1
       TabOrder = 0
-      ExplicitHeight = 337
       object Image: TImage
         Left = 0
         Top = 0
@@ -54,8 +52,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
     Align = alClient
     Caption = 'Preview'
     TabOrder = 1
-    ExplicitWidth = 185
-    ExplicitHeight = 354
     object PreviewPanel: TPanel
       Left = 2
       Top = 15
@@ -64,8 +60,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitWidth = 181
-      ExplicitHeight = 337
       object Panel1: TPanel
         Left = 0
         Top = 323
@@ -74,8 +68,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
         Align = alBottom
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitTop = 315
-        ExplicitWidth = 181
         object DisablePreviewCheckBox: TCheckBox
           Left = 2
           Top = 1
