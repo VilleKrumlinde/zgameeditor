@@ -967,6 +967,7 @@ var
   UseAlpha : boolean;
 begin
   B := Self.Component as TZBitmap;
+  B.Update;
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 

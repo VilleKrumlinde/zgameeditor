@@ -1,0 +1,2 @@
+inherited SpriteSheetEditFrame: TSpriteSheetEditFrame
+end

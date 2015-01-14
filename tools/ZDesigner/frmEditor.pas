@@ -333,7 +333,6 @@ type
     CompEditor : TCompEditFrameBase;  //Current component editor, nil if none
     CompEditorTreeNode : TZComponentTreeNode;
     _FileChanged : boolean;
-    ExePath : string;
     RenderAborted : boolean;
     MruList : TStringList;
     PackerProg,PackerParams : string;
@@ -405,7 +404,6 @@ type
     procedure BuildStyleMenu;
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     procedure OnTreeRecreate(Sender : TObject);
-    function OnGetLibraryPath: string;
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
@@ -422,6 +420,7 @@ type
     ZApp : TZApplication;
     GamutZBitmap : TZBitmap;
     Driver : TGLDriverBase;
+    ExePath : string;
     procedure SetFileChanged(Value : Boolean);
     //Custom editors
     procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
@@ -432,6 +431,7 @@ type
     procedure FindComponentAndFocusInTree(const CName: string); overload;
     procedure FindComponentAndFocusInTree(C: TZComponent); overload;
     procedure RefreshCompEditorTreeNode;
+    function OnGetLibraryPath: string;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -455,7 +455,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  frmAndroidApk, Winapi.Imm, ExtDlgs;
+  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit;
 
 { TEditorForm }
 
@@ -1369,6 +1369,11 @@ begin
   begin
     ViewerPageControl.ActivePage := ViewerCompTabSheet;
     CompEditor := MakeCompEditor(TMeshEditFrame);
+  end
+  else if ShowNode is TSpriteSheet then
+  begin
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TSpriteSheetEditFrame);
   end
   else if {(ShowNode is TZBitmap) or}
     {(ShowNode is TMesh) or}

@@ -28,7 +28,6 @@ program ZDesigner;
 {$ifend}
 
 uses
-//FastMM4,
   Forms,
   HTMLHelpViewer,
   ZLog in '..\..\ZLog.pas',
@@ -89,7 +88,9 @@ uses
   CocoAncestor in 'Compiler\CocoAncestor.pas',
   CocoSets in 'Compiler\CocoSets.pas',
   frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm},
-  GLDrivers in '..\..\GLDrivers.pas';
+  GLDrivers in '..\..\GLDrivers.pas',
+  frmScriptedCompEditBase in 'frmScriptedCompEditBase.pas' {ScriptedCompEditFrameBase: TFrame},
+  frmSpriteSheetEdit in 'frmSpriteSheetEdit.pas' {SpriteSheetEditFrame: TFrame};
 
 {$R *.res}
 
