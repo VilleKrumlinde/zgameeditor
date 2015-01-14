@@ -186,6 +186,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -194,6 +198,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -311,6 +319,10 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -415,6 +427,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -736,9 +752,9 @@ object EditorForm: TEditorForm
             object DetachCompEditorButton: TButton
               Left = 2
               Top = 1
-              Width = 155
+              Width = 111
               Height = 20
-              Caption = 'Detach editor window'
+              Caption = 'Detach editor'
               TabOrder = 0
               OnClick = DetachCompEditorButtonClick
             end
@@ -751,10 +767,6 @@ object EditorForm: TEditorForm
             Align = alClient
             BevelOuter = bvNone
             TabOrder = 1
-            ExplicitLeft = 344
-            ExplicitTop = 320
-            ExplicitWidth = 185
-            ExplicitHeight = 41
           end
         end
         object ViewerBlankTabSheet: TTabSheet
@@ -764,6 +776,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
       end
     end

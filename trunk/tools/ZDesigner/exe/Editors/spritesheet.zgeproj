@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="About dialog" ClearColor="0.24 0.24 0.24 1">
+  <OnUpdate>
+    <Timer Interval="0.31">
+      <OnTimer>
+        <SpawnModel Model="SpinnerModel"/>
+      </OnTimer>
+    </Timer>
+  </OnUpdate>
+  <OnRender>
+    <UseMaterial Material="SheetMaterial"/>
+    <RenderSprite/>
+  </OnRender>
+  <Content>
+    <Group Name="SpinnerGroup">
+      <Children>
+        <Model Name="SpinnerModel" Scale="2 2 1" RotationVelocity="0 0.5 0">
+          <OnUpdate>
+            <Condition Expression="return CurrentModel.Position.Y&gt;5.5;">
+              <OnTrue>
+                <RemoveModel/>
+              </OnTrue>
+            </Condition>
+            <ZExpression>
+              <Expression>
+<![CDATA[SpinnerTime+=App.DeltaTime*0.75;
+
+Temp1=-4.5 + SpinnerTime;
+Temp1+=noise2(CurrentModel.Personality,SpinnerTime*0.5) * 1.0;
+Temp1+=noise2((SpinnerTime+App.Time)*0.25,0)*3;
+CurrentModel.Position.Y=Temp1;
+
+Temp1=sin(SpinnerTime*2)*2;
+//Temp1+=App.MousePosition.X*4*(CurrentModel.Personality*0.1);
+//Temp1+=noise2(CurrentModel.Personality,SpinnerTime*1) * 1;
+Temp1+=noise2((SpinnerTime+App.Time)*0.2,0)*8;
+CurrentModel.Position.X=Temp1;
+
+Temp1=cos(SpinnerTime*2)*2;
+CurrentModel.Position.Z=Temp1;]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnRender>
+            <UseMaterial Material="SpinnerMaterial"/>
+            <RenderMesh Mesh="SpinnerMesh"/>
+          </OnRender>
+          <Definitions>
+            <Variable Name="SpinnerTime"/>
+          </Definitions>
+        </Model>
+        <Mesh Name="SpinnerMesh">
+          <Producers>
+            <MeshSphere Scale="0.25 0.25 0.25" ZSamples="8" RadialSamples="8"/>
+          </Producers>
+        </Mesh>
+        <Material Name="SpinnerMaterial" Shading="1" Color="0.5 0 0 1"/>
+      </Children>
+    </Group> <!-- SpinnerGroup -->
+
+    <Group Name="Globals">
+      <Children>
+        <Variable Name="Temp1"/>
+        <Variable Name="Temp2"/>
+        <Variable Name="Temp3"/>
+      </Children>
+    </Group> <!-- Globals -->
+
+    <Material Name="SheetMaterial">
+      <Textures>
+        <MaterialTexture Name="SheetMaterialTexture" TexCoords="1"/>
+      </Textures>
+    </Material>
+  </Content>
+</ZApplication>

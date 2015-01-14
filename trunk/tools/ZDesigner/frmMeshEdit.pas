@@ -630,6 +630,7 @@ begin
   Glp.OnMouseDown := OnGLPanelMouseDown;
   Glp.OnMouseUp := OnGLPanelMouseUp;
   Glp.OnMouseMove := OnGLPanelMouseMove;
+  Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Glp.Parent := PreviewPanel;
 
   ResetCamera;
@@ -998,7 +999,9 @@ begin
 
     //set our color to be red
     glColor3f(1.0, 0.0, 0.0);
+    Renderer.NormalsVisible := Self.NormalsCheckBox.Checked;
     (Owner as TEditorForm).Driver.RenderMesh(M);
+    Renderer.NormalsVisible := False;
     glColor3f(1.0, 1.0, 1.0);
 
   glPopAttrib();
@@ -1069,6 +1072,7 @@ begin
   if Glp.MouseInClient then
   begin
     ViewTranslate[2] := ViewTranslate[2] + (WheelDelta/240);
+    Glp.Invalidate;
     Handled := True;
   end
   else
