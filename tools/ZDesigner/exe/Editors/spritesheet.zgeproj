@@ -6,10 +6,16 @@
         <SpawnModel Model="SpinnerModel"/>
       </OnTimer>
     </Timer>
+    <KeyPress Keys="{" RepeatDelay="0.5">
+      <OnPressed>
+        <ZExpression Expression="trace(&quot;Click, X: &quot; + intToStr(App.MousePosition.X*100) + &quot; Y: &quot; + intToStr(App.MousePosition.Y*100));"/>
+      </OnPressed>
+    </KeyPress>
   </OnUpdate>
   <OnRender>
     <UseMaterial Material="SheetMaterial"/>
     <RenderSprite/>
+    <RenderBeams Count="4" Length="1.53" Width="0.04"/>
   </OnRender>
   <Content>
     <Group Name="SpinnerGroup">

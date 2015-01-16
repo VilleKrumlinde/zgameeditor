@@ -722,7 +722,7 @@ begin
     Vert(0.5 + C/2 , 0.5 + S/2, X,Y);
   end;
 
-  Self.ZApp.Driver.RenderArrays(GL_TRIANGLES,Beams.Count*2,2,V,T,nil);
+  Self.ZApp.Driver.RenderArrays(GL_TRIANGLES,Beams.Count*3,2,V,T,nil);
 
   FreeMem(Mem);
 end;

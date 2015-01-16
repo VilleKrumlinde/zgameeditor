@@ -14,8 +14,10 @@ type
   private
     { Private declarations }
     Glp : TGLPanel;
+    OldGlWindowProc : TWndMethod;
     procedure OnGlDraw(Sender: TObject);
     procedure LoadScript;
+    procedure GlWindowProc(var Message: TMessage);
   protected
     EditorApp : TZApplication;
     ScriptName : string;
@@ -27,7 +29,7 @@ type
 
 implementation
 
-uses frmEditor;
+uses frmEditor, ZPlatform;
 
 {$R *.dfm}
 
@@ -47,6 +49,8 @@ begin
   Glp.Align := alClient;
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
   Glp.OnGLDraw := Self.OnGlDraw;
+  OldGlWindowProc := Glp.WindowProc;
+  Glp.WindowProc := GlWindowProc;
   Glp.Parent := Self;
 
   LoadScript;
@@ -76,7 +80,7 @@ begin
   A.DesignerStart(Glp.Width,Glp.Height, 0);
   Self.EditorApp := A;
 
-  RenderTimer.Interval := 50;
+  RenderTimer.Interval := 25;
   RenderTimer.Enabled := True;
 end;
 
@@ -100,6 +104,12 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TScriptedCompEditFrameBase.GlWindowProc(var Message: TMessage);
+begin
+  Platform_DesignerWindowProc( pointer(@Message) );
+  OldGlWindowProc(Message);
 end;
 
 

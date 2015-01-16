@@ -85,10 +85,6 @@ v.Y*=1+Temp1;]]>
           </Producers>
         </Mesh>
         <Model Name="PlayerModel" Position="-3.9142 3.9932 0" Velocity="0.0183 0.0685 0" Category="4" CollisionBounds="0.1 0.4 0 0">
-          <Definitions>
-            <Variable Name="PlayerAngle"/>
-            <Variable Name="PlayerShieldTime"/>
-          </Definitions>
           <States>
             <ModelState Name="PlayerState_Playing">
               <OnUpdate>
@@ -153,6 +149,33 @@ PlayerLives-=1;]]>
               </OnUpdate>
             </ModelState>
           </States>
+          <OnSpawn>
+            <SetModelState State="PlayerState_Playing"/>
+            <ZExpression>
+              <Expression>
+<![CDATA[//Måste nollställa state eftersom spawn by reference
+PlayerShieldTime=0;
+PlayerAngle=0;
+PlayerModel.Rotation.Z=0;]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[if(PlayerShieldTime>0) {
+  PlayerShieldTime-=App.DeltaTime;
+}]]>
+              </Expression>
+            </ZExpression>
+          </OnUpdate>
+          <OnCollision>
+            <Condition Expression="return PlayerShieldTime&lt;=0;">
+              <OnTrue>
+                <SetModelState State="PlayerState_LoseLife"/>
+              </OnTrue>
+            </Condition>
+          </OnCollision>
           <OnRender>
             <Condition Expression="return (PlayerShieldTime&lt;=0) || (frac(App.Time*8)&lt;0.5);">
               <OnTrue>
@@ -169,33 +192,10 @@ PlayerLives-=1;]]>
               </OnTrue>
             </Condition>
           </OnRender>
-          <OnUpdate>
-            <ZExpression>
-              <Expression>
-<![CDATA[if(PlayerShieldTime>0) {
-  PlayerShieldTime-=App.DeltaTime;
-}]]>
-              </Expression>
-            </ZExpression>
-          </OnUpdate>
-          <OnSpawn>
-            <SetModelState State="PlayerState_Playing"/>
-            <ZExpression>
-              <Expression>
-<![CDATA[//Måste nollställa state eftersom spawn by reference
-PlayerShieldTime=0;
-PlayerAngle=0;
-PlayerModel.Rotation.Z=0;]]>
-              </Expression>
-            </ZExpression>
-          </OnSpawn>
-          <OnCollision>
-            <Condition Expression="return PlayerShieldTime&lt;=0;">
-              <OnTrue>
-                <SetModelState State="PlayerState_LoseLife"/>
-              </OnTrue>
-            </Condition>
-          </OnCollision>
+          <Definitions>
+            <Variable Name="PlayerAngle"/>
+            <Variable Name="PlayerShieldTime"/>
+          </Definitions>
         </Model>
         <Material Name="PlayerMaterial" Color="0.16 0.16 0.16 1"/>
         <Mesh Name="PlayerEyeMesh">
@@ -225,13 +225,25 @@ PlayerModel.Rotation.Z=0;]]>
           </Textures>
         </Material>
         <Model Name="PlayerShotModel" Scale="1.5 1 1" Category="1" CollisionBounds="0.1 0.1 0 0">
-          <Definitions>
-            <Variable Name="PlayerShotPersonality"/>
-          </Definitions>
-          <OnRender>
-            <UseMaterial Material="PlayerShotMaterial"/>
-            <RenderMesh Mesh="PlayerShotMesh"/>
-          </OnRender>
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[PlayerShotPersonality=rnd();
+
+Temp1=( (1-PlayerAngle+0.25)*(3.14*2)) + random(0,0.01);
+PlayerShotModel.Velocity.X=sin(Temp1) * PlayerShotSpeed;
+PlayerShotModel.Velocity.Y=cos(Temp1) * PlayerShotSpeed;
+
+PlayerShotModel.Rotation.Z = PlayerAngle;
+
+
+//PlayerShotModel.Rotation.X = PlayerShotPersonality*1.1;
+//PlayerShotModel.Rotation.Y = PlayerShotPersonality*1.314;
+//PlayerShotModel.Rotation.Z = PlayerShotPersonality*1.712;]]>
+              </Expression>
+            </ZExpression>
+            <PlaySound Sound="PlayerShotSound" NoteNr="40"/>
+          </OnSpawn>
           <OnUpdate>
             <Condition>
               <Expression>
@@ -253,28 +265,16 @@ PlayerModel.Rotation.Z=0;]]>
               </Expression>
             </ZExpression>
           </OnUpdate>
-          <OnSpawn>
-            <ZExpression>
-              <Expression>
-<![CDATA[PlayerShotPersonality=rnd();
-
-Temp1=( (1-PlayerAngle+0.25)*(3.14*2)) + random(0,0.01);
-PlayerShotModel.Velocity.X=sin(Temp1) * PlayerShotSpeed;
-PlayerShotModel.Velocity.Y=cos(Temp1) * PlayerShotSpeed;
-
-PlayerShotModel.Rotation.Z = PlayerAngle;
-
-
-//PlayerShotModel.Rotation.X = PlayerShotPersonality*1.1;
-//PlayerShotModel.Rotation.Y = PlayerShotPersonality*1.314;
-//PlayerShotModel.Rotation.Z = PlayerShotPersonality*1.712;]]>
-              </Expression>
-            </ZExpression>
-            <PlaySound Sound="PlayerShotSound" NoteNr="40"/>
-          </OnSpawn>
           <OnCollision>
             <RemoveModel/>
           </OnCollision>
+          <OnRender>
+            <UseMaterial Material="PlayerShotMaterial"/>
+            <RenderMesh Mesh="PlayerShotMesh"/>
+          </OnRender>
+          <Definitions>
+            <Variable Name="PlayerShotPersonality"/>
+          </Definitions>
         </Model>
         <Sound Name="PlayerShotSound" Comment="48" Length="0.1" Volume="0.41" UseFilter="1" FilterCutoff="0.47" FilterQ="0.79" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.63" Mod2Active="1" Mod2Source="5" Mod2Amount="0.16" Mod3Active="1" Mod3Source="5" Mod3Destination="12" Mod3Amount="0.25" Env0Active="1" Env0ReleaseTime="0.35"/>
       </Children>
@@ -283,16 +283,6 @@ PlayerShotModel.Rotation.Z = PlayerAngle;
     <Group Name="Level">
       <Children>
         <Model Name="LevelModel">
-          <Definitions>
-            <Variable Name="LevelEmitCounter" Comment="Hur många enemies att emitta just nu"/>
-            <Variable Name="LevelMaxOnScreen"/>
-            <Variable Name="LevelEmitDelay"/>
-            <Variable Name="LevelEmitTimer"/>
-            <Variable Name="LevelEmitTreeTimer"/>
-            <Variable Name="LevelLastScore"/>
-            <Variable Name="LevelScoreVibrate"/>
-            <Variable Name="LevelEmitDelayDecrease"/>
-          </Definitions>
           <States>
             <ModelState Name="Stage0_LevelState">
               <OnStart>
@@ -462,20 +452,9 @@ LevelNo+=1;]]>
               </OnUpdate>
             </ModelState>
           </States>
-          <OnRender>
-            <RenderTransformGroup Name="LevelTg1" Scale="12 10 1">
-              <Children>
-                <UseMaterial Material="PaperMaterial"/>
-                <RenderSprite/>
-              </Children>
-            </RenderTransformGroup>
-            <UseMaterial Material="TextMaterial"/>
-            <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
-            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore" X="0.75" Y="0.92" Scale="0.9059"/>
-            <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
-            <RenderText TextFloatRef="PlayerLives" X="-0.51" Y="0.92" Scale="0.66"/>
-            <RenderText Text="FPS " TextFloatRef="App.FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
-          </OnRender>
+          <OnSpawn>
+            <SetModelState State="StageLevelEnter_LevelState"/>
+          </OnSpawn>
           <OnUpdate>
             <ZExpression>
               <Expression>
@@ -493,9 +472,30 @@ LevelScoreVibrate*=0.9;
               </Expression>
             </ZExpression>
           </OnUpdate>
-          <OnSpawn>
-            <SetModelState State="StageLevelEnter_LevelState"/>
-          </OnSpawn>
+          <OnRender>
+            <RenderTransformGroup Name="LevelTg1" Scale="12 10 1">
+              <Children>
+                <UseMaterial Material="PaperMaterial"/>
+                <RenderSprite/>
+              </Children>
+            </RenderTransformGroup>
+            <UseMaterial Material="TextMaterial"/>
+            <RenderText Text="SCORE" X="0.4" Y="0.92" Scale="0.49"/>
+            <RenderText Name="ScoreRenderText" TextFloatRef="PlayerScore" X="0.75" Y="0.92" Scale="0.9059"/>
+            <RenderText Text="LIVES" X="-0.76" Y="0.92" Scale="0.49"/>
+            <RenderText TextFloatRef="PlayerLives" X="-0.51" Y="0.92" Scale="0.66"/>
+            <RenderText Text="FPS " TextFloatRef="App.FpsCounter" X="-0.95" Y="-0.92" Scale="0.4" Align="1"/>
+          </OnRender>
+          <Definitions>
+            <Variable Name="LevelEmitCounter" Comment="Hur många enemies att emitta just nu"/>
+            <Variable Name="LevelMaxOnScreen"/>
+            <Variable Name="LevelEmitDelay"/>
+            <Variable Name="LevelEmitTimer"/>
+            <Variable Name="LevelEmitTreeTimer"/>
+            <Variable Name="LevelLastScore"/>
+            <Variable Name="LevelScoreVibrate"/>
+            <Variable Name="LevelEmitDelayDecrease"/>
+          </Definitions>
         </Model>
         <Bitmap Name="PaperBitmap">
           <Producers>
@@ -560,6 +560,9 @@ pixel.B=Temp1;]]>
           </Textures>
         </Material>
         <Model Name="SunModel" Scale="4 4 1">
+          <OnUpdate>
+            <ZExpression Expression="SunModel.Rotation.Z+=App.DeltaTime*0.01;"/>
+          </OnUpdate>
           <OnRender>
             <UseMaterial Material="SunMaterial"/>
             <RenderNet XCount="2" YCount="2">
@@ -575,39 +578,21 @@ this.TexCoord.Y=clamp(this.TexCoord.Y+sin(Temp1)*0.05,0,1);]]>
               </RenderVertexExpression>
             </RenderNet>
           </OnRender>
-          <OnUpdate>
-            <ZExpression Expression="SunModel.Rotation.Z+=App.DeltaTime*0.01;"/>
-          </OnUpdate>
         </Model>
         <Model Name="TreeModel" Position="0 -3.71 0">
-          <Definitions>
-            <Mesh Name="TreeTrunkMesh1">
-              <Producers>
-                <MeshBox/>
-                <MeshExpression Scale="0.16 0.63 0.2">
-                  <Expression>
-<![CDATA[//V : current vertex
+          <OnSpawn>
+            <ZExpression>
+              <Expression>
+<![CDATA[TreePersonality=rnd();
+TreeModel.Position.X=RightEdge + 0.5;
+TreeModel.Position.Y=BottomEdge+0.5;
+TreeModel.Position.Z=-0.5;
 
-//Move pivot
-v.Y+=1;
-
-if(v.Y>1)
-  v.X*=1.25;]]>
-                  </Expression>
-                </MeshExpression>
-              </Producers>
-            </Mesh>
-            <Variable Name="TreePersonality"/>
-          </Definitions>
-          <OnRender>
-            <UseMaterial Material="TreeMaterial"/>
-            <RenderTransform Name="TreeTg1"/>
-            <RenderMesh Mesh="TreeTrunkMesh1"/>
-            <RenderTransform Name="TreeTg2" Translate="0 1.2 0"/>
-            <RenderMesh Mesh="TreeTrunkMesh1"/>
-            <RenderTransform Name="TreeTg3" Translate="0 1.2 -0.17"/>
-            <RenderMesh Mesh="TreeTrunkMesh1"/>
-          </OnRender>
+TreeModel.Scale.X=1+(TreePersonality*0.5);
+TreeModel.Scale.Y=1+(TreePersonality*0.5);]]>
+              </Expression>
+            </ZExpression>
+          </OnSpawn>
           <OnUpdate>
             <ZExpression>
               <Expression>
@@ -627,72 +612,37 @@ TreeTg3.Rotate.Z=(Temp1*0.27);]]>
               </OnTrue>
             </Condition>
           </OnUpdate>
-          <OnSpawn>
-            <ZExpression>
-              <Expression>
-<![CDATA[TreePersonality=rnd();
-TreeModel.Position.X=RightEdge + 0.5;
-TreeModel.Position.Y=BottomEdge+0.5;
-TreeModel.Position.Z=-0.5;
-
-TreeModel.Scale.X=1+(TreePersonality*0.5);
-TreeModel.Scale.Y=1+(TreePersonality*0.5);]]>
-              </Expression>
-            </ZExpression>
-          </OnSpawn>
-        </Model>
-        <Material Name="TreeMaterial" Color="0.31 0.69 0.13 0.5" Blend="1"/>
-        <Model Name="CaveDecorModel">
+          <OnRender>
+            <UseMaterial Material="TreeMaterial"/>
+            <RenderTransform Name="TreeTg1"/>
+            <RenderMesh Mesh="TreeTrunkMesh1"/>
+            <RenderTransform Name="TreeTg2" Translate="0 1.2 0"/>
+            <RenderMesh Mesh="TreeTrunkMesh1"/>
+            <RenderTransform Name="TreeTg3" Translate="0 1.2 -0.17"/>
+            <RenderMesh Mesh="TreeTrunkMesh1"/>
+          </OnRender>
           <Definitions>
-            <Mesh Name="CaveDecorMesh">
+            <Mesh Name="TreeTrunkMesh1">
               <Producers>
-                <MeshSphere ZSamples="5" RadialSamples="22"/>
-                <MeshExpression Scale="0.25 1 0.1">
+                <MeshBox/>
+                <MeshExpression Scale="0.16 0.63 0.2">
                   <Expression>
 <![CDATA[//V : current vertex
+
+//Move pivot
 v.Y+=1;
-if(v.Y<0.5)
-  v.Y*=0.5;
-v.X*= 1-abs(v.Y*0.4);
-if(abs(v.X)>0.3)
-  v.X*=1 + clamp(abs(noise2(v.X*26+CurrentModel.Personality*4,v.Y*137.7))*2.5,0,0.65);// random(0,0.1);]]>
+
+if(v.Y>1)
+  v.X*=1.25;]]>
                   </Expression>
                 </MeshExpression>
               </Producers>
             </Mesh>
-            <Variable Name="CaveDecorBaseY"/>
-            <Material Name="CaveDecorMaterial">
-              <Textures>
-                <MaterialTexture Name="CaveDecorMaterialTexture" Texture="CaveDecorBitmap"/>
-              </Textures>
-            </Material>
+            <Variable Name="TreePersonality"/>
           </Definitions>
-          <OnRender>
-            <UseMaterial Material="CaveDecorMaterial"/>
-            <RenderMesh Mesh="CaveDecorMesh"/>
-          </OnRender>
-          <OnUpdate>
-            <ZExpression>
-              <Expression>
-<![CDATA[CurrentModel.Position.X-=ScrollSpeed * App.DeltaTime;
-
-Temp1=cos(CurrentModel.Personality + App.Time*1.4)*0.25;
-CurrentModel.Position.Y=CaveDecorBaseY + Temp1;
-
-//Temp1=0.5+(noise2(TreePersonality,App.Time*0.4)*0.5);
-//Temp1=cos(TreePersonality + App.Time*0.4)*0.5;
-
-//TreeTg1.Rotate.Z=(Temp1*0.1);
-//TreeTg2.Rotate.Z=0-(Temp1*0.25);
-//TreeTg3.Rotate.Z=(Temp1*0.27);]]>
-              </Expression>
-            </ZExpression>
-            <Condition Expression="return CurrentModel.Position.X&lt;=(LeftEdge-0.5);">
-              <OnTrue>
-                <RemoveModel/>
-              </OnTrue>
-            </Condition>
-          </OnUpdate>
+        </Model>
+        <Material Name="TreeMaterial" Color="0.31 0.69 0.13 0.5" Blend="1"/>
+        <Model Name="CaveDecorModel">
           <OnSpawn>
             <ZExpression>
               <Expression>
@@ -718,6 +668,56 @@ CaveDecorMaterialTexture.TextureY = random(1,0.3);]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[CurrentModel.Position.X-=ScrollSpeed * App.DeltaTime;
+
+Temp1=cos(CurrentModel.Personality + App.Time*1.4)*0.25;
+CurrentModel.Position.Y=CaveDecorBaseY + Temp1;
+
+//Temp1=0.5+(noise2(TreePersonality,App.Time*0.4)*0.5);
+//Temp1=cos(TreePersonality + App.Time*0.4)*0.5;
+
+//TreeTg1.Rotate.Z=(Temp1*0.1);
+//TreeTg2.Rotate.Z=0-(Temp1*0.25);
+//TreeTg3.Rotate.Z=(Temp1*0.27);]]>
+              </Expression>
+            </ZExpression>
+            <Condition Expression="return CurrentModel.Position.X&lt;=(LeftEdge-0.5);">
+              <OnTrue>
+                <RemoveModel/>
+              </OnTrue>
+            </Condition>
+          </OnUpdate>
+          <OnRender>
+            <UseMaterial Material="CaveDecorMaterial"/>
+            <RenderMesh Mesh="CaveDecorMesh"/>
+          </OnRender>
+          <Definitions>
+            <Mesh Name="CaveDecorMesh">
+              <Producers>
+                <MeshSphere ZSamples="5" RadialSamples="22"/>
+                <MeshExpression Scale="0.25 1 0.1">
+                  <Expression>
+<![CDATA[//V : current vertex
+v.Y+=1;
+if(v.Y<0.5)
+  v.Y*=0.5;
+v.X*= 1-abs(v.Y*0.4);
+if(abs(v.X)>0.3)
+  v.X*=1 + clamp(abs(noise2(v.X*26+CurrentModel.Personality*4,v.Y*137.7))*2.5,0,0.65);// random(0,0.1);]]>
+                  </Expression>
+                </MeshExpression>
+              </Producers>
+            </Mesh>
+            <Variable Name="CaveDecorBaseY"/>
+            <Material Name="CaveDecorMaterial">
+              <Textures>
+                <MaterialTexture Name="CaveDecorMaterialTexture" Texture="CaveDecorBitmap"/>
+              </Textures>
+            </Material>
+          </Definitions>
         </Model>
         <Bitmap Name="CaveDecorBitmap">
           <Producers>
@@ -739,10 +739,19 @@ pixel.B=Temp1*0.5;
           </Producers>
         </Bitmap>
         <Model Name="LevelCompleteModel">
+          <OnUpdate>
+            <Timer Interval="1.5">
+              <OnTimer>
+                <RemoveModel/>
+              </OnTimer>
+            </Timer>
+          </OnUpdate>
           <OnRender>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="LEVEL COMPLETE" Scale="1.02"/>
           </OnRender>
+        </Model>
+        <Model Name="LevelEnterModel">
           <OnUpdate>
             <Timer Interval="1.5">
               <OnTimer>
@@ -750,19 +759,10 @@ pixel.B=Temp1*0.5;
               </OnTimer>
             </Timer>
           </OnUpdate>
-        </Model>
-        <Model Name="LevelEnterModel">
           <OnRender>
             <UseMaterial Material="TextMaterial"/>
             <RenderText Text="ENTER LEVEL " TextFloatRef="LevelNo" Scale="1.02"/>
           </OnRender>
-          <OnUpdate>
-            <Timer Interval="1.5">
-              <OnTimer>
-                <RemoveModel/>
-              </OnTimer>
-            </Timer>
-          </OnUpdate>
         </Model>
       </Children>
     </Group> <!-- Level -->
@@ -772,62 +772,6 @@ pixel.B=Temp1*0.5;
         <Group Name="MonkeyEnemy">
           <Children>
             <Model Name="MonkeyModel" Scale="1.2 1.2 1.2" Category="2" CollisionBounds="0.75 0.75 0 0">
-              <Definitions>
-                <Mesh Name="MonkeyMesh">
-                  <Producers>
-                    <MeshSphere ZSamples="20" RadialSamples="25"/>
-                    <MeshExpression Scale="0.65 0.4 0.5">
-                      <Expression>
-<![CDATA[//V : current vertex
-
-
-
-//Make square
-float Temp1=1-abs(v.X);
-v.X*=1+Temp1;
-
-Temp1=1-abs(v.Y);
-if( abs(v.X)<0.8 ) {
-  Temp1 += abs(noise2(v.X*7344.1512,MonkeyPersonality*333.3))*3.5;
-}
-v.Y*=0.5+Temp1;]]>
-                      </Expression>
-                    </MeshExpression>
-                  </Producers>
-                </Mesh>
-                <Mesh Name="MonkeyEyeMesh">
-                  <Producers>
-                    <MeshSphere Scale="0.2 0.15 0.05" ZSamples="4" RadialSamples="13"/>
-                    <MeshExpression>
-                      <Expression>
-<![CDATA[//V : current vertex
-float Temp1=atan2(v.X,v.Y) + MonkeyPersonality;
-Temp1=1 + (cos(Temp1*42) * 0.15);
-v.X*=Temp1;
-v.Y*=Temp1;]]>
-                      </Expression>
-                    </MeshExpression>
-                  </Producers>
-                </Mesh>
-                <Mesh Name="MonkeyPupillMesh">
-                  <Producers>
-                    <MeshSphere Scale="0.1 0.1 0.1" ZSamples="4"/>
-                  </Producers>
-                </Mesh>
-                <Variable Name="MonkeyPersonality"/>
-                <Variable Name="MonkeyFleeTimeout"/>
-                <Variable Name="MonkeyIsFalling"/>
-                <Variable Name="MonkeyIsFleeing"/>
-                <Mesh Name="MonkeyLeg">
-                  <Producers>
-                    <MeshBox Scale="0.1 0.4 0.1"/>
-                  </Producers>
-                </Mesh>
-                <Variable Name="MonkeyLife"/>
-                <Variable Name="MonkeyEmitSmokeTime"/>
-                <Variable Name="MonkeyEmitNutTimer"/>
-                <Variable Name="MonkeyIsNutEmitter"/>
-              </Definitions>
               <States>
                 <ModelState Name="MonkeyState_Idling">
                   <OnStart>
@@ -1001,50 +945,6 @@ MonkeyModel.Velocity.X=Temp1 * 4;]]>
                   </OnUpdate>
                 </ModelState>
               </States>
-              <OnRender>
-                <UseMaterial Material="PlayerMaterial"/>
-                <RenderSetColor Name="MonkeyColor" Color="0.18 0.18 0.18 1"/>
-                <RenderMesh Mesh="MonkeyMesh"/>
-                <RenderTransformGroup Name="MonkeyRLegTg" Translate="0.3 -0.44 0">
-                  <Children>
-                    <RenderMesh Mesh="MonkeyLeg"/>
-                    <RenderTransform Scale="1 0.5 1" Translate="-0.07 -0.31 0" Rotate="0 0 0.25"/>
-                    <RenderMesh Mesh="MonkeyLeg"/>
-                  </Children>
-                </RenderTransformGroup>
-                <RenderTransformGroup Name="MonkeyLLegTg" Translate="-0.3 -0.44 0">
-                  <Children>
-                    <RenderMesh Mesh="MonkeyLeg"/>
-                    <RenderTransform Scale="1 0.5 1" Translate="-0.07 -0.31 0" Rotate="0 0 0.25"/>
-                    <RenderMesh Mesh="MonkeyLeg"/>
-                  </Children>
-                </RenderTransformGroup>
-                <RenderTransformGroup Name="MonkeyTg1" Translate="0.33 0.14 0.51" Rotate="-0.01 0.02 0">
-                  <Children>
-                    <RenderSetColor Color="1 1 1 1"/>
-                    <RenderMesh Mesh="MonkeyEyeMesh"/>
-                    <RenderSetColor Color="0 0 0 1"/>
-                    <RenderMesh Mesh="MonkeyPupillMesh"/>
-                  </Children>
-                </RenderTransformGroup>
-              </OnRender>
-              <OnUpdate>
-                <Condition Comment="Enter fleestate if timeout">
-                  <Expression>
-<![CDATA[if( (MonkeyIsFalling==1) || (MonkeyIsFleeing==1) )
-  return 0;
-
-MonkeyFleeTimeout-=App.DeltaTime;
-if(MonkeyFleeTimeout<0)
-  return 1;
-
-return 0;]]>
-                  </Expression>
-                  <OnTrue>
-                    <SetModelState State="MonkeyState_Flee"/>
-                  </OnTrue>
-                </Condition>
-              </OnUpdate>
               <OnSpawn>
                 <ZExpression>
                   <Expression>
@@ -1086,9 +986,23 @@ MonkeyColor.Color.B *= Temp1;]]>
                 </ZExpression>
                 <SetModelState State="MonkeyState_Appearing"/>
               </OnSpawn>
-              <OnRemove>
-                <ZExpression Expression="EnemiesOnScreen-=1;"/>
-              </OnRemove>
+              <OnUpdate>
+                <Condition Comment="Enter fleestate if timeout">
+                  <Expression>
+<![CDATA[if( (MonkeyIsFalling==1) || (MonkeyIsFleeing==1) )
+  return 0;
+
+MonkeyFleeTimeout-=App.DeltaTime;
+if(MonkeyFleeTimeout<0)
+  return 1;
+
+return 0;]]>
+                  </Expression>
+                  <OnTrue>
+                    <SetModelState State="MonkeyState_Flee"/>
+                  </OnTrue>
+                </Condition>
+              </OnUpdate>
               <OnCollision>
                 <ZExpression>
                   <Expression>
@@ -1122,6 +1036,92 @@ CurrentModel.Rotation.Z += random(0,0.015);]]>
                   </OnFalse>
                 </Condition>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="PlayerMaterial"/>
+                <RenderSetColor Name="MonkeyColor" Color="0.18 0.18 0.18 1"/>
+                <RenderMesh Mesh="MonkeyMesh"/>
+                <RenderTransformGroup Name="MonkeyRLegTg" Translate="0.3 -0.44 0">
+                  <Children>
+                    <RenderMesh Mesh="MonkeyLeg"/>
+                    <RenderTransform Scale="1 0.5 1" Translate="-0.07 -0.31 0" Rotate="0 0 0.25"/>
+                    <RenderMesh Mesh="MonkeyLeg"/>
+                  </Children>
+                </RenderTransformGroup>
+                <RenderTransformGroup Name="MonkeyLLegTg" Translate="-0.3 -0.44 0">
+                  <Children>
+                    <RenderMesh Mesh="MonkeyLeg"/>
+                    <RenderTransform Scale="1 0.5 1" Translate="-0.07 -0.31 0" Rotate="0 0 0.25"/>
+                    <RenderMesh Mesh="MonkeyLeg"/>
+                  </Children>
+                </RenderTransformGroup>
+                <RenderTransformGroup Name="MonkeyTg1" Translate="0.33 0.14 0.51" Rotate="-0.01 0.02 0">
+                  <Children>
+                    <RenderSetColor Color="1 1 1 1"/>
+                    <RenderMesh Mesh="MonkeyEyeMesh"/>
+                    <RenderSetColor Color="0 0 0 1"/>
+                    <RenderMesh Mesh="MonkeyPupillMesh"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
+              <OnRemove>
+                <ZExpression Expression="EnemiesOnScreen-=1;"/>
+              </OnRemove>
+              <Definitions>
+                <Mesh Name="MonkeyMesh">
+                  <Producers>
+                    <MeshSphere ZSamples="20" RadialSamples="25"/>
+                    <MeshExpression Scale="0.65 0.4 0.5">
+                      <Expression>
+<![CDATA[//V : current vertex
+
+
+
+//Make square
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;
+
+Temp1=1-abs(v.Y);
+if( abs(v.X)<0.8 ) {
+  Temp1 += abs(noise2(v.X*7344.1512,MonkeyPersonality*333.3))*3.5;
+}
+v.Y*=0.5+Temp1;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="MonkeyEyeMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.2 0.15 0.05" ZSamples="4" RadialSamples="13"/>
+                    <MeshExpression>
+                      <Expression>
+<![CDATA[//V : current vertex
+float Temp1=atan2(v.X,v.Y) + MonkeyPersonality;
+Temp1=1 + (cos(Temp1*42) * 0.15);
+v.X*=Temp1;
+v.Y*=Temp1;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="MonkeyPupillMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.1 0.1 0.1" ZSamples="4"/>
+                  </Producers>
+                </Mesh>
+                <Variable Name="MonkeyPersonality"/>
+                <Variable Name="MonkeyFleeTimeout"/>
+                <Variable Name="MonkeyIsFalling"/>
+                <Variable Name="MonkeyIsFleeing"/>
+                <Mesh Name="MonkeyLeg">
+                  <Producers>
+                    <MeshBox Scale="0.1 0.4 0.1"/>
+                  </Producers>
+                </Mesh>
+                <Variable Name="MonkeyLife"/>
+                <Variable Name="MonkeyEmitSmokeTime"/>
+                <Variable Name="MonkeyEmitNutTimer"/>
+                <Variable Name="MonkeyIsNutEmitter"/>
+              </Definitions>
             </Model>
             <Sound Name="MonkeyFallSound" Comment="54" Volume="1" UseFilter="1" FilterCutoff="0.17" FilterQ="0.47" Pan="0.72" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.35" Env0Active="1" Env0ReleaseTime="0.95" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Speed="0.42"/>
             <Sound Name="MonkeyHitSound" Comment="24" Length="0.1" Volume="0.38" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.79" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.8"/>
@@ -1141,34 +1141,6 @@ v.Z+=Temp1;]]>
               </Producers>
             </Mesh>
             <Model Name="CoconutModel" Category="3" CollisionBounds="0.25 0.25 0 0">
-              <OnRender>
-                <UseMaterial Material="PlayerMaterial"/>
-                <RenderSetColor Name="CoconutColor" Color="0.13 0.07 0 1"/>
-                <RenderMesh Mesh="CoconutMesh"/>
-              </OnRender>
-              <OnUpdate>
-                <Condition>
-                  <Expression>
-<![CDATA[return
-  (CurrentModel.Position.X<LeftEdge) ||
-  (CurrentModel.Position.X>RightEdge) ||
-  (CurrentModel.Position.Y>TopEdge) ||
-  (CurrentModel.Position.Y<BottomEdge);]]>
-                  </Expression>
-                  <OnTrue>
-                    <RemoveModel/>
-                  </OnTrue>
-                </Condition>
-                <ZExpression>
-                  <Expression>
-<![CDATA[//CoconutModel.Velocity.Y-=CoconutPersonality*0.2;
-
-CurrentModel.Rotation.Z+=CurrentModel.Personality*0.4;
-CurrentModel.Rotation.X+=CurrentModel.Personality*0.25;
-CurrentModel.Rotation.Y+=CurrentModel.Personality*0.15;]]>
-                  </Expression>
-                </ZExpression>
-              </OnUpdate>
               <OnSpawn>
                 <ZExpression>
                   <Expression>
@@ -1195,16 +1167,64 @@ CurrentModel.Velocity.Y=sin(Temp3)*Temp2;]]>
                 </ZExpression>
                 <PlaySound Sound="MonkeyThrowNutSound" NoteNr="26" Channel="1"/>
               </OnSpawn>
+              <OnUpdate>
+                <Condition>
+                  <Expression>
+<![CDATA[return
+  (CurrentModel.Position.X<LeftEdge) ||
+  (CurrentModel.Position.X>RightEdge) ||
+  (CurrentModel.Position.Y>TopEdge) ||
+  (CurrentModel.Position.Y<BottomEdge);]]>
+                  </Expression>
+                  <OnTrue>
+                    <RemoveModel/>
+                  </OnTrue>
+                </Condition>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//CoconutModel.Velocity.Y-=CoconutPersonality*0.2;
+
+CurrentModel.Rotation.Z+=CurrentModel.Personality*0.4;
+CurrentModel.Rotation.X+=CurrentModel.Personality*0.25;
+CurrentModel.Rotation.Y+=CurrentModel.Personality*0.15;]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
               <OnCollision>
                 <RemoveModel/>
                 <SpawnModel Model="CocunutHitModel" UseSpawnerPosition="255"/>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="PlayerMaterial"/>
+                <RenderSetColor Name="CoconutColor" Color="0.13 0.07 0 1"/>
+                <RenderMesh Mesh="CoconutMesh"/>
+              </OnRender>
             </Model>
             <Sound Name="MonkeyThrowNutSound" Comment="note 26, borde vara sine" Length="0.1" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.18"/>
             <Model Name="MonkeyHitModel">
-              <Definitions>
-                <Variable Name="MonkeyHitLife"/>
-              </Definitions>
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[MonkeyHitLife=0.6;
+CurrentModel.Position.Y+=random(0.0,0.35);
+CurrentModel.Position.X-= random(0.8,0.2);]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[MonkeyHitLife-=App.DeltaTime;
+//SmokeModel.Scale.X+=App.DeltaTime;
+//SmokeModel.Scale.Y+=App.DeltaTime;]]>
+                  </Expression>
+                </ZExpression>
+                <Condition Expression="return MonkeyHitLife&lt;=0;">
+                  <OnTrue>
+                    <RemoveModel/>
+                  </OnTrue>
+                </Condition>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="200" Direction="-1.37" Spread="-0.31" ParticleWidth="0.1" ParticleHeight="0.1" Speed="3.4" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="0.3">
@@ -1223,31 +1243,30 @@ if(rnd()<0.5) {
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <ZExpression>
-                  <Expression>
-<![CDATA[MonkeyHitLife-=App.DeltaTime;
-//SmokeModel.Scale.X+=App.DeltaTime;
-//SmokeModel.Scale.Y+=App.DeltaTime;]]>
-                  </Expression>
-                </ZExpression>
-                <Condition Expression="return MonkeyHitLife&lt;=0;">
-                  <OnTrue>
-                    <RemoveModel/>
-                  </OnTrue>
-                </Condition>
-              </OnUpdate>
+              <Definitions>
+                <Variable Name="MonkeyHitLife"/>
+              </Definitions>
+            </Model>
+            <Model Name="MonkeyExplodeModel">
               <OnSpawn>
                 <ZExpression>
                   <Expression>
-<![CDATA[MonkeyHitLife=0.6;
-CurrentModel.Position.Y+=random(0.0,0.35);
-CurrentModel.Position.X-= random(0.8,0.2);]]>
+<![CDATA[/*CurrentModel.Scale.X+=random(0,0.1);
+CurrentModel.Scale.Y+=random(0,0.1);
+
+EyeExplodeP1.Duration*=random(1,0.3);
+EyeExplodeP1.Speed*=random(1,0.3);*/]]>
                   </Expression>
                 </ZExpression>
               </OnSpawn>
-            </Model>
-            <Model Name="MonkeyExplodeModel">
+              <OnUpdate>
+                <Timer Interval="1">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+                <ZExpression Expression="//CurrentModel.Rotation.Z+=App.DeltaTime*0.25;"/>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="6580" Spread="3" ParticleWidth="0.15" ParticleHeight="0.15" Speed="2" Radius="0.05" ParticleLifetime="0.5" AnimateAlpha="-1" Duration="0.05">
@@ -1281,25 +1300,6 @@ this.PColor.R=0.2 + random(0,0.1);]]>
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="1">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-                <ZExpression Expression="//CurrentModel.Rotation.Z+=App.DeltaTime*0.25;"/>
-              </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[/*CurrentModel.Scale.X+=random(0,0.1);
-CurrentModel.Scale.Y+=random(0,0.1);
-
-EyeExplodeP1.Duration*=random(1,0.3);
-EyeExplodeP1.Speed*=random(1,0.3);*/]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
             </Model>
             <Sound Name="MonkeyExplodeSound" Comment="note 69" Volume="1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.42" FilterQ="0.69" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.63" Env0Active="1" Env0ReleaseTime="0.98" Lfo0Active="1" Lfo0Speed="0.16"/>
           </Children>
@@ -1332,13 +1332,9 @@ pixel.A=Temp1;]]>
               </Textures>
             </Material>
             <Model Name="SmokeModel">
-              <Definitions>
-                <Variable Name="SmokeLife"/>
-              </Definitions>
-              <OnRender>
-                <UseMaterial Material="SmokeMaterial"/>
-                <RenderParticles ParticlesPerSecond="16" ParticleWidth="0.8" ParticleHeight="0.8" Radius="0.3" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="1"/>
-              </OnRender>
+              <OnSpawn>
+                <ZExpression Expression="SmokeLife=2;"/>
+              </OnSpawn>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
@@ -1353,9 +1349,13 @@ SmokeModel.Scale.Y+=App.DeltaTime;]]>
                   </OnTrue>
                 </Condition>
               </OnUpdate>
-              <OnSpawn>
-                <ZExpression Expression="SmokeLife=2;"/>
-              </OnSpawn>
+              <OnRender>
+                <UseMaterial Material="SmokeMaterial"/>
+                <RenderParticles ParticlesPerSecond="16" ParticleWidth="0.8" ParticleHeight="0.8" Radius="0.3" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="1"/>
+              </OnRender>
+              <Definitions>
+                <Variable Name="SmokeLife"/>
+              </Definitions>
             </Model>
             <Bitmap Name="DebrisBitmap">
               <Producers>
@@ -1363,8 +1363,8 @@ SmokeModel.Scale.Y+=App.DeltaTime;]]>
                   <Expression>
 <![CDATA[float Temp1=noise2(x*4,y*4);
 
-Temp2=x-0.5;
-Temp3=y-0.5;
+float Temp2=x-0.5;
+float Temp3=y-0.5;
 Temp2=sqrt(Temp2*Temp2 + Temp3*Temp3)*2.25;
 
 Temp1+=Temp2;
@@ -1389,6 +1389,13 @@ pixel.A=Temp1;]]>
               </Textures>
             </Material>
             <Model Name="CocunutHitModel">
+              <OnUpdate>
+                <Timer Interval="0.5">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="80" Spread="3" ParticleWidth="0.2" ParticleHeight="0.2" Speed="3" Radius="0.05" ParticleLifetime="0.5" AnimateAlpha="-3.5" Duration="0.2">
@@ -1402,13 +1409,6 @@ this.PColor.R=0.5;]]>
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="0.5">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-              </OnUpdate>
             </Model>
             <Bitmap Name="ExplosionBitmap">
               <Producers>
@@ -1531,9 +1531,6 @@ pixel.A=Temp1;]]>
               </Producers>
             </Mesh>
             <Model Name="EyeModel" Category="2" CollisionBounds="0.4 0.4 0 0">
-              <Definitions>
-                <Variable Name="EyeLife"/>
-              </Definitions>
               <States>
                 <ModelState Name="EyeState_FlyLeft">
                   <OnUpdate>
@@ -1644,24 +1641,6 @@ EyeStrafeShootTimeout-=App.DeltaTime;]]>
                   </Definitions>
                 </ModelState>
               </States>
-              <OnRender>
-                <UseMaterial Material="PlayerMaterial"/>
-                <RenderSetColor Color="0.69 0.49 0.29 1"/>
-                <RenderMesh Mesh="EyeMesh"/>
-                <RenderSetColor Color="0 0 0.25 1"/>
-                <RenderMesh Mesh="EyePupillMesh"/>
-                <RenderSetColor Name="EyeWingColor" Color="0 0 0.07 1"/>
-                <RenderTransformGroup Name="EyeTg1" Translate="0 -0.08 -0.12" Rotate="0 0 -0.21">
-                  <Children>
-                    <RenderMesh Mesh="EyeWingMesh"/>
-                  </Children>
-                </RenderTransformGroup>
-                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 0.21">
-                  <Children>
-                    <RenderMesh Mesh="EyeWingMesh"/>
-                  </Children>
-                </RenderTransformGroup>
-              </OnRender>
               <OnSpawn>
                 <ZExpression>
                   <Expression>
@@ -1679,9 +1658,6 @@ EyeLife=3;]]>
                 </ZExpression>
                 <SetModelState State="EyeState_FlyLeft"/>
               </OnSpawn>
-              <OnRemove>
-                <ZExpression Expression="EnemiesOnScreen-=1;"/>
-              </OnRemove>
               <OnCollision>
                 <ZExpression>
                   <Expression>
@@ -1705,6 +1681,30 @@ CurrentModel.Velocity.X*=0.85;]]>
                   </OnFalse>
                 </Condition>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="PlayerMaterial"/>
+                <RenderSetColor Color="0.69 0.49 0.29 1"/>
+                <RenderMesh Mesh="EyeMesh"/>
+                <RenderSetColor Color="0 0 0.25 1"/>
+                <RenderMesh Mesh="EyePupillMesh"/>
+                <RenderSetColor Name="EyeWingColor" Color="0 0 0.07 1"/>
+                <RenderTransformGroup Name="EyeTg1" Translate="0 -0.08 -0.12" Rotate="0 0 -0.21">
+                  <Children>
+                    <RenderMesh Mesh="EyeWingMesh"/>
+                  </Children>
+                </RenderTransformGroup>
+                <RenderTransformGroup Name="EyeTg2" Translate="0 -0.08 -0.12" Rotate="0 -0.5 0.21">
+                  <Children>
+                    <RenderMesh Mesh="EyeWingMesh"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
+              <OnRemove>
+                <ZExpression Expression="EnemiesOnScreen-=1;"/>
+              </OnRemove>
+              <Definitions>
+                <Variable Name="EyeLife"/>
+              </Definitions>
             </Model>
             <Mesh Name="EyeWingMesh">
               <Producers>
@@ -1724,6 +1724,25 @@ v.X -= sin(Temp1*0.5)*1.1;
               </Producers>
             </Mesh>
             <Model Name="EyeExplodeModel">
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[/*CurrentModel.Scale.X+=random(0,0.1);
+CurrentModel.Scale.Y+=random(0,0.1);
+
+EyeExplodeP1.Duration*=random(1,0.3);
+EyeExplodeP1.Speed*=random(1,0.3);*/]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
+              <OnUpdate>
+                <Timer Interval="0.5">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+                <ZExpression Expression="CurrentModel.Rotation.Z+=App.DeltaTime*0.25;"/>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="4580" Spread="3" ParticleWidth="0.3" ParticleHeight="0.3" Speed="6" Radius="0.05" ParticleLifetime="0.5" AnimateAlpha="-2" Duration="0.05">
@@ -1737,25 +1756,6 @@ this.PColor.R=0;]]>
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="0.5">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-                <ZExpression Expression="CurrentModel.Rotation.Z+=App.DeltaTime*0.25;"/>
-              </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[/*CurrentModel.Scale.X+=random(0,0.1);
-CurrentModel.Scale.Y+=random(0,0.1);
-
-EyeExplodeP1.Duration*=random(1,0.3);
-EyeExplodeP1.Speed*=random(1,0.3);*/]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
             </Model>
             <Sound Name="EyeDeadSound" Comment="note 62" Length="0.2" Volume="0.5" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.46" FilterQ="0.47" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.66" Env0Active="1" Env0ReleaseTime="1"/>
             <Sound Name="EyeStrafeSound" Comment="note 60" Length="0.3" Volume="0.2" UseFilter="1" FilterCutoff="0.65" FilterQ="0.92" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="2" Mod1Amount="0.21" Mod2Source="2" Mod2Amount="0.06" Env0Active="1" Env0ReleaseTime="0.56" Lfo0Active="1" Lfo0IsBipolar="1" Lfo0Style="1" Lfo0Speed="0.86"/>
@@ -1772,58 +1772,18 @@ EyeExplodeP1.Speed*=random(1,0.3);*/]]>
               </Textures>
             </Material>
             <Model Name="EyeWormModel" Scale="1.4 1.4 1" Category="3" CollisionBounds="0.2 0.2 0 0">
-              <Definitions>
-                <Model Name="EyeWormTailModel" Scale="0.6 0.6 1">
-                  <Definitions>
-                    <Variable Name="EyeWormTailDelay"/>
-                  </Definitions>
-                  <OnRender>
-                    <UseMaterial Material="TextMaterial"/>
-                    <RenderMesh Mesh="EyeWormMesh"/>
-                  </OnRender>
-                  <OnUpdate>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[//Temp1=EyeWormModel.Position.X-CurrentModel.Position.X;
-
-Temp3=clamp( EyeWormTailDelay*(App.DeltaTime*50),0,1);
-Temp1=1-Temp3;
-Temp2=Temp3;
-
-CurrentModel.Position.X =
-  (CurrentModel.Position.X*Temp1) +
-  (EyeWormModel.Position.X*Temp2);
-  
-CurrentModel.Position.Y =
-  (CurrentModel.Position.Y*Temp1) +
-  (EyeWormModel.Position.Y*Temp2);]]>
-                      </Expression>
-                    </ZExpression>
-                  </OnUpdate>
-                  <OnSpawn>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[EyeWormTailDelay=Temp1;
-
-Temp2=Temp1*0.5;
-CurrentModel.Scale.X+=Temp2;
-CurrentModel.Scale.Y+=Temp2;]]>
-                      </Expression>
-                    </ZExpression>
-                  </OnSpawn>
-                </Model>
-              </Definitions>
-              <OnRender>
-                <UseMaterial Material="EyeWormMaterial"/>
-                <RenderMesh Mesh="EyeWormMesh"/>
-                <RenderParticles ParticlesPerSecond="16" Spread="3.14" ParticleWidth="0.08" ParticleHeight="0.08" Speed="1" Radius="0.3" ParticleLifetime="0.5" AnimateAlpha="-1">
-                  <OnEmitExpression>
-<![CDATA[//Emit particle.
-//PColor : particle color
-this.PColor.G*=rnd();]]>
-                  </OnEmitExpression>
-                </RenderParticles>
-              </OnRender>
+              <OnSpawn>
+                <Repeat Count="2">
+                  <OnIteration>
+                    <SpawnModel Model="EyeWormTailModel" SpawnerIsParent="255"/>
+                  </OnIteration>
+                  <WhileExp>
+<![CDATA[Temp1=0.4 - ((this.Iteration+1)*0.034);
+return this.Iteration<8;
+//this.Iteration=current iteration nr. Return false to end loop.]]>
+                  </WhileExp>
+                </Repeat>
+              </OnSpawn>
               <OnUpdate>
                 <SteeringController Mass="0.1" MaxSpeed="4" MaxForce="8" AdjustHeading="255" Radius="0.2">
                   <Behaviours>
@@ -1854,23 +1814,63 @@ this.OutVector.Y=sin(Temp1)*2;]]>
                   </Expression>
                 </ZExpression>
               </OnUpdate>
-              <OnSpawn>
-                <Repeat Count="2">
-                  <OnIteration>
-                    <SpawnModel Model="EyeWormTailModel" SpawnerIsParent="255"/>
-                  </OnIteration>
-                  <WhileExp>
-<![CDATA[Temp1=0.4 - ((this.Iteration+1)*0.034);
-return this.Iteration<8;
-//this.Iteration=current iteration nr. Return false to end loop.]]>
-                  </WhileExp>
-                </Repeat>
-              </OnSpawn>
               <OnCollision>
                 <RemoveModel/>
                 <SpawnModel Model="EyeWormHitModel" UseSpawnerPosition="255"/>
                 <ZExpression Expression="PlayerScore+=50;"/>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="EyeWormMaterial"/>
+                <RenderMesh Mesh="EyeWormMesh"/>
+                <RenderParticles ParticlesPerSecond="16" Spread="3.14" ParticleWidth="0.08" ParticleHeight="0.08" Speed="1" Radius="0.3" ParticleLifetime="0.5" AnimateAlpha="-1">
+                  <OnEmitExpression>
+<![CDATA[//Emit particle.
+//PColor : particle color
+this.PColor.G*=rnd();]]>
+                  </OnEmitExpression>
+                </RenderParticles>
+              </OnRender>
+              <Definitions>
+                <Model Name="EyeWormTailModel" Scale="0.6 0.6 1">
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[EyeWormTailDelay=Temp1;
+
+Temp2=Temp1*0.5;
+CurrentModel.Scale.X+=Temp2;
+CurrentModel.Scale.Y+=Temp2;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                  <OnUpdate>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//Temp1=EyeWormModel.Position.X-CurrentModel.Position.X;
+
+Temp3=clamp( EyeWormTailDelay*(App.DeltaTime*50),0,1);
+Temp1=1-Temp3;
+Temp2=Temp3;
+
+CurrentModel.Position.X =
+  (CurrentModel.Position.X*Temp1) +
+  (EyeWormModel.Position.X*Temp2);
+  
+CurrentModel.Position.Y =
+  (CurrentModel.Position.Y*Temp1) +
+  (EyeWormModel.Position.Y*Temp2);]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnUpdate>
+                  <OnRender>
+                    <UseMaterial Material="TextMaterial"/>
+                    <RenderMesh Mesh="EyeWormMesh"/>
+                  </OnRender>
+                  <Definitions>
+                    <Variable Name="EyeWormTailDelay"/>
+                  </Definitions>
+                </Model>
+              </Definitions>
             </Model>
             <Mesh Name="EyeWormMesh">
               <Producers>
@@ -1879,6 +1879,13 @@ return this.Iteration<8;
             </Mesh>
             <Sound Name="EyeFireWormSound" Comment="note 54" Length="0.2" Volume="0.15" Osc1Waveform="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.4" Env1Active="1" Env1AttackTime="0.3"/>
             <Model Name="EyeWormHitModel">
+              <OnUpdate>
+                <Timer Interval="0.5">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="280" Spread="3" ParticleWidth="0.15" ParticleHeight="0.15" Speed="1" Radius="0.05" ParticleLifetime="0.5" AnimateAlpha="-3.5" Duration="0.1">
@@ -1892,15 +1899,23 @@ this.PColor.R=0.0;]]>
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
+            </Model>
+            <Model Name="EyeHitModel">
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
+//CurrentModel.Position.X-= random(0.8,0.2);]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
               <OnUpdate>
-                <Timer Interval="0.5">
+                <Timer Interval="0.2">
                   <OnTimer>
                     <RemoveModel/>
                   </OnTimer>
                 </Timer>
               </OnUpdate>
-            </Model>
-            <Model Name="EyeHitModel">
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="360" Direction="-1.37" Spread="-0.61" ParticleWidth="0.1" ParticleHeight="0.1" Speed="2" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="0.1">
@@ -1919,21 +1934,6 @@ if(rnd()<0.5) {
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="0.2">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-              </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
-//CurrentModel.Position.X-= random(0.8,0.2);]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
             </Model>
             <Sound Name="EyeHitSound" Comment="54" Length="0.1" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.24" FilterQ="0.06" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.77" Env0Active="1" Env0ReleaseTime="0.26"/>
           </Children>
@@ -1942,143 +1942,6 @@ if(rnd()<0.5) {
         <Group Name="BossEnemy">
           <Children>
             <Model Name="BossModel" Category="2" CollisionBounds="0.75 0.75 0 0">
-              <Definitions>
-                <Model Name="BossSegmentModel" Category="2" CollisionBounds="0.5 0.5 0 0">
-                  <Definitions>
-                    <Mesh Name="BossSegmentMesh">
-                      <Producers>
-                        <MeshSphere ZSamples="20" RadialSamples="25"/>
-                        <MeshExpression Scale="0.4 0.4 0.4">
-                          <Expression>
-<![CDATA[//V : current vertex
-
-float Temp1=
-  sin(CurrentModel.Personality+ v.X*2.2)+cos(v.Y*3.223)+sin(v.Z*2);
-float Temp2=
-  sin(CurrentModel.Personality+ v.X*0.3434)+cos(v.Y*5.223)+sin(v.Z*2.22);
-
-Temp2=noise2(Temp1*0.8,Temp2 + CurrentModel.Personality*3.333) * 0.8;
-v.X+=Temp2;
-v.Y+=Temp2;
-v.Z+=Temp2;]]>
-                          </Expression>
-                        </MeshExpression>
-                      </Producers>
-                    </Mesh>
-                    <Variable Name="BossSegmentAngle"/>
-                    <Variable Name="BossSegmentLife"/>
-                  </Definitions>
-                  <OnRender>
-                    <UseMaterial Material="PlayerMaterial"/>
-                    <RenderSetColor Name="BossSegmentColor" Color="0.18 0.18 0.18 1"/>
-                    <RenderMesh Mesh="BossSegmentMesh"/>
-                  </OnRender>
-                  <OnUpdate>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[CurrentModel.Rotation.Z=CurrentModel.Personality + App.Time*0.5;
-CurrentModel.Rotation.X=BossSegmentAngle*0.02;
-CurrentModel.Rotation.Y=BossSegmentAngle*0.035;
-
-CurrentModel.Position.X=BossModel.Position.X + sin(BossSegmentAngle)*BossSegmentDistance +
-  CurrentModel.Personality*0.3;
-CurrentModel.Position.Y=BossModel.Position.Y + cos(BossSegmentAngle)*BossSegmentDistance +
-  CurrentModel.Personality*0.2;
-
-BossSegmentAngle+=App.DeltaTime*1.5;]]>
-                      </Expression>
-                    </ZExpression>
-                  </OnUpdate>
-                  <OnSpawn>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[BossSegmentAngle=Temp1;
-
-Temp2=0.5+sin(BossSegmentAngle)*0.5; ///(3.14*2);
-BossSegmentColor.Color.R=0.2 + Temp2*0.3;
-BossSegmentColor.Color.G=Temp2*0.4;
-BossSegmentColor.Color.B=Temp2*0.25;
-
-BossSegmentLife=8 + Difficulty*8;]]>
-                      </Expression>
-                    </ZExpression>
-                  </OnSpawn>
-                  <OnRemove>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[BossSegmentsRemaining-=1;
-PlayerScore+=100;]]>
-                      </Expression>
-                    </ZExpression>
-                  </OnRemove>
-                  <OnCollision>
-                    <ZExpression>
-                      <Expression>
-<![CDATA[BossSegmentLife-=1;
-
-CurrentModel.Position.Y += random(0,0.15);
-CurrentModel.Position.X += random(0,0.15);]]>
-                      </Expression>
-                    </ZExpression>
-                    <Condition Comment="Set state dead if life=0" Expression="return BossSegmentLife&lt;=0;">
-                      <OnTrue>
-                        <PlaySound Sound="EyeDeadSound"/>
-                        <ZExpression Expression="PlayerScore+=100;"/>
-                        <SpawnModel Model="EyeExplodeModel" UseSpawnerPosition="255"/>
-                        <RemoveModel/>
-                      </OnTrue>
-                      <OnFalse>
-                        <SpawnModel Model="BossSegmentHitModel" UseSpawnerPosition="255"/>
-                        <PlaySound Sound="BossSegmentHitSound" NoteNr="24"/>
-                      </OnFalse>
-                    </Condition>
-                  </OnCollision>
-                </Model>
-                <Constant Name="BossSegmentCount" Value="12"/>
-                <Variable Name="BossSegmentDistance"/>
-                <Variable Name="BossIdleLocalTime"/>
-                <Variable Name="BossNextShotTimer"/>
-                <Variable Name="BossSegmentsRemaining"/>
-                <Variable Name="BossLife"/>
-                <Mesh Name="BossBodyMesh">
-                  <Producers>
-                    <MeshSphere ZSamples="20" RadialSamples="25"/>
-                    <MeshExpression Scale="0.6 0.4 0.2">
-                      <Expression>
-<![CDATA[//V : current vertex
-
-
-
-//Make square
-float Temp1=1-abs(v.X);
-v.X*=1+Temp1;]]>
-                      </Expression>
-                    </MeshExpression>
-                  </Producers>
-                </Mesh>
-                <Mesh Name="BossEyeMesh">
-                  <Producers>
-                    <MeshSphere Scale="0.2 0.15 0.05" ZSamples="4" RadialSamples="13"/>
-                    <MeshExpression Scale="1 1 0.5">
-                      <Expression>
-<![CDATA[//V : current vertex
-float Temp1=v.X;
-if(Temp1==0)
-  Temp1=0.0001;
-Temp1=atan2(v.Y,Temp1);// + CurrentModel.Personality;
-Temp1=1 + abs(tan(Temp1*2.3) * 0.01);
-v.X*=Temp1;
-v.Y*=Temp1;]]>
-                      </Expression>
-                    </MeshExpression>
-                  </Producers>
-                </Mesh>
-                <Mesh Name="BossPupillMesh">
-                  <Producers>
-                    <MeshSphere Scale="0.05 0.03 0.1" ZSamples="4"/>
-                  </Producers>
-                </Mesh>
-              </Definitions>
               <States>
                 <ModelState Name="BossState_Idle">
                   <OnStart>
@@ -2169,27 +2032,28 @@ BossNextStateTimer-=App.DeltaTime;]]>
                   </OnUpdate>
                 </ModelState>
               </States>
-              <OnRender>
-                <UseMaterial Material="PlayerMaterial"/>
-                <RenderSetColor Color="0.18 0.18 0.18 1"/>
-                <RenderMesh Mesh="BossBodyMesh"/>
-                <RenderTransformGroup Translate="-0.25 0.08 0.25">
-                  <Children>
-                    <RenderSetColor Color="0.82 0.82 0.82 1"/>
-                    <RenderMesh Mesh="BossEyeMesh"/>
-                    <RenderSetColor Color="0 0 0 1"/>
-                    <RenderMesh Mesh="BossPupillMesh"/>
-                  </Children>
-                </RenderTransformGroup>
-                <RenderTransformGroup Translate="0.25 0.08 0.25" Rotate="0 0.5 0">
-                  <Children>
-                    <RenderSetColor Color="0.82 0.82 0.82 1"/>
-                    <RenderMesh Mesh="BossEyeMesh"/>
-                    <RenderSetColor Color="0 0 0 1"/>
-                    <RenderMesh Mesh="BossPupillMesh"/>
-                  </Children>
-                </RenderTransformGroup>
-              </OnRender>
+              <OnSpawn>
+                <Repeat>
+                  <OnIteration>
+                    <SpawnModel Model="BossSegmentModel" UseSpawnerPosition="255" SpawnerIsParent="255"/>
+                  </OnIteration>
+                  <WhileExp>
+<![CDATA[Temp1=((3.14*2)/BossSegmentCount * this.Iteration);
+return this.Iteration<BossSegmentCount;]]>
+                  </WhileExp>
+                </Repeat>
+                <SetModelState State="BossState_Appearing"/>
+                <ZExpression>
+                  <Expression>
+<![CDATA[BossSegmentDistance=1;
+BossSegmentsRemaining=BossSegmentCount;
+BossNextShotTimer=2;
+BossLife=30;
+
+EnemiesOnScreen+=1;]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
@@ -2252,31 +2116,6 @@ return this.Iteration<Temp4;]]>
                   </OnTrue>
                 </Condition>
               </OnUpdate>
-              <OnSpawn>
-                <Repeat>
-                  <OnIteration>
-                    <SpawnModel Model="BossSegmentModel" UseSpawnerPosition="255" SpawnerIsParent="255"/>
-                  </OnIteration>
-                  <WhileExp>
-<![CDATA[Temp1=((3.14*2)/BossSegmentCount * this.Iteration);
-return this.Iteration<BossSegmentCount;]]>
-                  </WhileExp>
-                </Repeat>
-                <SetModelState State="BossState_Appearing"/>
-                <ZExpression>
-                  <Expression>
-<![CDATA[BossSegmentDistance=1;
-BossSegmentsRemaining=BossSegmentCount;
-BossNextShotTimer=2;
-BossLife=30;
-
-EnemiesOnScreen+=1;]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
-              <OnRemove>
-                <ZExpression Expression="EnemiesOnScreen-=1;"/>
-              </OnRemove>
               <OnCollision>
                 <ZExpression>
                   <Expression>
@@ -2299,37 +2138,169 @@ CurrentModel.Position.X += random(0,0.15);]]>
                   </OnFalse>
                 </Condition>
               </OnCollision>
-            </Model>
-            <Model Name="BossShotModel" Category="3" CollisionBounds="0.25 0.25 0 0">
               <OnRender>
                 <UseMaterial Material="PlayerMaterial"/>
-                <RenderSetColor Name="BossShotColor" Color="0.25 0.04 0.22 1"/>
-                <RenderMesh Mesh="BossShotMesh"/>
+                <RenderSetColor Color="0.18 0.18 0.18 1"/>
+                <RenderMesh Mesh="BossBodyMesh"/>
+                <RenderTransformGroup Translate="-0.25 0.08 0.25">
+                  <Children>
+                    <RenderSetColor Color="0.82 0.82 0.82 1"/>
+                    <RenderMesh Mesh="BossEyeMesh"/>
+                    <RenderSetColor Color="0 0 0 1"/>
+                    <RenderMesh Mesh="BossPupillMesh"/>
+                  </Children>
+                </RenderTransformGroup>
+                <RenderTransformGroup Translate="0.25 0.08 0.25" Rotate="0 0.5 0">
+                  <Children>
+                    <RenderSetColor Color="0.82 0.82 0.82 1"/>
+                    <RenderMesh Mesh="BossEyeMesh"/>
+                    <RenderSetColor Color="0 0 0 1"/>
+                    <RenderMesh Mesh="BossPupillMesh"/>
+                  </Children>
+                </RenderTransformGroup>
               </OnRender>
-              <OnUpdate>
-                <Condition>
-                  <Expression>
-<![CDATA[return
-  (CurrentModel.Position.X<LeftEdge) ||
-  (CurrentModel.Position.X>RightEdge) ||
-  (CurrentModel.Position.Y>TopEdge) ||
-  (CurrentModel.Position.Y<BottomEdge);]]>
-                  </Expression>
-                  <OnTrue>
-                    <RemoveModel/>
-                  </OnTrue>
-                </Condition>
-                <ZExpression>
-                  <Expression>
-<![CDATA[//CoconutModel.Velocity.Y-=CoconutPersonality*0.2;
+              <OnRemove>
+                <ZExpression Expression="EnemiesOnScreen-=1;"/>
+              </OnRemove>
+              <Definitions>
+                <Model Name="BossSegmentModel" Category="2" CollisionBounds="0.5 0.5 0 0">
+                  <OnSpawn>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[BossSegmentAngle=Temp1;
 
-//CurrentModel.Rotation.Z+=CurrentModel.Personality*0.4;
-//Temp1=CurrentModel.Rotation.X - abs(CurrentModel.Velocity.Y*0.15);
-//CurrentModel.Rotation.X+=Temp1 * App.DeltaTime;
-//CurrentModel.Rotation.Y+=CurrentModel.Personality*0.15;]]>
-                  </Expression>
-                </ZExpression>
-              </OnUpdate>
+Temp2=0.5+sin(BossSegmentAngle)*0.5; ///(3.14*2);
+BossSegmentColor.Color.R=0.2 + Temp2*0.3;
+BossSegmentColor.Color.G=Temp2*0.4;
+BossSegmentColor.Color.B=Temp2*0.25;
+
+BossSegmentLife=8 + Difficulty*8;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnSpawn>
+                  <OnUpdate>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[CurrentModel.Rotation.Z=CurrentModel.Personality + App.Time*0.5;
+CurrentModel.Rotation.X=BossSegmentAngle*0.02;
+CurrentModel.Rotation.Y=BossSegmentAngle*0.035;
+
+CurrentModel.Position.X=BossModel.Position.X + sin(BossSegmentAngle)*BossSegmentDistance +
+  CurrentModel.Personality*0.3;
+CurrentModel.Position.Y=BossModel.Position.Y + cos(BossSegmentAngle)*BossSegmentDistance +
+  CurrentModel.Personality*0.2;
+
+BossSegmentAngle+=App.DeltaTime*1.5;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnUpdate>
+                  <OnCollision>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[BossSegmentLife-=1;
+
+CurrentModel.Position.Y += random(0,0.15);
+CurrentModel.Position.X += random(0,0.15);]]>
+                      </Expression>
+                    </ZExpression>
+                    <Condition Comment="Set state dead if life=0" Expression="return BossSegmentLife&lt;=0;">
+                      <OnTrue>
+                        <PlaySound Sound="EyeDeadSound"/>
+                        <ZExpression Expression="PlayerScore+=100;"/>
+                        <SpawnModel Model="EyeExplodeModel" UseSpawnerPosition="255"/>
+                        <RemoveModel/>
+                      </OnTrue>
+                      <OnFalse>
+                        <SpawnModel Model="BossSegmentHitModel" UseSpawnerPosition="255"/>
+                        <PlaySound Sound="BossSegmentHitSound" NoteNr="24"/>
+                      </OnFalse>
+                    </Condition>
+                  </OnCollision>
+                  <OnRender>
+                    <UseMaterial Material="PlayerMaterial"/>
+                    <RenderSetColor Name="BossSegmentColor" Color="0.18 0.18 0.18 1"/>
+                    <RenderMesh Mesh="BossSegmentMesh"/>
+                  </OnRender>
+                  <OnRemove>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[BossSegmentsRemaining-=1;
+PlayerScore+=100;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnRemove>
+                  <Definitions>
+                    <Mesh Name="BossSegmentMesh">
+                      <Producers>
+                        <MeshSphere ZSamples="20" RadialSamples="25"/>
+                        <MeshExpression Scale="0.4 0.4 0.4">
+                          <Expression>
+<![CDATA[//V : current vertex
+
+float Temp1=
+  sin(CurrentModel.Personality+ v.X*2.2)+cos(v.Y*3.223)+sin(v.Z*2);
+float Temp2=
+  sin(CurrentModel.Personality+ v.X*0.3434)+cos(v.Y*5.223)+sin(v.Z*2.22);
+
+Temp2=noise2(Temp1*0.8,Temp2 + CurrentModel.Personality*3.333) * 0.8;
+v.X+=Temp2;
+v.Y+=Temp2;
+v.Z+=Temp2;]]>
+                          </Expression>
+                        </MeshExpression>
+                      </Producers>
+                    </Mesh>
+                    <Variable Name="BossSegmentAngle"/>
+                    <Variable Name="BossSegmentLife"/>
+                  </Definitions>
+                </Model>
+                <Constant Name="BossSegmentCount" Value="12"/>
+                <Variable Name="BossSegmentDistance"/>
+                <Variable Name="BossIdleLocalTime"/>
+                <Variable Name="BossNextShotTimer"/>
+                <Variable Name="BossSegmentsRemaining"/>
+                <Variable Name="BossLife"/>
+                <Mesh Name="BossBodyMesh">
+                  <Producers>
+                    <MeshSphere ZSamples="20" RadialSamples="25"/>
+                    <MeshExpression Scale="0.6 0.4 0.2">
+                      <Expression>
+<![CDATA[//V : current vertex
+
+
+
+//Make square
+float Temp1=1-abs(v.X);
+v.X*=1+Temp1;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="BossEyeMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.2 0.15 0.05" ZSamples="4" RadialSamples="13"/>
+                    <MeshExpression Scale="1 1 0.5">
+                      <Expression>
+<![CDATA[//V : current vertex
+float Temp1=v.X;
+if(Temp1==0)
+  Temp1=0.0001;
+Temp1=atan2(v.Y,Temp1);// + CurrentModel.Personality;
+Temp1=1 + abs(tan(Temp1*2.3) * 0.01);
+v.X*=Temp1;
+v.Y*=Temp1;]]>
+                      </Expression>
+                    </MeshExpression>
+                  </Producers>
+                </Mesh>
+                <Mesh Name="BossPupillMesh">
+                  <Producers>
+                    <MeshSphere Scale="0.05 0.03 0.1" ZSamples="4"/>
+                  </Producers>
+                </Mesh>
+              </Definitions>
+            </Model>
+            <Model Name="BossShotModel" Category="3" CollisionBounds="0.25 0.25 0 0">
               <OnSpawn>
                 <ZExpression>
                   <Expression>
@@ -2369,10 +2340,39 @@ CurrentModel.Velocity.Y=sin(Temp3)*Temp2;
                 </ZExpression>
                 <PlaySound Sound="BossShotSound" NoteNr="26"/>
               </OnSpawn>
+              <OnUpdate>
+                <Condition>
+                  <Expression>
+<![CDATA[return
+  (CurrentModel.Position.X<LeftEdge) ||
+  (CurrentModel.Position.X>RightEdge) ||
+  (CurrentModel.Position.Y>TopEdge) ||
+  (CurrentModel.Position.Y<BottomEdge);]]>
+                  </Expression>
+                  <OnTrue>
+                    <RemoveModel/>
+                  </OnTrue>
+                </Condition>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//CoconutModel.Velocity.Y-=CoconutPersonality*0.2;
+
+//CurrentModel.Rotation.Z+=CurrentModel.Personality*0.4;
+//Temp1=CurrentModel.Rotation.X - abs(CurrentModel.Velocity.Y*0.15);
+//CurrentModel.Rotation.X+=Temp1 * App.DeltaTime;
+//CurrentModel.Rotation.Y+=CurrentModel.Personality*0.15;]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
               <OnCollision>
                 <RemoveModel/>
                 <SpawnModel Model="CocunutHitModel" UseSpawnerPosition="255"/>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="PlayerMaterial"/>
+                <RenderSetColor Name="BossShotColor" Color="0.25 0.04 0.22 1"/>
+                <RenderMesh Mesh="BossShotMesh"/>
+              </OnRender>
             </Model>
             <Mesh Name="BossShotMesh">
               <Producers>
@@ -2393,6 +2393,22 @@ if(v.Z<-0.1)
             <Sound Name="BossShotSound" Comment="note 26, borde vara sine" Length="0.1" Osc1Waveform="1" UseFilter="1" FilterCutoff="0.46" FilterQ="0.2" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.18"/>
             <Sound Name="BossSegmentHitSound" Comment="24" Length="0.1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="0.79" Env0Active="1" Env0ReleaseTime="0.2" Env1Active="1" Env1AttackTime="0.82"/>
             <Model Name="BossSegmentHitModel">
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
+//CurrentModel.Position.X-= random(0.8,0.2);
+CurrentModel.Position.Z=0.5;]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
+              <OnUpdate>
+                <AnimatorGroup Duration="1" AutoStart="255">
+                  <OnStop>
+                    <RemoveModel/>
+                  </OnStop>
+                </AnimatorGroup>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="SmokeMaterial"/>
                 <RenderParticles ParticlesPerSecond="200" ParticleWidth="0.5" ParticleHeight="0.5" Radius="0.5" ParticleLifetime="1" AnimateAlpha="-1.6" Duration="0.1"/>
@@ -2414,25 +2430,24 @@ this.PColor.A=1.0;]]>
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <AnimatorGroup Duration="1" AutoStart="255">
-                  <OnStop>
-                    <RemoveModel/>
-                  </OnStop>
-                </AnimatorGroup>
-              </OnUpdate>
+            </Model>
+            <Sound Name="BossHitSound" Comment="80" Length="0.1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.87" FilterQ="0.77" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
+            <Model Name="BossHitModel">
               <OnSpawn>
                 <ZExpression>
                   <Expression>
 <![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
-//CurrentModel.Position.X-= random(0.8,0.2);
-CurrentModel.Position.Z=0.5;]]>
+//CurrentModel.Position.X-= random(0.8,0.2);]]>
                   </Expression>
                 </ZExpression>
               </OnSpawn>
-            </Model>
-            <Sound Name="BossHitSound" Comment="80" Length="0.1" Osc1Waveform="2" UseFilter="1" FilterCutoff="0.87" FilterQ="0.77" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Destination="2" Mod1Amount="1" Env0Active="1" Env0ReleaseTime="0.2"/>
-            <Model Name="BossHitModel">
+              <OnUpdate>
+                <Timer Interval="1">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="1500" Direction="-1.5" Spread="3" ParticleWidth="0.15" ParticleHeight="0.15" Speed="2" Radius="0.2" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="0.2">
@@ -2451,21 +2466,6 @@ if(rnd()<0.5) {
                   </OnEmitExpression>
                 </RenderParticles>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="1">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-              </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
-//CurrentModel.Position.X-= random(0.8,0.2);]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
             </Model>
             <Sound Name="BossExpandingSound" Comment="36" Length="5" UseOsc2="1" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.05" Mod2Active="1" Mod2Source="4" Mod2Destination="2" Mod2Amount="0.04" Env0Active="1" Env0ReleaseTime="5" Lfo0Active="1" Lfo0Speed="0.08"/>
             <Material Name="BossDebrisMaterial" Light="0" Blend="1" ZBuffer="0">
@@ -2500,6 +2500,21 @@ pixel.A=1-Temp1;]]>
               </Producers>
             </Bitmap>
             <Model Name="BossDeadModel">
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
+//CurrentModel.Position.X-= random(0.8,0.2);]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
+              <OnUpdate>
+                <Timer Interval="1.5">
+                  <OnTimer>
+                    <RemoveModel/>
+                  </OnTimer>
+                </Timer>
+              </OnUpdate>
               <OnRender>
                 <UseMaterial Material="DebrisMaterial"/>
                 <RenderParticles ParticlesPerSecond="1500" Direction="-1.5" Spread="3" ParticleWidth="0.15" ParticleHeight="0.15" Speed="2" Radius="0.2" ParticleLifetime="1" AnimateAlpha="-1.5" Duration="0.8">
@@ -2539,21 +2554,6 @@ this.PColor.A=1.0;]]>
                 <UseMaterial Material="BeamMaterial"/>
                 <RenderBeams Count="8" Length="2" Width="0.4"/>
               </OnRender>
-              <OnUpdate>
-                <Timer Interval="1.5">
-                  <OnTimer>
-                    <RemoveModel/>
-                  </OnTimer>
-                </Timer>
-              </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[CurrentModel.Position.Y+=random(0.0,0.35);
-//CurrentModel.Position.X-= random(0.8,0.2);]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
             </Model>
             <Sound Name="BossDeadSound" Comment="49" Length="5" UseOsc2="1" UseFilter="1" FilterCutoff="0.74" FilterQ="0.92" Mod0Active="1" Mod0Destination="11" Mod0Amount="1" Mod1Active="1" Mod1Source="2" Mod1Destination="10" Mod1Amount="0.14" Mod2Active="1" Mod2Source="3" Mod2Destination="2" Mod2Amount="0.18" Mod3Active="1" Mod3Source="4" Mod3Amount="0.22" Env0Active="1" Env0ReleaseTime="5" Lfo0Active="1" Lfo0Speed="0.1" Lfo1Active="1" Lfo1Style="1" Lfo1Speed="0.55"/>
           </Children>
@@ -2565,12 +2565,6 @@ this.PColor.A=1.0;]]>
     <Group Name="TitleScreen">
       <Children>
         <Model Name="TitleScreenModel">
-          <Definitions>
-            <Variable Name="TitleIntroTime"/>
-            <Constant Name="TitleStartTextX" Value="0.62"/>
-            <Constant Name="TitleStartTextY" Value="-0.83"/>
-            <Constant Name="TitleStartTextScale" Value="1.5"/>
-          </Definitions>
           <States>
             <ModelState Name="TitleState_Appear">
               <OnStart>
@@ -2601,48 +2595,10 @@ this.PColor.A=1.0;]]>
               </OnUpdate>
             </ModelState>
           </States>
-          <OnRender>
-            <RenderTransformGroup Scale="12 10 1">
-              <Children>
-                <UseMaterial Material="PaperMaterial"/>
-                <RenderSprite/>
-              </Children>
-            </RenderTransformGroup>
-            <UseMaterial Material="TextMaterial"/>
-            <RenderSetColor Color="0 0 0 1"/>
-            <RenderText Name="TitleText1" Text="TRIPLE-E" X="3" Y="0.87" Scale="0.5"/>
-            <RenderText Name="TitleText2" Text="A SMALL GAME FOR THE SHMUPDEV COMPETITION" X="3" Y="0.79" Scale="0.25">
-              <RenderCharExpression>
-<![CDATA[//Modify current character before render.
-//CharX,CharY : current coordinate
-//CharI : current character index
-//CharRotate : current character rotation in radians
-//CharScale : current character scale
-//this.CharY=noise2(this.CharI*0.1,TitleIntroTime)*0.5;
-//this.CharScale=1.5+noise2(this.CharI*0.1,App.Time*1)*0.9;
-//this.CharScale=1.5+noise2(this.CharI*0.1,App.Time*1)*0.9;
-//this.CharRotate=(1-TitleIntroTime) * 3.14;]]>
-              </RenderCharExpression>
-            </RenderText>
-            <RenderText Name="TitleText3" Text="BY VILLE KRUMLINDE  WWW.EMIX8.ORG" X="3" Y="0.72" Scale="0.25"/>
-            <RenderText Name="TitleTextStart" Text="START" X="3" Y="-0.83" Scale="1.5">
-              <RenderCharExpression>
-<![CDATA[//Modify current character before render.
-//CharX,CharY : current coordinate
-//CharI : current character index
-//CharRotate : current character rotation in radians
-//CharScale : current character scale
-this.CharRotate=(1-TitleIntroTime) * (3.14*0.1)*(this.CharI+1);]]>
-              </RenderCharExpression>
-            </RenderText>
-            <RenderTransformGroup Translate="-0.11 -0.45 0" Rotate="0 -0.51 0">
-              <Children>
-                <RenderSetColor Color="0.45 0.15 0.1 1"/>
-                <RenderText Text="PRESS SPACE TO START" X="-0.95" Y="-0.88" Scale="0.35" Align="1"/>
-                <RenderText Text="CONTROLS: MOUSE + A,S AND W" X="-0.95" Y="-0.94" Scale="0.35" Align="1"/>
-              </Children>
-            </RenderTransformGroup>
-          </OnRender>
+          <OnSpawn>
+            <SetModelState State="TitleState_Appear"/>
+            <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
+          </OnSpawn>
           <OnUpdate>
             <ZExpression>
               <Expression>
@@ -2692,19 +2648,59 @@ return
               </OnTrue>
             </Condition>
           </OnUpdate>
-          <OnSpawn>
-            <SetModelState State="TitleState_Appear"/>
-            <SpawnModel Model="TitleMouseCursor" SpawnStyle="1"/>
-          </OnSpawn>
+          <OnRender>
+            <RenderTransformGroup Scale="12 10 1">
+              <Children>
+                <UseMaterial Material="PaperMaterial"/>
+                <RenderSprite/>
+              </Children>
+            </RenderTransformGroup>
+            <UseMaterial Material="TextMaterial"/>
+            <RenderSetColor Color="0 0 0 1"/>
+            <RenderText Name="TitleText1" Text="TRIPLE-E" X="3" Y="0.87" Scale="0.5"/>
+            <RenderText Name="TitleText2" Text="A SMALL GAME FOR THE SHMUPDEV COMPETITION" X="3" Y="0.79" Scale="0.25">
+              <RenderCharExpression>
+<![CDATA[//Modify current character before render.
+//CharX,CharY : current coordinate
+//CharI : current character index
+//CharRotate : current character rotation in radians
+//CharScale : current character scale
+//this.CharY=noise2(this.CharI*0.1,TitleIntroTime)*0.5;
+//this.CharScale=1.5+noise2(this.CharI*0.1,App.Time*1)*0.9;
+//this.CharScale=1.5+noise2(this.CharI*0.1,App.Time*1)*0.9;
+//this.CharRotate=(1-TitleIntroTime) * 3.14;]]>
+              </RenderCharExpression>
+            </RenderText>
+            <RenderText Name="TitleText3" Text="BY VILLE KRUMLINDE  WWW.EMIX8.ORG" X="3" Y="0.72" Scale="0.25"/>
+            <RenderText Name="TitleTextStart" Text="START" X="3" Y="-0.83" Scale="1.5">
+              <RenderCharExpression>
+<![CDATA[//Modify current character before render.
+//CharX,CharY : current coordinate
+//CharI : current character index
+//CharRotate : current character rotation in radians
+//CharScale : current character scale
+this.CharRotate=(1-TitleIntroTime) * (3.14*0.1)*(this.CharI+1);]]>
+              </RenderCharExpression>
+            </RenderText>
+            <RenderTransformGroup Translate="-0.11 -0.45 0" Rotate="0 -0.51 0">
+              <Children>
+                <RenderSetColor Color="0.45 0.15 0.1 1"/>
+                <RenderText Text="PRESS SPACE TO START" X="-0.95" Y="-0.88" Scale="0.35" Align="1"/>
+                <RenderText Text="CONTROLS: MOUSE + A,S AND W" X="-0.95" Y="-0.94" Scale="0.35" Align="1"/>
+              </Children>
+            </RenderTransformGroup>
+          </OnRender>
+          <Definitions>
+            <Variable Name="TitleIntroTime"/>
+            <Constant Name="TitleStartTextX" Value="0.62"/>
+            <Constant Name="TitleStartTextY" Value="-0.83"/>
+            <Constant Name="TitleStartTextScale" Value="1.5"/>
+          </Definitions>
         </Model>
         <Model Name="TitleMouseCursor" Position="-4.7161 4 0" Velocity="0.0003 0 0">
-          <Definitions>
-            <Mesh Name="TitleMouseMesh1">
-              <Producers>
-                <MeshBox Scale="0.05 0.2 0.1"/>
-              </Producers>
-            </Mesh>
-          </Definitions>
+          <OnUpdate>
+            <MouseModelController ScaleX="6" ScaleY="4"/>
+          </OnUpdate>
           <OnRender>
             <UseMaterial Material="PlayerMaterial"/>
             <RenderSetColor Color="0.12 0.43 0.42 1"/>
@@ -2719,14 +2715,15 @@ return
               </Children>
             </RenderTransformGroup>
           </OnRender>
-          <OnUpdate>
-            <MouseModelController ScaleX="6" ScaleY="4"/>
-          </OnUpdate>
+          <Definitions>
+            <Mesh Name="TitleMouseMesh1">
+              <Producers>
+                <MeshBox Scale="0.05 0.2 0.1"/>
+              </Producers>
+            </Mesh>
+          </Definitions>
         </Model>
         <Model Name="GameOverModel">
-          <Definitions>
-            <Variable Name="GameOverIntroTime"/>
-          </Definitions>
           <States>
             <ModelState Name="GameOverState_Appear">
               <OnStart>
@@ -2757,6 +2754,27 @@ return
               </OnUpdate>
             </ModelState>
           </States>
+          <OnSpawn>
+            <SetModelState State="GameOverState_Appear"/>
+          </OnSpawn>
+          <OnUpdate>
+            <ZExpression>
+              <Expression>
+<![CDATA[//GameOverIntroTime sveper från 0..1
+
+GameOverText1.X=0 - (1.5-GameOverIntroTime*1.5);
+
+GameOverText2.X=0 - (2-GameOverIntroTime*2);
+
+GameOverText4.X=0 + (2.5-clamp(GameOverIntroTime*2.5,0,2.5));]]>
+              </Expression>
+            </ZExpression>
+            <KeyPress Keys=" {">
+              <OnPressed>
+                <SetModelState State="GameOverState_Leave"/>
+              </OnPressed>
+            </KeyPress>
+          </OnUpdate>
           <OnRender>
             <RenderTransformGroup Scale="12 10 1">
               <Children>
@@ -2791,27 +2809,9 @@ this.CharRotate=(1-GameOverIntroTime) * (3.14*0.025)*(this.CharI+1);]]>
               </RenderCharExpression>
             </RenderText>
           </OnRender>
-          <OnUpdate>
-            <ZExpression>
-              <Expression>
-<![CDATA[//GameOverIntroTime sveper från 0..1
-
-GameOverText1.X=0 - (1.5-GameOverIntroTime*1.5);
-
-GameOverText2.X=0 - (2-GameOverIntroTime*2);
-
-GameOverText4.X=0 + (2.5-clamp(GameOverIntroTime*2.5,0,2.5));]]>
-              </Expression>
-            </ZExpression>
-            <KeyPress Keys=" {">
-              <OnPressed>
-                <SetModelState State="GameOverState_Leave"/>
-              </OnPressed>
-            </KeyPress>
-          </OnUpdate>
-          <OnSpawn>
-            <SetModelState State="GameOverState_Appear"/>
-          </OnSpawn>
+          <Definitions>
+            <Variable Name="GameOverIntroTime"/>
+          </Definitions>
         </Model>
       </Children>
     </Group> <!-- TitleScreen -->
