@@ -423,9 +423,9 @@ var
 begin
   Now := Platform_GetTime;
 
-  {$ifdef minimal}
+  {.$ifdef minimal} //Ok, lets try to have frame rate setting respected in designer too
   if Now>=NextFrameTime then
-  {$endif}
+  {.$endif}
   begin  //Delay until next frame
     if (FrameRateStyle<>frsFree)  //But not if set to "Free"
       {$ifdef MSWINDOWS}
@@ -1190,6 +1190,7 @@ begin
   Renderer.DesignerRenderStop;
   AudioPlayer.DesignerStopAllAudio;
   Self.CurrentState := nil;
+  Self.DeltaTime := 0;
 end;
 {$endif}
 

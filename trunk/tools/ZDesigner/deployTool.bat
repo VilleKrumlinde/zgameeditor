@@ -40,6 +40,7 @@ copy .\exe\projects\ModPlay\4-mat_-_rose.xm ..\..\Deploy\%tool%\projects\ModPlay
 copy .\exe\lib\* ..\..\Deploy\%tool%\lib\
 copy .\exe\Templates\* ..\..\Deploy\%tool%\Templates\
 copy .\exe\Styles\readme.txt ..\..\Deploy\%tool%\Styles\
+copy .\exe\Editors\* ..\..\Deploy\%tool%\Editors\
 
 copy .\exe\Android\* ..\..\Deploy\%tool%\Android\
 

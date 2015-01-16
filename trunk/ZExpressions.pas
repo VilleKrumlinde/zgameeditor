@@ -1379,7 +1379,7 @@ begin
   if P=nil then
     ZHalt('Array assign outside range: ' + String(A.Name));
   {$endif}
-  Env.StackPush(P);
+  Env.StackPushPointer(P);
 end;
 
 { TExpStackFrame }
