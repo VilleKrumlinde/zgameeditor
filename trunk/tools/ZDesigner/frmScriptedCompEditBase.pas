@@ -21,10 +21,11 @@ type
   protected
     EditorApp : TZApplication;
     ScriptName : string;
+    procedure BindData; virtual;
+    procedure UpdateData; virtual;
   public
     procedure SetComponent(C: TZComponent; TreeNode: TZComponentTreeNode); override;
     destructor Destroy; override;
-    procedure BindData; virtual;
   end;
 
 implementation
@@ -54,7 +55,11 @@ begin
   Glp.Parent := Self;
 
   LoadScript;
-  BindData;
+end;
+
+procedure TScriptedCompEditFrameBase.UpdateData;
+begin
+
 end;
 
 procedure TScriptedCompEditFrameBase.BindData;
@@ -73,12 +78,14 @@ var
   A : TZApplication;
 begin
   A := ComponentManager.LoadXmlFromFile( (Owner as TEditorForm).ExePath + 'Editors\' + ScriptName ) as TZApplication;
-  A.RefreshSymbolTable;
   A.OnGetLibraryPath := (Owner as TEditorForm).OnGetLibraryPath;
   A.Compile;
+
+  Self.EditorApp := A;
+  BindData;
+
   A.DesignerReset;
   A.DesignerStart(Glp.Width,Glp.Height, 0);
-  Self.EditorApp := A;
 
   RenderTimer.Interval := 25;
   RenderTimer.Enabled := True;
@@ -88,6 +95,8 @@ procedure TScriptedCompEditFrameBase.OnGlDraw(Sender: TObject);
 begin
   if EditorApp<>nil then
   begin
+    Self.UpdateData;
+
     EditorApp.ScreenWidth := Glp.Width;
     EditorApp.ScreenHeight := Glp.Height;
     EditorApp.UpdateViewport;

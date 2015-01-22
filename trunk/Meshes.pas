@@ -787,6 +787,7 @@ procedure TModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
 
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}(@OnSpawn), zptComponentList);
@@ -794,7 +795,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}(@OnCollision), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}(@OnRemove), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'BaseModel',{$ENDIF}(@BaseModel), zptComponentRef);

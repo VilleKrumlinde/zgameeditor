@@ -140,15 +140,28 @@ type
     procedure Execute; override;
   end;
 
+
   TSpriteSheet = class(TZComponent)
+  type
+    PSpriteInfo = ^TSpriteInfo;
+    TSpriteInfo = packed record
+      SheetX,SheetY,SizeX,SizeY,OriginX,OriginY : smallint;
+    end;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
+    function GetSpriteInfo(const Index : integer) : PSpriteInfo;
   public
     Bitmap : TZBitmap;
+    SpriteData : TZBinaryPropValue;
   end;
 
   TRenderSprite = class(TRenderCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
   public
+    SpriteSheet : TSpriteSheet;
+    SpriteIndex : integer;
+    MirrorHorizontal,MirrorVertical : boolean;
     procedure Execute; override;
   end;
 
@@ -353,6 +366,8 @@ var
 
 
 implementation
+
+{$POINTERMATH ON}
 
 uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZLog, GLDrivers
   {$ifdef zlog},SysUtils{$endif};
@@ -637,15 +652,73 @@ end;
 { TRenderSprite }
 
 
-procedure TRenderSprite.Execute;
+procedure TRenderSprite.DefineProperties(List: TZPropertyList);
 begin
-  //todo: ange texgen auto on/off i material?
-  {
-    TexCoords Generated,ModelDefined
-    Z-Buffer on/off (depth)
-    DrawBackFace on/off
-  }
-  Self.ZApp.Driver.RenderUnitQuad;
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SpriteSheet',{$ENDIF}(@SpriteSheet), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TSpriteSheet]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'SpriteIndex',{$ENDIF}(@SpriteIndex), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'MirrorHorizontal',{$ENDIF}(@MirrorHorizontal), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'MirrorVertical',{$ENDIF}(@MirrorVertical), zptBoolean);
+end;
+
+procedure TRenderSprite.Execute;
+
+  function Flip(const B : boolean) : single;
+  begin
+    if B then
+      Result := -1
+    else
+      Result := 1;
+  end;
+
+var
+  Info : TSpriteSheet.PSpriteInfo;
+  Driver : TGLDriverBase;
+  Px,Py,TransX,TransY,ScaleX,ScaleY : single;
+begin
+  Driver := Self.ZApp.Driver;
+
+  if Assigned(Self.SpriteSheet) then
+  begin
+    Info := Self.SpriteSheet.GetSpriteInfo(Self.SpriteIndex);
+    if Assigned(Info) then
+    begin
+      Px := (1.0/Self.SpriteSheet.Bitmap.PixelWidth);
+      Py := (1.0/Self.SpriteSheet.Bitmap.PixelHeight);
+      ScaleX := Info.SizeX * Px;
+      ScaleY := Info.SizeY * Py;
+
+      //Bottom-left corner
+      TransX := Info.SheetX * Px;
+      TransY := (Info.SizeY+Info.SheetY) * Py;
+
+      Driver.MatrixMode(GL_TEXTURE);
+      Driver.PushMatrix();
+      Driver.LoadIdentity();
+      Driver.Translate(TransX, 1.0 - TransY, 0);
+      Driver.Scale(ScaleX,ScaleY,1);
+
+      Driver.MatrixMode(GL_MODELVIEW);
+        Driver.PushMatrix();
+          Driver.Scale(Info.SizeX*Flip(Self.MirrorHorizontal),Info.SizeY*Flip(Self.MirrorVertical),1);
+          glPushAttrib(GL_TEXTURE_BIT);
+          glEnable(GL_TEXTURE_2D);
+          glDisable(GL_TEXTURE_GEN_S);
+          glDisable(GL_TEXTURE_GEN_T);
+          glDisable(GL_CULL_FACE);
+          Self.SpriteSheet.Bitmap.UseTextureBegin;
+          Driver.RenderUnitQuad;
+          glDisable(GL_TEXTURE_2D);
+          glPopAttrib();
+        Driver.PopMatrix();
+
+      Driver.MatrixMode(GL_TEXTURE);
+      Driver.PopMatrix();
+      Driver.MatrixMode(GL_MODELVIEW);
+    end;
+  end else
+    Driver.RenderUnitQuad;
 end;
 
 { TRenderBeams }
@@ -2274,6 +2347,14 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}(@Bitmap), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$ifndef minimal}'SpriteData',{$ENDIF}@SpriteData, zptBinary);
+end;
+
+function TSpriteSheet.GetSpriteInfo(const Index: integer): PSpriteInfo;
+begin
+  Result := nil;
+  if Assigned(Self.Bitmap) and (Index>=0) and (Index<SpriteData.Size div SizeOf(TSpriteInfo)) then
+    Result := PSpriteInfo(PByte(Self.SpriteData.Data) + Index*SizeOf(TSpriteInfo));
 end;
 
 initialization

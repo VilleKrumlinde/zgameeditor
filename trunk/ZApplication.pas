@@ -84,6 +84,9 @@ type
     function Main : boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
+    {$ifndef minimal}
+    procedure InitAfterPropsAreSet; override;
+    {$endif}
   public
     Content : TZComponentList;
     Models : TModels;  //not a property
@@ -309,6 +312,13 @@ begin
       Platform_InitAudio;
   {$endif}
 end;
+
+{$ifndef minimal}
+procedure TZApplication.InitAfterPropsAreSet;
+begin
+  Self.RefreshSymbolTable;
+end;
+{$endif}
 
 procedure TZApplication.Shutdown;
 begin
@@ -1019,10 +1029,10 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TRenderCommand]);}{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'OnClose',{$ENDIF}(@OnClose), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}(@Content), zptComponentList);
-
   List.AddProperty({$IFNDEF MINIMAL}'Lights',{$ENDIF}(@Lights), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TLight]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'Content',{$ENDIF}(@Content), zptComponentList);
+
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}(@Caption), zptString);
     List.GetLast.IsManagedTarget := True;
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}(@DeltaTime), zptFloat);
@@ -1170,6 +1180,7 @@ begin
   Self.DeltaTime := 0;
   Self.LastTime := InitTime;
   Self.FpsTime := 0;
+  Self.NextFrameTime := Self.Time;
 
   //Initial tree update
   //Content.Update;
