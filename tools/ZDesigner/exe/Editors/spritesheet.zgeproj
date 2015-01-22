@@ -1,81 +1,110 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="About dialog" ClearColor="0.24 0.24 0.24 1">
+<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="128 64 90" FOV="90" ClipNear="1" ClipFar="1000">
+  <OnLoaded>
+    <ZExternalLibrary ModuleName="opengl32">
+      <Source>
+<![CDATA[//
+
+void glDisableClientState(int cap){}
+void glDrawArrays(int mode, int first, int count){}
+void glEnableClientState(int cap){}
+void glVertexPointer(int size, int type, int stride, xptr pointer){}]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZLibrary>
+      <Source>
+<![CDATA[//
+
+int SheetWidth, SheetHeight;
+
+//
+
+float[184] SpriteVertices;]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[//
+
+int a, x1, y1, x2, y2;
+
+//
+
+for(int i=0; i<23; i++)
+{
+  x1 = Sprites[i,0];
+  y1 = Sprites[i,1];
+
+  x2 = x1 + Sprites[i,2];
+  y2 = y1 + Sprites[i,3];
+
+  SpriteVertices[a++] = x1; SpriteVertices[a++] = y1;
+  SpriteVertices[a++] = x1; SpriteVertices[a++] = y2;
+  SpriteVertices[a++] = x2; SpriteVertices[a++] = y2;
+  SpriteVertices[a++] = x2; SpriteVertices[a++] = y1;
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
   <OnUpdate>
-    <Timer Interval="0.31">
-      <OnTimer>
-        <SpawnModel Model="SpinnerModel"/>
-      </OnTimer>
-    </Timer>
-    <KeyPress Keys="{" RepeatDelay="0.5">
-      <OnPressed>
-        <ZExpression Expression="trace(&quot;Click, X: &quot; + intToStr(App.MousePosition.X*100) + &quot; Y: &quot; + intToStr(App.MousePosition.Y*100));"/>
-      </OnPressed>
-    </KeyPress>
+    <ZExpression>
+      <Expression>
+<![CDATA[//
+
+SheetWidth = 16 << SheetBitmap.Width;
+SheetHeight = 16 << SheetBitmap.Height;
+
+//
+
+App.CameraPosition.X = SheetWidth * 0.5;
+App.CameraPosition.Y = SheetHeight * 0.5;
+App.CameraPosition.Z = App.ScreenHeight * 0.25;]]>
+      </Expression>
+    </ZExpression>
   </OnUpdate>
   <OnRender>
+    <ZExpression>
+      <Expression>
+<![CDATA[//
+
+mat4 m;
+
+//
+
+getMatrix(1, m);
+m[1,1] *= -1;
+setMatrix(1, m);]]>
+      </Expression>
+    </ZExpression>
     <UseMaterial Material="SheetMaterial"/>
-    <RenderSprite/>
-    <RenderBeams Count="4" Length="1.53" Width="0.04"/>
+    <RenderNet>
+      <RenderVertexExpression>
+<![CDATA[//
+
+Vertex.X = Vertex.X < 0 ? 0 : SheetWidth;
+Vertex.Y = Vertex.Y > 0 ? 0 : SheetHeight;]]>
+      </RenderVertexExpression>
+    </RenderNet>
+    <UseMaterial Material="LineMaterial"/>
+    <ZExpression>
+      <Expression>
+<![CDATA[//
+
+glEnableClientState(0x8074);
+glVertexPointer(2, 0x1406, 0, SpriteVertices);
+glDrawArrays(7, 0, 92);
+glDisableClientState(0x8074);]]>
+      </Expression>
+    </ZExpression>
   </OnRender>
   <Content>
-    <Group Name="SpinnerGroup">
-      <Children>
-        <Model Name="SpinnerModel" Scale="2 2 1" RotationVelocity="0 0.5 0">
-          <OnUpdate>
-            <Condition Expression="return CurrentModel.Position.Y&gt;5.5;">
-              <OnTrue>
-                <RemoveModel/>
-              </OnTrue>
-            </Condition>
-            <ZExpression>
-              <Expression>
-<![CDATA[SpinnerTime+=App.DeltaTime*0.75;
-
-Temp1=-4.5 + SpinnerTime;
-Temp1+=noise2(CurrentModel.Personality,SpinnerTime*0.5) * 1.0;
-Temp1+=noise2((SpinnerTime+App.Time)*0.25,0)*3;
-CurrentModel.Position.Y=Temp1;
-
-Temp1=sin(SpinnerTime*2)*2;
-//Temp1+=App.MousePosition.X*4*(CurrentModel.Personality*0.1);
-//Temp1+=noise2(CurrentModel.Personality,SpinnerTime*1) * 1;
-Temp1+=noise2((SpinnerTime+App.Time)*0.2,0)*8;
-CurrentModel.Position.X=Temp1;
-
-Temp1=cos(SpinnerTime*2)*2;
-CurrentModel.Position.Z=Temp1;]]>
-              </Expression>
-            </ZExpression>
-          </OnUpdate>
-          <OnRender>
-            <UseMaterial Material="SpinnerMaterial"/>
-            <RenderMesh Mesh="SpinnerMesh"/>
-          </OnRender>
-          <Definitions>
-            <Variable Name="SpinnerTime"/>
-          </Definitions>
-        </Model>
-        <Mesh Name="SpinnerMesh">
-          <Producers>
-            <MeshSphere Scale="0.25 0.25 0.25" ZSamples="8" RadialSamples="8"/>
-          </Producers>
-        </Mesh>
-        <Material Name="SpinnerMaterial" Shading="1" Color="0.5 0 0 1"/>
-      </Children>
-    </Group> <!-- SpinnerGroup -->
-
-    <Group Name="Globals">
-      <Children>
-        <Variable Name="Temp1"/>
-        <Variable Name="Temp2"/>
-        <Variable Name="Temp3"/>
-      </Children>
-    </Group> <!-- Globals -->
-
-    <Material Name="SheetMaterial">
+    <Array Name="Sprites" Type="1" Dimensions="1" SizeDim1="23" SizeDim2="6"/>
+    <Bitmap Name="SheetBitmap" Width="4" Height="3" Filter="1"/>
+    <Material Name="SheetMaterial" Shading="1" Light="0" ZBuffer="0">
       <Textures>
-        <MaterialTexture Name="SheetMaterialTexture" TexCoords="1"/>
+        <MaterialTexture Name="SheetMaterialTexture" Texture="SheetBitmap" TextureWrapMode="2" TexCoords="1"/>
       </Textures>
     </Material>
+    <Material Name="LineMaterial" WireframeWidth="1" Shading="2" Color="0.502 0.502 0.502 1" Light="0" ZBuffer="0" DrawBackFace="255"/>
   </Content>
 </ZApplication>

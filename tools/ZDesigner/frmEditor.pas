@@ -740,6 +740,7 @@ var
   function InNewProject : TZApplication;
   begin
     Result := TZApplication.Create(nil);
+    Result.RefreshSymbolTable;
     Result.Name:='App';
     Result.Caption:=AppName + ' application';
   end;
@@ -799,8 +800,6 @@ begin
 
   //Needed for platform wndproc
   SetWindowLongPtr(Glp.Handle,GWL_USERDATA, NativeInt(ZApp) );
-
-  ZApp.RefreshSymbolTable;
 
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
@@ -1541,10 +1540,29 @@ begin
 end;
 
 procedure TEditorForm.RefreshCompEditorTreeNode;
+
+  procedure DoOne(CompEditor : TCompEditFrameBase);
+  begin
+    Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
+    CompEditor.TreeNode.Expand(False);
+    CompEditor.NeedRefreshTreeNode := False;
+  end;
+
+var
+  F : TForm;
+  C : TCompEditFrameBase;
 begin
-  Tree.RefreshNode(CompEditor.TreeNode,CompEditor.Component);
-  CompEditor.TreeNode.Expand(False);
-  CompEditor.NeedRefreshTreeNode := False;
+  //Värde har ändrats i propertyeditorn
+  Glp.Invalidate;
+
+  if CompEditor<>nil then
+    DoOne(CompEditor);
+  for F in DetachedCompEditors.Values do
+  begin
+    C := F.Controls[0] as TCompEditFrameBase;
+    DoOne(C);
+  end;
+
   SetFileChanged(True);
 end;
 

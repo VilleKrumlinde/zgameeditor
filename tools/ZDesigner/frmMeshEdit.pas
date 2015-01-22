@@ -877,6 +877,7 @@ begin
   ReadFromComponent;
 
   RepaintPage;
+  ResetCamera;
   Glp.Invalidate;
 end;
 
@@ -956,6 +957,7 @@ var
   M : TMesh;
 begin
   M := (Self.Component as TMesh);
+  M.Update;
 
   if ShadersSupported then
     glUseProgram(0);
