@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2008- Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -638,7 +638,7 @@ begin
   //Filter, obs måste ske *efter* volym
   //Blir brus ifall volym sker efter filter
   if V.UseFilter then
-  begin
+  begin  //Based on http://www.musicdsp.org/showone.php?id=29
     Buf := @VoiceBuffer[0];
     for I := 0 to Count-1 do
     begin
