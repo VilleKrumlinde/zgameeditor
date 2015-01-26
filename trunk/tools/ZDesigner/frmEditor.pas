@@ -31,7 +31,7 @@ uses
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
   Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
-  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections;
+  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -47,7 +47,7 @@ type
     TabSheet1: TTabSheet;
     TrackBar1: TTrackBar;
     TabSheet2: TTabSheet;
-    PropEditorPanel: TGroupBox;
+    PropEditorPanel: TPanel;
     ViewerPanel: TPanel;
     Splitter2: TSplitter;
     Label1: TLabel;
@@ -234,6 +234,10 @@ type
     Panel1: TPanel;
     CompEditorParentPanel: TPanel;
     DetachCompEditorButton: TButton;
+    PropListParent: TGroupBox;
+    PropPageControl: TPageControl;
+    QuickCompListView: TListView;
+    Panel3: TPanel;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -316,6 +320,7 @@ type
     procedure ImportBitmapActionExecute(Sender: TObject);
     procedure ImportAudioActionExecute(Sender: TObject);
     procedure DetachCompEditorButtonClick(Sender: TObject);
+    procedure QuickCompListViewClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -412,6 +417,7 @@ type
     procedure ImportAudioFiles(Files: TStringList);
     function MakeCompEditor(Kind: TCompEditFrameBaseType): TCompEditFrameBase;
     procedure OnDetachedCompEditorClose(Sender: TObject; var Action: TCloseAction);
+    procedure FillQuickCompList;
   protected
     procedure CreateWnd; override;
   public
@@ -521,7 +527,7 @@ begin
   Ed := TZPropertyEditor.Create(Self);
   Ed.Align := alClient;
   Ed.OnPropValueChanged := Self.OnPropValueChange;
-  Ed.Parent := PropEditorPanel;
+  Ed.Parent := PropListParent;
 
   Tree := TZComponentTreeView.Create(Self);
   Tree.Align := alClient;
@@ -640,6 +646,30 @@ begin
   ReadAppSettingsFromIni;
   RefreshMenuFromMruList;
   FillNewMenuTemplateItems;
+
+  FillQuickCompList;
+end;
+
+procedure TEditorForm.FillQuickCompList;
+var
+  Infos : PComponentInfoArray;
+  Ci : TZComponentInfo;
+  I : TZClassIds;
+  Item : TListItem;
+begin
+  Infos := ZClasses.ComponentManager.GetAllInfos;
+  for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
+  begin
+    Ci := TZComponentInfo(Infos[I]);
+    Assert(Ci<>nil, 'Component info=nil. Component class removed?');
+    if Ci.NoUserCreate then
+      Continue;
+    Item := QuickCompListView.Items.Add;
+    Item.Caption := Ci.ZClassName;
+    Item.Data := Ci;
+    Item.ImageIndex := Ci.ImageIndex;
+  end;
+//  ListView_SetColumnWidth(QuickCompListView.Handle, 0, 200);
 end;
 
 procedure TEditorForm.CreateWnd;
@@ -740,8 +770,8 @@ var
   function InNewProject : TZApplication;
   begin
     Result := TZApplication.Create(nil);
-    Result.RefreshSymbolTable;
     Result.Name:='App';
+    Result.RefreshSymbolTable;
     Result.Caption:=AppName + ' application';
   end;
 
@@ -1533,10 +1563,19 @@ end;
 procedure TEditorForm.OnTreeSelectItem(Sender: TObject; Node : TTreeNode);
 begin
   if (Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>nil) then
+  begin
+    PropPageControl.ActivePageIndex := 0;
     SelectComponent( Tree.ZSelected.Component )
+  end
+  else if (Tree.ZSelected<>nil) and (Tree.ZSelected.ComponentList<>nil) then
+  begin
+    PropPageControl.ActivePageIndex := 1;
+  end
   else
-    //Dölj property editor om ingen component är selectad
+  begin
+    PropPageControl.ActivePageIndex := 0;
     Ed.SetComponent(nil);
+  end;
 end;
 
 procedure TEditorForm.RefreshCompEditorTreeNode;
@@ -1824,7 +1863,10 @@ var
 begin
   C := (Sender as TForm).Controls[0] as TCompEditFrameBase;
   if DetachedCompEditors.ContainsKey(C.Component) then
+  begin
+    C.OnEditorClose;
     DetachedCompEditors.Remove(C.Component);
+  end;
 end;
 
 procedure TEditorForm.DetachCompEditorButtonClick(Sender: TObject);
@@ -1833,9 +1875,14 @@ var
 begin
   F := TForm.CreateNew(Self);
   F.Caption := 'Editing: ' + String(CompEditor.Component.GetDisplayName);
+
+  F.SetBounds(CompEditor.ClientToScreen(Point(0,0)).X,CompEditor.ClientToScreen(Point(0,0)).Y,CompEditor.Width,CompEditor.Height);
+  F.Position := poDesigned;
   CompEditor.Parent := F;
   F.Show;
   F.OnClose := Self.OnDetachedCompEditorClose;
+  F.KeyPreview := True;
+  F.OnKeyPress := Self.OnKeyPress;
   DetachedCompEditors.Add(CompEditor.Component,F);
   DetachCompEditorButton.Visible := False;
   CompEditor := nil;
@@ -3270,6 +3317,16 @@ begin
     HasData;
 end;
 
+procedure TEditorForm.QuickCompListViewClick(Sender: TObject);
+var
+  Ci : TZComponentInfo;
+  C : TZComponent;
+begin
+  Ci := TZComponentInfo(QuickCompListView.Selected.Data);
+  C := Ci.ZClass.Create(nil);
+  AddNewComponentToTree(C);
+end;
+
 procedure TEditorForm.MoveUpComponentActionExecute(Sender: TObject);
 var
   C,Tmp : TObject;
@@ -3417,6 +3474,8 @@ begin
 end;
 
 procedure TEditorForm.FormKeyPress(Sender: TObject; var Key: Char);
+var
+  F : TForm;
 begin
   if (Key = #13) and (not (ActiveControl is TSynEdit)) and
     (not (ActiveControl is TCustomMemo)) and
@@ -3428,6 +3487,8 @@ begin
   end;
   if Assigned(CompEditor) then
     CompEditor.OnKeyPress(Key);
+  for F in DetachedCompEditors.Values do
+    (F.Controls[0] as TCompEditFrameBase).OnKeyPress(Key);
 end;
 
 var

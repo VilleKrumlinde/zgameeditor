@@ -44,6 +44,7 @@ begin
   if (O is TMaterialTexture) then
   begin
     Self.MaterialTexture := (O as TMaterialTexture);
+    MaterialTexture.Texture := (Self.Component as TSpriteSheet).Bitmap;
   end;
 
   O := EditorApp.SymTab.Lookup('Sprites');

@@ -88,11 +88,13 @@ type
     procedure PlayNoteFromChar(Key: char);
     procedure SetupMixerGui;
     procedure GetNoteNr(I: Integer; var NoteNr: Single);
+    procedure WriteToComponent;
     { Private declarations }
   public
     procedure SetComponent(C: TZComponent; TreeNode: TZComponentTreeNode);  override;
     procedure OnKeyPress(var Key: Char); override;
     constructor Create(AOwner: TComponent) ; override;
+    procedure OnEditorClose; override;
   end;
 
 var
@@ -141,17 +143,7 @@ begin
   if I=0 then
     Exit;
 
-  Sound.Voice.Osc1.Waveform := TWaveform(Osc1WaveformCombo.ItemIndex);
-  Sound.Voice.Osc1.PulseWidth := Round(Osc1PWTrackBar.Position) / 100;
-
-  Sound.Voice.UseOsc2 := Osc2ActiveCheckBox.Checked;
-  Sound.Voice.Osc2.NoteModifier := StrToIntDef(Osc2FreqEdit.Text,0) * 0.1;
-  Sound.Voice.Osc2.Waveform := TWaveform(Osc2WaveformCombo.ItemIndex);
-  Sound.Voice.Osc2Volume := Round(Osc2VolumeTrackBar.Position) / 100;
-
-  Sound.Voice.UseFilter := FilterActiveCheckBox.Checked;
-  Sound.Voice.FilterCutoff := Round(FilterCutoffTrackBar.Position) / 100.1;
-  Sound.Voice.FilterQ := Round(FilterQTrackBar.Position) / 100.1;
+  WriteToComponent;
 
   NoteLength := StrToFloatDef(NoteLengthEdit.Text,0.25);
   Sound.Voice.Length := NoteLength;
@@ -373,6 +365,25 @@ begin
   Platform_EnterMutex( SoundGraphMutex );
     ZPlatform.Platform_DesignerSetAudioCallback(ReceiveAudioFunc);
   Platform_LeaveMutex( SoundGraphMutex );
+end;
+
+procedure TSoundEditFrame.OnEditorClose;
+begin
+  inherited;
+  WriteToComponent;
+end;
+
+procedure TSoundEditFrame.WriteToComponent;
+begin
+  Sound.Voice.Osc1.Waveform := TWaveform(Osc1WaveformCombo.ItemIndex);
+  Sound.Voice.Osc1.PulseWidth := Round(Osc1PWTrackBar.Position) / 100;
+  Sound.Voice.UseOsc2 := Osc2ActiveCheckBox.Checked;
+  Sound.Voice.Osc2.NoteModifier := StrToIntDef(Osc2FreqEdit.Text, 0) * 0.1;
+  Sound.Voice.Osc2.Waveform := TWaveform(Osc2WaveformCombo.ItemIndex);
+  Sound.Voice.Osc2Volume := Round(Osc2VolumeTrackBar.Position) / 100;
+  Sound.Voice.UseFilter := FilterActiveCheckBox.Checked;
+  Sound.Voice.FilterCutoff := Round(FilterCutoffTrackBar.Position) / 100.1;
+  Sound.Voice.FilterQ := Round(FilterQTrackBar.Position) / 100.1;
 end;
 
 procedure TSoundEditFrame.OnKeyPress(var Key: Char);

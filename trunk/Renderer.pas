@@ -706,7 +706,8 @@ begin
           glEnable(GL_TEXTURE_2D);
           glDisable(GL_TEXTURE_GEN_S);
           glDisable(GL_TEXTURE_GEN_T);
-          glDisable(GL_CULL_FACE);
+          if Self.MirrorHorizontal or Self.MirrorHorizontal then
+            glDisable(GL_CULL_FACE);
           Self.SpriteSheet.Bitmap.UseTextureBegin;
           Driver.RenderUnitQuad;
           glDisable(GL_TEXTURE_2D);
