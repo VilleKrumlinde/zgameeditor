@@ -60,7 +60,7 @@ var
 
 implementation
 
-uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, SyncObjs, SysUtils;
+uses ZOpenGL, ZLog, UnixType, cthreads, jni, AudioPlayer, SyncObjs, SysUtils, Math;
 
 {$i-}  //No io-test on files, code tests ioresult
 
@@ -363,18 +363,18 @@ var
   MixBuffer : packed array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
   AudioTerminated : boolean;
 
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; SampleCount : integer);
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; SampleCount : integer);
 var
   I : integer;
-  Val : TSoundMixUnit;
+  Val : integer;
 begin
   for I := 0 to (SampleCount * StereoChannels)-1 do
-  begin
-    Val := Source^ div (1 shl (MixPBits-OutputBits));
-    if Val>High(TSoundOutputUnit) then
-      Dest^ := High(TSoundOutputUnit)
-    else if Val<Low(TSoundOutputUnit) then
-      Dest^ := Low(TSoundOutputUnit)
+  begin //Convert from float to smallint. Todo: on Lollipop floats are accepted directly.
+    Val := Round(Source^ * High(Smallint));
+    if Val>High(Smallint) then
+      Dest^ := High(Smallint)
+    else if Val<Low(SmallInt) then
+      Dest^ := Low(SmallInt)
     else
       Dest^ := Val;
     Inc(Source);
@@ -387,7 +387,7 @@ begin
   platform_error(pansichar(S + ': ' + ansistring(inttostr(Value))));
 end;}
 
-procedure MixAndCopyData(Destination : pointer; len: Integer );
+procedure MixAndCopyData(Destination : pointer; len: Integer);
 var
   BytesToWrite,SamplesToWrite : integer;
 begin
@@ -541,6 +541,8 @@ procedure Platform_InitGlobals;
 var
   I : integer;
 begin
+  Math.SetExceptionMask([exZeroDivide,exOverflow,exUnderflow,exPrecision,exDenormalized,exInvalidOp]);
+
   gettimeofday( @StartTimeVal, nil );
 
   AndroidCurrentMouse.X := 0;

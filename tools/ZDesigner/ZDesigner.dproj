@@ -287,12 +287,10 @@
         <DCCReference Include="..\..\GLDrivers.pas"/>
         <DCCReference Include="frmScriptedCompEditBase.pas">
             <Form>ScriptedCompEditFrameBase</Form>
-            <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
         <DCCReference Include="frmSpriteSheetEdit.pas">
             <Form>SpriteSheetEditFrame</Form>
-            <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
         <BuildConfiguration Include="Debug">
