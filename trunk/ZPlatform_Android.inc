@@ -358,7 +358,7 @@ end;
 
 
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize;
+  MixBufferSamplesSize = SoundBufferSamplesSize * 2; //todo skip *2 when float output
 var
   MixBuffer : packed array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
   AudioTerminated : boolean;
@@ -393,7 +393,8 @@ var
 begin
   BytesToWrite := Len;
 
-  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
+//  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
+  SamplesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
 
   if SamplesToWrite*StereoChannels>High(MixBuffer) then
     //test for high limit on buffer
@@ -690,6 +691,7 @@ function ThreadWrapper(Data : pointer) : longint;
 begin
   TZThread(Data).Execute;
   EndThread( 0 );
+  Result := 0;
 end;
 
 function Platform_CreateThread(ZThread : TZThread) : pointer;

@@ -1873,15 +1873,14 @@ var
   S : PAnsiChar;
 begin
   {$IFDEF LINUX}
-    {$IFDEF ANDROID}
-    if Mode=0 then //Different modules depending on GLES version
-      S := 'libGLESv1_CM.so'
-    else
-      S := 'libGLESv2.so';
-    {$else}
-    S := 'libGL.so';
-    {$endif}
+  S := 'libGL.so';
   {$ENDIF}
+  {$IFDEF ANDROID}
+  if Mode=0 then //Different modules depending on GLES version
+    S := 'libGLESv1_CM.so'
+  else
+    S := 'libGLESv2.so';
+  {$endif}
   {$IFDEF MACOS}
   S := 'System/Library/Frameworks/OpenGL.framework/OpenGL';
   {$ENDIF}

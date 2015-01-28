@@ -330,7 +330,7 @@ end;
 
 //Audio
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize;  //Måste vara lika stor som dma-buffern
+  MixBufferSamplesSize = SoundBufferSamplesSize * 2; //todo skip *2 when float output
 var
   MixBuffer : array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
 
@@ -358,7 +358,10 @@ var
   BytesToWrite,SamplesToWrite : integer;
 begin
   BytesToWrite := Len;
-  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
+
+//  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
+  SamplesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
+
   FillChar(MixBuffer,SamplesToWrite * SizeOf(TSoundMixUnit) * StereoChannels,0);
 
   Platform_EnterMutex(VoicesMutex);
