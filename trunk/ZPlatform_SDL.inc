@@ -334,18 +334,18 @@ const
 var
   MixBuffer : array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
 
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; SampleCount : integer);
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; SampleCount : integer);
 var
   I : integer;
-  Val : TSoundMixUnit;
+  Val : integer;
 begin
   for I := 0 to (SampleCount * StereoChannels)-1 do
-  begin
-    Val := Source^ div (1 shl (MixPBits-OutputBits));
-    if Val>High(TSoundOutputUnit) then
-      Dest^ := High(TSoundOutputUnit)
-    else if Val<Low(TSoundOutputUnit) then
-      Dest^ := Low(TSoundOutputUnit)
+  begin //Convert from float to smallint. Todo: SDL 2.0 supports floats directly.
+    Val := Round(Source^ * High(Smallint));
+    if Val>High(Smallint) then
+      Dest^ := High(Smallint)
+    else if Val<Low(SmallInt) then
+      Dest^ := Low(SmallInt)
     else
       Dest^ := Val;
     Inc(Source);

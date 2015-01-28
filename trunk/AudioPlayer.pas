@@ -38,13 +38,13 @@ const
 
 type
   //Type used when mixing/generating sounds
-  TSoundMixUnit = integer;
+  TSoundMixUnit = single;
   PSoundMixUnit = ^TSoundMixUnit;
   TSoundMixUnits = array[0..100000] of TSoundMixUnit;
   PSoundMixUnits = ^TSoundMixUnits;
 
   //One unit of sound when output to platform
-  TSoundOutputUnit = smallint;
+  TSoundOutputUnit = single;
   PSoundOutputUnit = ^TSoundOutputUnit;
 
   TWaveform = (wfSquare,wfSaw,wfNoise,wfSine);
@@ -56,9 +56,9 @@ type
     NoteModifier : single;
     Frequency : single; //calculated from notemodifier
     PulseWidth : single;
-    CurValue : TSoundMixUnit;
-    WStep : TSoundMixUnit;
-    IPulseWidth : TSoundMixUnit;
+    CurValue : integer;
+    WStep : integer;
+    IPulseWidth : integer;
   end;
 
   PEnvelope = ^TEnvelope;
@@ -130,10 +130,10 @@ type
     Osc2Volume : single; //0..1
 
     //Extra state-vars
-    IVol,IPanL,IPanR,IOsc2Vol : integer;
+    PanL,PanR : single;
     //Statevars för integerfilter
-    FilterFb,FilterIntCut : integer;
-    Buf0,Buf1 : integer;
+    FilterFb : single;
+    Buf0,Buf1 : TSoundMixUnit;
 
     //Sampled waveform
     SampleRef : pointer;  //Pointer to TSample-component
@@ -151,7 +151,6 @@ type
     Active : boolean;
     Volume : single;
     Voices : PVoiceEntry;
-    IVol : integer;
     UseDelay : boolean;
     DelayLength : single;  //0..1
     DelayBuffer : PSoundMixUnits;
@@ -162,13 +161,6 @@ const
   AudioRate = 44100;  //44khz
 
   OutputBits = SizeOf(TSoundOutputUnit)*8;
-
-  MixPBits = 24;      //Fixed point precision bits
-  //Detta betyder att allt över 1.0 (dvs 1<<24) kommer att clippas
-  //Output till 16 bits blir en shr/div med 8 (så gör Q3)
-  //Output = (data shr (MixPBits-OutputBits)) clamp (min/max outputrange)
-
-  MixToOutputBits = MixPBits-OutputBits;
 
   MaxVoices = 32;
   MaxChannels = 16;
@@ -186,7 +178,7 @@ const
   SoundBufferSamplesSize = Round(AudioRate/20);
   SoundBufferByteSize = SoundBufferSamplesSize * SizeOf(TSoundOutputUnit) * StereoChannels;
 
-  AudioFrameLength = 1.0 / 50;                      //Tid mellan varje uppdatering av modulations
+  AudioFrameLength = 1.0 / 200;                      //Tid mellan varje uppdatering av modulations
   FrameSampleCount = Round(AudioFrameLength * AudioRate);  //Antal samples i varje frame
 
 var
@@ -226,18 +218,14 @@ uses ZPlatform,ZMath,ZClasses,AudioComponents;
 
 
 const
-  FilterPBits = 8;  //Filter fixed point
   DelayBufferSampleCount = 2 * AudioRate;  //2 seconds delay
-
-  //Voice fixed point
-  VoicePBits = 16;
-  VoiceFullRange = (1 shl VoicePBits);
-  VoiceVolBits = 6;
 
   SamplePosPBits = 8;
 
   //Antal bits för hur många steg channel volume går i
   ChannelVolBits = 6;
+
+  VoiceFullRange = 2.0;
 
 var
   Voices : array[0..MaxVoices-1] of TVoiceEntry;
@@ -245,7 +233,6 @@ var
   Channels : array[0..MaxChannels-1] of TChannel;
   //Buffer where the voices for each channel are rendered before mix with mixbuffer
   ChannelBuffer : array[0..(FrameSampleCount*StereoChannels)-1] of TSoundMixUnit;
-  IMasterVolume : integer;
 
 function GetChannel(I : integer) : PChannel;
 begin
@@ -439,14 +426,11 @@ procedure SetVoiceFrameConstants(V : PVoiceEntry);
 var
   NoteNr : single;
 begin
-  //IVol är 0..1 i VoicePBits fixedpoint format
-  V.IVol := Trunc( V.Volume * (1 shl VoiceVolBits) );
-
   if StereoChannels=2 then
   begin
     //EQP panning. kebby.org.
-    V.IPanL := Round( Sqrt(1.0 - V.Pan) * (1 shl VoiceVolBits) );
-    V.IPanR := Round( Sqrt(V.Pan) * (1 shl VoiceVolBits) );
+    V.PanL := Sqrt(1.0 - V.Pan);
+    V.PanR := Sqrt(V.Pan);
   end;
 
   NoteNr := (V.NoteNr-69.0) + V.BaseNoteNr;
@@ -469,45 +453,42 @@ begin
   //Måste ta freq*2 pga MixFullRange ej kan representeras som en integer-konstant
   V.Osc1.WStep := Round( (V.Osc1.Frequency / AudioRate) * 2 * High(integer) );
   if V.Osc1.Waveform=wfSquare then
-    V.Osc1.IPulseWidth := Round(V.Osc1.PulseWidth * High(TSoundMixUnit));
+    V.Osc1.IPulseWidth := Round(V.Osc1.PulseWidth * High(integer));
 
   if V.UseOsc2 then
   begin
     V.Osc2.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc2.NoteModifier))/12);
     V.Osc2.WStep := Round( (V.Osc2.Frequency / AudioRate) * 2 * High(integer) );
-    V.IOsc2Vol := Trunc( V.Osc2Volume * (1 shl VoiceVolBits) );
   end;
 
   if V.UseFilter then
   begin
     //set feedback amount given f and q between 0 and 1
-    V.FilterFb := Round( (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff)) * (1 shl FilterPBits) );
-    V.FilterIntCut := Round(V.FilterCutoff * (1 shl FilterPBits) );
+    V.FilterFb := (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff));
   end;
 end;
 
 //Read a sample value. Only called from RenderVoice.
-function GetSample(V : PVoiceEntry; SamplePos : integer) : TSoundMixUnit; inline;
+function GetSample(V : PVoiceEntry; SamplePos : integer) : TSampleUnit; inline;
 begin
   Result := PSampleUnits(V.SampleData)^[SamplePos];
 end;
 
 procedure RenderVoice(V : PVoiceEntry; Count : integer);
 const
-  VoiceLowestValue =  (-1 shl (VoicePBits-1));
-  VoiceHighestValue =  (1 shl (VoicePBits-1));
-  VoiceToMixBits = MixPBits-VoicePBits;
+  VoiceLowestValue = -1.0;
+  VoiceHighestValue = 1.0;
 var
-  W1,Value1,LastW1 : TSoundMixUnit;
-  W2,Value2 : TSoundMixUnit;
+  W1,W2,LastW1 : integer;
+  Value1,Value2 : TSoundMixUnit;
   Buf,DestBuf : PSoundMixUnit;
-  I,Temp1 : integer;
+  I : integer;
+  HasSample : boolean;
+  Sample1,Sample2 : TSampleUnit;
+  SamplePos,SampleFraction : integer;
   //Buffer where voice is rendered before mix with channelbuffer
   //Voicebuffer is always mono
   VoiceBuffer : array[0..FrameSampleCount-1] of TSoundMixUnit;
-  HasSample : boolean;
-  Sample1,Sample2 : TSoundMixUnit;
-  SamplePos,SampleFraction : integer;
 begin
   //Write to voice buffer
 
@@ -544,17 +525,17 @@ begin
           else
             Value1 := VoiceLowestValue;
         wfSaw :
-          Value1 := W1 div VoiceFullRange;
+          Value1 := VoiceLowestValue + Round(W1 div 65536)/65536;
         wfNoise :
           if W1>=0 then
           begin
             //Value1 := IntRandom div (1 shl (MixToOutputBits));
-            Value1 := VoiceLowestValue + Round(System.Random*(VoiceFullRange-1));
-            Dec(W1, High(TSoundMixUnit) div 2 );
+            Value1 := VoiceLowestValue + System.Random*VoiceFullRange;
+            Dec(W1, High(integer) div 2 );
           end;
         wfSine :
           begin
-            Value1 := VoiceLowestValue + Round( (1.0 + Sin(W1 * (1/High(integer)* PI*2) )) * (VoiceFullRange div 2-1));
+            Value1 := Sin(W1 * (1.0/High(integer)* PI*2) );
           end;
       end;
     end
@@ -583,7 +564,7 @@ begin
         Sample2 := GetSample(V,SamplePos);
         Sample2 := (Sample2 * SampleFraction) div (1 shl SamplePosPBits);
 
-        Value1 := Sample1 + Sample2;
+        Value1 := (Sample1 + Sample2) / High(TSampleUnit);
         Inc(V.SamplePosition,V.SampleStep);
         if (V.SamplePosition shr SamplePosPBits>=V.SampleCount) and
           (V.SampleRepeatPosition>=0) then
@@ -612,25 +593,24 @@ begin
           else
             Value2 := VoiceHighestValue;
         wfSaw :
-          Value2 := W2 div VoiceFullRange;
+          Value2 := VoiceLowestValue + Round(W2 div 65536)/65536;
       else
         Value2 := 0;
       end;
       Inc(W2,V.Osc2.WStep);
 
-      Value2 := (Value2 * V.IOsc2Vol) div (1 shl VoiceVolBits);
+      Value2 := Value2 * V.Osc2Volume;
 
       Value1 := Value1 + Value2; //Mix osc1 + osc2
     end;
 
-    //Volym
-    //Multiplicera med volym som är 0..1 i fixed point VoiceVolBits
-    //Dela sedan med (1 shl VoicePBits) för att justera fixed-multiplication
-    Value1 := (Value1 * V.IVol) div (1 shl VoiceVolBits);
+    //Volume
+    Value1 := Value1 * V.Volume;
 
     Buf^ := Value1;
 
     Inc(Buf);
+
   end;
   V.Osc1.CurValue := W1;
   V.Osc2.CurValue := W2;
@@ -642,15 +622,8 @@ begin
     Buf := @VoiceBuffer[0];
     for I := 0 to Count-1 do
     begin
-      Temp1 := (V.FilterFb * (V.Buf0 - V.Buf1)) div (1 shl FilterPBits);
-      Temp1 := Buf^ - V.Buf0 + Temp1;
-
-      Temp1 := (V.FilterIntCut * Temp1) div (1 shl FilterPBits);
-
-      V.Buf0 := V.Buf0 + Temp1;
-
-      Temp1 := (V.FilterIntCut * (V.Buf0 - V.Buf1)) div (1 shl FilterPBits);
-      V.Buf1 := V.Buf1 + Temp1;
+      V.Buf0 := V.Buf0 + V.FilterCutoff * (Buf^ - V.Buf0 + V.FilterFb * (V.Buf0 - V.Buf1));
+      V.Buf1 := V.Buf1 + V.FilterCutoff * (V.Buf0 - V.Buf1);
 
       Buf^ := V.Buf1;
 
@@ -663,25 +636,19 @@ begin
   DestBuf := @ChannelBuffer[0];
   for I := 0 to Count-1 do
   begin
-    Value1 := Buf^ * (1 shl VoiceToMixBits);
 
-    //Mono
-    if StereoChannels=1 then
-    begin
-      Inc(DestBuf^,Value1);
-      Inc(DestBuf);
-    end;
+    Value1 := Buf^;
 
     //Stereo
-    if StereoChannels=2 then
-    begin
+//    if StereoChannels=2 then
+//    begin
       //Left
-      Inc(DestBuf^,(Value1 * V.IPanL) div (1 shl VoiceVolBits) );
+      DestBuf^ := DestBuf^ + Value1 * V.PanL;
       Inc(DestBuf);
       //Right
-      Inc(DestBuf^,(Value1 * V.IPanR) div (1 shl VoiceVolBits) );
+      DestBuf^ := DestBuf^ + Value1 * V.PanR;
       Inc(DestBuf);
-    end;
+//    end;
 
     Inc(Buf);
   end;
@@ -694,7 +661,7 @@ var
 begin
   for I := 0 to (Count * StereoChannels)-1 do
   begin
-    Inc(Dest^,Source^);
+    Dest^ := Dest^ + Source^;
     Inc(Source);
     Inc(Dest);
   end;
@@ -723,15 +690,12 @@ var
   Lfo : PLfo;
   DTime : single;
 begin
-  IMasterVolume := Trunc( ((1 shl ChannelVolBits)-1) * MasterVolume );
   Channel := @Channels[0];
   for I := 0 to MaxChannels-1 do
   begin
     if Channel.Active and (Channel.Voices<>nil) then
     begin
       //Update channel data
-      Channel.IVol := Trunc( ((1 shl ChannelVolBits)-1) * Channel.Volume );
-
       if Channel.UseDelay then
       begin
         Channel.DelayOutPoint := Channel.DelayInPoint -
@@ -810,7 +774,7 @@ begin
       Value := Channel.DelayBuffer[ Channel.DelayOutPoint+J ];
 
       //Mixa med input
-      Value := (Value div 4) + Buf^;
+      Value := (Value * 0.25) + Buf^;
 
       //Skriv det mixade värdet till delay-buffer för feedback
       Channel.DelayBuffer[ Channel.DelayInPoint+J ]:=Value;
@@ -835,8 +799,8 @@ var
   Buf : PSoundMixUnit;
   I : integer;
 begin
-  FillChar(ChannelBuffer,SizeOf(ChannelBuffer),0);
-  if Channel.IVol=0 then
+  FillChar(ChannelBuffer,Count * SizeOf(TSoundMixUnit) * StereoChannels,0);
+  if Channel.Volume<0.00001 then
     Exit;
 
   Voice := Channel.Voices;
@@ -855,8 +819,7 @@ begin
   Buf := @ChannelBuffer;
   for I := 0 to (Count * AudioPlayer.StereoChannels)-1 do
   begin
-    //IVol är i fixed point 8 bits
-    Buf^:=(Buf^ * Channel.IVol) div (1 shl ChannelVolBits);
+    Buf^ := Buf^ * Channel.Volume;
     Inc(Buf);
   end;
 end;
@@ -895,13 +858,14 @@ begin
       Inc(Channel);
     end;
 
-    if IMasterVolume<((1 shl ChannelVolBits)-1) then
+
+    if MasterVolume<1.0 then
     begin
       //Volume
       VBuf := Buf;
       for I := 0 to (FrameCount * AudioPlayer.StereoChannels)-1 do
       begin
-        VBuf^:=(VBuf^ * IMasterVolume) div (1 shl ChannelVolBits);
+        VBuf^ := VBuf^ * MasterVolume;
         Inc(VBuf);
       end;
     end;

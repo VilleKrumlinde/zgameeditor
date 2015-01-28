@@ -949,7 +949,7 @@ begin
     if Ini.ReadBool(Section,'IsMaximized',False) then
       Self.WindowState:=wsMaximized;
 
-    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',0),1);
+    GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
     if GuiLayout=0 then
     begin
       PropEditorPanel.Parent := LeftPanel;

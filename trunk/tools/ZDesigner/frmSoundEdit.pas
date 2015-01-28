@@ -432,7 +432,7 @@ end;
 
 procedure TSoundEditFrame.SoundGraphTimerTimer(Sender: TObject);
 var
-  D,Y,I,J,ISample,MaxDots,YSize : integer;
+  D,Y,I,J,MaxDots,YSize : integer;
   FSample : single;
 begin
   if (SoundGraphReadIndex>=SoundGraphMaxLength) or
@@ -473,12 +473,8 @@ begin
 
       for J := 0 to StereoChannels-1 do
       begin
-        ISample := SoundGraphBuffer[SoundGraphReadIndex+J];
+        FSample := SoundGraphBuffer[SoundGraphReadIndex+J];
 
-        if ISample>=0 then
-          FSample := ISample/High(TSoundOutputUnit)
-        else
-          FSample := ISample/Abs(Low(TSoundOutputUnit));
         Y := (YSize + J*(YSize*2)) -
           Round(FSample * YSize);
 

@@ -941,6 +941,7 @@ type
 
 const
   WAVE_FORMAT_PCM     = 1;
+  WAVE_FORMAT_IEEE_FLOAT = 3;
   mmsyst = 'winmm.dll';
 
 function timeBeginPeriod(uPeriod: UINT): MMRESULT; stdcall; external mmsyst;
@@ -1120,10 +1121,10 @@ begin
   if Err<>0 then
     ZHalt('dsound.setcooplevel failed');
 
-  Fmt.wFormatTag := wave_Format_PCM;         // it's PCM data
+  Fmt.wFormatTag := WAVE_FORMAT_IEEE_FLOAT;         // it's PCM data
   Fmt.nChannels := AudioPlayer.StereoChannels;  // mono/stereo
   Fmt.nSamplesPerSec := AudioPlayer.AudioRate;  // set the 44.1KHz rate
-  Fmt.wBitsPerSample := AudioPlayer.OutputBits;              // 16-bit audio
+  Fmt.wBitsPerSample := AudioPlayer.OutputBits;
   Fmt.nBlockAlign := Fmt.nChannels * SizeOf(TSoundOutputUnit);
   Fmt.nAvgBytesPerSec := Fmt.nSamplesPerSec * Fmt.nBlockAlign;
   Fmt.cbSize := 0;
@@ -1220,11 +1221,11 @@ var
 begin
   for I := 0 to (SampleCount * StereoChannels)-1 do
   begin
-    Val := Source^ div (1 shl (MixPBits-OutputBits));
-    if Val>High(TSoundOutputUnit) then
-      Dest^ := High(TSoundOutputUnit)
-    else if Val<Low(TSoundOutputUnit) then
-      Dest^ := Low(TSoundOutputUnit)
+    Val := Source^;
+    if Val>1.0 then
+      Dest^ := 1.0
+    else if Val<-1.0 then
+      Dest^ := -1.0
     else
       Dest^ := Val;
     Inc(Source);
