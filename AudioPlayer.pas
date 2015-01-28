@@ -610,7 +610,6 @@ begin
     Buf^ := Value1;
 
     Inc(Buf);
-
   end;
   V.Osc1.CurValue := W1;
   V.Osc2.CurValue := W2;
