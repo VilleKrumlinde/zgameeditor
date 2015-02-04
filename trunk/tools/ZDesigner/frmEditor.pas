@@ -321,6 +321,8 @@ type
     procedure ImportAudioActionExecute(Sender: TObject);
     procedure DetachCompEditorButtonClick(Sender: TObject);
     procedure QuickCompListViewClick(Sender: TObject);
+    procedure QuickCompListViewMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     { Private declarations }
     Ed : TZPropertyEditor;
@@ -394,7 +396,7 @@ type
     procedure WipeUndoHistory;
     procedure LoadSysLibrary;
     procedure OnAddFromLibraryItemClick(Sender: TObject);
-    procedure AddNewComponentToTree(C: TZComponent);
+    procedure AddNewComponentToTree(C: TZComponent; SelectIt : boolean = true);
     procedure AutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure ParamAutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure OnShaderExprChanged(Sender: TObject);
@@ -2628,10 +2630,11 @@ begin
   AddNewComponentToTree(C);
 end;
 
-procedure TEditorForm.AddNewComponentToTree(C : TZComponent);
+procedure TEditorForm.AddNewComponentToTree(C : TZComponent; SelectIt : boolean = true);
 var
   Ci : TZComponentInfo;
   S : string;
+  Node : TTreeNode;
 begin
   Ci := ComponentManager.GetInfo(C);
 
@@ -2644,7 +2647,12 @@ begin
 
   TZComponentTreeNode(Tree.Selected).ComponentList.AddComponent(C);
   TZComponentTreeNode(Tree.Selected).ComponentList.Change;
-  Tree.AddNode(C,Tree.Selected).Selected := True;
+
+  Node := Tree.AddNode(C,Tree.Selected);
+  if SelectIt then
+    Node.Selected := SelectIt;
+  Node.Parent.Expanded := True;
+
   SetFileChanged(True);
   if CompEditor<>nil then
     CompEditor.OnTreeChanged;
@@ -3324,7 +3332,13 @@ var
 begin
   Ci := TZComponentInfo(QuickCompListView.Selected.Data);
   C := Ci.ZClass.Create(nil);
-  AddNewComponentToTree(C);
+  AddNewComponentToTree(C, QuickCompListView.Tag<>0);
+end;
+
+procedure TEditorForm.QuickCompListViewMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  QuickCompListView.Tag := Ord(ssCtrl in Shift);
 end;
 
 procedure TEditorForm.MoveUpComponentActionExecute(Sender: TObject);

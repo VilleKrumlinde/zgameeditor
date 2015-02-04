@@ -24,29 +24,19 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls;
+  Dialogs, StdCtrls, ExtCtrls, GLPanel, ZExpressions;
 
 type
   TAboutForm = class(TForm)
-    SplashPanel: TPanel;
-    Button1: TButton;
-    Label1: TLabel;
-    NameLabel: TLabel;
-    VersionLabel: TLabel;
-    Label3: TLabel;
-    Label2: TLabel;
-    Label4: TLabel;
-    Panel1: TPanel;
-    Label5: TLabel;
-    Label6: TLabel;
-    Label7: TLabel;
-    Label8: TLabel;
-    Label9: TLabel;
-    Label10: TLabel;
     procedure FormCreate(Sender: TObject);
-    procedure Label6Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+  protected
+    procedure CreateParams(var Params: TCreateParams); override;
   private
     { Private declarations }
+    Glp : TGLPanelZGE;
+    Clicked : TDefineVariable;
+    procedure OnUpdateData(Sender: TObject);
   public
     { Public declarations }
   end;
@@ -56,28 +46,47 @@ var
 
 implementation
 
-uses frmEditor, uHelp;
+uses frmEditor, uHelp, Renderer;
 
 {$R *.dfm}
 
-procedure TAboutForm.FormCreate(Sender: TObject);
-var
-  Prog,ProgParam : string;
+procedure TAboutForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  Prog := ExtractFilePath(Application.ExeName) + 'about.bin';
-  ProgParam := '-p ' + IntToStr(SplashPanel.Handle);
-  //Must use winexec or createproces because shellexecute cannot start
-  //programs that doesn't end with '.exe'.
-  //Process is closed automatically when its parent window is destroyed.
-  WinExec(PAnsiChar(AnsiString(Prog + ' ' + ProgParam)), SW_SHOWNORMAL);
-
-  NameLabel.Caption := frmEditor.AppName;
-  VersionLabel.Caption := frmEditor.AppVersion;
+  //Post an extra mouseup to avoid app being closed immediately if reopened
+  PostMessage(Glp.Handle,WM_LBUTTONUP,0,0);
+  Application.ProcessMessages;
 end;
 
-procedure TAboutForm.Label6Click(Sender: TObject);
+
+procedure TAboutForm.CreateParams(var Params: TCreateParams);
 begin
-  uHelp.GoUrl( (Sender as TLabel).Caption );
+  inherited;
+  Params.Style := Params.Style or WS_DLGFRAME;
+end;
+
+procedure TAboutForm.FormCreate(Sender: TObject);
+var
+  R : TRenderText;
+begin
+  Glp := TGLPanelZGE.Create(Self);
+  Glp.Align := alClient;
+  Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  Glp.Parent := Self;
+  Glp.OnUpdateData := Self.OnUpdateData;
+
+  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Projects\about.zgeproj');
+  if Glp.App.BindComponent<TRenderText>('VersionText',R) then
+  begin
+    R.SetString('Text','Version ' + frmEditor.AppVersion);
+  end;
+
+  Glp.App.BindComponent<TDefineVariable>('Clicked',Self.Clicked);
+end;
+
+procedure TAboutForm.OnUpdateData(Sender: TObject);
+begin
+  if Assigned(Self.Clicked) and (Clicked.IntValue<>0) then
+    Close;
 end;
 
 end.

@@ -13,13 +13,10 @@ type
     procedure RenderTimerTimer(Sender: TObject);
   private
     { Private declarations }
-    Glp : TGLPanel;
-    OldGlWindowProc : TWndMethod;
-    procedure OnGlDraw(Sender: TObject);
-    procedure LoadScript;
-    procedure GlWindowProc(var Message: TMessage);
+    procedure OnBindData(Sender : TObject);
+    procedure OnUpdateData(Sender : TObject);
   protected
-    EditorApp : TZApplication;
+    Glp : TGLPanelZGE;
     ScriptName : string;
     procedure BindData; virtual;
     procedure UpdateData; virtual;
@@ -46,15 +43,14 @@ procedure TScriptedCompEditFrameBase.SetComponent(C: TZComponent;
 begin
   inherited;
 
-  Glp := TGLPanel.Create(Self);
+  Glp := TGLPanelZGE.Create(Self);
   Glp.Align := alClient;
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
-  Glp.OnGLDraw := Self.OnGlDraw;
-  OldGlWindowProc := Glp.WindowProc;
-  Glp.WindowProc := GlWindowProc;
   Glp.Parent := Self;
+  Glp.OnBindData := Self.OnBindData;
+  Glp.OnUpdateData := Self.OnUpdateData;
 
-  LoadScript;
+  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Editors\' + ScriptName);
 end;
 
 procedure TScriptedCompEditFrameBase.UpdateData;
@@ -69,58 +65,17 @@ end;
 
 destructor TScriptedCompEditFrameBase.Destroy;
 begin
-  FreeAndNil(EditorApp);
   inherited;
 end;
 
-procedure TScriptedCompEditFrameBase.LoadScript;
-var
-  A : TZApplication;
+procedure TScriptedCompEditFrameBase.OnBindData(Sender: TObject);
 begin
-  A := ComponentManager.LoadXmlFromFile( (Owner as TEditorForm).ExePath + 'Editors\' + ScriptName ) as TZApplication;
-  A.OnGetLibraryPath := (Owner as TEditorForm).OnGetLibraryPath;
-  A.Compile;
-
-  Self.EditorApp := A;
-  BindData;
-
-  A.DesignerReset;
-  A.DesignerStart(Glp.Width,Glp.Height, 0);
-
-  RenderTimer.Interval := 25;
-  RenderTimer.Enabled := True;
+  Self.BindData;
 end;
 
-procedure TScriptedCompEditFrameBase.OnGlDraw(Sender: TObject);
+procedure TScriptedCompEditFrameBase.OnUpdateData(Sender: TObject);
 begin
-  if EditorApp<>nil then
-  begin
-    Self.UpdateData;
-
-    EditorApp.ScreenWidth := Glp.Width;
-    EditorApp.ScreenHeight := Glp.Height;
-    EditorApp.UpdateViewport;
-    EditorApp.WindowHandle := Glp.Handle;
-
-    try
-      //Update app
-      EditorApp.Main;
-    except
-      on E : Exception do
-      begin
-        FreeAndNil(EditorApp);
-        raise;
-      end;
-    end;
-  end;
+  Self.UpdateData;
 end;
-
-procedure TScriptedCompEditFrameBase.GlWindowProc(var Message: TMessage);
-begin
-  Platform_DesignerWindowProc( pointer(@Message) );
-  OldGlWindowProc(Message);
-end;
-
-
 
 end.

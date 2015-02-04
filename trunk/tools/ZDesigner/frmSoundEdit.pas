@@ -276,6 +276,8 @@ begin
 
   PanTrackBar.Position := Round(Sound.Voice.Pan*100);
 
+  HardSyncCheckBox.Checked := Sound.Voice.HardSync;
+
 //  Hide;
 
   IsGuiCreated := ModulationsParent.ControlCount>0;
@@ -341,9 +343,9 @@ begin
     ChannelFrame.SetChannel(Channel);
   end;
 
-  for I := 0 to High(Sound.Voice.Envelopes) do
+  for I := 0 to High(Sound.Voice.Envelopes[0]) do
   begin
-    Envelope := @Sound.Voice.Envelopes[I];
+    Envelope := @Sound.Voice.Envelopes[0,I];
     if not IsGuiCreated then
     begin
       EnvelopeFrame := TEnvelopeFrame.Create(EnvelopesParent);
