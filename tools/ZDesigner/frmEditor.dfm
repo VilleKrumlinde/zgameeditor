@@ -186,10 +186,6 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -198,10 +194,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'Float/Int'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -319,10 +311,6 @@ object EditorForm: TEditorForm
           Caption = 'ShaderTabSheet'
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           DesignSize = (
             772
             182)
@@ -413,10 +401,6 @@ object EditorForm: TEditorForm
           TabOrder = 0
           object TTabSheet
             TabVisible = False
-            ExplicitLeft = 0
-            ExplicitTop = 0
-            ExplicitWidth = 0
-            ExplicitHeight = 0
             object PropListParent: TGroupBox
               Left = 0
               Top = 0
@@ -434,10 +418,6 @@ object EditorForm: TEditorForm
           object TTabSheet
             Caption = 'QuickCompTabSheet'
             TabVisible = False
-            ExplicitLeft = 0
-            ExplicitTop = 0
-            ExplicitWidth = 0
-            ExplicitHeight = 0
             object QuickCompListView: TListView
               Left = 0
               Top = 30
@@ -457,8 +437,7 @@ object EditorForm: TEditorForm
               TabOrder = 0
               ViewStyle = vsList
               OnClick = QuickCompListViewClick
-              ExplicitTop = 0
-              ExplicitHeight = 772
+              OnMouseDown = QuickCompListViewMouseDown
             end
             object Panel3: TPanel
               Left = 0
@@ -468,7 +447,7 @@ object EditorForm: TEditorForm
               Align = alTop
               Alignment = taLeftJustify
               BevelOuter = bvNone
-              Caption = 'Click on a component to add it to project'
+              Caption = 'Click component to add.'#13#10' Hold Ctrl  to add and select.'
               TabOrder = 1
             end
           end
@@ -803,10 +782,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -842,10 +817,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end

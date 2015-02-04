@@ -103,6 +103,7 @@ type
     //Copied into a modulation when a new voice is allocated
     OriginalDestinationValue : single;
     DestinationPtr : PSingle;
+    Interpolation : TSoundMixUnit;
   end;
   TModulations = array[0..MaxModulations-1] of TModulation;
 
@@ -118,7 +119,8 @@ type
     BaseNoteNr : single;
     Osc1 : TOscEntry;
     Osc2 : TOscEntry;
-    Envelopes : TEnvelopes;
+    //Envelopes + one copy of every envelope with offset time (for interpolation)
+    Envelopes : array[0..1] of TEnvelopes;
     UseOsc2 : boolean;
     HardSync : boolean;
     UseFilter : boolean;
@@ -131,8 +133,7 @@ type
 
     //Extra state-vars
     PanL,PanR : single;
-    //Statevars för integerfilter
-    FilterFb : single;
+    //Statevars för filter
     Buf0,Buf1 : TSoundMixUnit;
 
     //Sampled waveform
@@ -178,7 +179,7 @@ const
   SoundBufferSamplesSize = Round(AudioRate/20);
   SoundBufferByteSize = SoundBufferSamplesSize * SizeOf(TSoundOutputUnit) * StereoChannels;
 
-  AudioFrameLength = 1.0 / 200;                      //Tid mellan varje uppdatering av modulations
+  AudioFrameLength = 1.0 / 100;                      //Tid mellan varje uppdatering av modulations
   FrameSampleCount = Round(AudioFrameLength * AudioRate);  //Antal samples i varje frame
 
 var
@@ -241,71 +242,79 @@ end;
 
 procedure UpdateEnvelope(E : PEnvelope; V : PVoiceEntry; const TimeStep: single);
 begin
-  case E.State of
-    esInit :
-      begin
-        if V.Length<=E.ReleaseTime then
-        begin //Gå direkt till release ifall length är kort
-          E.State := esRelease;
-          E.Value := 1.0;
-          E.Rate := 1.0/V.Length;
-        end
-        else
+  while True do
+  begin
+    case E.State of
+      esInit :
         begin
-          E.State := esAttack;
-          if E.AttackTime>0 then
-          begin
-            E.Rate := 1.0/E.AttackTime;
-            E.Value := 0;
+          if V.Length<=E.ReleaseTime then
+          begin //Gå direkt till release ifall length är kort
+            E.State := esRelease;
+            E.Value := 1.0;
+            E.Rate := 1.0/V.Length;
           end
           else
-            E.Value := 1.0;
+          begin
+            E.State := esAttack;
+            if E.AttackTime>0 then
+            begin
+              E.Rate := 1.0/E.AttackTime;
+              E.Value := 0;
+            end
+            else
+              E.Value := 1.0;
+          end;
+          Continue;  //Go to top of loop
         end;
-      end;
-    esAttack :
-      begin
-        E.Value := E.Value + E.Rate * TimeStep;
-        if E.Value>=1 then
+      esAttack :
         begin
-          E.Value := 1.0;
-          E.State := esDecay;
-          if E.DecayTime>0 then
-            E.Rate := (E.SustainLevel - E.Value) / E.DecayTime
-          else
-            E.Value := E.SustainLevel;
-        end;
-      end;
-    esDecay :
-      begin
-        if E.Value<=E.SustainLevel then
-        begin
-          E.State := esSustain;
-          E.Value := E.SustainLevel;
-        end else
           E.Value := E.Value + E.Rate * TimeStep;
-      end;
-    esSustain :
-      begin
-        if V.Time>=V.Length-E.AttackTime-E.DecayTime-E.ReleaseTime then
-        begin
-          E.State := esRelease;
-          if E.ReleaseTime>0 then
-//            E.Rate := 1.0/(E.ReleaseTime
-            //Använd all återstående tid för att tvinga envelop nå noll
-            E.Rate := 1.0/(V.Length - V.Time)
-          else
-            E.Value := 0;
+          if E.Value>=1 then
+          begin
+            E.Value := 1.0;
+            E.State := esDecay;
+            if E.DecayTime>0 then
+              E.Rate := (E.SustainLevel - E.Value) / E.DecayTime
+            else
+              E.Value := E.SustainLevel;
+            Continue; //top of loop
+          end;
         end;
-      end;
-    esRelease :
-      begin
-        if E.Value<=0 then
+      esDecay :
         begin
-          E.Value := 0;
-          E.State := esStopped;
-        end else
-          E.Value := E.Value - E.Rate * TimeStep;
-      end;
+          if E.Value<=E.SustainLevel then
+          begin
+            E.State := esSustain;
+            E.Value := E.SustainLevel;
+            Continue; //Top of loop
+          end else
+            E.Value := E.Value + E.Rate * TimeStep;
+        end;
+      esSustain :
+        begin
+          if V.Time>=V.Length-E.AttackTime-E.DecayTime-E.ReleaseTime then
+          begin
+            E.State := esRelease;
+            if E.ReleaseTime>0 then
+              //E.Rate := 1.0/(E.ReleaseTime
+              //Använd all återstående tid för att tvinga envelop nå noll
+              E.Rate := 1.0/(V.Length - V.Time)
+            else
+              E.Value := 0;
+            Continue; //Top of loop
+          end;
+        end;
+      esRelease :
+        begin
+          if E.Value<=0 then
+          begin
+            E.Value := 0;
+            E.State := esStopped;
+          end else
+            E.Value := E.Value - E.Rate * TimeStep;
+        end;
+    end;
+    Break;
   end;
 end;
 
@@ -347,18 +356,19 @@ end;
 
 procedure UpdateModulators(Voice : PVoiceEntry; const TimeStep : single);
 var
-  I : integer;
+  I,J : integer;
   Modulation : PModulation;
   ModValue,Value : single;
   Lfo : PLfo;
   Envelope : PEnvelope;
 begin
-  for I := 0 to High(Voice.Envelopes) do
-  begin
-    Envelope := @Voice.Envelopes[I];
-    if Envelope.Active then
-      UpdateEnvelope(Envelope,Voice,TimeStep);
-  end;
+  for J := 0 to 1 do
+    for I := 0 to High(Voice.Envelopes[0]) do
+    begin
+      Envelope := @Voice.Envelopes[J,I];
+      if Envelope.Active then
+        UpdateEnvelope(Envelope,Voice,TimeStep);
+    end;
 
   for I := 0 to High(Voice.Lfos) do
   begin
@@ -370,10 +380,12 @@ begin
   for I := 0 to MaxModulations-1 do
   begin
     Modulation := @Voice.Modulations[I];
-    if Modulation.Active then
+    if not Modulation.Active then
+      Continue;
+    for J := 0 to 1 do
     begin
       case Modulation.Source of
-        msEnv1..msEnv2 : ModValue := Voice.Envelopes[ Ord(Modulation.Source)-Ord(msEnv1) ].Value;
+        msEnv1..msEnv2 : ModValue := Voice.Envelopes[J, Ord(Modulation.Source)-Ord(msEnv1) ].Value;
         msLfo1 : ModValue := Voice.Lfos[0].Value;
         msLfo2 : ModValue := Voice.Lfos[1].Value;
         msGlobalLfo1 : ModValue := GlobalLfos[0].Value;
@@ -415,9 +427,12 @@ begin
       else
         Value := 0;
       end;
-      Modulation.DestinationPtr^ := Value;
-
+      if J=0 then
+        Modulation.DestinationPtr^ := Value
+      else
+        Modulation.Interpolation := (Value-Modulation.DestinationPtr^) / FrameSampleCount;
     end;
+
   end;
 end;
 
@@ -460,12 +475,6 @@ begin
     V.Osc2.Frequency := 440.0 * Power(2, ((NoteNr + V.Osc2.NoteModifier))/12);
     V.Osc2.WStep := Round( (V.Osc2.Frequency / AudioRate) * 2 * High(integer) );
   end;
-
-  if V.UseFilter then
-  begin
-    //set feedback amount given f and q between 0 and 1
-    V.FilterFb := (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff));
-  end;
 end;
 
 //Read a sample value. Only called from RenderVoice.
@@ -482,10 +491,12 @@ var
   W1,W2,LastW1 : integer;
   Value1,Value2 : TSoundMixUnit;
   Buf,DestBuf : PSoundMixUnit;
-  I : integer;
+  I,J : integer;
   HasSample : boolean;
   Sample1,Sample2 : TSampleUnit;
   SamplePos,SampleFraction : integer;
+  Modulation : PModulation;
+  FilterFb : single;
   //Buffer where voice is rendered before mix with channelbuffer
   //Voicebuffer is always mono
   VoiceBuffer : array[0..FrameSampleCount-1] of TSoundMixUnit;
@@ -607,8 +618,14 @@ begin
     //Volume
     Value1 := Value1 * V.Volume;
 
-    Buf^ := Value1;
+    for J := 0 to MaxModulations-1 do
+    begin
+      Modulation := @V.Modulations[J];
+      if Modulation.Active then
+        Modulation.DestinationPtr^ := Modulation.DestinationPtr^ + Modulation.Interpolation;
+    end;
 
+    Buf^ := Value1;
     Inc(Buf);
   end;
   V.Osc1.CurValue := W1;
@@ -619,9 +636,11 @@ begin
   if V.UseFilter then
   begin  //Based on http://www.musicdsp.org/showone.php?id=29
     Buf := @VoiceBuffer[0];
+    //set feedback amount given f and q between 0 and 1
+    FilterFb := (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff));
     for I := 0 to Count-1 do
     begin
-      V.Buf0 := V.Buf0 + V.FilterCutoff * (Buf^ - V.Buf0 + V.FilterFb * (V.Buf0 - V.Buf1));
+      V.Buf0 := V.Buf0 + V.FilterCutoff * (Buf^ - V.Buf0 + FilterFb * (V.Buf0 - V.Buf1));
       V.Buf1 := V.Buf1 + V.FilterCutoff * (V.Buf0 - V.Buf1);
 
       Buf^ := V.Buf1;
@@ -933,7 +952,7 @@ var
   P: PSingle;
   V: PVoiceEntry;
   Channel: PChannel;
-  I: Integer;
+  I,J: Integer;
   M: PModulation;
 begin
   Channel := @Channels[Note.ChannelNr];
@@ -953,8 +972,7 @@ begin
     V^ := Note.Sound^;  //Memcopy voice data
   end;
   V.Time := 0;
-  for I := 0 to High(V.Envelopes) do
-    V.Envelopes[I].State := esInit;
+
   V.Active := True;
   V.NoteNr := Note.NoteNr;
   //V.Volume := 0.25;
@@ -964,6 +982,15 @@ begin
 
   //Modulate volume with velocity (0..1)
   V.Volume := V.Volume * Note.Velocity;
+
+  V.Envelopes[1] := V.Envelopes[0]; //memcopy
+  for J := 0 to 1 do
+    for I := 0 to High(V.Envelopes) do
+    begin
+      V.Envelopes[J,I].State := esInit;
+      if J=1 then //offset for interpolation
+        UpdateEnvelope(@V.Envelopes[J,I],V,AudioFrameLength);
+    end;
 
   //Determine the nr of samples in sampledata (size in bytes / sampleformat)
   if V.SampleRef <> nil then

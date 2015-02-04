@@ -157,15 +157,6 @@ uses ZApplication,ZExpressions,ZMath, ZPlatform, BeroAudioOGGVorbisTremor
 constructor TSound.Create(OwnerList: TZComponentList);
 begin
   inherited;
-{$ifndef minimal}
-//  //Default values in designer: Connect env1 with volume
-//  Voice.Modulations[0].Active := True;
-//  Voice.Modulations[0].Source := msEnv1;
-//  Voice.Modulations[0].Destination := mdVolume;
-//  Voice.Modulations[0].Amount := 1;
-//  Voice.Envelopes[0].Active := True;
-//  Voice.Envelopes[0].ReleaseTime := 0.2;
-{$endif}
 end;
 
 procedure TSound.DefineProperties(List: TZPropertyList);
@@ -220,12 +211,12 @@ begin
     List.AddProperty({$IFNDEF MINIMAL}S + 'Amount',{$ENDIF}(@Modulation.Amount), zptFloat);
   end;
 
-  for I := 0 to High(Voice.Envelopes) do
+  for I := 0 to High(Voice.Envelopes[0]) do
   begin
     {$ifndef minimal}
     S := 'Env' + Chr(Ord('0')+I);
     {$endif}
-    Envelope := @Voice.Envelopes[I];
+    Envelope := @Voice.Envelopes[0,I];
     List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Envelope.Active), zptBoolean);
     List.AddProperty({$IFNDEF MINIMAL}S + 'AttackTime',{$ENDIF}(@Envelope.AttackTime), zptFloat);
     List.AddProperty({$IFNDEF MINIMAL}S + 'DecayTime',{$ENDIF}(@Envelope.DecayTime), zptFloat);
@@ -352,7 +343,7 @@ begin
         if (InstrumentNr<Instruments.Count) and AudioPlayer.GetChannel(Ch).Active then
         begin
           Sound := TSound(Self.Instruments[InstrumentNr]);
-          NoteLength := NoteLength + Sound.Voice.Envelopes[0].ReleaseTime;
+          NoteLength := NoteLength + Sound.Voice.Envelopes[0,0].ReleaseTime;
           if not ZApp.NoSound then
           begin
             Self.PlayedNotes.Add(TNoteEmitEntry.Create(@Sound.Voice, NoteNr, Ch, NoteLength, Velocity, False));

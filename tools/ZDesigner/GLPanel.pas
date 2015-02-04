@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  OpenGL12, ExtCtrls;
+  OpenGL12, ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)
@@ -40,10 +40,26 @@ type
     procedure ForceInitGL;
   end;
 
+  TGLPanelZGE = class(TGLPanel)
+  strict private
+    RenderTimer : TTimer;
+    OldGlWindowProc : TWndMethod;
+    procedure RenderTimerTimer(Sender: TObject);
+    procedure GlWindowProc(var Message: TMessage);
+  protected
+    procedure Paint; override;
+  public
+    App : TZApplication;
+    OnBindData: TNotifyEvent;
+    OnUpdateData: TNotifyEvent;
+    procedure LoadApp(const FileName : string);
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  end;
 
 implementation
 
-uses ZLog, ZPlatform;
+uses ZLog, ZPlatform, ZClasses, frmEditor;
 
 procedure TGLPanel.CreateParams(var Params: TCreateParams);
 begin
@@ -195,6 +211,80 @@ begin
   end;
 end;
 
+
+{ TGLPanelZGE }
+
+constructor TGLPanelZGE.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.RenderTimer := TTimer.Create(AOwner);
+  Self.RenderTimer.OnTimer := RenderTimerTimer;
+
+  OldGlWindowProc := Self.WindowProc;
+  Self.WindowProc := GlWindowProc;
+end;
+
+destructor TGLPanelZGE.Destroy;
+begin
+  FreeAndNil(App);
+  inherited;
+end;
+
+procedure TGLPanelZGE.GlWindowProc(var Message: TMessage);
+begin
+  Platform_DesignerWindowProc( pointer(@Message) );
+  OldGlWindowProc(Message);
+end;
+
+procedure TGLPanelZGE.LoadApp(const FileName: string);
+var
+  A : TZApplication;
+begin
+  A := ComponentManager.LoadXmlFromFile( FileName ) as TZApplication;
+  A.OnGetLibraryPath := EditorForm.OnGetLibraryPath;
+  A.Compile;
+
+  Self.App := A;
+  if Assigned(OnBindData) then
+    OnBindData(Self);
+
+  A.DesignerReset;
+  A.DesignerStart(Self.Width,Self.Height, 0);
+
+  RenderTimer.Interval := 25;
+  RenderTimer.Enabled := True;
+end;
+
+procedure TGLPanelZGE.Paint;
+begin
+  inherited;
+
+  if Self.App<>nil then
+  begin
+    if Assigned(OnUpdateData) then
+      Self.OnUpdateData(Self);
+
+    Self.App.ScreenWidth := Self.Width;
+    Self.App.ScreenHeight := Self.Height;
+    Self.App.UpdateViewport;
+    Self.App.WindowHandle := Self.Handle;
+
+    try
+      App.Main;
+    except
+      on E : Exception do
+      begin
+        FreeAndNil(App);
+        raise;
+      end;
+    end;
+  end;
+end;
+
+procedure TGLPanelZGE.RenderTimerTimer(Sender: TObject);
+begin
+  Invalidate;
+end;
 
 initialization
   InitOpenGL;

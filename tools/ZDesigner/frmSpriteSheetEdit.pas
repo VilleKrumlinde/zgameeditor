@@ -33,25 +33,17 @@ uses frmEditor;
 { TSpriteSheetEditFrame }
 
 procedure TSpriteSheetEditFrame.BindData;
-var
-  O : TObject;
 begin
   inherited;
 
   Self.Sheet := Self.Component as TSpriteSheet;
 
-  O := EditorApp.SymTab.Lookup('SheetMaterialTexture');
-  if (O is TMaterialTexture) then
+  if Glp.App.BindComponent<TMaterialTexture>('SheetMaterialTexture', Self.MaterialTexture) then
   begin
-    Self.MaterialTexture := (O as TMaterialTexture);
     MaterialTexture.Texture := (Self.Component as TSpriteSheet).Bitmap;
   end;
 
-  O := EditorApp.SymTab.Lookup('Sprites');
-  if (O is TDefineArray) then
-  begin
-    Self.SpritesArray := (O as TDefineArray);
-  end;
+  Glp.App.BindComponent<TDefineArray>('Sprites',Self.SpritesArray);
 
   CopyDataFromComponent;
 end;

@@ -171,6 +171,7 @@ type
     procedure RefreshSymbolTable;
     procedure Compile;
     procedure CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
+    function BindComponent<T : class>(const CompName : string; out O : T) : boolean;
     {$endif}
   end;
 
@@ -816,6 +817,24 @@ begin
 end;
 
 {$ifndef minimal}
+function TZApplication.BindComponent<T>(const CompName: string;
+  out O: T): boolean;
+var
+  Temp : TObject;
+begin
+  Temp := Self.SymTab.Lookup(CompName);
+  if (Temp is T) then
+  begin
+    O := Temp as T;
+    Result := True
+  end
+  else
+  begin
+    O := nil;
+    Result := False;
+  end;
+end;
+
 procedure TZApplication.DesignerSetUpView;
 begin
   //Used for previewing app-state in designer
