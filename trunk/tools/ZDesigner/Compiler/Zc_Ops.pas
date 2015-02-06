@@ -292,8 +292,8 @@ var
         Result.Kind := zctReference;
         Result.ReferenceClassId := ComponentManager.GetInfoFromClass(Etyp.Prop.ChildClasses[0]).ClassId;
       end;
-    end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='ManagedValue') then
-    begin //Allow DefineVariable.ManagedType=mat4/vec3/string even though proptype is string
+    end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='PointerValue') then
+    begin //Allow DefineVariable.ManagedType=mat4/vec3 even though proptype is zptPointer
       Result.Kind := TDefineVariableBase(Self.Child(0).Ref)._Type;
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
@@ -1033,7 +1033,8 @@ begin
     PName := 'Value';
     case (Op.Ref as TDefineVariableBase)._Type of
       zctInt : PName := 'IntValue';
-      zctString,zctMat4,zctVec2,zctVec3,zctVec4 : PName := 'ManagedValue';
+      zctString : PName := 'StringValue';
+      zctMat4,zctVec2,zctVec3,zctVec4 : PName := 'PointerValue';
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
     end;

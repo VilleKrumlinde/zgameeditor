@@ -145,7 +145,7 @@ type
   type
     PSpriteInfo = ^TSpriteInfo;
     TSpriteInfo = packed record
-      SheetX,SheetY,SizeX,SizeY,OriginX,OriginY : smallint;
+      SheetX1,SheetY1,SheetX2,SheetY2,OriginX,OriginY : smallint;
     end;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -676,6 +676,7 @@ var
   Info : TSpriteSheet.PSpriteInfo;
   Driver : TGLDriverBase;
   Px,Py,TransX,TransY,ScaleX,ScaleY : single;
+  SizeX,SizeY : integer;
 begin
   Driver := Self.ZApp.Driver;
 
@@ -684,14 +685,16 @@ begin
     Info := Self.SpriteSheet.GetSpriteInfo(Self.SpriteIndex);
     if Assigned(Info) then
     begin
+      SizeX := Info.SheetX2-Info.SheetX1;
+      SizeY := Info.SheetY2-Info.SheetY1;
       Px := (1.0/Self.SpriteSheet.Bitmap.PixelWidth);
       Py := (1.0/Self.SpriteSheet.Bitmap.PixelHeight);
-      ScaleX := Info.SizeX * Px;
-      ScaleY := Info.SizeY * Py;
+      ScaleX := SizeX * Px;
+      ScaleY := SizeY * Py;
 
       //Bottom-left corner
-      TransX := Info.SheetX * Px;
-      TransY := (Info.SizeY+Info.SheetY) * Py;
+      TransX := Info.SheetX1 * Px;
+      TransY := (SizeY+Info.SheetY1) * Py;
 
       Driver.MatrixMode(GL_TEXTURE);
       Driver.PushMatrix();
@@ -701,7 +704,7 @@ begin
 
       Driver.MatrixMode(GL_MODELVIEW);
         Driver.PushMatrix();
-          Driver.Scale(Info.SizeX*Flip(Self.MirrorHorizontal),Info.SizeY*Flip(Self.MirrorVertical),1);
+          Driver.Scale(SizeX*Flip(Self.MirrorHorizontal),SizeY*Flip(Self.MirrorVertical),1);
           glPushAttrib(GL_TEXTURE_BIT);
           glEnable(GL_TEXTURE_2D);
           glDisable(GL_TEXTURE_GEN_S);
@@ -914,10 +917,8 @@ begin
   else
   begin
     if DefaultFont=nil then
-    begin
       DefaultFont := TFont.Create(nil);
-      DefaultFont._ZApp := Self.ZApp;
-    end;
+    DefaultFont._ZApp := Self.ZApp;
     CurFont := DefaultFont;
     Spacing := BuiltInSpacing;
   end;
@@ -1835,10 +1836,10 @@ var
     V := Sv.VariableRef;
     case V._Type of
       zctFloat : glUniform1f(Sv.Location,V.Value);
-      zctVec2 : glUniform2fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
-      zctVec3 : glUniform3fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
-      zctVec4 : glUniform4fv(Sv.Location, 1, PGLFloat(TDefineArray(V.ManagedValue).GetData));
-      zctMat4 : glUniformMatrix4fv(Sv.Location, 1, GL_FALSE, PGLFloat(TDefineArray(V.ManagedValue).GetData));
+      zctVec2 : glUniform2fv(Sv.Location, 1, PGLFloat(TDefineArray(V.PointerValue).GetData));
+      zctVec3 : glUniform3fv(Sv.Location, 1, PGLFloat(TDefineArray(V.PointerValue).GetData));
+      zctVec4 : glUniform4fv(Sv.Location, 1, PGLFloat(TDefineArray(V.PointerValue).GetData));
+      zctMat4 : glUniformMatrix4fv(Sv.Location, 1, GL_FALSE, PGLFloat(TDefineArray(V.PointerValue).GetData));
     end;
   end;
 

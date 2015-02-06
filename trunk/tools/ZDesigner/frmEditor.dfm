@@ -186,6 +186,10 @@ object EditorForm: TEditorForm
           Caption = 'TabSheet2'
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
         object TabSheet1: TTabSheet
           Margins.Left = 4
@@ -391,65 +395,67 @@ object EditorForm: TEditorForm
         BevelOuter = bvNone
         Constraints.MinWidth = 100
         TabOrder = 1
-        object PropPageControl: TPageControl
+        object PropListParent: TGroupBox
+          Left = 0
+          Top = 0
+          Width = 358
+          Height = 803
+          Margins.Left = 4
+          Margins.Top = 4
+          Margins.Right = 4
+          Margins.Bottom = 4
+          Align = alClient
+          Caption = '&Properties'
+          TabOrder = 0
+          ExplicitWidth = 350
+          ExplicitHeight = 793
+        end
+        object QuickCompListParent: TPanel
           Left = 0
           Top = 0
           Width = 358
           Height = 803
           Align = alClient
-          Style = tsButtons
-          TabOrder = 0
-          object TTabSheet
-            TabVisible = False
-            object PropListParent: TGroupBox
-              Left = 0
-              Top = 0
-              Width = 350
-              Height = 793
-              Margins.Left = 4
-              Margins.Top = 4
-              Margins.Right = 4
-              Margins.Bottom = 4
-              Align = alClient
-              Caption = '&Properties'
-              TabOrder = 0
-            end
+          BevelOuter = bvNone
+          TabOrder = 1
+          ExplicitLeft = 88
+          ExplicitTop = 384
+          ExplicitWidth = 185
+          ExplicitHeight = 41
+          object QuickCompListView: TListView
+            Left = 0
+            Top = 30
+            Width = 358
+            Height = 773
+            Margins.Left = 4
+            Margins.Top = 4
+            Margins.Right = 4
+            Margins.Bottom = 4
+            Align = alClient
+            Columns = <>
+            HideSelection = False
+            ReadOnly = True
+            RowSelect = True
+            SmallImages = CommonModule.CompIconsImageList
+            SortType = stText
+            TabOrder = 0
+            ViewStyle = vsList
+            OnClick = QuickCompListViewClick
+            OnMouseDown = QuickCompListViewMouseDown
+            ExplicitWidth = 350
+            ExplicitHeight = 763
           end
-          object TTabSheet
-            Caption = 'QuickCompTabSheet'
-            TabVisible = False
-            object QuickCompListView: TListView
-              Left = 0
-              Top = 30
-              Width = 350
-              Height = 763
-              Margins.Left = 4
-              Margins.Top = 4
-              Margins.Right = 4
-              Margins.Bottom = 4
-              Align = alClient
-              Columns = <>
-              HideSelection = False
-              ReadOnly = True
-              RowSelect = True
-              SmallImages = CommonModule.CompIconsImageList
-              SortType = stText
-              TabOrder = 0
-              ViewStyle = vsList
-              OnClick = QuickCompListViewClick
-              OnMouseDown = QuickCompListViewMouseDown
-            end
-            object Panel3: TPanel
-              Left = 0
-              Top = 0
-              Width = 350
-              Height = 30
-              Align = alTop
-              Alignment = taLeftJustify
-              BevelOuter = bvNone
-              Caption = 'Click component to add.'#13#10' Hold Ctrl  to add and select.'
-              TabOrder = 1
-            end
+          object Panel3: TPanel
+            Left = 0
+            Top = 0
+            Width = 358
+            Height = 30
+            Align = alTop
+            Alignment = taLeftJustify
+            BevelOuter = bvNone
+            Caption = 'Click component to add.'#13#10' Hold Ctrl  to add and select.'
+            TabOrder = 1
+            ExplicitWidth = 350
           end
         end
       end
@@ -782,6 +788,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -817,6 +827,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
         end
       end
     end

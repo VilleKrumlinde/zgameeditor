@@ -6,8 +6,6 @@ set tool=ZGameEditor
 copy .\exe\ZDesigner.exe ..\..\Deploy\%tool%\%tool%.exe
 copy .\exe\player.bin ..\..\Deploy\%tool%\
 copy .\exe\player_ss.bin ..\..\Deploy\%tool%\
-copy .\exe\about.bin ..\..\Deploy\%tool%\
-rem copy .\exe\player_activex.bin ..\..\Deploy\%tool%\
 copy .\exe\player_linux.bin ..\..\Deploy\%tool%\
 copy .\exe\player_osx86.bin ..\..\Deploy\%tool%\
 copy .\exe\MidiInstruments.xml ..\..\Deploy\%tool%\
