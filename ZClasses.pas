@@ -282,12 +282,14 @@ type
      13 : (ExpressionValue : TZExpressionPropValue);
      {$endif}
      14 : (BinaryValue : TZBinaryPropValue);
+     15 : (PointerValue : pointer);
   end;
 
   //zptScalar = float with 0..1 range
+  //zptPointer = managed pointer (vec/mat), never persisted
   TZPropertyType = (zptFloat,zptScalar,zptRectf,zptColorf,zptString,zptComponentRef,zptInteger,
     zptVector3f,zptComponentList,zptByte,zptBoolean,
-    zptExpression,zptBinary);
+    zptExpression,zptBinary,zptPointer);
 
   TZProperty = class
   public
@@ -1212,6 +1214,8 @@ begin
       {$endif}
     zptBinary :
       Value.BinaryValue := PZBinaryPropValue(P)^;
+    zptPointer :
+      Value.PointerValue := PPointer(P)^;
     {$ifdef minimal}
     else
       ZHalt('GetProperty no handler');
@@ -1279,7 +1283,9 @@ begin
           FreeMem(PZBinaryPropValue(P)^.Data);
         {$endif}
         PZBinaryPropValue(P)^ := Value.BinaryValue;
-      end
+      end;
+    zptPointer :
+      PPointer(P)^ := Value.PointerValue;
     {$ifdef minimal}
     else
       ZHalt('SetProperty no handler');
@@ -2688,8 +2694,8 @@ begin
           (Trim(Value.ExpressionValue.Source)=Trim(DefaultValue.ExpressionValue.Source)) or
           (Trim(Value.ExpressionValue.Source)='');
         {$endif}
-    zptBinary :
-      Result := Value.BinaryValue.Size=0;
+    zptBinary : Result := Value.BinaryValue.Size=0;
+    zptPointer : Result := Value.PointerValue=nil;
   end;
 end;
 

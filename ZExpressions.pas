@@ -118,9 +118,10 @@ type
   public
     Value : single;
     IntValue : integer;
-    ManagedValue : pointer;
     ModelValue : TZComponent;
     ByteValue : byte;
+    StringValue : TPropString;
+    PointerValue : pointer;
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
@@ -880,16 +881,19 @@ begin
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ManagedValue',{$ENDIF}(@ManagedValue), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
-    List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
     List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'PointerValue',{$ENDIF}(@PointerValue), zptPointer);
+    List.GetLast.NeverPersist := True;
+    List.GetLast.IsManagedTarget := True;
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
 {$ifndef minimal}
@@ -902,8 +906,9 @@ end;
 
 procedure TDefineVariable.InitManaged;
 begin
-  if Self._Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
-    Self.ManagedValue := CreateManagedValue(Self._Type);
+  if (Self._Type in [zctMat4,zctVec2,zctVec3,zctVec4]) and (Self.PointerValue=nil) then
+    //Create default empty value
+    Self.PointerValue := CreateManagedValue(Self._Type);
 end;
 
 procedure TDefineVariable.InitAfterPropsAreSet;

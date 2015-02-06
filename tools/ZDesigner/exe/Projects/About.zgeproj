@@ -21,23 +21,18 @@ Clicked=1;]]>
     <UseMaterial Material="DinaMaterial"/>
     <RenderText Text="ZGameEditor" X="-0.95" Y="0.8" Scale="0.67" Align="1"/>
     <RenderText Name="VersionText" Text="V1.0" X="-0.95" Y="0.69" Scale="0.54" Align="1"/>
-    <RenderText X="-0.95" Y="0.41" Scale="0.4" Align="1">
+    <RenderText X="-0.95" Y="-0.21" Scale="0.4" Align="1">
       <Text>
 <![CDATA[Main developer:
-
 Ville Krumlinde
 
-
 Contributors:
-
 Jph Wacheski
 Kjell Zijlmans
 Radovan "Rado1" Cervenka
 
-
 3rd party code:
-
-OGG-decoder by Benjamin "BeRo" Rosseaux 
+OGG-decoder by Benjamin "BeRo" Rosseaux
 Coco/R for Delphi by Michael Reith
 LibXmlParser by Stefan Heymann
 Resources code by Colin Wilson

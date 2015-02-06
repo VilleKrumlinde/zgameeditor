@@ -235,9 +235,9 @@ type
     CompEditorParentPanel: TPanel;
     DetachCompEditorButton: TButton;
     PropListParent: TGroupBox;
-    PropPageControl: TPageControl;
     QuickCompListView: TListView;
     Panel3: TPanel;
+    QuickCompListParent: TPanel;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -813,6 +813,7 @@ begin
   //will call RefreshContent that requires to have expressions already compiled.
   ReadProjectSettingsFromIni;
   Tree.Invalidate;
+  Tree.Items[0].Selected := True;  //Select "App" component as default
 end;
 
 function TEditorForm.OnGetLibraryPath : string;
@@ -1566,16 +1567,19 @@ procedure TEditorForm.OnTreeSelectItem(Sender: TObject; Node : TTreeNode);
 begin
   if (Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>nil) then
   begin
-    PropPageControl.ActivePageIndex := 0;
+    PropListParent.Visible := True;
+    QuickCompListParent.Visible := False;
     SelectComponent( Tree.ZSelected.Component )
   end
   else if (Tree.ZSelected<>nil) and (Tree.ZSelected.ComponentList<>nil) then
   begin
-    PropPageControl.ActivePageIndex := 1;
+    PropListParent.Visible := False;
+    QuickCompListParent.Visible := True;
   end
   else
   begin
-    PropPageControl.ActivePageIndex := 0;
+    PropListParent.Visible := False;
+    QuickCompListParent.Visible := False;
     Ed.SetComponent(nil);
   end;
 end;
