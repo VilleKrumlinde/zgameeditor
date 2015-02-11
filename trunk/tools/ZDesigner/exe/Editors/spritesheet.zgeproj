@@ -1,34 +1,979 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="128 64 161.5" FOV="90" ClipNear="1" ClipFar="1000">
+<ZApplication Name="App" Caption="SpriteSheet" CustomScreenWidth="960" CustomScreenHeight="540" CameraPosition="128 72 1" MouseVisible="255" NoSound="1">
   <OnLoaded>
-    <ZExternalLibrary ModuleName="opengl32">
-      <Source>
+    <Group Comment="External">
+      <Children>
+        <ZExternalLibrary ModuleName="opengl32">
+          <Source>
 <![CDATA[//
 
+void glAlphaFunc(int func, float value){}
+void glDisable(int cap){}
 void glDisableClientState(int cap){}
 void glDrawArrays(int mode, int first, int count){}
+void glEnable(int cap){}
 void glEnableClientState(int cap){}
+void glGetTexImage(int target, int level, int format, int type, xptr img){}
+void glGetTexLevelParameteriv(int target, int level, int pname, xptr params){}
+void glTexCoordPointer(int size, int type, int stride, xptr pointer){}
 void glVertexPointer(int size, int type, int stride, xptr pointer){}]]>
-      </Source>
-    </ZExternalLibrary>
-    <ZLibrary>
-      <Source>
+          </Source>
+        </ZExternalLibrary>
+      </Children>
+    </Group>
+    <Group Comment="Library">
+      <Children>
+        <ZLibrary Comment="Standard">
+          <Source>
 <![CDATA[//
 
-int SheetWidth, SheetHeight;
+float min(float a, float b)
+{
+  return a < b ? a : b;
+}
+
+float max(float a, float b)
+{
+  return a > b ? a : b;
+}
 
 //
 
-float[184] SpriteVertices;]]>
-      </Source>
-    </ZLibrary>
-    <ZExpression>
-      <Expression>
+float length2(float x, float y)
+{
+  return sqrt(x * x + y * y);
+}]]>
+          </Source>
+        </ZLibrary>
+        <ZLibrary Comment="Render">
+          <Source>
 <![CDATA[//
 
-int a, x1, y1, x2, y2;
+void renderNumber(string t, float x, float y)
+{
+  int n = length(t);
+
+  float z = 16 / Zoom;
+
+  float[0] v;
+  v.SizeDim1 = n << 4;
+
+  int a;
+  float x1, y1, x2, y2, s1, s2;
+
+  x1 = x;
+  y1 = y;
+  y2 = y1 + z;
+
+  for(int i=0; i<n; i++)
+  {
+    x2 = x1 + z;
+
+    s1 = ord(subStr(t, i, 1)) - 48;
+    s2 = s1 + 1;
+
+    v[a++] = x1; v[a++] = y1; v[a++] = s1; v[a++] = 1;
+    v[a++] = x1; v[a++] = y2; v[a++] = s1; v[a++] = 0;
+    v[a++] = x2; v[a++] = y2; v[a++] = s2; v[a++] = 0;
+    v[a++] = x2; v[a++] = y1; v[a++] = s2; v[a++] = 1;
+
+    x1 += z;
+  }
+
+  glVertexPointer(2, 0x1406, 16, v[0]);
+  glTexCoordPointer(2, 0x1406, 16, v[2]);
+  glDrawArrays(7, 0, n << 2);
+}]]>
+          </Source>
+        </ZLibrary>
+        <ZLibrary Comment="Batch">
+          <Source>
+<![CDATA[//
+
+  int       a1;
+float[4096] v1;
 
 //
+
+void addRect(float x1, float y1, float x2, float y2,
+             float s1, float t1, float s2, float t2)
+{
+  v1[a1++] = x1; v1[a1++] = y1; v1[a1++] = s1; v1[a1++] = t1;
+  v1[a1++] = x1; v1[a1++] = y2; v1[a1++] = s1; v1[a1++] = t2;
+  v1[a1++] = x2; v1[a1++] = y2; v1[a1++] = s2; v1[a1++] = t2;
+  v1[a1++] = x2; v1[a1++] = y1; v1[a1++] = s2; v1[a1++] = t1;
+}
+
+//
+
+void drawBatch()
+{
+  glEnableClientState(0x8074);
+  glEnableClientState(0x8078);
+
+  glVertexPointer(2, 0x1406, 16, v1[0]);
+  glTexCoordPointer(2, 0x1406, 16, v1[2]);
+
+  glDrawArrays(7, 0, a1 >> 2);
+
+  glDisableClientState(0x8078);
+  glDisableClientState(0x8074);
+
+  a1 = 0;
+}]]>
+          </Source>
+        </ZLibrary>
+        <ZLibrary Comment="Editor">
+          <Source>
+<![CDATA[//
+
+const int ACTION_NULL = 0,
+          ACTION_DRAW = 1,
+          ACTION_MOVE = 2,
+          ACTION_EDIT = 3;
+
+//
+
+float distance2(float x1, float y1, float x2, float y2)
+{
+  float x, y;
+
+  x = x1 - x2;
+  y = y1 - y2;
+
+  return sqrt(x * x + y * y);
+}
+
+//
+
+float[9,2] anchors;
+
+int selectHandle(float x, float y)
+{
+  if(!Selected.SizeDim1)return 0;
+
+  int s = Selected[0];
+
+  float x1, y1, x2, y2, x3, y3;
+
+  x1 = Sprites[s,0];
+  y1 = Sprites[s,1];
+
+  x3 = x1 + Sprites[s,2];
+  y3 = y1 + Sprites[s,3];
+
+  x2 = (x1 + x3) * 0.5;
+  y2 = (y1 + y3) * 0.5;
+
+  anchors[0,0] = x1 + Sprites[s,4];
+  anchors[0,1] = y1 + Sprites[s,5];
+
+  anchors[1,0] = x1; anchors[1,1] = y2;
+  anchors[2,0] = x2; anchors[2,1] = y1;
+  anchors[3,0] = x3; anchors[3,1] = y2;
+  anchors[4,0] = x2; anchors[4,1] = y3;
+
+  anchors[5,0] = x1; anchors[5,1] = y1;
+  anchors[6,0] = x3; anchors[6,1] = y1;
+  anchors[7,0] = x3; anchors[7,1] = y3;
+  anchors[8,0] = x1; anchors[8,1] = y3;
+
+  for(int i=0; i<9; i++)
+  {
+    float d = i ? 8 / Zoom : 16 / Zoom;
+
+    if(distance2(x, y, anchors[i,0], anchors[i,1]) < d)
+    {
+      Anchor = i;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+//
+
+int selectSprite(float x, float y)
+{
+  float x1, y1;
+
+  for(int i=Sprites.SizeDim1-1; i>=0; i--)
+  {
+    x1 = Sprites[i,0];
+    y1 = Sprites[i,1];
+
+    if(x >= x1 && x <= x1 + Sprites[i,2] &&
+       y >= y1 && y <= y1 + Sprites[i,3])
+    {
+      Selected.SizeDim1 = 1;
+      Selected[0] = i;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+//
+
+int selectSheet(float x, float y)
+{
+  return x < 0 || x > SheetWidth || y < 0 || y > SheetHeight ? 0 : 1;
+}
+
+//
+
+void deleteSelection()
+{
+  int n, d, s;
+
+  n = Sprites.SizeDim1 - 1;
+
+  for(int i=0; i<Selected.SizeDim1; i++)
+  {
+    d = Selected[i];
+
+    // TODO
+  }
+}
+
+void deleteSprite(int s)
+{
+  // TODO: Change function to deleteSelection
+
+  int n = Sprites.SizeDim1-1;
+
+  for(int i=s; i<n; i++)
+  {
+    int t = i + 1;
+
+    for(int p=0; p<6; p++)
+    {
+      Sprites[i,p] = Sprites[t,p];
+    }
+  }
+
+  Sprites.SizeDim1--;
+}
+
+//
+
+void moveForward()
+{
+  int s = Selected[0];
+
+  if(s > 0)
+  {
+    int d = s - 1;
+
+    for(int i=0; i<6; i++)
+    {
+          Cache[i] = Sprites[d,i];
+      Sprites[d,i] = Sprites[s,i];
+      Sprites[s,i] = Cache[i];
+    }
+
+    Selected[0]--;
+  }
+}
+
+void moveBackward()
+{
+  int s = Selected[0];
+
+  if(s < Sprites.SizeDim1 - 1)
+  {
+    int d = s + 1;
+
+    for(int i=0; i<6; i++)
+    {
+          Cache[i] = Sprites[d,i];
+      Sprites[d,i] = Sprites[s,i];
+      Sprites[s,i] = Cache[i];
+    }
+
+    Selected[0]++;
+  }
+}
+
+//
+
+void centerPivot(int s)
+{
+  int x1, y1, x2, y2;
+
+  x1 = Sprites[s,0];
+  y1 = Sprites[s,1];
+
+  x2 = x1 + Sprites[s,2];
+  y2 = y1 + Sprites[s,3];
+
+  Sprites[s,4] = (x1 + x2) * 0.5 - x1;
+  Sprites[s,5] = (y1 + y2) * 0.5 - y1;
+}
+
+//
+
+int pickAlpha(int x, int y)
+{
+  int o = SheetHeight - 1;
+
+  return SheetPixels[x,o-y];
+}
+
+//
+
+int getAlpha(int x, int y)
+{
+  return 0;
+}
+
+//
+
+void expandSprite(int i)
+{
+  int o, x1, y1, x2, y2;
+
+  o = SheetHeight - 1;
+
+  x1 = Sprites[i,0];
+  y1 = Sprites[i,1];
+
+  x2 = x1 + Sprites[i,2];
+  y2 = y1 + Sprites[i,3];
+
+  int a;
+
+  for(int y=y1; y<y2; y++)
+  {
+    if(SheetPixels[o-y,x2])
+    {
+      a = 1;
+    }
+  }
+
+  if(a)x2++; // TODO: Prevent from going out of bounds
+
+  Sprites[i,2] = x2 - x1;
+}]]>
+          </Source>
+        </ZLibrary>
+      </Children>
+    </Group>
+    <Group Comment="Reset">
+      <Children>
+        <ZExpression>
+          <Expression>
+<![CDATA[//
+
+Zoom = 2;
+
+//
+
+glAlphaFunc(0x0202, 0);]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnLoaded>
+  <OnUpdate>
+    <Group Comment="Input">
+      <Children>
+        <Group Comment="Button">
+          <Children>
+            <Repeat Name="ButtonRepeat" Count="3" WhileExp="//">
+              <OnIteration>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int i = ButtonRepeat.Iteration;
+
+//
+
+Button[i,1] = Button[i,0];
+Button[i,0] = 0;
+
+//
+
+ButtonPress.CharCode = 123 + i;]]>
+                  </Expression>
+                </ZExpression>
+                <KeyPress Name="ButtonPress" CharCode="125">
+                  <OnPressed>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//
+
+Button[ButtonRepeat.Iteration,0]++;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnPressed>
+                </KeyPress>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int i = ButtonRepeat.Iteration;
+
+//
+
+Button[i,2] = Button[i,0] && !Button[i,1];
+Button[i,3] = Button[i,1] && !Button[i,0];]]>
+                  </Expression>
+                </ZExpression>
+              </OnIteration>
+            </Repeat>
+            <KeyPress Keys="[">
+              <OnPressed>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+Button[0,2] = 1;]]>
+                  </Expression>
+                </ZExpression>
+              </OnPressed>
+            </KeyPress>
+          </Children>
+        </Group>
+        <Group Comment="Mouse">
+          <Children>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+Mouse[0,1] = Mouse[0,0];
+Mouse[1,1] = Mouse[1,0];
+
+//
+
+Mouse[0,0] = App.MousePosition.X;
+Mouse[1,0] = App.MousePosition.Y;
+
+//
+
+Mouse[0,2] = Mouse[0,0] - Mouse[0,1];
+Mouse[1,2] = Mouse[1,0] - Mouse[1,1];
+
+//
+
+Mouse[0,3] = floor((App.MousePosition.X + 1) * App.ScreenWidth / 64);
+Mouse[1,3] = floor((App.MousePosition.Y + 1) * App.ScreenHeight / 64);]]>
+              </Expression>
+            </ZExpression>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
+    <Group Comment="Editor">
+      <Children>
+        <ZExpression Comment="Sheet">
+          <Expression>
+<![CDATA[//
+
+if(SheetMaterialTexture.Texture == null)
+{
+  SheetWidth = 0;
+  SheetHeight = 0;
+}
+else
+{
+  @UseMaterial(Material: SheetMaterial);
+
+  glGetTexLevelParameteriv(0xDE1, 0, 0x1000, SheetWidth);
+  glGetTexLevelParameteriv(0xDE1, 0, 0x1001, SheetHeight);
+
+  if(SheetMaterialTexture.Texture != CachedTexture.Texture)
+  {
+    Zoom = 2;
+
+    App.CameraPosition.X = SheetWidth * 0.5;
+    App.CameraPosition.Y = SheetHeight * 0.5 + 8;
+
+    CachedTexture.Texture = SheetMaterialTexture.Texture;
+
+    SheetPixels.SizeDim1 = SheetWidth;
+    SheetPixels.SizeDim2 = SheetHeight;
+
+    glGetTexImage(0xDE1, 0, 0x1906, 0x1401, SheetPixels);
+  }
+}]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Control">
+          <Expression>
+<![CDATA[//
+
+float v;
+
+if(App.MouseWheelDelta)
+{
+  v += App.MouseWheelDelta < 0 ? Zoom / -3 : Zoom * 0.5;
+}
+
+if(Button[1,0])
+{
+  v += (Mouse[0,2] + Mouse[1,2]) * Zoom;
+}
+
+if(v)
+{
+  Zoom = clamp(Zoom + v, 2, 45);
+}
+
+//
+
+float z = Zoom;
+
+if(Button[2,0])
+{
+  App.CameraPosition.X -= Mouse[0,2] / z * App.ScreenWidth;
+  App.CameraPosition.Y += Mouse[1,2] / z * App.ScreenHeight;
+}
+
+//
+
+Cursor[0] = App.CameraPosition.X + Mouse[0,0] * App.ScreenWidth / z;
+Cursor[1] = App.CameraPosition.Y - Mouse[1,0] * App.ScreenHeight / z;]]>
+          </Expression>
+        </ZExpression>
+        <Condition>
+          <Expression>
+<![CDATA[//
+
+return Button[0,2];]]>
+          </Expression>
+          <OnTrue>
+            <Condition>
+              <Expression>
+<![CDATA[//
+
+return App.MousePosition.Y > -1 + 64f / App.ScreenHeight;]]>
+              </Expression>
+              <OnTrue>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+float x, y;
+
+x = Cursor[0];
+y = Cursor[1];
+
+//
+
+if(selectHandle(x, y))
+{
+  Action = ACTION_EDIT;
+}
+else if(selectSprite(x, y))
+{
+  Action = ACTION_MOVE;
+}
+else if(selectSheet(x, y))
+{
+  Action = ACTION_DRAW;
+
+  Selected.SizeDim1 = 1;
+  Selected[0] = Sprites.SizeDim1;
+  Sprites.SizeDim1++;
+
+  Origin.x = round(x);
+  Origin.y = round(y);
+}
+else
+{
+  if(Selected.SizeDim1)
+  {
+    Selected.SizeDim1 = 0;
+  }
+}
+
+//
+
+if(Action == ACTION_MOVE || Action == ACTION_EDIT)
+{
+  Origin.x = x;
+  Origin.y = y;
+
+  int s = Selected[0];
+
+  for(int i=0; i<6; i++)
+  {
+    Cache[i] = Sprites[s,i];
+  }
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnTrue>
+              <OnFalse>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int x = Mouse[0,3];
+
+//
+
+switch(x)
+{
+  case 0: // Generate
+    break;
+
+  case 1: // Delete
+    for(int i=0; i<Selected.SizeDim1; i++)
+    {
+      deleteSprite(Selected[i]);
+    }
+
+    Selected.SizeDim1 = 0;
+    break;
+
+  case 2: // Expand
+    break;
+
+  case 3: // Center
+    for(int i=0; i<Selected.SizeDim1; i++)
+    {
+      centerPivot(Selected[i]);
+    }
+    break;
+
+  case 4: // Forward
+    for(int i=0; i<Selected.SizeDim1; i++)
+    {
+      moveForward();
+    }
+    break;
+
+  case 5: // Backward
+    for(int i=0; i<Selected.SizeDim1; i++)
+    {
+      moveBackward();
+    }
+    break;
+
+  case 7: // Alpha
+    Alpha = Alpha ^ 1;
+    break;
+
+  case 8: // Bright
+    GridMaterial.Color = 1;
+    break;
+
+  case 9: // Dark
+    GridMaterial.Color = 0.2;
+    break;
+}]]>
+                  </Expression>
+                </ZExpression>
+              </OnFalse>
+            </Condition>
+          </OnTrue>
+        </Condition>
+        <ZExpression Comment="Action">
+          <Expression>
+<![CDATA[//
+
+float x, y;
+
+x = Cursor[0];
+y = Cursor[1];
+
+//
+
+int s;
+
+if(Button[0,3])
+{
+  switch(Action)
+  {
+    case ACTION_DRAW:
+      s = Selected[0];
+
+      if(!Sprites[s,2] || !Sprites[s,3])
+      {
+        Selected.SizeDim1 = 0;
+        Sprites.SizeDim1--;
+      }
+
+      break;
+  }
+
+  Action = ACTION_NULL;
+}
+
+//
+
+int x1, y1, x2, y2;
+
+switch(Action)
+{
+  case ACTION_DRAW:
+    x = clamp(round(x), 0, SheetWidth);
+    y = clamp(round(y), 0, SheetHeight);
+
+    x1 = min(Origin.x, x);
+    y1 = min(Origin.y, y);
+    x2 = max(Origin.x, x);
+    y2 = max(Origin.y, y);
+
+    s = Selected[0];
+
+    Sprites[s,0] = x1;
+    Sprites[s,1] = y1;
+
+    Sprites[s,2] = x2 - x1;
+    Sprites[s,3] = y2 - y1;
+
+    Sprites[s,4] = round((x1 + x2) * 0.5) - x1;
+    Sprites[s,5] = round((y1 + y2) * 0.5) - y1;
+    break;
+
+  case ACTION_MOVE:
+    // Cache[0] & [1] are used 3 times .. local copy please
+    int w, h;
+
+    w = Cache[2];
+    h = Cache[3];
+
+    x1 = 0 - Cache[0];
+    y1 = 0 - Cache[1];
+
+    x2 = SheetWidth - Cache[0] - w;
+    y2 = SheetHeight - Cache[1] - h;
+
+    x = clamp(round(x - Origin[0]), x1, x2);
+    y = clamp(round(y - Origin[1]), y1, y2);
+
+    s = Selected[0];
+
+    Sprites[s,0] = Cache[0] + x;
+    Sprites[s,1] = Cache[1] + y;
+    break;
+
+  case ACTION_EDIT:
+    s = Selected[0];
+
+    if(Anchor)
+    {
+      x = round(x - Origin[0]);
+      y = round(y - Origin[1]);
+
+      x1 = Cache[0];
+      y1 = Cache[1];
+
+      int a = AnchorMap[Anchor];
+
+      if(a & 0x1)
+      {
+        Sprites[s,0] = clamp(Cache[0] + x, 0, x1 + Cache[2] - 1);
+
+        x = Cache[0] - Sprites[s,0];
+
+        Sprites[s,2] = Cache[2] + x;
+        Sprites[s,4] = Cache[4] + x;
+      }
+      else if(a & 0x4)
+      {
+        Sprites[s,2] = clamp(Cache[2] + x, 1, SheetWidth - x1);
+      }
+
+      if(a & 0x2)
+      {
+        Sprites[s,1] = clamp(Cache[1] + y, 0, y1 + Cache[3] - 1);
+
+        y = Cache[1] - Sprites[s,1];
+
+        Sprites[s,3] = Cache[3] + y;
+        Sprites[s,5] = Cache[5] + y;
+      }
+      else if(a & 0x8)
+      {
+        Sprites[s,3] = clamp(Cache[3] + y, 1, SheetHeight - y1);
+      }
+    }
+    else
+    {
+      Sprites[s,4] = round(x) - Sprites[s,0];
+      Sprites[s,5] = round(y) - Sprites[s,1];
+    }
+
+    break;
+}]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnUpdate>
+  <OnRender>
+    <Group Comment="Workspace">
+      <Children>
+        <ZExpression Comment="Matrix">
+          <Expression>
+<![CDATA[//
+
+mat4 m;
+
+m[0,0] =     Zoom / App.ScreenWidth;
+m[1,1] = 0 - Zoom / App.ScreenHeight;
+m[2,2] = 1;
+m[3,3] = 1;
+
+setMatrix(1, m);
+
+//
+
+LineTexture.TextureScale.X = Zoom / 16;
+LineTexture.TextureScale.Y = Zoom / 16;
+
+LineTexture.TextureX -= App.DeltaTime;
+LineTexture.TextureY -= App.DeltaTime;]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Grid">
+          <Expression>
+<![CDATA[//
+
+float w, h;
+
+w = App.ScreenWidth;
+h = App.ScreenHeight;
+
+//
+
+float x1, y1, x2, y2, s1, t1, s2, t2;
+
+x1 = App.CameraPosition.X - w * 0.5;
+y1 = App.CameraPosition.Y - h * 0.5;
+
+x2 = x1 + w;
+y2 = y1 + h;
+
+s1 = x1 / 16;
+t1 = y1 / 16;
+
+s2 = x2 / 16;
+t2 = y2 / 16;
+
+//
+
+@UseMaterial(Material: GridMaterial);
+addRect(x1, y1, x2, y2, s1, t1, s2, t2);
+drawBatch();]]>
+          </Expression>
+        </ZExpression>
+        <Condition>
+          <Expression>
+<![CDATA[//
+
+return SheetMaterialTexture.Texture != null;]]>
+          </Expression>
+          <OnTrue>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+if(Alpha)
+{
+  addRect(0, 0, SheetWidth, SheetHeight, 0, 0, 0, 0);
+  @UseMaterial(Material: SolidMaterial);
+  drawBatch();
+}
+
+//
+
+addRect(0, 0, SheetWidth, SheetHeight, 0, 1, 1, 0);
+@UseMaterial(Material: SheetMaterial);
+
+if(Alpha)
+{
+  glEnable(0xBC0);
+  drawBatch();
+  glDisable(0xBC0);
+}
+else
+{
+  glEnable(0xBE2);
+  drawBatch();
+  glDisable(0xBE2);
+}]]>
+              </Expression>
+            </ZExpression>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+float x1, y1, x2, y2, x3, y3, x4, y4;
+
+x1 = 0 - 8;
+y1 = 0 - 8;
+
+x2 = 0;
+y2 = 0;
+
+x3 = SheetWidth;
+y3 = SheetHeight;
+
+x4 = x3 + 8;
+y4 = y3 + 8;
+
+//
+
+addRect(x1, y1, x2, y2, 1, 1, 0, 0);
+addRect(x1, y3, x2, y4, 1, 0, 0, 1);
+addRect(x3, y3, x4, y4, 0, 0, 1, 1);
+addRect(x3, y1, x4, y2, 0, 1, 1, 0);
+
+@UseMaterial(Material: ShadowMaterial);
+drawBatch();
+
+addRect(x1, y2, x2, y3, 1, 0, 0, 0);
+addRect(x2, y3, x3, y4, 0, 0, 0, 1);
+addRect(x3, y2, x4, y3, 0, 0, 1, 0);
+addRect(x2, y1, x3, y2, 0, 1, 0, 0);
+
+@UseMaterial(Material: ShadowMaterial);
+drawBatch();]]>
+              </Expression>
+            </ZExpression>
+          </OnTrue>
+        </Condition>
+        <ZExpression Comment="Info">
+          <Expression>
+<![CDATA[//
+
+int n = Sprites.SizeDim1;
+
+//
+
+if(!n)return;
+
+//
+
+@UseMaterial(Material: NumberMaterial);
+
+//
+
+glEnableClientState(0x8074);
+glEnableClientState(0x8078);
+
+for(int i=0; i<n; i++)
+{
+  renderNumber(intToStr(i), Sprites[i,0] + 1, Sprites[i,1] + 1);
+}
+
+glDisableClientState(0x8078);
+glDisableClientState(0x8074);]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Sprites">
+          <Expression>
+<![CDATA[//
+
+float x1, y1, x2, y2;
 
 for(int i=0; i<Sprites.SizeDim1; i++)
 {
@@ -38,73 +983,511 @@ for(int i=0; i<Sprites.SizeDim1; i++)
   x2 = x1 + Sprites[i,2];
   y2 = y1 + Sprites[i,3];
 
-  SpriteVertices[a++] = x1; SpriteVertices[a++] = y1;
-  SpriteVertices[a++] = x1; SpriteVertices[a++] = y2;
-  SpriteVertices[a++] = x2; SpriteVertices[a++] = y2;
-  SpriteVertices[a++] = x2; SpriteVertices[a++] = y1;
-}]]>
-      </Expression>
-    </ZExpression>
-  </OnLoaded>
-  <OnUpdate>
-    <ZExpression>
-      <Expression>
-<![CDATA[//
+  addRect(x1, y1, x2, y2, x1, y1, x2, y2);
+}
 
-SheetWidth = 16 << SheetBitmap.Width;
-SheetHeight = 16 << SheetBitmap.Height;
+LineMaterial.Color.A = 0.5;
+@UseMaterial(Material: LineMaterial);
+drawBatch();
 
 //
 
-App.CameraPosition.X = SheetWidth * 0.5;
-App.CameraPosition.Y = SheetHeight * 0.5;
-App.CameraPosition.Z = App.ScreenHeight * 0.25;]]>
-      </Expression>
-    </ZExpression>
-  </OnUpdate>
-  <OnRender>
-    <ZExpression>
-      <Expression>
+for(int i=0; i<Selected.SizeDim1; i++)
+{
+  int s = Selected[i];
+
+  x1 = Sprites[s,0];
+  y1 = Sprites[s,1];
+
+  x2 = x1 + Sprites[s,2];
+  y2 = y1 + Sprites[s,3];
+
+  addRect(x1, y1, x2, y2, x1, y1, x2, y2);
+}
+
+LineMaterial.Color.A = 1;
+drawBatch();]]>
+          </Expression>
+        </ZExpression>
+        <UseMaterial Material="AnchorMaterial"/>
+        <Repeat Name="AnchorRepeat">
+          <OnIteration>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+int s = Selected[AnchorRepeat.Iteration];
+
+//
+
+float x1, y1, x2, y2, x3, y3;
+
+x1 = Sprites[s,0];
+y1 = Sprites[s,1];
+
+x3 = x1 + Sprites[s,2];
+y3 = y1 + Sprites[s,3];
+
+x2 = (x1 + x3) * 0.5;
+y2 = (y1 + y3) * 0.5;
+
+//
+
+float[8,2] p;
+
+p[0,0] = x1; p[0,1] = y2;
+p[1,0] = x2; p[1,1] = y1;
+p[2,0] = x3; p[2,1] = y2;
+p[3,0] = x2; p[3,1] = y3;
+
+p[4,0] = x1; p[4,1] = y1;
+p[5,0] = x3; p[5,1] = y1;
+p[6,0] = x3; p[6,1] = y3;
+p[7,0] = x1; p[7,1] = y3;
+
+//
+
+float r, x, y;
+
+r = 16 / Zoom;
+
+for(int i=0; i<8; i++)
+{
+  x = p[i,0];
+  y = p[i,1];
+
+  addRect(x - r, y - r, x + r, y + r, 0, 0, 1, 1);
+}
+
+drawBatch();]]>
+              </Expression>
+            </ZExpression>
+          </OnIteration>
+          <WhileExp>
+<![CDATA[//
+
+return Iteration < Selected.SizeDim1;]]>
+          </WhileExp>
+        </Repeat>
+        <UseMaterial Material="PivotMaterial"/>
+        <Repeat Name="PivotRepeat">
+          <OnIteration>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+int s = Selected[PivotRepeat.Iteration];
+
+//
+
+float x, y, r;
+
+x = Sprites[s,0] + Sprites[s,4];
+y = Sprites[s,1] + Sprites[s,5];
+
+r = 16 / Zoom;
+
+//
+
+addRect(x - r, y - r, x + r, y + r, 0, 0, 1, 1);
+drawBatch();]]>
+              </Expression>
+            </ZExpression>
+          </OnIteration>
+          <WhileExp>
+<![CDATA[//
+
+return Iteration < Selected.SizeDim1;]]>
+          </WhileExp>
+        </Repeat>
+      </Children>
+    </Group>
+    <Group Comment="Toolbar">
+      <Children>
+        <ZExpression Comment="Matrix">
+          <Expression>
 <![CDATA[//
 
 mat4 m;
 
+for(int i=0; i<4; i++)
+{
+  m[i,i] = 1;
+}
+
+setMatrix(0, m);
+
 //
 
-getMatrix(1, m);
-m[1,1] *= -1;
+m[0,0] = 64f / App.ScreenWidth;
+m[1,1] = 64f / App.ScreenHeight;
+m[3,0] = -1;
+m[3,1] = -1;
+
 setMatrix(1, m);]]>
-      </Expression>
-    </ZExpression>
-    <UseMaterial Material="SheetMaterial"/>
-    <RenderNet>
-      <RenderVertexExpression>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Toolbar">
+          <Expression>
 <![CDATA[//
 
-Vertex.X = Vertex.X < 0 ? 0 : SheetWidth;
-Vertex.Y = Vertex.Y > 0 ? 0 : SheetHeight;]]>
-      </RenderVertexExpression>
-    </RenderNet>
-    <UseMaterial Material="LineMaterial"/>
-    <ZExpression>
-      <Expression>
-<![CDATA[//
+float w;
+float[8] v, t;
+
+//
+
+w = App.ScreenWidth / 32f;
+
+v[0] = 0; v[1] = 0;
+v[2] = w; v[3] = 0;
+v[4] = w; v[5] = 1;
+v[6] = 0; v[7] = 1;
+
+//
+
+w = App.ScreenWidth / 512f;
+
+t[0] = 0; t[1] = 0;
+t[2] = w; t[3] = 0;
+t[4] = w; t[5] = 1;
+t[6] = 0; t[7] = 1;
+
+//
+
+@UseMaterial(Material: IconsMaterial);
 
 glEnableClientState(0x8074);
-glVertexPointer(2, 0x1406, 0, SpriteVertices);
-glDrawArrays(7, 0, 92);
+glEnableClientState(0x8078);
+glVertexPointer(2, 0x1406, 0, v);
+glTexCoordPointer(2, 0x1406, 0, t);
+glDrawArrays(7, 0, 4);
+glDisableClientState(0x8078);
 glDisableClientState(0x8074);]]>
-      </Expression>
-    </ZExpression>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Hover">
+          <Expression>
+<![CDATA[//
+
+float[8] v;
+
+//
+
+float x, y;
+
+x = Mouse[0,3];
+y = Mouse[1,3];
+
+if(App.MousePosition.X < -0.99 ||
+   App.MousePosition.Y < -0.99)return;
+
+if(x < 0 || x > 9 || y > 0)return;
+
+//
+
+float x1, x2, y1, y2;
+
+x1 = x;
+x2 = x + 1;
+
+y1 = y;
+y2 = y + 1;
+
+v[0] = x1; v[1] = y1;
+v[2] = x2; v[3] = y1;
+v[4] = x2; v[5] = y2;
+v[6] = x1; v[7] = y2;
+
+//
+
+HoverMaterial.Color.A = Button[0,2] ? 0.5 : 0.25;
+
+@UseMaterial(Material: HoverMaterial);
+
+glEnableClientState(0x8074);
+glVertexPointer(2, 0x1406, 0, v);
+glDrawArrays(7, 0, 4);
+glDisableClientState(0x8074);]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
   </OnRender>
+  <OnClose>
+    <Group Comment="Reset">
+      <Children>
+        <ZExpression>
+          <Expression>
+<![CDATA[//
+
+Sprites.SizeDim1 = 0;
+
+//
+
+SheetPixels.SizeDim1 = 0;
+SheetPixels.SizeDim2 = 0;
+
+//
+
+Selected.SizeDim1 = 0;
+
+//
+
+CachedTexture.Texture = null;]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnClose>
   <Content>
-    <Array Name="Sprites" Type="1" Dimensions="1" SizeDim1="23" SizeDim2="6"/>
-    <Bitmap Name="SheetBitmap" Width="4" Height="3" Filter="1"/>
-    <Material Name="SheetMaterial" Shading="1" Light="0" ZBuffer="0">
-      <Textures>
-        <MaterialTexture Name="SheetMaterialTexture" Texture="SheetBitmap" TextureWrapMode="2" TexCoords="1"/>
-      </Textures>
-    </Material>
-    <Material Name="LineMaterial" WireframeWidth="1" Shading="2" Color="0.502 0.502 0.502 1" Light="0" ZBuffer="0" DrawBackFace="255"/>
+    <Group Comment="Input">
+      <Children>
+        <Array Name="Button" Type="4" Dimensions="1" SizeDim1="3" SizeDim2="4"/>
+        <Array Name="Mouse" Dimensions="1" SizeDim1="2" SizeDim2="4"/>
+      </Children>
+    </Group>
+    <Group Comment="Sheet">
+      <Children>
+        <Array Name="Sprites" Type="1" Dimensions="1" SizeDim2="6"/>
+        <Bitmap Name="SheetBitmap" Width="3" Height="3" Filter="1">
+          <Producers>
+            <BitmapExpression>
+              <Expression>
+<![CDATA[//
+
+Pixel = 0;]]>
+              </Expression>
+            </BitmapExpression>
+          </Producers>
+        </Bitmap>
+        <Material Name="SheetMaterial" Shading="1" Light="0" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Name="SheetMaterialTexture" Texture="SheetBitmap" TextureWrapMode="2" TexCoords="1"/>
+          </Textures>
+        </Material>
+        <Array Name="SheetPixels" Type="4" Dimensions="1"/>
+        <Variable Name="SheetWidth" Type="1"/>
+        <Variable Name="SheetHeight" Type="1"/>
+        <Material Name="CachedMaterial">
+          <Textures>
+            <MaterialTexture Name="CachedTexture"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group>
+    <Group Comment="Toolbar">
+      <Children>
+        <Group Comment="Icons">
+          <Children>
+            <Bitmap Name="IconsBitmap" Width="5" Height="1" Filter="1">
+              <Producers>
+                <BitmapFromFile DataWidth="512" DataHeight="32">
+                  <BitmapFile>
+<![CDATA[78DAED9D4F4C13591CC79F85AD08855A0945A278D7835B5D54CAF26F85C488FCC9464D88C4B89E8C9A3DF82751E3C978F1E4410E1A42AA98E8CD98E845C5D29688D8B2CA4AF913A94460652DAC1658FCC31F81FD665E6C8699163A53EA8EF8FB640E336F1ED3E1BDCEE7F7E6CD9B57C60882200882200882200882200882200882200882200882200882200882200822220C8C252D942729823CFF173A9D4EBCB962C58A55027ABD3ECA232F5BB6CC6432AD9A17644036D51F111F1FFFC3BC20C3F7FEFD34188C46638A086CCA2B0289EA8E1F1717171F0AAA0862C9F31B63038CF532F66BF83CD8D5272C151A3B7988F7E6CD9B6EB77BDDBA75D82C2A2ABA71E3C6AB57AFFE15F0F97C369BADB0B010BBCC66736363E3AD5BB7145DC570FBCB972FDFCD0B32209BBAF38755B66DDB969B9BFB7318B00B19904D9B5F9EACAC2C14B8C56289DD471C3870C0E5723588B0DBED48191C1C945484DFEF3F75EA94D2E3AF5EBDDA22F0A3086CCA2B02F0AF19412C9996FF0863B3C232C9D8BE5079F609BB789E7F34761700FFDFB973677676F6F9F3E7D7AF5F9FFD02F77F70B3AEAEAEB9B9192B4EA753914BD1AA141F2724C8806CAAFD0FAB6CDFBEFD973060173268D6FF5BB66C41098C8F8F5FBC78315C1E7E3BA6EEF8898989B07D6767E79F225A5B5BDBDBDB43D6C5DBB76F93939315B5FC617BFC175973410A9A0D92BA40EB028180EE028825432263FD5FDC8E65421602F60989C10C7F097FA22970BDDFBD7B975FFE030303C78F1FDFB06103EF10C0CAB163C77A7B7BF95E9844A988901F0DCBF9FD8F0CD1B4FFA114B8A5300CD8850CD1F42FC5BAE7EDE9D3A7BC1C2E5DBA24CF909191E1F178DEBC79B379F36615C7371A8D0E8703CEFF43444B4B0B52A6A6A6E475313C3C9C9A9AAAA8F30DFE87F07F9A0B520A0A0A42D68566633141A8A088B140981020917F40C8AC416A6A6AF8E50F2D2425254904FBF8F163BED766B3293D7284FE379BCDBCBB5869E33012FFA3FD8FE32FCAB3865870E2C48960515457574BF61E3E7C98EF420850D432E7A4A4A434343444EE7FD485A2104FFE2788625908D82D2C12F9176BF2E4A147DEF27FF2E40956E087848484E0D50D7B20F1D9B367B80B989999C1F5BBE8FE1F1D1D2D2929C9CECE56D157BFA0FF71CCB2B2329C7CF4CF1A62845EAFAFABAB43D9A2283E7DFA841000A3A6A5A5F1D6BBD7EB0D16546D6D2DF99F20B41F02A68445FBF207D7AE5DC3857FE6CC19B4FC9D4E67535353D0FFB854610FC485952B571E3D7A54858222F47F4545455E5E9E8ABEFA48FC5F5E5EFEE1C387E89F35C408942D9CFFF9F3679CDE952B576EDFBE0D338F8D8D391C8E3D7BF6F4F4F47CFCF8F1EAD5AB3C4094969692FF0942FB21E09B903F2EC6172F5EC02DB88A99D01D2DE981C1665C5C1C56D6AF5F8F6C1D1D1D7C7371FD0F4543D42AFC10A1FFF111EAFCF615A8AAAA9AA77050E6F7EFDFC78D80D56AADAFAF6F6D6D55EA7FBBDD8EBF6A11E1F17890C2238E84402040FE2708957D29B210101012358BC964821BDFBF7FBFE0533FE444A374787818ED55F2FFE2B6FFF9102C0988CB9393937CBDB2B29267563A7E12FE77B95C5EAF5732FE0729E3E3E353734144181A1A52EA7F8BC51272FC4F7E7E7EC15C501D393939E47F62A9B29BB1B1B9FE1F1312350B1F9F09B12F78D52340204C28ED3F21FF47C8912347E4C5323D3D8D95FEFE7E34FE55D72F940EB14B540FF92304201088E30252102C103214953F948E7296A81EF20F1914102C68FC27B124918CF6996750A876D0EBF5DDDDDD3333339B366DC266424282E4F2371A8DFC71006EF391CDE7F3297A2998FC1F213A9DEEF2E5CB8140405E3E5D5D5D369B4DDDCBB9F867431E131101F2F7783CE27E21A4D8ED76A5FE0F59FE0801213B85F02D22FF134B5EFE23A2F7C2341E02F8F3DFF3E7CFA385EF76BB61F8600F8FC964EAEDED45223472FAF46964436615F717F3FB1FB715D1F85FFCFE575E5E5EEE5CB2B3B377EDDAA571FF43B9C9C9C9999999D0AFBC7C2626260E1E3C683018D4F93F64FCC52D001AFC70BEF8B930521A1A1AC8FF04118DFC038CE5094BE05B0801B87ED1B087253A3A3A6086A6A6A6A06AB0824D247ABD5EBFDFAF62FCA764FE077818E160742EAF5FBF2E2B2B53EDFFE0FC0F907F696969F95C4A4A4AAAAAAA8231489BFEB75AADFDFDFD7C844F48571717AB1C4140FE27889852197E9CBFFCBD804A4DFE0BD5D5D55C0B1E8F473EFE87BF17006A6A6A941E593CFF5B7A7AFACE9D3BCB6540FE5C20EAC68704E7194B4B4BEBEBEB1B9501F907D5AAD9FE9F8A8A8AEEEEEE90FE9F9E9EE6533091FF0942532431E69F77A8A724040C6A6F16D0D4D4D4FAFA7AAE0534F2CF9D3BB775EBD64C01AC9C3D7B76606080EF7DF4E851464646349F85B6BABC8B06298B323E108166646464C1778DB5E97FCEDEBD7B7D3E9FE49C1F3E7C184DE586ECFF0FE77F87C3A1E84103F99FF89E3130F66EA171FEE210E0D7DEFC6F0F1E3C80109A9B9B6B6B6B837E981410BF79CA5F04C6BD806A3FC77AAEB658CF351753D6AE5DBB63C78E0B172E0C0D0D894FD8ED76AB9BF98783C67CB898D8DEDE2E19FFD3D5D5E5743A2513802C78F3852A2B2A2A92542542807CFC0F9A13168B45D1FB2304A1717E67AC93B156C6CAC2E72967AC8DB176C6F66BECE4F9FCCF8D8D8D66B3199B68B6D96CB6B6B6B6BF05E004983F3F3F9F09C3D4D110553AFFB3C4FF319DAB39D6734DC714E811658BD30BFAD9E3F11C3A7468CD9A35511EF9E4C9933D3D3D9272181C1C74B95C76BB5D3C2FF4BD7BF7F6EF57FC0DC57D624E4E8EBC5AE533426FDCB8313D3D9D8C412C3112185B704CE47261F926405030082CFA546931FDAD96AFF05B335F013492AD562B1ACF8B78CCE00FFA487EED45FC733060F97295DF509D4E27AF4739929F192208822008822008822008822008822008822008822008822008822008822008E2BBE53F8F9927CA]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="IconsMaterial" Shading="1" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="IconsBitmap" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Hover">
+          <Children>
+            <Material Name="HoverMaterial" Shading="1" Color="1 1 1 0.25" Light="0" Blend="1" ZBuffer="0"/>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
+    <Group Comment="Workspace">
+      <Children>
+        <Group Comment="Data">
+          <Children>
+            <Array Name="Cursor" SizeDim1="2"/>
+            <Variable Name="Zoom"/>
+            <Variable Name="Action" Type="4"/>
+            <Array Name="Selected" Type="1"/>
+            <Variable Name="Origin" Type="6"/>
+            <Array Name="Cache" Type="1" SizeDim1="6"/>
+            <Variable Name="Alpha" Type="4"/>
+          </Children>
+        </Group>
+        <Group Comment="Grid">
+          <Children>
+            <Bitmap Name="GridBitmap" Width="0" Height="0" Filter="1">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float c = round(X) + round(Y) != 1 ? 0.8 : 1;
+
+//
+
+Pixel.R = c;
+Pixel.G = c;
+Pixel.B = c;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="GridMaterial" Shading="1" Color="0.2 0.2 0.2 0.2" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="GridBitmap" TextureWrapMode="1" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Solid">
+          <Children>
+            <Material Name="SolidMaterial" Shading="1" Light="0" ZBuffer="0"/>
+          </Children>
+        </Group>
+        <Group Comment="Shadow">
+          <Children>
+            <Bitmap Name="ShadowBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+Pixel.A = 1 - pow(length2(x, y), 0.5) + rnd() / 8;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="ShadowMaterial" Shading="1" Color="1 1 1 0.25" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="ShadowBitmap" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Fonts">
+          <Children>
+            <Bitmap Name="NumberBitmap" Width="3" Height="0" Filter="1">
+              <Producers>
+                <BitmapFromFile Transparency="2" HasAlphaLayer="1" DataWidth="128" DataHeight="8">
+                  <BitmapFile>
+<![CDATA[78DAE557C10EC52008F3FF7FBAEFB4C491969677D3917891C1A045D0B55E826D5581589D0EC65E09D33BFBC47FF7DFA9FFDB04BBD41C21A4D33D7AF589C2B1D826F6917FE237F5BFD2D84FE77EDF6039320C092E486DD8D9AA183BFBC07FCB7FAD358687F0839BC84FB1EAF60D368CE3A47FB43193DA83C909847FB05054FF77F17D8DFFA40614B6C1794787FFA476446C6E768CEBF370FE557E725FCDCAB477EEFBAA3ED2FA71F73E556F64FE8DCFC7C935E07A9BE235ECBF72BE0FFB83BB63C0F02DFB47D50FF3BBEA01309915EA8CA6EF0717C33FB6897DF7CD34BF53E5070B8072C6]]>
+                  </BitmapFile>
+                </BitmapFromFile>
+              </Producers>
+            </Bitmap>
+            <Material Name="NumberMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="NumberBitmap" TextureScale="0.0625 0.5 1" TextureY="0.5" TextureWrapMode="2" TexCoords="1" Origin="0 0 0"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Line">
+          <Children>
+            <Bitmap Name="LineBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float a = clamp(cos((X + Y) * PI * 2) * 16, 0, 1);
+
+//
+
+Pixel.R = a;
+Pixel.G = a + 0.4;
+Pixel.B = 1;
+Pixel.A = 1;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="LineMaterial" WireframeWidth="1" Shading="2" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Name="LineTexture" Texture="LineBitmap" TextureScale="0.125 0.125 1" TextureX="-1116.1606" TextureY="-1116.1606" TextureWrapMode="1" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Anchor">
+          <Children>
+            <Variable Name="Anchor" Type="1"/>
+            <Array Name="AnchorMap" Type="4" SizeDim1="9" Persistent="255">
+              <Values>
+<![CDATA[78DA63606462E16066E3E10400009E002E]]>
+              </Values>
+            </Array>
+            <Bitmap Name="AnchorBitmap" Filter="2">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float u, v, r, c;
+
+//
+
+u = 0.5 - X;
+v = 0.5 - Y;
+
+r = 16 - sqrt(u * u + v * v) * 64;
+
+//
+
+Pixel.R = r;
+Pixel.G = r;
+Pixel.B = r;
+
+Pixel.A = r + 2;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="AnchorMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="AnchorBitmap" TextureWrapMode="1" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Pivot">
+          <Children>
+            <Bitmap Name="PivotBitmap" Filter="2">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float u, v, r, c;
+
+//
+
+u = 0.5 - X;
+v = 0.5 - Y;
+
+r = 6 - abs(20 - sqrt(u * u + v * v) * 64);
+
+//
+
+Pixel.R = r;
+Pixel.G = r;
+Pixel.B = r;
+
+Pixel.A = r + 2;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="PivotMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="PivotBitmap" TextureWrapMode="2" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>

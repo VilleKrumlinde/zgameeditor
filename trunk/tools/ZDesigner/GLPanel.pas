@@ -219,6 +219,7 @@ begin
   inherited;
   Self.RenderTimer := TTimer.Create(AOwner);
   Self.RenderTimer.OnTimer := RenderTimerTimer;
+  Self.TabStop := True;
 
   OldGlWindowProc := Self.WindowProc;
   Self.WindowProc := GlWindowProc;
@@ -232,6 +233,7 @@ end;
 
 procedure TGLPanelZGE.GlWindowProc(var Message: TMessage);
 begin
+  SetWindowLongPtr(Self.Handle,GWL_USERDATA, NativeInt(Self.App) );
   Platform_DesignerWindowProc( pointer(@Message) );
   OldGlWindowProc(Message);
 end;

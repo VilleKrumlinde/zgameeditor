@@ -407,8 +407,6 @@ object EditorForm: TEditorForm
           Align = alClient
           Caption = '&Properties'
           TabOrder = 0
-          ExplicitWidth = 350
-          ExplicitHeight = 793
         end
         object QuickCompListParent: TPanel
           Left = 0
@@ -418,10 +416,6 @@ object EditorForm: TEditorForm
           Align = alClient
           BevelOuter = bvNone
           TabOrder = 1
-          ExplicitLeft = 88
-          ExplicitTop = 384
-          ExplicitWidth = 185
-          ExplicitHeight = 41
           object QuickCompListView: TListView
             Left = 0
             Top = 30
@@ -442,8 +436,6 @@ object EditorForm: TEditorForm
             ViewStyle = vsList
             OnClick = QuickCompListViewClick
             OnMouseDown = QuickCompListViewMouseDown
-            ExplicitWidth = 350
-            ExplicitHeight = 763
           end
           object Panel3: TPanel
             Left = 0
@@ -455,7 +447,6 @@ object EditorForm: TEditorForm
             BevelOuter = bvNone
             Caption = 'Click component to add.'#13#10' Hold Ctrl  to add and select.'
             TabOrder = 1
-            ExplicitWidth = 350
           end
         end
       end

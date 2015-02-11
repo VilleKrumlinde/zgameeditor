@@ -1087,12 +1087,13 @@ begin
           List := TZComponentList.Create(Self);
           PZExpressionPropValue(GetPropertyPtr(Prop,0))^.Code := List;
         end;
-      zptString :
+      zptString,zptPointer :
         begin
           P := GetPropertyPtr(Prop,0);
           if Prop.IsManagedTarget then
             ManagedHeap_AddTarget(P);
-          PPointer(P)^ := @NilString;
+          if Prop.PropertyType=zptString then
+            PPointer(P)^ := @NilString;
         end;
     end;
     //Set defaultvalue for property
@@ -1139,7 +1140,7 @@ begin
           GetProperty(Prop,Value);
           Value.ExpressionValue.Code.Free;
         end;
-      zptString :
+      zptString,zptPointer :
         begin
           if Prop.IsManagedTarget then
             ManagedHeap_RemoveTarget(GetPropertyPtr(Prop,0));

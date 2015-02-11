@@ -35,6 +35,13 @@ uses frmEditor, ZPlatform;
 
 procedure TScriptedCompEditFrameBase.RenderTimerTimer(Sender: TObject);
 begin
+  if Glp.Tag=0 then
+  begin
+    //Must have focus for mousehwheel to work
+    Glp.SetFocus;
+    Glp.Tag := 1;
+  end;
+
   Glp.Invalidate;
 end;
 
