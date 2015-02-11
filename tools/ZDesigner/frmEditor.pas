@@ -1805,14 +1805,8 @@ begin
 end;
 
 procedure TEditorForm.Timer1Timer(Sender: TObject);
-var
-  H : HWND;
 begin
-  //Only draw when topmost (or editing arrays)
-  H := GetActiveWindow;
-  if ((H=Handle) or (Assigned(ArrayEditForm) and (H=ArrayEditForm.Handle)))
-     and (Glp.Tag=0) then
-    Glp.Invalidate;
+  Glp.Invalidate;
 end;
 
 procedure TEditorForm.UndoDeleteActionExecute(Sender: TObject);

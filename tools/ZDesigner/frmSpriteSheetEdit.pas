@@ -14,6 +14,7 @@ type
     SpritesArray : TDefineArray;
     MaterialTexture : TMaterialTexture;
     Sheet : TSpriteSheet;
+    DataChanged : TDefineVariable;
     procedure CopyDataToComponent;
     procedure CopyDataFromComponent;
   protected
@@ -44,6 +45,8 @@ begin
   end;
 
   Glp.App.BindComponent<TDefineArray>('Sprites',Self.SpritesArray);
+
+  Glp.App.BindComponent<TDefineVariable>('DataChanged',Self.DataChanged);
 
   CopyDataFromComponent;
 end;
@@ -140,7 +143,16 @@ begin
     MaterialTexture.Texture := (Self.Component as TSpriteSheet).Bitmap;
 
   if Assigned(SpritesArray) then
-    CopyDataToComponent;
+  begin
+    if (Self.DataChanged=nil) or (Self.DataChanged.IntValue<>0) then
+    begin
+      CopyDataToComponent;
+      if Assigned(Self.DataChanged) then
+        //Script assigns DataChanged to 1 when data is to be copied back.
+        //Then it is reset to 0.
+        Self.DataChanged.IntValue := 0;
+    end;
+  end;
 end;
 
 end.

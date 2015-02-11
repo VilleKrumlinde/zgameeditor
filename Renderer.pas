@@ -140,20 +140,7 @@ type
     procedure Execute; override;
   end;
 
-
-  TSpriteSheet = class(TZComponent)
-  type
-    PSpriteInfo = ^TSpriteInfo;
-    TSpriteInfo = packed record
-      SheetX1,SheetY1,SheetX2,SheetY2,OriginX,OriginY : smallint;
-    end;
-  protected
-    procedure DefineProperties(List: TZPropertyList); override;
-    function GetSpriteInfo(const Index : integer) : PSpriteInfo;
-  public
-    Bitmap : TZBitmap;
-    SpriteData : TZBinaryPropValue;
-  end;
+  TSpriteSheet = class;
 
   TRenderSprite = class(TRenderCommand)
   protected
@@ -163,6 +150,22 @@ type
     SpriteIndex : integer;
     MirrorHorizontal,MirrorVertical : boolean;
     procedure Execute; override;
+  end;
+
+  TSpriteSheet = class(TZComponent)
+  strict private
+  type
+    PSpriteInfo = ^TSpriteInfo;
+    TSpriteInfo = packed record
+      SheetX,SheetY,SizeX,SizeY,OriginX,OriginY : smallint;
+    end;
+    function GetSpriteInfo(const Index : integer) : PSpriteInfo;
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+    procedure Render(Rs : TRenderSprite);
+  public
+    Bitmap : TZBitmap;
+    SpriteData : TZBinaryPropValue;
   end;
 
   TRenderBeams = class(TRenderCommand)
@@ -663,65 +666,14 @@ begin
 end;
 
 procedure TRenderSprite.Execute;
-
-  function Flip(const B : boolean) : single;
-  begin
-    if B then
-      Result := -1
-    else
-      Result := 1;
-  end;
-
 var
-  Info : TSpriteSheet.PSpriteInfo;
   Driver : TGLDriverBase;
-  Px,Py,TransX,TransY,ScaleX,ScaleY : single;
-  SizeX,SizeY : integer;
 begin
   Driver := Self.ZApp.Driver;
 
   if Assigned(Self.SpriteSheet) then
-  begin
-    Info := Self.SpriteSheet.GetSpriteInfo(Self.SpriteIndex);
-    if Assigned(Info) then
-    begin
-      SizeX := Info.SheetX2-Info.SheetX1;
-      SizeY := Info.SheetY2-Info.SheetY1;
-      Px := (1.0/Self.SpriteSheet.Bitmap.PixelWidth);
-      Py := (1.0/Self.SpriteSheet.Bitmap.PixelHeight);
-      ScaleX := SizeX * Px;
-      ScaleY := SizeY * Py;
-
-      //Bottom-left corner
-      TransX := Info.SheetX1 * Px;
-      TransY := (SizeY+Info.SheetY1) * Py;
-
-      Driver.MatrixMode(GL_TEXTURE);
-      Driver.PushMatrix();
-      Driver.LoadIdentity();
-      Driver.Translate(TransX, 1.0 - TransY, 0);
-      Driver.Scale(ScaleX,ScaleY,1);
-
-      Driver.MatrixMode(GL_MODELVIEW);
-        Driver.PushMatrix();
-          Driver.Scale(SizeX*Flip(Self.MirrorHorizontal),SizeY*Flip(Self.MirrorVertical),1);
-          glPushAttrib(GL_TEXTURE_BIT);
-          glEnable(GL_TEXTURE_2D);
-          glDisable(GL_TEXTURE_GEN_S);
-          glDisable(GL_TEXTURE_GEN_T);
-          if Self.MirrorHorizontal or Self.MirrorHorizontal then
-            glDisable(GL_CULL_FACE);
-          Self.SpriteSheet.Bitmap.UseTextureBegin;
-          Driver.RenderUnitQuad;
-          glDisable(GL_TEXTURE_2D);
-          glPopAttrib();
-        Driver.PopMatrix();
-
-      Driver.MatrixMode(GL_TEXTURE);
-      Driver.PopMatrix();
-      Driver.MatrixMode(GL_MODELVIEW);
-    end;
-  end else
+    Self.SpriteSheet.Render(Self)
+  else
     Driver.RenderUnitQuad;
 end;
 
@@ -2357,6 +2309,88 @@ begin
   Result := nil;
   if Assigned(Self.Bitmap) and (Index>=0) and (Index<SpriteData.Size div SizeOf(TSpriteInfo)) then
     Result := PSpriteInfo(PByte(Self.SpriteData.Data) + Index*SizeOf(TSpriteInfo));
+end;
+
+procedure TSpriteSheet.Render(Rs: TRenderSprite);
+//This routine is based on a ZGE script by Kjell
+var
+  Info : PSpriteInfo;
+  x1, y1, x2, y2, s1, t1, s2, t2 : single;
+  W,H,X,Y : integer;
+  V : array[0..15] of single;
+  M : TZMatrix4f;
+  Driver : TGLDriverBase;
+begin
+  Info := GetSpriteInfo(Rs.SpriteIndex);
+  if (Info=nil) or (Self.Bitmap=nil) then
+    Exit;
+
+  Driver := Self.ZApp.Driver;
+
+  w := Info.SizeX;
+  h := Info.SizeY;
+
+  x := Info.OriginX;
+  y := Info.OriginY;
+
+  if Rs.MirrorHorizontal then
+  begin
+    x1 := (0 - w + x);
+    s2 := Info.SheetX;
+    s1 := s2 + w;
+  end
+  else
+  begin
+    x1 := (0 - x);
+    s1 := Info.SheetX;
+    s2 := s1 + w;
+  end;
+
+  if Rs.MirrorVertical then
+  begin
+    y1 := (0 - y);
+    t2 := Info.SheetY;
+    t1 := t2 + h;
+  end
+  else
+  begin
+    y1 := (y - h);
+    t1 := Info.SheetY;
+    t2 := t1 + h;
+  end;
+
+  x2 := x1 + w;
+  y2 := y1 + h;
+
+  v[00] := x1; v[01] := y1; v[02] := s1; v[03] := t2;
+  v[04] := x2; v[05] := y1; v[06] := s2; v[07] := t2;
+  v[08] := x2; v[09] := y2; v[10] := s2; v[11] := t1;
+  v[12] := x1; v[13] := y2; v[14] := s1; v[15] := t1;
+
+  FillChar(M,SizeOf(M),0);
+  m[0,0] :=  1 / Self.Bitmap.PixelWidth; // Texture width
+  m[1,1] := -1 / Self.Bitmap.PixelHeight; // Texture height
+  m[2,2] :=  1;
+  m[3,1] :=  1;
+  m[3,3] :=  1;
+
+  Driver.SetMatrix(2, m);
+
+  glPushAttrib(GL_TEXTURE_BIT);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    Self.Bitmap.UseTextureBegin;
+
+    glEnableClientState($8074);
+    glEnableClientState($8078);
+    glVertexPointer(2, $1406, 16, @v[0]);
+    glTexCoordPointer(2, $1406, 16, @v[2]);
+    glDrawArrays(7, 0, 4);
+    glDisableClientState($8078);
+    glDisableClientState($8074);
+    glDisable(GL_TEXTURE_2D);
+  glPopAttrib();
 end;
 
 initialization
