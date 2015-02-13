@@ -2320,6 +2320,8 @@ var
   V : array[0..15] of single;
   M : TZMatrix4f;
   Driver : TGLDriverBase;
+  Verts : array[0..3] of TZVector2f;
+  Texc : array[0..3] of TZVector2f;
 begin
   Info := GetSpriteInfo(Rs.SpriteIndex);
   if (Info=nil) or (Self.Bitmap=nil) then
@@ -2362,11 +2364,6 @@ begin
   x2 := x1 + w;
   y2 := y1 + h;
 
-  v[00] := x1; v[01] := y1; v[02] := s1; v[03] := t2;
-  v[04] := x2; v[05] := y1; v[06] := s2; v[07] := t2;
-  v[08] := x2; v[09] := y2; v[10] := s2; v[11] := t1;
-  v[12] := x1; v[13] := y2; v[14] := s1; v[15] := t1;
-
   FillChar(M,SizeOf(M),0);
   m[0,0] :=  1 / Self.Bitmap.PixelWidth; // Texture width
   m[1,1] := -1 / Self.Bitmap.PixelHeight; // Texture height
@@ -2381,14 +2378,15 @@ begin
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
     Self.Bitmap.UseTextureBegin;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glEnableClientState($8074);
-    glEnableClientState($8078);
-    glVertexPointer(2, $1406, 16, @v[0]);
-    glTexCoordPointer(2, $1406, 16, @v[2]);
-    glDrawArrays(7, 0, 4);
-    glDisableClientState($8078);
-    glDisableClientState($8074);
+    Verts[0] := Vector2f(X1,Y1); Texc[0] := Vector2f(s1,t2);
+    Verts[1] := Vector2f(X2,Y1); Texc[1] := Vector2f(s2,t2);
+    Verts[2] := Vector2f(X2,Y2); Texc[2] := Vector2f(s2,t1);
+    Verts[3] := Vector2f(X1,Y2); Texc[3] := Vector2f(s1,t1);
+    Driver.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
+
     glDisable(GL_TEXTURE_2D);
   glPopAttrib();
 end;
@@ -2454,6 +2452,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=25;{$endif}
 
   ZClasses.Register(TSpriteSheet,SpriteSheetClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
 
   DefaultMaterial := TMaterial.Create(nil);
   DefaultMaterialTexture := TMaterialTexture.Create(nil);
