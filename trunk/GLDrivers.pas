@@ -817,7 +817,7 @@ begin
   if Cols<>nil then
   begin
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_FALSE, 0, Cols);
+    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, Cols);
   end;
 
   //Texcoords
