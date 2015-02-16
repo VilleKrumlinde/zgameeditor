@@ -2317,7 +2317,6 @@ var
   Info : PSpriteInfo;
   x1, y1, x2, y2, s1, t1, s2, t2 : single;
   W,H,X,Y : integer;
-  V : array[0..15] of single;
   M : TZMatrix4f;
   Driver : TGLDriverBase;
   Verts : array[0..3] of TZVector2f;
