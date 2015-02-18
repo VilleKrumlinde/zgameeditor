@@ -2,7 +2,7 @@ unit GLDrivers;
 
 interface
 
-uses ZOpenGL, Meshes, ZClasses, Renderer;
+uses ZOpenGL, Meshes, ZClasses, Renderer, ZBitmap;
 
 type
   TGLBase = (glbFixed,glbProgrammable);
@@ -33,6 +33,7 @@ type
     procedure InitGL;
     procedure EnableMaterial(NewM : TMaterial);
     procedure RenderUnitQuad;
+    procedure RenderQuad(Tex : TZBitmap; const x,y,w,h,TexX,TexY : integer; const FlipH,FlipV : boolean);
   end;
 
 function CreateDriver(Kind : TGLBase) : TGLDriverBase;
@@ -358,6 +359,70 @@ begin
     else
       glUseProgram(0);
   end;
+end;
+
+procedure TGLDriverBase.RenderQuad(Tex : TZBitmap; const x,y,w,h,TexX,TexY : integer; const FlipH,FlipV : boolean);
+//This routine is based on a ZGE script by Kjell
+var
+  x1, y1, x2, y2, s1, t1, s2, t2 : single;
+  M : TZMatrix4f;
+  Verts : array[0..3] of TZVector2f;
+  Texc : array[0..3] of TZVector2f;
+begin
+  if FlipH then
+  begin
+    x1 := (0 - w + x);
+    s2 := TexX;
+    s1 := s2 + w;
+  end
+  else
+  begin
+    x1 := (0 - x);
+    s1 := TexX;
+    s2 := s1 + w;
+  end;
+
+  if FlipV then
+  begin
+    y1 := (0 - y);
+    t2 := TexY;
+    t1 := t2 + h;
+  end
+  else
+  begin
+    y1 := (y - h);
+    t1 := TexY;
+    t2 := t1 + h;
+  end;
+
+  x2 := x1 + w;
+  y2 := y1 + h;
+
+  FillChar(M,SizeOf(M),0);
+  m[0,0] :=  1 / Tex.PixelWidth; // Texture width
+  m[1,1] := -1 / Tex.PixelHeight; // Texture height
+  m[2,2] :=  1;
+  m[3,1] :=  1;
+  m[3,3] :=  1;
+
+  Self.SetMatrix(2, m);
+
+  glPushAttrib(GL_TEXTURE_BIT);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    Tex.UseTextureBegin;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    Verts[0] := Vector2f(X1,Y1); Texc[0] := Vector2f(s1,t2);
+    Verts[1] := Vector2f(X2,Y1); Texc[1] := Vector2f(s2,t2);
+    Verts[2] := Vector2f(X2,Y2); Texc[2] := Vector2f(s2,t1);
+    Verts[3] := Vector2f(X1,Y2); Texc[3] := Vector2f(s1,t1);
+    Self.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
+
+    glDisable(GL_TEXTURE_2D);
+  glPopAttrib();
 end;
 
 procedure TGLDriverBase.RenderUnitQuad;

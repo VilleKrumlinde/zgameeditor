@@ -198,8 +198,6 @@ begin
     WM_MBUTTONDOWN,WM_MBUTTONUP :
       //Use '|' as key for middle mouse button
       Keys[ Ord('|') ] := Msg=WM_MBUTTONDOWN;
-    WM_LBUTTONDBLCLK :
-      Keys[ Ord('[') ] := True;
     WM_MOUSEWHEEL :
       begin
         ZApp := TZApplication(GetWindowLongPtr(hWnd,GWL_USERDATA));
@@ -355,8 +353,10 @@ begin
 //  wndClass.cbSize := SizeOf(wndClass);
   wndClass.style  := CS_HREDRAW or    // Redraws entire window if length changes
                      CS_VREDRAW or    // Redraws entire window if height changes
-                     CS_OWNDC or      // Unique device context for the window
-                     CS_DBLCLKS;      // Receive doubleclick messages
+                     CS_OWNDC;        // Unique device context for the window
+//Ignore doubleclicks for now, they steal single clicks
+//                     CS_DBLCLKS;      // Receive doubleclick messages
+
   wndClass.lpfnWndProc   := @WndProc;        // Set the window procedure to our func WndProc
   wndClass.hInstance     := HInstance;  //Delphi rtl gets the hinstance (SysInit.Unit)
   wndClass.hCursor       := LoadCursor(0, IDC_ARROW);
@@ -662,9 +662,6 @@ end;
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
   Result := Keys[ KeyMap[C] ];
-  if Result and (C='[') then
-    //Buffer doubleclick event until read
-    Keys[ Ord('[') ] := False;
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;
