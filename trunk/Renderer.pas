@@ -168,6 +168,24 @@ type
     SpriteData : TZBinaryPropValue;
   end;
 
+  TTileSet = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Bitmap : TZBitmap;
+    TileWidth,TileHeight,TileBorder : integer;
+  end;
+
+  TRenderTile = class(TRenderCommand)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    TileSet : TTileSet;
+    TileIndex,OriginX,OriginY : integer;
+    MirrorHorizontal,MirrorVertical : boolean;
+    procedure Execute; override;
+  end;
+
   TRenderBeams = class(TRenderCommand)
   private
     Beams : TZArrayList;
@@ -2315,79 +2333,63 @@ procedure TSpriteSheet.Render(Rs: TRenderSprite);
 //This routine is based on a ZGE script by Kjell
 var
   Info : PSpriteInfo;
-  x1, y1, x2, y2, s1, t1, s2, t2 : single;
-  W,H,X,Y : integer;
-  M : TZMatrix4f;
-  Driver : TGLDriverBase;
-  Verts : array[0..3] of TZVector2f;
-  Texc : array[0..3] of TZVector2f;
 begin
   Info := GetSpriteInfo(Rs.SpriteIndex);
   if (Info=nil) or (Self.Bitmap=nil) then
     Exit;
 
-  Driver := Self.ZApp.Driver;
+  Self.ZApp.Driver.RenderQuad(Self.Bitmap,
+    Info.OriginX, Info.OriginY,
+    Info.SizeX, Info.SizeY,
+    Info.SheetX, Info.SheetY,
+    Rs.MirrorHorizontal, Rs.MirrorVertical);
+end;
 
-  w := Info.SizeX;
-  h := Info.SizeY;
+{ TTileSet }
 
-  x := Info.OriginX;
-  y := Info.OriginY;
+procedure TTileSet.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Bitmap',{$ENDIF}(@Bitmap), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TZBitmap]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TileWidth',{$ENDIF}@TileWidth, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'TileHeight',{$ENDIF}@TileHeight, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'TileBorder',{$ENDIF}@TileBorder, zptInteger);
+end;
 
-  if Rs.MirrorHorizontal then
-  begin
-    x1 := (0 - w + x);
-    s2 := Info.SheetX;
-    s1 := s2 + w;
-  end
-  else
-  begin
-    x1 := (0 - x);
-    s1 := Info.SheetX;
-    s2 := s1 + w;
-  end;
+{ TRenderTile }
 
-  if Rs.MirrorVertical then
-  begin
-    y1 := (0 - y);
-    t2 := Info.SheetY;
-    t1 := t2 + h;
-  end
-  else
-  begin
-    y1 := (y - h);
-    t1 := Info.SheetY;
-    t2 := t1 + h;
-  end;
+procedure TRenderTile.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'TileSet',{$ENDIF}(@TileSet), zptComponentRef);
+    {$ifndef minimal}List.GetLast.SetChildClasses([TTileSet]);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'TileIndex',{$ENDIF}(@TileIndex), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OriginX',{$ENDIF}(@OriginX), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'OriginY',{$ENDIF}(@OriginY), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'MirrorHorizontal',{$ENDIF}(@MirrorHorizontal), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'MirrorVertical',{$ENDIF}(@MirrorVertical), zptBoolean);
+end;
 
-  x2 := x1 + w;
-  y2 := y1 + h;
+procedure TRenderTile.Execute;
+var
+  Ts : TTileSet;
+  TilesPerRow,X,Y : integer;
+begin
+  Ts := Self.TileSet;
+  if (Ts=nil) or (Ts.Bitmap=nil) then
+    Exit;
 
-  FillChar(M,SizeOf(M),0);
-  m[0,0] :=  1 / Self.Bitmap.PixelWidth; // Texture width
-  m[1,1] := -1 / Self.Bitmap.PixelHeight; // Texture height
-  m[2,2] :=  1;
-  m[3,1] :=  1;
-  m[3,3] :=  1;
+  TilesPerRow := Ts.Bitmap.PixelWidth div (Ts.TileWidth+Ts.TileBorder);
 
-  Driver.SetMatrix(2, m);
+  X := (Self.TileIndex mod TilesPerRow) * (Ts.TileWidth+Ts.TileBorder);
+	Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
 
-  glPushAttrib(GL_TEXTURE_BIT);
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_GEN_S);
-    glDisable(GL_TEXTURE_GEN_T);
-    Self.Bitmap.UseTextureBegin;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    Verts[0] := Vector2f(X1,Y1); Texc[0] := Vector2f(s1,t2);
-    Verts[1] := Vector2f(X2,Y1); Texc[1] := Vector2f(s2,t2);
-    Verts[2] := Vector2f(X2,Y2); Texc[2] := Vector2f(s2,t1);
-    Verts[3] := Vector2f(X1,Y2); Texc[3] := Vector2f(s1,t1);
-    Driver.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
-
-    glDisable(GL_TEXTURE_2D);
-  glPopAttrib();
+  Self.ZApp.Driver.RenderQuad(Ts.Bitmap,
+    Self.OriginX, Self.OriginY,
+    Ts.TileWidth, Ts.TileHeight,
+    X, Y,
+    Self.MirrorHorizontal, Self.MirrorVertical);
 end;
 
 initialization
@@ -2452,6 +2454,9 @@ initialization
 
   ZClasses.Register(TSpriteSheet,SpriteSheetClassId);
     {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TTileSet,TileSetClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
+  ZClasses.Register(TRenderTile,RenderTileClassId);
 
   DefaultMaterial := TMaterial.Create(nil);
   DefaultMaterialTexture := TMaterialTexture.Create(nil);
