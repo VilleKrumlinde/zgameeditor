@@ -1,25 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.664,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.921,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.005,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmScriptedCompEditBase.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.311,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmSpriteSheetEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.005,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmScriptedCompEditBase.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.724,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.833,=C:\Data\Delphi32\ZzDC_Public\GLDrivers.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\u3dsFile.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.dfm,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmXmlEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.311,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmSpriteSheetEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.921,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.724,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmXmlEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.005,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmScriptedCompEditBase.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.311,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmSpriteSheetEdit.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.311,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmSpriteSheetEdit.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.005,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmScriptedCompEditBase.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC\tools\ZDesigner\u3dsFile.pas=D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>2015-02-19 14:26:27.665,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>2015-02-19 14:26:44.708,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmTileSetEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>2015-02-19 14:26:44.708,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmTileSetEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">
     <File Path="..\..\..\ZzDC_Public"/>
@@ -29,9 +32,11 @@
     <File Path="..\..\BitmapProducers.pas"/>
     <File Path="..\..\Collision.pas"/>
     <File Path="..\..\Commands.pas"/>
+    <File Path="..\..\GLDrivers.pas"/>
     <File Path="..\..\ImplicitMeshes.pas"/>
     <File Path="..\..\Meshes.pas"/>
     <File Path="..\..\Steering.pas"/>
+    <File Path="..\..\uSymTab.pas"/>
     <File Path="..\..\ZApplication.pas"/>
     <File Path="..\..\ZBitmap.pas"/>
     <File Path="..\..\ZClasses.pas"/>
@@ -47,15 +52,15 @@
     <File Path="3rdparty\unitResourceGraphics.pas"/>
     <File Path="3rdparty\unitResourceRCData.pas"/>
     <File Path="3rdparty\uTinyGif.pas"/>
-    <File Path="expr"/>
-    <File Path="expr\CocoBase.pas"/>
-    <File Path="expr\mwStringHashList.pas"/>
-    <File Path="expr\Zc.PAS"/>
-    <File Path="expr\Zc_Ops.pas"/>
+    <File Path="Compiler"/>
+    <File Path="Compiler\CocoAncestor.pas"/>
+    <File Path="Compiler\CocoSets.pas"/>
+    <File Path="Compiler\Compiler.pas"/>
+    <File Path="Compiler\Zc.PAS"/>
+    <File Path="Compiler\Zc_Ops.pas"/>
     <File Path="DesignerGui.pas"/>
     <File Path="dmCommon.pas"/>
     <File Path="dmCommon.dfm"/>
-    <File Path="ExprEdit.pas"/>
     <File Path="frm3dsImportOptions.pas"/>
     <File Path="frm3dsImportOptions.dfm"/>
     <File Path="frmAbout.pas"/>
@@ -97,6 +102,15 @@
     <File Path="u3dsFile.pas"/>
     <File Path="uHelp.pas"/>
     <File Path="uMidiFile.pas"/>
-    <File Path="uSymTab.pas"/>
+    <File Path="frmAndroidApk.pas"/>
+    <File Path="frmAndroidApk.dfm"/>
+    <File Path="frmScriptedCompEditBase.pas"/>
+    <File Path="frmScriptedCompEditBase.dfm"/>
+    <File Path="frmSpriteSheetEdit.pas"/>
+    <File Path="frmSpriteSheetEdit.dfm"/>
+    <File Path="frmXmlEdit.pas"/>
+    <File Path="frmXmlEdit.dfm"/>
+    <File Path="frmTileSetEdit.pas"/>
+    <File Path="frmTileSetEdit.dfm"/>
   </ProjectSortOrder>
 </BorlandProject>

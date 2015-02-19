@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="TileSet" CameraPosition="0 0 1" MouseVisible="255" NoSound="1">
+  <OnLoaded>
+    <Group Comment="External">
+      <Children>
+        <ZExternalLibrary ModuleName="opengl32">
+          <Source>
+<![CDATA[//
+
+void glDisableClientState(int cap){}
+void glDrawArrays(int mode, int first, int count){}
+void glEnableClientState(int cap){}
+void glGetTexLevelParameteriv(int target, int level, int pname, xptr params){}
+void glTexCoordPointer(int size, int type, int stride, xptr pointer){}
+void glVertexPointer(int size, int type, int stride, xptr pointer){}]]>
+          </Source>
+        </ZExternalLibrary>
+      </Children>
+    </Group>
+    <Group Comment="Batch">
+      <Children>
+        <ZLibrary>
+          <Source>
+<![CDATA[//
+
+float[65536] v1;
+int          i1;
+
+//
+
+void addRect(float x1, float y1, float x2, float y2,
+             float s1, float t1, float s2, float t2)
+{
+  v1[i1++] = x1; v1[i1++] = y1; v1[i1++] = s1; v1[i1++] = t1;
+  v1[i1++] = x1; v1[i1++] = y2; v1[i1++] = s1; v1[i1++] = t2;
+  v1[i1++] = x2; v1[i1++] = y2; v1[i1++] = s2; v1[i1++] = t2;
+  v1[i1++] = x2; v1[i1++] = y1; v1[i1++] = s2; v1[i1++] = t1;
+}
+
+//
+
+void drawBatch()
+{
+  glEnableClientState(0x8074);
+  glEnableClientState(0x8078);
+
+  glVertexPointer(2, 0x1406, 16, v1[0]);
+  glTexCoordPointer(2, 0x1406, 16, v1[2]);
+  glDrawArrays(7, 0, i1 >> 2);
+
+  glDisableClientState(0x8078);
+  glDisableClientState(0x8074);
+
+  i1 = 0;
+}]]>
+          </Source>
+        </ZLibrary>
+      </Children>
+    </Group>
+    <Group Comment="Reset">
+      <Children>
+        <ZExpression>
+          <Expression>
+<![CDATA[//
+
+Zoom = 2;]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnLoaded>
+  <OnUpdate>
+    <Group Comment="Input">
+      <Children>
+        <Group Comment="Button">
+          <Children>
+            <Repeat Name="ButtonRepeat" Count="3" WhileExp="//">
+              <OnIteration>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int i = ButtonRepeat.Iteration;
+
+//
+
+Button[i,1] = Button[i,0];
+Button[i,0] = 0;
+
+//
+
+ButtonPress.CharCode = 123 + i;]]>
+                  </Expression>
+                </ZExpression>
+                <KeyPress Name="ButtonPress" CharCode="125">
+                  <OnPressed>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//
+
+Button[ButtonRepeat.Iteration,0]++;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnPressed>
+                </KeyPress>
+                <ZExpression/>
+              </OnIteration>
+            </Repeat>
+          </Children>
+        </Group>
+        <Group Comment="Key">
+          <Children>
+            <Repeat Name="KeyRepeat" Count="2" WhileExp="//">
+              <OnIteration>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int i = KeyRepeat.Iteration;
+
+//
+
+Key[i,1] = Key[i,0];
+Key[i,0] = 0;
+
+//
+
+KeyPress.CharCode = 16 + i;]]>
+                  </Expression>
+                </ZExpression>
+                <KeyPress Name="KeyPress">
+                  <OnPressed>
+                    <ZExpression>
+                      <Expression>
+<![CDATA[//
+
+Key[KeyRepeat.Iteration,0]++;]]>
+                      </Expression>
+                    </ZExpression>
+                  </OnPressed>
+                </KeyPress>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+int i = KeyRepeat.Iteration;
+
+//
+
+Key[i,2] = Key[i,0] && !Key[i,1];
+Key[i,3] = Key[i,1] && !Key[i,0];]]>
+                  </Expression>
+                </ZExpression>
+              </OnIteration>
+            </Repeat>
+          </Children>
+        </Group>
+        <Group Comment="Mouse">
+          <Children>
+            <ZExpression>
+              <Expression>
+<![CDATA[//
+
+Mouse[0,1] = Mouse[0,0];
+Mouse[1,1] = Mouse[1,0];
+
+//
+
+Mouse[0,0] = App.MousePosition.X;
+Mouse[1,0] = App.MousePosition.Y;
+
+//
+
+Mouse[0,2] = Mouse[0,0] - Mouse[0,1];
+Mouse[1,2] = Mouse[1,0] - Mouse[1,1];]]>
+              </Expression>
+            </ZExpression>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
+    <Group Comment="Editor">
+      <Children>
+        <ZExpression Comment="Tileset">
+          <Expression>
+<![CDATA[//
+
+if(TilesetTexture.Texture == null)
+{
+  TilesetWidth = 0;
+  TilesetHeight = 0;
+}
+else
+{
+  @UseMaterial(Material: TilesetMaterial);
+
+  glGetTexLevelParameteriv(0xDE1, 0, 0x1000, TilesetWidth);
+  glGetTexLevelParameteriv(0xDE1, 0, 0x1001, TilesetHeight);
+
+  if(TilesetTexture.Texture != CachedTexture.Texture)
+  {
+    Zoom = 2;
+
+    App.CameraPosition.X = TilesetWidth / 2f;
+    App.CameraPosition.Y = TilesetHeight / 2f;
+
+    CachedTexture.Texture = TilesetTexture.Texture;
+  }
+}]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Control">
+          <Expression>
+<![CDATA[//
+
+float v;
+
+if(App.MouseWheelDelta)
+{
+  v += App.MouseWheelDelta < 0 ? Zoom / -3 : Zoom / 2;
+}
+
+if(Button[1,0] || (Button[2,0] && Key[1,0]))
+{
+  v += (Mouse[0,2] + Mouse[1,2]) * Zoom;
+}
+
+if(v)
+{
+  Zoom = clamp(Zoom + v, 2, 45);
+}
+
+//
+
+float z = Zoom;
+
+if(Button[2,0] && !Key[1,0])
+{
+  App.CameraPosition.X -= Mouse[0,2] / z * App.ViewportWidth;
+  App.CameraPosition.Y += Mouse[1,2] / z * App.ViewportHeight;
+}]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnUpdate>
+  <OnRender>
+    <Group Comment="Editor">
+      <Children>
+        <ZExpression Comment="Matrix">
+          <Expression>
+<![CDATA[//
+
+float z = Zoom;
+
+//
+
+mat4 m;
+
+m[0,0] =     z / App.ViewportWidth;
+m[1,1] = 0 - z / App.ViewportHeight;
+m[2,2] = 1;
+m[3,3] = 1;
+
+setMatrix(1, m);]]>
+          </Expression>
+        </ZExpression>
+        <ZExpression Comment="Grid">
+          <Expression>
+<![CDATA[//
+
+float w, h;
+
+w = App.ViewportWidth;
+h = App.ViewportHeight;
+
+//
+
+float x1, y1, x2, y2;
+
+x1 = App.CameraPosition.X - w * 0.5;
+y1 = App.CameraPosition.Y - h * 0.5;
+
+x2 = x1 + w;
+y2 = y1 + h;
+
+addRect(x1, y1, x2, y2, x1 / 16, y1 / 16, x2 / 16, y2 / 16);
+
+//
+
+@UseMaterial(Material: GridMaterial);
+drawBatch();]]>
+          </Expression>
+        </ZExpression>
+        <Condition>
+          <Expression>
+<![CDATA[//
+
+return TileSetTexture.Texture != null;]]>
+          </Expression>
+          <OnTrue>
+            <ZExpression Comment="Tileset">
+              <Expression>
+<![CDATA[//
+
+addRect(0, 0, 256, 128, 0, 1, 1, 0);
+
+//
+
+@UseMaterial(Material: TilesetMaterial);
+drawBatch();]]>
+              </Expression>
+            </ZExpression>
+            <ZExpression Comment="Shadow">
+              <Expression>
+<![CDATA[//
+
+float x1, y1, x2, y2, x3, y3, x4, y4;
+
+x1 = -8;
+y1 = -8;
+
+x2 = 0;
+y2 = 0;
+
+x3 = TilesetWidth;
+y3 = TilesetHeight;
+
+x4 = x3 + 8;
+y4 = y3 + 8;
+
+//
+
+addRect(x1, y1, x2, y2, 1, 1, 0, 0);
+addRect(x2, y1, x3, y2, 0, 1, 0, 0);
+addRect(x3, y1, x4, y2, 0, 1, 1, 0);
+addRect(x3, y2, x4, y3, 0, 0, 1, 0);
+addRect(x3, y3, x4, y4, 0, 0, 1, 1);
+addRect(x2, y3, x3, y4, 0, 0, 0, 1);
+addRect(x1, y3, x2, y4, 1, 0, 0, 1);
+addRect(x1, y2, x2, y3, 1, 0, 0, 0);
+
+@UseMaterial(Material: ShadowMaterial);
+drawBatch();]]>
+              </Expression>
+            </ZExpression>
+            <Condition>
+              <Expression>
+<![CDATA[//
+
+return Tileset.TileWidth > 0 && Tileset.TileHeight > 0;]]>
+              </Expression>
+              <OnTrue>
+                <ZExpression Comment="Marquee">
+                  <Expression>
+<![CDATA[//
+
+float z = Zoom;
+
+//
+
+MarqueeTexture.TextureScale.X = z / 16;
+MarqueeTexture.TextureScale.Y = z / 16;
+
+MarqueeTexture.TextureX = frac(MarqueeTexture.TextureX - App.DeltaTime);
+MarqueeTexture.TextureY = frac(MarqueeTexture.TextureY - App.DeltaTime);
+
+//
+
+int w, h, b, r, c;
+
+w = Tileset.TileWidth;
+h = Tileset.TileHeight;
+
+b = Tileset.TileBorder;
+
+r = TilesetHeight / (h + b);
+c = TilesetWidth / (w + b);
+
+float x1, y1, x2, y2;
+
+int i;
+
+for(int y=0; y<r; y++)
+{
+  y1 = y * (h + b);
+  y2 = y1 + h;
+
+  for(int x=0; x<c; x++)
+  {
+    x1 = x * (w + b);
+    x2 = x1 + w;
+
+    if(i++ >= 4096)continue; // Let's not get crazy :-)
+
+    addRect(x1, y1, x2, y2, x1, y1, x2, y2);
+  }
+}
+
+//
+
+@UseMaterial(Material: MarqueeMaterial);
+drawBatch();]]>
+                  </Expression>
+                </ZExpression>
+              </OnTrue>
+            </Condition>
+          </OnTrue>
+        </Condition>
+      </Children>
+    </Group>
+  </OnRender>
+  <OnClose>
+    <Group Comment="Reset">
+      <Children>
+        <ZExpression>
+          <Expression>
+<![CDATA[//
+
+CachedTexture.Texture = null;]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
+  </OnClose>
+  <Content>
+    <Group Comment="Input">
+      <Children>
+        <Array Name="Button" Type="4" Dimensions="1" SizeDim1="3" SizeDim2="4"/>
+        <Array Name="Key" Type="4" Dimensions="1" SizeDim1="2" SizeDim2="4"/>
+        <Array Name="Mouse" Dimensions="1" SizeDim1="2" SizeDim2="3"/>
+      </Children>
+    </Group>
+    <Group Comment="Editor">
+      <Children>
+        <Group Comment="Data">
+          <Children>
+            <Variable Name="Zoom"/>
+          </Children>
+        </Group>
+        <Group Comment="Grid">
+          <Children>
+            <Bitmap Name="GridBitmap" Width="0" Height="0" Filter="1">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float s = round(X) + round(Y) != 1 ? 0.8 : 1;
+
+//
+
+Pixel.R = s;
+Pixel.G = s;
+Pixel.B = s;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="GridMaterial" Shading="1" Color="0.2 0.2 0.2 1" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="GridBitmap" TextureWrapMode="1" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Shadow">
+          <Children>
+            <Bitmap Name="ShadowBitmap">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+Pixel.A = 1 - sqrt(X * X + Y * Y);]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="ShadowMaterial" Shading="1" Color="1 1 1 0.25" Light="0" Blend="1" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="ShadowBitmap" TexCoords="1" Origin="0 0.5 0"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+        <Group Comment="Marquee">
+          <Children>
+            <Bitmap Name="MarqueeBitmap" Width="0" Height="0" Filter="1">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+float s = clamp(cos((X + Y) * PI * 2) * 16, 0, 1);
+
+//
+
+Pixel.R = s;
+Pixel.G = s + 0.4;
+Pixel.B = 1;
+Pixel.A = 1;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="MarqueeMaterial" WireframeWidth="1" Shading="2" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Name="MarqueeTexture" Texture="MarqueeBitmap" TextureScale="0 0 1" TextureX="-0.7644" TextureY="-0.6732" TextureWrapMode="1" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Children>
+        </Group>
+      </Children>
+    </Group>
+    <Group Comment="Tileset">
+      <Children>
+        <TileSet Name="Tileset" Bitmap="TilesetBitmap" TileWidth="24" TileHeight="32"/>
+        <Bitmap Name="TilesetBitmap">
+          <Producers>
+            <BitmapExpression Expression="//"/>
+          </Producers>
+        </Bitmap>
+        <Material Name="TilesetMaterial" Shading="1" Light="0" Blend="1" ZBuffer="0">
+          <Textures>
+            <MaterialTexture Name="TilesetTexture" TextureWrapMode="2" TexCoords="1"/>
+          </Textures>
+        </Material>
+        <Variable Name="TilesetWidth" Type="1"/>
+        <Variable Name="TilesetHeight" Type="1"/>
+        <Material Name="CachedMaterial">
+          <Textures>
+            <MaterialTexture Name="CachedTexture"/>
+          </Textures>
+        </Material>
+      </Children>
+    </Group>
+  </Content>
+</ZApplication>
