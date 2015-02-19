@@ -9,8 +9,6 @@ uses
 
 type
   TScriptedCompEditFrameBase = class(TCompEditFrameBase)
-    RenderTimer: TTimer;
-    procedure RenderTimerTimer(Sender: TObject);
   private
     { Private declarations }
     procedure OnBindData(Sender : TObject);
@@ -32,18 +30,6 @@ uses frmEditor, ZPlatform;
 {$R *.dfm}
 
 { TScriptedCompEditFrameBase }
-
-procedure TScriptedCompEditFrameBase.RenderTimerTimer(Sender: TObject);
-begin
-  if Glp.Tag=0 then
-  begin
-    //Must have focus for mousehwheel to work
-    Glp.SetFocus;
-    Glp.Tag := 1;
-  end;
-
-  Glp.Invalidate;
-end;
 
 procedure TScriptedCompEditFrameBase.SetComponent(C: TZComponent;
   TreeNode: TZComponentTreeNode);

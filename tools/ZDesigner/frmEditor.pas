@@ -463,7 +463,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit;
+  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit;
 
 { TEditorForm }
 
@@ -1406,6 +1406,11 @@ begin
   begin
     ViewerPageControl.ActivePage := ViewerCompTabSheet;
     CompEditor := MakeCompEditor(TSpriteSheetEditFrame);
+  end
+  else if ShowNode is TTileSet then
+  begin
+    ViewerPageControl.ActivePage := ViewerCompTabSheet;
+    CompEditor := MakeCompEditor(TTileSetEditFrame);
   end
   else if {(ShowNode is TZBitmap) or}
     {(ShowNode is TMesh) or}

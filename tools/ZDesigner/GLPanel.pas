@@ -285,6 +285,12 @@ end;
 
 procedure TGLPanelZGE.RenderTimerTimer(Sender: TObject);
 begin
+  if Self.Tag=0 then
+  begin
+    //Must have focus for mousehwheel to work
+    Self.SetFocus;
+    Self.Tag := 1;
+  end;
   Invalidate;
 end;
 

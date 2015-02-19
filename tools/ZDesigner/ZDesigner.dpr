@@ -90,7 +90,8 @@ uses
   frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm},
   GLDrivers in '..\..\GLDrivers.pas',
   frmScriptedCompEditBase in 'frmScriptedCompEditBase.pas' {ScriptedCompEditFrameBase: TFrame},
-  frmSpriteSheetEdit in 'frmSpriteSheetEdit.pas' {SpriteSheetEditFrame: TFrame};
+  frmSpriteSheetEdit in 'frmSpriteSheetEdit.pas' {SpriteSheetEditFrame: TFrame},
+  frmTileSetEdit in 'frmTileSetEdit.pas' {TileSetEditFrame: TFrame};
 
 {$R *.res}
 
