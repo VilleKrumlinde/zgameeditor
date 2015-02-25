@@ -303,7 +303,7 @@ return TileSetTexture.Texture != null;]]>
               <Expression>
 <![CDATA[//
 
-addRect(0, 0, 256, 128, 0, 1, 1, 0);
+addRect(0, 0, TilesetWidth, TilesetHeight, 0, 1, 1, 0);
 
 //
 
@@ -374,8 +374,8 @@ h = Tileset.TileHeight;
 
 b = Tileset.TileBorder;
 
-r = TilesetHeight / (h + b);
-c = TilesetWidth / (w + b);
+r = (TilesetHeight + b) / (h + b);
+c = (TilesetWidth + b) / (w + b);
 
 float x1, y1, x2, y2;
 

@@ -174,6 +174,9 @@ type
   public
     Bitmap : TZBitmap;
     TileWidth,TileHeight,TileBorder : integer;
+    {$ifndef minimal}
+    constructor Create(OwnerList: TZComponentList); override;
+    {$endif}
   end;
 
   TRenderTile = class(TRenderCommand)
@@ -512,9 +515,18 @@ begin
   Driver.UpdateNormalMatrix;
   if not VecIsIdentity3(Model.Scale) then
     Driver.Scale(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
-  Model.RunRenderCommands;
+
   {$ifndef minimal}
   if CollisionBoundsVisible then
+    Driver.PushMatrix();
+  {$endif}
+
+  Model.RunRenderCommands;
+
+  {$ifndef minimal}
+  if CollisionBoundsVisible then
+  begin
+    Driver.PopMatrix();
     RenderCollisionBounds( Ord(Model.CollisionStyle),
              Model.Rotation[0],
              Model.Rotation[1],
@@ -528,7 +540,9 @@ begin
              Model.CollisionOffset[0],
              Model.CollisionOffset[1],
              Model.CollisionOffset[2]);
+  end;
   {$endif}
+
   Driver.PopMatrix();
 end;
 
@@ -2346,6 +2360,16 @@ begin
 end;
 
 { TTileSet }
+
+{$ifndef minimal}
+//Set some default values in designer
+constructor TTileSet.Create(OwnerList: TZComponentList);
+begin
+  inherited;
+  Self.TileWidth := 16;
+  Self.TileHeight := 16;
+end;
+{$endif}
 
 procedure TTileSet.DefineProperties(List: TZPropertyList);
 begin
