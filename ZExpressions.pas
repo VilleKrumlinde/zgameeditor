@@ -335,7 +335,7 @@ type
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
-    emPtrDerefPointer);
+    emPtrDerefPointer, emNotifyPropChanged);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -1571,6 +1571,12 @@ begin
         CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer(P^);
+      end;
+    emNotifyPropChanged :
+      begin
+        Env.StackPopTo(V);
+        Env.StackPopToPointer(P);
+        TZComponent(P).PropertyHasChanged(V);
       end;
   end;
 end;
