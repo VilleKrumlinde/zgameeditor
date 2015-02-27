@@ -299,8 +299,8 @@ type
     IsManagedTarget: boolean;   //Values are garbagecollected
     Offset : integer;
     PropertyType : TZPropertyType;
-    {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     PropId : integer;             //Ordningsnr på denna property för en klass
+    {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
     ExcludeFromBinary : boolean;  //Ta inte med denna prop i binärström (designer only)
@@ -313,6 +313,7 @@ type
     HideInGui : boolean;        //Visa inte denna prop i gui
     ReturnType : TZcDataType;      //For expresssions: return type of expression
     ExpressionKind : TExpressionKind;  //For expressions: kind of expression
+    NotifyWhenChanged : boolean;  //Call PropertyHasChanged
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
     constructor Create;
@@ -335,7 +336,8 @@ type
     function GetById(PropId : integer) : TZProperty;
   end;
 
-  //Baskomponentklass för allt som ska kunna redigeras i tool
+  //ZGE base component class.
+  //NOTE: for size coding, avoid virtual methods here since it will increate vmt for every child class
   TZComponent = class
   private
     function DoClone(ObjIds,FixUps : TZArrayList; Into : TZComponent) : TZComponent;
@@ -361,6 +363,7 @@ type
     procedure Change;
     function Clone(Into : TZComponent = nil) : TZComponent;
     procedure ResetGpuResources; virtual; //Free resources such as GL-handles
+    procedure PropertyHasChanged(const PropId : integer); virtual;  //Prop marked with notifyflag have changed
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
@@ -1313,6 +1316,11 @@ end;
 
 procedure TZComponent.InitAfterPropsAreSet;
 begin
+end;
+
+procedure TZComponent.PropertyHasChanged(const PropId: integer);
+begin
+
 end;
 
 procedure TZComponent.Change;

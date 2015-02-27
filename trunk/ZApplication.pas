@@ -45,7 +45,7 @@ type
 
   TCamera = class(TZComponent)
   private
-    procedure ApplyTransform(App : TZApplication);
+    procedure ApplyTransform(const Aspect : single);
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -56,13 +56,14 @@ type
   end;
 
   TZApplication = class(TZComponent)
+  class var
+    CaptionPropId,CameraPropId : integer;
   strict private
     DepthList : TZArrayList;
     ConstantPool : TZComponentList;
     {$ifndef minimal}
     ConstantMap : TDictionary<AnsiString,TObject>;
     {$endif}
-    OldCaption : pointer;
     FpsFrames : integer;
     FpsCounter,FpsTime : single;
     HasShutdown : boolean;
@@ -161,6 +162,7 @@ type
     function NormalizeToScreen(P : TZPointi) : TZVector2f;
     procedure CenterMouse;
     procedure ResetGpuResources; override;
+    procedure PropertyHasChanged(const PropId: Integer); override;
     {$ifndef minimal}
     procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer; const InitTime : single = 0);
@@ -400,6 +402,14 @@ begin
   {$endif}
 end;
 
+procedure TZApplication.PropertyHasChanged(const PropId: Integer);
+begin
+  if PropId=Self.CaptionPropId then
+    Platform_SetWindowCaption(Self.Caption)
+  else if PropId=Self.CameraPropId then
+    ApplyCameraTransform;
+end;
+
 procedure TZApplication.UpdateStateVars;
 begin
   PZVector2f(@MousePosition)^ := NormalizeToScreen(Platform_GetMousePos);
@@ -520,13 +530,6 @@ begin
   //Notify that net-data has been read
   if Commands.NetResultList.Count>0 then
     TWebOpen.FlushResultList;
-
-  //Update window caption
-  if pointer(Self.Caption)<>Self.OldCaption then
-  begin
-    Self.OldCaption := Self.Caption;
-    Platform_SetWindowCaption(Self.Caption);
-  end;
 
   {$ifndef minimal}
   if (Self.Driver<>nil) and (Self.Driver.Kind<>Self.GLBase) then
@@ -696,33 +699,38 @@ end;
 
 procedure TZApplication.ApplyCameraTransform;
 begin
-  {$ifdef zgeviz}
-  if Assigned(Self.ZgeVizCameraCallback) then
-    Self.ZgeVizCameraCallback(Self)
+  if Camera<>nil then
+    Camera.ApplyTransform(Self.ActualViewportRatio)
   else
   begin
-  {$endif}
-    //Setup view and camera
-    Driver.MatrixMode(GL_PROJECTION);
-    Driver.LoadIdentity;
-    Driver.Perspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
-    Driver.MatrixMode(GL_MODELVIEW);
-    Driver.LoadIdentity;
-  {$ifdef zgeviz}
+    {$ifdef zgeviz}
+    if Assigned(Self.ZgeVizCameraCallback) then
+      Self.ZgeVizCameraCallback(Self)
+    else
+    begin
+    {$endif}
+      //Setup view and camera
+      Driver.MatrixMode(GL_PROJECTION);
+      Driver.LoadIdentity;
+      Driver.Perspective(Self.FOV, Self.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+      Driver.MatrixMode(GL_MODELVIEW);
+      Driver.LoadIdentity;
+    {$ifdef zgeviz}
+    end;
+    {$endif}
+
+    {$ifdef zgeviz}
+    Driver.Rotate( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
+    {$endif}
+
+    //Reverse order to make XYZ-rotation
+    Driver.Rotate( (CameraRotation[0]*360) , 1, 0, 0);
+    Driver.Rotate( (CameraRotation[1]*360) , 0, 1, 0);
+    Driver.Rotate( (CameraRotation[2]*360) , 0, 0, 1);
+    //Måste ta negativt på cameraposition för att dess axlar ska bete sig
+    //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+    Driver.Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
   end;
-  {$endif}
-
-  {$ifdef zgeviz}
-  Driver.Rotate( (ZgeVizCameraRotation[2]*360) , 0, 0, 1);
-  {$endif}
-
-  //Reverse order to make XYZ-rotation
-  Driver.Rotate( (CameraRotation[0]*360) , 1, 0, 0);
-  Driver.Rotate( (CameraRotation[1]*360) , 0, 1, 0);
-  Driver.Rotate( (CameraRotation[2]*360) , 0, 0, 1);
-  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  Driver.Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
 end;
 
 procedure TZApplication.UpdateScreen;
@@ -748,10 +756,7 @@ begin
     {$endif}
 
     //Use custom camera or default
-    if Camera<>nil then
-      Camera.ApplyTransform(Self)
-    else
-      ApplyCameraTransform;
+    ApplyCameraTransform;
 
     if (ClearScreenMode=0) and (CurrentRenderTarget=nil) then
     begin
@@ -840,10 +845,7 @@ begin
   //Used for previewing app-state in designer
   UpdateViewport;
 
-  if Camera<>nil then
-    Camera.ApplyTransform(Self)
-  else
-    Self.ApplyCameraTransform;
+  Self.ApplyCameraTransform;
 
   glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
 
@@ -1054,6 +1056,8 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}(@Caption), zptString);
     List.GetLast.IsManagedTarget := True;
+    {$ifndef minimal}List.GetLast.NotifyWhenChanged := True;{$endif}
+    Self.CaptionPropId := List.GetLast.PropId;
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}(@DeltaTime), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -1111,6 +1115,8 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}(@Camera), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCamera]);{$endif}
+    {$ifndef minimal}List.GetLast.NotifyWhenChanged := True;{$endif}
+    Self.CameraPropId := List.GetLast.PropId;
 
   List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}(@LightPosition), zptVector3f);
     //Light default is down the Z axis
@@ -1277,18 +1283,21 @@ end;
 
 { TCamera }
 
-procedure TCamera.ApplyTransform(App : TZApplication);
+procedure TCamera.ApplyTransform(const Aspect : single);
 var
   W,H : single;
+  D : TGLDriverBase;
 begin
   //Setup view and camera
 
-  App.Driver.MatrixMode(GL_PROJECTION);
-  App.Driver.LoadIdentity;
+  D := Self.ZApp.Driver;
+
+  D.MatrixMode(GL_PROJECTION);
+  D.LoadIdentity;
   case Self.Kind of
     catPerspective :
       begin
-        App.Driver.Perspective(Self.FOV, App.ActualViewportRatio, Self.ClipNear, Self.ClipFar);
+        D.Perspective(Self.FOV, Aspect, Self.ClipNear, Self.ClipFar);
       end;
   else
     begin
@@ -1298,23 +1307,23 @@ begin
       begin //Avoid divide by zero
       {$endif}
       H := Self.OrthoZoom;
-      W := App.ActualViewportRatio * H;
-      App.Driver.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
+      W := Aspect * H;
+      D.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
       {$ifndef minimal}
       end;
       {$endif}
     end;
   end;
-  App.Driver.MatrixMode(GL_MODELVIEW);
-  App.Driver.LoadIdentity;
+  D.MatrixMode(GL_MODELVIEW);
+  D.LoadIdentity;
 
   //Reverse order to make XYZ-rotation
-  App.Driver.Rotate( (Rotation[0]*360) , 1, 0, 0);
-  App.Driver.Rotate( (Rotation[1]*360) , 0, 1, 0);
-  App.Driver.Rotate( (Rotation[2]*360) , 0, 0, 1);
+  D.Rotate( (Rotation[0]*360) , 1, 0, 0);
+  D.Rotate( (Rotation[1]*360) , 0, 1, 0);
+  D.Rotate( (Rotation[2]*360) , 0, 0, 1);
   //Måste ta negativt på cameraposition för att dess axlar ska bete sig
   //likadant som modell-koordinater (positiv y = uppåt t.ex.)
-  App.Driver.Translate(-Position[0], -Position[1], -Position[2]);
+  D.Translate(-Position[0], -Position[1], -Position[2]);
 end;
 
 procedure TCamera.DefineProperties(List: TZPropertyList);
