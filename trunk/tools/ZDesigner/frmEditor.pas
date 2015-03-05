@@ -1580,6 +1580,7 @@ begin
   begin
     PropListParent.Visible := False;
     QuickCompListParent.Visible := True;
+    Ed.SetComponent(nil);
   end
   else
   begin
@@ -3333,6 +3334,8 @@ var
   Ci : TZComponentInfo;
   C : TZComponent;
 begin
+  if QuickCompListView.Selected=nil then
+    Exit;
   Ci := TZComponentInfo(QuickCompListView.Selected.Data);
   C := Ci.ZClass.Create(nil);
   AddNewComponentToTree(C, QuickCompListView.Tag<>0);
