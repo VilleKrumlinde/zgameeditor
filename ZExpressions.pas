@@ -1576,7 +1576,7 @@ begin
       begin
         Env.StackPopTo(V);
         Env.StackPopToPointer(P);
-        TZComponent(P).PropertyHasChanged(V);
+        TZComponent(P).GetProperties.GetById(V).NotifyWhenChanged(P,V);
       end;
   end;
 end;

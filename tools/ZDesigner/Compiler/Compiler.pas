@@ -652,7 +652,7 @@ begin
     GenValue(RightOp);
     Target.AddComponent( MakeAssignOp(AssignSize) );
 
-    if Prop.NotifyWhenChanged then
+    if Assigned(Prop.NotifyWhenChanged) then
     begin //This property should notify when assigned, generate notify call
       GenValue(LeftOp.Children.First);
       with TExpConstantInt.Create(Target) do

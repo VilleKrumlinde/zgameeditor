@@ -1021,7 +1021,9 @@ Primary<var OutOp : TZcOp>
 
     .)
 
-  | "(" (. Assert(OutOp.Kind=zcIdentifier);
+  | "(" (.
+           if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
+             ZError('Unexpected "("');
            OutOp.Kind:=zcFuncCall;
          .)
         [Argument<Op> (. OutOp.Children.Add(Op); .)
@@ -1034,7 +1036,9 @@ Primary<var OutOp : TZcOp>
         .)
     ")"
 
-  | "[" (. Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
+  | "[" (.
+           if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
+             ZError('Unexpected "["');
            Op := MakeArrayAccess(OutOp);
            OutOp := Op;
          .)

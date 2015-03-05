@@ -56,8 +56,6 @@ type
   end;
 
   TZApplication = class(TZComponent)
-  class var
-    CaptionPropId,CameraPropId : integer;
   strict private
     DepthList : TZArrayList;
     ConstantPool : TZComponentList;
@@ -71,13 +69,13 @@ type
     NextFrameTime : single;
     LastTime : single;
     procedure RenderModels;
-    procedure ApplyCameraTransform;
     procedure MainSlice;
     procedure Init;
     procedure Shutdown;
     procedure UpdateScreen;
   private
     CurrentState : TAppState;
+    procedure ApplyCameraTransform;
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
@@ -162,7 +160,6 @@ type
     function NormalizeToScreen(P : TZPointi) : TZVector2f;
     procedure CenterMouse;
     procedure ResetGpuResources; override;
-    procedure PropertyHasChanged(const PropId: Integer); override;
     {$ifndef minimal}
     procedure Terminate;
     procedure DesignerStart(const ViewW,ViewH : integer; const InitTime : single = 0);
@@ -400,14 +397,6 @@ begin
   if Abs(Result[1])<=2/ViewportHeight then
     Result[1] := 0;
   {$endif}
-end;
-
-procedure TZApplication.PropertyHasChanged(const PropId: Integer);
-begin
-  if PropId=Self.CaptionPropId then
-    Platform_SetWindowCaption(Self.Caption)
-  else if PropId=Self.CameraPropId then
-    ApplyCameraTransform;
 end;
 
 procedure TZApplication.UpdateStateVars;
@@ -1038,6 +1027,16 @@ begin
   Models.Add(Model);
 end;
 
+procedure AppCaptionChanged(Instance : TZComponent; const PropId : integer);
+begin
+  Platform_SetWindowCaption( TZApplication(Instance).Caption );
+end;
+
+procedure AppCameraChanged(Instance : TZComponent; const PropId : integer);
+begin
+  TZApplication(Instance).ApplyCameraTransform;
+end;
+
 procedure TZApplication.DefineProperties(List: TZPropertyList);
 begin
   inherited;
@@ -1056,8 +1055,7 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'Caption',{$ENDIF}(@Caption), zptString);
     List.GetLast.IsManagedTarget := True;
-    {$ifndef minimal}List.GetLast.NotifyWhenChanged := True;{$endif}
-    Self.CaptionPropId := List.GetLast.PropId;
+    List.GetLast.NotifyWhenChanged := @AppCaptionChanged;
   List.AddProperty({$IFNDEF MINIMAL}'DeltaTime',{$ENDIF}(@DeltaTime), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -1115,8 +1113,7 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'Camera',{$ENDIF}(@Camera), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TCamera]);{$endif}
-    {$ifndef minimal}List.GetLast.NotifyWhenChanged := True;{$endif}
-    Self.CameraPropId := List.GetLast.PropId;
+    List.GetLast.NotifyWhenChanged := @AppCameraChanged;
 
   List.AddProperty({$IFNDEF MINIMAL}'LightPosition',{$ENDIF}(@LightPosition), zptVector3f);
     //Light default is down the Z axis

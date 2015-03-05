@@ -1832,7 +1832,9 @@ begin
     else if (CurrentInputSymbol=lparSym) then
     begin
          Get;
-           Assert(OutOp.Kind=zcIdentifier);
+          
+           if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
+             ZError('Unexpected "("');
            OutOp.Kind:=zcFuncCall;
          
          if InSet(CurrentInputSymbol,7) then
@@ -1855,7 +1857,9 @@ begin
     else if (CurrentInputSymbol=lbrackSym) then
     begin
          Get;
-           Assert(OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall]);
+          
+           if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
+             ZError('Unexpected "["');
            Op := MakeArrayAccess(OutOp);
            OutOp := Op;
          

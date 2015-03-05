@@ -291,6 +291,8 @@ type
     zptVector3f,zptComponentList,zptByte,zptBoolean,
     zptExpression,zptBinary,zptPointer);
 
+  TPropNotifyProc = procedure(Instance : TZComponent; const PropId : integer);
+
   TZProperty = class
   public
     DefaultValue : TZPropertyValue;
@@ -300,6 +302,7 @@ type
     Offset : integer;
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
+    NotifyWhenChanged : TPropNotifyProc;  //Call PropertyHasChanged
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     {$IFNDEF MINIMAL}
     Name : string;              //Namn på property i designer 'Color'
@@ -313,7 +316,6 @@ type
     HideInGui : boolean;        //Visa inte denna prop i gui
     ReturnType : TZcDataType;      //For expresssions: return type of expression
     ExpressionKind : TExpressionKind;  //For expressions: kind of expression
-    NotifyWhenChanged : boolean;  //Call PropertyHasChanged
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
     constructor Create;
@@ -363,7 +365,6 @@ type
     procedure Change;
     function Clone(Into : TZComponent = nil) : TZComponent;
     procedure ResetGpuResources; virtual; //Free resources such as GL-handles
-    procedure PropertyHasChanged(const PropId : integer); virtual;  //Prop marked with notifyflag have changed
     {$ifndef minimal}
     function GetDisplayName : AnsiString; virtual;
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
@@ -1316,11 +1317,6 @@ end;
 
 procedure TZComponent.InitAfterPropsAreSet;
 begin
-end;
-
-procedure TZComponent.PropertyHasChanged(const PropId: integer);
-begin
-
 end;
 
 procedure TZComponent.Change;
