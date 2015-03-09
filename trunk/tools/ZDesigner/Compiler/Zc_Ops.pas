@@ -1034,7 +1034,7 @@ begin
     case (Op.Ref as TDefineVariableBase)._Type of
       zctInt : PName := 'IntValue';
       zctString : PName := 'StringValue';
-      zctMat4,zctVec2,zctVec3,zctVec4 : PName := 'PointerValue';
+      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr : PName := 'PointerValue';
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
     end;

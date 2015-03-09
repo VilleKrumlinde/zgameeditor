@@ -1713,7 +1713,7 @@ procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4','xptr']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
 
@@ -2583,12 +2583,14 @@ initialization
   ZClasses.Register(TDefineVariable,DefineVariableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=8;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Variable';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TDefineConstant,DefineConstantClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=29;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Constant';{$endif}
   ZClasses.Register(TDefineArray,DefineArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=22;{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ZClassName := 'Array';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
   ZClasses.Register(TZExternalLibrary,ExternalLibraryClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=35;{$endif}
 
