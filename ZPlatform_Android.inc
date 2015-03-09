@@ -567,7 +567,8 @@ end;
 
 procedure Platform_Sleep(time : integer);
 begin
-  usleep(time);
+  //usleep takes param in 1/1e6 seconds.
+  usleep(time * 1000);
 end;
 
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;

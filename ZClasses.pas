@@ -236,10 +236,10 @@ type
     zctVec2,
     zctVec3,
     zctVec4,
+    zctXptr,
     zctVoid,  //Private types
     zctReference,
     zctNull,
-    zctXptr,
     zctArray);
 
   TZcDataType = record
@@ -624,8 +624,8 @@ const
   FloatTextDecimals = 4;  //Nr of fraction digits when presenting float-values as text
 
   ZcTypeNames : array[TZcDataTypeKind] of string =
-(('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),
- ('void'),('#reference'),('null'),('xptr'),('#array'));
+(('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),('xptr'),
+ ('void'),('#reference'),('null'),('#array'));
 
 
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
