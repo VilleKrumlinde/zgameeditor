@@ -55,6 +55,7 @@ type
     ClipNear,ClipFar,OrthoZoom,FOV : single;
   end;
 
+  TAspectRatio = (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
   TZApplication = class(TZComponent)
   strict private
     DepthList : TZArrayList;
@@ -114,7 +115,7 @@ type
     CameraRotation : TZVector3f;
     LightPosition : TZVector4f;
     CustomViewportRatio,FOV,ClipNear,ClipFar : single;
-    ViewportRatio : (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
+    ViewportRatio : TAspectRatio;
     ActualViewportRatio : single;
     FrameRateStyle : (frsSyncedWithMonitor,frsFree,frsFixed);
     FixedFrameRate : integer;
@@ -1035,6 +1036,8 @@ end;
 procedure AppCameraChanged(Instance : TZComponent; const PropId : integer);
 begin
   TZApplication(Instance).ApplyCameraTransform;
+  if CurrentModel<>nil then
+    Renderer.ApplyModelTransform(CurrentModel);
 end;
 
 procedure TZApplication.DefineProperties(List: TZPropertyList);

@@ -1234,6 +1234,8 @@ const
   GL_MAX_RENDERBUFFER_SIZE_EXT = $84E8;
   GL_INVALID_FRAMEBUFFER_OPERATION_EXT = $0506;
 
+  GL_TEXTURE_2D_MULTISAMPLE = $9100;
+
 
 {******************************************************************************}
 
@@ -1447,21 +1449,25 @@ var
   glBufferSubData : procedure(target: GLenum; offset: integer; size: integer; const data: pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   //***** GL_EXT_framebuffer_object *****//
-  glIsRenderbufferEXT: function(renderbuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glBindRenderbufferEXT: procedure(target: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glDeleteRenderbuffersEXT: procedure(n: GLsizei; const renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGenRenderbuffersEXT: procedure(n: GLsizei; renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glRenderbufferStorageEXT: procedure(target: GLenum; internalformat: GLenum; width: GLsizei; height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetRenderbufferParameterivEXT: procedure(target: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glIsFramebufferEXT: function(framebuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glBindFramebufferEXT: procedure(target: GLenum; framebuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glDeleteFramebuffersEXT: procedure(n: GLsizei; const framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGenFramebuffersEXT: procedure(n: GLsizei; framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glCheckFramebufferStatusEXT: function(target: GLenum): GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFramebufferTexture2DEXT: procedure(target: GLenum; attachment: GLenum; textarget: GLenum; texture: GLuint; level: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFramebufferRenderbufferEXT: procedure(target: GLenum; attachment: GLenum; renderbuffertarget: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glGetFramebufferAttachmentParameterivEXT: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glIsRenderbuffer: function(renderbuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindRenderbuffer: procedure(target: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteRenderbuffers: procedure(n: GLsizei; const renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenRenderbuffers: procedure(n: GLsizei; renderbuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glRenderbufferStorage: procedure(target: GLenum; internalformat: GLenum; width: GLsizei; height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetRenderbufferParameteriv: procedure(target: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glIsFramebuffer: function(framebuffer: GLuint): GLboolean; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBindFramebuffer: procedure(target: GLenum; framebuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glDeleteFramebuffers: procedure(n: GLsizei; const framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGenFramebuffers: procedure(n: GLsizei; framebuffers: PGLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glCheckFramebufferStatus: function(target: GLenum): GLenum; {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFramebufferTexture2D: procedure(target: GLenum; attachment: GLenum; textarget: GLenum; texture: GLuint; level: GLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glFramebufferRenderbuffer: procedure(target: GLenum; attachment: GLenum; renderbuffertarget: GLenum; renderbuffer: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glGetFramebufferAttachmentParameteriv: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGenerateMipmap: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glRenderbufferStorageMultisample : procedure(target: GLenum; samples: GLsizei; internalformat: GLenum; width: GLsizei; height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+
+  // GL_ARB_texture_multisample
+  glTexImage2DMultisample : procedure(target: GLenum; samples: GLsizei; internalformat: GLint; width: GLsizei; height: GLsizei; fixedsamplelocations: GLboolean); {$IFDEF WIN32}stdcall; {$ELSE}cdecl; {$ENDIF}
 
   glDisableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glEnableVertexAttribArray : procedure(index : GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1510,7 +1516,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..40
+const ExtFuncArray : packed array[0..42
   {$if (not defined(minimal)) or defined(android)}+5{$ifend}
   {$ifdef MSWINDOWS}+1{$endif}] of
   packed record
@@ -1588,18 +1594,20 @@ const ExtFuncArray : packed array[0..40
 (Name : 'glBufferData'; Ptr : @@glBufferData),
 (Name : 'glBufferSubData'; Ptr : @@glBufferSubData),
 //FBO
-(Name : 'glIsRenderbuffer'; Ptr : @@glIsRenderbufferEXT),
-(Name : 'glBindRenderbuffer'; Ptr : @@glBindRenderbufferEXT),
-(Name : 'glDeleteRenderbuffers'; Ptr : @@glDeleteRenderbuffersEXT),
-(Name : 'glGenRenderbuffers'; Ptr : @@glGenRenderbuffersEXT),
-(Name : 'glRenderbufferStorage'; Ptr : @@glRenderbufferStorageEXT),
-(Name : 'glBindFramebuffer'; Ptr : @@glBindFramebufferEXT),
-(Name : 'glDeleteFramebuffers'; Ptr : @@glDeleteFramebuffersEXT),
-(Name : 'glGenFramebuffers'; Ptr : @@glGenFramebuffersEXT),
-(Name : 'glCheckFramebufferStatus'; Ptr : @@glCheckFramebufferStatusEXT),
-(Name : 'glFramebufferTexture2D'; Ptr : @@glFramebufferTexture2DEXT),
-(Name : 'glFramebufferRenderbuffer'; Ptr : @@glFramebufferRenderbufferEXT),
+(Name : 'glIsRenderbuffer'; Ptr : @@glIsRenderbuffer),
+(Name : 'glBindRenderbuffer'; Ptr : @@glBindRenderbuffer),
+(Name : 'glDeleteRenderbuffers'; Ptr : @@glDeleteRenderbuffers),
+(Name : 'glGenRenderbuffers'; Ptr : @@glGenRenderbuffers),
+(Name : 'glRenderbufferStorage'; Ptr : @@glRenderbufferStorage),
+(Name : 'glBindFramebuffer'; Ptr : @@glBindFramebuffer),
+(Name : 'glDeleteFramebuffers'; Ptr : @@glDeleteFramebuffers),
+(Name : 'glGenFramebuffers'; Ptr : @@glGenFramebuffers),
+(Name : 'glCheckFramebufferStatus'; Ptr : @@glCheckFramebufferStatus),
+(Name : 'glFramebufferTexture2D'; Ptr : @@glFramebufferTexture2D),
+(Name : 'glFramebufferRenderbuffer'; Ptr : @@glFramebufferRenderbuffer),
 (Name : 'glGenerateMipmap'; Ptr : @@glGenerateMipmap),
+(Name : 'glRenderbufferStorageMultisample'; Ptr : @@glRenderbufferStorageMultisample),
+(Name : 'glTexImage2DMultisample'; Ptr : @@glTexImage2DMultisample),
 
 {$ifdef MSWINDOWS}
 (Name : 'wglSwapIntervalEXT'; Ptr : @@wglSwapIntervalEXT),
@@ -1624,7 +1632,7 @@ begin
   ShadersSupported := @glUseProgram<>nil;
   MultiTextureSupported := @glActiveTexture<>nil;
   VbosSupported := @glBindBuffer<>nil;
-  FbosSupported := @glIsRenderbufferEXT<>nil;
+  FbosSupported := @glIsRenderbuffer<>nil;
 end;
 
 {$ifdef Android} //Define dummys for functions not supported in GL ES 1.1
