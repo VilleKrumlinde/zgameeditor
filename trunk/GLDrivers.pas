@@ -283,6 +283,7 @@ begin
         mbA_1 : glBlendFunc(GL_SRC_ALPHA,GL_ONE);
         mbC_1MSC : glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
         mbAlphaSat_1 : glBlendFunc(GL_SRC_ALPHA_SATURATE,GL_ONE);
+        mb1MSA_A : glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
       end;
     end;
   end;
@@ -653,6 +654,7 @@ procedure TGLDriverProgrammable.SetMatrix(const Index: integer;
   const Mat: TZMatrix4f);
 begin
   MPtrs[Index]^ := Mat;
+  MDirty[Index] := True;
 end;
 
 procedure TGLDriverProgrammable.Perspective(const fovy, aspect, zNear, zFar: GLfloat);

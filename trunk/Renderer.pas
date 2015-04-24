@@ -41,7 +41,7 @@ type
     Shading : TMaterialShading;
     Color : TZColorf;
     Light : boolean;
-    Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1);
+    Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1,mb1MSA_A);
     ZBuffer : boolean;
     DrawBackFace : boolean;
     Font : TFont;
@@ -342,6 +342,7 @@ type
     ClearColor : TZColorf;
     Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
     CustomWidth,CustomHeight : integer;
+    UseMultisample : boolean;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
@@ -372,6 +373,7 @@ type
   end;
 
 procedure RenderModel(Model : TModel);
+procedure ApplyModelTransform(Model : TModel);
 
 {$ifndef minimal}
 procedure CleanUp;
@@ -502,6 +504,17 @@ begin
 end;
 {$endif}
 
+procedure ApplyModelTransform(Model : TModel);
+var
+  Driver : TGLDriverBase;
+begin
+  Driver := Model.ZApp.Driver;
+  Driver.Translate(Model.Position[0],Model.Position[1],Model.Position[2]);
+  Driver.ApplyRotation(Model.Rotation);
+  Driver.UpdateNormalMatrix;
+  if not VecIsIdentity3(Model.Scale) then
+    Driver.Scale(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
+end;
 
 procedure RenderModel(Model : TModel);
 var
@@ -510,11 +523,8 @@ begin
   Driver := Model.ZApp.Driver;
 
   Driver.PushMatrix();
-  Driver.Translate(Model.Position[0],Model.Position[1],Model.Position[2]);
-  Driver.ApplyRotation(Model.Rotation);
-  Driver.UpdateNormalMatrix;
-  if not VecIsIdentity3(Model.Scale) then
-    Driver.Scale(Model.Scale[0],Model.Scale[1],Model.Scale[2]);
+
+  ApplyModelTransform(Model);
 
   {$ifndef minimal}
   if CollisionBoundsVisible then
@@ -566,7 +576,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}(@EmissionColor), zptColorf);
   List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}(@Shininess), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}(@Blend), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One','OneMinusSourceAlpha/Alpha']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}(@ZBuffer), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}(@DrawBackFace), zptBoolean);
@@ -2010,7 +2020,7 @@ begin
   if FbosSupported then
   begin
     if CurrentRenderTarget<>nil then
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
   end;
   CurrentRenderTarget := nil;
 end;
@@ -2106,38 +2116,57 @@ begin
     //For android: http://blog.shayanjaved.com/2011/05/13/android-opengl-es-2-0-render-to-texture/
     // create a texture object
     glGenTextures(1, @TexId);
-    glBindTexture(GL_TEXTURE_2D, TexId);
+    if UseMultisample then
+    begin
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId);
+    end
+    else
+    begin
+      glBindTexture(GL_TEXTURE_2D, TexId);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR{$endif});
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR_MIPMAP_LINEAR{$endif});
+      {$ifndef android}
+      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+      {$endif}
+    end;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR{$endif});
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR_MIPMAP_LINEAR{$endif});
-
-    {$ifndef android}
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
-    {$endif}
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    if UseMultisample then
+    begin
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, ActualW, ActualH, GL_FALSE);
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    end
+    else
+    begin
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+      glBindTexture(GL_TEXTURE_2D, 0);
+    end;
 
     // create a renderbuffer object to store depth info
-    glGenRenderbuffersEXT(1, @RboId);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, RboId);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+    glGenRenderbuffers(1, @RboId);
+    glBindRenderbuffer(GL_RENDERBUFFER_EXT, RboId);
+    if UseMultisample then
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER_EXT,4,{$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH)
+    else
+      glRenderbufferStorage(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
+    glBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
-    glGenFramebuffersEXT(1, @FboId);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+    glGenFramebuffers(1, @FboId);
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
 
     // attach the texture to FBO color attachment point
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
+    if UseMultisample then
+      glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, TexId, 0)
+    else
+      glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
 
     // attach the renderbuffer to depth attachment point
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
 
     {$ifdef android}
-    if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
       AndroidLog('fbo fail')
     else
       AndroidLog('fbo ok');
@@ -2145,13 +2174,13 @@ begin
 
     // check FBO status
     {$ifndef minimal}
-    if glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
     begin
-      ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) );
+      ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)) );
     end;
     {$endif}
   end else
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FboId);
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
 
   //Cannot call updataviewport here because it updates app.viewportwidth which is used above
 //  ZApp.UpdateViewport(W, H);
@@ -2190,8 +2219,8 @@ begin
   if FbosSupported and (TexId<>0) then
   begin
     glDeleteTextures(1, @TexId);
-    glDeleteFramebuffersEXT(1, @FboId);
-    glDeleteRenderbuffersEXT(1, @RboId);
+    glDeleteFramebuffers(1, @FboId);
+    glDeleteRenderbuffers(1, @RboId);
     TexId := 0;
   end;
 end;
@@ -2204,7 +2233,10 @@ end;
 
 procedure TRenderTarget.UseTextureBegin;
 begin
-  glBindTexture(GL_TEXTURE_2D, TexId);
+  if Self.UseMultisample then
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId)
+  else
+    glBindTexture(GL_TEXTURE_2D, TexId);
 end;
 
 procedure TRenderTarget.ResetGpuResources;
@@ -2238,7 +2270,7 @@ begin
   if Self.RenderTarget=nil then
   begin
     //Restore main framebuffer
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     CurrentRenderTarget := nil;
     ZApp.UpdateViewport;
   end

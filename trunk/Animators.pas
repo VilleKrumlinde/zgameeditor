@@ -427,8 +427,11 @@ begin
     begin
       Inc(CurrentIteration);
       if (CurrentIteration>RepeatCount) and (RepeatCount<>-1) then
+      begin
         //End of animation, set x=1 to guarantee write final value
-        Stop
+        X := Duration;
+        Stop;
+      end
       else
       begin
         //Next iteration

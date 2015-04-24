@@ -370,6 +370,12 @@ var
 begin
   for I := 0 to (SampleCount * StereoChannels)-1 do
   begin //Convert from float to smallint. Todo: on Lollipop floats are accepted directly.
+
+    //Fast version: no clipping
+//    Val := Trunc(Source^ * High(Smallint));
+//    Dest^ := Val;
+
+    //Slow version
     Val := Round(Source^ * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
@@ -377,6 +383,7 @@ begin
       Dest^ := Low(SmallInt)
     else
       Dest^ := Val;
+
     Inc(Source);
     Inc(Dest);
   end;
@@ -484,7 +491,9 @@ begin
       env^.ReleasePrimitiveArrayCritical(env, buffer, pBuffer, 0);
       env^.CallNonvirtualIntMethodV(env, track, cAudioTrack, mWrite, C([buffer, 0, OnePassSize]));
 
-      Platform_Sleep( Round(((SoundBufferSamplesSize/AudioRate)/8) * 1000) );
+      //Can only sleep a very short while here, otherwise sound breaks up
+      //Round(((SoundBufferSamplesSize/AudioRate)/16) * 1000) );
+      Platform_Sleep( 1 );
     end;
 
     env^.CallNonvirtualVoidMethod(env, track, cAudioTrack, mStop);
@@ -740,7 +749,7 @@ begin
   RunClass := Env^.FindClass(Env, 'java/lang/Runtime');
 
   Mid := Env^.GetStaticMethodID(Env, RunClass , 'getRuntime', '()Ljava/lang/Runtime;');
-  RunObj := Env^.CallStaticObjectMethodV(Env, Jobject(AndroidThis), Mid, nil);
+  RunObj := Env^.CallStaticObjectMethodV(Env, RunClass, Mid, nil);
 
   Mid := Env^.GetMethodID(Env, RunClass , 'availableProcessors', '()I');
   Result := Env^.CallIntMethod(Env,RunObj,Mid);
