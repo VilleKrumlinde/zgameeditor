@@ -2072,9 +2072,15 @@ procedure TRenderTarget.Activate;
 var
   W,H : integer;
   ActualW,ActualH : integer;
+  A : TZApplication;
 begin
   if not FbosSupported then
     Exit;
+
+  A := ZApp;
+
+  //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
+  A.UpdateViewport;
 
   W := Self.CustomWidth;
   if W=0 then
@@ -2082,7 +2088,7 @@ begin
     if Self.Width>=rts128 then
       W := 128 shl (Ord(Self.Width)-Ord(rts128))
     else
-      W := ZApp.ViewportWidth shr Ord(Self.Width);
+      W := A.ViewportWidth shr Ord(Self.Width);
   end;
   H := Self.CustomHeight;
   if H=0 then
@@ -2090,7 +2096,7 @@ begin
     if Self.Height>=rts128 then
       H := 128 shl (Ord(Self.Height)-Ord(rts128))
     else
-      H := ZApp.ViewportHeight shr Ord(Self.Height);
+      H := A.ViewportHeight shr Ord(Self.Height);
   end;
 
   if Self.AutoPowerOfTwo then
@@ -2182,13 +2188,7 @@ begin
   end else
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
 
-  //Cannot call updataviewport here because it updates app.viewportwidth which is used above
-//  ZApp.UpdateViewport(W, H);
-  glViewport(0,0,W,H);
-  ZApp.ActualViewportRatio := W/H;
-  {$ifdef zgeviz}
-  ZApp.ViewportChanged;
-  {$endif}
+  A.UpdateViewport(W, H);
 
   if Self.ClearBeforeUse then
   begin
@@ -2256,8 +2256,13 @@ begin
 end;
 
 procedure TSetRenderTarget.Execute;
+var
+  NewRt : TRenderTarget;
 begin
   if not FbosSupported then
+    Exit;
+
+  if CurrentRenderTarget=Self.RenderTarget then
     Exit;
 
   if CurrentRenderTarget<>nil then
@@ -2267,7 +2272,13 @@ begin
     glGenerateMipmap(GL_TEXTURE_2D);
   end;
 
-  if Self.RenderTarget=nil then
+  NewRt := Self.RenderTarget;
+  {$ifdef zgeviz}
+  if NewRt=nil then
+    NewRt := Self.ZApp.MainRenderTarget;
+  {$endif}
+
+  if NewRt=nil then
   begin
     //Restore main framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
@@ -2277,7 +2288,7 @@ begin
   else
   begin
     //CurrentRenderTarget must be set before viewport-change because of zgeviz-onviewcallback
-    CurrentRenderTarget := Self.RenderTarget;
+    CurrentRenderTarget := NewRt;
     CurrentRenderTarget.Activate;
   end;
 end;
