@@ -23,7 +23,7 @@ unit ZApplication;
 interface
 
 uses ZClasses,Meshes,Collision,Commands,AudioComponents, GLDrivers
-  {$ifndef minimal},Generics.Collections,uSymTab,Contnrs{$endif}
+  {$ifndef minimal},Generics.Collections,uSymTab,Contnrs,Renderer{$endif}
 ;
 
 type
@@ -147,8 +147,9 @@ type
     {$ifdef zgeviz}
     ZgeVizCameraRotation : TZVector3f;
     ZgeVizTime : single;
-    ZgeVizRenderPassOverride : integer;
     ZgeVizCameraCallback,ZgeVizViewportCallback : TAppCallback;
+    ZgeVizIsFeedbackLayer : boolean;
+    MainRenderTarget : TRenderTarget;
     procedure ViewportChanged;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
@@ -203,9 +204,11 @@ const
 
 implementation
 
-uses ZPlatform,ZLog,AudioPlayer,ZMath,Renderer,ZOpenGL
+uses ZPlatform,ZLog,AudioPlayer,ZMath,ZOpenGL
   {$ifndef minimal}
   ,ZExpressions,SysUtils,Zc_Ops,Classes,Compiler
+  {$else}
+  ,Renderer
   {$endif}
   ;
 
@@ -731,10 +734,6 @@ begin
   for I := 0 to Self.RenderPasses-1 do
   begin
     Self.CurrentRenderPass := I;
-    {$ifdef zgeviz}
-    if ZgeVizRenderPassOverride<>0 then
-      Self.CurrentRenderPass := ZgeVizRenderPassOverride-1;
-    {$endif}
 
     if Self.OnBeginRenderPass.Count>0 then
       Self.OnBeginRenderPass.ExecuteCommands;
@@ -1138,7 +1137,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}(@ViewportX), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}(@ViewportX), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ViewportY',{$ENDIF}(@ViewportY), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ViewportWidth',{$ENDIF}(@ViewportWidth), zptInteger);
