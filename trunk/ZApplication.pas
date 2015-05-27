@@ -139,6 +139,7 @@ type
     AndroidSdk : byte;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
+    FileVersion : integer;
     //Zc-parsing
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
@@ -321,6 +322,7 @@ end;
 procedure TZApplication.InitAfterPropsAreSet;
 begin
   Self.RefreshSymbolTable;
+  Self.FileVersion := 2;
 end;
 {$endif}
 
@@ -1168,6 +1170,8 @@ begin
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
+  List.AddProperty('FileVersion',@FileVersion, zptInteger);
+    List.SetDesignerProperty;
   List.AddProperty('Icon',@Icon, zptBinary);
     List.SetDesignerProperty;
   List.AddProperty('PreviewClearColor',@PreviewClearColor, zptColorf);

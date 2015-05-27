@@ -38,10 +38,13 @@ type
   protected
     procedure CopyAndDestroy(Source : TContent); override;
     procedure DefineProperties(List: TZPropertyList); override;
+    {$ifndef minimal}
+    procedure InitAfterPropsAreSet; override;
+    {$endif}
   public
     Handle: GLuint;
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
-    PropWidth,PropHeight : TBitmapSize;
+    Width,Height : integer;
     Filter : (bmfLinear,bmfNearest,bmfMipmap);
     constructor CreateFromBitmap(B : TZBitmap);
     destructor Destroy; override;
@@ -72,8 +75,8 @@ uses ZMath,Renderer,ZApplication,GLDrivers;
 constructor TZBitmap.CreateFromBitmap(B: TZBitmap);
 begin
   inherited Create(nil);
-  PropHeight := B.PropHeight;
-  PropWidth := B.PropWidth;
+  Self.Height := B.Height;
+  Self.Width := B.Width;
   Filter := B.Filter;
   {$ifdef android}
   Self._ZApp := B.ZApp;
@@ -153,6 +156,17 @@ begin
   Result := P;
 end;
 
+{$ifndef minimal}
+procedure TZBitmap.InitAfterPropsAreSet;
+begin
+  if Self.HasZapp and (Self.ZApp.FileVersion<2) then
+  begin //Convert from old-style fixed pot2 sizes
+    Self.Height := 16 shl Self.Height;
+    Self.Width := 16 shl Self.Width;
+  end;
+end;
+{$endif}
+
 function TZBitmap.GetCopyAs3f: pointer;
 var
   P : PFloat;
@@ -184,8 +198,8 @@ begin
   B := TZBitmap(Source);
   Self.Handle := B.Handle;
   Self.IsInitialized := B.IsInitialized;
-  Self.PropHeight := B.PropHeight;
-  Self.PropWidth := B.PropWidth;
+  Self.Height := B.Height;
+  Self.Width := B.Width;
   Self.Memory := B.Memory;
   Self.MemFormat := B.MemFormat;
   Self.MemType := B.MemType;
@@ -366,12 +380,12 @@ end;
 
 function TZBitmap.PixelHeight: integer;
 begin
-  Result := 16 shl ord(PropHeight);
+  Result := Height;
 end;
 
 function TZBitmap.PixelWidth: integer;
 begin
-  Result := 16 shl ord(PropWidth);
+  Result := Width;
 end;
 
 procedure TZBitmap.ResetGpuResources;
@@ -386,12 +400,10 @@ begin
   {$ifndef minimal}
 //  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}(@PropWidth), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048','4096']);{$endif}
-    List.GetLast.DefaultValue.ByteValue := Ord(bs64);
-  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}(@PropHeight), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['16','32','64','128','256','512','1024','2048','4096']);{$endif}
-    List.GetLast.DefaultValue.ByteValue := Ord(bs64);
+  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}@Width, zptInteger);
+    List.GetLast.DefaultValue.IntegerValue := 64;
+  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}@Height, zptInteger);
+    List.GetLast.DefaultValue.ByteValue := 64;
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@Handle), zptInteger);

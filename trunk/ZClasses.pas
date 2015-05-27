@@ -3060,7 +3060,7 @@ begin
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
   ExternalSymTab := False;
   SymTab := TSymbolTable.Create;
-  MainXml.LoadFromFile(ansistring(FileName));
+  MainXml.LoadFromFile(FileName);
 end;
 
 procedure TZXmlReader.LoadFromString(const XmlData: string; SymTab : TSymbolTable);
@@ -3396,10 +3396,13 @@ begin
               end;
             zptExpression :
               begin
-                if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
-                  S := PatchOldPropRef(S)
-                else if (Prop.ExpressionKind in [ekiBitmap,ekiMesh]) then
-                  S := PatchBitmapExp(S);
+                if C.HasZapp and (C.ZApp.FileVersion<2) then
+                begin
+                  if Prop.ExpressionKind in [ekiGetValue,ekiGetPointer] then
+                    S := PatchOldPropRef(S)
+                  else if (Prop.ExpressionKind in [ekiBitmap,ekiMesh]) then
+                    S := PatchBitmapExp(S);
+                end;
                 Value.ExpressionValue.Source := String(S);
               end
           else
@@ -3991,9 +3994,6 @@ begin
   Self.Event := Platform_CreateEvent;
   WorkerCount := Platform_GetCpuCount;
   ThreadCount := WorkerCount-1;
-  {$ifdef zlog}
-  ZLog.GetLog(Self.ClassName).Write('Worker count: ' + IntToStr(WorkerCount));
-  {$endif}
   {$ifndef minimal}
   Self.Enabled := True;
   {$endif}
@@ -4042,6 +4042,9 @@ begin
   begin
     if Threads=nil then
     begin
+      {$ifdef zlog}
+      ZLog.GetLog(Self.ClassName).Write('Worker count: ' + IntToStr(WorkerCount));
+      {$endif}
       IsMultiThread:=True; //Tell the Delphi mm that we are multithreaded
       //Create threads
       GetMem(Threads,ThreadCount*SizeOf(Pointer));

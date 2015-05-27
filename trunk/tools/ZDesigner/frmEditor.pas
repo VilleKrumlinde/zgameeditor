@@ -501,8 +501,8 @@ constructor TEditorForm.Create(AOwner: TComponent);
     end;
 
     Zb := TZBitmap.Create(nil);
-    Zb.PropWidth := bs16;
-    Zb.PropHeight := bs16;
+    Zb.Width := 16;
+    Zb.Height := 16;
     Bf := TBitmapFromFile.Create(Zb.Producers);
     Bf.SetProperty( Bf.GetProperties.GetByName('BitmapFile'), Value );
 

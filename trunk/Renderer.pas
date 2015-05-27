@@ -311,7 +311,7 @@ type
     ParticleLifetime : single;
     Speed,SpeedRange : single;
     Radius : single;
-    AnimateAlpha,AnimateSize : single;
+    AnimateAlpha,AnimateSize,Damping : single;
     Duration : single;
     BeginTime : single;
     Gravity : TZVector3f;
@@ -1081,8 +1081,7 @@ end;
 { TFont }
 
 const
-  FontMinSize1 = bs16;
-  FontMinSize2 = 16;
+  FontMinSize1 = 16;
 
 procedure TFont.DefineProperties(List: TZPropertyList);
 begin
@@ -1156,7 +1155,7 @@ begin
     Dec(Char,33);
     //Pick the right font for the size
     FontSize := 0;
-    CurSize := FontMinSize2;
+    CurSize := FontMinSize1;
     while (FontSize<High(FontSizes)) and (CurSize<Size) do
     begin
       Inc(FontSize);
@@ -1212,7 +1211,7 @@ var
   J,I,CharCount : integer;
   RasterPos : TZVector4f;
   CharWidth : single;
-  CurSize1 : TBitmapSize;
+  CurSize1 : integer;
   CurSize2 : integer;
   Characters : TZComponentList;
 begin
@@ -1223,7 +1222,7 @@ begin
   //ladda font
   CharCount := LastChar-FirstCharBuiltIn+1;
   CurSize1 := FontMinSize1;
-  CurSize2 := FontMinSize2;
+  CurSize2 := FontMinSize1;
   for J := 0 to High(FontSizes) do
   begin
     Lists := Platform_GenerateFontDisplayLists(CurSize2,FirstCharBuiltIn,LastChar);
@@ -1235,8 +1234,8 @@ begin
     for I := 0 to CharCount-1 do
     begin
       B:=TZBitmap.Create(Characters);
-      B.PropHeight:=CurSize1;
-      B.PropWidth:=CurSize1;
+      B.Height:=CurSize1;
+      B.Width:=CurSize1;
       B.RenderTargetBegin;
 
       glClearColor(0,0,0,0);
@@ -1364,7 +1363,7 @@ type
   TParticle = class
   private
     LifeTime : single;
-    Position,Velocity,Acceleration : TZVector2f;
+    Position,Velocity: TZVector2f;
     Width,Height : single;
     Color : TZColorf;
   end;
@@ -1407,6 +1406,7 @@ begin
   begin
     if CurrentModel<>nil then
     begin
+      Self.ZApp.Driver.PushMatrix;
       Tmp := PZVector2f(@CurrentModel.Position)^;
       Self.ZApp.Driver.Translate(-Tmp[0],-Tmp[1],0);
     end;
@@ -1462,6 +1462,9 @@ begin
 
   //Restore default color
   glColor3fv(@ZMath.UNIT_XYZ3);
+
+  if not Self.FollowModel and (CurrentModel<>nil) then
+     Self.ZApp.Driver.PopMatrix;
 end;
 
 
@@ -1524,7 +1527,7 @@ procedure TRenderParticles.Update;
 var
   P : TParticle;
   I,EmitCount : integer;
-  DAlpha,DSize,T,DT : single;
+  DSpeed,DAlpha,DSize,T,DT : single;
   ScaledGravity : TZVector2f;
   UseGravity : boolean;
 begin
@@ -1539,6 +1542,7 @@ begin
   //Update positions and remove particles
   DAlpha := Self.AnimateAlpha * DT;
   DSize := Self.AnimateSize * DT;
+  DSpeed := 1.0 - (Self.Damping * DT);
 
   if UseGravity then
     ScaledGravity := VecScalarMult2(PZVector2f(@Gravity)^,DT);
@@ -1555,8 +1559,8 @@ begin
       P.Position[0] := P.Position[0] + P.Velocity[0] * DT;
       P.Position[1] := P.Position[1] + P.Velocity[1] * DT;
 
-      P.Velocity[0] := P.Velocity[0] + P.Acceleration[0] * DT;
-      P.Velocity[1] := P.Velocity[1] + P.Acceleration[1] * DT;
+      P.Velocity[0] := P.Velocity[0] * DSpeed;
+      P.Velocity[1] := P.Velocity[1] * DSpeed;
 
       if UseGravity then
         VecAdd2_Inplace( PZVector2f(@P.Velocity)^, ScaledGravity );
@@ -1605,6 +1609,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ParticleLifetime',{$ENDIF}(@ParticleLifetime), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'AnimateAlpha',{$ENDIF}(@AnimateAlpha), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'AnimateSize',{$ENDIF}(@AnimateSize), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}'Damping',{$ENDIF}(@Damping), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Duration',{$ENDIF}(@Duration), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'BeginTime',{$ENDIF}(@BeginTime), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnEmitExpression',{$ENDIF}(@OnEmitExpression), zptExpression);
