@@ -958,24 +958,6 @@ kbInput[1] -= 1;]]>
             <Array Name="kbInput" Type="1" SizeDim1="2"/>
             <Array Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
             <Model Name="MyCamera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
-              <OnRender>
-                <UseMaterial Material="DefaultMaterial"/>
-                <RenderNet>
-                  <RenderVertexExpression>
-<![CDATA[//
-
-if(this.Vertex.Y < 0)
-{
-  this.Vertex = 0;
-}
-else
-{
-  this.Vertex.X *= 2;
-  this.Vertex.Y *= 4;
-}]]>
-                  </RenderVertexExpression>
-                </RenderNet>
-              </OnRender>
               <OnUpdate>
                 <ZExpression>
                   <Expression>
@@ -1021,6 +1003,24 @@ App.CameraPosition.Y = CurrentModel.Position.Y;]]>
                   </Expression>
                 </ZExpression>
               </OnUpdate>
+              <OnRender>
+                <UseMaterial Material="DefaultMaterial"/>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+if(this.Vertex.Y < 0)
+{
+  this.Vertex = 0;
+}
+else
+{
+  this.Vertex.X *= 2;
+  this.Vertex.Y *= 4;
+}]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </OnRender>
             </Model>
             <Model Name="Building">
               <OnRender>
@@ -2402,65 +2402,38 @@ void bitField(int X, int B)
           </Children>
         </Group> <!-- BitLibraryGroup -->
 
-        <Group Name="HsvColorGroup" Comment="HSV Color Library">
-          <Children>
-            <Array Name="Color" SizeDim1="3"/>
-            <ZLibrary Comment="HSV Library">
-              <Source>
-<![CDATA[//
-
-float angle(float X)
+        <ZLibrary Comment="HSV Library">
+          <Source>
+<![CDATA[vec3 hsv(float h, float s, float v)
 {
-  if(X >= 0 && X < 360)return X;
-  if(X > 360)return X-floor(X/360)* 360;
-  if(X <   0)return X+floor(X/360)*-360;
-}
+  s = clamp(s/100, 0, 1);
+  v = clamp(v/100, 0, 1);
 
-//
+  if(!s)return vector3(v, v, v);
 
-void hsv(float H, float S, float V)
-{
-  float R,G,B,I,F,P,Q,T;
+  h = h < 0 ? frac(1-abs(frac(h/360)))*6 : frac(h/360)*6;
 
-  H = angle(H);
-  S = clamp(S,0,100);
-  V = clamp(V,0,100);
+  float c, f, p, q, t;
 
-  H /= 60;
-  S /= 100;
-  V /= 100;
+  c = floor(h);
+  f = h-c;
 
-  if(S == 0)
+  p = v*(1-s);
+  q = v*(1-s*f);
+  t = v*(1-s*(1-f));
+
+  switch(c)
   {
-    Color[0] = V;
-    Color[1] = V;
-    Color[2] = V;
-    return;
+    case 0: return vector3(v, t, p);
+    case 1: return vector3(q, v, p);
+    case 2: return vector3(p, v, t);
+    case 3: return vector3(p, q, v);
+    case 4: return vector3(t, p, v);
+    case 5: return vector3(v, p, q);
   }
-
-  I = floor(H);
-  F = H-I;
-
-  P = V*(1-S);
-  Q = V*(1-S*F);
-  T = V*(1-S*(1-F));
-
-  if(I == 0){R = V; G = T; B = P;}
-  if(I == 1){R = Q; G = V; B = P;}
-  if(I == 2){R = P; G = V; B = T;}
-  if(I == 3){R = P; G = Q; B = V;}
-  if(I == 4){R = T; G = P; B = V;}
-  if(I == 5){R = V; G = P; B = Q;}
-
-  Color[0] = R;
-  Color[1] = G;
-  Color[2] = B;
 }]]>
-              </Source>
-            </ZLibrary>
-          </Children>
-        </Group> <!-- HsvColorGroup -->
-
+          </Source>
+        </ZLibrary>
         <Group Name="MatrixLibraryGroup" Comment="Matrix Library">
           <Children>
             <ZLibrary Comment="Matrix Library">

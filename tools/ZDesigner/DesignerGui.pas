@@ -1416,8 +1416,8 @@ begin
       ZBm := (BmFile.GetOwner as TZBitmap);
       if (ZBm.PixelWidth<Bm.Width) or  (ZBm.PixelHeight<Bm.Height) then
       begin
-        ZBm.PropWidth := NextPowerOfTwoBitmap(Bm.Width);
-        ZBm.PropHeight := NextPowerOfTwoBitmap(Bm.Height);
+        ZBm.Width := Bm.Width;
+        ZBm.Height := Bm.Height;
       end;
     end;
 
