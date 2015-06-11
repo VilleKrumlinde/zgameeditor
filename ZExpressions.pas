@@ -237,7 +237,7 @@ type
   public
     Kind : TExpOpJumpKind;
     Destination : integer;
-    _Type : (jutFloat,jutInt,jutString);
+    _Type : (jutFloat,jutInt,jutString,jutPointer);
     {$ifndef minimal}
     function ExpAsText : string; override;
     {$endif}
@@ -856,7 +856,14 @@ begin
             if Kind=jsJumpNE then
                Jump := not Jump;
           end;
-        //todo: need to compare pointer-size here for win64
+        jutPointer:
+          begin
+            Env.StackPopToPointer(Rp);
+            Env.StackPopToPointer(Lp);
+            Jump := Rp=Lp;
+            if Kind=jsJumpNE then
+              Jump := not Jump;
+          end;
       end;
     end;
   end;
@@ -1984,7 +1991,7 @@ begin
 end;
 
 {$elseif defined(cpux64)}
-procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8 : NativeInt);
+procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
 end;
 
@@ -2046,7 +2053,7 @@ begin
   begin
     if I<4 then
     begin
-      case TZcDataTypeKind(ArgTypes[I]) of
+      case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
         zctInt :
           begin
             W(Int32Regs[I]);
@@ -2068,7 +2075,7 @@ begin
     end else
     begin
       //push on stack
-      case GetZcTypeSize(TZcDataTypeKind(ArgTypes[I])) of
+      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
         4 :
           begin
             W(Int32Stack1);
@@ -2111,14 +2118,17 @@ begin
   begin
     Self.Proc := Lib.LoadFunction(Self.FuncName);
     //Make sure there is enough stack space for calling a func with 8 params
-    DummyProc(1,2,3,4,5,6,7,8);
+    DummyProc(1,2,3,4,5,6,7,8,9,10,11,12);
     FreeMem(Self.Trampoline);
     Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
+    {$ifndef minimal}
+    Assert(Length(Self.ArgTypes)=ArgCount);
+    {$endif}
   end;
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := ArgCount-1 downto 0 do
-    if GetZcTypeSize(TZcDataTypeKind(Self.ArgTypes[I]))=SizeOf(Pointer) then
+    if GetZcTypeSize(TZcDataTypeKind(Ord(Self.ArgTypes[I])-1))=SizeOf(Pointer) then
       Env.StackPopToPointer(Args[I])
     else
       Env.StackPopTo(Args[I]);

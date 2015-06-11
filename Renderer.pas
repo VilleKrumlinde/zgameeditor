@@ -1260,7 +1260,7 @@ begin
     end;
 
     glDeleteLists(Lists,CharCount);
-    Inc(CurSize1);
+    Inc(CurSize1,CurSize1);
     Inc(CurSize2,CurSize2);
   end;
 end;
@@ -1891,10 +1891,10 @@ begin
     end;
     {$endif}
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
-    {$ifndef minimal}
+    {$if (not defined(minimal)) and (not defined(zgeviz)) }
     if Sv.Location=-1 then
       ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + String(Sv.VariableName) );
-    {$endif}
+    {$ifend}
   end;
 end;
 

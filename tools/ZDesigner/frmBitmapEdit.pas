@@ -23,6 +23,7 @@ type
     SaveToFileButton: TButton;
     Panel1: TPanel;
     UseAlphaCheckBox: TCheckBox;
+    TileCheckBox: TCheckBox;
     procedure ImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ImageMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -987,8 +988,9 @@ begin
 
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity();
+  if TileCheckBox.Checked then
+    glScalef(2,2,1);
   glMatrixMode(GL_MODELVIEW);
-
   glViewport(0, 0, Glp.Width, Glp.Height);
 
   glClearColor(0.5,0.5,0.5,0);

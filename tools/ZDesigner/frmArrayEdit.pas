@@ -16,8 +16,7 @@ type
     PasteAllButton: TButton;
     procedure GridSetEditText(Sender: TObject; ACol, ARow: Integer;
       const Value: string);
-    procedure UpDown1ChangingEx(Sender: TObject; var AllowChange: Boolean;
-      NewValue: Smallint; Direction: TUpDownDirection);
+    procedure UpDown1ChangingEx(Sender: TObject; var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
     procedure CopyAllButtonClick(Sender: TObject);
     procedure PasteAllButtonClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);
@@ -162,7 +161,7 @@ begin
 end;
 
 procedure TArrayEditForm.UpDown1ChangingEx(Sender: TObject;
-  var AllowChange: Boolean; NewValue: Smallint; Direction: TUpDownDirection);
+  var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
 begin
   if (NewValue>=0) and (NewValue<TheArray.SizeDim1) then
   begin
