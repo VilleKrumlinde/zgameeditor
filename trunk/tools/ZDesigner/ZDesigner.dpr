@@ -29,6 +29,7 @@ program ZDesigner;
 
 uses
   Forms,
+  Windows,
   HTMLHelpViewer,
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
@@ -101,6 +102,9 @@ uses
 {$SETPEFLAGS $21}
 
 begin
+  //Disable dpi virtualization
+  //SetProcessDPIAware;
+
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;
 

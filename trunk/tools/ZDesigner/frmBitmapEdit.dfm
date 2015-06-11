@@ -78,7 +78,7 @@ inherited BitmapEditFrame: TBitmapEditFrame
           OnClick = DisablePreviewCheckBoxClick
         end
         object SaveToFileButton: TButton
-          Left = 198
+          Left = 256
           Top = 1
           Width = 75
           Height = 20
@@ -87,12 +87,21 @@ inherited BitmapEditFrame: TBitmapEditFrame
           OnClick = SaveToFileButtonClick
         end
         object UseAlphaCheckBox: TCheckBox
-          Left = 92
+          Left = 87
           Top = 1
           Width = 100
           Height = 18
           Caption = 'Draw with alpha'
           TabOrder = 2
+          OnClick = DisablePreviewCheckBoxClick
+        end
+        object TileCheckBox: TCheckBox
+          Left = 189
+          Top = 1
+          Width = 50
+          Height = 18
+          Caption = 'Tile'
+          TabOrder = 3
           OnClick = DisablePreviewCheckBoxClick
         end
       end

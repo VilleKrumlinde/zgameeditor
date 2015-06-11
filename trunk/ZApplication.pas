@@ -149,7 +149,6 @@ type
     ZgeVizCameraRotation : TZVector3f;
     ZgeVizTime : single;
     ZgeVizCameraCallback,ZgeVizViewportCallback : TAppCallback;
-    ZgeVizIsFeedbackLayer : boolean;
     MainRenderTarget : TRenderTarget;
     procedure ViewportChanged;
     {$endif}
@@ -1172,6 +1171,7 @@ begin
   {$IFNDEF MINIMAL}
   List.AddProperty('FileVersion',@FileVersion, zptInteger);
     List.SetDesignerProperty;
+    List.GetLast.HideInGui := True;
   List.AddProperty('Icon',@Icon, zptBinary);
     List.SetDesignerProperty;
   List.AddProperty('PreviewClearColor',@PreviewClearColor, zptColorf);

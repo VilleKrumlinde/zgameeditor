@@ -985,7 +985,8 @@ begin
   Op.Kind := Kind;
   case T of
     zctFloat: Op._Type := jutFloat;
-    zctInt,zctByte,zctModel,zctNull,zctReference: Op._Type := jutInt;
+    zctInt,zctByte: Op._Type := jutInt;
+    zctXptr,zctNull,zctModel,zctReference : Op._Type := jutPointer;
     zctString:
       begin
         Op._Type := jutString;
@@ -1225,10 +1226,11 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       S := '';
       for Arg in UserFunc.Arguments do
       begin
+        //Use +1 to avoid #0 character in string
         if Arg.Typ.IsPointer then
-          S := S + AnsiChar( zctXptr )
+          S := S + AnsiChar( Ord(zctXptr)+1 )
         else
-          S := S + AnsiChar( Arg.Typ.Kind );
+          S := S + AnsiChar( Ord(Arg.Typ.Kind)+1 );
       end;
       FE.SetString('ArgTypes',S);
       {$endif}

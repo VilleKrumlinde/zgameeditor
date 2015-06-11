@@ -2,59 +2,49 @@ object ArrayEditForm: TArrayEditForm
   Left = 0
   Top = 0
   Caption = 'Edit array values'
-  ClientHeight = 374
-  ClientWidth = 557
+  ClientHeight = 286
+  ClientWidth = 613
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -14
+  Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
   ShowHint = True
   DesignSize = (
-    557
-    374)
-  PixelsPerInch = 120
-  TextHeight = 17
+    613
+    286)
+  PixelsPerInch = 96
+  TextHeight = 13
   object OkButton: TButton
-    Left = 449
-    Top = 331
-    Width = 98
-    Height = 33
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
+    Left = 530
+    Top = 253
+    Width = 75
+    Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'OK'
     TabOrder = 0
     OnClick = OkButtonClick
+    ExplicitLeft = 343
   end
   object Grid: TStringGrid
-    Left = 21
-    Top = 21
-    Width = 514
-    Height = 284
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
+    Left = 16
+    Top = 16
+    Width = 580
+    Height = 217
     Anchors = [akLeft, akTop, akRight, akBottom]
     RowCount = 2
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goTabs, goAlwaysShowEditor]
     TabOrder = 1
     OnSetEditText = GridSetEditText
+    ExplicitWidth = 393
   end
   object UpDown1: TUpDown
-    Left = 75
-    Top = 322
-    Width = 31
-    Height = 25
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
+    Left = 57
+    Top = 246
+    Width = 24
+    Height = 21
     Anchors = [akLeft, akBottom]
     Associate = Dim3Edit
     Orientation = udHorizontal
@@ -62,47 +52,37 @@ object ArrayEditForm: TArrayEditForm
     OnChangingEx = UpDown1ChangingEx
   end
   object Dim3Edit: TEdit
-    Left = 21
-    Top = 322
-    Width = 54
-    Height = 25
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
+    Left = 16
+    Top = 246
+    Width = 41
+    Height = 21
     Anchors = [akLeft, akBottom]
     ReadOnly = True
     TabOrder = 3
     Text = '0'
   end
   object CopyAllButton: TButton
-    Left = 187
-    Top = 331
-    Width = 112
-    Height = 33
+    Left = 330
+    Top = 253
+    Width = 86
+    Height = 25
     Hint = 'Copy all values as comma-seperated text to clipboard'
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = 'Copy all values'
     TabOrder = 4
     OnClick = CopyAllButtonClick
+    ExplicitLeft = 143
   end
   object PasteAllButton: TButton
-    Left = 307
-    Top = 331
-    Width = 113
-    Height = 33
+    Left = 422
+    Top = 253
+    Width = 86
+    Height = 25
     Hint = 'Paste all values from clipboard'
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = 'Paste all values'
     TabOrder = 5
     OnClick = PasteAllButtonClick
+    ExplicitLeft = 235
   end
 end
