@@ -6,11 +6,11 @@
   https://github.com/Rado-1/ZgeBullet
 
   Download Windows DLL and Android shared library from
-  http://googledrive.com/host/0BxwfQ8la88ouQTVuLWJfY1dMVGs/
+  https://github.com/Rado-1/ZgeBullet/releases
 
   Copyright (c) 2012-2015 Radovan Cervenka
 
-  Version: 2.0 (2015-06-08)
+  Version: 2.1 (2015-06-??)
 */
 
 
@@ -288,6 +288,8 @@ void zbtSetGeneric6DofSpring(xptr spring,
 	int axis, int bEnableSpring, float stiffness, float damping,
 	float equilibriumPoint) {}
 
+void zbtSetEnabled(xptr constraint, int bEnabled) {}
+	
 void zbtDeleteConstraint(xptr constraint) {}
 
 
@@ -422,20 +424,30 @@ void zbtGetPositionXYZ(xptr obj,
 
 void zbtGetPosition(xptr obj, xptr outPosition) {}
 
-void zbtSetPosition(xptr obj, float x, float y, float z) {}
+void zbtSetPositionXYZ(xptr obj, float x, float y, float z) {}
+
+void zbtSetPosition(xptr obj, xptr position) {}
 
 void zbtGetRotationXYZ(xptr obj,
 	ref float outRx, ref float outRy, ref float outRz) {}
 
 void zbtGetRotation(xptr obj, xptr outRotation) {}
 
-void zbtSetRotation(xptr obj, float rx, float ry, float rz) {}
+void zbtSetRotationXYZ(xptr obj, float rx, float ry, float rz) {}
+
+void zbtSetRotation(xptr obj, xptr rotation) {}
 
 void zbtGetPosRotXYZ(xptr obj,
 	ref float outX, ref float outY, ref float outZ,
 	ref float outRx, ref float outRy, ref float outRz) {}
 
 void zbtGetPosRot(xptr obj, xptr outPosition, xptr outRotation) {}
+
+void zbtSetPosRotXYZ(xptr obj,
+	float x, float y, float z,
+	float rx, float ry, float rz) {}
+
+void zbtSetPosRot(xptr obj, xptr position, xptr rotation) {}
 
 void zbtSetCollisionFlags(xptr obj, int flags) {}
 
