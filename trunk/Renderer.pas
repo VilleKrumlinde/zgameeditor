@@ -1229,7 +1229,7 @@ begin
     Characters := TZComponentList.Create;
     FontSizes[J] := Characters;
     {$ifndef Win32}
-    Continue; //Built-int only work on win32
+    Continue; //Built-in only work on win32
     {$endif}
     for I := 0 to CharCount-1 do
     begin
