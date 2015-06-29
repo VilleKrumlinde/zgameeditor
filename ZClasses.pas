@@ -55,7 +55,7 @@ type
  ZExpressionClassId,ExpConstantFloatClassId,ExpConstantIntClassId,
  ExpOpBinaryFloatClassId,ExpOpBinaryIntClassId,
  ExpJumpClassId,DefineVariableClassId,ExpFuncCallClassId,ExpExternalFuncCallClassId,
- ExpArrayReadClassId,ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
+ ExpArrayWriteClassId,ExpStackFrameClassId,ExpAccessLocalClassId,
  ExpReturnClassId,ExpMiscClassId,ExpUserFuncCallClassId,ExpConvertClassId,
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
@@ -299,7 +299,7 @@ type
     NeverPersist : boolean;
     DontClone : boolean;
     IsManagedTarget: boolean;   //Values are garbagecollected
-    Offset : integer;
+    Offset : NativeInt;
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
     NotifyWhenChanged : TPropNotifyProc;  //Call PropertyHasChanged
@@ -359,7 +359,7 @@ type
     destructor Destroy; override;
     function GetProperties : TZPropertyList;
     procedure SetProperty(Prop : TZProperty; const Value : TZPropertyValue);
-    procedure GetProperty(Prop : TZProperty; var Value : TZPropertyValue);
+    function GetProperty(Prop: TZProperty) : TZPropertyValue;
     function GetPropertyPtr(Prop : TZProperty; Index : integer) : pointer;
     procedure Update; virtual;
     procedure Change;
@@ -958,7 +958,7 @@ begin
         case Prop.PropertyType of
           zptComponentRef :
             begin
-              C.GetProperty(Prop,Value);
+              Value := C.GetProperty(Prop);
               if Value.ComponentValue=Target then
                 List.Add(C);
             end;
@@ -1136,12 +1136,12 @@ begin
     case Prop.PropertyType of
       zptComponentList :
         begin
-          GetProperty(Prop,Value);
+          Value := GetProperty(Prop);
           Value.ComponentListValue.Free;
         end;
       zptExpression :
         begin
-          GetProperty(Prop,Value);
+          Value := GetProperty(Prop);
           Value.ExpressionValue.Code.Free;
         end;
       zptString,zptPointer :
@@ -1155,7 +1155,7 @@ begin
           //Frigör binary mem enbart i designer.
           //I minimal så klonas binary genom att peka på samma source, mem skulle
           //då frigöras flera gånger.
-          GetProperty(Prop,Value);
+          Value := GetProperty(Prop);
           FreeMem(Value.BinaryValue.Data);
         end;
       {$endif}
@@ -1185,42 +1185,42 @@ begin
     List.GetLast.DontClone := True;
 end;
 
-procedure TZComponent.GetProperty(Prop: TZProperty; var Value: TZPropertyValue);
+function TZComponent.GetProperty(Prop: TZProperty) : TZPropertyValue;
 var
   P : pointer;
 begin
-  P := pointer(NativeInt(Self) + Prop.Offset);
+  P := pointer(NativeUInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
-      Value.FloatValue := PFloat(P)^;
+      Result.FloatValue := PFloat(P)^;
     zptString :
-      Value.StringValue := PAnsiChar(PPointer(P)^);
+      Result.StringValue := PAnsiChar(PPointer(P)^);
     zptComponentRef :
-      Value.ComponentValue := TZComponent(PPointer(P)^);
+      Result.ComponentValue := TZComponent(PPointer(P)^);
     zptInteger :
-      Value.IntegerValue := PInteger(P)^;
+      Result.IntegerValue := PInteger(P)^;
     zptRectf :
-      Value.RectfValue := PRectf(P)^;
+      Result.RectfValue := PRectf(P)^;
     zptColorf :
-      Value.ColorfValue := PColorf(P)^;
+      Result.ColorfValue := PColorf(P)^;
     zptVector3f :
-      Value.Vector3fValue := PZVector3f(P)^;
+      Result.Vector3fValue := PZVector3f(P)^;
     zptComponentList :
-      Value.ComponentListValue := TZComponentList(PPointer(P)^);
+      Result.ComponentListValue := TZComponentList(PPointer(P)^);
     zptByte :
-      Value.ByteValue := PByte(P)^;
+      Result.ByteValue := PByte(P)^;
     zptBoolean :
-      Value.BooleanValue := PBoolean(P)^;
+      Result.BooleanValue := PBoolean(P)^;
     zptExpression :
       {$ifdef minimal}
-      Value.ExpressionValue.Code := TZComponentList(PPointer(P)^);
+      Result.ExpressionValue.Code := TZComponentList(PPointer(P)^);
       {$else}
-      Value.ExpressionValue := PZExpressionPropValue(P)^;
+      Result.ExpressionValue := PZExpressionPropValue(P)^;
       {$endif}
     zptBinary :
-      Value.BinaryValue := PZBinaryPropValue(P)^;
+      Result.BinaryValue := PZBinaryPropValue(P)^;
     zptPointer :
-      Value.PointerValue := PPointer(P)^;
+      Result.PointerValue := PPointer(P)^;
     {$ifdef minimal}
     else
       ZHalt('GetProperty no handler');
@@ -1235,7 +1235,7 @@ var
   S : ansistring;
   {$endif}
 begin
-  P := pointer(NativeInt(Self) + Prop.Offset);
+  P := pointer(NativeUInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       PFloat(P)^ := Value.FloatValue;
@@ -1350,13 +1350,13 @@ begin
     case Prop.PropertyType of
       zptComponentList :
         begin
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
           for J := 0 to Value.ComponentListValue.ComponentCount-1 do
             CloneAssignObjectIds(TZComponent(Value.ComponentListValue[J]),ObjIds,CleanUps);
         end;
       zptExpression :
         begin
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
           for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
             CloneAssignObjectIds(TZComponent(Value.ExpressionValue.Code[J]),ObjIds,CleanUps);
         end;
@@ -1436,9 +1436,9 @@ begin
     Prop := TZProperty(PropList[I]);
     if Prop.DontClone then
       Continue; //Skip properties like: objid, model.personality
-    GetProperty(Prop,Value);
+    Value := GetProperty(Prop);
     if (Into<>nil) and Prop.IsDefaultValue(Value) then
-      //Skip default values when cloning into. 
+      //Skip default values when cloning into.
       //This is because child models should keep their base model property values unless values are overriden (i.e. non-default).
       Continue;
     case Prop.PropertyType of
@@ -1450,12 +1450,12 @@ begin
         end;
       zptComponentList :
         begin
-          Result.GetProperty(Prop,Tmp);
+          Tmp := Result.GetProperty(Prop);
           InCloneList(Value.ComponentListValue,Tmp.ComponentListValue);
         end;
       zptExpression :
         begin
-          Result.GetProperty(Prop,Tmp);
+          Tmp := Result.GetProperty(Prop);
           InCloneList(Value.ExpressionValue.Code,Tmp.ExpressionValue.Code);
           {$ifndef minimal}
           //Also copy source if in designer
@@ -1496,7 +1496,7 @@ begin
     case Prop.PropertyType of
       zptComponentList :
         begin
-          GetProperty(Prop,Value);
+          Value := GetProperty(Prop);
           for J := 0 to Value.ComponentListValue.Count - 1 do
             (Value.ComponentListValue[J] as TZComponent).ResetGpuResources;
         end;
@@ -1544,7 +1544,7 @@ begin
     case Prop.PropertyType of
       zptComponentList :
         begin
-          GetProperty(Prop,Value);
+          Value := GetProperty(Prop);
           Value.ComponentListValue.DesignerReset;
         end;
     end;
@@ -1575,7 +1575,7 @@ begin
     case Prop.PropertyType of
       zptComponentList :
         begin
-          Self.GetProperty(Prop,Value);
+          Value := Self.GetProperty(Prop);
           for J := 0 to Value.ComponentListValue.ComponentCount-1 do
             TZComponent(Value.ComponentListValue[J]).GetAllChildren(List,IncludeExpressions);
         end;
@@ -1583,7 +1583,7 @@ begin
         begin
           if IncludeExpressions then
           begin
-            Self.GetProperty(Prop,Value);
+            Value := Self.GetProperty(Prop);
             for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
               TZComponent(Value.ExpressionValue.Code[J]).GetAllChildren(List,IncludeExpressions);
           end;
@@ -2232,7 +2232,7 @@ begin
     Prop := TZProperty(PropList[I]);
     if Prop.ExcludeFromBinary or Prop.NeverPersist then
       Continue;
-    C.GetProperty(Prop,Value);
+    Value := C.GetProperty(Prop);
     PStream := PStreams[Prop.PropertyType];
     if Prop.IsDefaultValue(Value) then
     begin
@@ -2294,7 +2294,7 @@ begin
   for I := 0 to AfterList.Count-1 do
   begin
     Prop := TZProperty(AfterList[I]);
-    C.GetProperty(Prop,Value);
+    Value := C.GetProperty(Prop);
     case Prop.PropertyType of
       zptComponentList :
         InWriteList(Value.ComponentListValue);
@@ -2371,18 +2371,18 @@ var
       case Prop.PropertyType of
         zptComponentRef :
           begin
-            C.GetProperty(Prop,Value);
+            Value := C.GetProperty(Prop);
             InGiveOne(Value.ComponentValue);
           end;
         zptComponentList :
           begin
-            C.GetProperty(Prop,Value);
+            Value := C.GetProperty(Prop);
             for J := 0 to Value.ComponentListValue.ComponentCount-1 do
               InGiveObjIds(Value.ComponentListValue.GetComponent(J));
           end;
         zptExpression :
           begin
-            C.GetProperty(Prop,Value);
+            Value := C.GetProperty(Prop);
             for J := 0 to Value.ExpressionValue.Code.ComponentCount-1 do
               InGiveObjIds(Value.ExpressionValue.Code.GetComponent(J));
           end;
@@ -2492,7 +2492,7 @@ begin
     for I := 0 to PropList.Count-1 do
     begin
       Prop := TZProperty(PropList[I]);
-      C.GetProperty(Prop,Value);
+      Value := C.GetProperty(Prop);
       if Prop.NeverPersist or Prop.ExcludeFromXml or Prop.IsDefaultValue(Value) then
         Continue;
       case Prop.PropertyType of
@@ -2523,7 +2523,7 @@ begin
     for I := 0 to NormalProps.Count-1 do
     begin
       Prop := TZProperty(NormalProps[I]);
-      C.GetProperty(Prop,Value);
+      Value := C.GetProperty(Prop);
       case Prop.PropertyType of
         zptString : V := InAttrValue( Value.StringValue );
         zptFloat,zptScalar :
@@ -2560,7 +2560,7 @@ begin
       for I := 0 to NestedProps.Count-1 do
       begin
         Prop := TZProperty(NestedProps[I]);
-        C.GetProperty(Prop,Value);
+        Value := C.GetProperty(Prop);
         LevelDown;
         WriteLine('<' + Prop.Name + '>');
         case Prop.PropertyType of
@@ -2954,13 +2954,13 @@ begin
       zptComponentList :
         begin
           //läs först så att vi får samma pekare (listan ägs av komponenten)
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
           InReadList(Value.ComponentListValue);
         end;
       zptExpression :
         begin
           //läs först så att vi får samma pekare (listan ägs av komponenten)
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
           InReadList(Value.ExpressionValue.Code);
         end;
     {$ifdef zdebug}
@@ -3157,7 +3157,7 @@ var
     if NotFounds.Values['Texture']='' then
       Exit;
     Prop := PropList.GetByName('Textures');
-    C.GetProperty(Prop,Value);
+    Value := C.GetProperty(Prop);
     S := '<MaterialTexture Texture="' + ansistring(NotFounds.Values['Texture']) + '" ';
     InFixTex('TextureScale');
     InFixTex('TextureX');
@@ -3222,7 +3222,7 @@ var
       '</Sample>';
 
     Prop := PropList.GetByName('Sample');
-    C.GetProperty(Prop,Value);
+    Value := C.GetProperty(Prop);
 
     OtherXml := TXmlParser.Create;
     OtherXml.LoadFromBuffer(PAnsiChar(S));
@@ -3449,7 +3449,7 @@ begin
               end;
               if NestedProp=nil then
                 raise Exception.Create('TZXmlReader: Unknown nested property ' + String(Xml.CurName));
-              C.GetProperty(NestedProp,Value);
+              Value := C.GetProperty(NestedProp);
               while Xml.Scan do
                 case Xml.CurPartType of
                   ptStartTag,ptEmptyTag,ptCData  :

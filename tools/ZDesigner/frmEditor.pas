@@ -31,7 +31,8 @@ uses
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
   Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
-  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl;
+  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl,
+  System.ImageList;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -2075,7 +2076,7 @@ begin
   //Läs tillbaka propvärde för kompilering
   C := Selected;
   Prop := C.GetProperties.GetByName(ExprEditBox.Hint);
-  C.GetProperty(Prop,PropValue);
+  PropValue := C.GetProperty(Prop);
   Success:=False;
   try
     if (C is TZLibrary) or (C is TZExternalLibrary) then

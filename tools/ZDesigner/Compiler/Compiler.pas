@@ -161,8 +161,7 @@ begin
       //Need to cast from double, otherwise precision problem: assert( StrToInt('$01111111'=17895697) );
       with TExpConstantInt.Create(Target) do
         Constant := Round(Value);
-    zctNull :
-      TExpConstantInt.Create(Target);
+    zctNull : TExpMisc.Create(Target,emLoadNull);
     else
       raise ECodeGenError.Create('Invalid literal: ' + FloatToStr(Value));
   end;
@@ -236,7 +235,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       raise ECodeGenError.Create('Failed to deref ' + Op.Id);
 
     case PTyp of
-      zptString,zptComponentRef: Kind := emPtrDerefPointer;
+      zptString,zptComponentRef,zptPointer: Kind := emPtrDerefPointer;
       zptByte,zptBoolean: Kind := emPtrDeref1;
     else
       Kind := emPtrDeref4;
@@ -256,8 +255,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       L.Kind := loLoad;
       if (Op.Ref is TZcOpArgumentVar) and (Op.Ref as TZcOpArgumentVar).Typ.IsPointer then
       begin //"ref" argument, need to dereference pointer to get value
-        TExpMisc.Create(Target, emPtrDeref4);
-        //todo: need attention in 64-bit mode
+        TExpMisc.Create(Target, emPtrDerefPointer);
       end;
     end else if LowerCase(Op.Id)='currentmodel' then
     begin
@@ -326,7 +324,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     case TDefineArray(A)._Type of
       zctByte :
         TExpMisc.Create(Target, emPtrDeref1);
-      zctString,zctModel :
+      zctString,zctModel,zctXptr :
         TExpMisc.Create(Target, emPtrDerefPointer);
       else
         if TDefineArray(A)._Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
@@ -600,7 +598,7 @@ begin
     //Local "ref" argument
     GenAddress(LeftOp);
     GenValue(RightOp);
-    Target.AddComponent( MakeAssignOp(4) ); //todo: need attention in 64-bit mode
+    Target.AddComponent( MakeAssignOp( GetZcTypeSize(LeftOp.GetDataType.Kind) ) );
     if LeaveValue=alvPost then
       GenValue(LeftOp);
   end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
@@ -643,7 +641,7 @@ begin
     if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
     case Prop.PropertyType of
-      zptString, zptComponentRef: AssignSize := 100;
+      zptString, zptComponentRef, zptPointer: AssignSize := 100;
       zptByte, zptBoolean: AssignSize := 1;
     else
       AssignSize := 4;
@@ -1285,12 +1283,13 @@ var
   I : integer;
 begin
   Result := S;
-{$if CompilerVersion>=26}  //Xe5 and upwards
+//todo: for some reason this cause memory corruption in xe8
+{$if CompilerVersion=26}  //Xe5 and upwards
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
-{$ifend}
+{$endif}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
@@ -1384,7 +1383,7 @@ begin
         while (I>0) do
         begin
           Dec(I);
-          if Target.Items[I] is TExpConstantInt then
+          if (Target.Items[I] is TExpMisc) and (TExpMisc(Target.Items[I]).Kind=emLoadNull)  then
             Target.Items[I].Free;  //remove the "null" from "return null"
           if Target.Items[I] is TExpFuncCall then
           begin //remove the __getLValue call. This will make the code return the lvalue instead of null.

@@ -171,7 +171,7 @@ type
     procedure ClearConstantPool;
     procedure RefreshSymbolTable;
     procedure Compile;
-    procedure CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
+    procedure CompileProperty(C : TZComponent; Expr : TZPropertyValue; const Prop : TZProperty);
     function BindComponent<T : class>(const CompName : string; out O : T) : boolean;
     {$endif}
   end;
@@ -950,7 +950,7 @@ begin
         Prop := TZProperty(PropList[J]);
         if Prop.PropertyType=zptExpression then
         begin
-          C.GetProperty(Prop,PropValue);
+          PropValue := C.GetProperty(Prop);
           CompileProperty(C,PropValue,Prop);
         end;
       end;
@@ -962,7 +962,7 @@ begin
   FormatSettings.DecimalSeparator := OldSep;
 end;
 
-procedure TZApplication.CompileProperty(C : TZComponent; Expr : TZPropertyValue; Prop : TZProperty);
+procedure TZApplication.CompileProperty(C : TZComponent; Expr : TZPropertyValue; const Prop : TZProperty);
 var
   CurParent: TZComponent;
   Model : TZComponent;

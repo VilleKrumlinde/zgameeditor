@@ -25,7 +25,7 @@ program ZDesigner;
 
 {$if defined(CPUX64)}
   {$EXCESSPRECISION OFF} //Needed for fast single-precision math
-{$ifend}
+{$endif}
 
 uses
   Forms,

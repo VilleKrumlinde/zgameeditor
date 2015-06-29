@@ -24,7 +24,7 @@ interface
 
 uses
   SysUtils, Classes, ImgList, Controls, Menus, ActnList, XPStyleActnCtrls,
-  ActnMan, StdActns, Dialogs, System.Actions;
+  ActnMan, StdActns, Dialogs, System.Actions, System.ImageList;
 
 type
   TCommonModule = class(TDataModule)

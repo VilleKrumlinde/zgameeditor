@@ -358,7 +358,7 @@ begin
   if ComponentManager.GetInfo(OwnerC).ClassId<>ModelClassId then
     Exit;
   //Var must be in Definitions-list
-  OwnerC.GetProperty( OwnerC.GetProperties.GetByName('Definitions'), PropValue );
+  PropValue := OwnerC.GetProperty( OwnerC.GetProperties.GetByName('Definitions'));
   if PropValue.ComponentListValue<>C.OwnerList then
     Exit;
   Result := C;
@@ -386,11 +386,11 @@ var
     Model := C.OwnerList.Owner;
     repeat
       //Get the correct item index by adding up definitions in the  model inheritance chain
-      Model.GetProperty( Model.GetProperties.GetByName('BaseModel'), PropValue );
+      PropValue := Model.GetProperty( Model.GetProperties.GetByName('BaseModel'));
       Parent := PropValue.ComponentValue;
       if Parent<>nil then
       begin
-        Parent.GetProperty( Parent.GetProperties.GetByName('Definitions'), PropValue );
+        PropValue := Parent.GetProperty( Parent.GetProperties.GetByName('Definitions'));
         Inc(I,PropValue.ComponentListValue.Count);
       end;
       Model := Parent;
@@ -1010,7 +1010,7 @@ begin
       until (Owner=nil) or (ComponentManager.GetInfo(Owner).ClassId=ModelClassId);
       while Owner<>nil do
       begin //Check in closest parent model including any hierarchy
-        Owner.GetProperty( Owner.GetProperties.GetByName('Definitions'), PropValue );
+        PropValue := Owner.GetProperty( Owner.GetProperties.GetByName('Definitions'));
         if PropValue.ComponentListValue.IndexOf(Op.Ref)>-1 then
         begin
           Result := MakeOp(zcSelect,[ MakeIdentifier('CurrentModel') ]);
@@ -1018,7 +1018,7 @@ begin
           Result.Ref := Op.Ref;
           Break;
         end;
-        Owner.GetProperty( Owner.GetProperties.GetByName('BaseModel'), PropValue );
+        PropValue := Owner.GetProperty( Owner.GetProperties.GetByName('BaseModel'));
         Owner := PropValue.ComponentValue;
       end;
     end;

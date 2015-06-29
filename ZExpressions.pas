@@ -289,12 +289,6 @@ type
     procedure Execute(Env : PExecutionEnvironment); override;
   end;
 
-  //Read value from array and push on stack
-  TExpArrayRead = class(TExpBase)
-  protected
-    procedure Execute(Env : PExecutionEnvironment); override;
-  end;
-
   //Push ptr to element in array on stack, used with assign
   TExpArrayGetElement = class(TExpBase)
   protected
@@ -335,7 +329,7 @@ type
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
-    emPtrDerefPointer, emNotifyPropChanged);
+    emPtrDerefPointer, emNotifyPropChanged, emLoadNull);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -1189,34 +1183,6 @@ begin
 end;
 {$endif}
 
-{ TExpArrayRead }
-
-procedure TExpArrayRead.Execute(Env : PExecutionEnvironment);
-var
-  V : single;
-  P : PFloat;
-  I : integer;
-  A : TDefineArray;
-begin
-  Env.StackPopToPointer(A);
-  P := A.PopAndGetElement(Env);
-  {$ifndef minimal}
-  if P=nil then
-    ZHalt('Array read outside range: ' + String(A.Name));
-  {$endif}
-  if A._Type=zctByte then
-  begin
-    I := PByte(P)^;
-    Env.StackPush(I);
-  end
-  else
-  begin
-    V := P^;
-    //todo: 64 bit
-    Env.StackPush( V );
-  end;
-end;
-
 { TDefineArray }
 
 procedure TDefineArray.DefineProperties(List: TZPropertyList);
@@ -1505,7 +1471,7 @@ begin
   for I := 4 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
-    Self.GetProperty(Prop,Value);
+    Value := Self.GetProperty(Prop);
     case Prop.PropertyType of
       zptFloat,zptScalar : S := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
       zptInteger : S := IntToStr(Value.IntegerValue);
@@ -1584,6 +1550,11 @@ begin
         Env.StackPopTo(V);
         Env.StackPopToPointer(P);
         TZComponent(P).GetProperties.GetById(V).NotifyWhenChanged(P,V);
+      end;
+    emLoadNull :
+      begin
+        P := nil;
+        Env.StackPushPointer(P);
       end;
   end;
 end;
@@ -2365,7 +2336,8 @@ end;
 procedure TExpInvokeComponent.Execute(Env : PExecutionEnvironment);
 var
   Ci : TZComponentInfo;
-  I,PropId,RawValue : integer;
+  I,PropId : integer;
+  RawValue : nativeint;
   Prop : TZProperty;
   V : TZPropertyValue;
 begin
@@ -2380,9 +2352,12 @@ begin
   for I := 0 to InvokeArgCount-1 do
   begin
     Env.StackPopTo(PropId);
+    {$ifdef cpux64}
+    Env.StackPopToPointer(RawValue);
+    {$else}
     Env.StackPopTo(RawValue);
+    {$endif}
     Prop := InvokeC.GetProperties.GetById(PropId);
-    //todo: Pointer properties need separate treatment for 64-bit compilation
     case Prop.PropertyType of
       zptFloat: V.FloatValue := PFloat(@RawValue)^;
       zptInteger: V.IntegerValue := RawValue;
@@ -2617,8 +2592,6 @@ initialization
   ZClasses.Register(TExpFuncCall,ExpFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpExternalFuncCall,ExpExternalFuncCallClassId);
-    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpArrayRead,ExpArrayReadClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayGetElement,ExpArrayWriteClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
