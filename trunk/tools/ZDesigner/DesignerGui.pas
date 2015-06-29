@@ -361,7 +361,7 @@ begin
 //  Self.BevelOuter := bvNone;
 
   //Läs aktuellt värde
-  C.GetProperty(Prop,Value);
+  Value := C.GetProperty(Prop);
   OldValue := Value;
 
   NamePanel := TPanel.Create(Self);
@@ -838,7 +838,7 @@ begin
       zptExpression :
         begin
           //Expression-nodes visas ska bara visas för debug, tillåt ej ändringar
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
           if false then //(displaying opcodes is too slow) if ShowOpCodes then
           begin
             if Value.ExpressionValue.Code.Count=0 then
@@ -856,7 +856,7 @@ begin
         begin
           //Ifall endast en child-nod finns så skippa prop-namnet
           //Detta gör trädet smalare
-          C.GetProperty(Prop,Value);
+          Value := C.GetProperty(Prop);
 {          if NestedCount=1 then
             NestedNode := Node
           else
@@ -1163,7 +1163,7 @@ begin
         case Prop.PropertyType of
           zptComponentRef :
             begin
-              C.GetProperty(Prop,Value);
+              Value := C.GetProperty(Prop);
               if Value.ComponentValue=Target then
                 List.Add(C);
             end;
