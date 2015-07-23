@@ -774,6 +774,7 @@ var
   begin
     Result := TZApplication.Create(nil);
     Result.Name:='App';
+    Result.FileVersion := AppFileVersion;
     Result.RefreshSymbolTable;
     Result.Caption:=AppName + ' application';
   end;

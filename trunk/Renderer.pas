@@ -77,7 +77,7 @@ type
     Value : single;
     ValuePropRef : TZExpressionPropValue;
     ValueArrayRef : TDefineArray;
-    ArrayKind : (sakTexture1D,sakMat4);
+    ArrayKind : (sakTexture2D,sakMat4);
     VariableRef : TDefineVariable;
     procedure ResetGpuResources; override;
     {$ifndef minimal}
@@ -1799,23 +1799,24 @@ var
     Count := Sv.ValueArrayRef.CalcLimit;
     P := Sv.ValueArrayRef.GetData;
     case Sv.ArrayKind of
-      sakTexture1D :
+      sakTexture2D :
         begin
           glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
-          glEnable(GL_TEXTURE_1D);
+          glEnable(GL_TEXTURE_2D);
           if Sv.TextureHandle=0 then
           begin
             glGenTextures(1, @Sv.TextureHandle);
-            glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
-            glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, Count, 0, GL_RED, GL_FLOAT, P);
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+            glBindTexture(GL_TEXTURE_2D, Sv.TextureHandle);
+            //Store array as 2d-texture with height 1 (because there seems to be problems with 1d textures)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Count, 1, 0, GL_RED, GL_FLOAT, P);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
           end else
           begin
-            glBindTexture(GL_TEXTURE_1D, Sv.TextureHandle);
-            glTexSubImage1D(GL_TEXTURE_1D, 0, 0, Count, GL_RED, GL_FLOAT, P);
+            glBindTexture(GL_TEXTURE_2D, Sv.TextureHandle);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Count, 1, GL_RED, GL_FLOAT, P);
           end;
           glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
           Inc(Self.TexCount);
@@ -1843,7 +1844,7 @@ var
   end;
 
 begin
-  //Arrays are passed as sampler1d so update with the index of the texture
+  //Arrays are passed as sampler2d so update with the index of the texture
   if ZApp.Driver.CurrentMaterial<>nil then
     Self.FirstTexIndex := ZApp.Driver.CurrentMaterial.Textures.Count
   else
@@ -1905,7 +1906,7 @@ begin
   for I := Self.TexCount-1 downto 0 do
   begin
     glActiveTexture($84C0 + Self.FirstTexIndex + I);
-    glDisable(GL_TEXTURE_1D);
+    glDisable(GL_TEXTURE_2D);
   end;
 end;
 

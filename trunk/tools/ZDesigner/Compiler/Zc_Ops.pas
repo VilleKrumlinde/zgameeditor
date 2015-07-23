@@ -1375,12 +1375,19 @@ begin
   TZcOpFunctionBuiltIn(BuiltInFunctions.Last).Arguments.Last.Typ.IsPointer := True;
 
   BuiltInConstants := TObjectList.Create(True);
+
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','PI');
   Con.Value := PI;
   BuiltInConstants.Add(Con);
+
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','ANDROID');
+  Con.Value := 0;
+  BuiltInConstants.Add(Con);
+
+  Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','CPUX64');
   Con.Value := 0;
   BuiltInConstants.Add(Con);
 end;

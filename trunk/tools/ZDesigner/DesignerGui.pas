@@ -671,6 +671,7 @@ begin
   Cb.Align := alClient;
   Cb.OnEnter := OnFocusControl;
   Cb.Parent := ValuePanel;
+  Cb.DropDownCount := Cb.DropDownCount * 3;
 end;
 
 procedure TZPropertyComponentEdit.DoFindComponent(Sender: TObject);

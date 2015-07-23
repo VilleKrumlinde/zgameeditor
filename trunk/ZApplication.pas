@@ -201,6 +201,7 @@ function LoadApplicationComponent : TZApplication;
 
 const
   TicksPerSecond = 1000;
+  AppFileVersion = 2;
 
 implementation
 
@@ -321,7 +322,7 @@ end;
 procedure TZApplication.InitAfterPropsAreSet;
 begin
   Self.RefreshSymbolTable;
-  Self.FileVersion := 2;
+  Self.FileVersion := AppFileVersion;
 end;
 {$endif}
 
@@ -915,6 +916,10 @@ var
 begin
   OldSep := FormatSettings.DecimalSeparator;
   FormatSettings.DecimalSeparator := '.';
+
+  {$ifdef CPUX64}
+  (ZApp.SymTab.Lookup('CPUX64') as TDefineConstant).Value:=1;
+  {$endif}
 
   for I := 0 to ZcGlobalNames.Count - 1 do
   begin
