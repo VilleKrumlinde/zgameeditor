@@ -142,6 +142,17 @@ begin
 end;
 {$endif}
 
+{$ifndef minimal}
+procedure TZBitmap.InitAfterPropsAreSet;
+begin
+  if Self.HasZapp and (Self.ZApp.FileVersion<2) then
+  begin //Convert from old-style fixed pot2 sizes
+    Self.Height := 16 shl Self.Height;
+    Self.Width := 16 shl Self.Width;
+  end;
+end;
+{$endif}
+
 function TZBitmap.GetCopyAsFloats: pointer;
 var
   P : PFloat;
@@ -155,17 +166,6 @@ begin
   {$endif}
   Result := P;
 end;
-
-{$ifndef minimal}
-procedure TZBitmap.InitAfterPropsAreSet;
-begin
-  if Self.HasZapp and (Self.ZApp.FileVersion<2) then
-  begin //Convert from old-style fixed pot2 sizes
-    Self.Height := 16 shl Self.Height;
-    Self.Width := 16 shl Self.Width;
-  end;
-end;
-{$endif}
 
 function TZBitmap.GetCopyAs3f: pointer;
 var
@@ -403,7 +403,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}@Width, zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 64;
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}@Height, zptInteger);
-    List.GetLast.DefaultValue.ByteValue := 64;
+    List.GetLast.DefaultValue.IntegerValue := 64;
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@Handle), zptInteger);

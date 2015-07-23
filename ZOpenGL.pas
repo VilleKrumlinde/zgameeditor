@@ -1297,8 +1297,7 @@ var
 
   glBegin : procedure (mode: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glCallList : procedure (list: GLuint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexImage1D : procedure (target: GLEnum; level, internalformat: GLint; width: GLsizei; border: GLint; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glTexSubImage1D : procedure (target: GLEnum; level, xoffset: GLint; width: GLsizei; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glTexSubImage2D : procedure (target: GLEnum; level, xoffset, yoffset: GLint; width, height: GLsizei; format, atype: GLEnum; pixels: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor3f : procedure (red, green, blue: GLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor3fv : procedure (const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glColor4fv : procedure (const v: PGLfloat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1784,7 +1783,7 @@ begin
 end;
 {$endif} //Android
 
-const FuncArray : packed array[0..79{$ifdef android}+1{$endif}] of
+const FuncArray : packed array[0..78{$ifdef android}+1{$endif}] of
   packed record
     Name : pansichar;
     Ptr : ^pointer;
@@ -1837,8 +1836,7 @@ const FuncArray : packed array[0..79{$ifdef android}+1{$endif}] of
 (Name : {$ifdef android}'glFrustumf'{$else}'glFrustum'{$endif}; Ptr : @@glFrustum),
 (Name : 'glBegin'; Ptr : @@glBegin),
 (Name : 'glCallList'; Ptr : @@glCallList),
-(Name : 'glTexImage1D'; Ptr : @@glTexImage1D),
-(Name : 'glTexSubImage1D'; Ptr : @@glTexSubImage1D),
+(Name : 'glTexSubImage2D'; Ptr : @@glTexSubImage2D),
 (Name : 'glColor3f'; Ptr : @@glColor3f),
 (Name : 'glColor3fv'; Ptr : @@glColor3fv),
 (Name : 'glColor4fv'; Ptr : @@glColor4fv),
@@ -1907,8 +1905,6 @@ begin
   for I := 0 to High(FuncArray) do
     if FuncArray[I].Ptr^=nil then
       FuncArray[I].Ptr^ := @GlNotImp;
-  glTexImage1D := @fakeTexImage1D;
-  glTexSubImage1D := @fakeTexSubImage1D;
   glColor3f := @fakeColor3f;
   glColor3fv := @fakeColor3fv;
   glColor4fv := @fakeColor4fv;

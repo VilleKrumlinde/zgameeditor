@@ -166,7 +166,7 @@ uses {$ifdef zlog}ZLog,{$endif} ZMath, Renderer, NanoJpeg, ZApplication;
 function GetIncrement(const X,Y,W,H : integer) : integer; inline;
 begin
   //Wrap X & Y
-  //Use the fact that W & H always are power-of-two values
+  //Use the fact that W & H always are power-of-two values (todo: no longer true)
   Result := (Y and (H-1)) * W + (X and (W-1));
 end;
 
@@ -219,6 +219,7 @@ begin
   glColor3f(1.0,1.0,1.0);
 
   B.RenderTargetEnd;
+
 
   Stack.Push(B);
 end;
@@ -367,7 +368,7 @@ var
   H,W,I : integer;
   Pixels,P : PColorf;
 
-  TaskCount : integer;
+  TaskCount,RowsLeft : integer;
   TaskList : pointer;
   Task : PPixelTask;
   TaskH : integer;
@@ -401,6 +402,7 @@ begin
   GetMem(TaskList,TaskCount*SizeOf(TPixelTask));
   Task := TaskList;
 
+  RowsLeft := H;
   TaskH := H div TaskCount;
   P := Pixels;
   for I := 0 to TaskCount-1 do
@@ -408,6 +410,9 @@ begin
     Task.P := P;
     Task.W := W;
     Task.H := TaskH;
+    Dec(RowsLeft,TaskH);
+    if I=TaskCount-1 then
+      Inc(Task.H,RowsLeft); //if any rows are left then add to last task
     Task.Y := I*TaskH;
     Task.YStep := 1/(H-1);
     Inc(Task);

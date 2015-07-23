@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="0 0 0" LightPosition="0.5 2 1">
+<ZApplication Name="App" Caption="ZGameEditor application" CameraPosition="-1.7358 0 8.6007" CameraRotation="0 -0.5892 0" LightPosition="0.5 2 1" FileVersion="2">
   <OnLoaded>
     <FileAction File="LevelLayoutFile"/>
     <SpawnModel Model="PlayerModel" Position="0 0 14" SpawnStyle="1"/>
@@ -11,16 +11,12 @@
   </OnLoaded>
   <OnRender>
     <UseMaterial Material="TextMaterial"/>
-    <RenderText Text="FPS " TextFloatRef="App FpsCounter" X="0.55" Y="-0.92" Scale="0.4" Align="1"/>
+    <RenderText Text="FPS " TextFloatRef="App.FpsCounter" X="0.55" Y="-0.92" Scale="0.4" Align="1"/>
   </OnRender>
   <Content>
     <Group Comment="Wall">
       <Children>
         <Model Name="WallModel" Category="2" CollisionBounds="1 1 1 0" CollisionStyle="2">
-          <OnRender>
-            <UseMaterial Material="WallMaterial"/>
-            <RenderMesh Mesh="WallMesh"/>
-          </OnRender>
           <OnSpawn>
             <ZExpression>
               <Expression>
@@ -29,6 +25,10 @@ CurrentModel.Position.Z=TileCurZ;]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
+          <OnRender>
+            <UseMaterial Material="WallMaterial"/>
+            <RenderMesh Mesh="WallMesh"/>
+          </OnRender>
         </Model>
         <Mesh Name="WallMesh">
           <Producers>
@@ -40,7 +40,7 @@ CurrentModel.Position.Z=TileCurZ;]]>
             <MaterialTexture Texture="WallTexture" TextureWrapMode="1" TexCoords="1"/>
           </Textures>
         </Material>
-        <Bitmap Name="WallTexture">
+        <Bitmap Name="WallTexture" Width="256" Height="256">
           <Producers>
             <BitmapRect Color="0.24 0.53 0.37 1" Size="-1 1 1 -1"/>
             <BitmapRect Color="0.75 0.75 0.75 1" Size="-0.4 -0.4 0.4 0.4"/>
@@ -48,14 +48,6 @@ CurrentModel.Position.Z=TileCurZ;]]>
           </Producers>
         </Bitmap>
         <Model Name="DoorModel" Category="2" CollisionBounds="1 1 1 0" CollisionStyle="2">
-          <OnRender>
-            <UseMaterial Material="SpriteMaterial"/>
-            <RenderSetColor Color="0.25 0.19 0.8 1"/>
-            <RenderMesh Mesh="WallMesh"/>
-          </OnRender>
-          <OnUpdate>
-            <AnimatorSimple Name="DoorMoveDownAnim" Duration="2" Target="DoorModel Position 1" ToValue="-4"/>
-          </OnUpdate>
           <OnSpawn>
             <ZExpression>
               <Expression>
@@ -64,6 +56,9 @@ CurrentModel.Position.Z=TileCurZ;]]>
               </Expression>
             </ZExpression>
           </OnSpawn>
+          <OnUpdate>
+            <AnimatorSimple Name="DoorMoveDownAnim" Duration="2" Target="DoorModel.Position.Y" ToValue="-4"/>
+          </OnUpdate>
           <OnCollision>
             <Condition Expression="return (CurrentModel.CollidedWith.ClassId==PlayerModel.ClassId) &amp;&amp; (CurrentModel.Position.Y==0);">
               <OnTrue>
@@ -71,6 +66,11 @@ CurrentModel.Position.Z=TileCurZ;]]>
               </OnTrue>
             </Condition>
           </OnCollision>
+          <OnRender>
+            <UseMaterial Material="SpriteMaterial"/>
+            <RenderSetColor Color="0.25 0.19 0.8 1"/>
+            <RenderMesh Mesh="WallMesh"/>
+          </OnRender>
         </Model>
       </Children>
     </Group>
@@ -84,7 +84,7 @@ CurrentModel.Position.Z=TileCurZ;]]>
                 <ZExpression Comment="Init CurX" Expression="TileCurX=-(TileCountX/2 * TileSize);"/>
                 <Repeat Comment="X loop" WhileExp="return this.Iteration&lt;TileCountX+2;">
                   <OnIteration>
-                    <FileMoveData Property="TileID Value"/>
+                    <FileMoveData Property="TileID"/>
                     <Condition Comment="Spawn tile on &apos;A&apos; (ascii 65)" Expression="return TileID==65;">
                       <OnTrue>
                         <SpawnModel Model="WallModel"/>
@@ -112,17 +112,17 @@ return this.Iteration<TileCountZ;]]>
             </Repeat>
           </OnRead>
         </File>
-        <DefineVariable Name="TileID"/>
-        <DefineVariable Name="TileCurX"/>
-        <DefineVariable Name="TileCurZ"/>
-        <DefineConstant Name="TileCountX" Value="29"/>
-        <DefineConstant Name="TileCountZ" Value="19"/>
-        <DefineConstant Name="TileSize" Value="2"/>
+        <Variable Name="TileID"/>
+        <Variable Name="TileCurX"/>
+        <Variable Name="TileCurZ"/>
+        <Constant Name="TileCountX" Value="29"/>
+        <Constant Name="TileCountZ" Value="19"/>
+        <Constant Name="TileSize" Value="2"/>
       </Children>
     </Group>
     <Group Comment="Player">
       <Children>
-        <Model Name="PlayerModel" Position="7.85 0 -3.64" Category="1" CollisionBounds="0.6 0 0 0" CollisionStyle="1">
+        <Model Name="PlayerModel" Position="-1.7358 0 8.6007" Category="1" CollisionBounds="0.6 0 0 0" CollisionStyle="1">
           <OnUpdate>
             <ZExpression>
               <Expression>
@@ -212,8 +212,8 @@ App.CameraRotation.Y=PlayerViewAngle;]]>
             </ZExpression>
           </OnCollision>
         </Model>
-        <DefineConstant Name="PlayerSpeed" Value="10"/>
-        <DefineVariable Name="PlayerViewAngle"/>
+        <Constant Name="PlayerSpeed" Value="10"/>
+        <Variable Name="PlayerViewAngle"/>
         <Group Comment="PlayerShot">
           <Children>
             <Mesh Name="PlayerShotMesh">
@@ -223,14 +223,6 @@ App.CameraRotation.Y=PlayerViewAngle;]]>
             </Mesh>
             <Material Name="SpriteMaterial"/>
             <Model Name="PlayerShotModel" Category="3" CollisionBounds="0.2 0 0 0" CollisionStyle="1">
-              <OnRender>
-                <UseMaterial Material="SpriteMaterial"/>
-                <RenderSetColor Color="0.89 0.08 0.08 1"/>
-                <RenderMesh Mesh="PlayerShotMesh"/>
-              </OnRender>
-              <OnUpdate>
-                <ZExpression Expression="CurrentModel.Velocity.Y-=3 * App.DeltaTime;"/>
-              </OnUpdate>
               <OnSpawn>
                 <ZExpression>
                   <Expression>
@@ -248,28 +240,36 @@ CurrentModel.Position.Y-=0.35; + random(0,0.1);]]>
                   </Expression>
                 </ZExpression>
               </OnSpawn>
+              <OnUpdate>
+                <ZExpression Expression="CurrentModel.Velocity.Y-=3 * App.DeltaTime;"/>
+              </OnUpdate>
               <OnCollision>
                 <RemoveModel/>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="SpriteMaterial"/>
+                <RenderSetColor Color="0.89 0.08 0.08 1"/>
+                <RenderMesh Mesh="PlayerShotMesh"/>
+              </OnRender>
             </Model>
-            <DefineConstant Name="PlayerShotSpeed" Value="20"/>
+            <Constant Name="PlayerShotSpeed" Value="20"/>
           </Children>
         </Group>
       </Children>
     </Group>
     <Group Comment="Globals">
       <Children>
-        <DefineVariable Name="Temp1"/>
-        <DefineVariable Name="Temp2"/>
-        <DefineVariable Name="Temp3"/>
-        <DefineVariable Name="Temp4"/>
+        <Variable Name="Temp1"/>
+        <Variable Name="Temp2"/>
+        <Variable Name="Temp3"/>
+        <Variable Name="Temp4"/>
       </Children>
     </Group>
     <Group Name="Font3Group">
       <Children>
-        <Bitmap Name="FontBitmap3" Width="4" Height="1">
+        <Bitmap Name="FontBitmap3" Width="256" Height="32">
           <Producers>
-            <BitmapFromFile Transparency="1">
+            <BitmapFromFile Transparency="1" DataWidth="256" DataHeight="32">
               <BitmapFile>
 <![CDATA[78DAED9BC19284300844E7FF7F7AF7B45596A3041A8831FBDE51CB4CC49634C4F97C0000000000000000000076E6E78FCB83478815A07F80EDF56F1C07D84FFCBC020000FFD3F99C523DFE1FD03FFA070000003879A726AF7579A1FF2AC3BCD95ECE73D5F0E78C012FA3710AE670F2978FC038E59F463E1A43CF3C3C6E8731A42859ABEBD41A7DA73C8F3BA97FCF2D0BD118EABF291A2565A3B0D99ACC724DD5AB9CFF3369CD8864F4B1CA031626A8687BE138DA5DA0AAD27526C93B63924C9B210FD09DD2F3FA37EE42D6BF16B1AAB4369C6DD4937C2BFC38A0712AB3F226FD6AF4A5084DC3693EE7B89A92E5A37CC05737A593B624B3FCE54F9578636D356CCDFF99D94E36F91D5583B6D4CEAC50A205F5CAE1D58ADC6EFFAFBD5C8227E9EBFF8466D2A77FFB54B48720F77FB4E655F27975EB7F3F6F0000008B94B1EBCCDC5885E7377B93CB6EA67915328A8600E4268FBF7E8956D9E8DF1FCFF2F25F1827F3D6084ACE6C06556DDE7D223BBCD1DD61D6A9E86B3BB3035CF55B9E2A2FB4E5A4B5A1B4E2DDAFE1D686EA7EF95FFB7BDA7BF53FECE408B76C6F2F66BC56288D8716AFA7FC8FF32304F4BF4D5E9A1CA8EF9D5C63264FE9BFF50BA2FC039AE9FF9F2A6AEEEC4A55D57037EC225B630FE699772D01ADFD9F05EBFA4CD72854FF6A1B85D16FD21E11FF2F2CB9AB28]]>
               </BitmapFile>
@@ -348,24 +348,20 @@ CurrentModel.Position.Y-=0.35; + random(0,0.1);]]>
             </Group>
             <Model Name="WolfEnemyModel" Category="4" CollisionBounds="0.5 0 0 0" CollisionStyle="1">
               <Definitions>
-                <DefineVariable Name="Enemy1ViewAngle"/>
-                <DefineVariable Name="Enemy1DirTimer"/>
+                <Variable Name="Enemy1ViewAngle"/>
+                <Variable Name="Enemy1DirTimer"/>
               </Definitions>
-              <OnRender>
-                <UseMaterial Material="SpriteMaterial"/>
-                <RenderSetColor Name="Enemy1Color" Color="0.7 0.7 0.7 0"/>
-                <RenderMesh Mesh="WarewolfheadMesh0"/>
-                <RenderMesh Mesh="WarewolfheadMesh2"/>
-                <RenderMesh Mesh="WarewolfheadMesh3"/>
-                <RenderTransformGroup Name="WolfRt1" Rotate="-0.07 0 0">
-                  <Children>
-                    <RenderMesh Mesh="WarewolfheadMesh1"/>
-                  </Children>
-                </RenderTransformGroup>
-              </OnRender>
+              <OnSpawn>
+                <ZExpression>
+                  <Expression>
+<![CDATA[CurrentModel.Position.X=TileCurX;
+CurrentModel.Position.Z=TileCurZ;]]>
+                  </Expression>
+                </ZExpression>
+              </OnSpawn>
               <OnUpdate>
-                <AnimatorSimple Duration="0.5" AutoStart="255" Target="WolfRt1 Rotate" FromValue="-0.02" ToValue="-0.07" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
-                <AnimatorSimple Duration="1" AutoStart="255" Target="WolfEnemyModel Position 1" FromValue="0.5" ToValue="-0.5" Smooth="255" AutoReverse="255" RepeatCount="-1"/>
+                <AnimatorSimple Duration="0.5" AutoStart="255" Target="WolfRt1.Rotate.X" AutoReverse="255" RepeatCount="-1" FromValue="-0.02" ToValue="-0.07" Smooth="255"/>
+                <AnimatorSimple Duration="1" AutoStart="255" Target="WolfEnemyModel.Position.Y" AutoReverse="255" RepeatCount="-1" FromValue="0.5" ToValue="-0.5" Smooth="255"/>
                 <ZExpression>
                   <Expression>
 <![CDATA[if( (Enemy1DirTimer<=0) ||
@@ -397,14 +393,6 @@ Enemy1DirTimer-=App.DeltaTime;]]>
                   </Expression>
                 </ZExpression>
               </OnUpdate>
-              <OnSpawn>
-                <ZExpression>
-                  <Expression>
-<![CDATA[CurrentModel.Position.X=TileCurX;
-CurrentModel.Position.Z=TileCurZ;]]>
-                  </Expression>
-                </ZExpression>
-              </OnSpawn>
               <OnCollision>
                 <Condition Expression="return CurrentModel.CollidedWith.ClassId==PlayerShotModel.ClassId;">
                   <OnTrue>
@@ -412,8 +400,20 @@ CurrentModel.Position.Z=TileCurZ;]]>
                   </OnTrue>
                 </Condition>
               </OnCollision>
+              <OnRender>
+                <UseMaterial Material="SpriteMaterial"/>
+                <RenderSetColor Name="Enemy1Color" Color="0.7 0.7 0.7 0"/>
+                <RenderMesh Mesh="WarewolfheadMesh0"/>
+                <RenderMesh Mesh="WarewolfheadMesh2"/>
+                <RenderMesh Mesh="WarewolfheadMesh3"/>
+                <RenderTransformGroup Name="WolfRt1" Rotate="-0.07 0 0">
+                  <Children>
+                    <RenderMesh Mesh="WarewolfheadMesh1"/>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
             </Model>
-            <DefineConstant Name="Enemy1Speed" Value="4"/>
+            <Constant Name="Enemy1Speed" Value="4"/>
           </Children>
         </Group>
       </Children>
@@ -422,14 +422,14 @@ CurrentModel.Position.Z=TileCurZ;]]>
       <Children>
         <File Name="SaveGameFile" FileName="SaveGame" Encoding="1">
           <OnRead>
-            <FileMoveData Property="PlayerModel Position"/>
-            <FileMoveData Property="PlayerModel Position 2"/>
-            <FileMoveData Property="PlayerViewAngle Value"/>
+            <FileMoveData Property="PlayerModel.Position"/>
+            <FileMoveData Property="PlayerModel.Position.Z"/>
+            <FileMoveData Property="PlayerViewAngle"/>
           </OnRead>
           <OnWrite>
-            <FileMoveData Property="PlayerModel Position"/>
-            <FileMoveData Property="PlayerModel Position 2"/>
-            <FileMoveData Property="PlayerViewAngle Value"/>
+            <FileMoveData Property="PlayerModel.Position"/>
+            <FileMoveData Property="PlayerModel.Position.Z"/>
+            <FileMoveData Property="PlayerViewAngle"/>
           </OnWrite>
         </File>
       </Children>
