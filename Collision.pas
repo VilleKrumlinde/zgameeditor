@@ -59,6 +59,9 @@ type
     Cat1,Cat2 : integer;
     Action : TCollisionAction;
     procedure Execute; override;
+    {$ifndef minimal}
+    function GetDisplayName: AnsiString; override;
+    {$endif}
   end;
 
 
@@ -494,7 +497,9 @@ procedure TDefineCollision.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}(@Cat1), zptInteger);
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}(@Cat2), zptInteger);
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Collision','Stop']);{$endif}
 end;
@@ -503,6 +508,14 @@ procedure TDefineCollision.Execute;
 begin
   ZApp.Collisions.Add(Cat1,Cat2,Action);
 end;
+
+{$ifndef minimal}
+function TDefineCollision.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  Result := Result + '  ' + AnsiString(IntToStr(Self.Cat1)) + ' vs. ' + AnsiString(IntToStr(Self.Cat2));
+end;
+{$endif}
 
 { TCollisionHelper }
 

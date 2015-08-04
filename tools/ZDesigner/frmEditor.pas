@@ -3397,7 +3397,7 @@ begin
   if I<L.Count-2 then
     Node.MoveTo(Node.Parent.Item[Node.Index+2],naInsert)
   else
-    Node.MoveTo(Node.Parent,naAddChild);
+    Node.MoveTo(Node.Parent.GetLastChild,naAdd);
   Node.Selected := True;
 
   SetFileChanged(True);

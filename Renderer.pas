@@ -2453,7 +2453,7 @@ begin
   if (Ts=nil) or (Ts.Bitmap=nil) then
     Exit;
 
-  TilesPerRow := Ts.Bitmap.PixelWidth div (Ts.TileWidth+Ts.TileBorder);
+  TilesPerRow := (Ts.Bitmap.PixelWidth+Ts.TileBorder) div (Ts.TileWidth+Ts.TileBorder);
 
   X := (Self.TileIndex mod TilesPerRow) * (Ts.TileWidth+Ts.TileBorder);
 	Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
