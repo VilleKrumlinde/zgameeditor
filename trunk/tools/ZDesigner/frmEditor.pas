@@ -48,7 +48,7 @@ type
     TabSheet1: TTabSheet;
     TrackBar1: TTrackBar;
     TabSheet2: TTabSheet;
-    PropEditorPanel: TPanel;
+    PropListPanel: TPanel;
     ViewerPanel: TPanel;
     Splitter2: TSplitter;
     Label1: TLabel;
@@ -957,13 +957,13 @@ begin
     GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
     if GuiLayout=0 then
     begin
-      PropEditorPanel.Parent := LeftPanel;
-      PropEditorPanel.Align := alBottom;
+      PropListPanel.Parent := LeftPanel;
+      PropListPanel.Align := alBottom;
       TreePanel.Align := alClient;
       Splitter3.Parent := LeftPanel;
       Splitter3.Align := alBottom;
       Splitter3.Cursor := crVSplit;
-      PropEditorPanel.Height := Self.Height div 2;
+      PropListPanel.Height := Self.Height div 2;
     end;
 
     ExprSynEdit.Font.Size := Ini.ReadInteger(Section,'CodeEditorFontSize',ExprSynEdit.Font.Size);
