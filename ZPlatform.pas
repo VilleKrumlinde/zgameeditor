@@ -133,4 +133,4 @@ const
   {$INCLUDE ZPlatform_Android.inc}
 {$else}
   {$INCLUDE ZPlatform_Win32.inc}
-{$IFEND}
+{$endif}
