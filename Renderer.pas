@@ -31,7 +31,7 @@ type
   TShader = class;
   TRenderTarget = class;
 
-  TMaterialShading = (msSmooth,msFlat,msWireframe);
+  TMaterialShading = (msSmooth,msFlat,msWireframe,msPoint);
   TMaterialTexCoords = (tcGenerated,tcModelDefined);
   TMaterial = class(TZComponent)
   protected
@@ -565,9 +565,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Textures',{$ENDIF}(@Textures), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMaterialTexture]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'WireframeWidth',{$ENDIF}(@WireframeWidth), zptFloat);
-    List.GetLast.DefaultValue.FloatValue:=4.0;
+    List.GetLast.DefaultValue.FloatValue:=1.0;
   List.AddProperty({$IFNDEF MINIMAL}'Shading',{$ENDIF}(@Shading), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Smooth','Flat','Wireframe','Point']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'Color',{$ENDIF}(@Color), zptColorf);
     List.GetLast.DefaultValue.ColorfValue := TZColorf(ZMath.UNIT_XYZ4);
   List.AddProperty({$IFNDEF MINIMAL}'Light',{$ENDIF}(@Light), zptBoolean);
@@ -1980,7 +1980,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ValueArrayRef',{$ENDIF}(@ValueArrayRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ArrayKind',{$ENDIF}(@ArrayKind), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Texture1D','Mat4']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Texture2D','Mat4']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'VariableRef',{$ENDIF}(@VariableRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TDefineVariable]);{$endif}
 end;

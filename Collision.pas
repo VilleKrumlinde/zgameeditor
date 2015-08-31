@@ -347,7 +347,14 @@ end;
 procedure TCollisionChecks.Add(Cat1, Cat2: integer; Action : TCollisionAction = caCollision);
 var
   Check : TCollisionCheck;
+  I : integer;
 begin
+  for I := 0 to Checks.Count-1 do
+  begin //Check for duplicate
+    Check := TCollisionCheck(Checks[I]);
+    if (Check.Cat1=Cat1) and (Check.Cat2=Cat2) then
+      Exit;
+  end;
   Check := TCollisionCheck.Create;
   Check.Cat1 := Cat1;
   Check.Cat2 := Cat2;

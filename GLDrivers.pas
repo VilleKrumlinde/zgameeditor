@@ -231,8 +231,9 @@ begin
         msFlat :
           glShadeModel(GL_FLAT);
         msWireframe :
-          //Wireframe
           glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        msPoint :
+          glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
       end;
     end;
 

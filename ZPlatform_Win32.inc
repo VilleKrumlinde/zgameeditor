@@ -157,7 +157,8 @@ begin
         //In screensaver mode with ParentWindow: parent window sends destroy to
         //all child windows, important to quit otherwise process will keep on living.
         {$ifdef minimal}
-        PostQuitMessage(0);
+        if not ZApplication.ScreenModeChanging then
+          PostQuitMessage(0);
         {$endif}
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
@@ -297,6 +298,8 @@ var
 procedure Platform_ShutdownScreen;
 begin
   KillWnd(FullScreen);
+  //Reset keystate before recreating window
+  FillChar(Keys,SizeOf(Keys),0);
 end;
 
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;

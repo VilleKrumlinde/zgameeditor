@@ -1507,7 +1507,7 @@ end;
 procedure TExpMisc.Execute(Env : PExecutionEnvironment);
 var
   V : integer;
-  P : pointer;
+  P,ValueP : pointer;
 begin
   case Kind of
     emPop: Env.StackPopFloat;  //Pop, discard value from top of stack
@@ -1549,7 +1549,8 @@ begin
       begin
         Env.StackPopTo(V);
         Env.StackPopToPointer(P);
-        TZComponent(P).GetProperties.GetById(V).NotifyWhenChanged(P,V);
+        Env.StackPopToPointer(ValueP);
+        TZComponent(P).GetProperties.GetById(V).NotifyWhenChanged(P,V,ValueP);
       end;
     emLoadNull :
       begin

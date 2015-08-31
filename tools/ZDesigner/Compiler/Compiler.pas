@@ -646,20 +646,23 @@ begin
     else
       AssignSize := 4;
     end;
-    GenAddress(LeftOp);
-    GenValue(RightOp);
-    Target.AddComponent( MakeAssignOp(AssignSize) );
 
     if Assigned(Prop.NotifyWhenChanged) then
     begin //This property should notify when assigned, generate notify call
+      GenValue(RightOp);
       GenValue(LeftOp.Children.First);
       with TExpConstantInt.Create(Target) do
         Constant := Prop.PropId;
       TExpMisc.Create(Target,emNotifyPropChanged);
+    end else
+    begin
+      GenAddress(LeftOp);
+      GenValue(RightOp);
+      Target.AddComponent( MakeAssignOp(AssignSize) );
     end;
 
-    if LeaveValue=alvPost then
-      GenValue(LeftOp);
+   if LeaveValue=alvPost then
+     GenValue(LeftOp);
   end else if LeftOp.Kind=zcArrayAccess then
   begin
     if LeaveValue=alvPost then

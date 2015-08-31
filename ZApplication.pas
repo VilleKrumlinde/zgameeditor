@@ -56,6 +56,7 @@ type
   end;
 
   TAspectRatio = (vprFullWindow,vprCustom,vpr4_3,vpr16_9);
+  TAppScreenMode = (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
   TZApplication = class(TZComponent)
   strict private
     DepthList : TZArrayList;
@@ -77,6 +78,9 @@ type
   private
     CurrentState : TAppState;
     procedure ApplyCameraTransform;
+    {$ifdef minimal}
+    procedure CreateWindow;
+    {$endif}
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
     procedure UpdateStateVars;
@@ -108,7 +112,7 @@ type
     ClearColor : TZColorf;
     AmbientLightColor : TZColorf;
     Fullscreen : boolean;
-    ScreenMode : (vmFullScreenDesktop,vm640x480,vm800x600,vm1024x768,vm1280x800,vm1280x1024);
+    ScreenMode : TAppScreenMode;
     ShowOptionsDialog : boolean;
     CustomScreenWidth,CustomScreenHeight : integer;
     CameraPosition : TZVector3f;
@@ -203,6 +207,9 @@ const
   TicksPerSecond = 1000;
   AppFileVersion = 2;
 
+var
+  ScreenModeChanging : boolean;
+
 implementation
 
 uses ZPlatform,ZLog,AudioPlayer,ZMath,ZOpenGL
@@ -256,10 +263,6 @@ begin
 end;
 
 procedure TZApplication.Init;
-{$ifdef minimal}
-var
-  I : integer;
-{$endif}
 begin
   {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
@@ -281,26 +284,7 @@ begin
       if not Platform_ShowOptionDialog(Self) then Halt;
     end;
 
-    {$ifndef android}
-    if((CustomScreenWidth > 0) and (CustomScreenHeight > 0)) then
-    begin
-      ScreenWidth := Self.CustomScreenWidth;
-      ScreenHeight := Self.CustomScreenHeight;
-    end
-    else
-    begin
-      I := Ord(Self.ScreenMode);
-      ScreenWidth := ScreenModes[ I ].W;
-      ScreenHeight := ScreenModes[ I ].H;
-    end;
-    {$endif}
-
-    Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption), Self);
-    Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
-    Driver.InitGL;
-
-    Platform_ShowMouse(MouseVisible);
-    UpdateViewport;
+    CreateWindow;
 
     TargetFrameRate := Platform_GetDisplayRefreshRate;
 
@@ -317,6 +301,34 @@ begin
       Platform_InitAudio;
   {$endif}
 end;
+
+{$ifdef minimal}
+procedure TZApplication.CreateWindow;
+var
+  I : integer;
+begin
+  {$ifndef android}
+  if((CustomScreenWidth > 0) and (CustomScreenHeight > 0)) then
+  begin
+    ScreenWidth := Self.CustomScreenWidth;
+    ScreenHeight := Self.CustomScreenHeight;
+  end
+  else
+  begin
+    I := Ord(Self.ScreenMode);
+    ScreenWidth := ScreenModes[ I ].W;
+    ScreenHeight := ScreenModes[ I ].H;
+  end;
+  {$endif}
+
+  Self.WindowHandle := Platform_InitScreen(ScreenWidth,ScreenHeight, Self.Fullscreen , PAnsiChar(Self.Caption), Self);
+  Self.Driver := GLDrivers.CreateDriver(Self.GLBase);
+  Driver.InitGL;
+
+  Platform_ShowMouse(MouseVisible);
+  UpdateViewport;
+end;
+{$endif}
 
 {$ifndef minimal}
 procedure TZApplication.InitAfterPropsAreSet;
@@ -1033,16 +1045,39 @@ begin
   Models.Add(Model);
 end;
 
-procedure AppCaptionChanged(Instance : TZComponent; const PropId : integer);
+procedure AppCaptionChanged(Instance : TZComponent; const PropId : integer; const NewValue : pointer);
 begin
-  Platform_SetWindowCaption( TZApplication(Instance).Caption );
+  if TZApplication(Instance).Caption<>NewValue then
+  begin
+    TZApplication(Instance).Caption := NewValue;
+    Platform_SetWindowCaption( TZApplication(Instance).Caption );
+  end;
 end;
 
-procedure AppCameraChanged(Instance : TZComponent; const PropId : integer);
+procedure AppCameraChanged(Instance : TZComponent; const PropId : integer; const NewValue : pointer);
 begin
+  TZApplication(Instance).Camera := TCamera(NewValue);
   TZApplication(Instance).ApplyCameraTransform;
   if CurrentModel<>nil then
     Renderer.ApplyModelTransform(CurrentModel);
+end;
+
+procedure AppScreenModeChanged(Instance : TZComponent; const PropId : integer; const NewValue : pointer);
+var
+  B : integer;
+begin
+  B := integer(NewValue);
+  if Ord(TZApplication(Instance).ScreenMode)<>B then
+  begin
+    ScreenModeChanging := True;
+    TZApplication(Instance).ScreenMode := TAppScreenMode(B);
+    {$ifdef minimal}
+    TZApplication(Instance).ResetGpuResources;
+    Platform_ShutdownScreen;
+    TZApplication(Instance).CreateWindow;
+    {$endif}
+    ScreenModeChanging := False;
+  end;
 end;
 
 procedure TZApplication.DefineProperties(List: TZPropertyList);
@@ -1100,6 +1135,7 @@ begin
     List.GetLast.DefaultValue.ColorfValue := MakeColorf(0.4,0.4,0.4,1);
 
   List.AddProperty({$IFNDEF MINIMAL}'FullScreen',{$ENDIF}(@FullScreen), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'FrameRateStyle',{$ENDIF}(@FrameRateStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['SyncedWithMonitor','Free','Fixed']);{$endif}
@@ -1107,8 +1143,8 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}'ScreenMode',{$ENDIF}(@ScreenMode), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Use Desktop resolution','640x480','800x600','1024x768','1280x800','1280x1024']);{$endif}
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     List.GetLast.DefaultValue.ByteValue := 2;
+    List.GetLast.NotifyWhenChanged := @AppScreenModeChanged;
   List.AddProperty({$IFNDEF MINIMAL}'ShowOptionsDialog',{$ENDIF}(@ShowOptionsDialog), zptBoolean);
 
   List.AddProperty({$IFNDEF MINIMAL}'CustomScreenWidth',{$ENDIF}(@CustomScreenWidth), zptInteger);
@@ -1172,6 +1208,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'NoSound',{$ENDIF}(@NoSound), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('FileVersion',@FileVersion, zptInteger);

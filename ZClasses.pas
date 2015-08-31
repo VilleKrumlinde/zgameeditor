@@ -291,7 +291,7 @@ type
     zptVector3f,zptComponentList,zptByte,zptBoolean,
     zptExpression,zptBinary,zptPointer);
 
-  TPropNotifyProc = procedure(Instance : TZComponent; const PropId : integer);
+  TPropNotifyProc = procedure(Instance : TZComponent; const PropId : integer; const NewValue : pointer);
 
   TZProperty = class
   public
@@ -1189,7 +1189,7 @@ function TZComponent.GetProperty(Prop: TZProperty) : TZPropertyValue;
 var
   P : pointer;
 begin
-  P := pointer(NativeUInt(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       Result.FloatValue := PFloat(P)^;
@@ -1235,7 +1235,7 @@ var
   S : ansistring;
   {$endif}
 begin
-  P := pointer(NativeUInt(Self) + Prop.Offset);
+  P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       PFloat(P)^ := Value.FloatValue;
