@@ -10,7 +10,7 @@
 
   Copyright (c) 2012-2015 Radovan Cervenka
 
-  Version: 2.1 (2015-06-27)
+  Version: 2.2 (2015-10-02)
 */
 
 
@@ -152,10 +152,18 @@ void zbtGetAngularVelocity(xptr rigidBody,
 
 void zbtApplyCentralImpulse(xptr rigidBody, float x, float y, float z) {}
 
-void zbtApplyTorqueImpulse(xptr rigidBody, float x, float y, float z) {}
+void zbtApplyCentralImpulseLocal(xptr rigidBody, float x, float y, float z) {}
 
 void zbtApplyImpulse(xptr rigidBody, float x, float y, float z,
 	float relX, float relY, float relZ) {}
+
+void zbtApplyTorque(xptr rigidBody, float x, float y, float z) {}
+  
+void zbtApplyTorqueImpulse(xptr rigidBody, float x, float y, float z) {}
+
+void zbtApplyTorqueLocal(xptr rigidBody, float x, float y, float z) {}
+  
+void zbtApplyTorqueImpulseLocal(xptr rigidBody, float x, float y, float z) {}
 
 void zbtSetSleepingThresholds(xptr rigidBody, float linear, float angular) {}
 
@@ -419,6 +427,8 @@ void zbtSetCharacterUpInterpolate(xptr controller, int bInterpolate) {}
 
 void zbtSetFriction(xptr obj, float friction) {}
 
+void zbtSetRollingFriction(xptr obj, float friction) {}
+
 void zbtSetRestitution(xptr obj, float restitution) {}
 
 void zbtSetHitFraction(xptr obj, float hitFraction) {}
@@ -452,6 +462,12 @@ void zbtSetPosRotXYZ(xptr obj,
 	float rx, float ry, float rz) {}
 
 void zbtSetPosRot(xptr obj, xptr position, xptr rotation) {}
+
+void zbtGetOrientation(xptr obj, xptr outOrientation) {}
+
+void zbtGetModelMatrix(xptr obj, xptr outMatrix) {}
+
+void zbtGetModelMatrixInv(xptr obj, xptr outMatrix) {}
 
 void zbtSetCollisionFlags(xptr obj, int flags) {}
 
