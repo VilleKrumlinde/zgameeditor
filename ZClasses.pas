@@ -575,9 +575,7 @@ type
     constructor Create;
   public
     WorkerCount : integer;
-    {$ifndef minimal}
     Enabled : boolean;
-    {$endif}
     procedure Run(TaskProc : TTaskProc; TaskList : pointer; TaskCount,TaskStride : integer);
     destructor Destroy; override;
   end;
@@ -3994,9 +3992,7 @@ begin
   Self.Event := Platform_CreateEvent;
   WorkerCount := Platform_GetCpuCount;
   ThreadCount := WorkerCount-1;
-  {$ifndef minimal}
   Self.Enabled := True;
-  {$endif}
 end;
 
 destructor TTasks.Destroy;
@@ -4038,7 +4034,7 @@ begin
     FinishedTaskCount := 0;
   Platform_LeaveMutex(Self.Lock);
 
-  if (ThreadCount>0) {$ifndef minimal}and Self.Enabled{$endif} then
+  if (ThreadCount>0) and Self.Enabled then
   begin
     if Threads=nil then
     begin

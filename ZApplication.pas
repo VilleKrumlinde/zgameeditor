@@ -135,6 +135,7 @@ type
     FrameLoss : boolean;  //sätts till true ifall vi tappar frames
     ScreenWidth : integer;
     ScreenHeight : integer;
+    ThreadedProcessingEnabled : boolean;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
@@ -267,6 +268,8 @@ begin
   {$ifndef zgeviz}
   Platform_InitGlobals;  //Nollställ timer etc
   {$endif}
+
+//  ZClasses.Tasks.Enabled := Self.ThreadedProcessingEnabled;
 
   {$ifndef minimal}
     //no init if inside designer tool
@@ -1109,6 +1112,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'GLBase',{$ENDIF}(@GLBase), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Compatible','ES2/GL3']);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+
+//  List.AddProperty({$IFNDEF MINIMAL}'ThreadsEnabled',{$ENDIF}@ThreadedProcessingEnabled, zptBoolean);
+//    List.GetLast.DefaultValue.BooleanValue := True;
 
   List.AddProperty({$IFNDEF MINIMAL}'FpsCounter',{$ENDIF}(@FpsCounter), zptFloat);
     List.GetLast.NeverPersist := True;

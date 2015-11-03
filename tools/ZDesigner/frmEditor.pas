@@ -1010,6 +1010,9 @@ begin
 
     Self.AndroidKeystorePath := Ini.ReadString(Section,'AndroidKeystorePath','');
     Self.AndroidKeystoreAlias := Ini.ReadString(Section,'AndroidKeystoreAlias','');
+
+    EnableThreadedProcessingMenuItem.Checked := Ini.ReadBool(Section,'UseThreadedProcessing',True);
+    EnableThreadedProcessingMenuItem.OnClick(EnableThreadedProcessingMenuItem);
   finally
     Ini.Free;
   end;
@@ -1111,6 +1114,8 @@ begin
 
       Ini.WriteString(Section,'AndroidKeystorePath',Self.AndroidKeystorePath);
       Ini.WriteString(Section,'AndroidKeystoreAlias',Self.AndroidKeystoreAlias);
+
+      Ini.WriteBool(Section,'UseThreadedProcessing',EnableThreadedProcessingMenuItem.Checked);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;

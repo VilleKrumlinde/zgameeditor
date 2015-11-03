@@ -868,6 +868,8 @@ var
     Ret.HasFrame := Func.NeedFrame;
     Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
     Ret.Arguments := Func.Arguments.Count;
+    if IsLibrary then
+      Ret.Lib := Component as TZLibrary;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
@@ -1286,13 +1288,10 @@ var
   I : integer;
 begin
   Result := S;
-//todo: for some reason this cause memory corruption in xe8
-{$if CompilerVersion=26}  //Xe5 and upwards
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
-{$endif}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;

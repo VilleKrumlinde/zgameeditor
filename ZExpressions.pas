@@ -72,10 +72,19 @@ type
 
   //User-defined functions
   TZLibrary = class(TZComponent)
+  strict private
+    Lock : pointer;
+  private
+    procedure AquireLock;
+    procedure ReleaseLock;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    UseThreadLock : boolean;
     Source : TZExpressionPropValue;
+    {$ifndef minimal}
+    destructor Destroy; override;
+    {$endif}
   end;
 
   //Import of external library (dll)
@@ -323,6 +332,7 @@ type
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    Lib : TZLibrary;
     HasFrame : boolean;
     HasReturnValue : boolean;
     Arguments : integer;
@@ -610,7 +620,7 @@ begin
   Env.StackPushPointer(NilP); //Push return adress nil
 
   {$ifndef minimal}
-  GuardLimit := 500 * 1000000;
+  GuardLimit := High(Integer);
   GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000*10;
   {$endif}
   while True do
@@ -622,7 +632,7 @@ begin
     {$ifndef minimal}
     Dec(GuardLimit);
     if GuardLimit=0 then
-      ZHalt('Five hundered million instructions executed. Infinite loop?');
+      ZHalt('Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
       ZHalt('Ten million strings allocated. Infinite loop?');
     {$endif}
@@ -1422,6 +1432,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasFrame',{$ENDIF}(@HasFrame), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}(@HasReturnValue), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'Arguments',{$ENDIF}(@Arguments), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}(@Lib), zptComponentRef);
 end;
 
 {$warnings off}
@@ -1452,6 +1463,9 @@ begin
   begin
     Env.StackPushPointer(RetVal);
   end;
+
+  if (Lib<>nil) and Lib.UseThreadLock then
+    Lib.ReleaseLock
 end;
 {$warnings on}
 
@@ -1580,7 +1594,29 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}(@Source), zptExpression);
     {$ifndef minimal}List.GetLast.ExpressionKind := ekiLibrary;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'UseThreadLock',{$ENDIF}@UseThreadLock, zptBoolean);
 end;
+
+procedure TZLibrary.AquireLock;
+begin
+  if Self.Lock=nil then
+    Lock := Platform_CreateMutex;
+  Platform_EnterMutex(Lock);
+end;
+
+procedure TZLibrary.ReleaseLock;
+begin
+  Platform_LeaveMutex(Lock);
+end;
+
+{$ifndef minimal}
+destructor TZLibrary.Destroy;
+begin
+  if Lock<>nil then
+    Platform_FreeMutex(Lock);
+  inherited;
+end;
+{$endif}
 
 { TExpUserFuncCall }
 
@@ -1593,6 +1629,8 @@ end;
 
 procedure TExpUserFuncCall.Execute(Env : PExecutionEnvironment);
 begin
+  if Lib.UseThreadLock then
+    Lib.AquireLock;
   Env.StackPushPointer(Env.gCurrentPC);
   Env.gCurrentPC := Lib.Source.Code.GetPtrToItem(Index);
   Dec(Env.gCurrentPc);

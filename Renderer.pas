@@ -70,6 +70,7 @@ type
   private
     Location : integer;
     TextureHandle : integer;
+    TexWidth : integer;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -326,9 +327,10 @@ type
     {$endif}
   end;
 
+  TRenderQuality = (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
   TRenderTarget = class(TZComponent)
   strict private
-    TexId,RboId,FboId : integer;
+    RboId,FboId : integer;
     {$ifndef minimal}
     LastW,LastH : integer;
     {$endif}
@@ -340,9 +342,10 @@ type
     ClearBeforeUse : boolean;
     AutoPowerOfTwo : boolean;
     ClearColor : TZColorf;
-    Width,Height : (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
+    Width,Height : TRenderQuality;
     CustomWidth,CustomHeight : integer;
     UseMultisample : boolean;
+    TexId : integer; //read by zgeviz
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
@@ -1803,6 +1806,11 @@ var
         begin
           glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
           glEnable(GL_TEXTURE_2D);
+          if Sv.TexWidth<>Count then
+          begin //Resize texture if array size has changed
+            Sv.TexWidth := Count;
+            Sv.ResetGpuResources;
+          end;
           if Sv.TextureHandle=0 then
           begin
             glGenTextures(1, @Sv.TextureHandle);
