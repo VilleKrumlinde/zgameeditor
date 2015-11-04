@@ -1757,7 +1757,7 @@ var
   Mesh : TMesh;
   VertP : PZVector3f;
   PrevIndP,IndP : PMeshVertexIndex;
-  I,J : integer;
+  I,J,K : integer;
   Stream : TZInputStream;
   TriCount,VertCount : integer;
   MinV,DiffV : TZVector3f;
@@ -1831,12 +1831,13 @@ begin
       PTex := pointer(Mesh.TexCoords);
       Stream.Read(Sm,2);
       PTex^[J] := Sm / High(Smallint);
+      K := Sm;
       for I := 0 to VertCount-2 do
       begin
         Inc(PTex);
-        Stream.Read(Sm2,2);
-        Inc(Sm,Sm2);
-        PTex^[J] := Sm / High(Smallint);
+        Stream.Read(Sm,2);
+        Inc(K,Sm);
+        PTex^[J] := K / High(Smallint);
       end;
     end;
   end;
