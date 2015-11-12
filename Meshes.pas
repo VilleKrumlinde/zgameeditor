@@ -307,6 +307,7 @@ type
   public
     Model : TModel;
     procedure Execute; override;
+    {$ifndef minimal}function GetDisplayName: AnsiString; override;{$endif}
   end;
 
   TRemoveAllModels = class(TCommand)
@@ -1564,6 +1565,15 @@ begin
   ZApp.Models.Remove( M );
 end;
 
+{$ifndef minimal}
+function TRemoveModel.GetDisplayName: AnsiString;
+begin
+  Result := inherited GetDisplayName;
+  if Assigned(Self.Model) then
+    Result := Result + '  ' + Self.Model.Name;
+end;
+{$endif}
+
 { TRemoveAllModels }
 
 procedure TRemoveAllModels.DefineProperties(List: TZPropertyList);
@@ -1762,7 +1772,7 @@ var
   TriCount,VertCount : integer;
   MinV,DiffV : TZVector3f;
   W : word;
-  Sm,Sm2 : smallint;
+  Sm : smallint;
   PColor : PMeshVertexColor;
   PTex : PZVector2f;
 begin

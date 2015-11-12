@@ -1706,7 +1706,7 @@ procedure TShader.ReInit;
     end
     else
     begin
-      LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation')) );
+      LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation' {$ifndef minimal} + ' (' + Self.Name + ')'{$endif})) );
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
         LogWrite( PAnsiChar(@GlMess) );
