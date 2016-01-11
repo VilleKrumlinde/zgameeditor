@@ -10,7 +10,7 @@
 
   Copyright (c) 2012-2015 Radovan Cervenka
 
-  Version: 2.2 (2015-10-02)
+  Version: 2.3 (2015-12-05)
 */
 
 
@@ -451,6 +451,14 @@ void zbtSetRotationXYZ(xptr obj, float rx, float ry, float rz) {}
 
 void zbtSetRotation(xptr obj, xptr rotation) {}
 
+void zbtGetRotationQuat(xptr obj, xptr outQuaternion) {}
+
+void zbtGetRotationDirection(xptr obj, xptr outDirection) {}
+
+void zbtSetRotationDirectionXYZ(xptr obj, float x, float y, float z) {}
+
+void zbtSetRotationDirection(xptr obj, xptr direction) {}
+
 void zbtGetPosRotXYZ(xptr obj,
 	ref float outX, ref float outY, ref float outZ,
 	ref float outRx, ref float outRy, ref float outRz) {}
@@ -462,8 +470,6 @@ void zbtSetPosRotXYZ(xptr obj,
 	float rx, float ry, float rz) {}
 
 void zbtSetPosRot(xptr obj, xptr position, xptr rotation) {}
-
-void zbtGetOrientation(xptr obj, xptr outOrientation) {}
 
 void zbtGetModelMatrix(xptr obj, xptr outMatrix) {}
 
@@ -497,16 +503,19 @@ void zbtSetIgnoreCollisionCheck(xptr objA, xptr objB,
 
 int zbtStartCollisionDetection() {}
 
-int zbtGetNextContact(xptr outObjA, xptr outObjB,
+int zbtGetNextContact(ref xptr outObjA, ref xptr outObjB,
 	xptr outPosA, xptr outPosB, xptr outNormal) {}
 
-void zbtGetCollidedObjects(int contactIndex, xptr outObjA, xptr outObjB) {}
+void zbtGetCollidedObjects(int contactIndex, ref xptr outObjA, ref xptr outObjB,
+  ref float outAppliedImpulse) {}
 
 int zbtIsColliding(xptr obj) {}
 
 int zbtGetNumberOfCollisions(xptr obj) {}
 
 int zbtIsCollidedWith(xptr objA, xptr objB) {}
+
+float zbtGetCollisionImpulse(xptr obj) {}
 
 
 // Raycasting
