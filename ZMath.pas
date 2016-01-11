@@ -740,8 +740,8 @@ procedure SinCos(const Theta: Single; out Sin, Cos: Single);
 asm
    FLD  Theta
    FSINCOS
-   FSTP DWORD PTR [EDX]    // cosine
-   FSTP DWORD PTR [EAX]    // sine
+   FSTP DWORD PTR [Cos]    // cosine
+   FSTP DWORD PTR [Sin]    // sine
 end;
 {$else}
 var

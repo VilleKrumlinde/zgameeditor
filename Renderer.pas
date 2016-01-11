@@ -1,4 +1,4 @@
-{Copyright (c) 2008- Ville Krumlinde
+{Copyright (c) Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -330,7 +330,7 @@ type
   TRenderQuality = (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
   TRenderTarget = class(TZComponent)
   strict private
-    RboId,FboId : integer;
+    RboId : integer;
     {$ifndef minimal}
     LastW,LastH : integer;
     {$endif}
@@ -345,7 +345,8 @@ type
     Width,Height : TRenderQuality;
     CustomWidth,CustomHeight : integer;
     UseMultisample : boolean;
-    TexId : integer; //read by zgeviz
+    TexId,FboId : integer; //read by zgeviz
+    Filter : TBitmapFilterType;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
@@ -1029,6 +1030,7 @@ begin
 
     CurChar := P^;
 
+    Self.CharI := NativeUInt(P)-NativeUInt(TheText);
     ZExpressions.RunCode(RenderCharExpression.Code);
 
     Driver.PushMatrix;
@@ -1039,8 +1041,6 @@ begin
     Driver.PopMatrix;
 
     CharX := CharX + XStep;
-
-    Inc(CharI);
     Inc(P);
   end;
 
@@ -1706,7 +1706,7 @@ procedure TShader.ReInit;
     end
     else
     begin
-      LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation' {$ifndef minimal} + ' (' + Self.Name + ')'{$endif})) );
+      LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation' {$ifndef minimal} + ' (' + String(Self.Name) + ')'{$endif})) );
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
         LogWrite( PAnsiChar(@GlMess) );
@@ -2083,9 +2083,11 @@ begin
 end;
 
 procedure TRenderTarget.Activate;
+const
+  FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_LINEAR_MIPMAP_LINEAR);
 var
   W,H : integer;
-  ActualW,ActualH : integer;
+  ActualW,ActualH,I : integer;
   A : TZApplication;
 begin
   if not FbosSupported then
@@ -2145,9 +2147,17 @@ begin
       glBindTexture(GL_TEXTURE_2D, TexId);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR{$endif});
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, {$ifdef android}GL_NEAREST{$else}GL_LINEAR_MIPMAP_LINEAR{$endif});
-      {$ifndef android}
+
+      {$ifdef android}
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      {$else}
+      if Self.Filter=bmfMipmap then
+        I := GL_LINEAR  //Mipmap is not a valid mag-filter
+      else
+        I := FilterTypes[Ord(Self.Filter)];
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] );
       glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
       {$endif}
     end;
@@ -2226,6 +2236,8 @@ begin
     List.GetLast.DefaultValue.BooleanValue := True;
   List.AddProperty({$IFNDEF MINIMAL}'AutoPowerOfTwo',{$ENDIF}(@AutoPowerOfTwo), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}(@ClearColor), zptColorf);
+  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
 end;
 
 procedure TRenderTarget.CleanUp;

@@ -103,7 +103,6 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     Url : TPropString;
-    ParamArray,ResultArray : TDefineArray;
     ResultString : TPropString;
     OnResult : TZComponentList;
     InBrowser : boolean;
@@ -301,8 +300,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Interval',{$ENDIF}(@Interval), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatCount',{$ENDIF}(@RepeatCount), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := -1;
-  List.AddProperty({$IFNDEF MINIMAL}'CurrentRelativeTime',{$ENDIF}(@Time), zptFloat);
-    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'CurrentRelativeTime',{$ENDIF}@Time, zptFloat);
     List.GetLast.NeverPersist := True;
 end;
 
@@ -342,13 +340,9 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Url',{$ENDIF}(@Url), zptString);
     List.GetLast.IsManagedTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ResultArray',{$ENDIF}(@ResultArray), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ResultString',{$ENDIF}(@ResultString), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ParamArray',{$ENDIF}(@ParamArray), zptComponentRef);
-    {$ifndef minimal}List.GetLast.SetChildClasses([TDefineArray]);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'InBrowser',{$ENDIF}(@InBrowser), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'OnResult',{$ENDIF}(@OnResult), zptComponentList);
 end;
@@ -373,25 +367,6 @@ begin
     Pd := @Buf;
     ZStrCopy(@Buf,PAnsiChar(Self.Url));
     Inc(Pd,ZStrLength(@Buf));
-
-    if ParamArray<>nil then
-    begin
-      {$ifndef minimal}
-      if ParamArray._Type<>zctByte then
-        GetLog(Self.ClassName).Warning('ParamArray must be of byte-type');
-      {$endif}
-      Limit := ParamArray.CalcLimit;
-      Ps := PByte(ParamArray.GetData);
-      I := 0;
-      while (I<Limit) and (I<High(Buf)-1) and (Ps^<>0) do
-      begin
-        Pd^ := Ps^;
-        Inc(Pd);
-        Inc(Ps);
-        Inc(I);
-      end;
-      Pd^ := 0;
-    end;
 
     Platform_NetOpen(PAnsiChar(@Buf),Self.InBrowser,Self);
   end;
@@ -434,22 +409,9 @@ begin
 
   if BytesRead>0 then
   begin
-    if ResultArray<>nil then
-    begin
-      {$ifndef minimal}
-      if ResultArray._Type<>zctByte then
-        GetLog(Self.ClassName).Warning('ResultArray must be of byte-type');
-      {$endif}
-      ResultArray.SizeDim1 := BytesRead;
-      Ps := Self.Buffer;
-      Pd := PByte(ResultArray.GetData);
-      Move(Ps^,Pd^,BytesRead);
-    end else
-    begin
-      Self.ResultString := ManagedHeap_Alloc(BytesRead+1);
-      Move(Self.Buffer^,Self.ResultString^,BytesRead);
-      PBytes(Self.ResultString)^[BytesRead+1] := 0; //Zero terminate
-    end;
+    Self.ResultString := ManagedHeap_Alloc(BytesRead+1);
+    Move(Self.Buffer^,Self.ResultString^,BytesRead);
+    PBytes(Self.ResultString)^[BytesRead+1] := 0; //Zero terminate
   end;
   AddToResultList;
 end;

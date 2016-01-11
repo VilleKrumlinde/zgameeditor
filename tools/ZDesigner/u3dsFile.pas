@@ -481,7 +481,9 @@ begin
       MeshImp.HasVertexColors := True;
       for I := 0 to InMesh.NVertices - 1 do
       begin
-        Color := (Round(InMesh.VertexColors[I].B * 255) shl 16) or
+        Color :=
+          ($ff shl 24) or
+          (Round(InMesh.VertexColors[I].B * 255) shl 16) or
           (Round(InMesh.VertexColors[I].G * 255) shl 8) or
           Round(InMesh.VertexColors[I].R * 255);
         Stream.Write(Color,4);

@@ -1379,6 +1379,9 @@ begin
 
   //Init timer
   QueryPerformanceFrequency(TimerFreq);
+  {$ifndef minimal}
+  if TimerStart=0 then
+  {$endif}
   QueryPerformanceCounter(TimerStart);
 
   InitKeyMap;

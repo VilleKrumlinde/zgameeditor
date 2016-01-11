@@ -3810,11 +3810,11 @@ end;
 procedure TStateBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}@Definitions, zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}@OnStart, zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}@OnUpdate, zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}@OnRender, zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}@OnLeave, zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}@Definitions, zptComponentList);
 end;
 
 

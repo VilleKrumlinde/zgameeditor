@@ -895,7 +895,6 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
-    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}

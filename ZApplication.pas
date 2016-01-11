@@ -108,7 +108,7 @@ type
     Time,DeltaTime : single;
     Caption : TPropString;
     MousePosition : TZVector3f;
-    ClearScreenMode : integer;
+    ClearScreenMode : (csmClear,csmNoClear);
     ClearColor : TZColorf;
     AmbientLightColor : TZColorf;
     Fullscreen : boolean;
@@ -764,7 +764,7 @@ begin
     //Use custom camera or default
     ApplyCameraTransform;
 
-    if (ClearScreenMode=0) and (CurrentRenderTarget=nil) then
+    if (ClearScreenMode=csmClear) and (CurrentRenderTarget=nil) then
     begin
       glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -1128,8 +1128,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MouseWheelDelta',{$ENDIF}(@MouseWheelDelta), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}(@ClearScreenMode), zptInteger);
-    List.GetLast.NeverPersist := True;
+  List.AddProperty({$IFNDEF MINIMAL}'ClearScreenMode',{$ENDIF}@ClearScreenMode, zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['ClearScreen','NoClearScreen']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'RenderPasses',{$ENDIF}(@RenderPasses), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
   List.AddProperty({$IFNDEF MINIMAL}'WindowHandle',{$ENDIF}(@WindowHandle), zptInteger);

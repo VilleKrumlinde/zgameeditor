@@ -27,6 +27,8 @@ uses ZOpenGL, ZClasses;
 type
   TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024,bs2048,bs4096);
 
+  TBitmapFilterType = (bmfLinear,bmfNearest,bmfMipmap);
+
   //32 bits per pixel image
   TZBitmap = class(TContent)
   strict private
@@ -42,10 +44,13 @@ type
     procedure InitAfterPropsAreSet; override;
     {$endif}
   public
+    {$ifndef minimal}
+    HasExternalHandle : boolean;  //Used in ZgeViz
+    {$endif}
     Handle: GLuint;
     //Keep fields in sync with CopyAndDestroy + CreateFromBitmap
     Width,Height : integer;
-    Filter : (bmfLinear,bmfNearest,bmfMipmap);
+    Filter : TBitmapFilterType;
     constructor CreateFromBitmap(B : TZBitmap);
     destructor Destroy; override;
     procedure Update; override;
@@ -186,7 +191,10 @@ begin
   if IsInitialized then
   begin
     IsInitialized := False;
-    glDeleteTextures(1, @Handle);
+    {$ifndef minimal}
+    if not HasExternalHandle then
+    {$endif}
+      glDeleteTextures(1, @Handle);
   end;
 end;
 
@@ -358,7 +366,7 @@ end;
 procedure TZBitmap.UseTextureBegin;
 begin
   if (not IsInitialized)
-   {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
+   {$ifndef minimal}or Producers.IsChanged or IsChanged and (not HasExternalHandle){$endif} then
     ReInit;
 
   glBindTexture(GL_TEXTURE_2D, Handle);
