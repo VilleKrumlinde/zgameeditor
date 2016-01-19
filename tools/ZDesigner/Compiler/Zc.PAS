@@ -1146,13 +1146,16 @@ begin
   Expect(assgnSym);
   _Expr(Op);
     
+   if not (Typ.Kind in [zctByte,zctInt,zctFloat,zctString]) then
+     ZError('Only byte, int, float and string constants are allowed');
+
    Op := Op.Optimize;
    if not (Op is TZcOpLiteral) then
      ZError('Constant expression expected: ' + Op.ToString);
 
    Lit := Op as TZcOpLiteral;
 
-   if Lit.Typ.Kind<>Typ.Kind then
+   if (Lit.Typ.Kind<>Typ.Kind) and not ((Typ.Kind=zctByte) and (Lit.Typ.Kind=zctInt))then
      ZError('Constant expression is not of the expected type: ' + Op.ToString);
 
    Cns := TDefineConstant.Create(nil);
@@ -1160,6 +1163,11 @@ begin
    GlobalNames.Add(Cns);
 
    case Typ.Kind of
+     zctByte:
+       begin
+         Cns._Type := zctByte;
+         Cns.ByteValue := Round(Lit.Value);
+       end;
      zctInt:
        begin
          Cns._Type := zctInt;

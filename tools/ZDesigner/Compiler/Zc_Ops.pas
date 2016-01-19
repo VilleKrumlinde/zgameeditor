@@ -869,6 +869,7 @@ begin
     case C._Type of
       zctFloat : Result := TZcOpLiteral.Create(zctFloat,C.Value);
       zctInt : Result := TZcOpLiteral.Create(zctInt,C.IntValue);
+      zctByte : Result := TZcOpLiteral.Create(zctByte,C.ByteValue);
       zctString : Result := TZcOpLiteral.Create(zctString,'"' + String(C.StringValue) + '"');
     else
       Assert(False);
@@ -1255,6 +1256,7 @@ var
       'V' : Result.Kind := zctVoid;
       'F' : Result.Kind := zctFloat;
       'I' : Result.Kind := zctInt;
+      'B' : Result.Kind := zctByte;
       'S' : Result.Kind := zctString;
       'M' : Result.Kind := zctModel;
       'R' : Result.Kind := zctReference;
@@ -1593,14 +1595,13 @@ end;
 
 function GetArray(Kind : TZcDataTypeKind) : TDefineArray;
 begin
-  Result := nil;
   case Kind of
     zctMat4 : Result := Prototypes.Mat4Array;
     zctVec3 : Result := Prototypes.Vec3Array;
     zctVec2 : Result := Prototypes.Vec2Array;
     zctVec4 : Result := Prototypes.Vec4Array;
   else
-    Assert(False);
+    raise ECodeGenError.Create('Array access [] is not valid syntax here');
   end;
 end;
 

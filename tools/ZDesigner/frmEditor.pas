@@ -2073,6 +2073,7 @@ var
   PropValue : TZPropertyValue;
   Success : boolean;
   I : integer;
+  Node : TZComponentTreeNode;
 begin
   ExprCompileButton.Enabled := False;
   //Spara ändrad text i edit-ruta
@@ -2093,19 +2094,37 @@ begin
   except
     on E : EParseError do
     begin
-      ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
-      ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
-      ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
-      ExprSynEdit.SetFocus;
-      //ShowMessage( E.Message );
-      CompileErrorLabel.Caption := E.Message;
-      Log.Write(E.Message);
+      if E.Component<>C then
+      begin
+        Node := Tree.FindNodeForComponent(E.Component);
+        ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
+        Node.Expand(True);
+        Tree.Selected := Node;
+      end else
+      begin
+        ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
+        ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
+        ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
+        ExprSynEdit.SetFocus;
+        //ShowMessage( E.Message );
+        CompileErrorLabel.Caption := E.Message;
+        Log.Write(E.Message);
+      end;
     end;
     on E : ECodeGenError do
     begin
-      CompileErrorLabel.BevelKind := bkTile;
-      CompileErrorLabel.Caption := E.Message;
-      Log.Write(E.Message);
+      if E.Component<>C then
+      begin
+        Node := Tree.FindNodeForComponent(E.Component);
+        ShowMessage( 'Error in expression for node: ' + String(Node.Component.GetDisplayName) + ' '#13 + E.Message );
+        Node.Expand(True);
+        Tree.Selected := Node;
+      end else
+      begin
+        CompileErrorLabel.BevelKind := bkTile;
+        CompileErrorLabel.Caption := E.Message;
+        Log.Write(E.Message);
+      end;
     end;
   end;
 //  Tree.RefreshNode(Tree.Selected,Selected);
@@ -3787,6 +3806,7 @@ var
     Arg : TZcOpArgumentVar;
   begin
     Result := Func.Id + '(';
+
     for I := 0 to Func.Arguments.Count - 1 do
     begin
       Arg := Func.Arguments[I] as TZcOpArgumentVar;
@@ -3794,7 +3814,11 @@ var
         Result := Result + ',';
       if Arg.Typ.IsPointer then
         Result := Result + 'ref ';
-      Result := Result + GetZcTypeName(Arg.Typ) + ' ' + Arg.Id;
+      if Arg.Typ.Kind=zctArray then
+      begin
+        Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[] ' + Arg.Id;
+      end else
+        Result := Result + GetZcTypeName(Arg.Typ) + ' ' + Arg.Id;
     end;
     Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
   end;
@@ -3805,7 +3829,11 @@ begin
   if (Item is TZComponent) then
     Desc := String((Item as TZComponent).GetDisplayName)
   else if (Item is TZcOpFunctionBase) then
+  begin
+    if (Item is TZcOpFunctionBuiltIn) and (TZcOpFunctionBuiltIn(Item).FuncId=fcGenLValue) then
+      Exit; //Skip internal function
     Desc := InGetSig(Item as TZcOpFunctionBase)
+  end
   else
     Desc := S;
   C.ItemList.Add(Desc);
