@@ -92,7 +92,11 @@ uses
   GLDrivers in '..\..\GLDrivers.pas',
   frmScriptedCompEditBase in 'frmScriptedCompEditBase.pas' {ScriptedCompEditFrameBase: TFrame},
   frmSpriteSheetEdit in 'frmSpriteSheetEdit.pas' {SpriteSheetEditFrame: TFrame},
-  frmTileSetEdit in 'frmTileSetEdit.pas' {TileSetEditFrame: TFrame};
+  frmTileSetEdit in 'frmTileSetEdit.pas' {TileSetEditFrame: TFrame},
+  frmCustomPropEditBase in 'frmCustomPropEditBase.pas' {CustomPropEditBaseForm},
+  frmExprPropEdit in 'frmExprPropEdit.pas' {ExprPropEditForm},
+  frmFloatPropEdit in 'frmFloatPropEdit.pas' {FloatPropEditForm},
+  frmShaderPropEdit in 'frmShaderPropEdit.pas' {ShaderPropEditForm};
 
 {$R *.res}
 

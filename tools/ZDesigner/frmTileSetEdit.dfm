@@ -1,0 +1,2 @@
+inherited TileSetEditFrame: TTileSetEditFrame
+end

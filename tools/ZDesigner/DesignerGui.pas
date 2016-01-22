@@ -27,8 +27,9 @@ uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,
 
 type
   TPropValueChangedEvent = procedure of object;
+  TPropValueEditFocusEvent = procedure(Sender: TObject; Prop : TZProperty; Component : TZComponent) of object;
 
-  TZPropertyEditor =  class(TScrollBox)
+  TZPropertiesEditor =  class(TScrollBox)
   private
     C : TZComponent;
     LastWidth : integer;
@@ -38,6 +39,7 @@ type
   public
     RootComponent : TZComponent;
     OnPropValueChanged : TPropValueChangedEvent;
+    OnPropEditFocusControl : TPropValueEditFocusEvent;
     WantsFocus : TWinControl;
     procedure SetComponent(C : TZComponent);
     constructor Create(Owner : TComponent); override;
@@ -110,7 +112,7 @@ type
     OldValue,Value : TZPropertyValue;
     OnPropValueChanged : TPropValueChangedEvent;
     NamePanel : TPanel;
-    PropEditor : TZPropertyEditor;
+    PropEditor : TZPropertiesEditor;
     IsReadOnlyProp : boolean;
     procedure SetProp(C : TZComponent; Prop : TZProperty); virtual;
     procedure UpdateProp;
@@ -228,13 +230,13 @@ end;
 
 { TZPropertyEditor }
 
-procedure TZPropertyEditor.SetComponent(C: TZComponent);
+procedure TZPropertiesEditor.SetComponent(C: TZComponent);
 begin
   Self.C := C;
   RebuildGui;
 end;
 
-constructor TZPropertyEditor.Create(Owner: TComponent);
+constructor TZPropertiesEditor.Create(Owner: TComponent);
 begin
   inherited Create(Owner);
   Self.OnResize := MyOnResize;
@@ -242,14 +244,14 @@ begin
   Self.BorderStyle := bsNone;
 end;
 
-procedure TZPropertyEditor.MyOnResize(Sender : TObject);
+procedure TZPropertiesEditor.MyOnResize(Sender : TObject);
 begin
   if Visible and (Self.Width<>LastWidth) then
     RebuildGUI;
   LastWidth := Self.Width;
 end;
 
-procedure TZPropertyEditor.RebuildGui;
+procedure TZPropertiesEditor.RebuildGui;
 var
   PropList : TZPropertyList;
   Prop : TZProperty;
@@ -259,7 +261,6 @@ begin
   Hide;
 
   DestroyComponents;
-  (Owner as TEditorForm).HideEditor;
 
   if C = nil then
     Exit;
@@ -281,8 +282,7 @@ begin
       zptColorf : PEditor := TZPropertyColorEdit.Create(Self);
       zptComponentRef : PEditor := TZPropertyComponentEdit.Create(Self);
       zptInteger : PEditor := TZPropertyIntegerEdit.Create(Self);
-      zptRectf : PEditor := TZPropertyFloatsEdit.Create(Self);
-      zptVector3f : PEditor := TZPropertyFloatsEdit.Create(Self);
+      zptRectf,zptVector3f : PEditor := TZPropertyFloatsEdit.Create(Self);
       zptBoolean : PEditor := TZPropertyBooleanEdit.Create(Self);
       zptByte : PEditor := TZPropertyByteEdit.Create(Self);
       zptBinary : PEditor := TZBinaryPropEdit.Create(Self);
@@ -309,7 +309,7 @@ begin
 end;
 
 
-procedure TZPropertyEditor.OnPropEditValueChanged;
+procedure TZPropertiesEditor.OnPropEditValueChanged;
 begin
   //Skicka vidare event från propeditor till owner
   if Assigned(OnPropValueChanged) then
@@ -322,7 +322,7 @@ end;
 constructor TZPropertyEditBase.Create(AOwner: TComponent);
 begin
   inherited;
-  Self.PropEditor := AOwner as TZPropertyEditor;
+  Self.PropEditor := AOwner as TZPropertiesEditor;
   Self.BorderStyle := bsNone;
   Self.BevelOuter := bvNone;
 end;
@@ -334,17 +334,7 @@ end;
 
 procedure TZPropertyEditBase.OnFocusControl(Sender: TObject);
 begin
-  if (Sender is TEdit) and
-   (TEdit(Sender).Owner is TZPropertyFloatsEdit) or (TEdit(Sender).Owner is TZPropertyFloatEdit) then
-  begin
-    (PropEditor.Owner as TEditorForm).ShowFloatEditor(Sender as TEdit,TZPropertyFloatEdit(TEdit(Sender).Owner).Prop.PropertyType=zptScalar);
-  end
-  else if (Sender is TEdit) and (TEdit(Sender).Tag=100) then
-    (PropEditor.Owner as TEditorForm).ShowExprEditor(Sender as TEdit)
-  else if (Sender is TEdit) and (TEdit(Sender).Tag=101) then
-    (PropEditor.Owner as TEditorForm).ShowShaderEditor(Sender as TEdit)
-  else
-    (PropEditor.Owner as TEditorForm).HideEditor;
+  PropEditor.OnPropEditFocusControl(Sender,Self.Prop,Self.Component);
 end;
 
 procedure TZPropertyEditBase.SetFocus;

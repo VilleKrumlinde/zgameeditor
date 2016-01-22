@@ -22,7 +22,7 @@ unit Renderer;
 
 interface
 
-uses Meshes,ZClasses,ZBitmap,ZExpressions;
+uses {$ifndef minimal}SysUtils,{$endif}Meshes,ZClasses,ZBitmap,ZExpressions;
 
 type
   TRenderCommand = class(TCommand);
@@ -87,6 +87,9 @@ type
     destructor Destroy; override;
   end;
 
+  {$ifndef minimal}
+  EShaderException = class(Exception);
+  {$endif}
   TShader = class(TZComponent)
   strict private
     VShaderHandle,FShaderHandle : cardinal;
@@ -399,8 +402,7 @@ implementation
 
 {$POINTERMATH ON}
 
-uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZLog, GLDrivers
-  {$ifdef zlog},SysUtils{$endif};
+uses ZOpenGL, ZMath, ZApplication, ZPlatform, ZLog, GLDrivers;
 
 var
   DefaultFont : TFont = nil;
@@ -1706,14 +1708,20 @@ procedure TShader.ReInit;
     end
     else
     begin
+      {$ifndef minimal}
       LogWarn( PAnsiChar(AnsiString('Error in ' + S + ' shader compilation' {$ifndef minimal} + ' (' + String(Self.Name) + ')'{$endif})) );
+      {$endif}
       glGetShaderInfoLog(Shader^,SizeOf(GlMess),@MessLen,@GlMess);
       if MessLen>0 then
         LogWrite( PAnsiChar(@GlMess) );
-      //Remove the incorrect shader, otherwise it try to unattach in cleanup
+      //Remove the incorrect shader, otherwise it tries to unattach in cleanup
       glDeleteShader(Shader^);
       Shader^ := 0;
+      {$ifndef minimal}
+      raise EShaderException.Create(String(PAnsiChar(@GlMess)));
+      {$else}
       Result := False;
+      {$endif}
     end;
   end;
 

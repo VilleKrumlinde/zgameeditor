@@ -27,16 +27,22 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
-  SynEdit, ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
+  ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
   Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
   Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl,
-  System.ImageList;
+  System.ImageList, frmCustomPropEditBase;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
     bbNormalLinux,bbNormalOsx86,bbNormalAndroid);
+
+  TPropEditKey = record
+    Comp : TZComponent;
+    Prop : TZProperty;
+    constructor Create(Comp : TZComponent; Prop : TZProperty);
+  end;
 
   TEditorForm = class(TForm)
     SaveDialog: TSaveDialog;
@@ -44,18 +50,10 @@ type
     LeftPanel: TPanel;
     TreePanel: TGroupBox;
     Splitter1: TSplitter;
-    CustomPropEditorsPageControl: TPageControl;
-    TabSheet1: TTabSheet;
-    TrackBar1: TTrackBar;
-    TabSheet2: TTabSheet;
     PropListPanel: TPanel;
     ViewerPanel: TPanel;
     Splitter2: TSplitter;
-    Label1: TLabel;
-    TabSheet3: TTabSheet;
-    ExprCompileButton: TButton;
     Splitter3: TSplitter;
-    ExprPanel: TGroupBox;
     ActionList1: TActionList;
     AddComponentAction: TAction;
     TreePopupMenu: TPopupMenu;
@@ -126,7 +124,6 @@ type
     FileSaveBinaryAsAction: TAction;
     SaveBinaryMenuItem: TMenuItem;
     ViewerBlankTabSheet: TTabSheet;
-    CompileErrorLabel: TStaticText;
     ActionDisabledImageList: TImageList;
     ToolButton12: TToolButton;
     ToolButton13: TToolButton;
@@ -156,17 +153,12 @@ type
     N7: TMenuItem;
     NewWindow1: TMenuItem;
     FileNewWindowAction: TAction;
-    ExprHelpButton: TButton;
     ReopenMenuItem: TMenuItem;
     Import3dsAction: TAction;
     Import3dsAction1: TMenuItem;
     N8: TMenuItem;
     N9: TMenuItem;
     ViewTranslateLabel: TLabel;
-    ShaderTabSheet: TTabSheet;
-    CompileShaderButton: TButton;
-    ShaderPanel: TGroupBox;
-    Label6: TLabel;
     GenerateReleaseLinuxAction: TAction;
     BuildandcompressLinuxbinary1: TMenuItem;
     GenerateReleaseOsx86Action: TAction;
@@ -239,12 +231,12 @@ type
     QuickCompListView: TListView;
     Panel3: TPanel;
     QuickCompListParent: TPanel;
+    PropEditParentPanel: TPanel;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure Update1Click(Sender: TObject);
     procedure LockShowActionExecute(Sender: TObject);
-    procedure TrackBar1Change(Sender: TObject);
     procedure ExprCompileButtonClick(Sender: TObject);
     procedure GenerateEXEClick(Sender: TObject);
     procedure AddComponentActionExecute(Sender: TObject);
@@ -321,25 +313,23 @@ type
     procedure ImportBitmapActionExecute(Sender: TObject);
     procedure ImportAudioActionExecute(Sender: TObject);
     procedure DetachCompEditorButtonClick(Sender: TObject);
+    procedure DetachPropEditorButtonClick(Sender: TObject);
     procedure QuickCompListViewClick(Sender: TObject);
     procedure QuickCompListViewMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
   private
     { Private declarations }
-    Ed : TZPropertyEditor;
+    Ed : TZPropertiesEditor;
     Selected,ShowNode : TZComponent;
     LockShow : boolean;
     Root : TZComponent;
-    FloatEdit : TEdit;
-    MinFloat,MaxFloat : single;
-    ExprEditBox : TEdit;
     CurrentFileName : string;
-    ExprSynEdit,ShaderSynEdit : TSynEdit;
     ViewRotate,ViewTranslate : TZVector3f;
     IsAppRunning : boolean;
     OldGlWindowProc : TWndMethod;
     CompEditor : TCompEditFrameBase;  //Current component editor, nil if none
     CompEditorTreeNode : TZComponentTreeNode;
+    PropEditor : TCustomPropEditBaseForm; //Current property editor, nil if none
     _FileChanged : boolean;
     RenderAborted : boolean;
     MruList : TStringList;
@@ -350,9 +340,10 @@ type
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
     SysLibrary : TZComponent;
-    AutoComp,ParamComp : TSynCompletionProposal;
+    SynEditFontSize,AutoCompTimerInterval : integer;
     Log : TLog;
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
+    DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
     procedure SelectComponent(C : TZComponent);
     procedure DrawModel;
     procedure OnGlDraw(Sender : TObject);
@@ -381,7 +372,6 @@ type
     procedure OpenProject(const FileName: string; const IsTemplate : boolean = False);
     procedure NewProject(const FromTemplate : string = '');
     function CloseProject: boolean;
-    procedure OnExprChanged(Sender: TObject);
     procedure BuildBinary(const PlayerName, OutputName: string);
     procedure ExecToolAndWait(const ExeFile, ParamString: string);
     function BuildRelease(Kind : TBuildBinaryKind) : string;
@@ -400,7 +390,6 @@ type
     procedure AddNewComponentToTree(C: TZComponent; SelectIt : boolean = true);
     procedure AutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure ParamAutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
-    procedure OnShaderExprChanged(Sender: TObject);
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
     procedure OnAppException(Sender: TObject; E: Exception);
@@ -420,7 +409,9 @@ type
     procedure ImportAudioFiles(Files: TStringList);
     function MakeCompEditor(Kind: TCompEditFrameBaseType): TCompEditFrameBase;
     procedure OnDetachedCompEditorClose(Sender: TObject; var Action: TCloseAction);
+    procedure OnDetachedPropEditorClose(Sender: TObject; var Action: TCloseAction);
     procedure FillQuickCompList;
+    procedure OnPropEditFocusControl(Sender: TObject; Prop : TZProperty; Component : TZComponent);
   protected
     procedure CreateWnd; override;
   public
@@ -431,11 +422,6 @@ type
     Driver : TGLDriverBase;
     ExePath : string;
     procedure SetFileChanged(Value : Boolean);
-    //Custom editors
-    procedure ShowFloatEditor(Edit : TEdit; IsScalar : boolean);
-    procedure ShowExprEditor(Edit : TEdit);
-    procedure ShowShaderEditor(Edit : TEdit);
-    procedure HideEditor;
     procedure ValidateNewName(const OldName,NewName : string);
     procedure FindComponentAndFocusInTree(const CName: string); overload;
     procedure FindComponentAndFocusInTree(C: TZComponent); overload;
@@ -450,7 +436,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '3.1b';
+  AppVersion = '4.0b';
   ZgeProjExtension = '.zgeproj';
 
 procedure SetupGLShading;
@@ -460,11 +446,12 @@ implementation
 {$R *.dfm}
 
 uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
-  ShellApi, SynEditHighlighter, SynHighlighterCpp, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
+  ShellApi, SynEditHighlighter, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit;
+  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
+  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit;
 
 { TEditorForm }
 
@@ -522,14 +509,16 @@ begin
 
   LoadGamutBitmap;
   DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
+  DetachedPropEditors := TObjectDictionary<TPropEditKey,TForm>.Create([doOwnsValues]);
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
   FormatSettings.DecimalSeparator := '.';
 
-  Ed := TZPropertyEditor.Create(Self);
+  Ed := TZPropertiesEditor.Create(Self);
   Ed.Align := alClient;
   Ed.OnPropValueChanged := Self.OnPropValueChange;
+  Ed.OnPropEditFocusControl := Self.OnPropEditFocusControl;
   Ed.Parent := PropListParent;
 
   Tree := TZComponentTreeView.Create(Self);
@@ -571,57 +560,6 @@ begin
   ExePath := ExtractFilePath(Application.ExeName);
   SaveDialog.InitialDir := ExePath + 'Projects';
 
-  ExprSynEdit := TSynEdit.Create(Self);
-  ExprSynEdit.Align := alClient;
-  ExprSynEdit.Gutter.Visible := True;
-  ExprSynEdit.Gutter.ShowLineNumbers := True;
-  ExprSynEdit.Parent := ExprPanel;
-  ExprSynEdit.OnChange := OnExprChanged;
-  ExprSynEdit.Highlighter := TSynZcSyn.Create(Self);
-  ExprSynEdit.WantTabs := True;
-  ExprSynEdit.TabWidth := 2;
-  ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
-    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
-  ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
-  ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
-
-  //SynEdit autocompletion
-  AutoComp := TSynCompletionProposal.Create(Self);
-  AutoComp.Editor := ExprSynEdit;
-  AutoComp.EndOfTokenChr := '+-/*=()[]., @';
-  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
-  AutoComp.ShortCut := 16416;
-  AutoComp.OnExecute := AutoCompOnExecute;
-  AutoComp.Options := DefaultProposalOptions + [scoCaseSensitive,scoUseBuiltInTimer,scoUseInsertList,scoUsePrettyText];
-  AutoComp.TimerInterval := 2000;
-
-  //SynEdit autocompletion for parameters
-  ParamComp := TSynCompletionProposal.Create(Self);
-  ParamComp.DefaultType := ctParams;
-  ParamComp.Options := [scoLimitToMatchedText, scoUseBuiltInTimer];
-  ParamComp.TriggerChars := '(';
-  ParamComp.EndOfTokenChr := '';
-  ParamComp.ShortCut := 24608;
-  ParamComp.Editor := ExprSynEdit;
-  ParamComp.OnExecute := ParamAutoCompOnExecute;
-  ParamComp.TimerInterval := 2000;
-
-  ShaderSynEdit := TSynEdit.Create(Self);
-  ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
-  ShaderSynEdit.Align := alClient;
-  ShaderSynEdit.Gutter.Visible := True;
-  ShaderSynEdit.Gutter.ShowLineNumbers := True;
-  ShaderSynEdit.Parent := ShaderPanel;
-  ShaderSynEdit.OnChange := OnShaderExprChanged;
-  ShaderSynEdit.WantTabs := True;
-  ShaderSynEdit.TabWidth := 2;
-  ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
-    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
-  ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
-  ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
-
   Application.HelpFile := ExePath + 'ZGameEditor.chm';
 
   ResetCamera;
@@ -651,6 +589,96 @@ begin
   FillNewMenuTemplateItems;
 
   FillQuickCompList;
+end;
+
+
+procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty; Component : TZComponent);
+
+  function MakePropEditor(T : TCustomPropEditBaseFormClass) : TCustomPropEditBaseForm;
+  var
+    F : TCustomPropEditBaseForm;
+  begin
+    F := T.Create(Self);
+
+    F.Prop := Prop;
+    F.Component := Component;
+    F.TreeNode := Tree.Selected as TZComponentTreeNode;
+    F.DetachButton.OnClick := Self.DetachPropEditorButtonClick;
+    F.Parent := PropEditParentPanel;
+    F.Align := alClient;
+    F.Show;
+    Self.PropEditor := F;
+    Result := F;
+  end;
+
+  procedure ShowExprEditor(Edit: TEdit);
+  var
+    F: TExprPropEditForm;
+  begin
+    F := MakePropEditor(TExprPropEditForm) as TExprPropEditForm;
+
+    Edit.ReadOnly := True;
+    F.ExprSynEdit.Text := Edit.Text;
+    F.AutoComp.OnExecute := AutoCompOnExecute;
+    F.ParamComp.OnExecute := ParamAutoCompOnExecute;
+    F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
+    F.AutoComp.TimerInterval := Self.AutoCompTimerInterval;
+    F.ParamComp.TimerInterval := Self.AutoCompTimerInterval;
+    F.ExprCompileButton.OnClick := Self.ExprCompileButtonClick;
+  end;
+
+  procedure ShowShaderEditor(Edit: TEdit);
+  var
+    F: TShaderPropEditForm;
+  begin
+    F := MakePropEditor(TShaderPropEditForm) as TShaderPropEditForm;
+
+    Edit.ReadOnly := True;
+    F.ShaderSynEdit.Text := Edit.Text;
+    F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
+    F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
+  end;
+
+  procedure ShowFloatEditor(Edit: TEdit; IsScalar : boolean);
+  var
+    F: TFloatPropEditForm;
+    CurValue : single;
+  begin
+    F := MakePropEditor(TFloatPropEditForm) as TFloatPropEditForm;
+
+    CurValue := StrToFloatDef(Edit.Text,0);
+    if IsScalar then
+    begin
+      F.MinFloat := 0;
+      F.MaxFloat := 1;
+    end
+    else
+    begin
+      F.MinFloat := Min(CurValue / 10, CurValue - 5);
+      F.MaxFloat := Max(CurValue * 5, CurValue + 5);
+    end;
+    F.TrackBar1.Position := Round((CurValue-F.MinFloat) / ((F.MaxFloat-F.MinFloat)/F.TrackBar1.Max));
+    F.FloatEdit := Edit;
+  end;
+
+var
+  Key : TPropEditKey;
+begin
+  if PropEditor<>nil then
+  begin
+    FreeAndNil(PropEditor);
+  end;
+
+  Key := TPropEditKey.Create(Component,Prop);
+  if DetachedPropEditors.ContainsKey(Key) then
+    DetachedPropEditors[Key].BringToFront
+  else if (Sender is TEdit) and
+    (Prop.PropertyType in [zptFloat,zptScalar,zptRectf,zptVector3f]) then
+    ShowFloatEditor(Sender as TEdit,Prop.PropertyType=zptScalar)
+  else if (Sender is TEdit) and (TEdit(Sender).Tag=100) then
+    ShowExprEditor(Sender as TEdit)
+  else if (Sender is TEdit) and (TEdit(Sender).Tag=101) then
+    ShowShaderEditor(Sender as TEdit);
 end;
 
 procedure TEditorForm.FillQuickCompList;
@@ -966,8 +994,7 @@ begin
       PropListPanel.Height := Self.Height div 2;
     end;
 
-    ExprSynEdit.Font.Size := Ini.ReadInteger(Section,'CodeEditorFontSize',ExprSynEdit.Font.Size);
-    ShaderSynEdit.Font.Size := ExprSynEdit.Font.Size;
+    SynEditFontSize := Ini.ReadInteger(Section,'CodeEditorFontSize',10);
 
     S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
     if S<>TStyleManager.ActiveStyle.Name then
@@ -1001,8 +1028,7 @@ begin
     Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');
 
-    Self.AutoComp.TimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
-    Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
+    Self.AutoCompTimerInterval := Ini.ReadInteger(Section,'CodeCompletionDelay',2000);
 
     Self.AndroidSdkPath := Ini.ReadString(Section,'AndroidSdkPath','');
     Self.AndroidSdCardPath := Ini.ReadString(Section,'AndroidSdCardPath','/sdcard/');
@@ -1082,7 +1108,7 @@ begin
 
       Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
-      Ini.WriteInteger(Section,'CodeEditorFontSize',ExprSynEdit.Font.Size);
+      Ini.WriteInteger(Section,'CodeEditorFontSize',SynEditFontSize);
 
       S := ExtractFilePath(CurrentFileName);
       if S='' then
@@ -1104,7 +1130,7 @@ begin
       Ini.WriteString(Section,'PackerProg', Self.PackerProg);
       Ini.WriteString(Section,'PackerParams', Self.PackerParams);
 
-      Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoComp.TimerInterval);
+      Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoCompTimerInterval);
 
       Ini.WriteString(Section,'Style', TStyleManager.ActiveStyle.Name);
 
@@ -1540,14 +1566,6 @@ begin
   Action := caFree;
 
   //Need to remove synedit first, otherwise synedit assertion fails
-  Self.RemoveComponent(ExprSynEdit);
-  ExprSynEdit.Free;
-  ExprSynEdit:=nil;
-
-  Self.RemoveComponent(ShaderSynEdit);
-  ShaderSynEdit.Free;
-  ShaderSynEdit:=nil;
-
   for I := 0 to LogListBox.Items.Count - 1 do
   begin
     LogListBox.Items.Objects[I].Free;
@@ -1649,19 +1667,7 @@ begin
     (ActiveControl is TEdit) and
     Assigned((ActiveControl as TEdit).OnExit) then
     //Spara stringedit
-    (ActiveControl as TEdit).OnExit(ActiveControl)
-  else if ActiveControl=ExprSynEdit then
-  begin
-  end
-  else if ActiveControl=ShaderSynEdit then
-  begin
-  end;
-
-  //Save expression
-  if ExprCompileButton.Enabled then ExprCompileButton.Click;
-
-  //Save shader
-  if CompileShaderButton.Enabled then CompileShaderButton.Click;
+    (ActiveControl as TEdit).OnExit(ActiveControl);
 end;
 
 procedure TEditorForm.SaveBinaryMenuItemClick(Sender: TObject);
@@ -1860,6 +1866,7 @@ destructor TEditorForm.Destroy;
 begin
   inherited;
   DetachedCompEditors.Free;
+  DetachedPropEditors.Free;
   MruList.Free;
   Renderer.CleanUp;
   UndoNodes.Free;
@@ -1882,6 +1889,18 @@ begin
   end;
 end;
 
+procedure TEditorForm.OnDetachedPropEditorClose(Sender: TObject; var Action: TCloseAction);
+var
+  F : TCustomPropEditBaseForm;
+begin
+  F := (Sender as TCustomPropEditBaseForm);
+  if DetachedPropEditors.ContainsKey(TPropEditKey.Create(F.Component,F.Prop)) then
+  begin
+    F.SaveChanges;
+    DetachedPropEditors.Remove(TPropEditKey.Create(F.Component,F.Prop));
+  end;
+end;
+
 procedure TEditorForm.DetachCompEditorButtonClick(Sender: TObject);
 var
   F : TForm;
@@ -1899,6 +1918,38 @@ begin
   DetachedCompEditors.Add(CompEditor.Component,F);
   DetachCompEditorButton.Visible := False;
   CompEditor := nil;
+end;
+
+procedure TEditorForm.DetachPropEditorButtonClick(Sender: TObject);
+var
+  F : TCustomPropEditBaseForm;
+  R : TRect;
+begin
+  F := Self.PropEditor;
+  F.Caption := 'Editing: ' + String(F.Component.GetDisplayName) + ' ' + F.Prop.Name;
+
+  R := F.BoundsRect;
+//  F.SetBounds(CompEditor.ClientToScreen(Point(0,0)).X,CompEditor.ClientToScreen(Point(0,0)).Y,CompEditor.Width,CompEditor.Height);
+//  F.Position := poDesigned;
+//  CompEditor.Parent := F;
+//  F.Show;
+  F.Align := alNone;
+  F.Parent := nil;
+
+  F.SetBounds(PropEditParentPanel.ClientToScreen(Point(0,0)).X,PropEditParentPanel.ClientToScreen(Point(0,0)).Y,R.Width,R.Height);
+  F.Position := poDesigned;
+
+  F.BorderStyle := bsSizeable;
+  F.OnClose := Self.OnDetachedPropEditorClose;
+  DetachedPropEditors.Add( TPropEditKey.Create(F.Component,F.Prop) ,F);
+  F.DetachButton.Visible := False;
+
+  if F is TFloatPropEditForm then
+  begin
+    (F as TFloatPropEditForm).FloatEdit := nil;
+  end;
+
+  PropEditor := nil;
 end;
 
 procedure TEditorForm.FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
@@ -1950,60 +2001,14 @@ begin
   (Sender as TAction).Checked:= LockShow;
 end;
 
-procedure TEditorForm.TrackBar1Change(Sender: TObject);
-var
-  NewValue,Scale : single;
-begin
-  if FloatEdit=nil then
-    Exit;
-  Scale := (MaxFloat - MinFloat) / TrackBar1.Max;
-  NewValue := MinFloat + (TrackBar1.Position * Scale);
-  FloatEdit.Text := FloatToStr( RoundTo(NewValue,-2) );
-end;
-
-procedure TEditorForm.ShowFloatEditor(Edit: TEdit; IsScalar : boolean);
-var
-  CurValue : single;
-begin
-  CustomPropEditorsPageControl.ActivePageIndex := 1;
-  FloatEdit := nil;
-  CurValue := StrToFloatDef(Edit.Text,0);
-  if IsScalar then
-  begin
-    MinFloat := 0;
-    MaxFloat := 1;
-  end
-  else
-  begin
-    MinFloat := Min(CurValue / 10, CurValue - 5);
-    MaxFloat := Max(CurValue * 5, CurValue + 5);
-  end;
-  TrackBar1.Position := Round((CurValue-MinFloat) / ((MaxFloat-MinFloat)/TrackBar1.Max));
-  FloatEdit := Edit;
-end;
-
 procedure TEditorForm.HelpContentsActionExecute(Sender: TObject);
 begin
   Application.HelpContext(1);
 end;
 
-procedure TEditorForm.HideEditor;
-begin
-  CustomPropEditorsPageControl.ActivePageIndex := 0;
-end;
-
 procedure TEditorForm.ShowCompilerDetailsActionExecute(Sender: TObject);
 begin
   ShowCompilerDetailsAction.Checked := not ShowCompilerDetailsAction.Checked;
-end;
-
-procedure TEditorForm.ShowExprEditor(Edit: TEdit);
-begin
-  ExprEditBox := Edit;
-  ExprEditBox.ReadOnly := True;
-  ExprSynEdit.Text := Edit.Text;
-  ExprCompileButton.Enabled := False;
-  CustomPropEditorsPageControl.ActivePageIndex := 2;
 end;
 
 procedure TEditorForm.ShowSettingsActionExecute(Sender: TObject);
@@ -2015,7 +2020,7 @@ begin
     F.PackerEdit.Text := Self.PackerProg;
     F.PackerParamsEdit.Text := Self.PackerParams;
     F.GuiLayoutCombo.ItemIndex := Self.GuiLayout;
-    F.UpDown1.Position := Self.AutoComp.TimerInterval;
+    F.UpDown1.Position := Self.AutoCompTimerInterval;
     F.AndroidSdkPathEdit.Text := Self.AndroidSdkPath;
     F.AndroidSdCardPathEdit.Text := Self.AndroidSdCardPath;
     F.AndroidAntPathEdit.Text := Self.AndroidAntPath;
@@ -2026,8 +2031,7 @@ begin
       Self.PackerProg := F.PackerEdit.Text;
       Self.PackerParams := F.PackerParamsEdit.Text;
       Self.GuiLayout := F.GuiLayoutCombo.ItemIndex;
-      Self.AutoComp.TimerInterval := F.UpDown1.Position;
-      Self.ParamComp.TimerInterval := Self.AutoComp.TimerInterval;
+      Self.AutoCompTimerInterval := F.UpDown1.Position;
       Self.AndroidSdkPath := F.AndroidSdkPathEdit.Text;
       Self.AndroidSdCardPath := F.AndroidSdCardPathEdit.Text;
       Self.AndroidAntPath := F.AndroidAntPathEdit.Text;
@@ -2039,57 +2043,68 @@ begin
   end;
 end;
 
-procedure TEditorForm.ShowShaderEditor(Edit: TEdit);
-begin
-  ExprEditBox := Edit;
-  ExprEditBox.ReadOnly := True;
-  ShaderSynEdit.Text := Edit.Text;
-  CompileShaderButton.Enabled := False;
-  CustomPropEditorsPageControl.ActivePage := ShaderTabSheet;
-end;
-
-procedure TEditorForm.OnExprChanged(Sender: TObject);
-begin
-  ExprCompileButton.Enabled := True;
-end;
-
-procedure TEditorForm.OnShaderExprChanged(Sender: TObject);
-begin
-  CompileShaderButton.Enabled := True;
-end;
-
 procedure TEditorForm.CompileShaderButtonClick(Sender: TObject);
+var
+  F : TShaderPropEditForm;
+  S : AnsiString;
+  Value : TZPropertyValue;
 begin
-  CompileShaderButton.Enabled := False;
-  //Spara ändrad text i edit-ruta
-  ExprEditBox.Text := TrimRight(ShaderSynEdit.Text);
-  ExprEditBox.OnExit(ExprEditBox);
+  F := (Sender as TComponent).Owner as TShaderPropEditForm;
+
+  F.CompileShaderButton.Enabled := False;
+
+  Value := F.Component.GetProperty(F.Prop);
+  S := AnsiString(TrimRight(F.ShaderSynEdit.Text));
+  if Value.StringValue<>S then
+  begin
+    Value.StringValue := S;
+    F.Component.SetProperty(F.Prop,Value);
+    SetFileChanged(True);
+    try
+      (F.Component as TShader).UseShader;
+      F.CompileErrorLabel.Hide;
+    except
+      on E : EShaderException do
+      begin
+        F.CompileErrorLabel.Caption := E.Message;
+        F.CompileErrorLabel.Hint := E.Message;
+        F.CompileErrorLabel.Show;
+      end;
+    end;
+  end;
 end;
 
 procedure TEditorForm.ExprCompileButtonClick(Sender: TObject);
 var
   C : TZComponent;
-  Prop : TZProperty;
   PropValue : TZPropertyValue;
   Success : boolean;
   I : integer;
   Node : TZComponentTreeNode;
+  F : TExprPropEditForm;
+  Value : TZPropertyValue;
+  S : string;
 begin
-  ExprCompileButton.Enabled := False;
-  //Spara ändrad text i edit-ruta
-  ExprEditBox.Text := TrimRight(ExprSynEdit.Text);
-  ExprEditBox.OnExit(ExprEditBox);
-  //Propvärde har nu sparats i component
-  //Läs tillbaka propvärde för kompilering
-  C := Selected;
-  Prop := C.GetProperties.GetByName(ExprEditBox.Hint);
-  PropValue := C.GetProperty(Prop);
+  F := (Sender as TComponent).Owner as TExprPropEditForm;
+
+  F.ExprCompileButton.Enabled := False;
+
+  Value := F.Component.GetProperty(F.Prop);
+  S := TrimRight(F.ExprSynEdit.Text);
+
+  if Value.ExpressionValue.Source=S then
+    Exit;
+
+  F.Component.SetProperty(F.Prop,Value);
+  SetFileChanged(True);
+
+  C := F.Component;
   Success:=False;
   try
     if (C is TZLibrary) or (C is TZExternalLibrary) then
       CompileAll(True)
     else
-      DoCompile(Tree.ZSelected,PropValue,Prop);
+      DoCompile(F.TreeNode,PropValue,F.Prop);
     Success:=True;
   except
     on E : EParseError do
@@ -2102,12 +2117,13 @@ begin
         Tree.Selected := Node;
       end else
       begin
-        ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
-        ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
-        ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
-        ExprSynEdit.SetFocus;
+        F.ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
+        F.ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
+        F.ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
+        F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
-        CompileErrorLabel.Caption := E.Message;
+        F.CompileErrorLabel.Caption := E.Message;
+        F.CompileErrorLabel.Show;
         Log.Write(E.Message);
       end;
     end;
@@ -2121,8 +2137,8 @@ begin
         Tree.Selected := Node;
       end else
       begin
-        CompileErrorLabel.BevelKind := bkTile;
-        CompileErrorLabel.Caption := E.Message;
+        F.CompileErrorLabel.BevelKind := bkTile;
+        F.CompileErrorLabel.Caption := E.Message;
         Log.Write(E.Message);
       end;
     end;
@@ -2130,8 +2146,9 @@ begin
 //  Tree.RefreshNode(Tree.Selected,Selected);
   if Success then
   begin
-    CompileErrorLabel.Caption := '';
-    CompileErrorLabel.BevelKind := bkNone;
+    F.CompileErrorLabel.Caption := '';
+    F.CompileErrorLabel.BevelKind := bkNone;
+    F.CompileErrorLabel.Hide;
     if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
       ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
@@ -2308,7 +2325,7 @@ begin
   try
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
-    F.SynEdit.Font.Size := ExprSynEdit.Font.Size;
+    F.SynEdit.Font.Size := Self.SynEditFontSize;
     repeat
       if (F.ShowModal=mrOk) and F.SynEdit.Modified then
       begin
@@ -3455,6 +3472,12 @@ begin
     C.OnEditorClose;
   end;
   DetachedCompEditors.Clear;
+
+  for F in DetachedPropEditors.Values do
+  begin
+    (F as TCustomPropEditBaseForm).SaveChanges;
+  end;
+  DetachedPropEditors.Clear;
 
   //This force current expression-editor to be saved
   Tree.Selected := nil;
@@ -4724,6 +4747,14 @@ begin
     ShowMessageWithLink('Created APK file: '#13#13 + ApkFileName,
       '<A HREF="' + ProjectPath + '">Open project folder</A>' + #13#13 +
       'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
+end;
+
+{ TPropEditKey }
+
+constructor TPropEditKey.Create(Comp: TZComponent; Prop: TZProperty);
+begin
+  Self.Comp := Comp;
+  Self.Prop := Prop;
 end;
 
 end.

@@ -137,7 +137,7 @@ object EditorForm: TEditorForm
         Constraints.MinWidth = 5
         DoubleBuffered = True
         ParentDoubleBuffered = False
-        TabOrder = 1
+        TabOrder = 0
         object LogListBox: TListBox
           Left = 0
           Top = 0
@@ -165,210 +165,18 @@ object EditorForm: TEditorForm
           OnMouseMove = LogListBoxMouseMove
         end
       end
-      object CustomPropEditorsPageControl: TPageControl
+      object PropEditParentPanel: TPanel
         Left = 0
         Top = 0
         Width = 780
         Height = 192
-        Margins.Left = 4
-        Margins.Top = 4
-        Margins.Right = 4
-        Margins.Bottom = 4
-        ActivePage = TabSheet1
         Align = alClient
-        Constraints.MinWidth = 123
-        TabOrder = 0
-        object TabSheet2: TTabSheet
-          Margins.Left = 4
-          Margins.Top = 4
-          Margins.Right = 4
-          Margins.Bottom = 4
-          Caption = 'TabSheet2'
-          ImageIndex = 1
-          TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
-        end
-        object TabSheet1: TTabSheet
-          Margins.Left = 4
-          Margins.Top = 4
-          Margins.Right = 4
-          Margins.Bottom = 4
-          Caption = 'Float/Int'
-          TabVisible = False
-          DesignSize = (
-            772
-            182)
-          object Label1: TLabel
-            Left = 20
-            Top = 10
-            Width = 59
-            Height = 16
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Caption = '&Edit value'
-            FocusControl = TrackBar1
-          end
-          object TrackBar1: TTrackBar
-            Left = 10
-            Top = 31
-            Width = 757
-            Height = 55
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akTop, akRight]
-            Max = 1000
-            TabOrder = 0
-            TickStyle = tsNone
-            OnChange = TrackBar1Change
-          end
-        end
-        object TabSheet3: TTabSheet
-          Margins.Left = 4
-          Margins.Top = 4
-          Margins.Right = 4
-          Margins.Bottom = 4
-          Caption = 'Expression'
-          ImageIndex = 2
-          TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
-          DesignSize = (
-            772
-            182)
-          object ExprPanel: TGroupBox
-            Left = 0
-            Top = 0
-            Width = 772
-            Height = 132
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Align = alTop
-            Anchors = [akLeft, akTop, akRight, akBottom]
-            Caption = '&Code editor'
-            TabOrder = 0
-            OnClick = ExprPanelClick
-          end
-          object ExprCompileButton: TButton
-            Left = 10
-            Top = 142
-            Width = 92
-            Height = 30
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akBottom]
-            Caption = '&OK'
-            Enabled = False
-            TabOrder = 1
-            OnClick = ExprCompileButtonClick
-          end
-          object CompileErrorLabel: TStaticText
-            Left = 207
-            Top = 139
-            Width = 560
-            Height = 32
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akRight, akBottom]
-            AutoSize = False
-            Color = clWhite
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clRed
-            Font.Height = -20
-            Font.Name = 'MS Sans Serif'
-            Font.Style = []
-            ParentColor = False
-            ParentFont = False
-            TabOrder = 2
-            Transparent = False
-          end
-          object ExprHelpButton: TButton
-            Left = 107
-            Top = 142
-            Width = 92
-            Height = 30
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akBottom]
-            Caption = '&Help'
-            TabOrder = 3
-            OnClick = ExprHelpButtonClick
-          end
-        end
-        object ShaderTabSheet: TTabSheet
-          Margins.Left = 4
-          Margins.Top = 4
-          Margins.Right = 4
-          Margins.Bottom = 4
-          Caption = 'ShaderTabSheet'
-          ImageIndex = 3
-          TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
-          DesignSize = (
-            772
-            182)
-          object Label6: TLabel
-            Left = 118
-            Top = 150
-            Width = 117
-            Height = 16
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akBottom]
-            Caption = 'GLSL Shader editor'
-          end
-          object CompileShaderButton: TButton
-            Left = 10
-            Top = 142
-            Width = 92
-            Height = 30
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Anchors = [akLeft, akBottom]
-            Caption = '&OK'
-            Enabled = False
-            TabOrder = 0
-            OnClick = CompileShaderButtonClick
-          end
-          object ShaderPanel: TGroupBox
-            Left = 0
-            Top = 0
-            Width = 772
-            Height = 132
-            Margins.Left = 4
-            Margins.Top = 4
-            Margins.Right = 4
-            Margins.Bottom = 4
-            Align = alTop
-            Anchors = [akLeft, akTop, akRight, akBottom]
-            Caption = '&Shader editor'
-            TabOrder = 1
-            OnClick = ExprPanelClick
-          end
-        end
+        BevelOuter = bvNone
+        TabOrder = 1
+        ExplicitLeft = 408
+        ExplicitTop = 80
+        ExplicitWidth = 185
+        ExplicitHeight = 41
       end
     end
     object Panel2: TPanel
@@ -787,10 +595,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -826,10 +630,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end
