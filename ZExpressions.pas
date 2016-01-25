@@ -113,7 +113,10 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     _Type : TZcDataTypeKind;
-    {$ifndef minimal}function GetDisplayName: ansistring; override;{$endif}
+    {$ifndef minimal}
+    _ReferenceClassId : TZClassIds;  //This is used to verify type of global declared reference variables
+    function GetDisplayName: ansistring; override;
+    {$endif}
   end;
 
 

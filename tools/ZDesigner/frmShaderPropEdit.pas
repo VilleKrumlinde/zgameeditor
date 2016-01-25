@@ -18,6 +18,7 @@ type
   public
     { Public declarations }
     ShaderSynEdit : TSynEdit;
+    procedure SaveChanges; override;
   end;
 
 implementation
@@ -50,6 +51,12 @@ end;
 procedure TShaderPropEditForm.OnShaderExprChanged(Sender: TObject);
 begin
   CompileShaderButton.Enabled := True;
+end;
+
+procedure TShaderPropEditForm.SaveChanges;
+begin
+  if CompileShaderButton.Enabled then
+    CompileShaderButton.OnClick(CompileShaderButton);
 end;
 
 end.

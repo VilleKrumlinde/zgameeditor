@@ -295,6 +295,8 @@ var
     end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='PointerValue') then
     begin //Allow DefineVariable.ManagedType=mat4/vec3 even though proptype is zptPointer
       Result.Kind := TDefineVariableBase(Self.Child(0).Ref)._Type;
+      //Allow global variables of Bitmap type
+      Result.ReferenceClassId := TDefineVariableBase(Self.Child(0).Ref)._ReferenceClassId;
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
   end;
@@ -1031,13 +1033,14 @@ begin
   then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
-    PName := 'Value';
     case (Op.Ref as TDefineVariableBase)._Type of
       zctInt : PName := 'IntValue';
       zctString : PName := 'StringValue';
-      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr : PName := 'PointerValue';
+      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference : PName := 'PointerValue';
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
+    else
+      PName := 'Value';
     end;
     Result := MakeOp(zcSelect,[Result]);
     Result.Id := PName;
@@ -1563,7 +1566,10 @@ begin
       end;
     end
     else if (Ref is TDefineArray) then
+    begin
       Result.Kind := (Ref as TDefineArray)._Type;
+      Result.ReferenceClassId := (Ref as TDefineArray)._ReferenceClassId;
+    end;
   end;
 
   if Result.Kind=zctVoid then

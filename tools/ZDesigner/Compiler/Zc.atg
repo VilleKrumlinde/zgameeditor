@@ -365,12 +365,14 @@ GlobalVarRest<Typ : TZcDataType; const Name : string> (. var V : TDefineVariable
         begin
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
+          V._ReferenceClassId := Typ.ReferenceClassId;
           Self.ZApp.GlobalVars.AddComponent(V);
         end
         else
         begin
           V := TDefineVariable.Create(Self.ZApp.GlobalVars);
           V._Type := Typ.Kind;
+          V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
         V.SetString('Name', AnsiString(Name));

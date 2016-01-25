@@ -659,6 +659,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     end;
     F.TrackBar1.Position := Round((CurValue-F.MinFloat) / ((F.MaxFloat-F.MinFloat)/F.TrackBar1.Max));
     F.FloatEdit := Edit;
+    F.PropIndex := Edit.Tag;
   end;
 
 var
@@ -1662,12 +1663,20 @@ begin
 end;
 
 procedure TEditorForm.SaveCurrentEdits;
+var
+  F : TForm;
 begin
   if Assigned(ActiveControl) and
     (ActiveControl is TEdit) and
     Assigned((ActiveControl as TEdit).OnExit) then
     //Spara stringedit
     (ActiveControl as TEdit).OnExit(ActiveControl);
+
+  if Assigned(PropEditor) then
+    PropEditor.SaveChanges;
+
+  for F in DetachedPropEditors.Values do
+    (F as TCustomPropEditBaseForm).SaveChanges;
 end;
 
 procedure TEditorForm.SaveBinaryMenuItemClick(Sender: TObject);
@@ -1944,11 +1953,6 @@ begin
   DetachedPropEditors.Add( TPropEditKey.Create(F.Component,F.Prop) ,F);
   F.DetachButton.Visible := False;
 
-  if F is TFloatPropEditForm then
-  begin
-    (F as TFloatPropEditForm).FloatEdit := nil;
-  end;
-
   PropEditor := nil;
 end;
 
@@ -2061,8 +2065,9 @@ begin
     F.Component.SetProperty(F.Prop,Value);
     SetFileChanged(True);
     try
-      (F.Component as TShader).UseShader;
+      (F.Component as TShader).UseShader; //Force a compile
       F.CompileErrorLabel.Hide;
+      glUseProgram(0); //Then turn it off
     except
       on E : EShaderException do
       begin
@@ -2077,7 +2082,6 @@ end;
 procedure TEditorForm.ExprCompileButtonClick(Sender: TObject);
 var
   C : TZComponent;
-  PropValue : TZPropertyValue;
   Success : boolean;
   I : integer;
   Node : TZComponentTreeNode;
@@ -2094,6 +2098,7 @@ begin
 
   if Value.ExpressionValue.Source=S then
     Exit;
+  Value.ExpressionValue.Source:=S;
 
   F.Component.SetProperty(F.Prop,Value);
   SetFileChanged(True);
@@ -2104,7 +2109,7 @@ begin
     if (C is TZLibrary) or (C is TZExternalLibrary) then
       CompileAll(True)
     else
-      DoCompile(F.TreeNode,PropValue,F.Prop);
+      DoCompile(F.TreeNode,Value,F.Prop);
     Success:=True;
   except
     on E : EParseError do
@@ -2123,6 +2128,7 @@ begin
         F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
         F.CompileErrorLabel.Caption := E.Message;
+        F.CompileErrorLabel.Hint := E.Message;
         F.CompileErrorLabel.Show;
         Log.Write(E.Message);
       end;
@@ -2153,8 +2159,8 @@ begin
     begin
       ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
-      for I := 0 to PropValue.ExpressionValue.Code.Count - 1 do
-        Log.Write( (PropValue.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+      for I := 0 to Value.ExpressionValue.Code.Count - 1 do
+        Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
   end;
 end;
