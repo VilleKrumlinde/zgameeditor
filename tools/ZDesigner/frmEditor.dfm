@@ -606,9 +606,9 @@ object EditorForm: TEditorForm
             object DetachCompEditorButton: TButton
               Left = 2
               Top = 1
-              Width = 111
+              Width = 80
               Height = 20
-              Caption = 'Detach editor'
+              Caption = 'Detach'
               TabOrder = 0
               OnClick = DetachCompEditorButtonClick
             end
