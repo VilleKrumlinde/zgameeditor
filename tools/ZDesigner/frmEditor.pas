@@ -2068,6 +2068,7 @@ begin
       (F.Component as TShader).UseShader; //Force a compile
       F.CompileErrorLabel.Hide;
       glUseProgram(0); //Then turn it off
+      OnPropValueChange;
     except
       on E : EShaderException do
       begin
@@ -2110,6 +2111,7 @@ begin
       CompileAll(True)
     else
       DoCompile(F.TreeNode,Value,F.Prop);
+    OnPropValueChange;
     Success:=True;
   except
     on E : EParseError do
@@ -3913,6 +3915,7 @@ var
 var
   Id : TZClassIds;
   Ci : TZComponentInfo;
+  Cv : TDefineVariable;
 begin
   Comp := Sender as TSynCompletionProposal;
   Comp.ItemList.Clear;
@@ -3956,6 +3959,12 @@ begin
       if C<>nil then
       begin
         PropList := C.GetProperties;
+        if C is TDefineVariable then
+        begin //If var of ref-type, show props of referenced type instead (i.e. Bitmap bmp)
+          Cv := C as TDefineVariable;
+          if Cv._Type=zctReference then
+            PropList := ComponentManager.GetInfoFromId(Cv._ReferenceClassId).GetProperties;
+        end;
         for I := 0 to PropList.Count - 1 do
         begin
           Prop := TZProperty(PropList[I]);

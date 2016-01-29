@@ -141,18 +141,47 @@ procedure TFileAction.Execute;
 
   procedure CopyToArray(A : TDefineArray);
   var
-    I : integer;
+    I,BufPos : integer;
     B : byte;
     P : PInteger;
+    Dest : PAnsiChar;
+    DestP : ppointer;
+    Buf : array[0..2047] of ansichar;
   begin
     {$ifndef minimal}
-    if not (A._Type in [zctInt,zctFloat,zctByte]) then
+    if not (A._Type in [zctInt,zctFloat,zctByte,zctString]) then
     begin
-      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type int, float or byte.');
+      ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type string, int, float or byte.');
       Exit;
     end;
     {$endif}
-    if (CurFile.Encoding=feBinary) or (A._Type in [zctByte,zctFloat]) then
+    if A._Type=zctString then
+    begin
+      BufPos := 0;
+      A.SizeDim1 := 0;
+      A.GetData;
+      for I := 0 to CurInStream.Size-1 do
+      begin
+        CurInStream.Read(B,1);
+        if (B<>13) and (B<>10) then
+        begin
+          Buf[BufPos]:=AnsiChar(B);
+          Inc(BufPos);
+        end;
+        if (B=10) or (BufPos>=High(Buf)-2) or (I=CurInStream.Size-1) and (BufPos>0) then
+        begin
+          Buf[BufPos]:=#0;
+          A.SizeDim1 := A.SizeDim1 + 1;
+          Dest := ManagedHeap_Alloc(BufPos+1);
+          ZStrCopy(Dest,@Buf);
+          DestP := PPointer(A.GetData);
+          Inc(DestP,A.SizeDim1-1);
+          DestP^ := Dest;
+          BufPos:=0;
+        end;
+      end;
+    end
+    else if (CurFile.Encoding=feBinary) or (A._Type in [zctByte,zctFloat]) then
     begin
       A.SizeDim1 := CurInStream.Size div A.GetElementSize;
       CurInStream.Read(A.GetData^,CurInStream.Size);
