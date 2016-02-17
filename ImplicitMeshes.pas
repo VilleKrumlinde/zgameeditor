@@ -339,7 +339,7 @@ begin
   for M := Cache.Count-1 downto 0 do
   begin
     CacheC := TImpCorner(Cache[M]);
-    if (CacheC.I=I) and (CacheC.J=K) and (CacheC.K=K) then
+    if (CacheC.I=I) and (CacheC.J=J) and (CacheC.K=K) then
     begin //match found, copy function value and exit
       C.Value := CacheC.Value;
       Result := C;

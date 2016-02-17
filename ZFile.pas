@@ -202,7 +202,7 @@ procedure TFileAction.Execute;
   procedure WriteFromArray(A : TDefineArray);
   begin
     Platform_WriteFile(CurFile.WriteFileName,A.GetData,
-      A.SizeDim1 * A.GetElementSize,
+      A.CalcLimit * A.GetElementSize,
       CurWriteBuf.Append);
     CurWriteBuf.Append := True;
   end;

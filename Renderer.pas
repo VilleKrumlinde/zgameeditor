@@ -339,7 +339,6 @@ type
     {$endif}
     procedure CleanUp;
   protected
-    procedure Activate;
     procedure DefineProperties(List: TZPropertyList); override;
   public
     ClearBeforeUse : boolean;
@@ -347,12 +346,12 @@ type
     ClearColor : TZColorf;
     Width,Height : TRenderQuality;
     CustomWidth,CustomHeight : integer;
-    UseMultisample : boolean;
     TexId,FboId : integer; //read by zgeviz
     Filter : TBitmapFilterType;
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
+    procedure Activate;
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -2146,48 +2145,30 @@ begin
     //For android: http://blog.shayanjaved.com/2011/05/13/android-opengl-es-2-0-render-to-texture/
     // create a texture object
     glGenTextures(1, @TexId);
-    if UseMultisample then
-    begin
-      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId);
-    end
-    else
-    begin
-      glBindTexture(GL_TEXTURE_2D, TexId);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, TexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-      {$ifdef android}
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      {$else}
-      if Self.Filter=bmfMipmap then
-        I := GL_LINEAR  //Mipmap is not a valid mag-filter
-      else
-        I := FilterTypes[Ord(Self.Filter)];
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] );
-      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
-      {$endif}
-    end;
-
-    if UseMultisample then
-    begin
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, ActualW, ActualH, GL_FALSE);
-      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-    end
+    {$ifdef android}
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    {$else}
+    if Self.Filter=bmfMipmap then
+      I := GL_LINEAR  //Mipmap is not a valid mag-filter
     else
-    begin
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
-      glBindTexture(GL_TEXTURE_2D, 0);
-    end;
+      I := FilterTypes[Ord(Self.Filter)];
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, I );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilterTypes[Ord(Self.Filter)] );
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+    {$endif}
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     // create a renderbuffer object to store depth info
     glGenRenderbuffers(1, @RboId);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, RboId);
-    if UseMultisample then
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER_EXT,4,{$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH)
-    else
-      glRenderbufferStorage(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
+    glRenderbufferStorage(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
@@ -2195,10 +2176,7 @@ begin
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
 
     // attach the texture to FBO color attachment point
-    if UseMultisample then
-      glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, TexId, 0)
-    else
-      glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, TexId, 0);
 
     // attach the renderbuffer to depth attachment point
     glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
@@ -2267,10 +2245,7 @@ end;
 
 procedure TRenderTarget.UseTextureBegin;
 begin
-  if Self.UseMultisample then
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId)
-  else
-    glBindTexture(GL_TEXTURE_2D, TexId);
+  glBindTexture(GL_TEXTURE_2D, TexId);
 end;
 
 procedure TRenderTarget.ResetGpuResources;
