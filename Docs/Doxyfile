@@ -232,7 +232,7 @@ ALIASES                = \
 dl="<DL>" dlx="</DD></DL>" dt="<DT>" dtn="<DT class='normal'>" dd="</DT><DD>" \
 iimg{1}="@htmlonly <img src='\1'> @endhtmlonly" \
 bf{1}="<B>\1</B>" \
-syn="<PRE>" synx="</PRE>" syn{1}="`\1`"
+syn="<PRE class='syntax'>" synx="</PRE>" syn{1}="<div class='syntax'>`\1`</div>"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"

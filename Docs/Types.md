@@ -143,19 +143,19 @@ This function can be called with specified name of @ref Array containing the dat
 
 `xptr` can also be used as an identifier of the C++ objects returned from calls of external functions that are used in consequent calls of external functions. ZGameeditor scripts do not change these pointers, just remember them in variables and pass them to function calls. This usage can be seen, for instance, in ZgeBullet 3D physic library in function `xptr zbtCreateWorld ()`, which creates a physics simulation world and returns a pointer to it. This pointer is then used in other functions as parameter:
 
-  xptr World; // global variable
-  ...
+    xptr World; // global variable
+    ...
 
-  // initialization of physical world
-  World = zbtCreateWorld();
-  zbtSetCurrentWorld(World);
-  zbtSetWorldGravity(0, -10, 0);  
+    // initialization of physical world
+    World = zbtCreateWorld();
+    zbtSetCurrentWorld(World);
+    zbtSetWorldGravity(0, -10, 0);  
 
-  // continue simulation
-  ...
-  
-  // destroy physical world
-  zbtDestroyWorld(World);
+    // continue simulation
+    ...
+    
+    // destroy physical world
+    zbtDestroyWorld(World);
 
 # Component-based Types {#ComponentTypes}
 @anchor modelType @anchor MaterialType @anchor SoundType @anchor ShaderType @anchor BitmapType @anchor MeshType @anchor CameraType @anchor FontType @anchor SampleType
@@ -217,9 +217,7 @@ Accessing of array items (defined as scripting variable or @ref Array component)
 
 Index must be in range from 0 to SizeDim1/2/3.
 
-Examples:
-
-Copying of array:
+Example: Copy of an array.
 
     int[] source;
     int[] destination;

@@ -1,7 +1,9 @@
 /* The standard CSS for doxygen 1.8.10 */
 
-#doc-content {
-  background-color: LightYellow ;
+
+div.syntax, pre.syntax {
+  font-weight: bold;
+  margin-left: 1em;
 }
 
 body, table, div, p, dl {

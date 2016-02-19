@@ -193,8 +193,8 @@ a *= b | Multiplication assignment | a = a * b
 a /= b | Division assignment | a = a / b
 a++ | Post-increment | a = a + 1
 ++a | Pre-increment | a = a + 1
-a++ | Post-decrement | a = a - 1
-++a | Pre-decrement | a = a - 1
+a-- | Post-decrement | a = a - 1
+--a | Pre-decrement | a = a - 1
 
 _Note: If you are using prefix form then increment or decrement will be done before rest of the expression, and if you are using postfix form, then increment or decrement will be done after the complete expression is evaluated._
 
