@@ -17,7 +17,7 @@ The application top-most component. This component is automatically created when
 @dt Time
 @dd Read only. Time in seconds since application was started.
 
-@dt GLBase
+@dt @anchor ZApplicationGLBase GLBase
 @dd Set this to the desired OpenGL API version used for rendering objects. It can be:
 
 * Compatible - default rendering is used for visual components. This will work on most of OpenGL GPUs.

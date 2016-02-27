@@ -9,6 +9,6 @@ This component can only be used in the OnRender property of @ref Model, @ref Mod
 @dl
 
 @dt Color
-@dd The new color.
+@dd The current render color. Left mouse click can change the RGB color, right mouse click modifies Alpha.
 
 @dlx
