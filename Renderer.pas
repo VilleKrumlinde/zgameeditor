@@ -456,10 +456,10 @@ begin
   glDisable(GL_BLEND);
   glPushMatrix();
 
-  glScalef(1/SX,1/SY,1/SZ);
-  glRotatef(RZ*360,0,0,-1);
-  glRotatef(RY*360,0,-1,0);
-  glRotatef(RX*360,-1,0,0);
+//  glScalef(1/SX,1/SY,1/SZ);
+//  glRotatef(RZ*360,0,0,-1);
+//  glRotatef(RY*360,0,-1,0);
+//  glRotatef(RX*360,-1,0,0);
   glTranslatef(OX,OY,OZ);
 
   case Style of
@@ -531,17 +531,15 @@ begin
 
   ApplyModelTransform(Model);
 
-  {$ifndef minimal}
-  if CollisionBoundsVisible then
-    Driver.PushMatrix();
-  {$endif}
-
   Model.RunRenderCommands;
+
+  Driver.PopMatrix();
 
   {$ifndef minimal}
   if CollisionBoundsVisible then
   begin
-    Driver.PopMatrix();
+    Driver.PushMatrix();
+    Driver.Translate(Model.Position[0],Model.Position[1],Model.Position[2]);
     RenderCollisionBounds( Ord(Model.CollisionStyle),
              Model.Rotation[0],
              Model.Rotation[1],
@@ -555,10 +553,9 @@ begin
              Model.CollisionOffset[0],
              Model.CollisionOffset[1],
              Model.CollisionOffset[2]);
+    Driver.PopMatrix();
   end;
   {$endif}
-
-  Driver.PopMatrix();
 end;
 
 
@@ -1825,9 +1822,10 @@ var
             //Store array as 2d-texture with height 1 (because there seems to be problems with 1d textures)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Count, 1, 0, GL_RED, GL_FLOAT, P);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
           end else
           begin
             glBindTexture(GL_TEXTURE_2D, Sv.TextureHandle);
@@ -1909,7 +1907,7 @@ begin
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
     {$if (not defined(minimal)) and (not defined(zgeviz)) }
     if Sv.Location=-1 then
-      ZLog.GetLog(Self.ClassName).Warning( 'Shader variable error: ' + String(Sv.VariableName) );
+      ZLog.GetLog(Self.ClassName).Write( 'Shader variable missing/unused: ' + String(Sv.VariableName) );
     {$ifend}
   end;
 end;

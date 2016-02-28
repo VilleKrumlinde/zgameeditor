@@ -3473,6 +3473,9 @@ begin
 
   WriteProjectSettingsToIni;
 
+  ShowNode := nil;
+  Tree.LockShowNode := nil;
+
   //Close and save all detached editors
   for F in DetachedCompEditors.Values do
   begin
@@ -3481,6 +3484,8 @@ begin
   end;
   DetachedCompEditors.Clear;
 
+  if PropEditor<>nil then
+    FreeAndNil(PropEditor);
   for F in DetachedPropEditors.Values do
   begin
     (F as TCustomPropEditBaseForm).SaveChanges;

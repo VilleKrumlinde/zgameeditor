@@ -83,6 +83,7 @@ type
     procedure MasterVolumeTrackBarChange(Sender: TObject);
     procedure CreateMidiButtonClick(Sender: TObject);
     procedure NotesEditChange(Sender: TObject);
+    procedure WritebackEvent(Sender: TObject);
   private
     Sound : TSound;
     procedure PlayNoteFromChar(Key: char);
@@ -375,6 +376,12 @@ begin
   WriteToComponent;
 end;
 
+procedure TSoundEditFrame.WritebackEvent(Sender: TObject);
+begin
+  inherited;
+  WriteToComponent;
+end;
+
 procedure TSoundEditFrame.WriteToComponent;
 begin
   Sound.Voice.Osc1.Waveform := TWaveform(Osc1WaveformCombo.ItemIndex);
@@ -395,7 +402,7 @@ begin
   if Pos(Key,NoteKeys)>0 then
   begin
     P := Self.ClientToScreen( Point(0,0) );
-    if PtInRect( Rect(P.X,P.Y,P.X + Width, P.Y + Height) , Mouse.CursorPos ) then
+    if PtInRect( Rect(P.X,P.Y,P.X + Width, P.Y + Height) , Mouse.CursorPos ) and (not NotesEdit.Focused) then
     begin
       NotesEditKeyPress(nil,Key);
       Key := #0;

@@ -236,6 +236,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Height = 21
           Style = csDropDownList
           TabOrder = 0
+          OnChange = WritebackEvent
           Items.Strings = (
             'Square'
             'Saw'
@@ -252,6 +253,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Min = -100
           TabOrder = 1
           TickStyle = tsNone
+          OnChange = WritebackEvent
         end
       end
       object GroupBox2: TGroupBox
@@ -282,6 +284,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Height = 17
           Caption = 'Active'
           TabOrder = 0
+          OnClick = WritebackEvent
         end
         object FilterCutoffTrackBar: TTrackBar
           Left = 48
@@ -292,6 +295,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Position = 25
           TabOrder = 1
           TickStyle = tsNone
+          OnChange = WritebackEvent
         end
         object FilterQTrackBar: TTrackBar
           Left = 48
@@ -302,6 +306,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Position = 25
           TabOrder = 2
           TickStyle = tsNone
+          OnChange = WritebackEvent
         end
       end
       object GroupBox1: TGroupBox
@@ -332,6 +337,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Height = 17
           Caption = 'Active'
           TabOrder = 0
+          OnClick = WritebackEvent
         end
         object Osc2FreqEdit: TEdit
           Left = 80
@@ -340,6 +346,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Height = 21
           Hint = '10=one note, 120=one octave, 240 two octaves etc.'
           TabOrder = 1
+          OnChange = WritebackEvent
         end
         object Osc2WaveformCombo: TComboBox
           Left = 8
@@ -350,6 +357,7 @@ inherited SoundEditFrame: TSoundEditFrame
           ItemIndex = 0
           TabOrder = 2
           Text = 'Square'
+          OnChange = WritebackEvent
           Items.Strings = (
             'Square'
             'Saw')
@@ -372,6 +380,7 @@ inherited SoundEditFrame: TSoundEditFrame
           Position = 25
           TabOrder = 4
           TickStyle = tsNone
+          OnChange = WritebackEvent
         end
       end
       object EnvelopesParent: TScrollBox
