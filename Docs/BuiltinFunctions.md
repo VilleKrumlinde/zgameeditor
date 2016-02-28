@@ -212,6 +212,9 @@ _Remark: ZApplication.MousePosition.Y is on Android identical with touchGetY(0).
 @dtn void @bf{trace} (string message)
 @dd Shows a _message_ in the @ref LogWindow. Useful for debugging.
 
+    trace(chr(12));                       // clear the log
+    trace("Time: " + intToStr(App.Time)); // log application running time
+
 @dtn void @bf{quit} ()
 @dd Quit the application.
 
