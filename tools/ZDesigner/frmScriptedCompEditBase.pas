@@ -5,10 +5,14 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmCompEditBase, GLPanel, ZClasses, DesignerGui,
-  ZApplication, Vcl.ExtCtrls;
+  ZApplication, Vcl.ExtCtrls, Vcl.StdCtrls;
 
 type
   TScriptedCompEditFrameBase = class(TCompEditFrameBase)
+    Panel3: TPanel;
+    HelpButton: TButton;
+    InfoLabel: TLabel;
+    procedure HelpButtonClick(Sender: TObject);
   private
     { Private declarations }
     procedure OnBindData(Sender : TObject);
@@ -59,6 +63,12 @@ end;
 destructor TScriptedCompEditFrameBase.Destroy;
 begin
   inherited;
+end;
+
+procedure TScriptedCompEditFrameBase.HelpButtonClick(Sender: TObject);
+begin
+  inherited;
+  HtmlHelp(0,Application.HelpFile + '::/' + InfoLabel.Hint + '.html', HH_DISPLAY_TOPIC, 0);
 end;
 
 procedure TScriptedCompEditFrameBase.OnBindData(Sender: TObject);

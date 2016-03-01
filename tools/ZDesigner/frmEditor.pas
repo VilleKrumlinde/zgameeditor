@@ -275,7 +275,6 @@ type
     procedure AppPreviewStopActionExecute(Sender: TObject);
     procedure ForumsMenuItemsClick(Sender: TObject);
     procedure FileNewWindowActionExecute(Sender: TObject);
-    procedure ExprHelpButtonClick(Sender: TObject);
     procedure Import3dsActionExecute(Sender: TObject);
     procedure CompileShaderButtonClick(Sender: TObject);
     procedure GenerateReleaseLinuxActionExecute(Sender: TObject);
@@ -618,7 +617,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F := MakePropEditor(TExprPropEditForm) as TExprPropEditForm;
 
     Edit.ReadOnly := True;
-    F.ExprSynEdit.Text := Edit.Text;
+    F.ExprSynEdit.Text := Component.GetProperty(Prop).ExpressionValue.Source;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
     F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
@@ -634,7 +633,8 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F := MakePropEditor(TShaderPropEditForm) as TShaderPropEditForm;
 
     Edit.ReadOnly := True;
-    F.ShaderSynEdit.Text := Edit.Text;
+    F.ShaderSynEdit.Text := Component.GetProperty(Prop).StringValue;
+
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
   end;
@@ -667,6 +667,7 @@ var
 begin
   if PropEditor<>nil then
   begin
+    PropEditor.SaveChanges;
     FreeAndNil(PropEditor);
   end;
 
@@ -2165,12 +2166,6 @@ begin
         Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
   end;
-end;
-
-procedure TEditorForm.ExprHelpButtonClick(Sender: TObject);
-begin
-  HtmlHelp(0,Application.HelpFile + '::writingexpressions.html', HH_DISPLAY_TOPIC, 0);
-//  uHelp.ShowHelp('Main/WritingExpressions');
 end;
 
 procedure TEditorForm.ExprPanelClick(Sender: TObject);

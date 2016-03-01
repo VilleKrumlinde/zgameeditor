@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmScriptedCompEditBase, Vcl.ExtCtrls, ZExpressions,
-  Renderer;
+  Renderer, Vcl.StdCtrls;
 
 type
   TSpriteSheetEditFrame = class(TScriptedCompEditFrameBase)

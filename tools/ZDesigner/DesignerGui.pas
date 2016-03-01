@@ -422,7 +422,8 @@ begin
     Edit.Text := String( Value.StringValue );
 
   if  (Prop.Name='VertexShaderSource') or
-    (Prop.Name='FragmentShaderSource') then
+    (Prop.Name='FragmentShaderSource') or
+    (Prop.Name='GeometryShaderSource') then
     Edit.Tag := 101;
 
   Edit.OnExit := OnStoreValue;

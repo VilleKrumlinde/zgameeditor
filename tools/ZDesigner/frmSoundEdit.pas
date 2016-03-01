@@ -86,6 +86,7 @@ type
     procedure WritebackEvent(Sender: TObject);
   private
     Sound : TSound;
+    DisableWriteBack : boolean;
     procedure PlayNoteFromChar(Key: char);
     procedure SetupMixerGui;
     procedure GetNoteNr(I: Integer; var NoteNr: Single);
@@ -259,25 +260,29 @@ begin
   inherited;
   Self.Sound := C as TSound;
 
-  Osc1WaveformCombo.ItemIndex := Ord(Sound.Voice.Osc1.Waveform);
-  Osc1PWTrackBar.Position := Round(Sound.Voice.Osc1.PulseWidth*100);
+  DisableWriteBack := True;
 
-  Osc2ActiveCheckBox.Checked := Sound.Voice.UseOsc2;
-  Osc2FreqEdit.Text := IntToStr(Round(Sound.Voice.Osc2.NoteModifier * 10));
-  Osc2WaveformCombo.ItemIndex := Ord(Sound.Voice.Osc2.Waveform);
-  Osc2VolumeTrackBar.Position := Round(Sound.Voice.Osc2Volume*100);
+    Osc1WaveformCombo.ItemIndex := Ord(Sound.Voice.Osc1.Waveform);
+    Osc1PWTrackBar.Position := Round(Sound.Voice.Osc1.PulseWidth*100);
 
-  FilterActiveCheckBox.Checked := Sound.Voice.UseFilter;
-  FilterCutoffTrackBar.Position := Round(Sound.Voice.FilterCutoff*100);
-  FilterQTrackBar.Position := Round(Sound.Voice.FilterQ*100);
+    Osc2ActiveCheckBox.Checked := Sound.Voice.UseOsc2;
+    Osc2FreqEdit.Text := IntToStr(Round(Sound.Voice.Osc2.NoteModifier * 10));
+    Osc2WaveformCombo.ItemIndex := Ord(Sound.Voice.Osc2.Waveform);
+    Osc2VolumeTrackBar.Position := Round(Sound.Voice.Osc2Volume*100);
 
-  NoteLengthEdit.Text := FormatFloat('0.0',Sound.Voice.Length);
+    FilterActiveCheckBox.Checked := Sound.Voice.UseFilter;
+    FilterCutoffTrackBar.Position := Round(Sound.Voice.FilterCutoff*100);
+    FilterQTrackBar.Position := Round(Sound.Voice.FilterQ*100);
 
-  VolumeTrackBar.Position := Round(Sound.Voice.Volume*100);
+    NoteLengthEdit.Text := FormatFloat('0.0',Sound.Voice.Length);
 
-  PanTrackBar.Position := Round(Sound.Voice.Pan*100);
+    VolumeTrackBar.Position := Round(Sound.Voice.Volume*100);
 
-  HardSyncCheckBox.Checked := Sound.Voice.HardSync;
+    PanTrackBar.Position := Round(Sound.Voice.Pan*100);
+
+    HardSyncCheckBox.Checked := Sound.Voice.HardSync;
+
+  DisableWriteBack := False;
 
 //  Hide;
 
@@ -379,7 +384,8 @@ end;
 procedure TSoundEditFrame.WritebackEvent(Sender: TObject);
 begin
   inherited;
-  WriteToComponent;
+  if not DisableWriteBack then
+    WriteToComponent;
 end;
 
 procedure TSoundEditFrame.WriteToComponent;

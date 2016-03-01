@@ -163,7 +163,7 @@ end;
 
 procedure TSelectComponentForm.HelpButtonClick(Sender: TObject);
 begin
-  uHelp.ShowHelp( 'ComponentRef/' + GetSelectedClass.ZClassName );
+  HtmlHelp(0,Application.HelpFile + '::/' + GetSelectedClass.ZClassName + '.html', HH_DISPLAY_TOPIC, 0);
 end;
 
 

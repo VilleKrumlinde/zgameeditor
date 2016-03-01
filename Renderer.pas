@@ -92,7 +92,7 @@ type
   {$endif}
   TShader = class(TZComponent)
   strict private
-    VShaderHandle,FShaderHandle : cardinal;
+    VShaderHandle,FShaderHandle,GShaderHandle : cardinal;
     LastVariableUpdate : single;
     TexCount,FirstTexIndex : integer;
     procedure ReInit;
@@ -104,6 +104,7 @@ type
   public
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
+    GeometryShaderSource : TPropString;
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
     ProgHandle : integer;
@@ -1636,6 +1637,7 @@ procedure TShader.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'VertexShaderSource',{$ENDIF}(@VertexShaderSource), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}'GeometryShaderSource',{$ENDIF}(@GeometryShaderSource), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'FragmentShaderSource',{$ENDIF}(@FragmentShaderSource), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'UniformVariables',{$ENDIF}(@UniformVariables), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TShaderVariable]);{$endif}
@@ -1768,6 +1770,7 @@ begin
 
   VShaderHandle := InCreate(VertexShaderSource,GL_VERTEX_SHADER);
   FShaderHandle := InCreate(FragmentShaderSource,GL_FRAGMENT_SHADER);
+  GShaderHandle := InCreate(GeometryShaderSource,GL_GEOMETRY_SHADER);
 
   Driver := Self.ZApp.Driver;
   Driver.BeforeLinkShader(Self);
@@ -1969,6 +1972,7 @@ begin
 
   InDestroy(@VShaderHandle);
   InDestroy(@FShaderHandle);
+  InDestroy(@GShaderHandle);
 
   glDeleteProgram(ProgHandle);
   ProgHandle := 0;

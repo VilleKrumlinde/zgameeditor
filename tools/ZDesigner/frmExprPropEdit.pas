@@ -33,7 +33,7 @@ uses dmCommon, SynHighlighterZc, SynEditSearch;
 
 procedure TExprPropEditForm.ExprHelpButtonClick(Sender: TObject);
 begin
-  HtmlHelp(0,Application.HelpFile + '::writingexpressions.html', HH_DISPLAY_TOPIC, 0);
+  HtmlHelp(0,Application.HelpFile + '::/ScriptingLanguage.html', HH_DISPLAY_TOPIC, 0);
 end;
 
 procedure TExprPropEditForm.FormCreate(Sender: TObject);

@@ -21,7 +21,6 @@ inherited ExprPropEditForm: TExprPropEditForm
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = '&Code editor'
     TabOrder = 1
-    ExplicitWidth = 558
     object CompileErrorLabel: TStaticText
       Left = 2
       Top = 186
@@ -44,9 +43,6 @@ inherited ExprPropEditForm: TExprPropEditForm
       TabOrder = 0
       Transparent = False
       Visible = False
-      ExplicitLeft = 90
-      ExplicitTop = 188
-      ExplicitWidth = 305
     end
   end
   object ExprCompileButton: TButton
@@ -62,7 +58,6 @@ inherited ExprPropEditForm: TExprPropEditForm
     Caption = 'C&ompile'
     Enabled = False
     TabOrder = 2
-    ExplicitLeft = 357
   end
   object ExprHelpButton: TButton
     Left = 503
@@ -77,6 +72,5 @@ inherited ExprPropEditForm: TExprPropEditForm
     Caption = '&Help'
     TabOrder = 3
     OnClick = ExprHelpButtonClick
-    ExplicitLeft = 457
   end
 end

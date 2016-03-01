@@ -173,10 +173,6 @@ object EditorForm: TEditorForm
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
-        ExplicitLeft = 408
-        ExplicitTop = 80
-        ExplicitWidth = 185
-        ExplicitHeight = 41
       end
     end
     object Panel2: TPanel
@@ -285,10 +281,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -599,10 +591,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -638,10 +626,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end
