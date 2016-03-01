@@ -32,6 +32,9 @@ External links: [OpenGL Shading Language on Wikipedia](https://en.wikipedia.org/
   attribute vec4 color | Vertex color.
   attribute vec2 texCoord | Vertex texture coordinate.
   
+@dt GeometryShaderSource
+@dd Optional GLSL source code for the geometry shader.
+
 @dt FragmentShaderSource
 @dd GLSL source code for the fragment (pixel) shader.
 
