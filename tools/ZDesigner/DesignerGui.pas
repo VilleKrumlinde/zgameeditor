@@ -101,7 +101,8 @@ uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
-  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath;
+  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath,
+  Winapi.GDIPAPI, Winapi.GDIPOBJ;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1340,7 +1341,9 @@ var
 begin
   Bmp := Graphics.TBitmap.Create;
   if Pic.Graphic is TPngImage then
-    (Pic.Graphic as TPngImage).AssignTo(Bmp)
+  begin
+    (Pic.Graphic as TPngImage).AssignTo(Bmp);
+  end
   else
   begin
     Bmp.PixelFormat := pf24bit;
@@ -1352,17 +1355,26 @@ begin
   Result := Bmp;
 end;
 
-function NextPowerOfTwoBitmap(const I : integer) : TBitmapSize;
+function BitmapFromGdi(const FileName : string) : Graphics.TBitmap;
 var
-  J : integer;
+  Pic: TGPBitmap;
+  I,J : integer;
+  P : PInteger;
 begin
-  J := 16;
-  Result := bs16;
-  while (J<I) and (Result<High(TBitmapSize)) do
+  Pic := TGPBitmap.Create(FileName);
+  Result := Graphics.TBitmap.Create;
+  Result.PixelFormat := pf32bit;
+  Result.SetSize(Pic.GetWidth,Pic.GetHeight);
+  for I := 0 to Pic.GetHeight-1 do
   begin
-    Inc(J,J);
-    Inc(Result);
+    P := Result.ScanLine[I];
+    for J := 0 to Pic.GetWidth-1 do
+    begin
+      Pic.GetPixel(J,I, PGPColor(P)^);
+      Inc(P);
+    end;
   end;
+  Pic.Free;
 end;
 
 procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
@@ -1392,7 +1404,8 @@ begin
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
     if not (Pic.Graphic is Graphics.TBitmap) then
     begin
-      Bm := GraphicToBitmap(Pic);
+      Bm := BitmapFromGdi(FileName);
+//      Bm := GraphicToBitmap(Pic);
       OwnBm := True;
     end
     else
@@ -1406,7 +1419,7 @@ begin
     if (BmFile.GetOwner is TZBitmap) then
     begin
       ZBm := (BmFile.GetOwner as TZBitmap);
-      if (ZBm.PixelWidth<Bm.Width) or  (ZBm.PixelHeight<Bm.Height) then
+      if (ZBm.PixelWidth<>Bm.Width) or  (ZBm.PixelHeight<>Bm.Height) then
       begin
         ZBm.Width := Bm.Width;
         ZBm.Height := Bm.Height;

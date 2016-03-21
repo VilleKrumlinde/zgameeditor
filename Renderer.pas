@@ -349,6 +349,7 @@ type
     CustomWidth,CustomHeight : integer;
     TexId,FboId : integer; //read by zgeviz
     Filter : TBitmapFilterType;
+    InternalFormat : (infRGBA,infRGBA16);
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
@@ -2094,6 +2095,7 @@ end;
 procedure TRenderTarget.Activate;
 const
   FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_LINEAR_MIPMAP_LINEAR);
+  InternalFormats : array[0..2] of integer = (GL_RGBA, GL_RGBA16, GL_R32F);
 var
   W,H : integer;
   ActualW,ActualH,I : integer;
@@ -2164,7 +2166,7 @@ begin
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // automatic mipmap
     {$endif}
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+    glTexImage2D(GL_TEXTURE_2D, 0, InternalFormats[ Ord(Self.InternalFormat) ] , ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // create a renderbuffer object to store depth info
@@ -2226,6 +2228,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ClearColor',{$ENDIF}(@ClearColor), zptColorf);
   List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'InternalFormat',{$ENDIF}@InternalFormat, zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['RGBA','RGBA16','R32F']);{$endif}
 end;
 
 procedure TRenderTarget.CleanUp;

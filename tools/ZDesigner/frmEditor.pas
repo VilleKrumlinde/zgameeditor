@@ -561,6 +561,10 @@ begin
 
   Application.HelpFile := ExePath + 'ZGameEditor.chm';
 
+  //Remove chm-blocking (see http://stackoverflow.com/questions/11438634/opening-a-chm-file-produces-navigation-to-the-webpage-was-canceled)
+  if FileExists(Application.HelpFile+':Zone.Identifier') then
+    DeleteFile(Application.HelpFile+':Zone.Identifier');
+
   ResetCamera;
 
   AboutAction.Caption := 'About ' + AppName;
@@ -633,7 +637,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F := MakePropEditor(TShaderPropEditForm) as TShaderPropEditForm;
 
     Edit.ReadOnly := True;
-    F.ShaderSynEdit.Text := Component.GetProperty(Prop).StringValue;
+    F.ShaderSynEdit.Text := String(Component.GetProperty(Prop).StringValue);
 
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
