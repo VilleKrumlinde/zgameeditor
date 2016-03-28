@@ -14,7 +14,7 @@ See also: @ref Font, @ref Material.
 @dd The text that will be rendered.
 
 @dt TextFloatRef
-@dd A reference to a floating point property that have its value rendered. The value will first be rounded to an integer, use FloatMultiply if decimals are needed.
+@dd A reference to a floating point property that have its value rendered. The value will first be rounded to an integer, use FloatMultiply if decimals are needed. Value of this property is an @ref ScriptingLanguage "expression" specified in @ref CodeEditor "Code editor".
 
 @dt TextArray
 @dd Integer @ref Array of which cells represent ASCII codes of the displayed characters. Dimension(s) of array determine the length of the displayed text. If the array is multi-dimensional, the length of text is given by multiplication of dimension sizes and the characters are displayed in the order they are stored in memory.

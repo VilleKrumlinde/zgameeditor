@@ -17,6 +17,6 @@ See also: @ref startThread "startThread() function", @ref sleep "sleep() functio
 @dl
 
 @dt Expression
-@dd Expression running in its own thread. The special integer variable "param" holds the value passed in the @ref startThread "startThread()" call.
+@dd @ref ScriptingLanguage "Expression" running in its own thread. The special integer variable "param" holds the value passed in the @ref startThread "startThread()" call. Value of this property is specified in @ref CodeEditor "Code editor".
 
 @dlx

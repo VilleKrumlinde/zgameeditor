@@ -11,6 +11,6 @@ Example usage: @ref FileDemo sample project.
 @dl
 
 @dt Property
-@dd A reference to the floating point property that will receive the value from a file. Examples: "TileId.Value", "EnemyModel.Position.X".
+@dd A reference to the floating point property that will receive the value from a file. Value of this property is an @ref ScriptingLanguage "expression" specified in @ref CodeEditor "Code editor". Examples: "TileId.Value", "EnemyModel.Position.X".
 
 @dlx

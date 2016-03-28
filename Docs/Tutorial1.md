@@ -121,7 +121,7 @@ See the available keyboard shortcuts @ref KeyboardShortcuts "here". For more inf
 
 ![Code editor](tut1-code-editor.png)
 
-__GLSL Shader editor__: This editor is displayed when the shader source edit boxes in the property editor are clicked.
+@anchor ShaderEditor __GLSL Shader editor__: This editor is displayed when a shader source property of the @ref Shader component is clicked.
 
 For more info see [OpenGL Shading Language on Wikipedia (external link)](https://en.wikipedia.org/wiki/OpenGL_Shading_Language).
 

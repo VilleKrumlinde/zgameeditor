@@ -53,7 +53,7 @@ Example usage: "CursorModel.OnRender" in @ref Particles sample project.
 @dd Delay in seconds before any particles will be created.
 
 @dt OnEmitExpression
-@dd An expression that will be called when a new particle is created. The following properties can be modified in the expression: PColor (particle color) and PAngle (particle angle).
+@dd An @ref ScriptingLanguage "expression" that will be called when a new particle is created. Value of this property is specified in @ref CodeEditor "Code editor". The following properties can be modified in the expression: `PColor` (particle color) and `PAngle` (particle angle).
 
 @dt Gravity
 @dd A gravitation speed that is added to every particles velocity each frame. Note that even though a Z-value can be set, only the X and Y values are used.

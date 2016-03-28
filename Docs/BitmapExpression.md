@@ -13,7 +13,7 @@ Example usage: BallTexture in @ref ZPong sample project.
 @dl
 
 @dt Expression
-@dd An expression which defines the bitmap. The expression is called once for every pixel in the bitmap. A number of special variables are valid within the expression:
+@dd An @ref ScriptingLanguage "expression" which defines the bitmap. Its value is specified in @ref CodeEditor "Code editor". The expression is called once for every pixel in the bitmap. A number of special variables are valid within the expression:
 * "X" and "Y" holds the current x and y coordinate in 0 to 1 range.
 * Assign "Pixel" color (vec3) to set the current pixel.
 * "this" refers to the current Bitmap. It can be omitted if built-in variables do not collide with locally defined variables.

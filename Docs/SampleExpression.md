@@ -13,7 +13,7 @@ External links: [Discussion of this component in the Forum](http://www.emix8.org
 @dl
 
 @dt Expression
-@dd An expression which defines or modifies sample sound. The expression can use special properties "Sample" and "Time"; see later. The keyword "this" refers to the current SampleExpression component.
+@dd An @ref ScriptingLanguage "expression" which defines or modifies sample sound. The expression can use special properties "Sample" and "Time"; see later. The keyword "this" refers to the current SampleExpression component.
 
 Example of expression for generating a sound:
 
@@ -23,7 +23,9 @@ Example of expression for generating a sound:
 Example of expression for modifying of sound from previous producer:
 
     this.Sample *= sin(Time * freq) * volume;
- 
+
+Value of this property is specified in @ref CodeEditor "Code editor".
+    
 @dt Sample
 @dd Read-write property initially set to the current signal value of sample sound. Its value is in interval from -1 to 1. This property can be accessed only from the Expression property.
 

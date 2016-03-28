@@ -9,6 +9,6 @@ See also: @ref ScriptingLanguage
 @dl
 
 @dt Expression
-@dd Source code for the expression that will be executed.
+@dd Source code for the expression that will be executed. Value of this property is specified in @ref CodeEditor "Code editor".
 
 @dlx

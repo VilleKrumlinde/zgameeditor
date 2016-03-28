@@ -7,13 +7,15 @@ Execute a component list depending on the return value of an expression.
 @dl
 
 @dt Expression
-@dd The expression that will be evaluated. If a true value is returned then the "OnTrue" component list will be executed, otherwise the "OnFalse" will be executed. Example expressions:
+@dd The @ref ScriptingLanguage "expression" that will be evaluated. If a true value is returned then the "OnTrue" component list will be executed, otherwise the "OnFalse" will be executed. Example expressions:
 
     return 1; // true
 
 or 
 
     return CurrentModel.Position.X > 5;
+
+Value of this property is specified in @ref CodeEditor "Code editor".
 
 @dlx
 

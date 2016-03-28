@@ -18,23 +18,26 @@ Definition of interface, consisting of functions and constants, to external .DLL
 For details see [Wikipedia article](https://en.wikipedia.org/wiki/X86_calling_conventions).
 
 @dt BeforeInitExp
-@dd This expressions runs before the ZExternalLibrary loads, so you can set ModuleName here based on the ANDROID constant. See the OpenGL component in the library for an example:
+@dd This @ref ScriptingLanguage "expression" runs before the ZExternalLibrary loads, so you can set ModuleName here based on the ANDROID constant. See the OpenGL component in the library for an example:
 
     if(ANDROID)
       this.ModuleName="libGLESv1_CM.so";
+
+Value of this property is specified in @ref CodeEditor "Code editor".
 
 @dt Source
 @dd Declare library functions with the following syntax:
 
 @syn{<return type> <function name>(<type> <name>, <type> <name>, ...) \{\}}
 
+Value of this property is specified in @ref CodeEditor "Code editor".
+
 See example project ModPlay in Projects folder.
 
-Here is a short list on how to convert parameter types between a dll and ZGE:
+Here is a short list on how to convert parameter types between C/C++ types used in DLL and ZGameEditor types:
 
 C/C++ type | ZGameEditor type
 -----------|-----------------
-ALT + T | Focus Project tree
 int, word, longword, byte, bool | int
 byte | byte
 float | float

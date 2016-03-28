@@ -31,15 +31,20 @@ External links: [OpenGL Shading Language on Wikipedia](https://en.wikipedia.org/
   attribute vec3 normal | Vertex normal.
   attribute vec4 color | Vertex color.
   attribute vec2 texCoord | Vertex texture coordinate.
+
+Value of this property is specified in @ref ShaderEditor "Shader editor".
   
 @dt GeometryShaderSource
-@dd Optional GLSL source code for the geometry shader.
+@dd Optional GLSL source code for the geometry shader. Value of this property is specified in @ref ShaderEditor "Shader editor".
 
 @dt FragmentShaderSource
-@dd GLSL source code for the fragment (pixel) shader.
+@dd GLSL source code for the fragment (pixel) shader. Value of this property is specified in @ref ShaderEditor "Shader editor".
 
 @dt UpdateVarsOnEachUse
 @dd Setting this property on will update uniform variables before each usage of shader. If it is unset, shader variables are updated only on the beginning of rendering cycle.
+
+@dt BeforeLinkExpression
+@dd An @ref ScriptingLanguage "expression" executed between GLSL compiling and linking. Some OpenGL commands must be given in this phase; e.g., specifying of shader outputs for GLSL 1.3 and later. Value of this property is specified in @ref CodeEditor "Code editor".
 
 @dt Handle
 @dd Read only. The OpenGL handle of the shader. Use this when you want to make direct OpenGL calls. This value is available only in runtime. Example of usage Handle to obtain handle to attribute variable "position" in MyShader:

@@ -34,7 +34,7 @@ External links: [Craig Reynolds: Steering Behaviors](http://www.red3d.com/cwr/st
 @dd A value giving this behaviour a weight. The force of each behaviour is multiplied with this value. Use for fine-tuning the effect of each behaviour.
 
 @dt Expression
-@dd When Kind is "Expression", this expression calculates a steer vector. The special property "OutVector" is to be set by the expression. The keyword "this" refers to this SteeringBehaviour component. Example:
+@dd When Kind is "Expression", this @ref ScriptingLanguage "expression" calculates a steer vector. Value of this property is specified in @ref CodeEditor "Code editor". The special property "OutVector" is to be set by the expression. The keyword "this" refers to this SteeringBehaviour component. Example:
 
     this.OutVector.X = 0.5; this.OutVector.Y=0.5;
 

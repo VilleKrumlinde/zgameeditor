@@ -19,6 +19,8 @@ Here is an example:
       return x1*x2;
     }
 
+Value of this property is specified in @ref CodeEditor "Code editor".
+
 @dt UseThreadLock
 @dd If set, the included functions are thread-safety; they can be called safely from different threads - expressions in @ref Thread, @ref BitmapExpression, and @ref MeshExpression components.
 

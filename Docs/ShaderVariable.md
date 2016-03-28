@@ -17,7 +17,7 @@ See also: @ref Shader
 @dd Set this property to set the current value of the uniform variable. This property is only valid if ValuePropRef is not set.
 
 @dt ValuePropRef
-@dd Use this expression to compute a value of uniform variable from other properties. For example, type "App.Time * 8" to connect the current application time to a GLSL variable used for animation.
+@dd Use this @ref ScriptingLanguage "expression" to compute a value of uniform variable from other properties. Value of this property is specified in @ref CodeEditor "Code editor". For example, type "App.Time * 8" to connect the current application time to a GLSL variable used for animation.
 
 @dt ValueArrayRef
 @dd Set this reference to an @ref Array to pass it to GLSL. The GLSL type is determined by ArrayKind property. Use only float, vec2, vec3, vec4 and mat4 arrays. 

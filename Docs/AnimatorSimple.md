@@ -18,7 +18,7 @@ See also: @ref AnimatorGroup
 @dd If set then this animator will start automatically. If not set then it can be started with a StartAnimator component.
 
 @dt Target
-@dd The target property which the animation controls. 
+@dd The target property which the animation controls. Value of this property is an @ref ScriptingLanguage "expression" specified in @ref CodeEditor "Code editor".
 
 Example: "ShipModel.Scale.X".
 
