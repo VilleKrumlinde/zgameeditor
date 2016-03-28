@@ -63,7 +63,7 @@ Now we will add some simple animation.
 
   * __Duration__ = `2`
   * __AutoStart__ = checked
-  * __Target__ = `MyText.Y`
+  * __Target__ = `MyText.Y` (the value is an @ref ScriptingLanguage "expression" specified in @ref CodeEditor "Code editor")
   * __FromValue__ = `-0.5`
   * __ToValue__ = `0.5`
   * __Smooth__ = checked
