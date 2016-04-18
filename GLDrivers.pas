@@ -410,22 +410,11 @@ begin
 
   Self.SetMatrix(2, m);
 
-  glPushAttrib(GL_TEXTURE_BIT);
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_GEN_S);
-    glDisable(GL_TEXTURE_GEN_T);
-    Tex.UseTextureBegin;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    Verts[0] := Vector2f(X1,Y1); Texc[0] := Vector2f(s1,t2);
-    Verts[1] := Vector2f(X2,Y1); Texc[1] := Vector2f(s2,t2);
-    Verts[2] := Vector2f(X2,Y2); Texc[2] := Vector2f(s2,t1);
-    Verts[3] := Vector2f(X1,Y2); Texc[3] := Vector2f(s1,t1);
-    Self.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
-
-    glDisable(GL_TEXTURE_2D);
-  glPopAttrib();
+  Verts[0] := Vector2f(X1,Y1); Texc[0] := Vector2f(s1,t2);
+  Verts[1] := Vector2f(X2,Y1); Texc[1] := Vector2f(s2,t2);
+  Verts[2] := Vector2f(X2,Y2); Texc[2] := Vector2f(s2,t1);
+  Verts[3] := Vector2f(X1,Y2); Texc[3] := Vector2f(s1,t1);
+  Self.RenderArrays(GL_TRIANGLE_FAN,4,2,@Verts,@Texc,nil);
 end;
 
 procedure TGLDriverBase.RenderUnitQuad;

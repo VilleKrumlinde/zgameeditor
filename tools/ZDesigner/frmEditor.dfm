@@ -2299,6 +2299,10 @@ object EditorForm: TEditorForm
       Caption = 'Clear'
       OnClick = LogClearMenuItemClick
     end
+    object LogShowTraceOnly: TMenuItem
+      Caption = 'Show expression trace only'
+      OnClick = LogShowTraceOnlyClick
+    end
   end
   object OpenStyleDialog: TOpenDialog
     DefaultExt = '*.vsf'

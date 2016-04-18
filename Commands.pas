@@ -355,8 +355,6 @@ end;
 
 procedure TWebOpen.Execute;
 var
-  Ps,Pd : PByte;
-  I,Limit : integer;
   Buf : array[0..1024-1] of byte;
 begin
   if not Self.IsWaiting then
@@ -364,9 +362,7 @@ begin
     if not Self.InBrowser then
       IsWaiting := True;
 
-    Pd := @Buf;
     ZStrCopy(@Buf,PAnsiChar(Self.Url));
-    Inc(Pd,ZStrLength(@Buf));
 
     Platform_NetOpen(PAnsiChar(@Buf),Self.InBrowser,Self);
   end;
@@ -395,7 +391,6 @@ end;
 
 procedure TWebOpen.StartReading;
 var
-  Ps,Pd : PByte;
   BytesRead : integer;
 begin
   if not Self.IsWaiting then

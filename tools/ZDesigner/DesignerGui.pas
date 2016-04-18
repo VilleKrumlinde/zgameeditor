@@ -127,6 +127,7 @@ type
   TZPropertyStringEdit = class(TZPropertyEditBase)
   strict private
     Edit : TEdit;
+    IsExpression : boolean;
     procedure OnStoreValue(Sender : TObject);
     procedure OnMemoEdit(Sender: TObject);
   private
@@ -418,6 +419,7 @@ begin
   begin
     Edit.Text := Value.ExpressionValue.Source;
     Edit.Tag:=100;
+    Self.IsExpression := True;
   end
   else
     Edit.Text := String( Value.StringValue );
@@ -425,12 +427,16 @@ begin
   if  (Prop.Name='VertexShaderSource') or
     (Prop.Name='FragmentShaderSource') or
     (Prop.Name='GeometryShaderSource') then
+  begin
     Edit.Tag := 101;
+    Self.IsExpression := True;
+  end;
 
   Edit.OnExit := OnStoreValue;
   Edit.OnEnter := OnFocusControl;
-  Edit.Enabled := not IsReadOnlyProp;
+  Edit.Enabled := (not IsReadOnlyProp);
   Edit.Parent := ValuePanel;
+  Edit.ReadOnly :=  Self.IsExpression;
 
   if (Prop.Name='Text') or (Prop.Name='Comment') or (Prop.Name='StringValue') then
   begin
@@ -469,6 +475,8 @@ var
   S : string;
   IsChanged : boolean;
 begin
+  if Self.IsExpression then
+    Exit; //Expressions and shaders are saved from the custom property editor directly
   IsChanged := False;
   S := TEdit(Sender).Text;
   if Prop.PropertyType=zptString then

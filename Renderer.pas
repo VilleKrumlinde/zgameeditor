@@ -164,6 +164,8 @@ type
     TSpriteInfo = packed record
       SheetX,SheetY,SizeX,SizeY,OriginX,OriginY : smallint;
     end;
+  var
+    Material : TMaterial;
     function GetSpriteInfo(const Index : integer) : PSpriteInfo;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -171,9 +173,14 @@ type
   public
     Bitmap : TZBitmap;
     SpriteData : TZBinaryPropValue;
+    {$ifndef minimal}
+    destructor Destroy; override;
+    {$endif}
   end;
 
   TTileSet = class(TZComponent)
+  private
+    Material : TMaterial;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -181,6 +188,7 @@ type
     TileWidth,TileHeight,TileBorder : integer;
     {$ifndef minimal}
     constructor Create(OwnerList: TZComponentList); override;
+    destructor Destroy; override;
     {$endif}
   end;
 
@@ -2386,6 +2394,14 @@ end;
 
 { TSpriteSheet }
 
+{$ifndef minimal}
+destructor TSpriteSheet.Destroy;
+begin
+  Material.Free;
+  inherited;
+end;
+{$endif}
+
 procedure TSpriteSheet.DefineProperties(List: TZPropertyList);
 begin
   inherited;
@@ -2401,16 +2417,43 @@ begin
     Result := PSpriteInfo(PByte(Self.SpriteData.Data) + Index*SizeOf(TSpriteInfo));
 end;
 
+function CreateMaterialForSprites(B : TZBitmap) : TMaterial;
+var
+  M : TMaterial;
+  MT : TMaterialTexture;
+begin
+  M := TMaterial.Create(nil);
+  Mt := TMaterialTexture.Create(M.Textures);
+  Mt.Texture := B;
+  Mt.TextureWrapMode := tmClamp;
+  Mt.TexCoords := tcModelDefined;
+  Result := M;
+end;
+
 procedure TSpriteSheet.Render(Rs: TRenderSprite);
 //This routine is based on a ZGE script by Kjell
 var
   Info : PSpriteInfo;
+  Driver : TGLDriverBase;
 begin
   Info := GetSpriteInfo(Rs.SpriteIndex);
   if (Info=nil) or (Self.Bitmap=nil) then
     Exit;
 
-  Self.ZApp.Driver.RenderQuad(Self.Bitmap,
+  Driver := Self.ZApp.Driver;
+
+  if Material=nil then
+    Material := CreateMaterialForSprites(Self.Bitmap);
+  if (Driver.CurrentMaterial<>Self.Material) and (Driver.CurrentMaterial<>nil) then
+  begin
+    Self.Material.Blend := Driver.CurrentMaterial.Blend;
+    Self.Material.Shader := Driver.CurrentMaterial.Shader;
+  end;
+
+  TMaterialTexture(Self.Material.Textures[0]).Texture := Self.Bitmap;
+  Driver.EnableMaterial(Self.Material);
+
+  Driver.RenderQuad(Self.Bitmap,
     Info.OriginX, Info.OriginY,
     Info.SizeX, Info.SizeY,
     Info.SheetX, Info.SheetY,
@@ -2426,6 +2469,12 @@ begin
   inherited;
   Self.TileWidth := 16;
   Self.TileHeight := 16;
+end;
+
+destructor TTileSet.Destroy;
+begin
+  Material.Free;
+  inherited;
 end;
 {$endif}
 
@@ -2457,6 +2506,7 @@ procedure TRenderTile.Execute;
 var
   Ts : TTileSet;
   TilesPerRow,X,Y : integer;
+  Driver : TGLDriverBase;
 begin
   Ts := Self.TileSet;
   if (Ts=nil) or (Ts.Bitmap=nil) then
@@ -2467,7 +2517,18 @@ begin
   X := (Self.TileIndex mod TilesPerRow) * (Ts.TileWidth+Ts.TileBorder);
 	Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
 
-  Self.ZApp.Driver.RenderQuad(Ts.Bitmap,
+  Driver := Self.ZApp.Driver;
+
+  if Ts.Material=nil then
+    Ts.Material := CreateMaterialForSprites(Ts.Bitmap);
+  if (Driver.CurrentMaterial<>Ts.Material) and (Driver.CurrentMaterial<>nil) then
+  begin
+    Ts.Material.Blend := Driver.CurrentMaterial.Blend;
+    Ts.Material.Shader := Driver.CurrentMaterial.Shader;
+  end;
+  Driver.EnableMaterial(Ts.Material);
+
+  Driver.RenderQuad(Ts.Bitmap,
     Self.OriginX, Self.OriginY,
     Ts.TileWidth, Ts.TileHeight,
     X, Y,

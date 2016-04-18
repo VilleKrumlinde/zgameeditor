@@ -341,6 +341,11 @@ procedure TAnimatorSimple.DoAnimate;
 var
   X : single;
 begin
+  {$ifndef minimal}
+  if Duration=0 then
+    X := LocalTime
+  else
+  {$endif}
   X:=LocalTime/Duration;  //0..1 in animation
 
   if Smooth then

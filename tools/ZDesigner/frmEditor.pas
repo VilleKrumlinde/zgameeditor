@@ -232,6 +232,7 @@ type
     Panel3: TPanel;
     QuickCompListParent: TPanel;
     PropEditParentPanel: TPanel;
+    LogShowTraceOnly: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -316,6 +317,7 @@ type
     procedure QuickCompListViewClick(Sender: TObject);
     procedure QuickCompListViewMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure LogShowTraceOnlyClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -620,7 +622,8 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
   begin
     F := MakePropEditor(TExprPropEditForm) as TExprPropEditForm;
 
-    Edit.ReadOnly := True;
+    F.ExprPanel.Caption := F.ExprPanel.Caption + ' (' + Prop.Name + ')';
+
     F.ExprSynEdit.Text := Component.GetProperty(Prop).ExpressionValue.Source;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
@@ -636,7 +639,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
   begin
     F := MakePropEditor(TShaderPropEditForm) as TShaderPropEditForm;
 
-    Edit.ReadOnly := True;
+    F.ShaderPanel.Caption := F.ShaderPanel.Caption + ' (' + Prop.Name + ')';
     F.ShaderSynEdit.Text := String(Component.GetProperty(Prop).StringValue);
 
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
@@ -954,6 +957,8 @@ begin
       I : integer;
       Tmp : TStringList;
     begin
+      if Self.LogShowTraceOnly.Checked and (Level<>lleUserTrace) then
+        Exit;
       if Pos(#12,Mess)>0 then
       begin
         LogClearMenuItemClick(nil);
@@ -2012,12 +2017,17 @@ end;
 
 procedure TEditorForm.HelpContentsActionExecute(Sender: TObject);
 begin
-  Application.HelpContext(1);
+  HtmlHelp(0,Application.HelpFile, HH_DISPLAY_TOC, 0);
 end;
 
 procedure TEditorForm.ShowCompilerDetailsActionExecute(Sender: TObject);
 begin
   ShowCompilerDetailsAction.Checked := not ShowCompilerDetailsAction.Checked;
+end;
+
+procedure TEditorForm.LogShowTraceOnlyClick(Sender: TObject);
+begin
+  (Sender as TMenuItem).Checked := not (Sender as TMenuItem).Checked;
 end;
 
 procedure TEditorForm.ShowSettingsActionExecute(Sender: TObject);
@@ -2074,6 +2084,8 @@ begin
       F.CompileErrorLabel.Hide;
       glUseProgram(0); //Then turn it off
       OnPropValueChange;
+      if F.Component=Self.Tree.ZSelected.Component then
+        Self.Ed.SetComponent(F.Component); //This will force rebuildgui to show latest values
     except
       on E : EShaderException do
       begin
@@ -2169,6 +2181,9 @@ begin
       for I := 0 to Value.ExpressionValue.Code.Count - 1 do
         Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
+
+    if F.Component=Self.Tree.ZSelected.Component then
+      Self.Ed.SetComponent(F.Component); //This will force rebuildgui to show latest values
   end;
 end;
 
