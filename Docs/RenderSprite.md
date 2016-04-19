@@ -6,7 +6,7 @@ Render a 2D sprite. To change size (e.g., to draw a rectangle) or rotation of th
 * a static bitmap, if the used Material specifies texture(s), or
 * a (possibly) dynamic bitmap, if the bitmap is selected from a @ref SpriteSheet by SpriteIndex which may change in time.
 
-This component can only be used in the OnRender property of @ref Model, @ref ModelState, @ref ZApplication or @ref AppState components.
+This component can only be used in the OnRender property of @ref Model, @ref ModelState, @ref ZApplication or @ref AppState components. If other rendering commands are used after RenderSprite in the same OnRender property, you must add another call to @ref UseMaterial to render them properly, even if they use the same material.
 
 Example usage: "TitleScreenModel.OnRender" in @ref TripleE sample project.
 

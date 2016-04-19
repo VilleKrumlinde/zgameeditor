@@ -2,7 +2,7 @@
 
 Render a 2D tile on screen. This component is intended to be used for drawing 2D background maps composed of tiles. To change size (e.g., to draw a rectangle) or rotation of the sprite use @ref Model's Scale or Rotate properties, @ref RenderTransform or @ref RenderTransformGroup specified before RenderTile.
 
-This component can only be used in the OnRender property of @ref Model, @ref ModelState, @ref ZApplication or @ref AppState components.
+This component can only be used in the OnRender property of @ref Model, @ref ModelState, @ref ZApplication or @ref AppState components. If other rendering commands are used after RenderTile in the same OnRender property, you must add another call to @ref UseMaterial to render them properly, even if they use the same material.
 
 See also: @ref TileSet
 
