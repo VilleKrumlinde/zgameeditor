@@ -204,7 +204,8 @@ begin
   if (NewM=nil) then
     Exit;
 
-  Self.SetColor(NewM.Color);
+  if not NewM.SkipSetColor then
+    Self.SetColor(NewM.Color);
 
   //Test for equal material after setting color
   //This is because rendersetcolor may have been called so we need reset material.color

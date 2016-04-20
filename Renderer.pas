@@ -49,6 +49,7 @@ type
     WireframeWidth : single;
     SpecularColor,EmissionColor : TZColorf;
     Shininess : integer;
+    SkipSetColor : boolean;  //True if Color should not be used
   end;
 
   TMaterialTexture = class(TZComponent)
@@ -2423,12 +2424,22 @@ var
   MT : TMaterialTexture;
 begin
   M := TMaterial.Create(nil);
+  M.SkipSetColor := True;
   Mt := TMaterialTexture.Create(M.Textures);
   Mt.Texture := B;
   Mt.TextureWrapMode := tmClamp;
   Mt.TexCoords := tcModelDefined;
   Result := M;
 end;
+
+procedure CopySpriteMaterialProps(M1,M2 : TMaterial);
+begin
+  M1.Blend := M2.Blend;
+  M1.Shader := M2.Shader;
+  M1.Light := M2.Light;
+  M1.Shading := M2.Shading;
+end;
+
 
 procedure TSpriteSheet.Render(Rs: TRenderSprite);
 //This routine is based on a ZGE script by Kjell
@@ -2445,10 +2456,7 @@ begin
   if Material=nil then
     Material := CreateMaterialForSprites(Self.Bitmap);
   if (Driver.CurrentMaterial<>Self.Material) and (Driver.CurrentMaterial<>nil) then
-  begin
-    Self.Material.Blend := Driver.CurrentMaterial.Blend;
-    Self.Material.Shader := Driver.CurrentMaterial.Shader;
-  end;
+    CopySpriteMaterialProps(Self.Material,Driver.CurrentMaterial);
 
   TMaterialTexture(Self.Material.Textures[0]).Texture := Self.Bitmap;
   Driver.EnableMaterial(Self.Material);
@@ -2522,10 +2530,7 @@ begin
   if Ts.Material=nil then
     Ts.Material := CreateMaterialForSprites(Ts.Bitmap);
   if (Driver.CurrentMaterial<>Ts.Material) and (Driver.CurrentMaterial<>nil) then
-  begin
-    Ts.Material.Blend := Driver.CurrentMaterial.Blend;
-    Ts.Material.Shader := Driver.CurrentMaterial.Shader;
-  end;
+    CopySpriteMaterialProps(Ts.Material,Driver.CurrentMaterial);
   Driver.EnableMaterial(Ts.Material);
 
   Driver.RenderQuad(Ts.Bitmap,
