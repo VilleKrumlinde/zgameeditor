@@ -87,8 +87,14 @@ Prerequisites:
 
 * To allow compiling ZGameEditor projects to Android application files (.apk), install [Android SDK (external link)](http://developer.android.com/sdk/). You can install either the whole Android Studio IDE or stand-alone Android SDK Tools; Android SDK Tools are smaller and sufficient for development with ZGameEditor. Android SDK requires [Java SE Development Kit (external link)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) to be installed on your machine.
 
-* Start _Android SDK Manager_ tool and install "Android 2.2 (API 8) / SDK Platform". To see this item in the Packages list, check the "Obsolete" check-box. If you want to use sensors (by means of the ZgeSensors external library) or controllers in your Android applications, you must install also "Android 4.1.2 (API 16) / SDK Platform".
+* Start _Android SDK Manager_ tool and install the following items:
+  * Tools / Android SDK Tools
+  * Tools / Android SDK Platform-tools
+  * Tools / Android SDK Build-tools
+  * Android 4.1.2 (API 16) / SDK Platform
 
+  If you want to develop also for older Android devices, you should  manually install SDK Platform for Android 2.2 (API 8). Download it from [this link](http://qdevarena.blogspot.sk/2010/05/download-android-sdk-standalone-for.html) and unpack it to the "platforms" folder of your Android SDK installation folder.
+  
   ![](ht4-scr7.png)
 
 * You need to install and setup [Apache Ant (external link)](http://ant.apache.org/) for Windows. This is required for Android SDK building. See the [help page (external link)](http://ant.apache.org/manual/install.html) for details.
