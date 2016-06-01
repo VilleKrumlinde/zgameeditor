@@ -29,27 +29,28 @@ type
     procedure ZError(const S : string);
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
+    function IsConst : boolean;
     
   protected
 
-    procedure _ZcFuncRest(Typ : TZcDataType; const Name : string);
+    procedure _ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
     procedure _FormalParams;
     procedure _ZcFuncBody;
     procedure _Zc;
-    procedure _ConstantDeclarationList;
+    procedure _ConstantDeclarationList(IsPrivate : boolean);
     procedure _Type(var Typ : TZcDataType);
-    procedure _GlobalVarDecl(Typ : TZcDataType; const Name : string);
+    procedure _GlobalVarDecl(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
     procedure _Statement(var OutOp : TZcOp);
     procedure _Par;
     procedure _LocalVarDecl(var OutOp : TZcOp);
     procedure _LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
     procedure _Init(var OutOp : TZcOp);
-    procedure _GlobalVarRest(Typ : TZcDataType; const Name : string);
-    procedure _GlobalVar(Typ : TZcDataType);
+    procedure _GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
+    procedure _GlobalVar(Typ : TZcDataType; IsPrivate : boolean);
     procedure _Expr(var OutOp : TZcOp);
     procedure _Argument(var OutOp : TZcOp);
     procedure _SimpleType(var Typ : TZcDataType);
-    procedure _ConstantDeclaration(var Typ : TZcDataType);
+    procedure _ConstantDeclaration(var Typ : TZcDataType; IsPrivate : boolean);
     procedure _EmbeddedStatement(var OutOp : TZcOp);
     procedure _Block(var OutOp : TZcOp);
     procedure _StatementExpr(var OutOp : TZcOp);
@@ -109,15 +110,15 @@ const
 	orSym = 26;	plusSym = 27;	rbraceSym = 28;	rbrackSym = 29;	rparSym = 30;
 	rshiftSym = 31;	scolonSym = 32;	tildeSym = 33;	timesSym = 34;	xorSym = 35;
 	MaterialSym = 36;	SoundSym = 37;	ShaderSym = 38;	BitmapSym = 39;	MeshSym = 40;
-	CameraSym = 41;	FontSym = 42;	SampleSym = 43;	FileSym = 44;	voidSym = 45;
-	refSym = 46;	floatSym = 47;	intSym = 48;	byteSym = 49;	stringSym = 50;
-	modelSym = 51;	xptrSym = 52;	mat_fourSym = 53;	vec_twoSym = 54;	vec_threeSym = 55;
-	vec_fourSym = 56;	constSym = 57;	ifSym = 58;	elseSym = 59;	switchSym = 60;
-	whileSym = 61;	forSym = 62;	breakSym = 63;	continueSym = 64;	returnSym = 65;
-	_plus_equalSym = 66;	_minus_equalSym = 67;	_star_equalSym = 68;	_slash_equalSym = 69;	caseSym = 70;
-	defaultSym = 71;	_querySym = 72;	_bar_barSym = 73;	_and_andSym = 74;	reinterpret_underscorecastSym = 75;
-	_atSym = 76;	nullSym = 77;	_NOSYMB = 78;	_slash_starSym = 79;	_slash_slashSym = 80;
-
+	CameraSym = 41;	FontSym = 42;	SampleSym = 43;	FileSym = 44;	privateSym = 45;
+	voidSym = 46;	refSym = 47;	floatSym = 48;	intSym = 49;	byteSym = 50;
+	stringSym = 51;	modelSym = 52;	xptrSym = 53;	mat_fourSym = 54;	vec_twoSym = 55;
+	vec_threeSym = 56;	vec_fourSym = 57;	constSym = 58;	ifSym = 59;	elseSym = 60;
+	switchSym = 61;	whileSym = 62;	forSym = 63;	breakSym = 64;	continueSym = 65;
+	returnSym = 66;	_plus_equalSym = 67;	_minus_equalSym = 68;	_star_equalSym = 69;	_slash_equalSym = 70;
+	caseSym = 71;	defaultSym = 72;	_querySym = 73;	_bar_barSym = 74;	_and_andSym = 75;
+	reinterpret_underscorecastSym = 76;	_atSym = 77;	nullSym = 78;	_NOSYMB = 79;	_slash_starSym = 80;
+	_slash_slashSym = 81;
 
 var ZcSymSets: TSetArray;
 
@@ -636,8 +637,14 @@ begin
   raise E;
 end;
 
+function TZc.IsConst : boolean;
+begin
+  Result := (CurrentInputSymbol=constSym) or
+    ((CurrentInputSymbol=privateSym) and (Symbols[2].Id=constSym));
+end;
 
-procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string);
+
+procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
 
 var
   Func : TZcOpFunctionUserDefined;
@@ -647,10 +654,16 @@ begin
         if SymTab.Contains(Name) then
           ZError('Name already defined: ' + Name);
 
-        Func := TZcOpFunctionUserDefined.Create(GlobalNames);
+        if IsPrivate then
+          Func := TZcOpFunctionUserDefined.Create(nil)
+        else
+          Func := TZcOpFunctionUserDefined.Create(GlobalNames);
         Func.Id := Name;
         Func.ReturnType := Typ;
-        SymTab.Add(Func.Id,Func);
+        if IsPrivate then
+          SymTab.Add(Func.Id,Func)
+        else
+          SymTab.AddPrevious(Func.Id,Func);
         ZFunctions.Add(Func);
         Self.CurrentFunction := Func;
         SymTab.PushScope;
@@ -700,22 +713,35 @@ procedure TZc._Zc;
         Typ : TZcDataType;
         Func : TZcOpFunctionUserDefined;
         Name : string;
+        IsPrivate : boolean;
     
 begin
   if InSet(CurrentInputSymbol,2) and ( AllowFunctions ) then
   begin
        while InSet(CurrentInputSymbol,3) do
        begin
-         if (CurrentInputSymbol=constSym) then
+         if (CurrentInputSymbol in [privateSym, constSym]) and ( IsConst ) then
          begin
-              _ConstantDeclarationList;
+         IsPrivate := False; 
+              if (CurrentInputSymbol=privateSym) then
+              begin
+                Get;
+                     IsPrivate:= True; 
+              end;
+              _ConstantDeclarationList(IsPrivate);
          end
          else if InSet(CurrentInputSymbol,4) then
          begin
+         IsPrivate := False; 
+              if (CurrentInputSymbol=privateSym) then
+              begin
+                Get;
+                     IsPrivate:= True; 
+              end;
               if (CurrentInputSymbol=voidSym) then
               begin
                    Get;
-               Typ.Kind := zctVoid; 
+                 Typ.Kind := zctVoid; 
               end
               else if InSet(CurrentInputSymbol,5) then
               begin
@@ -723,15 +749,15 @@ begin
               end
               else SynError(1);
               Expect(identSym);
-                                                              Name := LexString; 
+                                                                Name := LexString; 
               if (CurrentInputSymbol=lparSym) then
               begin
                    Get;
-                   _ZcFuncRest(Typ,Name);
+                   _ZcFuncRest(Typ,Name,IsPrivate);
               end
               else if (CurrentInputSymbol in [commaSym, scolonSym]) then
               begin
-                   _GlobalVarDecl(Typ,Name);
+                   _GlobalVarDecl(Typ,Name,IsPrivate);
                    Expect(scolonSym);
               end
               else SynError(1);
@@ -766,7 +792,7 @@ begin
   else SynError(1);
 end;
 
-procedure TZc._ConstantDeclarationList;
+procedure TZc._ConstantDeclarationList(IsPrivate : boolean);
 
 var
   Typ : TZcDataType;
@@ -774,11 +800,11 @@ var
 begin
   Expect(constSym);
   _Type(Typ);
-  _ConstantDeclaration(Typ);
+  _ConstantDeclaration(Typ,IsPrivate);
   while (CurrentInputSymbol=commaSym) do
   begin
     Get;
-    _ConstantDeclaration(Typ);
+    _ConstantDeclaration(Typ,IsPrivate);
   end;
   Expect(scolonSym);
 end;
@@ -833,13 +859,13 @@ begin
   end;
 end;
 
-procedure TZc._GlobalVarDecl(Typ : TZcDataType; const Name : string);
+procedure TZc._GlobalVarDecl(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
 begin
-  _GlobalVarRest(Typ,Name);
+  _GlobalVarRest(Typ,Name,IsPrivate);
   while (CurrentInputSymbol=commaSym) do
   begin
     Get;
-    _GlobalVar(Typ);
+    _GlobalVar(Typ,IsPrivate);
   end;
 end;
 
@@ -848,7 +874,7 @@ begin
   if (CurrentInputSymbol=constSym) then
   begin
      OutOp := nil; 
-       _ConstantDeclarationList;
+       _ConstantDeclarationList(false);
   end
   else if InSet(CurrentInputSymbol,5) then
   begin
@@ -944,8 +970,8 @@ begin
   _Expr(OutOp);
 end;
 
-procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string);
-                                                         var V : TDefineVariableBase; 
+procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
+                                                                              var V : TDefineVariableBase; 
 begin
        
         if SymTab.ScopeContains(Name) then
@@ -967,14 +993,17 @@ begin
 
         V.SetString('Name', AnsiString(Name));
         V.DesignerReset; //Needed to init managed variables
-        SymTab.Add(Name,V);
+        if IsPrivate then
+          SymTab.Add(Name,V)
+        else
+          SymTab.AddPrevious(Name,V);
      
 end;
 
-procedure TZc._GlobalVar(Typ : TZcDataType);
+procedure TZc._GlobalVar(Typ : TZcDataType; IsPrivate : boolean);
 begin
   Expect(identSym);
-  _GlobalVarRest(Typ,LexString);
+  _GlobalVarRest(Typ,LexString,IsPrivate);
 end;
 
 procedure TZc._Expr(var OutOp : TZcOp);
@@ -1134,7 +1163,7 @@ begin
   else SynError(4);
 end;
 
-procedure TZc._ConstantDeclaration(var Typ : TZcDataType);
+procedure TZc._ConstantDeclaration(var Typ : TZcDataType; IsPrivate : boolean);
 
 var
   Cns : TDefineConstant;
@@ -1188,7 +1217,10 @@ begin
      else
        ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
    end;
-   SymTab.Add(CnsName,Cns);
+   if IsPrivate then
+     SymTab.Add(CnsName,Cns)
+   else
+     SymTab.AddPrevious(CnsName,Cns)
   
 end;
 
@@ -2003,14 +2035,14 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'"|"'	,'"+"'	,'"}"'	,'"]"'	,'")"'
 	,'">>"'	,'";"'	,'"~"'	,'"*"'	,'"^"'
 	,'"Material"'	,'"Sound"'	,'"Shader"'	,'"Bitmap"'	,'"Mesh"'
-	,'"Camera"'	,'"Font"'	,'"Sample"'	,'"File"'	,'"void"'
-	,'"ref"'	,'"float"'	,'"int"'	,'"byte"'	,'"string"'
-	,'"model"'	,'"xptr"'	,'"mat4"'	,'"vec2"'	,'"vec3"'
-	,'"vec4"'	,'"const"'	,'"if"'	,'"else"'	,'"switch"'
-	,'"while"'	,'"for"'	,'"break"'	,'"continue"'	,'"return"'
-	,'"+="'	,'"-="'	,'"*="'	,'"/="'	,'"case"'
-	,'"default"'	,'"?"'	,'"||"'	,'"&&"'	,'"reinterpret_cast"'
-	,'"@"'	,'"null"'  ,'not');
+	,'"Camera"'	,'"Font"'	,'"Sample"'	,'"File"'	,'"private"'
+	,'"void"'	,'"ref"'	,'"float"'	,'"int"'	,'"byte"'
+	,'"string"'	,'"model"'	,'"xptr"'	,'"mat4"'	,'"vec2"'
+	,'"vec3"'	,'"vec4"'	,'"const"'	,'"if"'	,'"else"'
+	,'"switch"'	,'"while"'	,'"for"'	,'"break"'	,'"continue"'
+	,'"return"'	,'"+="'	,'"-="'	,'"*="'	,'"/="'
+	,'"case"'	,'"default"'	,'"?"'	,'"||"'	,'"&&"'
+	,'"reinterpret_cast"'	,'"@"'	,'"null"'  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -2080,12 +2112,13 @@ begin
 	  States[63] := 53;  States[64] := 56;
     end;
     ZcLiterals := CreateLiterals(True,
-	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','File','void','ref','float','int','byte','string'
-		,'model','xptr','mat4','vec2','vec3','vec4','const','if','else','switch','while','for','break','continue','return','case'
-		,'default','reinterpret_cast','null'],
-	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,-FileSym,voidSym,refSym,floatSym,intSym
-		,byteSym,stringSym,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,constSym,ifSym,elseSym,switchSym
-		,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym,reinterpret_underscorecastSym,nullSym]
+	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','File','private','void','ref','float','int','byte'
+		,'string','model','xptr','mat4','vec2','vec3','vec4','const','if','else','switch','while','for','break','continue','return'
+		,'case','default','reinterpret_cast','null'],
+	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,-FileSym,privateSym,voidSym,refSym,floatSym
+		,intSym,byteSym,stringSym,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,constSym,ifSym,elseSym
+		,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym,reinterpret_underscorecastSym,nullSym
+		]
      );
   end;
   with TZcScanner(Result) do
@@ -2111,9 +2144,9 @@ begin
   InitSymSets(ZcSymSets,[
     	{ 0} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, refSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 1} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
-	{ 2} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
-	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
-	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 2} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,

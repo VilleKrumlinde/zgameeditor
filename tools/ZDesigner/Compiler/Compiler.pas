@@ -1311,6 +1311,7 @@ begin
   CompilerContext.SymTab := SymTab;
   CompilerContext.ThisC := ThisC;
 
+  SymTab.PushScope; //Create a scope for private vars and functions
   Compiler := TZc.Create(nil);
   try
     case ExpKind of
@@ -1329,17 +1330,17 @@ begin
         end;
       ekiBitmap :
         begin
-          S := 'void __f(float x, float y, vec4 pixel) { ' + CloseComment(S) + #13#10' }';
+          S := 'private void __f(float x, float y, vec4 pixel) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
       ekiMesh :
         begin
-          S := 'void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + CloseComment(S) + #13#10' }';
+          S := 'private void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
       ekiThread :
         begin
-          S := 'void __f(int param) { ' + CloseComment(S) + #13#10' }';
+          S := 'private void __f(int param) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
     end;
@@ -1410,6 +1411,7 @@ begin
       CodeGen.Free;
     end;
   finally
+    SymTab.PopScope;
     Compiler.Free;
   end;
 

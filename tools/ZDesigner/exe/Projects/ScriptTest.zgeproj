@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="0 2 3" LightPosition="3 2 1" PreviewClearColor="0.5961 0.2902 0.7098 1">
+<ZApplication Name="App" Caption="ZGameEditor application" ClearColor="0 0.5 0.1 0" CameraPosition="0 2 3" LightPosition="3 2 1" FileVersion="2" PreviewClearColor="0.5961 0.2902 0.7098 1">
   <OnLoaded>
     <ZLibrary Name="Lib1">
       <Source>
-<![CDATA[void f1() {
+<![CDATA[private const  int xx=42;
+private int zz;
+
+void f1() {
   App.ClearColor.R=1.0;
 }
 
@@ -15,7 +18,12 @@ float f3() {
   return 0.5;
 }
 
+private void f5() {
+  zz+=xx;
+}
+
 float f4() {
+  f5();
   float x1;
   x1=0.5;
   return noise2(app.time*x1,app.time * 4);
@@ -830,6 +838,17 @@ else
   </OnRender>
   <Content>
     <Model Name="Model1" Position="1 2 3" Category="5">
+      <Definitions>
+        <Variable Name="Defined1"/>
+        <Variable Name="Defined2"/>
+        <Variable Name="Defined3" Type="2"/>
+        <Array Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
+          <Values>
+<![CDATA[78DA6360200E000000280001]]>
+          </Values>
+        </Array>
+        <Array Name="DefinedVecArray" Type="6" SizeDim1="1"/>
+      </Definitions>
       <OnUpdate>
         <ZExpression>
           <Expression>
@@ -842,17 +861,6 @@ DefinedVecArray[0][0]=1;]]>
       <OnRender>
         <RenderSprite/>
       </OnRender>
-      <Definitions>
-        <Variable Name="Defined1"/>
-        <Variable Name="Defined2"/>
-        <Variable Name="Defined3" Type="2"/>
-        <Array Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[78DA6360200E000000280001]]>
-          </Values>
-        </Array>
-        <Array Name="DefinedVecArray" Type="6" SizeDim1="1"/>
-      </Definitions>
     </Model>
     <Variable Name="Error"/>
     <Mesh Name="Mesh1">

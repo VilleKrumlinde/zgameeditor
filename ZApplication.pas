@@ -1239,6 +1239,7 @@ begin
     List.SetDesignerProperty;
   List.AddProperty('AndroidSdk',(@AndroidSdk), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['2.2 (API Level 8)','4.1 (API Level 16)']);{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.ByteValue := 1;{$endif}
     List.SetDesignerProperty;
   {$ENDIF}
 end;

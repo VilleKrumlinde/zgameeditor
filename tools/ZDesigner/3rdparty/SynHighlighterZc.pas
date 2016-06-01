@@ -185,13 +185,14 @@ uses
 //**** VK: Merge begin
 
 const
-  KeyWords: array[0..14] of UnicodeString = (
-    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if', 'int',
-    'model', 'return', 'string', 'switch', 'while', 'void'
+  // as this language is case-insensitive keywords *must* be in lowercase
+  KeyWords: array[0..15] of UnicodeString = (
+    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if', 'int', 
+    'model', 'private', 'return', 'string', 'switch', 'while', 'void' 
   );
 
   KeyIndices: array[0..16] of Integer = (
-    1, 14, -1, 5, 8, 10, 3, 0, 11, 2, 6, 7, -1, 12, 13, 9, 4
+    3, 5, -1, 0, 7, 9, 14, 15, 13, 10, 1, 8, 6, 4, 12, 11, 2 
   );
 
 
@@ -201,14 +202,13 @@ begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 497 + Ord(Str^) * 42;
+    Result := Result * 898 + Ord(Str^) * 332;
     inc(Str);
   end;
   Result := Result mod 17;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
-
 
 //**** VK: Merge end
 //----

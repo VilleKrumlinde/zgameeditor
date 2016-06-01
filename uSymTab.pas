@@ -43,6 +43,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Add(const Name : string; Value : TObject);
+    procedure AddPrevious(const Name : string; Value : TObject);
     function ScopeContains(const Name: string): boolean;
     function Contains(const Name : string) : boolean;
     function Lookup(const Name : string) : TObject;
@@ -95,6 +96,19 @@ begin
   Entry.Name := Name;
   Entry.Value := Value;
   CurrentScope.Add(Key,Entry);
+end;
+
+procedure TSymbolTable.AddPrevious(const Name: string; Value: TObject);
+//Add to previous (global scope)
+var
+  Entry : TSymTabEntry;
+  Key : string;
+begin
+  Key := LowerCase(Name);
+  Entry := TSymTabEntry.Create;
+  Entry.Name := Name;
+  Entry.Value := Value;
+  Scopes[Scopes.Count-2].Add(Key,Entry);
 end;
 
 procedure TSymbolTable.ClearAll;
