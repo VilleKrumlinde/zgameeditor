@@ -641,7 +641,11 @@ function TCocoRScanner.CapChUTF8At(var pos: Integer): CocoChar;
 begin
   Result := CharAt(pos);
   if Result<>#0 then
+    {$IFDEF UNICODE}
+    Result := UpCase(Result);
+    {$ELSE}
     CharUpperBuffW(Pointer(@Result),1);
+    {$ENDIF}
 end;
 
 procedure TCocoRScanner.Get(var sym: TSymbolRec);

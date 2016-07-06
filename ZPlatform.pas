@@ -131,6 +131,8 @@ const
   {$INCLUDE ZPlatform_SDL.inc}
 {$elseif Defined(ANDROID)}
   {$INCLUDE ZPlatform_Android.inc}
+{$elseif Defined(ZZDC_MacZgeViz)}
+  {$INCLUDE ZPlatform_MacZgeViz.inc}
 {$else}
   {$INCLUDE ZPlatform_Win32.inc}
-{$ifend}
+{$endif}

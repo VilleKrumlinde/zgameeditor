@@ -9,7 +9,7 @@ implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses SDL, ZLog, AudioPlayer, ZApplication
+uses SDL, ZLog, AudioPlayer, ZApplication, SyncObjs
   {$ifdef linux},libc{$endif}
   {$ifdef darwin} {$ifdef fpc},dl{$else},Posix.Dlfcn{$endif}  {$endif}
   ;
@@ -565,6 +565,53 @@ function Platform_TouchGetId(const TouchIndex : integer) : integer;
 begin
   Result := 0;
 end;
+
+function Platform_CreateThread(ZThread : TZThread) : pointer;
+begin
+  Result := nil;
+end;
+
+procedure Platform_FreeThread(T : pointer);
+begin
+
+end;
+
+function Platform_CreateEvent : pointer;
+begin
+  Result := TEvent.Create(nil,False,False,'');
+end;
+
+procedure Platform_WaitEvent(E : pointer);
+begin
+  TEvent(E).WaitFor(INFINITE);
+end;
+
+procedure Platform_SignalEvent(E : pointer);
+begin
+  TEvent(E).SetEvent;
+end;
+
+procedure Platform_FreeEvent(E : pointer);
+begin
+  TEvent(E).Free;
+end;
+
+function Platform_GetCpuCount : integer;
+begin
+  Result := 1;
+end;
+
+{$ifndef minimal}
+procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
+begin
+
+end;
+
+procedure Platform_DesignerSetFilePath(const P : AnsiString);
+begin
+
+end;
+{$endif}
 
 initialization
 

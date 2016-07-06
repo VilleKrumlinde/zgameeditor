@@ -285,6 +285,9 @@ uses
 {$ENDIF}
 
 {$if defined(macos) and not defined(fpc)}
+
+{$DEFINE Unix}
+
 const
   PTHREAD_MUTEX_SIZE = 40;
   PTHREAD_COND_SIZE = 24;

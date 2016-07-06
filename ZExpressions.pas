@@ -1111,7 +1111,9 @@ begin
       begin
         Env.StackPopToPointer(A);
         Env.StackPopToPointer(Bp);
-        A.SizeDim1 := Bp.Size div A.GetElementSize;
+        if A.GetElementSize*A.CalcLimit<>Bp^.Size then
+          //Only resize if needed
+          A.SizeDim1 := Bp.Size div A.GetElementSize;
         Move(Bp^.Data^, A.GetData^, Bp^.Size);
         HasReturnValue := False;
       end;

@@ -75,6 +75,9 @@ type
     procedure Init;
     procedure Shutdown;
     procedure UpdateScreen;
+    {$ifdef zgeviz}
+    procedure ViewportChanged;
+    {$endif}
   private
     CurrentState : TAppState;
     procedure ApplyCameraTransform;
@@ -155,7 +158,6 @@ type
     ZgeVizTime : single;
     ZgeVizCameraCallback,ZgeVizViewportCallback : TAppCallback;
     MainRenderTarget : TRenderTarget;
-    procedure ViewportChanged;
     {$endif}
     constructor Create(OwnerList: TZComponentList); override;
     destructor Destroy; override;
@@ -997,7 +999,7 @@ begin
     begin
       if not Assigned(Self.OnGetLibraryPath) then
         raise Exception.Create('OnGetLibraryPath not set');
-      S := Self.OnGetLibraryPath + '\' + S;
+      S := Self.OnGetLibraryPath + PathDelim + S;
       if not FileExists(S) then
         raise Exception.Create('Definitions file not found: ' + S);
       DefContent := TStringList.Create;
