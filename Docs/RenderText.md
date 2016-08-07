@@ -50,6 +50,6 @@ See also: @ref Font, @ref Material.
 @dd Rotation of the current character in radians. It can be accessed only from the RenderCharExpression.
 
 @dt CharScale
-@dd Scale of the current character in radians. It can be accessed only from the RenderCharExpression.
+@dd Scale of the current character. It can be accessed only from the RenderCharExpression.
 
 @dlx
