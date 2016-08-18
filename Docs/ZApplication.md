@@ -54,10 +54,7 @@ The application top-most component. This component is automatically created when
 @dd Global ambient light value. Default is (0.4, 0.4, 0.4).
 
 @dt @anchor ZApplicationFullScreen FullScreen
-@dd Set this property to make your application run in fullscreen mode. You can override this property with the following command line switches:
-
-* -w Force windowed mode
-* -f Force fullscreen mode
+@dd Set this property to make your application run in fullscreen mode. You can override this property with @ref CommandLineSwitches "command line switches" (-w or -f).
 
 @dt FrameRateStyle
 @dd Set to one of preset values:

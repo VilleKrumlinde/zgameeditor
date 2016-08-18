@@ -50,3 +50,16 @@ The @ref ZApplication component (the top-most component in project) defines seve
 * @ref ZApplicationMouseVisible "MouseVisible"
 * @ref ZApplicationEscapeToQuit "EscapeToQuit"
 * @ref ZApplicationIcon "Icon"
+
+@anchor CommandLineSwitches
+## Command Line Switches
+
+Generated Windows executable file recognizes the following command line switches:
+
+Option | Semantics
+-------|----------
+-f | force fullscreen mode
+-w | force windowed mode
+-s | disable sound
+
+_Note: Do not use "-f", "-w", and "-s" as part of the project file name (and therefore also the generated executable file) or part of the directory path to the executable file, because ZGameEditor would interpret it as a command line switch. For instance, "u-f-o-s.exe" is not a good file name for a windowed application with sounds._
