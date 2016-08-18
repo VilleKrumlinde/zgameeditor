@@ -135,4 +135,4 @@ const
   {$INCLUDE ZPlatform_MacZgeViz.inc}
 {$else}
   {$INCLUDE ZPlatform_Win32.inc}
-{$endif}
+{$ifend}
