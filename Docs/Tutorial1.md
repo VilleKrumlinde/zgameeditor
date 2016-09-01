@@ -121,6 +121,8 @@ See the available keyboard shortcuts @ref KeyboardShortcuts "here". For more inf
 
 ![Code editor](tut1-code-editor.png)
 
+_Tip: You can change font size used in Code editor by setting the `CodeEditorFontSize` property in the `ZGameEditor.ini` file located in the ZGameEditor's installation folder while ZGameEditor is not running._
+
 @anchor ShaderEditor __GLSL Shader editor__: This editor is displayed when a shader source property of the @ref Shader component is clicked.
 
 For more info see [OpenGL Shading Language on Wikipedia (external link)](https://en.wikipedia.org/wiki/OpenGL_Shading_Language).

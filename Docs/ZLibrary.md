@@ -7,7 +7,7 @@ A library of global functions, constants and variables (including arrays).
 @dl
 
 @dt Source
-@dd Type your functions, constants and global variables here. They can be accessed/called from other expressions in your project. The functions/constants/variables must be defined before they are accessed/called, so insert the ZLibrary component somewhere at the top of your project, in @ref ZApplicationOnLoaded "ZApplication.OnLoaded" for instance.
+@dd Declare your functions, constants and global variables here. They can be accessed/called from other expressions in your project. The functions/constants/variables must be defined before they are accessed/called, so insert the ZLibrary component somewhere at the top of your project, in @ref ZApplicationOnLoaded "ZApplication.OnLoaded" for instance.
 
 Here is an example:
 

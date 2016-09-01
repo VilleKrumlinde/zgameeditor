@@ -85,10 +85,15 @@
 @dd Updates the specified _matrix_ by the current OpenGL matrix used for rendering. The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture. 
 
 @dtn void @bf{setMatrix} (int type, mat4 matrix)
-@dd Sets the currently used OpenGL matrix to the specified _matrix_.  The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture.
+@dd Sets the currently used OpenGL matrix to the specified _matrix_.  The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture. Example:
+
+    mat4 mvm;
+    getMatrix(0, mvm);  // get model view matrix
+    mvm[0,0] = 2.5; // scale on X axis
+    setMatrix(0, mvm);
 
 @dtn vec3 @bf{transformPoint} (mat4 matrix, vec3 point)
-@dd Returns position of _point_ transformed by _matrix_. More information about transformation matrices see [here](https://open.gl/transformations).
+@dd Returns position of _point_ transformed by _matrix_. More information about transformation matrices see [here](http://open.gl/transformations).
 
 @dlx
 
@@ -187,7 +192,17 @@ _Remark: ZApplication.MousePosition.Y is on Android identical with touchGetY(0).
 @dd Creates and returns an instance of model type _m_.
 
 @dtn void @bf{getModels} (Array items, int category)
-@dd Updates the _items_ array (an array of type model) to model instances of the specified _category_.
+@dd Updates the _items_ array (an array of type model) to model instances of the specified _category_. Example:
+
+    //get all model instances of category zero
+    model[] models;
+    getModels(models,0);
+
+    //loop through the list
+    for(int i=0; i<models.SizeDim1; i++) {
+      model m = models[i];
+      //do something
+    }
 
 @dtn int @bf{getSystemTime} ()
 @dd Returns returns seconds elapsed since midnight.

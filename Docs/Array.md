@@ -27,15 +27,15 @@ See also: @ref Arrays "Arrays in expressions"
 @dt Dimensions
 @dd This property can be set to one of the following values:
 
-* One - A one dimensional array. Example:
+* One - A one dimensional array. Example of usage in expression:
 
       MyArray[4] = 1;
 
-* Two - A two dimensional array. Example:
+* Two - A two dimensional array. Example of usage in expression:
 
       MyArray[4, 1] = 1;
 
-* Three - A three dimensional array. Example:
+* Three - A three dimensional array. Example of usage in expression:
 
       MyArray[4, 1, 2] = 1;
 

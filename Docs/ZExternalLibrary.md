@@ -2,6 +2,8 @@
 
 Definition of interface, consisting of functions and constants, to external .DLL or Android shared .SO library. After defining in ZExternalLibrary, it is possible to call external functions and defined constants from expressions.
 
+External links: [List of external libraries and related discussions in the Forum](http://www.emix8.org/forum/viewforum.php?f=10)
+
 ## Properties
 
 @dl
@@ -44,6 +46,8 @@ float | float
 LPCTSTR, char* | string
 QWORD, INT64 | define two int-parameters
 pointers to structures and objects | xptr
+
+_Note: External function for Android library can take maximum up to 16 parameters._
 
 @dt DefinitionFile
 @dd If specified, the definition of external functions is not given in the Source property, but in a file specified here. The file must be placed in the `<zge_install_dir>\Lib` directory. Fro example, see the "OpenGL 4.0 graphics" and "Bullet 3D physics library" libraries from built-in library of components.

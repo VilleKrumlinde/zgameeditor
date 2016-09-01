@@ -33,7 +33,7 @@ Range: from 3.4e +/- 38 (23 bits for significand, i.e., up to 7 valid digits)
 
 To ensure that integral values are treated as floats, you can add suffix ".0" or "f".
 
-Floats support also scientific notation for large or small numbers in form _significand_ x 10<SUP>_exponent_</SUP>. Instead of 10<SUP>_exponent_</SUP>, "e" or "E" is used to delimit exponent from significand.
+Floats support also scientific notation for large or small numbers in form _significand_ x 10<SUP>exponent</SUP>. Instead of 10<SUP>exponent</SUP>, "e" or "E" is used to delimit exponent from significand.
 
 Examples:
 
@@ -89,11 +89,14 @@ Arithmetic operations must be performed on particular index properties, it is no
 
 Examples:
 
-    vec2 v2 = vector2(1,2);
+    vec2 v2 = vector2(1, 2);
+    vec3 v3 = vector3(10, 10, 10);
     vec4 v4 = MyRenderSetColor.Color;
 
     v2.X = 14.2;
     v2.Y *= v2.X;
+    App.LightPosition = v3;
+    v4.A = 0.5;
     
 # mat4 {#mat4Type}
 
@@ -101,11 +104,17 @@ Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric 
 
 Entries of a matrix can be accessed as array of 16 floats. So you can use 1D (matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
 
+Matrix multiplication is supported by * operator. Example:
+
+    mat4 m1, m2;
+    // ...
+    mat4 m3 = m1 * m2;
+
 Example of changing model-view matrix in OnRender property of @ref Model :
 
     // inputs
     float scale = 2.0;
-    vec3 tran = vector3(1,2,3);
+    vec3 tran = vector3(1, 2, 3);
 
     mat4 modelViewMatrix;
     
@@ -186,6 +195,47 @@ Example: Multiple instantiation of models and setting their properties:
       m.AsteroidWeight = random(30, 10); // setting of Model's local variable
     }
 
+Additional various examples:
+
+    // Play a sound
+    Sound snd;
+    snd = @Sound();  // create and define a new sound
+    @PlaySound(Sound : snd, NoteNr : 65);  // play it
+
+    // ... or with compact syntax
+    @PlaySound(
+      Sound : @Sound(Osc1WaveForm : 1),
+      NoteNr : 60);
+
+    // Write to file
+    byte[256] buf;
+    for(int i=0; i<buf.SizeDim1; i++)
+      buf[i]=i;
+    File f = @File(
+      FileName : "test.txt",
+      Encoding : 1,
+      TargetArray : buf);
+    @FileAction(File : f, Action : 1);
+
+    // ... or with compact syntax
+    @FileAction(
+      File : @File(
+        FileName : "test.txt",
+        Encoding : 1,
+        TargetArray : buf),
+      Action : 1);
+
+    // Read from file
+    byte[256] buf;
+    File f = @File(
+      FileName : "test.txt",
+      Encoding : 1,
+      TargetArray : buf);
+    @FileAction(File : f, Action : 0);
+    for(int i=0; i<buf.SizeDim1; i++)
+      if(i!=buf[i])
+        trace("error when reading");
+    
 # Arrays {#Arrays}
 
 In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also in scripts with the following syntax:
@@ -201,11 +251,13 @@ Size can be unspecified an therefore is 0 by default.
 Examples:
 
     int[10] arr1;     // 1D array of integers
-    float[5,10] arr2; // 2D array of floats
-    vec3[,] arr3;    // 2D array of vec3   
-    model[,,] arr4;    // 3D array of models
+    const int SIZE = 100;
+    string[10 * SIZE] arr2; // computed array size
+    float[5,10] arr3; // 2D array of floats
+    vec3[,] arr4;    // 2D array of vec3   
+    model[,,] arr5;    // 3D array of models
 
-Size of array (defined as scripting variable or @ref Array component) can be changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3 respectively, for each dimension of array. The SizeDim* properties can also be used to check actual size of array.
+Size of array (defined as scripting variable or @ref Array component) can be changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3 respectively, for each dimension of an array. The SizeDim* properties can also be used to check actual size of array.
 
 Accessing of array items (defined as scripting variable or @ref Array component) is done with syntax:
 
@@ -228,3 +280,29 @@ Example: Copy of an array.
     destination.SizeDim1 = source.SizeDim1;
     for(int i = source.SizeDim1 - 1; i >= 0; i--)
       destination[i] = source[i];
+      
+Example: Passing an array as parameter to function and dynamic changing the size of the array.
+
+    const int BUFFER_DELTA = 100;
+
+    // adding an item to buffer at position
+    void addItem(int[] buffer, int item, ref int position) {
+      if(buffer.SizeDim1 == position) buffer.SizeDim1 += BUFFER_DELTA;
+      buffer[position] = item;
+      position++;
+    }
+
+    // variables
+    int[] MyBuffer;
+    int index = 0;
+    
+    // calling the function
+    for(; index < 1000;)
+      addItem(MyBuffer, index, index);
+
+Example: Declaring a function-local array and returning it as a result.
+
+    int[] getArray() {
+      int[10] x;
+      return x;
+    }

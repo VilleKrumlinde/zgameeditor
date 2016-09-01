@@ -17,7 +17,7 @@ See also: @ref Material
 @dd Set to a @ref RenderTarget that the material will use for texturing instead of bitmap. If used, the Texture property should be left empty.
 
 @dt TextureScale
-@dd This value controls scaling of the texture. 1.0 is the default value for normal scale. 0.5 is half scale, 2.0 is double scale. You can specify a separate scale for the X and Y axis; Z axis is ignored.
+@dd This value controls scaling of the texture. 1.0 is the default value for normal scale. 0.5 is half scale, 2.0 is double scale. You can specify a separate scale for the X and Y axes; the Z axis is ignored.
 
 @dt TextureX, TextureY
 @dd This values controls the texture offset in X and Y axis. Animate the values to "move" the texture over the rendered object.
@@ -37,5 +37,8 @@ See also: @ref Material
 
 * Generated - Material will use automatically generated texture coordinates.
 * ModelDefined - Texture coordinates supplied with the model will be used. Set this value when using the @ref RenderSprite component.
+
+@dt Origin
+@dd Origin of texture rotation. Use the X and Y axes; the Z axis is ignored.
 
 @dlx
