@@ -233,6 +233,7 @@ type
     QuickCompListParent: TPanel;
     PropEditParentPanel: TPanel;
     LogShowTraceOnly: TMenuItem;
+    Findunsedcomponents1: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -318,6 +319,7 @@ type
     procedure QuickCompListViewMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure LogShowTraceOnlyClick(Sender: TObject);
+    procedure Findunsedcomponents1Click(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -1982,6 +1984,71 @@ begin
       Break;
     end;
     CurParent := CurParent.Parent as TZComponentTreeNode;
+  end;
+end;
+
+procedure TEditorForm.Findunsedcomponents1Click(Sender: TObject);
+var
+  I,J : integer;
+  L : TObjectList;
+  PropList : TZPropertyList;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  C : TZComponent;
+  Counts : TDictionary<TZComponent,Integer>;
+  S : string;
+begin
+  CompileAll(True);
+  L := TObjectList.Create(False);
+  Counts := TDictionary<TZComponent,Integer>.Create;
+  try
+    GetAllObjects(Self.Root,L);
+    for I := 0 to L.Count-1 do
+    begin
+      C := TZComponent(L[I]);
+      if C is TContent then
+      begin
+        if not Counts.ContainsKey(C) then
+          Counts.Add(C,0);
+      end;
+
+      PropList := C.GetProperties;
+      for J := 0 to PropList.Count-1 do
+      begin
+        Prop := TZProperty(PropList[J]);
+        case Prop.PropertyType of
+          zptComponentRef :
+            begin
+              Value := C.GetProperty(Prop);
+              if Value.ComponentValue=nil then
+                Continue;
+              if not Counts.ContainsKey(Value.ComponentValue) then
+                Counts.Add(Value.ComponentValue,0);
+              Counts[Value.ComponentValue] := Counts[Value.ComponentValue]+1;
+            end;
+        end;
+      end;
+    end;
+
+    S := '';
+    for C in Counts.Keys do
+    begin
+      if Counts[C]=0 then
+      begin
+        if S='' then
+          S := string(C.Name)
+        else
+          S := S + ',' + string(C.Name);
+      end;
+    end;
+    if S='' then
+      ShowMessage('No unused components found')
+    else
+      ShowMessage('The following components are not used in the project:'#13#13 + S);
+
+  finally
+    L.Free;
+    Counts.Free;
   end;
 end;
 

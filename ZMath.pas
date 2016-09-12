@@ -561,7 +561,7 @@ end;
 
 
 //Från math.pas
-function IntPower(const Base: Extended; const Exponent: Integer): Extended;
+function IntPower(const Base: single; const Exponent: Integer): single;
 {$IFDEF CPU386}
 asm
         mov     ecx, eax

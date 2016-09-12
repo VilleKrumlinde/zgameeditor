@@ -2286,10 +2286,12 @@ begin
   if not FbosSupported then
     Exit;
 
+  {$ifndef zgeviz}  //For ZgeViz we want updateviewport to be called every time
   if CurrentRenderTarget=Self.RenderTarget then
     Exit;
+  {$endif}
 
-  if CurrentRenderTarget<>nil then
+  if (CurrentRenderTarget<>nil) and (CurrentRenderTarget<>Self.RenderTarget) then
   begin
     //update texture mipmap of current render target
     CurrentRenderTarget.UseTextureBegin;
