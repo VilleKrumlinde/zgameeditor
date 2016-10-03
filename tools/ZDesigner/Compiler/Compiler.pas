@@ -285,6 +285,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
           begin
             DefinedIndex := ETyp.DefinedIndex;
             DefinedName := ETyp.Component.Name;
+            ComponentRef := ETyp.Component; //Set this so "Delete component" in IDE detects reference to the component
           end;
         end
       else

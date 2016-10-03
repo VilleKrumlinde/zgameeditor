@@ -340,7 +340,7 @@ type
     {$endif}
   end;
 
-  TRenderQuality = (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512);
+  TRenderQuality = (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512,rts1024);
   TRenderTarget = class(TZComponent)
   strict private
     RboId : integer;
@@ -2224,10 +2224,10 @@ procedure TRenderTarget.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}(@Width), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width','128','256','512']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport width','Half viewport width','Quarter viewport width','128','256','512','1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 4;
   List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}(@Height), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height','128','256','512']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['Viewport height','Half viewport height','Quarter viewport height','128','256','512','1024']);{$endif}
     List.GetLast.DefaultValue.ByteValue := 4;
   List.AddProperty({$IFNDEF MINIMAL}'CustomWidth',{$ENDIF}(@CustomWidth), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'CustomHeight',{$ENDIF}(@CustomHeight), zptInteger);

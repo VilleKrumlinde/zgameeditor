@@ -114,6 +114,7 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Carbon');
   Application.Title := frmEditor.AppName;
   Application.CreateForm(TCommonModule, CommonModule);
   Application.CreateForm(TEditorForm, EditorForm);

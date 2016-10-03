@@ -448,6 +448,7 @@ type
     DefinedIndex : integer;
     {$ifndef minimal}
     DefinedName : TPropString;
+    ComponentRef : TZComponent;
     {$endif}
   end;
 
@@ -2328,6 +2329,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'DefinedIndex',{$ENDIF}(@DefinedIndex), zptInteger);
   {$ifndef minimal}
   List.AddProperty({$IFNDEF MINIMAL}'DefinedName',{$ENDIF}(@DefinedName), zptString);
+    List.SetDesignerProperty;
+  List.AddProperty({$IFNDEF MINIMAL}'ComponentRef',{$ENDIF}@ComponentRef, zptComponentRef);
     List.SetDesignerProperty;
   {$endif}
 end;
