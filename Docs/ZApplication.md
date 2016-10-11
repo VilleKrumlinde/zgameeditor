@@ -113,6 +113,9 @@ The application top-most component. This component is automatically created when
 @dt @anchor ZApplicationEscapeToQuit EscapeToQuit
 @dd Uncheck this to disable user pressing Escape key to quit your application. On Android, the Back menu button is used to quit the application.
 
+@dt UseStencilBuffer
+@dd Set this to use OpenGL stencil buffer. This may be useful if your application or a used external library needs it. If not, it is better to leave it unchecked. The @ref PreviewWindow uses stencil buffer always.
+
 @dt ViewportX, ViewportY
 @dd Read only. X and Y position of viewport in application window.
 
@@ -126,7 +129,7 @@ The application top-most component. This component is automatically created when
 @dd Load a ICO-file to this property for customizing the application icon of the generated EXE file. Note: The icon is only inserted in compressed Windows EXE files, not for other platforms.
 
 @dt PreviewClearColor
-@dd Choose which color to use as a background in the preview-window of the designer. Available in designer only.
+@dd Choose which color to use as a background in the @ref PreviewWindow of the designer. Available in designer only.
 
 @dt @anchor ZApplicationAndroidPackageName AndroidPackageName
 @dd A unique name of Android application placed to AndroidManifest.xml file as `manifest.package` attribute. See [Android developer's page](http://developer.android.com/guide/topics/manifest/manifest-element.html#package) for details.
