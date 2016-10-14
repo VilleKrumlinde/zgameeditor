@@ -85,7 +85,7 @@ See also: @ref SpawnModel, @ref createModel "createModel() function"
 @dt @anchor ModelOnCollision OnCollision
 @dd Called when this model has collided with another model. Collision detection must have been enabled using a @ref DefineCollision component. A @ref ZExpression defined here can examine which category the model has collided with using the @ref ModelCollidedWith "CollidedWith" property.
 
-@dt OnRender
+@dt @anchor ModelOnRender OnRender
 @dd This component list is called when it's time to render this model to the screen. Use render command components such as @ref RenderMesh to render your models.
 
 @dt OnRemove

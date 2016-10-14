@@ -21,7 +21,7 @@ See also: @ref Model, @ref SetModelState
 @dt OnUpdate
 @dd Called between every frame when this state is active.
 
-@dt OnRender
+@dt @anchor ModelStateOnRender OnRender
 @dd A list of render commands for this state.
 
 @dt OnLeave

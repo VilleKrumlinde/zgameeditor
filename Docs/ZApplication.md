@@ -116,6 +116,11 @@ The application top-most component. This component is automatically created when
 @dt UseStencilBuffer
 @dd Set this to use OpenGL stencil buffer. This may be useful if your application or a used external library needs it. If not, it is better to leave it unchecked. The @ref PreviewWindow uses stencil buffer always.
 
+@dt RenderOrder
+@dd Specifies the order in which OnRender sections of application's components are executed.
+* ModelsBeforeApp - The @ref ModelStateOnRender "ModelState.OnRender" section is applied for each active model state as first, then @ref ModelOnRender "Model.OnRender" section for each active model, @ref AppStateOnRender "AppState.OnRender" section for active application state, and finally @ref ZApplicationOnRender "ZApplication.OnRender".
+* AppBeforeModels - Rendering order is reversed.
+
 @dt ViewportX, ViewportY
 @dd Read only. X and Y position of viewport in application window.
 
@@ -169,7 +174,7 @@ This property is reflected by AndroidManifest.xml file as `<uses-sdk android:min
 @dt OnBeginRenderPass
 @dd This is called before each render pass.
 
-@dt OnRender
+@dt @anchor ZApplicationOnRender OnRender
 @dd A list of render commands.
 
 @dt OnClose
