@@ -1376,7 +1376,9 @@ begin
     else
     begin
       Spawned.AddToScene(ZApp);
-      if SpawnerIsParent then
+      if SpawnerIsParent and (CurrentModel<>nil) and
+        //Parent needs to be active (and not on the removed-list): http://www.emix8.org/forum/viewtopic.php?p=8346#p8346
+        CurrentModel.Active then
       begin
         CurrentModel.ChildModelRefs.Add(Spawned);
         Spawned.ParentModel := CurrentModel;

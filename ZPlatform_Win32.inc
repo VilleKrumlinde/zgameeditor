@@ -511,6 +511,8 @@ begin
       //dwLayerMask     := 0;                    // Ignored
       //dwVisibleMask   := 0;                    // Transparent color of underlay plane
       //dwDamageMask    := 0;                     // Ignored
+      if TZApplication(ZApp).UseStencilBuffer then
+        cStencilBits := 8;
     end;
 
     // Attempts to find the pixel format supported by a device context that is the best match to a given pixel format specification.
@@ -1379,9 +1381,6 @@ begin
 
   //Init timer
   QueryPerformanceFrequency(TimerFreq);
-  {$ifndef minimal}
-  if TimerStart=0 then
-  {$endif}
   QueryPerformanceCounter(TimerStart);
 
   InitKeyMap;

@@ -91,6 +91,7 @@ begin
     cDepthBits:= 16;
     iLayerType:= PFD_MAIN_PLANE;    // Layer type
     cAlphaBits := 8;
+    cStencilBits := 8; //NanoVG requires stencil buffer
   end;
 
   //Use the same pixeldepth as the desktop

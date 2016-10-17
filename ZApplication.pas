@@ -139,6 +139,8 @@ type
     ScreenWidth : integer;
     ScreenHeight : integer;
     ThreadedProcessingEnabled : boolean;
+    UseStencilBuffer : boolean;
+    RenderOrder : (aroModelsBeforeApp,aroAppBeforeModels);
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
@@ -527,7 +529,7 @@ begin
   //Update application renderers: particlesystems, beams etc
   OnRender.Update;
 
-  //Uppdatera modeller, flytta noder
+  //Update models
   if (CurrentState=nil) or CurrentState.ModelUpdatesEnabled then
     Models.Update;
 
@@ -785,15 +787,25 @@ begin
     end;
 
     Driver.EnableMaterial(DefaultMaterial);
-      RenderModels;
 
-      //Render application
-      Driver.PushMatrix;
-      if Self.OnRender.Count>0 then
-        Self.OnRender.ExecuteCommands;
-      if Self.CurrentState<>nil then
-        Self.CurrentState.OnRender.ExecuteCommands;
-      Driver.PopMatrix;
+    //Render models and application in order specified with App.RendeOrder.
+    for J := 0 to 1 do
+    begin
+      case Ord(Self.RenderOrder) xor J  of
+        0 : RenderModels;
+        1 :
+          begin
+            //Render application
+            Driver.PushMatrix;
+            if Self.OnRender.Count>0 then
+              Self.OnRender.ExecuteCommands;
+            if Self.CurrentState<>nil then
+              Self.CurrentState.OnRender.ExecuteCommands;
+            Driver.PopMatrix;
+          end;
+      end;
+    end;
+
     Driver.EnableMaterial(DefaultMaterial);
 
     for J := 0 to Lights.Count-1 do
@@ -1183,6 +1195,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MouseVisible',{$ENDIF}(@MouseVisible), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'EscapeToQuit',{$ENDIF}(@EscapeToQuit), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
+  List.AddProperty({$IFNDEF MINIMAL}'UseStencilBuffer',{$ENDIF}@UseStencilBuffer, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'RenderOrder',{$ENDIF}@RenderOrder, zptByte);
+    {$ifndef minimal}List.GetLast.SetOptions(['ModelsBeforeApp','AppBeforeModels']);{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'ViewportX',{$ENDIF}(@ViewportX), zptInteger);
     List.GetLast.NeverPersist := True;

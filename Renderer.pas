@@ -1039,7 +1039,6 @@ begin
 
     CurChar := P^;
 
-    Self.CharI := NativeUInt(P)-NativeUInt(TheText);
     ZExpressions.RunCode(RenderCharExpression.Code);
 
     Driver.PushMatrix;
@@ -1050,6 +1049,7 @@ begin
     Driver.PopMatrix;
 
     CharX := CharX + XStep;
+    CharI := CharI + 1;
     Inc(P);
   end;
 
