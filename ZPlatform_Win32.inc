@@ -1216,11 +1216,15 @@ const
 var
   MixBuffer : array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
 
+{.$DEFINE CLIP} //Skip audioclipping for now, Kjell says it give better audio quality
 procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; SampleCount : integer);
+{$IFDEF CLIP}
 var
   I : integer;
   Val : TSoundMixUnit;
+{$ENDIF}
 begin
+  {$IFDEF CLIP}
   for I := 0 to (SampleCount * StereoChannels)-1 do
   begin
     Val := Source^;
@@ -1233,6 +1237,9 @@ begin
     Inc(Source);
     Inc(Dest);
   end;
+  {$ELSE}
+  Move(Source^,Dest^,SampleCount*StereoChannels*SizeOf(TSoundMixUnit));
+  {$ENDIF}
 
   {$ifndef minimal}
   //Kopiera mixad data tillbaka till gui för att visa display

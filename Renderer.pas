@@ -1754,12 +1754,23 @@ procedure TShader.ReInit;
   {$endif}
 
   function InCreate(const Source : TPropString; const Kind: GLEnum) : cardinal;
+  {$if not defined(minimal) and defined(macos)}
+  var
+    S : ansistring;
+  {$ifend}
   begin
     Result := 0;
     if (pointer(Source)=nil) or (ZStrLength(PAnsiChar(Source))=0) then
       Exit;
     Result := glCreateShader(Kind);
+
+    {$if not defined(minimal) and defined(macos)} //Give shaders a chance to ifdef around macos specifics (in zgeviz)
+    S := ansistring('#define macos'#13) + Source;
+    glShaderSource(Result,1, @S,nil);
+    {$else}
     glShaderSource(Result,1,@Source,nil);
+    {$ifend}
+
     glCompileShader(Result);
     {$ifdef glsl_error_check}
     if InCheckShaderValid(@Result,Kind) then
