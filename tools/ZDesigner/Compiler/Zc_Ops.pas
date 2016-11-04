@@ -1393,7 +1393,12 @@ begin
 
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','CPUX64');
-  Con.Value := 0;
+  Con.Value := {$IFDEF CPUX64}1{$ELSE}0{$ENDIF};
+  BuiltInConstants.Add(Con);
+
+  Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','MACOS');
+  Con.Value := {$IFDEF MACOS}1{$ELSE}0{$ENDIF};
   BuiltInConstants.Add(Con);
 end;
 

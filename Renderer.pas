@@ -362,7 +362,7 @@ type
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
-    procedure Activate;
+    procedure Activate{$ifndef minimal}(const NoApp : boolean = False){$endif};
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -1940,10 +1940,14 @@ procedure TShader.DetachArrayVariables;
 var
   I : integer;
 begin
-  for I := Self.TexCount-1 downto 0 do
+  if Self.TexCount>0 then
   begin
-    glActiveTexture($84C0 + Self.FirstTexIndex + I);
-    glDisable(GL_TEXTURE_2D);
+    for I := Self.TexCount-1 downto 0 do
+    begin
+      glActiveTexture($84C0 + Self.FirstTexIndex + I);
+      glDisable(GL_TEXTURE_2D);
+    end;
+    glActiveTexture($84C0); //Make sure we leave with activetexture 0
   end;
 end;
 
@@ -2112,7 +2116,8 @@ begin
     Result := Result shl 1;
 end;
 
-procedure TRenderTarget.Activate;
+procedure TRenderTarget.Activate{$ifndef minimal}(const NoApp : boolean = False){$endif};
+//NoApp = does not require ZApp to be set
 const
   FilterTypes : array[0..2] of integer = (GL_LINEAR,GL_NEAREST,GL_LINEAR_MIPMAP_LINEAR);
   InternalFormats : array[0..2] of integer = (GL_RGBA, GL_RGBA16, GL_R32F);
@@ -2124,10 +2129,17 @@ begin
   if not FbosSupported then
     Exit;
 
-  A := ZApp;
-
-  //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
-  A.UpdateViewport;
+  {$ifndef minimal}
+  if not NoApp then
+  {$endif}
+  begin
+    A := ZApp;
+    //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
+    A.UpdateViewport;
+  {$ifndef minimal}
+  end else
+    A := nil;
+  {$endif}
 
   W := Self.CustomWidth;
   if W=0 then
@@ -2222,7 +2234,12 @@ begin
   end else
     glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
 
-  A.UpdateViewport(W, H);
+  {$ifndef minimal}
+  if NoApp then
+    glViewPort(0,0,W,H)
+  else
+  {$endif}
+    A.UpdateViewport(W, H);
 
   if Self.ClearBeforeUse then
   begin
