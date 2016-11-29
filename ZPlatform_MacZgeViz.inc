@@ -15,6 +15,7 @@ var
   Keys : array[0..511] of boolean;
   KeyMap : array[AnsiChar] of word;
   gZApp: TZApplication;
+  StartTime : double;
 
 {$ifndef minimal}
 var
@@ -59,8 +60,11 @@ const
 function CACurrentMediaTime: double; cdecl; external libCoreAnimation name '_CACurrentMediaTime';
 
 function Platform_GetTime : single;
+var
+  D : double;
 begin
-  Result := CACurrentMediaTime;
+  D := CACurrentMediaTime - StartTime; //take care not to overflow
+  Result := D;
 end;
 
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
@@ -349,5 +353,7 @@ begin
 end;
 
 initialization
+
+  StartTime := CACurrentMediaTime;
 
 end.

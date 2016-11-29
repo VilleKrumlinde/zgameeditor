@@ -2131,8 +2131,8 @@ begin
 
   {$ifndef minimal}
   if not NoApp then
-  {$endif}
   begin
+  {$endif}
     A := ZApp;
     //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
     A.UpdateViewport;

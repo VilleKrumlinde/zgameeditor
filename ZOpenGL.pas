@@ -1889,7 +1889,11 @@ begin
     S := 'libGLESv2.so';
   {$endif}
   {$IFDEF MACOS}
-  S := 'System/Library/Frameworks/OpenGL.framework/OpenGL';
+    {$IFDEF USE_REGAL}
+    S := '/Library/Application Support/Image-Line/Shared/libRegal.dylib';
+    {$ELSE}
+    S := '/System/Library/Frameworks/OpenGL.framework/OpenGL';
+    {$ENDIF}
   {$ENDIF}
   {$if defined(WIN32) or defined(WIN64)}
   S := 'opengl32.dll';
