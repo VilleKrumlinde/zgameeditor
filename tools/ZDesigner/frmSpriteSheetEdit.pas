@@ -9,6 +9,9 @@ uses
 
 type
   TSpriteSheetEditFrame = class(TScriptedCompEditFrameBase)
+    ImportButton: TButton;
+    OpenJsonDialog: TOpenDialog;
+    procedure ImportButtonClick(Sender: TObject);
   private
     { Private declarations }
     SpritesArray : TDefineArray;
@@ -17,6 +20,7 @@ type
     DataChanged : TDefineVariable;
     procedure CopyDataToComponent;
     procedure CopyDataFromComponent;
+    procedure ImportFromFile(const F: string);
   protected
     procedure BindData; override;
     procedure UpdateData; override;
@@ -29,7 +33,7 @@ implementation
 
 {$R *.dfm}
 
-uses frmEditor;
+uses frmEditor, System.JSON, IOUtils;
 
 { TSpriteSheetEditFrame }
 
@@ -154,5 +158,57 @@ begin
     end;
   end;
 end;
+
+procedure TSpriteSheetEditFrame.ImportButtonClick(Sender: TObject);
+begin
+  if OpenJsonDialog.Execute then
+    ImportFromFile(OpenJsonDialog.FileName);
+end;
+
+procedure TSpriteSheetEditFrame.ImportFromFile(const F: string);
+var
+  J : TJsonObject;
+  V : TJsonValue;
+  X,Y,W,H,Ox,Oy : smallint;
+  M : TMemoryStream;
+begin
+  J := TJSONObject.Create;
+  M := TMemoryStream.Create;
+  try
+    J.Parse(TEncoding.ASCII.GetBytes(TFile.ReadAllText(F)), 0);
+
+    for V in (J.Values['SubTexture'] as TJsonArray) do
+    begin
+      X := StrToInt( (V as TJsonObject).Values['x'].Value );
+      Y := StrToInt( (V as TJsonObject).Values['y'].Value );
+      H := StrToInt( (V as TJsonObject).Values['height'].Value );
+      W := StrToInt( (V as TJsonObject).Values['width'].Value );
+
+      Ox := W div 2;
+      Oy := H div 2;
+
+      M.Write(X,SizeOf(SmallInt));
+      M.Write(Y,SizeOf(SmallInt));
+      M.Write(W,SizeOf(SmallInt));
+      M.Write(H,SizeOf(SmallInt));
+      M.Write(Ox,SizeOf(SmallInt));
+      M.Write(Oy,SizeOf(SmallInt));
+    end;
+
+    M.Position := 0;
+    Self.Sheet.SpriteData.Size := M.Size;
+    ReallocMem(Self.Sheet.SpriteData.Data,Self.Sheet.SpriteData.Size);
+    Move(M.Memory^ , Self.Sheet.SpriteData.Data^, Self.Sheet.SpriteData.Size);
+
+    CopyDataFromComponent;
+    Glp.Invalidate;
+
+  finally
+    J.Free;
+    M.Free;
+  end;
+end;
+
+
 
 end.

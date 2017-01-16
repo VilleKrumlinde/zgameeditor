@@ -26,7 +26,6 @@ object ArrayEditForm: TArrayEditForm
     Caption = 'OK'
     TabOrder = 0
     OnClick = OkButtonClick
-    ExplicitLeft = 343
   end
   object Grid: TStringGrid
     Left = 16
@@ -38,7 +37,15 @@ object ArrayEditForm: TArrayEditForm
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goTabs, goAlwaysShowEditor]
     TabOrder = 1
     OnSetEditText = GridSetEditText
-    ExplicitWidth = 393
+    ColWidths = (
+      64
+      64
+      64
+      64
+      64)
+    RowHeights = (
+      24
+      24)
   end
   object UpDown1: TUpDown
     Left = 57
@@ -71,7 +78,6 @@ object ArrayEditForm: TArrayEditForm
     Caption = 'Copy all values'
     TabOrder = 4
     OnClick = CopyAllButtonClick
-    ExplicitLeft = 143
   end
   object PasteAllButton: TButton
     Left = 422
@@ -83,6 +89,5 @@ object ArrayEditForm: TArrayEditForm
     Caption = 'Paste all values'
     TabOrder = 5
     OnClick = PasteAllButtonClick
-    ExplicitLeft = 235
   end
 end

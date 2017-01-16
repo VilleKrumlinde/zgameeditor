@@ -129,7 +129,7 @@ begin
           Grid.Cells[0, I + 1] := IntToStr(I);
         for J := 0 to A.SizeDim3 - 1 do
           Grid.Cells[J + 1, 0] := IntToStr(J);
-        Inc(P,Self.Index3*A.SizeDim2*A.SizeDim3);
+        Inc(P,Self.Index3*A.SizeDim2*A.SizeDim3*A.GetElementSize);
         for I := 0 to A.SizeDim2 - 1 do
         begin
           for J := 0 to A.SizeDim3 - 1 do
