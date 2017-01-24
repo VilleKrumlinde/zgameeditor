@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit Renderer;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses {$ifndef minimal}SysUtils,{$endif}Meshes,ZClasses,ZBitmap,ZExpressions;

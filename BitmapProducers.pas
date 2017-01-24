@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit BitmapProducers;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZOpenGL, ZClasses, ZExpressions, ZBitmap;

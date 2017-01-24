@@ -27,6 +27,8 @@ THE SOFTWARE.}
 }
 unit AudioPlayer;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 const

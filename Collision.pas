@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit Collision;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,Meshes;

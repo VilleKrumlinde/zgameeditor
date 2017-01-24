@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit ZMath;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses;

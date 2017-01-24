@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit AudioComponents;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,AudioPlayer;

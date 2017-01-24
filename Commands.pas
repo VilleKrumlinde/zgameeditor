@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit Commands;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,ZExpressions;

@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit ZBitmap;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZOpenGL, ZClasses;

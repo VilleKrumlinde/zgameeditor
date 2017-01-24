@@ -21,6 +21,8 @@ THE SOFTWARE.}
 //Meshes and models
 unit Meshes;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses, ZBitmap, ZExpressions, ZOpenGL;

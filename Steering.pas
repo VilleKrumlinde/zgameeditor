@@ -23,6 +23,8 @@ unit Steering;
 //"Steering" movement
 //Based on http://opensteer.sourceforge.net/
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,ZMath,Meshes;

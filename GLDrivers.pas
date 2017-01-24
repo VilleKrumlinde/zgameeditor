@@ -1,5 +1,7 @@
 unit GLDrivers;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZOpenGL, Meshes, ZClasses, Renderer, ZBitmap;

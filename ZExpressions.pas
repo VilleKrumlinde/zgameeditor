@@ -27,6 +27,8 @@ unit ZExpressions;
   Runtime Virtual Machine
 }
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses;

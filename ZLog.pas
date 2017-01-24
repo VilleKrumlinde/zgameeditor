@@ -22,6 +22,8 @@ unit ZLog;
 
 //Log, debug and error unit
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 {$ifndef minimal}

@@ -22,6 +22,8 @@ THE SOFTWARE.}
 
 unit ZClasses;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 {$ifndef minimal}

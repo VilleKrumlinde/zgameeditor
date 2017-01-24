@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit Animators;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,Meshes;

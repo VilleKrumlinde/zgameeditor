@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit ZApplication;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,Meshes,Collision,Commands,AudioComponents, GLDrivers

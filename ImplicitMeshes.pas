@@ -24,6 +24,8 @@ unit ImplicitMeshes;
   Code based on http://www.unchainedgeometry.com/jbloom/
 }
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses,Meshes,ZExpressions;

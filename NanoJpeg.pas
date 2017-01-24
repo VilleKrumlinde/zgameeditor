@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit NanoJpeg;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 {.$define USE_CHROMA_FILTER}

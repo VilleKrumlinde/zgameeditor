@@ -22,6 +22,8 @@ unit ZFile;
 
 interface
 
+{$include zzdc_globalopt.inc}
+
 uses ZClasses, ZExpressions;
 
 type

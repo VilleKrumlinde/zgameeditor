@@ -20,6 +20,8 @@ THE SOFTWARE.}
 
 unit ZPlatform;
 
+{$include zzdc_globalopt.inc}
+
 interface
 
 uses ZClasses;

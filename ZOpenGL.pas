@@ -4,6 +4,8 @@
 
 unit ZOpenGL;
 
+{$include zzdc_globalopt.inc}
+
 //unit GL;
 {
   $Id: GL.pas,v 1.6 2003/06/02 12:32:12 savage Exp $
