@@ -18,7 +18,7 @@ object SelectComponentForm: TSelectComponentForm
     966
     592)
   PixelsPerInch = 96
-  TextHeight = 16
+  TextHeight = 13
   object CompListView: TListView
     Left = 10
     Top = 10
@@ -84,6 +84,7 @@ object SelectComponentForm: TSelectComponentForm
     Margins.Bottom = 4
     Anchors = [akLeft, akBottom]
     Caption = '&Help'
+    Enabled = False
     TabOrder = 3
     OnClick = HelpButtonClick
   end

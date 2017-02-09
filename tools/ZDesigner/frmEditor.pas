@@ -2917,6 +2917,7 @@ begin
   AppPreviewStartAction.Enabled := False;
   AppPreviewStopAction.Enabled := True;
   Glp.SetFocus;
+  Timer1.Interval := 15; //Try 60fps in preview
   IsAppRunning := True;
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
@@ -2934,6 +2935,7 @@ begin
   AppPreviewStartAction.Enabled := True;
   AppPreviewStopAction.Enabled := False;
   IsAppRunning := False;
+  Timer1.Interval := 30; //Restore 30fps in preview (to avoid fan spinning on laptops)
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
   AppStopButton.Perform(CM_RECREATEWND, 0, 0);

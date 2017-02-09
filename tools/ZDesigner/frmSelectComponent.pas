@@ -115,6 +115,7 @@ begin
     OkButton.Enabled := EnabledList[Item.Index]
   else
     OkButton.Enabled := False;
+  HelpButton.Enabled := Selected;
 end;
 
 procedure TSelectComponentForm.FilterBy(ParentComps, ParentLists : TStringList; const Prop : TZProperty);

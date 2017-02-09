@@ -2,7 +2,7 @@ object EditorForm: TEditorForm
   Left = 0
   Top = 0
   Caption = 'ZDesigner'
-  ClientHeight = 1022
+  ClientHeight = 821
   ClientWidth = 1344
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,12 +19,12 @@ object EditorForm: TEditorForm
   OnCloseQuery = FormCloseQuery
   OnKeyPress = FormKeyPress
   PixelsPerInch = 96
-  TextHeight = 16
+  TextHeight = 13
   object Splitter2: TSplitter
     Left = 345
     Top = 22
     Width = 5
-    Height = 1000
+    Height = 799
     Margins.Left = 4
     Margins.Top = 4
     Margins.Right = 4
@@ -36,7 +36,7 @@ object EditorForm: TEditorForm
     Left = 0
     Top = 22
     Width = 345
-    Height = 1000
+    Height = 799
     Margins.Left = 4
     Margins.Top = 4
     Margins.Right = 4
@@ -49,7 +49,7 @@ object EditorForm: TEditorForm
       Left = 0
       Top = 0
       Width = 345
-      Height = 1000
+      Height = 799
       Margins.Left = 4
       Margins.Top = 4
       Margins.Right = 4
@@ -78,7 +78,7 @@ object EditorForm: TEditorForm
     Left = 350
     Top = 22
     Width = 994
-    Height = 1000
+    Height = 799
     Margins.Left = 4
     Margins.Top = 4
     Margins.Right = 4
@@ -88,7 +88,7 @@ object EditorForm: TEditorForm
     TabOrder = 1
     object Splitter1: TSplitter
       Left = 0
-      Top = 803
+      Top = 602
       Width = 994
       Height = 5
       Cursor = crVSplit
@@ -101,7 +101,7 @@ object EditorForm: TEditorForm
     end
     object LowerRightPanel: TPanel
       Left = 0
-      Top = 808
+      Top = 607
       Width = 994
       Height = 192
       Margins.Left = 4
@@ -179,7 +179,7 @@ object EditorForm: TEditorForm
       Left = 0
       Top = 0
       Width = 994
-      Height = 803
+      Height = 602
       Margins.Left = 4
       Margins.Top = 4
       Margins.Right = 4
@@ -191,7 +191,7 @@ object EditorForm: TEditorForm
         Left = 358
         Top = 0
         Width = 5
-        Height = 803
+        Height = 602
         Margins.Left = 4
         Margins.Top = 4
         Margins.Right = 4
@@ -202,7 +202,7 @@ object EditorForm: TEditorForm
         Left = 0
         Top = 0
         Width = 358
-        Height = 803
+        Height = 602
         Align = alLeft
         BevelOuter = bvNone
         Constraints.MinWidth = 100
@@ -211,7 +211,7 @@ object EditorForm: TEditorForm
           Left = 0
           Top = 0
           Width = 358
-          Height = 803
+          Height = 602
           Margins.Left = 4
           Margins.Top = 4
           Margins.Right = 4
@@ -224,7 +224,7 @@ object EditorForm: TEditorForm
           Left = 0
           Top = 0
           Width = 358
-          Height = 803
+          Height = 602
           Align = alClient
           BevelOuter = bvNone
           TabOrder = 1
@@ -232,7 +232,7 @@ object EditorForm: TEditorForm
             Left = 0
             Top = 30
             Width = 358
-            Height = 773
+            Height = 572
             Margins.Left = 4
             Margins.Top = 4
             Margins.Right = 4
@@ -266,7 +266,7 @@ object EditorForm: TEditorForm
         Left = 363
         Top = 0
         Width = 631
-        Height = 803
+        Height = 602
         Margins.Left = 4
         Margins.Top = 4
         Margins.Right = 4
@@ -315,8 +315,8 @@ object EditorForm: TEditorForm
             object Label2: TLabel
               Left = 9
               Top = 27
-              Width = 51
-              Height = 16
+              Width = 42
+              Height = 13
               Margins.Left = 4
               Margins.Top = 4
               Margins.Right = 4
@@ -326,8 +326,8 @@ object EditorForm: TEditorForm
             object Label3: TLabel
               Left = 138
               Top = 27
-              Width = 52
-              Height = 16
+              Width = 42
+              Height = 13
               Margins.Left = 4
               Margins.Top = 4
               Margins.Right = 4
@@ -337,8 +337,8 @@ object EditorForm: TEditorForm
             object Label4: TLabel
               Left = 267
               Top = 27
-              Width = 51
-              Height = 16
+              Width = 42
+              Height = 13
               Margins.Left = 4
               Margins.Top = 4
               Margins.Right = 4
@@ -348,8 +348,8 @@ object EditorForm: TEditorForm
             object Label5: TLabel
               Left = 399
               Top = 27
-              Width = 35
-              Height = 16
+              Width = 27
+              Height = 13
               Margins.Left = 4
               Margins.Top = 4
               Margins.Right = 4
@@ -591,10 +591,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -617,7 +613,7 @@ object EditorForm: TEditorForm
             Left = 0
             Top = 24
             Width = 623
-            Height = 769
+            Height = 568
             Align = alClient
             BevelOuter = bvNone
             TabOrder = 1
@@ -630,10 +626,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end
@@ -763,7 +755,7 @@ object EditorForm: TEditorForm
     Top = 40
   end
   object Timer1: TTimer
-    Interval = 15
+    Interval = 30
     OnTimer = Timer1Timer
     Left = 88
     Top = 40
@@ -1083,7 +1075,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 96
     Bitmap = {
-      494C01010F0011000C0010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C01010F001100040010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1784,7 +1776,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 152
     Bitmap = {
-      494C01010C0011000C0010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C01010C001100040010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
