@@ -27,7 +27,7 @@ unit ZClasses;
 interface
 
 {$ifndef minimal}
-uses uSymTab,Contnrs,Classes;
+uses uSymTab,Contnrs,Classes,Generics.Collections;
 {$endif}
 
 type
@@ -168,7 +168,7 @@ type
     procedure Grow;
     function GetItem(Index: Integer): TObject;
     procedure SetItem(Index: Integer; const Value: TObject);
-    {$ifndef minimal}
+    {$ifdef debug}
     procedure CheckValidIndex(Index: Integer);
     {$endif}
   public
@@ -433,6 +433,9 @@ type
   TZComponentManager = class
   private
     ComponentInfos : TComponentInfoArray;
+    {$IFNDEF MINIMAL}
+    InfoDictionary : TDictionary<TClass,TZComponentInfo>;
+    {$ENDIF}
     procedure Register(C : TZComponentClass; ClassId : TZClassIds);
     function GetProperties(Component : TZComponent) : TZPropertyList;
     {$ifndef minimal}public
@@ -642,7 +645,7 @@ implementation
 
 uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
   {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib,
-  Generics.Collections,Zc_Ops
+  Zc_Ops
   {$endif}
   ;
 
@@ -796,7 +799,7 @@ end;
 
 function ManagedHeap_Alloc(const Size : integer) : pointer;
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   ZAssert(Size>=0,'Alloc called with size <=0');
   ZAssert(Size<1024*1024*128,'Alloc called with size > 128mb');
   {$endif}
@@ -804,7 +807,7 @@ begin
   Platform_EnterMutex(mh_Lock);
     mh_Allocations.Add(Result);
   Platform_LeaveMutex(mh_Lock);
-  {$ifndef minimal}
+  {$ifdef debug}
   ZAssert(NativeInt(Result) and 1=0,'Alloc fail');
   {$endif}
 end;
@@ -812,7 +815,7 @@ end;
 procedure ManagedHeap_AddValueObject(const O : TObject);
 //Add an TObject to managed heap. The destructor will be called when released.
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   ZAssert(NativeInt(O) and 1=0,'AddValueObject fail');
   {$endif}
   //Use unused lower bits of pointer to flag that this is an object
@@ -823,7 +826,7 @@ end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if mh_Targets.IndexOf(P)>-1 then
   begin
     GetLog('MH').Warning('Add target already in list');
@@ -837,7 +840,7 @@ end;
 
 procedure ManagedHeap_RemoveTarget(const P : pointer);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if mh_Targets.IndexOf(P)=-1 then
   begin
     GetLog('MH').Warning('Remove target not found');
@@ -1632,7 +1635,7 @@ begin
   inherited;
 end;
 
-{$ifndef minimal}
+{$ifdef debug}
 procedure TZArrayList.CheckValidIndex(Index: Integer);
 begin
   if (Index < 0) or (Index >= FCount) then
@@ -1642,13 +1645,13 @@ end;
 
 function TZArrayList.GetItem(Index: Integer): TObject;
 begin
-  {$ifndef minimal}CheckValidIndex(Index);{$endif}
+  {$ifdef debug}CheckValidIndex(Index);{$endif}
   Result := List^[Index];
 end;
 
 function TZArrayList.GetPtrToItem(Index: Integer): pointer;
 begin
-  {$ifndef minimal}CheckValidIndex(Index);{$endif}
+  {$ifdef debug}CheckValidIndex(Index);{$endif}
   Result := @List^[Index];
 end;
 
@@ -1663,7 +1666,7 @@ end;
 
 procedure TZArrayList.SetItem(Index: Integer; const Value: TObject);
 begin
-  {$ifndef minimal}CheckValidIndex(Index);{$endif}
+  {$ifdef debug}CheckValidIndex(Index);{$endif}
   List^[Index] := Value;
 end;
 
@@ -1685,7 +1688,7 @@ end;
 function TZArrayList.IndexOf(Item: TObject): Integer;
 begin
   Result := 0;
-  while (Result < FCount) and (List^[Result] <> Item) do
+  while (Result < FCount) and (List[Result] <> Item) do
     Inc(Result);
   if Result = FCount then
     Result := -1;
@@ -1695,7 +1698,7 @@ procedure TZArrayList.RemoveAt(Index: integer);
 var
   Temp: TObject;
 begin
-  {$ifndef minimal}CheckValidIndex(Index);{$endif}
+  {$ifdef debug}CheckValidIndex(Index);{$endif}
   Temp := List^[Index];
   Dec(FCount);
   if Index < FCount then
@@ -1757,12 +1760,16 @@ end;
 function TZComponentManager.GetInfo(Component: TZComponent) : TZComponentInfo;
 var
   C : TZComponentClass;
+  {$IFDEF MINIMAL}
   I : TZClassIds;
   Ci : TZComponentInfo;
+  {$ENDIF}
 begin
   //todo borde ligga i hashlist
   C := TZComponentClass(Component.ClassType);
-
+  {$IFNDEF MINIMAL}
+  Exit( InfoDictionary[C] );
+  {$ELSE}
   for I := Low(ComponentInfos) to High(ComponentInfos) do
   begin
     Ci := ComponentInfos[I];
@@ -1774,6 +1781,8 @@ begin
       Exit;
     end;
   end;
+  {$ENDIF}
+
   {$IFNDEF MINIMAL}
 //  ZHalt('getinfocomponent returned nil:' + Component.ClassName);
   raise Exception.Create('getinfocomponent not found: ' + Component.ClassName);
@@ -1840,6 +1849,9 @@ begin
   Ci.ClassId := ClassId;
   {$IFNDEF MINIMAL}
   Ci.ZClassName := Copy(C.ClassName,2,100);
+  if InfoDictionary=nil then
+    InfoDictionary := TDictionary<TClass,TZComponentInfo>.Create;
+  InfoDictionary.Add(C,Ci);
   {$ENDIF}
   {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
   LastAdded := Ci;
@@ -1861,6 +1873,9 @@ begin
     Ci.Properties.Free;
     Ci.Free;
   end;
+  {$IFNDEF MINIMAL}
+  InfoDictionary.Free;
+  {$ENDIF}
   inherited;
 end;
 

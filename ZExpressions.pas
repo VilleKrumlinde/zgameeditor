@@ -550,7 +550,7 @@ end;
 //Push 32-bit value
 procedure TExecutionEnvironment.StackPush(const X);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
     ZHalt('Zc Stack Overflow (infinite recursion?)');
   {$endif}
@@ -561,7 +561,7 @@ end;
 //Push 32 or 64-bit value depending on architechture
 procedure TExecutionEnvironment.StackPushPointer(const X);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
     ZHalt('Zc Stack Overflow (infinite recursion?)');
   {$endif}
@@ -572,7 +572,7 @@ end;
 //Pop 32-bit value
 procedure TExecutionEnvironment.StackPopTo(var X);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if StackGetDepth=0 then
     ZHalt('Zc Stack Underflow');
   {$endif}
@@ -583,7 +583,7 @@ end;
 //Pop 32 or 64-bit value depending on architechture
 procedure TExecutionEnvironment.StackPopToPointer(var X);
 begin
-  {$ifndef minimal}
+  {$ifdef debug}
   if StackGetDepth=0 then
     ZHalt('Zc Stack Underflow');
   {$endif}
@@ -651,7 +651,7 @@ begin
   {$endif}
 end;
 
-{$ifndef minimal}
+{$ifdef debug}
 procedure CheckNilDeref(P : pointer);
 begin
   ZAssert( NativeUInt(P)>1024,'Null pointer referenced in expression');
@@ -1543,7 +1543,7 @@ begin
     emPtrDeref4 :
       begin
         Env.StackPopToPointer(P);
-        {$ifndef MINIMAL}
+        {$ifdef debug}
         CheckNilDeref(P);
         {$endif}
         V := PInteger(P)^;
@@ -1552,7 +1552,7 @@ begin
     emPtrDeref1 :
       begin
         Env.StackPopToPointer(P);
-        {$ifndef MINIMAL}
+        {$ifdef debug}
         CheckNilDeref(P);
         {$endif}
         V := PByte(P)^;
@@ -1561,7 +1561,7 @@ begin
     emPtrDerefPointer :
       begin
         Env.StackPopToPointer(P);
-        {$ifndef MINIMAL}
+        {$ifdef debug}
         CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer(P^);
@@ -2313,7 +2313,7 @@ begin
   if not IsInit then
   begin
     Env.StackPopToPointer(C);
-    {$ifndef minimal}
+    {$ifdef debug}
     CheckNilDeref(C);
     {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
@@ -2343,7 +2343,7 @@ var
   C : TZComponent;
 begin
   Env.StackPopToPointer(M);
-  {$ifndef minimal}
+  {$ifdef debug}
   CheckNilDeref(M);
   if (Self.DefinedIndex>=M.Definitions.Count) or
     (not SameText(String(TZComponent(M.Definitions[Self.DefinedIndex]).Name),String(DefinedName))) then
