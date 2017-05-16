@@ -25,7 +25,9 @@ interface
 uses Classes,Contnrs,ZLog, Generics.Collections;
 
 type
+  {$ifndef fpc}
   TSymTabFunc = reference to procedure(const S : string; Item : TObject; Context : pointer);
+  {$endif}
 
   TSymbolTable = class
   strict private type
@@ -52,7 +54,9 @@ type
     procedure ClearAll;
     procedure PushScope;
     procedure PopScope;
+    {$ifndef fpc}
     procedure Iterate(F : TSymTabFunc; Context : pointer = nil);
+    {$endif}
   end;
 
 implementation
@@ -187,6 +191,7 @@ begin
   CurrentScope.Remove(Key);
 end;
 
+{$ifndef fpc}
 procedure TSymbolTable.Iterate(F: TSymTabFunc; Context: pointer);
 var
   I : integer;
@@ -200,5 +205,6 @@ begin
       F(Entry.Name,Entry.Value,Context);
   end;
 end;
+{$endif}
 
 end.

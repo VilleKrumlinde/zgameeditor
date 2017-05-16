@@ -3633,7 +3633,6 @@ begin
   Remove(Component);
 end;
 
-
 procedure TZComponentList.Update;
 var
   I : integer;
@@ -3658,7 +3657,9 @@ begin
   while Count>0 do
   begin
     Instance := TZComponent(Last);
-    RemoveComponent(Instance);
+    //Because we know the index, the lines below are much faster than calling RemoveComponent.
+    Instance.OwnerList := nil;
+    RemoveAt(Count-1);
     Instance.Destroy;
   end;
 end;
@@ -4208,3 +4209,4 @@ finalization
 {$endif}
 
 end.
+
