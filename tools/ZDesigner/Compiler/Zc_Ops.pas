@@ -156,6 +156,13 @@ type
     function GetDataType : TZcDataType; override;
   end;
 
+  TPrototypes = class
+  private
+    constructor Create;
+  public
+    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
+  end;
+
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
@@ -182,6 +189,8 @@ function GetBuiltInConstants : Contnrs.TObjectList;
 
 procedure CleanUp;
 
+function Prototypes : TPrototypes;
+
 var
   //Nodes owned by the current compiled function/expression
   //Used for memory management
@@ -193,10 +202,6 @@ var
     ThisC : TZComponent;
   end;
 
-  Prototypes : record
-    Mat4Array,Vec2Array,Vec3Array,Vec4Array : TDefineArray;
-  end;
-
 implementation
 
 uses SysUtils,Math,Compiler,Classes,StrUtils;
@@ -205,6 +210,14 @@ var
   BuiltInFunctions : Contnrs.TObjectList=nil;
   BuiltInConstants : Contnrs.TObjectList=nil;
   BuiltInCleanUps : Contnrs.TObjectList;
+  _Prototypes : TPrototypes;
+
+function Prototypes : TPrototypes;
+begin
+  if _Prototypes=nil then
+    _Prototypes := TPrototypes.Create;
+  Result := _Prototypes;
+end;
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
@@ -1493,12 +1506,13 @@ begin
   FreeAndNil(BuiltInFunctions);
   FreeAndNil(BuiltInConstants);
   FreeAndNil(BuiltInCleanUps);
-  with Prototypes do
+  if Assigned(_Prototypes) then
   begin
-    Vec2Array.Free;
-    Vec3Array.Free;
-    Vec4Array.Free;
-    Mat4Array.Free;
+    _Prototypes.Vec2Array.Free;
+    _Prototypes.Vec3Array.Free;
+    _Prototypes.Vec4Array.Free;
+    _Prototypes.Mat4Array.Free;
+    FreeAndNil(_Prototypes);
   end;
 end;
 
@@ -1657,31 +1671,34 @@ begin
 end;
 
 
+{ TPrototypes }
+
+constructor TPrototypes.Create;
+begin
+  Mat4Array := TDefineArray.Create(nil);
+  Mat4Array.Dimensions := dadTwo;
+  Mat4Array.SizeDim1 := 4;
+  Mat4Array.SizeDim2 := 4;
+  Mat4Array._Type := zctFloat;
+
+  Vec2Array := TDefineArray.Create(nil);
+  Vec2Array.Dimensions := dadOne;
+  Vec2Array.SizeDim1 := 2;
+  Vec2Array._Type := zctFloat;
+
+  Vec3Array := TDefineArray.Create(nil);
+  Vec3Array.Dimensions := dadOne;
+  Vec3Array.SizeDim1 := 3;
+  Vec3Array._Type := zctFloat;
+
+  Vec4Array := TDefineArray.Create(nil);
+  Vec4Array.Dimensions := dadOne;
+  Vec4Array.SizeDim1 := 4;
+  Vec4Array._Type := zctFloat;
+end;
+
 initialization
 
   FunctionCleanUps := Contnrs.TObjectList.Create(True);
-  with Prototypes do
-  begin
-    Mat4Array := TDefineArray.Create(nil);
-    Mat4Array.Dimensions := dadTwo;
-    Mat4Array.SizeDim1 := 4;
-    Mat4Array.SizeDim2 := 4;
-    Mat4Array._Type := zctFloat;
-
-    Vec2Array := TDefineArray.Create(nil);
-    Vec2Array.Dimensions := dadOne;
-    Vec2Array.SizeDim1 := 2;
-    Vec2Array._Type := zctFloat;
-
-    Vec3Array := TDefineArray.Create(nil);
-    Vec3Array.Dimensions := dadOne;
-    Vec3Array.SizeDim1 := 3;
-    Vec3Array._Type := zctFloat;
-
-    Vec4Array := TDefineArray.Create(nil);
-    Vec4Array.Dimensions := dadOne;
-    Vec4Array.SizeDim1 := 4;
-    Vec4Array._Type := zctFloat;
-  end;
 
 end.
