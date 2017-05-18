@@ -257,7 +257,7 @@ var LineBreak: String = sLineBreak;
 
 implementation
 
-uses SysUtils,Windows,Generics.Collections;
+uses SysUtils,Winapi.Windows,Generics.Collections;
 
 var
   _GlobalCleanUps : TObjectList<TObject>;
