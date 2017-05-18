@@ -59,7 +59,7 @@ uses
   QSynEditHighlighter,
   QSynUnicode,
 {$ELSE}
-  Graphics,
+  Vcl.Graphics,
   SynEditTypes,
   SynEditHighlighter,
   SynUnicode,

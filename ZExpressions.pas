@@ -519,7 +519,7 @@ implementation
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
-{$if (not defined(minimal))}, System.SysUtils, System.Math, System.TypInfo{$ifend}
+{$if (not defined(minimal))}, SysUtils, Math, TypInfo{$ifend}
 {$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 
 {$POINTERMATH ON}
@@ -529,7 +529,7 @@ begin
   Result := RunCode(Code).SingleValue;
 end;
 
-function ExpGetPointer(Code : TZComponentList) : PFloat;
+function ExpGetPointer(Code : TZComponentList) : ZClasses.PFloat;
 begin
   Result := RunCode(Code).PointerValue;
 end;
@@ -1222,7 +1222,7 @@ begin
   inherited;
 end;
 
-function TDefineArray.GetData: PFloat;
+function TDefineArray.GetData: ZClasses.PFloat;
 begin
   //Check if Array size has changed
   if (Limit<>CalcLimit) then
@@ -1234,13 +1234,13 @@ begin
   begin
     if Values.Data=nil then
       AllocData;
-    Result := PFloat(Values.Data)
+    Result := ZClasses.PFloat(Values.Data)
   end
   else
   begin
     if Data=nil then
       AllocData;
-    Result := PFloat(Data);
+    Result := ZClasses.PFloat(Data);
   end;
 end;
 
@@ -1313,7 +1313,7 @@ begin
   end;
 end;
 
-function TDefineArray.PopAndGetElement(Env : PExecutionEnvironment) : PFloat;
+function TDefineArray.PopAndGetElement(Env : PExecutionEnvironment) : ZClasses.PFloat;
 var
   Index,I1,I2,I3 : integer;
   P : PBytes;
@@ -2119,7 +2119,9 @@ begin
   PPointer(P)^ := Proc; Inc(P,8);  //x
   W([$49,$ff,$e3]); //jmp r11
 
+  {$ifdef mswindows}
   VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+  {$endif}
 end;
 
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);

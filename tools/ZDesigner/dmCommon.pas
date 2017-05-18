@@ -23,8 +23,8 @@ unit dmCommon;
 interface
 
 uses
-  SysUtils, Classes, ImgList, Controls, Menus, ActnList, XPStyleActnCtrls,
-  ActnMan, StdActns, Dialogs, System.Actions, System.ImageList;
+  SysUtils, Classes, Vcl.ImgList, Vcl.Controls, Vcl.Menus, Vcl.ActnList, Vcl.XPStyleActnCtrls,
+  Vcl.ActnMan, Vcl.StdActns, Vcl.Dialogs, System.Actions, System.ImageList;
 
 type
   TCommonModule = class(TDataModule)
@@ -69,7 +69,7 @@ implementation
 
 {$R *.dfm}
 
-uses Forms, SynEdit, SynEditTypes;
+uses Vcl.Forms, SynEdit, SynEditTypes;
 
 procedure TCommonModule.FindActionExecute(Sender: TObject);
 var

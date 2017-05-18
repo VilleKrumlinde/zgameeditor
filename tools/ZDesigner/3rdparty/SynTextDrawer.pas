@@ -72,7 +72,7 @@ uses
   SysUtils,
   Classes,
   Windows,
-  Graphics,
+  Vcl.Graphics,
   Math;
 
 const

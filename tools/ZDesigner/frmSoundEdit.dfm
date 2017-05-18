@@ -49,7 +49,7 @@ inherited SoundEditFrame: TSoundEditFrame
       object Label13: TLabel
         Left = 8
         Top = 5
-        Width = 564
+        Width = 547
         Height = 20
         Caption = 
           'Point mouse here and use keys a,w,s,e,d,f,t,g,y,h,u,j to play no' +
@@ -470,7 +470,7 @@ inherited SoundEditFrame: TSoundEditFrame
       object Label14: TLabel
         Left = 8
         Top = 5
-        Width = 624
+        Width = 595
         Height = 20
         Caption = 
           'Global mixer settings. To save settings: Add a AudioMixer-compon' +

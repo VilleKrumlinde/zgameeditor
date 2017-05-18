@@ -857,7 +857,7 @@ begin
   end
   else
   begin
-    O := nil;
+    O := default(T);
     Result := False;
   end;
 end;

@@ -3,8 +3,8 @@ unit GLPanel;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  OpenGL12, ExtCtrls, ZApplication;
+  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  OpenGL12, Vcl.ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)

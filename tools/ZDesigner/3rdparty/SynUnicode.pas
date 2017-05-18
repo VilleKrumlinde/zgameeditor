@@ -59,10 +59,10 @@ uses
   QClipbrd,  
   {$ELSE}
   Messages,
-  Controls,
-  Forms,
-  Graphics,
-  Clipbrd,  
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Graphics,
+  Vcl.Clipbrd,
   {$ENDIF}
   {$IFDEF SYN_COMPILER_6_UP}
   Types,

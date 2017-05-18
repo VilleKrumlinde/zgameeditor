@@ -44,7 +44,7 @@ procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable;
   ReturnType : TZcDataType;
-  GlobalNames : TObjectList;
+  GlobalNames : Contnrs.TObjectList;
   ExpKind : TExpressionKind);
 
 var
@@ -52,7 +52,7 @@ var
 
 implementation
 
-uses Zc,Zc_Ops, Vcl.Dialogs, Generics.Collections;
+uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections;
 
 
 type
@@ -64,7 +64,7 @@ type
 
   TZCodeLabel = class
   private
-    Usage : TObjectList;
+    Usage : Contnrs.TObjectList;
     Definition : integer;
     constructor Create;
     destructor Destroy; override;
@@ -79,7 +79,7 @@ type
     Component : TZComponent;
     ZApp : TZApplication;
     SymTab : TSymbolTable;
-    Labels : TObjectList;
+    Labels : Contnrs.TObjectList;
     LReturn : TZCodeLabel;
     CurrentFunction : TZcOpFunctionUserDefined;
     IsLibrary,IsExternalLibrary : boolean;
@@ -106,7 +106,7 @@ type
     procedure GenInvoke(Op: TZcOpInvokeComponent; IsValue: boolean);
     function GenArrayAddress(Op : TZcOp) : TObject;
   public
-    procedure GenRoot(StmtList : TList);
+    procedure GenRoot(StmtList : Classes.TList);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -962,7 +962,7 @@ end;
 
 constructor TZCodeGen.Create;
 begin
-  Labels := TObjectList.Create;
+  Labels := Contnrs.TObjectList.Create;
   BreakStack := TStack<TZCodeLabel>.Create;
   ContinueStack := TStack<TZCodeLabel>.Create;
 end;
@@ -1006,7 +1006,7 @@ begin
   Lbl.Usage.Add( U );
 end;
 
-procedure TZCodeGen.GenRoot(StmtList: TList);
+procedure TZCodeGen.GenRoot(StmtList: Classes.TList);
 var
   I : integer;
 begin
@@ -1266,7 +1266,7 @@ end;
 
 constructor TZCodeLabel.Create;
 begin
-  Usage := TObjectList.Create;
+  Usage := Contnrs.TObjectList.Create;
   Self.Definition := -1;
 end;
 
@@ -1289,17 +1289,19 @@ var
   I : integer;
 begin
   Result := S;
+  {$ifndef fpc}
   {$IF CompilerVersion>29}  //LastIndexOf is broken in Xe8
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
   {$ENDIF}
+  {$endif}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable; ReturnType : TZcDataType;
-  GlobalNames : TObjectList;
+  GlobalNames : Contnrs.TObjectList;
   ExpKind : TExpressionKind);
 var
   Compiler : TZc;

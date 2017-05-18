@@ -49,7 +49,7 @@ uses
   QMenus,
   QSynUnicode,
 {$ELSE}
-  Menus,
+  Vcl.Menus,
   SynUnicode,
 {$ENDIF}
   Classes,
@@ -520,7 +520,7 @@ begin
 {$IFDEF SYN_CLX}
   Result := QMenus.ShortCut(Key, Shift);
 {$ELSE}
-  Result := Menus.ShortCut(Key, Shift);
+  Result := Vcl.Menus.ShortCut(Key, Shift);
 {$ENDIF}
 end;
 
@@ -562,7 +562,7 @@ begin
 {$IFDEF SYN_CLX}
   QMenus.ShortCutToKey(Value, NewKey, NewShift);
 {$ELSE}
-  Menus.ShortCutToKey(Value, NewKey, NewShift);
+  Vcl.Menus.ShortCutToKey(Value, NewKey, NewShift);
 {$ENDIF}
 
   if (NewKey <> Key) or (NewShift <> Shift) then
@@ -602,7 +602,7 @@ begin
 {$IFDEF SYN_CLX}
   QMenus.ShortCutToKey(Value, NewKey, NewShift);
 {$ELSE}
-  Menus.ShortCutToKey(Value, NewKey, NewShift);
+  Vcl.Menus.ShortCutToKey(Value, NewKey, NewShift);
 {$ENDIF}
   if (NewKey <> Key2) or (NewShift <> Shift2) then
   begin
@@ -616,7 +616,7 @@ begin
 {$IFDEF SYN_CLX}
   Result := QMenus.ShortCut(Key2, Shift2);
 {$ELSE}
-  Result := Menus.ShortCut(Key2, Shift2);
+  Result := Vcl.Menus.ShortCut(Key2, Shift2);
 {$ENDIF}
 end;
 

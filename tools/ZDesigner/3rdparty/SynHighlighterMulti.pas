@@ -259,7 +259,7 @@ uses
   QSynRegExpr,
   QSynEditStrConst,
 {$ELSE}
-  Graphics,
+  Vcl.Graphics,
   SynEditMiscProcs,
   SynRegExpr,
   SynEditStrConst,

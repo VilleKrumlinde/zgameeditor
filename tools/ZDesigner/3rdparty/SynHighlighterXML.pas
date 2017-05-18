@@ -64,7 +64,7 @@ uses
   QSynEditHighlighter,
   QSynUnicode,
 {$ELSE}
-  Windows, Messages, Controls, Graphics, Registry,
+  Windows, Messages, Vcl.Controls, Vcl.Graphics, Registry,
   SynEditTypes,
   SynEditHighlighter,
   SynUnicode,

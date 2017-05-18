@@ -54,9 +54,9 @@ uses
 {$ELSE}
   Windows,
   Messages,
-  Graphics,
-  Controls,
-  Forms,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
   SynEditTypes,
 {$ENDIF}
   SysUtils,

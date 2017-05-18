@@ -132,7 +132,7 @@ type
 implementation
 
 uses ZLog,SysUtils,ZMath,Renderer,
-  frm3dsImportOptions, Controls, Forms, DesignerGUI;
+  frm3dsImportOptions, Vcl.Controls, Vcl.Forms, DesignerGUI;
 
 { T3dsFileParser }
 

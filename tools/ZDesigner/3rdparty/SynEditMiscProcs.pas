@@ -54,7 +54,7 @@ uses
   QSynUnicode,
 {$ELSE}
   Windows,
-  Graphics,
+  Vcl.Graphics,
   SynEditTypes,
   SynEditHighlighter,
   SynUnicode,

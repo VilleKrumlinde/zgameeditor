@@ -28,9 +28,9 @@ program ZDesigner;
 {$endif}
 
 uses
-  Forms,
+  Vcl.Forms,
   Windows,
-  HTMLHelpViewer,
+  Vcl.HTMLHelpViewer,
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',

@@ -22,8 +22,8 @@ unit DesignerGui;
 
 interface
 
-uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,
-  Windows, BitmapProducers;
+uses Vcl.Controls,Classes,Vcl.ExtCtrls,ZClasses,Vcl.ComCtrls,Contnrs,Vcl.Forms,Vcl.Menus,Vcl.Graphics,
+  Winapi.Windows, BitmapProducers;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -97,8 +97,8 @@ procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string
 
 implementation
 
-uses StdCtrls,System.SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
-  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,AxCtrls,CommCtrl,
+uses Vcl.StdCtrls,System.SysUtils,Math,Vcl.Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
+  Vcl.ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,Vcl.AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
   Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath,
@@ -1343,11 +1343,11 @@ end;
 
 { TZBinaryPropEdit }
 
-function GraphicToBitmap(Pic :TPicture) : Graphics.TBitmap;
+function GraphicToBitmap(Pic :TPicture) : Vcl.Graphics.TBitmap;
 var
-  Bmp: Graphics.TBitmap;
+  Bmp: Vcl.Graphics.TBitmap;
 begin
-  Bmp := Graphics.TBitmap.Create;
+  Bmp := Vcl.Graphics.TBitmap.Create;
   if Pic.Graphic is TPngImage then
   begin
     (Pic.Graphic as TPngImage).AssignTo(Bmp);
@@ -1363,14 +1363,14 @@ begin
   Result := Bmp;
 end;
 
-function BitmapFromGdi(const FileName : string) : Graphics.TBitmap;
+function BitmapFromGdi(const FileName : string) : Vcl.Graphics.TBitmap;
 var
   Pic: TGPBitmap;
   I,J : integer;
   P : PInteger;
 begin
   Pic := TGPBitmap.Create(FileName);
-  Result := Graphics.TBitmap.Create;
+  Result := Vcl.Graphics.TBitmap.Create;
   Result.PixelFormat := pf32bit;
   Result.SetSize(Pic.GetWidth,Pic.GetHeight);
   for I := 0 to Pic.GetHeight-1 do
@@ -1389,7 +1389,7 @@ procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string
 var
   Pic : TPicture;
   OwnBm : boolean;
-  Bm : Graphics.TBitmap;
+  Bm : Vcl.Graphics.TBitmap;
   X,Y : integer;
   R,G,B,A : byte;
   ZBm : TZBitmap;
@@ -1410,7 +1410,7 @@ begin
     end;
 
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
-    if not (Pic.Graphic is Graphics.TBitmap) then
+    if not (Pic.Graphic is Vcl.Graphics.TBitmap) then
     begin
       Bm := BitmapFromGdi(FileName);
 //      Bm := GraphicToBitmap(Pic);

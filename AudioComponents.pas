@@ -148,7 +148,7 @@ var
 
 implementation
 
-uses ZApplication,ZExpressions,ZMath, ZPlatform, BeroAudioOGGVorbisTremor
+uses ZApplication,ZExpressions,ZMath, ZPlatform, BeRoAudioOGGVorbisTremor
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -674,7 +674,7 @@ begin
 end;
 
 
-function ogg_fread(ptr:pointer;size,nmemb:NativeUInt;datasource:pointer):NativeUInt;
+function ogg_fread(ptr:pointer;size,nmemb:BeRoAudioOGGPtrUInt;datasource:pointer):BeRoAudioOGGPtrUInt;
 //var res:integer;
 var
   bytes : integer;

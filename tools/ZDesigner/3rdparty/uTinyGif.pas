@@ -10,7 +10,7 @@ unit uTinyGif;
 
 interface
 
-uses windows, classes, sysutils, graphics, axctrls;
+uses windows, classes, sysutils, Vcl.graphics, Vcl.axctrls;
 
 type
   TTinyGifImage = class (TOleGraphic)

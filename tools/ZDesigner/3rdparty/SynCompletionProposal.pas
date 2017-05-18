@@ -66,13 +66,13 @@ uses
 {$ELSE}
   Windows,
   Messages,
-  Graphics,
-  Forms,
-  Controls,
-  StdCtrls,
-  ExtCtrls,
-  Menus,
-  Dialogs,
+  Vcl.Graphics,
+  Vcl.Forms,
+  Vcl.Controls,
+  Vcl.StdCtrls,
+  Vcl.ExtCtrls,
+  Vcl.Menus,
+  Vcl.Dialogs,
   SynEditTypes,
   SynEditKeyCmds,
   SynEditHighlighter,
@@ -3077,7 +3077,7 @@ begin
   // Belongs to Missing-ShowWindow-Workaround
   FIgnoreFocusCommands := False;
 {$ELSE}
-  fShortCut := Menus.ShortCut(Ord(' '), [ssCtrl]);
+  fShortCut := Vcl.Menus.ShortCut(Ord(' '), [ssCtrl]);
 {$ENDIF}
   Options := DefaultProposalOptions;
   fEditors := TList.Create;
@@ -3467,7 +3467,7 @@ begin
 {$IFDEF SYN_CLX}
   fShortCut := QMenus.ShortCut(Ord(' '), [ssShift]);
 {$ELSE}
-  fShortCut := Menus.ShortCut(Ord(' '), [ssShift]);
+  fShortCut := Vcl.Menus.ShortCut(Ord(' '), [ssShift]);
 {$ENDIF}
 end;
 

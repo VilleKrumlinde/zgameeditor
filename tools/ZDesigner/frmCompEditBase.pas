@@ -3,8 +3,8 @@ unit frmCompEditBase;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ZClasses, DesignerGUI;
+  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.StdCtrls, ZClasses, DesignerGUI;
 
 type
   TCompEditFrameBaseType = class of TCompEditFrameBase;

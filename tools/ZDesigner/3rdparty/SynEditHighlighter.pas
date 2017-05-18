@@ -43,7 +43,7 @@ uses
   QSynEditMiscClasses,
   QSynUnicode,
 {$ELSE}
-  Graphics,
+  Vcl.Graphics,
   Windows,
   Registry,
   IniFiles,

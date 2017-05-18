@@ -8,7 +8,7 @@ procedure GoUrl(const Url : string);
 
 implementation
 
-uses ShellApi,Forms,WinTypes;
+uses ShellApi,Vcl.Forms,WinTypes;
 
 const
   HelpRoot = 'http://www.zgameeditor.org/';

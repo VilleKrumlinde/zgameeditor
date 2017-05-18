@@ -60,7 +60,7 @@ uses
 {$ENDIF}
   Classes,
   SysUtils,
-  Graphics;
+  Vcl.Graphics;
 
 type
   TSynEditRange = pointer;

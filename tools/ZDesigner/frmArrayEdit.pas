@@ -3,8 +3,8 @@ unit frmArrayEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs,ZExpressions, Grids, StdCtrls, ZClasses, ComCtrls;
+  Winapi.Windows, Winapi.Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs,ZExpressions, Vcl.Grids, Vcl.StdCtrls, ZClasses, Vcl.ComCtrls;
 
 type
   TArrayEditForm = class(TForm)
@@ -39,7 +39,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesignerGUI,Clipbrd;
+uses DesignerGUI,Vcl.Clipbrd;
 
 { TArrayEditForm }
 

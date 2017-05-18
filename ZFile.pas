@@ -52,9 +52,6 @@ type
     Action : (faRead,faWrite);
     ZFile : TZFile;
     procedure Execute; override;
-    {$ifndef minimal}
-    function GetDisplayName: AnsiString; override;
-    {$endif}
   end;
 
   TFileMoveData = class(TCommand)
@@ -63,9 +60,6 @@ type
   public
     ZProperty : TZExpressionPropValue;
     procedure Execute; override;
-    {$ifndef minimal}
-    function GetDisplayName: AnsiString; override;
-    {$endif}
   end;
 
 implementation
@@ -303,16 +297,6 @@ begin
   {$endif}
 end;
 
-{$ifndef minimal}
-function TFileAction.GetDisplayName: AnsiString;
-begin
-  Result := inherited GetDisplayName;
-  if Assigned(Self.ZFile) then
-    Result := Result + '  ' + AnsiString(FileActionNames[ Ord(Action) ]) + ' ' + ZFile.Name;
-end;
-{$endif}
-
-
 procedure TZFile.InitAfterPropsAreSet;
 begin
   inherited;
@@ -391,14 +375,6 @@ begin
       end;
   end;
 end;
-
-{$ifndef minimal}
-function TFileMoveData.GetDisplayName: AnsiString;
-begin
-  Result := inherited GetDisplayName;
-  Result := Result + '  ' + AnsiString(ZProperty.Source);
-end;
-{$endif}
 
 initialization
 

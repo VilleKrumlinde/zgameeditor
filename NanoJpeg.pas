@@ -135,7 +135,7 @@ end;
 {$elseif defined(CPUX64)}
 asm
   mov eax,i
-  mov cl,j
+  mov ecx,j
   sar eax,cl
 end;
 {$elseif defined(Android)}

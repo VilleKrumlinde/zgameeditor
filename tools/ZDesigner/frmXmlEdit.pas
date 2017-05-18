@@ -3,8 +3,8 @@ unit frmXmlEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, SynEdit, ExtCtrls;
+  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, Vcl.StdCtrls, SynEdit, Vcl.ExtCtrls;
 
 type
   TXmlEditForm = class(TForm)

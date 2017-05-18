@@ -3,8 +3,8 @@ unit frmSoundEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, frmCompEditBase,
-  Dialogs, ComCtrls, ExtCtrls, StdCtrls, Spin, ZClasses, DesignerGUI, AudioComponents;
+  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, frmCompEditBase,
+  Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Samples.Spin, ZClasses, DesignerGUI, AudioComponents;
 
 type
   TSoundEditFrame = class(TCompEditFrameBase)
@@ -107,7 +107,7 @@ implementation
 {$R *.dfm}
 
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
-  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types, Clipbrd;
+  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types, Vcl.Clipbrd;
 
 const
   NoteKeys : string = 'awsedftgyhuj';

@@ -36,7 +36,7 @@ type
     Id : string;
     Children : TZcOpList;
     Ref : TObject;
-    constructor Create(Owner : TObjectList); overload; virtual;
+    constructor Create(Owner : Contnrs.TObjectList); overload; virtual;
     constructor Create; overload;
     destructor Destroy; override;
     function ToString : string; reintroduce; virtual;
@@ -101,9 +101,9 @@ type
   public
     Locals : TObjectList<TZcOpLocalVar>;
     Arguments : TObjectList<TZcOpArgumentVar>;
-    Statements : TObjectList;
+    Statements : Contnrs.TObjectList;
     ReturnType : TZcDataType;
-    constructor Create(Owner : TObjectList); override;
+    constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
     function Optimize : TZcOp; override;
@@ -136,7 +136,7 @@ type
     ValueOp : TZcOp;
     CaseOps : TZcOpList;
     StatementsOps : TZcOpList;
-    constructor Create(Owner : TObjectList); override;
+    constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
     function Optimize : TZcOp; override;
@@ -144,14 +144,14 @@ type
 
   TZcOpInvokeComponent = class(TZcOp)
   public
-    constructor Create(Owner : TObjectList); override;
+    constructor Create(Owner : Contnrs.TObjectList); override;
     function ToString : string; override;
   end;
 
   TZcOpReinterpretCast = class(TZcOp)
   public
     Typ : TZcDataType;
-    constructor Create(Owner : TObjectList); override;
+    constructor Create(Owner : Contnrs.TObjectList); override;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
   end;
@@ -177,15 +177,15 @@ function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : double;
 function PropTypeToZType(const PTyp : TZPropertyType) : TZcDataType;
 
-function GetBuiltInFunctions : TObjectList;
-function GetBuiltInConstants : TObjectList;
+function GetBuiltInFunctions : Contnrs.TObjectList;
+function GetBuiltInConstants : Contnrs.TObjectList;
 
 procedure CleanUp;
 
 var
   //Nodes owned by the current compiled function/expression
   //Used for memory management
-  FunctionCleanUps : TObjectList;
+  FunctionCleanUps : Contnrs.TObjectList;
 
   //State shared between this unit and Zc-compiler
   CompilerContext : record
@@ -202,9 +202,9 @@ implementation
 uses SysUtils,Math,Compiler,Classes,StrUtils;
 
 var
-  BuiltInFunctions : TObjectList=nil;
-  BuiltInConstants : TObjectList=nil;
-  BuiltInCleanUps : TObjectList;
+  BuiltInFunctions : Contnrs.TObjectList=nil;
+  BuiltInConstants : Contnrs.TObjectList=nil;
+  BuiltInCleanUps : Contnrs.TObjectList;
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
@@ -241,7 +241,7 @@ begin
     Result.Children.Add(Op.Clone);
 end;
 
-constructor TZcOp.Create(Owner : TObjectList);
+constructor TZcOp.Create(Owner : Contnrs.TObjectList);
 begin
   if Owner=nil then
     Owner := FunctionCleanUps;
@@ -720,11 +720,11 @@ end;
 
 { TZcOpFunctionBase }
 
-constructor TZcOpFunctionBase.Create(Owner: TObjectList);
+constructor TZcOpFunctionBase.Create(Owner: Contnrs.TObjectList);
 begin
   inherited;
   Kind := zcFunction;
-  Statements := TObjectList.Create(False);
+  Statements := Contnrs.TObjectList.Create(False);
   Locals := TObjectList<TZcOpLocalVar>.Create(False);
   Arguments := TObjectList<TZcOpArgumentVar>.Create(True);
 end;
@@ -1320,8 +1320,8 @@ var
   end;
 
 begin
-  BuiltInFunctions := TObjectList.Create(False);
-  BuiltInCleanUps := TObjectList.Create(True);
+  BuiltInFunctions := Contnrs.TObjectList.Create(False);
+  BuiltInCleanUps := Contnrs.TObjectList.Create(True);
 
   MakeOne('sin',fcSin,'FF');
   MakeOne('sqrt',fcSqrt,'FF');
@@ -1379,7 +1379,7 @@ begin
   MakeOne('__getLValue',fcGenLValue,'VF');
   TZcOpFunctionBuiltIn(BuiltInFunctions.Last).Arguments.Last.Typ.IsPointer := True;
 
-  BuiltInConstants := TObjectList.Create(True);
+  BuiltInConstants := Contnrs.TObjectList.Create(True);
 
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','PI');
@@ -1403,14 +1403,14 @@ begin
 end;
 
 
-function GetBuiltInFunctions : TObjectList;
+function GetBuiltInFunctions : Contnrs.TObjectList;
 begin
   if BuiltInFunctions=nil then
     InitBuiltIns;
   Result := BuiltInFunctions;
 end;
 
-function GetBuiltInConstants : TObjectList;
+function GetBuiltInConstants : Contnrs.TObjectList;
 begin
   if BuiltInConstants=nil then
     InitBuiltIns;
@@ -1436,7 +1436,7 @@ end;
 
 { TZcOpSwitch }
 
-constructor TZcOpSwitch.Create(Owner: TObjectList);
+constructor TZcOpSwitch.Create(Owner: Contnrs.TObjectList);
 begin
   inherited;
   CaseOps := TZcOpList.Create(False);
@@ -1504,7 +1504,7 @@ end;
 
 { TZcOpInvokeComponent }
 
-constructor TZcOpInvokeComponent.Create(Owner: TObjectList);
+constructor TZcOpInvokeComponent.Create(Owner: Contnrs.TObjectList);
 begin
   inherited;
   Self.Kind := zcInvokeComponent;
@@ -1526,7 +1526,7 @@ end;
 
 { TZcOpReinterpretCast }
 
-constructor TZcOpReinterpretCast.Create(Owner: TObjectList);
+constructor TZcOpReinterpretCast.Create(Owner: Contnrs.TObjectList);
 begin
   inherited;
   Self.Kind := zcReinterpretCast;
@@ -1659,7 +1659,7 @@ end;
 
 initialization
 
-  FunctionCleanUps := TObjectList.Create(True);
+  FunctionCleanUps := Contnrs.TObjectList.Create(True);
   with Prototypes do
   begin
     Mat4Array := TDefineArray.Create(nil);

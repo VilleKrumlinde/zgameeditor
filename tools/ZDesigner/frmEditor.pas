@@ -25,12 +25,12 @@ unit frmEditor;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
-  ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
-  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
-  ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
-  Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
+  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, ZClasses, DesignerGui, GLPanel, Vcl.ComCtrls, Vcl.Menus, Vcl.StdCtrls,
+  Vcl.ActnList, Vcl.ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
+  uSymTab, frmMusicEdit, ZLog, Vcl.Buttons, Vcl.StdActns, Vcl.ExtCtrls,
+  Vcl.ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
+  Vcl.Imaging.Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
   Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl,
   System.ImageList, frmCustomPropEditBase;
 
@@ -450,10 +450,10 @@ implementation
 
 uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   ShellApi, SynEditHighlighter, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
-  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd, unitResourceDetails,
+  dmCommon, frmAbout, uHelp, frmToolMissing, Vcl.Clipbrd, unitResourceDetails,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
-  frmAndroidApk, Winapi.Imm, ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
+  frmAndroidApk, Winapi.Imm, Vcl.ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
   frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit;
 
 { TEditorForm }

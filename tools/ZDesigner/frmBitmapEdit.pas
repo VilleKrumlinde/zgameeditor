@@ -3,9 +3,9 @@ unit frmBitmapEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
-  Menus, StdCtrls,GlPanel;
+  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, frmCompEditBase, Vcl.ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
+  Vcl.Menus, Vcl.StdCtrls,GlPanel;
 
 type
   TBitmapEditFrame = class(TCompEditFrameBase)
@@ -70,7 +70,7 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, Vcl.ExtDlgs,
   System.Types, OpenGL12, Renderer, ZOpenGL;
 
 {$R *.dfm}

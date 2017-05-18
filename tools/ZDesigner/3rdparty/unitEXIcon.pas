@@ -42,7 +42,7 @@ unit unitExIcon;
 
 interface
 
-uses Windows, Classes, SysUtils, Graphics, Controls;
+uses Windows, Classes, SysUtils, Vcl.Graphics, Vcl.Controls;
 
 type
 
@@ -229,7 +229,7 @@ var
 
 implementation
 
-uses Clipbrd;
+uses Vcl.Clipbrd;
 
 resourceString
   rstInvalidIcon           = 'Invalid Icon or Cursor';

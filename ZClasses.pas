@@ -372,7 +372,7 @@ type
     procedure DesignerReset; virtual;  //Reset house-keeping state (such as localtime in animators)
     function GetOwner : TZComponent;
     procedure SetString(const PropName : string; const Value : AnsiString);
-    procedure GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
+    procedure GetAllChildren(List : contnrs.TObjectList; IncludeExpressions : boolean);
     {$endif}
   end;
 
@@ -631,10 +631,10 @@ const
  ('void'),('#reference'),('null'),('#array'));
 
 
-procedure GetAllObjects(C : TZComponent; List : TObjectList);
+procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
 function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
-procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+procedure GetReferersTo(Root, Target : TZComponent; List : contnrs.TObjectList);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 
 var
@@ -644,8 +644,11 @@ var
 implementation
 
 uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
-  {$ifndef minimal},LibXmlParser,AnsiStrings,SysUtils,Math,zlib,
-  Zc_Ops
+  {$ifndef minimal},LibXmlParser,{$ifndef fpc}AnsiStrings,{$endif}SysUtils,Math,zlib
+  ,Zc_Ops
+  {$endif}
+  {$ifdef fpc}
+  ,zstream,strutils
   {$endif}
   ;
 
@@ -2465,7 +2468,7 @@ var
 
   function InGetBinary(const BinaryValue : TZBinaryPropValue) : string;
   var
-    Zs : zlib.TCompressionStream;
+    Zs : TCompressionStream;
     Mem : TMemoryStream;
   begin
     Mem := TMemoryStream.Create;
@@ -2478,7 +2481,7 @@ var
       end;
       Mem.Position:=0;
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PAnsiChar(Mem.Memory),PChar(Result),Mem.Size);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),PAnsiChar(Result),Mem.Size);
     finally
       Mem.Free;
     end;
@@ -2512,11 +2515,13 @@ begin
         Continue;
       case Prop.PropertyType of
         zptString :
+          {$ifndef fpc}
           if (AnsiStrings.AnsiPos(#13,Value.StringValue)=0) {and
             (Pos('<',Value.StringValue)=0) and
             (Pos('>',Value.StringValue)=0)} then
             NormalProps.Add(Prop)
           else
+          {$endif}
             NestedProps.Add(Prop);
         zptComponentList :
           NestedProps.Add(Prop);
@@ -3123,7 +3128,7 @@ var
   procedure InDecodeBinary(const HexS : string; var BinaryValue : TZBinaryPropValue);
   var
     CompMem,DecompMem : TMemoryStream;
-    Zs : zlib.TDecompressionStream;
+    Zs : TDecompressionStream;
     S : ansistring;
     Buf : array[0..1023] of byte;
     I : integer;
@@ -3132,7 +3137,7 @@ var
     DecompMem := TMemoryStream.Create;
     try
       SetLength(S,Length(HexS) div 2);
-      Classes.HexToBin(PChar(HexS),PAnsiChar(S),Length(S));
+      Classes.HexToBin({$ifdef fpc}PAnsiChar(HexS){$else}PChar(HexS){$endif},PAnsiChar(S),Length(S));
 
       CompMem.Write(S[1],Length(S));
       CompMem.Position := 0;
@@ -3304,7 +3309,11 @@ var
     begin
       if AnsiPos(Name,L)=0 then
         Exit;
+      {$ifdef fpc}
+      Result := ReplaceText(Result,Name,NewName);
+      {$else}
       Result := AnsiReplaceText(Result,Name,NewName);
+      {$endif}
     end;
 
   begin

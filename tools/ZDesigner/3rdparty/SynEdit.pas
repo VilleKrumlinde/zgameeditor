@@ -67,17 +67,17 @@ uses
   QExtCtrls,
   QSynUnicode,
 {$ELSE}
-  Controls,
+  Vcl.Controls,
   Contnrs,
-  Graphics,
-  Forms,
-  StdCtrls,
-  ExtCtrls,
+  Vcl.Graphics,
+  Vcl.Forms,
+  Vcl.StdCtrls,
+  Vcl.ExtCtrls,
   Windows,
   Messages,
   {$IFDEF SYN_COMPILER_4_UP}
-  StdActns,
-  Dialogs,
+  Vcl.StdActns,
+  Vcl.Dialogs,
   {$ENDIF}
   {$IFDEF SYN_COMPILER_7}
   Themes,
@@ -1126,7 +1126,7 @@ implementation
 
 uses
 {$IFDEF SYN_COMPILER_6_UP}
-  Consts,
+  Vcl.Consts,
 {$ENDIF}
 {$IFDEF SYN_CLX}
   QStdActns,
@@ -1134,7 +1134,7 @@ uses
   QSynEditWordWrap,
   QSynEditStrConst;
 {$ELSE}
-  Clipbrd,
+  Vcl.Clipbrd,
   ShellAPI,
   SynEditWordWrap,
   SynEditStrConst;

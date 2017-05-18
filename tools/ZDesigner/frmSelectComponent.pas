@@ -3,8 +3,8 @@ unit frmSelectComponent;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ComCtrls, ZClasses, StdCtrls;
+  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, Vcl.ComCtrls, ZClasses, Vcl.StdCtrls;
 
 type
   TSelectComponentForm = class(TForm)

@@ -6,7 +6,8 @@ implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses AudioPlayer, ZApplication, SyncObjs, Posix.Dlfcn, ZOpenGL,
+uses AudioPlayer, ZApplication, SyncObjs, 
+  {$ifdef fpc}dl,CocoaAll{$else}Posix.Dlfcn{$endif}, ZOpenGL,
   {$ifndef minimal}Sysutils{$endif};
 
 var
@@ -54,10 +55,12 @@ procedure Platform_Run(Callback : TRunCallback);
 begin
 end;
 
+{$ifndef fpc}
 const
   libCoreAnimation = '/System/Library/Frameworks/QuartzCore.framework/QuartzCore';
 
 function CACurrentMediaTime: double; cdecl; external libCoreAnimation name '_CACurrentMediaTime';
+{$endif}
 
 function Platform_GetTime : single;
 var
