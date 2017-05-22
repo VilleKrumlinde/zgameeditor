@@ -2014,24 +2014,66 @@ end;
 
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
 const
-  Int32Regs : array[0..3] of array[0..3] of byte =
-( ($41,$8B,$4A,0),  //mov ecx,[r10+x]
-  ($41,$8B,$52,0),
-  ($45,$8B,$42,0),
-  ($45,$8B,$4A,0)
-);
-  Int64Regs : array[0..3] of array[0..3] of byte =
+{$ifdef MSWINDOWS}
+  IntRegCount = 4;
+  FloatRegCount = 4;
+
+  Int64Regs : array[0..IntRegCount-1] of array[0..3] of byte =
 ( ($49,$8B,$4A,0), //mov rcx,[r10+x]
   ($49,$8B,$52,0),
   ($4d,$8B,$42,0),
   ($4d,$8B,$4A,0)
 );
-  Float32Regs : array[0..3] of array[0..5] of byte =
+
+  Int32Regs : array[0..IntRegCount-1] of array[0..3] of byte =
+( ($41,$8B,$4A,0),  //mov ecx,[r10+x]
+  ($41,$8B,$52,0),
+  ($45,$8B,$42,0),
+  ($45,$8B,$4A,0)
+);
+
+  Float32Regs : array[0..FloatRegCount-1] of array[0..5] of byte =
 ( ($66,$41,$0F,$6E,$42,0), //movd xmm0,[r10+x]
   ($66,$41,$0F,$6E,$4A,0),
   ($66,$41,$0F,$6E,$52,0),
   ($66,$41,$0F,$6E,$5A,0)
 );
+
+{$ELSE}
+  //Non MS-abi: https://en.wikipedia.org/wiki/X86_calling_conventions#x86-64_calling_conventions
+  IntRegCount = 6;
+  FloatRegCount = 8;
+
+  Int64Regs : array[0..IntRegCount-1] of array[0..3] of byte =
+( ($49,$8B,$7A,0), //mov rdi,[r10+x]
+  ($49,$8B,$72,0),
+  ($49,$8B,$52,0),
+  ($49,$8B,$4A,0),
+  ($4D,$8B,$42,0),
+  ($4D,$8B,$4A,0)
+);
+
+  Int32Regs : array[0..IntRegCount-1] of array[0..3] of byte =
+( ($41,$8B,$7A,0),  //mov edi,[r10+x]
+  ($41,$8B,$72,0),
+  ($41,$8B,$52,0),
+  ($41,$8B,$4A,0),
+  ($45,$8B,$42,0),
+  ($45,$8B,$4A,0)
+);
+
+  Float32Regs : array[0..FloatRegCount-1] of array[0..5] of byte =
+( ($66,$41,$0F,$6E,$42,0), //movd xmm0,[r10+x]
+  ($66,$41,$0F,$6E,$4A,0),
+  ($66,$41,$0F,$6E,$52,0),
+  ($66,$41,$0F,$6E,$5A,0),
+  ($66,$41,$0F,$6E,$62,0),
+  ($66,$41,$0F,$6E,$6A,0),
+  ($66,$41,$0F,$6E,$72,0),
+  ($66,$41,$0F,$6E,$7A,0)
+);
+{$ENDIF}
+
   Int32Stack1 : array[0..3] of byte = ($41,$8B,$42,0);  //mov eax,[r10+$10]
   Int32Stack2 : array[0..3] of byte = ($89,$44,$24,0);  //mov [rsp+$10],eax
   Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov rax,[r10+$10]
@@ -2055,41 +2097,63 @@ var
   OldProtect : dword;
   CodeSize : integer;
   StackOffs : integer;
+  UseStack : boolean;
 begin
-  CodeSize := 64 + 4 * ArgCount;
+  CodeSize := 64 + (6 * ArgCount);
   GetMem(Result,CodeSize);
 
   P := Result;
 
   if ArgCount>0 then
+    //Copy Args-ptr to R10
+    {$ifdef MSWINDOWS}
     W([$49,$89,$ca]); //mov r10,rcx
+    {$else}
+    W([$49,$89,$fa]); //mov r10,rdi
+    {$endif}
 
-  Offs := 0;
+  Offs := 0; //Offset in Args
   StackOffs := $28;
   for I := 0 to ArgCount-1 do
   begin
-    if I<4 then
-    begin
-      case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
-        zctInt :
+    UseStack := False;
+
+    case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
+      zctInt :
+        begin
+          if I<IntRegCount then
           begin
             W(Int32Regs[I]);
             P[-1] := Offs;
-          end;
-        zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4 :
+          end
+          else
+            UseStack := True;
+        end;
+      zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4 :
+        begin
+          if I<IntRegCount then
           begin
             W(Int64Regs[I]);
             P[-1] := Offs;
-          end;
-        zctFloat :
+          end
+          else
+            UseStack := True;
+        end;
+      zctFloat :
+        begin
+          if I<FloatRegCount then
           begin
             W(Float32Regs[I]);
             P[-1] := Offs;
-          end;
-      else
-        Assert(False,'This argument type not yet supported on 64-bit:');
-      end;
-    end else
+          end
+          else
+            UseStack := True;
+        end;
+    else
+      Assert(False,'This argument type not yet supported on 64-bit:');
+    end;
+
+    if UseStack then
     begin
       //push on stack
       case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
@@ -2112,6 +2176,7 @@ begin
       end;
       Inc(StackOffs, 8);
     end;
+
     Inc(Offs, SizeOf(NativeInt) );
   end;
 
