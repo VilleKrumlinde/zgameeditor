@@ -2481,7 +2481,7 @@ var
       end;
       Mem.Position:=0;
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PAnsiChar(Mem.Memory),PAnsiChar(Result),Mem.Size);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),{$ifdef fpc}PAnsiChar(Result){$else}PChar(Result){$endif},Mem.Size);
     finally
       Mem.Free;
     end;
@@ -3077,7 +3077,9 @@ end;
 
 procedure TZXmlReader.LoadFromFile(const FileName: string);
 begin
+  {$ifndef zgeviz}
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
+  {$endif}
   ExternalSymTab := False;
   SymTab := TSymbolTable.Create;
   MainXml.LoadFromFile(FileName);

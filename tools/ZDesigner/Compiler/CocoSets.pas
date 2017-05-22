@@ -29,8 +29,8 @@ type
     FBits: Pointer;
     procedure Error;
     procedure SetSize(Value: Integer);
-    procedure SetBit(Index: Integer; Value: Boolean);
-    function  GetBit(Index: Integer): Boolean;
+    procedure SetBit(Index: Integer; Value: Boolean); 
+    function  GetBit(Index: Integer): Boolean; {$ifdef fpc} ms_abi_default; {$endif}
     procedure SyncSize(other: TCocoSet);
   public
     class function Intersect(a,b: TCocoSet): TCocoSet;
@@ -183,18 +183,21 @@ begin
   end;
 end;
 
-function TCocoSet.GetBit(Index: Integer): Boolean; assembler;
+function TCocoSet.GetBit(Index: Integer): Boolean; assembler; {$ifdef fpc} ms_abi_default; {$endif}
 {$ifdef cpux64}
+
 asm
-        CMP     Index,[RCX].FSize
+        CMP     Index,Self.FSize
         JAE     @@1
-        MOV     RAX,[RCX].FBits
+        MOV     RAX,Self.FBits
         BT      [RAX],Index
         SBB     EAX,EAX
         AND     EAX,1
-        RET
+        JMP      @@2
 @@1:    MOV     EAX,0
+@@2:
 end;
+
 {$else}
 asm
         CMP     Index,[EAX].FSize
@@ -208,15 +211,33 @@ asm
 end;
 {$endif}
 
-procedure TCocoSet.SetBit(Index: Integer; Value: Boolean);  assembler;
+procedure TCocoSet.SetBit(Index: Integer; Value: Boolean); {$ifndef fpc}assembler;{$endif}
 {$ifdef cpux64}
-//begin
-//  if Index>=FSize then
-//  begin
-//    SetSize(Index+1);
-//  end;
-//  PByte(NativeInt(Self.FBits) + (Index shr 3))
-//end;
+
+{$ifdef fpc}
+var
+  P : pointer;
+begin
+  if Index>=FSize then
+  begin
+    SetSize(Index+1);
+  end;
+  P := Self.FBits;
+  asm
+    MOV     RAX,P
+    MOV     CL, Value
+    OR      CL,CL
+    JZ      @@2
+    MOV     R8D,Index
+    BTS     [RAX],R8
+    JMP     @@3
+@@2: 
+    BTR     [RAX],R8
+@@3:
+  end;
+end;
+
+{$else}
 asm
         CMP     Index,[RCX].FSize
         JAE     @@Size
@@ -242,6 +263,8 @@ asm
         POP     RCX
         JMP     @@1
 end;
+{$endif}
+
 {$else}
 asm
         CMP     Index,[EAX].FSize
