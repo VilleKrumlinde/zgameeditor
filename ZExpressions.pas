@@ -2084,7 +2084,6 @@ const
   Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov rax,[r10+$10]
   Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],rax
 var
-  I,Offs : integer;
   P : PByte;
 
   procedure W(const code : array of byte);
@@ -2099,6 +2098,7 @@ var
   end;
 
 var
+  I,FloatI,IntI,Offs : integer;
   OldProtect : dword;
   CodeSize : integer;
   StackOffs : integer;
@@ -2130,37 +2130,54 @@ begin
   StackOffs := 0;
   {$endif}
   
+  FloatI := 0; IntI := 0;
   for I := 0 to ArgCount-1 do
   begin
     UseStack := False;
 
+    {$ifdef MSWINDOWS}
+    //MS-calling convention uses registers for 4 first parameters only, regardless of float or int.
+    //Rest of the world uses 6 int + 8 float registers depending on argument types.
+    FloatI := I; 
+    IntI := I;
+    {$endif}
+
     case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
       zctInt :
         begin
-          if I<IntRegCount then
+          if IntI<IntRegCount then
           begin
-            W(Int32Regs[I]);
+            W(Int32Regs[IntI]);
             P[-1] := Offs;
+            {$ifndef MSWINDOWS}
+            Inc(IntI);
+            {$endif}
           end
           else
             UseStack := True;
         end;
       zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4 :
         begin
-          if I<IntRegCount then
+          if IntI<IntRegCount then
           begin
-            W(Int64Regs[I]);
+            W(Int64Regs[IntI]);
             P[-1] := Offs;
+            {$ifndef MSWINDOWS}
+            Inc(IntI);
+            {$endif}
           end
           else
             UseStack := True;
         end;
       zctFloat :
         begin
-          if I<FloatRegCount then
+          if FloatI<FloatRegCount then
           begin
-            W(Float32Regs[I]);
+            W(Float32Regs[FloatI]);
             P[-1] := Offs;
+            {$ifndef MSWINDOWS}
+            Inc(FloatI);
+            {$endif}
           end
           else
             UseStack := True;
@@ -2209,11 +2226,11 @@ end;
 
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 type
-  TFunc = function(Args : pointer) : NativeInt;
+  TFunc = function(Args : pointer) : NativeUInt;
   PFunc = ^TFunc;
 var
   I : integer;
-  RetVal : NativeInt;
+  RetVal : NativeUInt;
   Args : array[0..31] of NativeInt;
 begin
   if Self.Proc=nil then
