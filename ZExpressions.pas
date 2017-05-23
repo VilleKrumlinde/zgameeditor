@@ -519,6 +519,7 @@ implementation
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
+{$ifndef MSWINDOWS}, BaseUnix{$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo{$ifend}
 {$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 
@@ -2012,6 +2013,10 @@ procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
 end;
 
+{$ifndef MSWINDOWS}
+function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc.dylib' name 'mprotect';
+{$endif}
+
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
 const
 {$ifdef MSWINDOWS}
@@ -2099,8 +2104,14 @@ var
   StackOffs : integer;
   UseStack : boolean;
 begin
+
+  {$ifdef MSWINDOWS}
   CodeSize := 64 + (6 * ArgCount);
   GetMem(Result,CodeSize);
+  {$else}
+  CodeSize := 512; //Use fixed size so we don't have to save the size for unmap call
+  Result := fpmmap(nil,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC,MAP_PRIVATE or MAP_ANONYMOUS,-1,0);
+  {$endif}
 
   P := Result;
 
@@ -2113,7 +2124,12 @@ begin
     {$endif}
 
   Offs := 0; //Offset in Args
+  {$ifdef MSWINDOWS}
   StackOffs := $28;
+  {$else}
+  StackOffs := 0;
+  {$endif}
+  
   for I := 0 to ArgCount-1 do
   begin
     UseStack := False;
@@ -2186,6 +2202,8 @@ begin
 
   {$ifdef mswindows}
   VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+  {$else}
+  mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
   {$endif}
 end;
 
@@ -2230,7 +2248,11 @@ end;
 
 destructor TExpExternalFuncCall.Destroy;
 begin
+  {$ifdef MSWINDOWS}
   FreeMem(Trampoline);
+  {$else}
+  fpmunmap(Trampoline,512);  
+  {$endif}
 end;
 
 {$elseif defined(cpux86) or defined(CPU32)}  //CPU32 is for Freepascal
