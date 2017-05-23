@@ -3131,19 +3131,15 @@ var
   var
     CompMem,DecompMem : TMemoryStream;
     Zs : TDecompressionStream;
-    S : ansistring;
     Buf : array[0..1023] of byte;
     I : integer;
   begin
     CompMem := TMemoryStream.Create;
     DecompMem := TMemoryStream.Create;
     try
-      SetLength(S,Length(HexS) div 2);
-      Classes.HexToBin({$ifdef fpc}PAnsiChar(HexS){$else}PChar(HexS){$endif},PAnsiChar(S),Length(S));
-
-      CompMem.Write(S[1],Length(S));
+      CompMem.Size := Length(HexS) div 2;
       CompMem.Position := 0;
-
+      Classes.HexToBin({$ifdef fpc}PAnsiChar(AnsiString(HexS)){$else}PChar(HexS){$endif},PAnsiChar(CompMem.Memory),CompMem.Size);
       Zs := TDecompressionStream.Create(CompMem);
       try
         I := Zs.Read(Buf,SizeOf(Buf));
