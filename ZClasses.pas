@@ -2481,7 +2481,7 @@ var
       end;
       Mem.Position:=0;
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PAnsiChar(Mem.Memory),{$ifdef fpc}PAnsiChar(Result){$else}PChar(Result){$endif},Mem.Size);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),{$ifdef fpc}PAnsiChar(Result){$else}PWideChar(Result){$endif},Mem.Size);
     finally
       Mem.Free;
     end;
