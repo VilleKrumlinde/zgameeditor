@@ -961,6 +961,7 @@ var
   A : TDefineArray;
   L : TZArrayList;
   HasReturnValue : boolean;
+  I,J : integer;
 begin
   HasReturnValue := True;
   case Kind of
@@ -1137,11 +1138,17 @@ begin
         L := ZApp.Models.Get(I1);
         A.SizeDim1 := L.Count;
         P1 := A.GetData;
-        for I2 := 0 to L.Count-1 do
+        J := 0;
+        for I := 0 to L.Count-1 do
         begin
-          PPointer(P1)^ := L[I2];
-          Inc(PPointer(P1));
+          if TModel(L[I]).Active then
+          begin //Only copy non-removed models
+            PPointer(P1)^ := L[I];
+            Inc(PPointer(P1));
+            Inc(J);
+          end;
         end;
+        A.SizeDim1 := J; //Set to actual models copied over
         HasReturnValue := False;
       end;
     fcSleep :
