@@ -519,7 +519,7 @@ implementation
 
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
-{$ifndef MSWINDOWS}, BaseUnix{$endif}
+{$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo{$ifend}
 {$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 

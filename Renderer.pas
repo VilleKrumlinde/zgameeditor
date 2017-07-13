@@ -2560,9 +2560,15 @@ begin
   Driver := Self.ZApp.Driver;
 
   if Ts.Material=nil then
-    Ts.Material := CreateMaterialForSprites(Ts.Bitmap);
+    Ts.Material := CreateMaterialForSprites(Ts.Bitmap)
+  else
+    //It is possible that Ts.Bitmap has been assigned from code since last time,
+    //so we reassign it just in case.
+    TMaterialTexture(Ts.Material.Textures[0]).Texture := Ts.Bitmap;
+
   if (Driver.CurrentMaterial<>Ts.Material) and (Driver.CurrentMaterial<>nil) then
     CopySpriteMaterialProps(Ts.Material,Driver.CurrentMaterial);
+
   Driver.EnableMaterial(Ts.Material);
 
   Driver.RenderQuad(Ts.Bitmap,
