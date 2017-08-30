@@ -78,7 +78,8 @@ begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
-  FindDialog1.Tag := Integer(Syn);
+  Syn.CaretXY := BufferCoord(0,0); //Force search to start from beginning
+  FindDialog1.Tag := IntPtr(Syn);
   FindDialog1.Execute(Syn.Handle);
 end;
 
@@ -89,7 +90,8 @@ begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
-  ReplaceDialog1.Tag := Integer(Syn);
+  Syn.CaretXY := BufferCoord(0,0); //Force search/replace to start from beginning
+  ReplaceDialog1.Tag := IntPtr(Syn);
   ReplaceDialog1.Execute(Syn.Handle);
 end;
 
