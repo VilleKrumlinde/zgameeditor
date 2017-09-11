@@ -71,6 +71,9 @@ type
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId,
  ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId
+ {$ifndef minimal}
+ ,ExpIDEFuncCallClassId
+ {$endif}
 );
 
   TZComponent = class;

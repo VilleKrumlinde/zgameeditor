@@ -958,6 +958,11 @@ begin
   if (WantedType.Kind=zctInt) and (ExistingType.Kind=zctByte) then
     Exit(Op);
 
+  if ((WantedType.Kind in [zctModel,zctReference]) and (ExistingType.Kind = zctXptr)) then
+    Exit(Op);
+  if ((ExistingType.Kind in [zctModel,zctReference]) and (WantedType.Kind = zctXptr)) then
+    Exit(Op);
+
   if ((WantedType.Kind=zctNull) and (ExistingType.Kind in NullCompatible)) or
     ((ExistingType.Kind=zctNull) and (WantedType.Kind in NullCompatible)) then
     Exit(Op);
@@ -1279,6 +1284,7 @@ var
       'A' : Result.Kind := zctArray;
       'm' : Result.Kind := zctMat4;
       'v' : Result.Kind := zctVec2;
+      'X' : Result.Kind := zctXptr;
     else
       raise Exception.Create('Unknown type: ' + C);
     end;
@@ -1387,6 +1393,11 @@ begin
   MakeOne('vector4',fcVec4,'v4FFFF');
   MakeOne('sleep',fcSleep,'VI');
   MakeOne('startThread',fcStartThread,'VR{Thread}I');
+
+  MakeOne('findComponent',fcFindComponent,'XS');
+  MakeOne('createComponent',fcCreateComponent,'XXSS');
+  MakeOne('setNumericProperty',fcSetNumericProperty,'VXSIF');
+  MakeOne('setStringProperty',fcSetStringProperty,'VXSS');
 
   //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
   MakeOne('__getLValue',fcGenLValue,'VF');

@@ -270,7 +270,9 @@ type
      fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix,
      fcVec2,fcVec3,fcVec4
      {$ifndef minimal}
-     ,fcGenLValue
+     ,fcGenLValue,
+     //IDE
+     fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty
      {$endif}
      );
 
@@ -302,6 +304,14 @@ type
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
   end;
+
+  {$ifndef minimal}
+  //IDE/Visualizer functions
+  TExpIDEFuncCall = class(TExpFuncCallBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+  end;
+  {$endif}
 
   //Push ptr to element in array on stack, used with assign
   TExpArrayGetElement = class(TExpBase)
@@ -2647,6 +2657,87 @@ begin
   end;
 end;
 
+{ TExpIDEFuncCall }
+
+{$ifndef minimal}
+procedure TExpIDEFuncCall.Execute(Env : PExecutionEnvironment);
+var
+  P1,P2,P3 : pointer;
+  C : TZComponent;
+  Ci : TZComponentInfo;
+  Prop : TZProperty;
+  Value : TZPropertyValue;
+  V : single;
+  I : integer;
+begin
+  case Kind of
+    fcFindComponent :
+      begin
+        Env.StackPopToPointer(P1);
+        P2 := ZApp.Symtab.Lookup(String(PAnsiChar(P1)));
+        Env.StackPush(P2);
+      end;
+    fcCreateComponent :
+      begin
+        Env.StackPopToPointer(P1); //compname
+        Env.StackPopToPointer(P2); //proplistname
+        Env.StackPopToPointer(P3); //owner
+        if P2=nil then
+          ZHalt('CreateComponent called with owner null');
+        Ci := ZClasses.ComponentManager.GetInfoFromName(String(PAnsiChar(P1)));
+        Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
+        if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
+          ZHalt('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
+        C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
+        Env.StackPush(C);
+        ZLog.GetLog('Zc').Write('Creating component: ' + Ci.ZClassName,lleNormal);
+      end;
+    fcSetNumericProperty :
+      begin
+        //XSIF
+        V := Env.StackPopFloat;  //value
+        Env.StackPopTo(I); //index
+        Env.StackPopToPointer(P2); //propname
+        Env.StackPopToPointer(P1); //comp
+        Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
+        if Prop=nil then
+          ZHalt('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+        Value := TZComponent(P1).GetProperty(Prop); //Must read prop first, when modifying rects
+        case Prop.PropertyType of
+          zptFloat,zptScalar: Value.FloatValue := V;
+          zptRectf: Value.RectfValue.Area[I] := V;
+          zptColorf: Value.ColorfValue.V[I] := V;
+          zptInteger: Value.IntegerValue := Round(V);
+          zptVector3f: Value.Vector3fValue[I] := V;
+          zptByte: Value.ByteValue := Round(V);
+          zptBoolean: Value.BooleanValue := ByteBool(Round(V));
+        else
+          ZHalt('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+        end;
+        TZComponent(P1).SetProperty(Prop,Value);
+      end;
+    fcSetStringProperty :
+      begin
+        //XSS
+        Env.StackPopToPointer(P3); //value
+        Env.StackPopToPointer(P2); //propname
+        Env.StackPopToPointer(P1); //comp
+        Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
+        if Prop=nil then
+          ZHalt('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+        case Prop.PropertyType of
+          zptString : Value.StringValue := AnsiString(PAnsiChar(P3));
+          zptExpression : Value.ExpressionValue.Source := String(PAnsiChar(P3));
+        else
+          ZHalt('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+        end;
+        if (Prop.Name='Name') and Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
+          ZHalt('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+        TZComponent(P1).SetProperty(Prop,Value);
+      end;
+  end;
+end;
+{$endif}
 
 { TExpGetRawMemElement }
 
@@ -2798,5 +2889,10 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayUtil,ExpArrayUtilClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+
+  {$ifndef minimal}
+  ZClasses.Register(TExpIDEFuncCall,ExpIDEFuncCallClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  {$endif}
 
 end.
