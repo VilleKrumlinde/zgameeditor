@@ -233,7 +233,7 @@ begin
 
   if NilOld or (NewM.Shading<>OldM.Shading) then
   begin //This setting is relevant in glbProgrammable too
-    if (not NilOld) and (OldM.Shading=msWireframe) then
+    if (not NilOld) and (OldM.Shading in [msWireframe,msPoint]) then
     begin
       glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
       glLineWidth(1.0);
