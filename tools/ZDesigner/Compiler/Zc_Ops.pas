@@ -958,10 +958,16 @@ begin
   if (WantedType.Kind=zctInt) and (ExistingType.Kind=zctByte) then
     Exit(Op);
 
+  //Xptr <> Reference are accepted for SetNumericProperty function
   if ((WantedType.Kind in [zctModel,zctReference]) and (ExistingType.Kind = zctXptr)) then
     Exit(Op);
   if ((ExistingType.Kind in [zctModel,zctReference]) and (WantedType.Kind = zctXptr)) then
-    Exit(Op);
+  begin
+    //But do not allow array -> xptr without conversion
+    //(because Polar relies on it, we need to send vertices in array as xptr to opengl)
+    if not ((ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId)) then
+      Exit(Op);
+  end;
 
   if ((WantedType.Kind=zctNull) and (ExistingType.Kind in NullCompatible)) or
     ((ExistingType.Kind=zctNull) and (WantedType.Kind in NullCompatible)) then

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZExpression Comment="Loop and modify bitmaps" DesignDisable="1">
+      <Expression>
+<![CDATA[int i=0;
+Bitmap c;
+while(1) {
+ c=findComponent("bitmap" + intToStr(++i));
+ if(c==null)
+   break;
+ trace("Found bitmap " + c.name);
+ c.Width=c.Width*2;
+}]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="Create a list of bitmaps">
+      <Expression>
+<![CDATA[for(int i=1; i<10; i++) {
+  xptr c=createComponent(App,"Content","bitmap");
+  setStringProperty(c,"Name","Bitmap" + intToStr(i));
+  setNumericProperty(c,"Width",0,512);
+  setNumericProperty(c,"Height",0,512);
+
+  xptr nested;
+  if(i & 1) {
+    nested=createComponent(c,"Producers","BitmapExpression");
+    setStringProperty(nested,"Expression",
+      "Pixel=vector4(1.0," +
+      "abs(cos(Y*" + intToStr(random(4,3)) + ")) * ." + intToStr(rnd()*1000) + "," +
+      "abs(sin(X*" + intToStr(random(4,3)) + ")) * ." + intToStr(rnd()*1000) + "," +
+      "1.0);");
+  } else {
+    for(int j=0; j<3; j++) {
+      nested=createComponent(c,"Producers","BitmapRect");
+      setNumericProperty(nested,"Color",0,rnd());
+      setNumericProperty(nested,"Color",1,rnd());
+      setNumericProperty(nested,"Size",0,rnd());
+      setNumericProperty(nested,"Size",1,rnd());
+      setNumericProperty(nested,"Size",2,rnd());
+      setNumericProperty(nested,"Size",3,rnd());
+    }
+  }
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+</ZApplication>
