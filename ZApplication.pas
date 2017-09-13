@@ -156,6 +156,7 @@ type
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
     OnGetLibraryPath : function : string of object;
+    HasScriptCreatedComponents : boolean;
     {$endif}
     {$ifdef zgeviz}
     ZgeVizCameraRotation : TZVector3f;

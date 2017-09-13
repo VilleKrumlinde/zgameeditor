@@ -385,7 +385,7 @@ begin
   for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
     Ci := TZComponentInfo(Infos[I]);
-    if Ci.NoUserCreate then
+    if (not Assigned(Ci)) or Ci.NoUserCreate then
       Continue;
     if not (Ci.ZClass.InheritsFrom(TContentProducer)) then
       Continue;

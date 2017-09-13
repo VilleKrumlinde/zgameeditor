@@ -272,7 +272,8 @@ type
      {$ifndef minimal}
      ,fcGenLValue,
      //IDE
-     fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty
+     fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty,
+     fcSetObjectProperty
      {$endif}
      );
 
@@ -2691,6 +2692,7 @@ begin
         C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
         Env.StackPush(C);
         ZLog.GetLog('Zc').Write('Creating component: ' + Ci.ZClassName,lleNormal);
+        ZApp.HasScriptCreatedComponents := True;
       end;
     fcSetNumericProperty :
       begin
@@ -2731,8 +2733,27 @@ begin
         else
           ZHalt('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
-        if (Prop.Name='Name') and Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
-          ZHalt('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+        if (Prop.Name='Name') then
+        begin
+          if Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
+            ZHalt('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+          ZApp.SymTab.Add(String(PAnsiChar(P3)),TZComponent(P1));
+        end;
+        TZComponent(P1).SetProperty(Prop,Value);
+      end;
+    fcSetObjectProperty :
+      begin
+        Env.StackPopToPointer(P3); //value
+        Env.StackPopToPointer(P2); //propname
+        Env.StackPopToPointer(P1); //comp
+        Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
+        if Prop=nil then
+          ZHalt('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+        case Prop.PropertyType of
+          zptComponentRef : Value.ComponentValue := P3;
+        else
+          ZHalt('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+        end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
   end;

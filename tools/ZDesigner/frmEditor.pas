@@ -702,6 +702,8 @@ begin
   Infos := ZClasses.ComponentManager.GetAllInfos;
   for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
+    if I=AnyComponentClassId then
+      Continue;
     Ci := TZComponentInfo(Infos[I]);
     Assert(Ci<>nil, 'Component info=nil. Component class removed?');
     if Ci.NoUserCreate then
@@ -2940,6 +2942,11 @@ begin
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
   AppStopButton.Perform(CM_RECREATEWND, 0, 0);
   Self.ShowHint := True;
+  if ZApp.HasScriptCreatedComponents then
+  begin
+    ZApp.HasScriptCreatedComponents := False;
+    Tree.SetRootComponent(Self.Root);
+  end;
 end;
 
 procedure TEditorForm.ResetComponentActionExecute(Sender: TObject);
@@ -4348,7 +4355,7 @@ begin
     for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
     begin
       Ci := TZComponentInfo(Infos[Id]);
-      if UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1 then
+      if Assigned(Ci) and (UsedComponents.IndexOf(Ci.ZClass.ClassName)=-1) then
         ClassesToRemove.Add(Ci.ZClass.ClassName);
     end;
     if UsedComponents.IndexOf('TMeshImplicit')=-1 then
@@ -4480,7 +4487,8 @@ begin
   for Id := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
     Ci := TZComponentInfo(Infos[Id]);
-    NamesToRemove.Add(Ci.ZClass.ClassName)
+    if Assigned(Ci) then
+      NamesToRemove.Add(Ci.ZClass.ClassName)
   end;
   NamesToRemove.CustomSort(SortOnLength);
 

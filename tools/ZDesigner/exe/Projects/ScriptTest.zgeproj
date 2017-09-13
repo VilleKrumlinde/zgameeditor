@@ -822,6 +822,15 @@ if(s!="test42")
   Error=2001;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="ide funcs">
+      <Expression>
+<![CDATA[Component c = findComponent("Global1");
+
+setNumericProperty(c,"IntValue",0,10);
+if (Global1!=10)
+  Error=2002;]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>

@@ -16,13 +16,14 @@ while(1) {
     </ZExpression>
     <ZExpression Comment="Create a list of bitmaps">
       <Expression>
-<![CDATA[for(int i=1; i<10; i++) {
-  xptr c=createComponent(App,"Content","bitmap");
+<![CDATA[Component prevC=null;
+for(int i=1; i<10; i++) {
+  Component c=createComponent(App,"Content","bitmap");
   setStringProperty(c,"Name","Bitmap" + intToStr(i));
   setNumericProperty(c,"Width",0,512);
   setNumericProperty(c,"Height",0,512);
 
-  xptr nested;
+  Component nested;
   if(i & 1) {
     nested=createComponent(c,"Producers","BitmapExpression");
     setStringProperty(nested,"Expression",
@@ -31,6 +32,11 @@ while(1) {
       "abs(sin(X*" + intToStr(random(4,3)) + ")) * ." + intToStr(rnd()*1000) + "," +
       "1.0);");
   } else {
+    if(prevC!=null) {
+      nested=createComponent(c,"Producers","BitmapLoad");
+      setObjectProperty(nested,"Bitmap",prevC);
+    }
+
     for(int j=0; j<3; j++) {
       nested=createComponent(c,"Producers","BitmapRect");
       setNumericProperty(nested,"Color",0,rnd());
@@ -41,6 +47,7 @@ while(1) {
       setNumericProperty(nested,"Size",3,rnd());
     }
   }
+  prevC = C;
 }]]>
       </Expression>
     </ZExpression>

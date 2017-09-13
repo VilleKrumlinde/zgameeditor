@@ -222,7 +222,12 @@ end;
 function GetZcTypeName(const Typ : TZcDataType) : string;
 begin
   if Typ.Kind=zctReference then
-    Result := ComponentManager.GetInfoFromId(Typ.ReferenceClassId).ZClassName
+  begin
+    if Typ.ReferenceClassId=AnyComponentClassId then
+      Result := ZcTypeNames[Typ.Kind]
+    else
+      Result := ComponentManager.GetInfoFromId(Typ.ReferenceClassId).ZClassName;
+  end
   else
     Result := ZcTypeNames[Typ.Kind];
 end;
@@ -927,7 +932,11 @@ begin
 
   if (ExistingType.Kind=zctReference) and (WantedType.Kind=zctReference) and
     (ExistingType.ReferenceClassId<>WantedType.ReferenceClassId) then
+  begin
+    if (WantedType.ReferenceClassId=AnyComponentClassId) or (ExistingType.ReferenceClassId=AnyComponentClassId) then
+      Exit(Op);
     raise ECodeGenError.Create('Cannot convert ' + GetZcTypeName(ExistingType) + ' to ' + GetZcTypeName(WantedType));
+  end;
 
   if (WantedType.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
     (ExistingType.Kind=WantedType.Kind) and
@@ -957,17 +966,6 @@ begin
     Exit(Op);
   if (WantedType.Kind=zctInt) and (ExistingType.Kind=zctByte) then
     Exit(Op);
-
-  //Xptr <> Reference are accepted for SetNumericProperty function
-  if ((WantedType.Kind in [zctModel,zctReference]) and (ExistingType.Kind = zctXptr)) then
-    Exit(Op);
-  if ((ExistingType.Kind in [zctModel,zctReference]) and (WantedType.Kind = zctXptr)) then
-  begin
-    //But do not allow array -> xptr without conversion
-    //(because Polar relies on it, we need to send vertices in array as xptr to opengl)
-    if not ((ExistingType.Kind=zctReference) and (ExistingType.ReferenceClassId=DefineArrayClassId)) then
-      Exit(Op);
-  end;
 
   if ((WantedType.Kind=zctNull) and (ExistingType.Kind in NullCompatible)) or
     ((ExistingType.Kind=zctNull) and (WantedType.Kind in NullCompatible)) then
@@ -1296,48 +1294,56 @@ var
     end;
   end;
 
+  function ParseType(const Input : string; var I : integer) : TZcDataType;
+  var
+    S : string;
+    J : integer;
+    A : TDefineArray;
+  begin
+    Result := CharToType(Input[I]);
+    if Result.Kind=zctVec2 then
+    begin
+      Inc(Result.Kind,Ord(Input[I+1])-Ord('2'));
+      Inc(I,2);
+    end else if Result.Kind=zctReference then
+    begin
+      J := PosEx('}',Input,I+1);
+      S := Copy(Input,I+2, J-I-2);
+      if S='Component' then
+        Result.ReferenceClassId := AnyComponentClassId
+      else
+        Result.ReferenceClassId := ComponentManager.GetInfoFromName(S).ClassId;
+      I := J+1;
+    end else if Result.Kind=zctArray then
+    begin
+      J := PosEx('}',Input,I+1);
+      A := TDefineArray.Create(nil);
+      BuiltInCleanUps.Add(A);
+      Result.TheArray := A;
+      A._Type := CharToType( Input[I+2] ).Kind;
+      I := J+1;
+    end else
+      Inc(I);
+  end;
+
   procedure MakeOne(Id :string; Kind : TExpFuncCallKind; Sig : string);
   var
     F : TZcOpFunctionBuiltIn;
-    I,J : integer;
+    I : integer;
     Arg : TZcOpArgumentVar;
-    A : TDefineArray;
   begin
     F := TZcOpFunctionBuiltIn.Create(BuiltInCleanUps);
     F.Id := Id;
     F.FuncId := Kind;
-    F.ReturnType := CharToType(Sig[1]);
-    if F.ReturnType.Kind=zctVec2 then
-    begin
-      Inc(F.ReturnType.Kind,Ord(Sig[2])-Ord('2'));
-      I := 3;
-    end else
-      I := 2;
+
+    I := 1;
+    F.ReturnType := ParseType(Sig,I);
     while I<=Length(Sig) do
     begin
       Arg := TZcOpArgumentVar.Create;
-      Arg.Typ := CharToType(Sig[I]);
+      Arg.Typ := ParseType(Sig,I);
       if Arg.Typ.Kind=zctVoid then
         Arg.Typ.IsPointer := True;
-      if Arg.Typ.Kind=zctVec2 then
-      begin
-        Inc(Arg.Typ.Kind,Ord(Sig[I+1])-Ord('2'));
-        I := I + 2;
-      end else if Arg.Typ.Kind=zctReference then
-      begin
-        J := PosEx('}',Sig,I+1);
-        Arg.Typ.ReferenceClassId := ComponentManager.GetInfoFromName(Copy(Sig,I+2, J-I-2)).ClassId;
-        I := J+1;
-      end else if Arg.Typ.Kind=zctArray then
-      begin
-        J := PosEx('}',Sig,I+1);
-        A := TDefineArray.Create(nil);
-        BuiltInCleanUps.Add(A);
-        Arg.Typ.TheArray := A;
-        A._Type := CharToType( Sig[I+2] ).Kind;
-        I := J+1;
-      end else
-        Inc(I);
       F.AddArgument(Arg);
     end;
 
@@ -1400,10 +1406,11 @@ begin
   MakeOne('sleep',fcSleep,'VI');
   MakeOne('startThread',fcStartThread,'VR{Thread}I');
 
-  MakeOne('findComponent',fcFindComponent,'XS');
-  MakeOne('createComponent',fcCreateComponent,'XXSS');
-  MakeOne('setNumericProperty',fcSetNumericProperty,'VXSIF');
-  MakeOne('setStringProperty',fcSetStringProperty,'VXSS');
+  MakeOne('findComponent',fcFindComponent,'R{Component}S');
+  MakeOne('createComponent',fcCreateComponent,'R{Component}R{Component}SS');
+  MakeOne('setNumericProperty',fcSetNumericProperty,'VR{Component}SIF');
+  MakeOne('setStringProperty',fcSetStringProperty,'VR{Component}SS');
+  MakeOne('setObjectProperty',fcSetObjectProperty,'VR{Component}SR{Component}');
 
   //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
   MakeOne('__getLValue',fcGenLValue,'VF');

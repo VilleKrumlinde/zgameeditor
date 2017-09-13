@@ -73,6 +73,7 @@ type
  ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId
  {$ifndef minimal}
  ,ExpIDEFuncCallClassId
+ ,AnyComponentClassId  //Used by the compiler to parse "Component" datatype
  {$endif}
 );
 
@@ -631,7 +632,7 @@ const
 
   ZcTypeNames : array[TZcDataTypeKind] of string =
 (('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),('xptr'),
- ('void'),('#reference'),('null'),('#array'));
+ ('void'),('Component'),('null'),('#array'));
 
 
 procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);
@@ -2236,6 +2237,9 @@ begin
 
   Ci := ComponentManager.GetInfo(C);
   Assert(Ord(Ci.ClassId)<127);
+
+  if Ci.ClassId=ExpIDEFuncCallClassId then
+    ZHalt('Script using IDE-functions (createcomponent etc) cannot be written to binary.');
 
   if Ci.ExcludeFromBinary then
     Exit;

@@ -205,6 +205,7 @@ HOMOGRAPHS
   "Font"
   "Sample"
   "File"
+  "Component"
 
 PRODUCTIONS
 
@@ -521,6 +522,8 @@ SimpleType<var Typ : TZcDataType>
   | "Font" (. Typ.Kind := zctReference; Typ.ReferenceClassId := FontClassId; .)
   | "Sample" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; .)
   | "File" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZFileClassId; .)
+
+  | "Component" (. Typ.Kind := zctReference; Typ.ReferenceClassId := AnyComponentClassId; .)
 .
 
 /*------------------------------------------------------------------------*/

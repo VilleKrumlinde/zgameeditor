@@ -49,6 +49,8 @@ begin
   Infos := ZClasses.ComponentManager.GetAllInfos;
   for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
+    if I=AnyComponentClassId then
+      Continue;
     Ci := TZComponentInfo(Infos[I]);
     Assert(Ci<>nil, 'Component info=nil. Component class removed?');
     if Ci.NoUserCreate then

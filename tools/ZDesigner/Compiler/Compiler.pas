@@ -1186,7 +1186,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     end else if Func.FuncId in [fcMatMultiply,fcMatTransformPoint,fcGetMatrix,fcSetMatrix,fcVec2,fcVec3,fcVec4] then
     begin
       F := TExpMat4FuncCall.Create(Target);
-    end else if Func.FuncId in [fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty] then
+    end else if Func.FuncId in [fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty,fcSetObjectProperty] then
     begin
       F := TExpIDEFuncCall.Create(Target);
     end else
