@@ -184,6 +184,68 @@ _Remark: ZApplication.MousePosition.Y is on Android identical with touchGetY(0).
 
 @dlx
 
+# Component Management {#ComponentManagement}
+
+_Note: These functions can only be used from the ZGE IDE and Visualizer. Error message appears if you try to save exe-file using these functions._
+
+Some suggestions on how these functions can be used:
+* Debug/support routines in the IDE when creating projects.
+* Useful in Visualizer scripts.
+* Generate code. For instance, in a visualizer script it could create custom Expression components, MeshExpression, BitmapExpression etc. Could be powerful for generated content.
+
+@dl
+
+@dtn Component @bf{findComponent} (string name)
+@dd Returns the component with that name if it exists, or null otherwise. Example:
+
+    Bitmap b = findComponent("bitmap" + intToStr(i));
+    if(b!=null)
+      //do something with b
+
+@dtn Component @bf{createComponent} (Component owner, string propertyListName, string componentClassName)
+@dd Creates and returns a new component as child to an existing component. Example:
+
+    // Create 10 bitmaps, set properties, and also create child producer
+    // component to each bitmap.
+    
+    for(int i=1; i<10; i++) {
+      Component c=createComponent(App,"Content","bitmap");
+      setStringProperty(c,"Name","Bitmap" + intToStr(i));
+      setNumericProperty(c,"Width",0,512);
+      setNumericProperty(c,"Height",0,512);
+
+      Component nested;
+      if(i & 1) {
+        nested=createComponent(c,"Producers","BitmapExpression");
+        setStringProperty(nested,"Expression",
+          "Pixel=vector4(1.0," +
+          "abs(cos(Y*" + intToStr(random(4,3)) + ")) * ." + intToStr(rnd()*1000) + "," +
+          "abs(sin(X*" + intToStr(random(4,3)) + ")) * ." + intToStr(rnd()*1000) + "," +
+          "1.0);");
+      } else {
+        for(int j=0; j<3; j++) {
+          nested=createComponent(c,"Producers","BitmapRect");
+          setNumericProperty(nested,"Color",0,rnd());
+          setNumericProperty(nested,"Color",1,rnd());
+          setNumericProperty(nested,"Size",0,rnd());
+          setNumericProperty(nested,"Size",1,rnd());
+          setNumericProperty(nested,"Size",2,rnd());
+          setNumericProperty(nested,"Size",3,rnd());
+        }
+      }
+    }
+    
+@dtn void @bf{setNumericProperty} (Component component, string propertyName, int index, float value)
+@dd Set value of a numeric property. The "index" is used with multi-value properties such as Color.
+
+@dtn void @bf{setStringProperty} (Component component, string propertyName, string value)
+@dd Set value of a string property.
+
+@dtn void @bf{setObjectProperty} (Component component, string propertyName, Component value)
+@dd Set value of a object property (example: "Texture" property of MaterialTexture is a object property).
+
+@dlx
+
 # Misc {#Misc}
 
 @dl
