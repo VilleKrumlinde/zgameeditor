@@ -182,6 +182,7 @@ Mesh | @ref Mesh
 Camera | @ref Camera
 Font | @ref Font
 Sample | @ref Sample
+Component | any component
 
 Example: Multiple instantiation of models and setting their properties:
 
