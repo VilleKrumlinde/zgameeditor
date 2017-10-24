@@ -315,7 +315,7 @@ begin
     AllFinished := Animators.Count>0;
     for I := 0 to Animators.Count-1 do
     begin
-      A := TAnimatorBase(Animators[I]);
+      A := {$ifdef minimal}TAnimatorBase(Animators[I]){$else}(Animators[I] as TAnimatorBase){$endif};
       A.UpdateWithTimeStep(DeltaTime);
       if not A.HasFinished then
         AllFinished := False;

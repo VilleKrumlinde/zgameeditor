@@ -273,7 +273,7 @@ type
      ,fcGenLValue,
      //IDE
      fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty,
-     fcSetObjectProperty
+     fcSetObjectProperty,fcSaveComponentToTextFile
      {$endif}
      );
 
@@ -307,7 +307,7 @@ type
   end;
 
   {$ifndef minimal}
-  //IDE/Visualizer functions
+  //IDE/Visualizer "meta" functions
   TExpIDEFuncCall = class(TExpFuncCallBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -531,7 +531,7 @@ implementation
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
-{$if (not defined(minimal))}, SysUtils, Math, TypInfo{$ifend}
+{$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$ifend}
 {$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
 
 {$POINTERMATH ON}
@@ -2670,6 +2670,7 @@ var
   Value : TZPropertyValue;
   V : single;
   I : integer;
+  Stream : TMemoryStream;
 begin
   case Kind of
     fcFindComponent :
@@ -2683,16 +2684,25 @@ begin
         Env.StackPopToPointer(P1); //compname
         Env.StackPopToPointer(P2); //proplistname
         Env.StackPopToPointer(P3); //owner
-        if P2=nil then
-          ZHalt('CreateComponent called with owner null');
+
         Ci := ZClasses.ComponentManager.GetInfoFromName(String(PAnsiChar(P1)));
-        Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
-        if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
-          ZHalt('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
-        C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
+
+        if (P2=nil) or (P3=nil) then
+        begin
+          C := Ci.ZClass.Create( nil );
+          //No owner, add to GC
+          ZClasses.ManagedHeap_AddValueObject(C);
+        end else
+        begin
+          Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
+          if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
+            ZHalt('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
+          C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
+          C.ZApp.HasScriptCreatedComponents := True;
+        end;
+
         Env.StackPush(C);
         ZLog.GetLog('Zc').Write('Creating component: ' + Ci.ZClassName,lleNormal);
-        ZApp.HasScriptCreatedComponents := True;
       end;
     fcSetNumericProperty :
       begin
@@ -2755,6 +2765,14 @@ begin
           ZHalt('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
+      end;
+    fcSaveComponentToTextFile:
+      begin
+        Env.StackPopToPointer(P2); //filename
+        Env.StackPopToPointer(P1); //comp
+        Stream := ComponentManager.SaveXmlToStream(TZComponent(P1)) as TMemoryStream;
+        Stream.SaveToFile( String(PAnsiChar(P2)) );
+        Stream.Free;
       end;
   end;
 end;

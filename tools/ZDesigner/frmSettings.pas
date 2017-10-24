@@ -42,6 +42,9 @@ type
     Label11: TLabel;
     Label12: TLabel;
     Label13: TLabel;
+    GroupBox5: TGroupBox;
+    Label14: TLabel;
+    ScalingCombo: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure ShellCheckClick(Sender: TObject);
     procedure OkButtonClick(Sender: TObject);

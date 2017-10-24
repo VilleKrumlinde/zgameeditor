@@ -347,6 +347,7 @@ type
     Log : TLog;
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
     DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
+    MainScaling : integer;
     procedure SelectComponent(C : TZComponent);
     procedure DrawModel;
     procedure OnGlDraw(Sender : TObject);
@@ -595,6 +596,8 @@ begin
   RefreshMenuFromMruList;
   FillNewMenuTemplateItems;
 
+  ChangeScale(Self.MainScaling,100);
+
   FillQuickCompList;
 end;
 
@@ -606,6 +609,8 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F : TCustomPropEditBaseForm;
   begin
     F := T.Create(Self);
+
+    F.ScaleBy(Self.MainScaling,100);
 
     F.Prop := Prop;
     F.Component := Component;
@@ -997,6 +1002,8 @@ begin
     if Ini.ReadBool(Section,'IsMaximized',False) then
       Self.WindowState:=wsMaximized;
 
+    Self.MainScaling := Ini.ReadInteger(Section,'Scaling',100);
+
     GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
     if GuiLayout=0 then
     begin
@@ -1124,6 +1131,8 @@ begin
       Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
       Ini.WriteInteger(Section,'CodeEditorFontSize',SynEditFontSize);
+
+      Ini.WriteInteger(Section,'Scaling',Self.MainScaling);
 
       S := ExtractFilePath(CurrentFileName);
       if S='' then
@@ -2114,6 +2123,8 @@ begin
     F.AndroidAntPathEdit.Text := Self.AndroidAntPath;
     F.AndroidKeystorePathEdit.Text := Self.AndroidKeystorePath;
     F.AndroidKeystoreAliasEdit.Text := Self.AndroidKeystoreAlias;
+    F.ScalingCombo.ItemIndex := F.ScalingCombo.Items.IndexOf( IntToStr(Self.MainScaling) );
+
     if F.ShowModal=mrOk then
     begin
       Self.PackerProg := F.PackerEdit.Text;
@@ -2125,6 +2136,7 @@ begin
       Self.AndroidAntPath := F.AndroidAntPathEdit.Text;
       Self.AndroidKeystorePath := F.AndroidKeystorePathEdit.Text;
       Self.AndroidKeystoreAlias := F.AndroidKeystoreAliasEdit.Text;
+      Self.MainScaling := StrToIntDef(F.ScalingCombo.Text,100);
     end;
   finally
     F.Free;
@@ -2570,7 +2582,7 @@ var
   end;
 
 var
-  C : TDefineConstant;
+  C,DebugC : TDefineConstant;
 begin
   UsePiggyback := False;
   UseCodeRemoval := False;
@@ -2619,6 +2631,9 @@ begin
   C := ZApp.SymTab.Lookup('android') as TDefineConstant;
   C.Value := IfThen(Kind=bbNormalAndroid, 1, 0);
 
+  DebugC := ZApp.SymTab.Lookup('debug') as TDefineConstant;
+  DebugC.Value := 0;
+
   if Kind=bbNormalAndroid then
     BuildBinary('',OutFile)
   else if UsePiggyback then
@@ -2639,9 +2654,10 @@ begin
   end;
 
   C.Value := 0;
-  if Kind=bbNormalAndroid then
-    //Need to recompile afterwards to remove constant in designer
-    CompileAll;
+  DebugC.Value := 1;
+
+  //Need to recompile afterwards to reset constants in designer
+  CompileAll;
 
   //linuxbinärer med piggyback hanteras ej av upx
   if Kind in [bbNormal,bbScreenSaver] then

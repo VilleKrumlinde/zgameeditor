@@ -1411,6 +1411,7 @@ begin
   MakeOne('setNumericProperty',fcSetNumericProperty,'VR{Component}SIF');
   MakeOne('setStringProperty',fcSetStringProperty,'VR{Component}SS');
   MakeOne('setObjectProperty',fcSetObjectProperty,'VR{Component}SR{Component}');
+  MakeOne('saveComponentToTextFile',fcSaveComponentToTextFile,'VR{Component}S');
 
   //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
   MakeOne('__getLValue',fcGenLValue,'VF');
@@ -1436,6 +1437,11 @@ begin
   Con := TDefineConstant.Create(nil);
   Con.SetString('Name','MACOS');
   Con.Value := {$IFDEF MACOS}1{$ELSE}0{$ENDIF};
+  BuiltInConstants.Add(Con);
+
+  Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','DEBUG');
+  Con.Value := 1; //Default is debug compiles, set to 0 in editor buildbinary
   BuiltInConstants.Add(Con);
 end;
 

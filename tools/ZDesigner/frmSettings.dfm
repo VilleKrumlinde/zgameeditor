@@ -3,7 +3,7 @@ object SettingsForm: TSettingsForm
   Top = 110
   BorderIcons = [biSystemMenu]
   Caption = 'Settings'
-  ClientHeight = 426
+  ClientHeight = 476
   ClientWidth = 443
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,12 +16,12 @@ object SettingsForm: TSettingsForm
   OnCreate = FormCreate
   DesignSize = (
     443
-    426)
+    476)
   PixelsPerInch = 96
   TextHeight = 13
   object OkButton: TButton
     Left = 280
-    Top = 394
+    Top = 444
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -29,30 +29,34 @@ object SettingsForm: TSettingsForm
     Default = True
     TabOrder = 0
     OnClick = OkButtonClick
+    ExplicitTop = 394
   end
   object Button2: TButton
     Left = 362
-    Top = 394
+    Top = 444
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
+    ExplicitTop = 394
   end
   object PageControl1: TPageControl
     Left = 8
     Top = 8
     Width = 429
-    Height = 376
+    Height = 426
     ActivePage = TabSheet1
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 2
+    ExplicitHeight = 376
     object TabSheet1: TTabSheet
       Caption = 'General'
+      ExplicitHeight = 348
       DesignSize = (
         421
-        348)
+        398)
       object GroupBox1: TGroupBox
         Left = 0
         Top = 0
@@ -217,13 +221,42 @@ object SettingsForm: TSettingsForm
           Text = '100'
         end
       end
+      object GroupBox5: TGroupBox
+        Left = 0
+        Top = 335
+        Width = 404
+        Height = 59
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'UI scaling'
+        TabOrder = 4
+        object Label14: TLabel
+          Left = 14
+          Top = 24
+          Width = 124
+          Height = 13
+          Caption = 'Scaling % (requires restart)'
+        end
+        object ScalingCombo: TComboBox
+          Left = 211
+          Top = 22
+          Width = 89
+          Height = 21
+          Style = csDropDownList
+          ItemIndex = 0
+          TabOrder = 0
+          Text = '100'
+          Items.Strings = (
+            '100'
+            '125')
+        end
+      end
     end
     object TabSheet2: TTabSheet
       Caption = 'Android'
       ImageIndex = 1
       DesignSize = (
         421
-        348)
+        398)
       object Label8: TLabel
         Left = 6
         Top = 19
