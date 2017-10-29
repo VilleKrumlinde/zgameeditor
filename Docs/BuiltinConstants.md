@@ -11,4 +11,7 @@
 @dt CPUX64
 @dd Set to 1 if running in 64bit version of ZGameEditor, or 0 if running in 32bit version. At the moment, the only available 64bit version of ZGameEditor is distributed with FL Studio as ZGameEditor Visualizer as visualization effect plugin.
 
+@dt DEBUG
+@dd Set to 1 if executed in ZGameEditor IDE, 0 if running in compiled binary code.
+
 @dlx

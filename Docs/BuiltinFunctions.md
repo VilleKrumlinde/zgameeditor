@@ -244,6 +244,17 @@ Some suggestions on how these functions can be used:
 @dtn void @bf{setObjectProperty} (Component component, string propertyName, Component value)
 @dd Set value of a object property (example: "Texture" property of MaterialTexture is a object property).
 
+@dtn void @bf{saveComponentToTextFile} (Component component,string filename)
+@dd Save the specified component to a file.
+
+    // This example generates a new project that displays "Hello world".
+    if(DEBUG) { //Code within DEBUG only compiles in IDE and Visualizer, it is removed for binary builds
+      Component newApp = createComponent(null,null,"ZApplication");
+      Component text = createComponent(newApp,"OnRender","RenderText");
+      setStringProperty(text,"Text","Hello world!");
+      saveComponentToTextFile(newApp,"c:\\temp\\hello.zgeProj");
+    }
+
 @dlx
 
 # Misc {#Misc}
