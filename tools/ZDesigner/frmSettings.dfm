@@ -242,12 +242,13 @@ object SettingsForm: TSettingsForm
           Width = 89
           Height = 21
           Style = csDropDownList
-          ItemIndex = 0
           TabOrder = 0
-          Text = '100'
           Items.Strings = (
             '100'
-            '125')
+            '125'
+            '150'
+            '175'
+            '200')
         end
       end
     end

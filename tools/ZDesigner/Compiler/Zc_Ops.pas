@@ -938,6 +938,10 @@ begin
     raise ECodeGenError.Create('Cannot convert ' + GetZcTypeName(ExistingType) + ' to ' + GetZcTypeName(WantedType));
   end;
 
+  if (WantedType.Kind=zctReference) and (WantedType.ReferenceClassId=AnyComponentClassId) and
+      (ExistingType.Kind=zctModel) then
+    Exit(Op); //Ok to cast model to Component
+
   if (WantedType.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
     (ExistingType.Kind=WantedType.Kind) and
     (Op.Kind=zcArrayAccess) then

@@ -33,9 +33,12 @@ type
   private
     C : TZComponent;
     LastWidth : integer;
+    PanelHeight : integer;
     procedure RebuildGui;
     procedure OnPropEditValueChanged;
     procedure MyOnResize(Sender: TObject);
+  protected
+    procedure ChangeScale(M: Integer; D: Integer); override;
   public
     RootComponent : TZComponent;
     OnPropValueChanged : TPropValueChangedEvent;
@@ -238,12 +241,19 @@ begin
   RebuildGui;
 end;
 
+procedure TZPropertiesEditor.ChangeScale(M, D: Integer);
+begin
+  inherited;
+  PanelHeight := MulDiv(PanelHeight,M,D);
+end;
+
 constructor TZPropertiesEditor.Create(Owner: TComponent);
 begin
   inherited Create(Owner);
   Self.OnResize := MyOnResize;
   ParentBackground := True;
   Self.BorderStyle := bsNone;
+  PanelHeight := 20;
 end;
 
 procedure TZPropertiesEditor.MyOnResize(Sender : TObject);
@@ -292,7 +302,7 @@ begin
       Continue;
     end;
     PEditor.IsReadOnlyProp := Prop.NeverPersist;// or Prop.IsReadOnly;
-    PEditor.Height := 20;
+    PEditor.Height := Self.PanelHeight;
     PEditor.Parent := Self;
     PEditor.SetProp(C,Prop);
     PEditor.Top := 10000;

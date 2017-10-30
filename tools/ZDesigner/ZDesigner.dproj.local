@@ -24,8 +24,8 @@
     <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.627,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmShaderPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.708,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmTileSetEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.150,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmExprPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.150,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmExprPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.627,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmShaderPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">

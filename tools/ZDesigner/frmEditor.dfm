@@ -8,7 +8,7 @@ object EditorForm: TEditorForm
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  Font.Name = 'MS Sans Serif'
+  Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
   Menu = MainMenu1
@@ -348,7 +348,7 @@ object EditorForm: TEditorForm
             object Label5: TLabel
               Left = 399
               Top = 27
-              Width = 27
+              Width = 26
               Height = 13
               Margins.Left = 4
               Margins.Top = 4
@@ -566,6 +566,7 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               Action = AppPreviewStartAction
+              Constraints.MaxHeight = 31
               Images = ActionImageList
               TabOrder = 2
             end
@@ -579,6 +580,7 @@ object EditorForm: TEditorForm
               Margins.Right = 4
               Margins.Bottom = 4
               Action = AppPreviewStopAction
+              Constraints.MaxHeight = 50
               Images = ActionImageList
               TabOrder = 3
             end
@@ -591,10 +593,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -630,10 +628,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end

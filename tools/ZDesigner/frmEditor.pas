@@ -596,8 +596,6 @@ begin
   RefreshMenuFromMruList;
   FillNewMenuTemplateItems;
 
-  ChangeScale(Self.MainScaling,100);
-
   FillQuickCompList;
 end;
 
@@ -1004,6 +1002,8 @@ begin
 
     Self.MainScaling := Ini.ReadInteger(Section,'Scaling',100);
 
+    ChangeScale(Self.MainScaling,100);
+
     GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
     if GuiLayout=0 then
     begin
@@ -1043,9 +1043,9 @@ begin
     S := Ini.ReadString(Section,'MruList', '');
     MruList.CommaText := S;
 
-    LowerRightPanel.Height := Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100);
-    LogPanel.Width := Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20);
-    LeftPanel.Width := Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20);
+    LowerRightPanel.Height := Min(Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100),Screen.Height);
+    LogPanel.Width := Min(Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20),Screen.Width);
+    LeftPanel.Width := Min(Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20),Screen.Width);
 
     Self.PackerProg := Ini.ReadString(Section,'PackerProg','{$toolpath}upx.exe');
     Self.PackerParams := Ini.ReadString(Section,'PackerParams','{$exename}');

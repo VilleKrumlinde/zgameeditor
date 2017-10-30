@@ -519,11 +519,20 @@ end;
 
 procedure TGLDriverFixed.RenderArrays(const Mode: GLenum; const Count,
   VertElements: integer; const Verts, Texc, Cols: pointer);
+var
+  I : integer;
 begin
   glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glVertexPointer(VertElements,GL_FLOAT,0,Verts);
-  glTexCoordPointer(2,GL_FLOAT,0,Texc);
+
+  for I := CurrentMaterial.Textures.Count-1 downto 0 do
+  begin
+    if MultiTextureSupported then
+      glClientActiveTexture($84C0 + I);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2,GL_FLOAT,0,Texc);
+  end;
+
   if Cols<>nil then
   begin
     glEnableClientState(GL_COLOR_ARRAY);
@@ -537,6 +546,8 @@ begin
 end;
 
 procedure TGLDriverFixed.RenderMesh(Mesh: TMesh);
+var
+  I : integer;
 begin
   Mesh.BeforeRender;
 
@@ -553,11 +564,15 @@ begin
       glEnableClientState(GL_COLOR_ARRAY);
       glColorPointer(4,GL_UNSIGNED_BYTE,0,pointer(Mesh.VboOffsets[1]));
     end;
-
-    if Mesh.TexCoords<>nil then
+    if (Mesh.TexCoords<>nil) and (CurrentMaterial<>nil) then
     begin
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-      glTexCoordPointer(2,GL_FLOAT,0,pointer(Mesh.VboOffsets[2]));
+      for I := CurrentMaterial.Textures.Count-1 downto 0 do
+      begin
+        if MultiTextureSupported then
+          glClientActiveTexture($84C0 + I);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2,GL_FLOAT,0,pointer(Mesh.VboOffsets[2]));
+      end;
     end;
 
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -573,10 +588,15 @@ begin
     glVertexPointer(3,GL_FLOAT,0,Mesh.Vertices);
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_FLOAT,0,Mesh.Normals);
-    if Mesh.TexCoords<>nil then
+    if (Mesh.TexCoords<>nil) and (CurrentMaterial<>nil) then
     begin
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-      glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
+      for I := CurrentMaterial.Textures.Count-1 downto 0 do
+      begin
+        if MultiTextureSupported then
+          glClientActiveTexture($84C0 + I);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
+      end;
     end;
     if Mesh.Colors<>nil then
     begin

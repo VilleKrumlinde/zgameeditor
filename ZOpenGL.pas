@@ -1345,6 +1345,7 @@ function wglGetProcAddress(P : pansichar) : pointer; stdcall; external 'opengl32
 
 var
    glActiveTexture : procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+   glClientActiveTexture : procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   //OpenGL 2.0
 //  glBlendEquationSeparate: procedure(modeRGB: GLenum; modeAlpha: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 //  glDrawBuffers: procedure(n: GLsizei; const bufs: PGLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
@@ -1518,7 +1519,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..42
+const ExtFuncArray : packed array[0..43
   {$if (not defined(minimal)) or defined(android)}+5{$ifend}
   {$ifdef MSWINDOWS}+1{$endif}] of
   packed record
@@ -1589,6 +1590,7 @@ const ExtFuncArray : packed array[0..42
 (Name : 'glUseProgram'; Ptr : @@glUseProgram),
  //Multitexture
 (Name : 'glActiveTexture'; Ptr : @@glActiveTexture),
+(Name : 'glClientActiveTexture'; Ptr : @@glClientActiveTexture),
  //VBO
 (Name : 'glBindBuffer'; Ptr : @@glBindBuffer),
 (Name : 'glDeleteBuffers'; Ptr : @@glDeleteBuffers),
