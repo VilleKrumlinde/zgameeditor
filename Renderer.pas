@@ -50,7 +50,7 @@ type
     Shader : TShader;
     WireframeWidth : single;
     SpecularColor,EmissionColor : TZColorf;
-    Shininess : integer;
+    Shininess : single;
     SkipSetColor : boolean;  //True if Color should not be used
   end;
 
@@ -589,7 +589,7 @@ begin
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'SpecularColor',{$ENDIF}(@SpecularColor), zptColorf);
   List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}(@EmissionColor), zptColorf);
-  List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}(@Shininess), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}(@Shininess), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}(@Blend), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One','OneMinusSourceAlpha/Alpha']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}(@ZBuffer), zptBoolean);
