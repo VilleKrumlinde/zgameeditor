@@ -300,7 +300,7 @@ begin
   for I := TexCount-1 downto 0 do
   begin
     if MultiTextureSupported then
-      glActiveTexture($84C0 + I)
+      glActiveTexture(GL_TEXTURE0 + I)
     else if I>0 then
       Continue;
 
@@ -528,7 +528,7 @@ begin
   for I := CurrentMaterial.Textures.Count-1 downto 0 do
   begin
     if MultiTextureSupported then
-      glClientActiveTexture($84C0 + I);
+      glClientActiveTexture(GL_TEXTURE0 + I);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2,GL_FLOAT,0,Texc);
   end;
@@ -540,7 +540,12 @@ begin
   end;
   glDrawArrays(Mode,0,Count);
   glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  for I := CurrentMaterial.Textures.Count-1 downto 0 do
+  begin
+    if MultiTextureSupported then
+      glClientActiveTexture(GL_TEXTURE0 + I);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  end;
   if Cols<>nil then
     glDisableClientState(GL_COLOR_ARRAY);
 end;
@@ -569,7 +574,7 @@ begin
       for I := CurrentMaterial.Textures.Count-1 downto 0 do
       begin
         if MultiTextureSupported then
-          glClientActiveTexture($84C0 + I);
+          glClientActiveTexture(GL_TEXTURE0 + I);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2,GL_FLOAT,0,pointer(Mesh.VboOffsets[2]));
       end;
@@ -593,7 +598,7 @@ begin
       for I := CurrentMaterial.Textures.Count-1 downto 0 do
       begin
         if MultiTextureSupported then
-          glClientActiveTexture($84C0 + I);
+          glClientActiveTexture(GL_TEXTURE0 + I);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2,GL_FLOAT,0,Mesh.TexCoords);
       end;
@@ -608,7 +613,12 @@ begin
 
   glDisableClientState(GL_VERTEX_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  for I := CurrentMaterial.Textures.Count-1 downto 0 do
+  begin
+    if MultiTextureSupported then
+      glClientActiveTexture(GL_TEXTURE0 + I);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  end;
   glDisableClientState(GL_COLOR_ARRAY);
 
   {$ifndef minimal}

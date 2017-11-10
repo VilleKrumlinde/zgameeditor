@@ -1834,7 +1834,7 @@ var
     case Sv.ArrayKind of
       sakTexture2D :
         begin
-          glActiveTexture($84C0 + Self.FirstTexIndex + Self.TexCount);
+          glActiveTexture(GL_TEXTURE0 + Self.FirstTexIndex + Self.TexCount);
           glEnable(GL_TEXTURE_2D);
           if Sv.TexWidth<>Count then
           begin //Resize texture if array size has changed
@@ -1946,10 +1946,10 @@ begin
   begin
     for I := Self.TexCount-1 downto 0 do
     begin
-      glActiveTexture($84C0 + Self.FirstTexIndex + I);
+      glActiveTexture(GL_TEXTURE0 + Self.FirstTexIndex + I);
       glDisable(GL_TEXTURE_2D);
     end;
-    glActiveTexture($84C0); //Make sure we leave with activetexture 0
+    glActiveTexture(GL_TEXTURE0); //Make sure we leave with activetexture 0
   end;
 end;
 

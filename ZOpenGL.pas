@@ -256,6 +256,8 @@ const
   GL_AUX2                           = $040B;
   GL_AUX3                           = $040C;
 
+  GL_TEXTURE0 = $84C0;
+
   // Enable
   //      GL_FOG
   //      GL_LIGHTING
