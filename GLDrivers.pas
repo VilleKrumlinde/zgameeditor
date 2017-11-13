@@ -525,7 +525,9 @@ begin
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(VertElements,GL_FLOAT,0,Verts);
 
-  for I := CurrentMaterial.Textures.Count-1 downto 0 do
+  //Need to do Max-call here because renderunitquad (via rendertext) calls this function
+  //and might have enabled a custom texture (not in materials).
+  for I := Max(CurrentMaterial.Textures.Count-1,0) downto 0 do
   begin
     if MultiTextureSupported then
       glClientActiveTexture(GL_TEXTURE0 + I);
@@ -540,7 +542,7 @@ begin
   end;
   glDrawArrays(Mode,0,Count);
   glDisableClientState(GL_VERTEX_ARRAY);
-  for I := CurrentMaterial.Textures.Count-1 downto 0 do
+  for I := Max(CurrentMaterial.Textures.Count-1,0) downto 0 do
   begin
     if MultiTextureSupported then
       glClientActiveTexture(GL_TEXTURE0 + I);

@@ -54,12 +54,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Caption = 
           'Point mouse here and use keys a,w,s,e,d,f,t,g,y,h,u,j to play no' +
           'tes of an octave'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -16
-        Font.Name = 'MS Sans Serif'
-        Font.Style = []
-        ParentFont = False
       end
       object Label12: TLabel
         Left = 8
@@ -475,12 +469,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Caption = 
           'Global mixer settings. To save settings: Add a AudioMixer-compon' +
           'ent to your project.'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -16
-        Font.Name = 'MS Sans Serif'
-        Font.Style = []
-        ParentFont = False
       end
       object Label15: TLabel
         Left = 8

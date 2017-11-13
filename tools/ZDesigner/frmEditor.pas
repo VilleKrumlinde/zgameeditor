@@ -2017,7 +2017,10 @@ begin
     for I := 0 to L.Count-1 do
     begin
       C := TZComponent(L[I]);
-      if (C is TContent) or ((C is TDefineVariableBase) and not (C is TDefineConstant))then
+      if (C is TContent) or
+        (C is TShader) or
+        (C is TMaterial) or
+        ((C is TDefineVariableBase) and not (C is TDefineConstant))then
       begin
         if not Counts.ContainsKey(C) then
           Counts.Add(C,0);
