@@ -455,7 +455,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
   frmAndroidApk, Winapi.Imm, Vcl.ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
-  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit;
+  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit, uObjFile;
 
 { TEditorForm }
 
@@ -3223,26 +3223,46 @@ procedure TEditorForm.Import3dsActionExecute(Sender: TObject);
 var
   D : TOpenDialog;
   Imp : T3dsImport;
+  ObjImp : TObjImport;
   Parent,Node : TZComponentTreeNode;
 begin
   D := TOpenDialog.Create(Self);
   try
-    D.Filter := '3D-studio files (*.3ds)|*.3ds';
-    D.DefaultExt := '*.3ds';
+    D.Filter := 'All 3d-models|*.3ds;*.obj|3D-studio files (*.3ds)|*.3ds|OBJ files (*.obj)|*.obj';
+//    D.DefaultExt := '*.3ds;*.obj';
     if not D.Execute then
       Exit;
-    Imp := T3dsImport.Create(D.FileName);
-    try
-      //ZApp.Content.AddComponent( Imp.Import );
-      Parent := Tree.FindNodeForComponentList(ZApp.Content);
-      Assert(Parent<>nil,'Can''t find app.content node');
-      Imp.Import;
-      Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
-      Node.Expand(False);
-      //Auto-select the Model-component
-      Tree.Selected := Node.GetLastChild.GetLastChild;
-    finally
-      Imp.Free;
+
+    if ExtractFileExt(D.FileName).ToLower='.3ds' then
+    begin
+      Imp := T3dsImport.Create(D.FileName);
+      try
+        //ZApp.Content.AddComponent( Imp.Import );
+        Parent := Tree.FindNodeForComponentList(ZApp.Content);
+        Assert(Parent<>nil,'Can''t find app.content node');
+        Imp.Import;
+        Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
+        Node.Expand(False);
+        //Auto-select the Model-component
+        Tree.Selected := Node.GetLastChild.GetLastChild;
+      finally
+        Imp.Free;
+      end;
+    end else if ExtractFileExt(D.FileName).ToLower='.obj' then
+    begin
+      ObjImp := TObjImport.Create(D.FileName);
+      try
+        //ZApp.Content.AddComponent( Imp.Import );
+        Parent := Tree.FindNodeForComponentList(ZApp.Content);
+        Assert(Parent<>nil,'Can''t find app.content node');
+        ObjImp.Import;
+        Node := InsertAndRenameComponent(ObjImp.ResultMesh, Parent);
+        Node.Expand(False);
+        //Auto-select the Model-component
+        Tree.Selected := Node.GetLastChild.GetLastChild;
+      finally
+        ObjImp.Free;
+      end;
     end;
   finally
     D.Free;

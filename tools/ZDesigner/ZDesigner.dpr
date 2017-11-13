@@ -96,7 +96,8 @@ uses
   frmCustomPropEditBase in 'frmCustomPropEditBase.pas' {CustomPropEditBaseForm},
   frmExprPropEdit in 'frmExprPropEdit.pas' {ExprPropEditForm},
   frmFloatPropEdit in 'frmFloatPropEdit.pas' {FloatPropEditForm},
-  frmShaderPropEdit in 'frmShaderPropEdit.pas' {ShaderPropEditForm};
+  frmShaderPropEdit in 'frmShaderPropEdit.pas' {ShaderPropEditForm},
+  uObjFile in 'uObjFile.pas';
 
 {$R *.res}
 
