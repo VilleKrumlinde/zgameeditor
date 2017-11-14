@@ -527,7 +527,7 @@ begin
   begin
     //Tillåt ändra nevepersist floats: detta gör att man kan ändra
     //DefineVariable.Value i editor vilket är bra vid felsök.
-    Edit.Font.Color := clGrayText;
+//    Edit.Font.Color := clGrayText;
   end
   else
     Edit.Enabled := not IsReadOnlyProp;

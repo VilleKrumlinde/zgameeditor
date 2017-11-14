@@ -411,6 +411,7 @@ type
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
     procedure ImportBitmaps(Files: TStringList);
     procedure ImportAudioFiles(Files: TStringList);
+    procedure ImportModelFiles(Files: TStringList);
     function MakeCompEditor(Kind: TCompEditFrameBaseType): TCompEditFrameBase;
     procedure OnDetachedCompEditorClose(Sender: TObject; var Action: TCloseAction);
     procedure OnDetachedPropEditorClose(Sender: TObject; var Action: TCloseAction);
@@ -1087,14 +1088,16 @@ procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
 var
   i, fileCount: integer;
   fileName: array[0..MAX_PATH] of char;
-  BitmapFiles,AudioFiles : TStringList;
-  BmMatch,AudioMatch : string;
+  ModelFiles,BitmapFiles,AudioFiles : TStringList;
+  BmMatch,AudioMatch,ModelMatch : string;
 begin
   BitmapFiles := TStringList.Create;
   AudioFiles := TStringList.Create;
+  ModelFiles := TStringList.Create;
 
   BmMatch := '.png .jpg .jpeg .bmp .gif';
   AudioMatch := '.ogg';
+  ModelMatch := '.3ds .obj';
 
   fileCount:=DragQueryFile(msg.Drop, $FFFFFFFF, fileName, MAX_PATH);
   for i := 0 to fileCount - 1 do
@@ -1104,6 +1107,8 @@ begin
       BitmapFiles.Add(Filename)
     else if Pos(LowerCase(ExtractFileExt(FileName)),AudioMatch)>0 then
       AudioFiles.Add(Filename)
+    else if Pos(LowerCase(ExtractFileExt(FileName)),ModelMatch)>0 then
+      ModelFiles.Add(Filename)
   end;
   DragFinish(msg.Drop);
 
@@ -1111,9 +1116,12 @@ begin
     ImportBitmaps(BitmapFiles);
   if AudioFiles.Count>0 then
     ImportAudioFiles(AudioFiles);
+  if ModelFiles.Count>0 then
+    ImportModelFiles(ModelFiles);
 
   BitmapFiles.Free;
   AudioFiles.Free;
+  ModelFiles.Free;
 end;
 
 procedure TEditorForm.WriteAppSettingsToIni;
@@ -2770,7 +2778,11 @@ begin
 
     //Ta reda på vilken klass som ska läggas till
     if not Assigned(SelectComponentForm) then
+    begin
       SelectComponentForm := TSelectComponentForm.Create(Self);
+      SelectComponentForm.ScaleBy(Self.MainScaling,100);
+    end;
+
 //    if Prop=nil then
       SelectComponentForm.FilterBy(ParentComps,ParentLists,Prop);
 //    else
@@ -3219,27 +3231,21 @@ begin
   end;
 end;
 
-procedure TEditorForm.Import3dsActionExecute(Sender: TObject);
+procedure TEditorForm.ImportModelFiles(Files: TStringList);
 var
-  D : TOpenDialog;
   Imp : T3dsImport;
   ObjImp : TObjImport;
   Parent,Node : TZComponentTreeNode;
+  S : string;
 begin
-  D := TOpenDialog.Create(Self);
-  try
-    D.Filter := 'All 3d-models|*.3ds;*.obj|3D-studio files (*.3ds)|*.3ds|OBJ files (*.obj)|*.obj';
-//    D.DefaultExt := '*.3ds;*.obj';
-    if not D.Execute then
-      Exit;
-
-    if ExtractFileExt(D.FileName).ToLower='.3ds' then
+  for S in Files do
+  begin
+    Parent := Tree.FindNodeForComponentList(ZApp.Content);
+    Assert(Parent<>nil,'Can''t find app.content node');
+    if ExtractFileExt(S).ToLower='.3ds' then
     begin
-      Imp := T3dsImport.Create(D.FileName);
+      Imp := T3dsImport.Create(S);
       try
-        //ZApp.Content.AddComponent( Imp.Import );
-        Parent := Tree.FindNodeForComponentList(ZApp.Content);
-        Assert(Parent<>nil,'Can''t find app.content node');
         Imp.Import;
         Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
         Node.Expand(False);
@@ -3248,24 +3254,42 @@ begin
       finally
         Imp.Free;
       end;
-    end else if ExtractFileExt(D.FileName).ToLower='.obj' then
+    end else if ExtractFileExt(S).ToLower='.obj' then
     begin
-      ObjImp := TObjImport.Create(D.FileName);
+      ObjImp := TObjImport.Create(S);
       try
-        //ZApp.Content.AddComponent( Imp.Import );
-        Parent := Tree.FindNodeForComponentList(ZApp.Content);
-        Assert(Parent<>nil,'Can''t find app.content node');
         ObjImp.Import;
         Node := InsertAndRenameComponent(ObjImp.ResultMesh, Parent);
         Node.Expand(False);
-        //Auto-select the Model-component
-        Tree.Selected := Node.GetLastChild.GetLastChild;
+        //Auto-select the Mesh-component
+        Tree.Selected := Node;
       finally
         ObjImp.Free;
       end;
     end;
+  end;
+end;
+
+procedure TEditorForm.Import3dsActionExecute(Sender: TObject);
+var
+  D : TOpenDialog;
+  L : TStringList;
+begin
+  D := TOpenDialog.Create(Self);
+  L := TStringList.Create;
+  try
+    D.Filter := 'All 3d-models|*.3ds;*.obj|3D-studio files (*.3ds)|*.3ds|OBJ files (*.obj)|*.obj';
+    D.Options := D.Options + [ofAllowMultiSelect];
+//    D.DefaultExt := '*.3ds;*.obj';
+    if not D.Execute then
+      Exit;
+
+    L.AddStrings( D.Files );
+    if L.Count>0 then
+      ImportModelFiles(L);
   finally
     D.Free;
+    L.Free;
   end;
 end;
 

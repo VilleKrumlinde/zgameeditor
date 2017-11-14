@@ -452,7 +452,7 @@ begin
     end;
 
     if InvertNormals then
-      for I := 1 to InMesh.NFaces - 1 do
+      for I := 0 to InMesh.NFaces - 1 do
       begin
         W := InMesh.Faces[I].V1;
         InMesh.Faces[I].V1 := InMesh.Faces[I].V3;

@@ -31,13 +31,20 @@ type
     Index : array[0..2] of integer;
   end;
 
+  TObjMaterial = class
+    Diffuse : TZVector3f;
+  end;
+
   TObjImport = class
   strict private
     Lines : TStringList;
-    Verts,Normals : TList<TZVector3f>;
+    Verts,Normals,Colors : TList<TZVector3f>;
     Faces : TList<TObjFace>;
+    FileName : string;
+    Materials : TObjectDictionary<string,TObjMaterial>;
     procedure UpdateMeshImp(MeshImp: TMeshImport);
     function GenerateMesh : TZComponent;
+    procedure AddMaterialLib(const MatFileName : string);
   public
     ResultMesh : TMesh;
     constructor Create(const FileName : string);
@@ -56,17 +63,59 @@ begin
   Lines := TStringList.Create;
   Lines.LoadFromFile(FileName);
   Verts := TList<TZVector3f>.Create;
+  Colors := TList<TZVector3f>.Create;
   Normals := TList<TZVector3f>.Create;
   Faces := TList<TObjFace>.Create;
+  Materials := TObjectDictionary<string,TObjMaterial>.Create([doOwnsValues]);
+  Self.FileName := FileName;
 end;
 
 destructor TObjImport.Destroy;
 begin
   Lines.Free;
   Verts.Free;
+  Colors.Free;
   Normals.Free;
   Faces.Free;
+  Materials.Free;
   inherited;
+end;
+
+procedure TObjImport.AddMaterialLib(const MatFileName : string);
+var
+  S : string;
+  L,L2 : TStringList;
+  Mat : TObjMaterial;
+  I : integer;
+begin
+  S := ExtractFilePath(Self.FileName) + MatFileName;
+  if not FileExists(S) then
+    Exit;
+  L := TStringList.Create;
+  L.LoadFromFile(S);
+
+  L2 := TStringList.Create;
+  L2.Delimiter := ' ';
+  Mat := nil;
+  for S in L do
+  begin
+    if Trim(S)='' then
+      Continue;
+    L2.DelimitedText := Trim(S);
+    if L2[0]='newmtl' then
+    begin
+      Mat := TObjMaterial.Create;
+      Self.Materials.Add(L2[1], Mat);
+    end
+    else if L2[0]='Kd' then
+    begin
+      for I := 0 to 2 do
+        Mat.Diffuse[I] := StrToFloat(L2[I+1]);
+    end;
+  end;
+
+  L.Free;
+  L2.Free;
 end;
 
 procedure TObjImport.Import;
@@ -75,6 +124,7 @@ var
   L,L2 : TStringList;
   Face : TObjFace;
   I : integer;
+  Mat : TObjMaterial;
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
@@ -82,17 +132,19 @@ begin
   L2 := TStringList.Create;
   L2.Delimiter := '/';
 
+  Mat := nil;
   for S in Lines do
   begin
     if Trim(S)='' then
       Continue;
     L.DelimitedText := S;
 
-    if L[0]='#' then
+    if L[0][1]='#' then
       Continue
     else if L[0]='v' then
     begin
-      Verts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  )
+      Verts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  );
+      Colors.Add( Vector3f(0.8,0.8,0.8) );
     end
     else if L[0]='vn' then
     begin
@@ -100,12 +152,24 @@ begin
     end
     else if L[0]='f' then
     begin
+      if L.Count<>4 then
+        raise Exception.Create('OBJ-reader: Only triangle surfaces supported');
       for I := 0 to 2 do
       begin
         L2.DelimitedText := L[1+I];
         Face.Index[I] := StrToInt(L2[0])-1;
+        if Assigned(Mat) then
+          Colors[ Face.Index[I] ] := Mat.Diffuse;
       end;
       Self.Faces.Add(Face);
+    end
+    else if L[0]='mtllib' then
+    begin
+      AddMaterialLib(L[1]);
+    end
+    else if L[0]='usemtl' then
+    begin
+      Self.Materials.TryGetValue(L[1],Mat);
     end;
 
   end;
@@ -175,21 +239,21 @@ begin
       Stream.Write(Sm,2);
     end;
 
-{    if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
+//   if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
     begin
       MeshImp.HasVertexColors := True;
-      for I := 0 to InMesh.NVertices - 1 do
+      for I := 0 to Self.Colors.Count - 1 do
       begin
         Color :=
           ($ff shl 24) or
-          (Round(InMesh.VertexColors[I].B * 255) shl 16) or
-          (Round(InMesh.VertexColors[I].G * 255) shl 8) or
-          Round(InMesh.VertexColors[I].R * 255);
+          (Round(Self.Colors[I][2] * 255) shl 16) or
+          (Round(Self.Colors[I][1] * 255) shl 8) or
+          Round(Self.Colors[I][0] * 255);
         Stream.Write(Color,4);
       end;
     end;
 
-    if DataFile.IncludeTextureCoords and (Length(InMesh.TextureCoords)>0) then
+{    if DataFile.IncludeTextureCoords and (Length(InMesh.TextureCoords)>0) then
     begin
       MeshImp.HasTextureCoords := True;
       StU := TMemoryStream.Create;
