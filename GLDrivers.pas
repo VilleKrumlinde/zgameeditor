@@ -520,14 +520,18 @@ end;
 procedure TGLDriverFixed.RenderArrays(const Mode: GLenum; const Count,
   VertElements: integer; const Verts, Texc, Cols: pointer);
 var
-  I : integer;
+  I,TexCount : integer;
 begin
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(VertElements,GL_FLOAT,0,Verts);
 
   //Need to do Max-call here because renderunitquad (via rendertext) calls this function
   //and might have enabled a custom texture (not in materials).
-  for I := Max(CurrentMaterial.Textures.Count-1,0) downto 0 do
+  //Note: BitmapRects might call this with CurrentMaterial=nil.
+  TexCount := 1;
+  if Assigned(CurrentMaterial) then
+    TexCount := Max(CurrentMaterial.Textures.Count,TexCount);
+  for I := TexCount-1 downto 0 do
   begin
     if MultiTextureSupported then
       glClientActiveTexture(GL_TEXTURE0 + I);
@@ -542,7 +546,7 @@ begin
   end;
   glDrawArrays(Mode,0,Count);
   glDisableClientState(GL_VERTEX_ARRAY);
-  for I := Max(CurrentMaterial.Textures.Count-1,0) downto 0 do
+  for I := TexCount-1 downto 0 do
   begin
     if MultiTextureSupported then
       glClientActiveTexture(GL_TEXTURE0 + I);

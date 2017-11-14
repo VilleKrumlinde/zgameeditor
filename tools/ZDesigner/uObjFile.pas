@@ -46,6 +46,8 @@ type
     function GenerateMesh : TZComponent;
     procedure AddMaterialLib(const MatFileName : string);
   public
+    IncludeVertexColors : boolean;
+    MeshImpToUpdate : TMeshImport;
     ResultMesh : TMesh;
     constructor Create(const FileName : string);
     destructor Destroy; override;
@@ -68,6 +70,7 @@ begin
   Faces := TList<TObjFace>.Create;
   Materials := TObjectDictionary<string,TObjMaterial>.Create([doOwnsValues]);
   Self.FileName := FileName;
+  Self.IncludeVertexColors := True;
 end;
 
 destructor TObjImport.Destroy;
@@ -176,7 +179,10 @@ begin
   L.Free;
   L2.Free;
 
-  Self.ResultMesh := GenerateMesh as TMesh;
+  if Assigned(Self.MeshImpToUpdate) then
+    UpdateMeshImp(Self.MeshImpToUpdate)
+  else
+    Self.ResultMesh := GenerateMesh as TMesh;
 end;
 
 procedure TObjImport.UpdateMeshImp(MeshImp: TMeshImport);
@@ -239,7 +245,7 @@ begin
       Stream.Write(Sm,2);
     end;
 
-//   if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
+   if Self.IncludeVertexColors then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to Self.Colors.Count - 1 do

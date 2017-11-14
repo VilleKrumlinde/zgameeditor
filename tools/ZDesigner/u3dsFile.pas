@@ -99,7 +99,6 @@ type
     DataFile : T3dsFileParser;
     FileName,NamePrefix : string;
     MeshScale : single;
-    AutoCenter,AutoScale,InvertNormals,SingleMesh: boolean;
     procedure ScaleAndCenter;
     function GenerateMesh(M : TObject) : TZComponent;
     function GenerateModel: TZComponent;
@@ -107,11 +106,12 @@ type
     procedure CollapseToSingleMesh;
     procedure UpdateMeshImp(InMesh: T3dsMesh; MeshImp: TMeshImport);
   public
+    AutoCenter,AutoScale,InvertNormals,SingleMesh,IncludeVertexColors: boolean;
     MeshImpToUpdate : TMeshImport;  //Set by caller when updating a meshimport with a single mesh
     ResultModelGroup : TZComponent; //Set after import to new group
     constructor Create(const FileName : string);
     destructor Destroy; override;
-    procedure Import;
+    procedure Import(ShowDialog : boolean = True);
   end;
 
   T3dsExport = class
@@ -132,7 +132,15 @@ type
 implementation
 
 uses ZLog,SysUtils,ZMath,Renderer,
-  frm3dsImportOptions, Vcl.Controls, Vcl.Forms, DesignerGUI;
+  frm3dsImportOptions, Vcl.Controls, Vcl.Forms, Vcl.Graphics;
+
+function ColorToZColor(C : TColor) : TZColorf;
+begin
+  Result.B := ((C shr 16) and 255) * (1.0/255);
+  Result.G := ((C shr 8) and 255) * (1.0/255);
+  Result.R := (C and 255) * (1.0/255);
+  Result.A := 1;
+end;
 
 { T3dsFileParser }
 
@@ -454,8 +462,8 @@ begin
     if InvertNormals then
       for I := 0 to InMesh.NFaces - 1 do
       begin
-        W := InMesh.Faces[I].V1;
-        InMesh.Faces[I].V1 := InMesh.Faces[I].V3;
+        W := InMesh.Faces[I].V2;
+        InMesh.Faces[I].V2 := InMesh.Faces[I].V3;
         InMesh.Faces[I].V3 := W;
       end;
 
@@ -594,35 +602,46 @@ end;
 var
   OptionDialog : TImport3dsForm;
 
-procedure T3dsImport.Import;
+procedure T3dsImport.Import(ShowDialog : boolean = True);
 var
   Group,MeshGroup : TLogicalGroup;
   I : integer;
   Mesh : T3dsMesh;
 begin
-  if OptionDialog=nil then
-    OptionDialog := TImport3dsForm.Create(Application.MainForm);
-  OptionDialog.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
-  if Assigned(Self.MeshImpToUpdate) then
+  if ShowDialog then
   begin
-    OptionDialog.SingleMeshCheckBox.Checked := True;
-    OptionDialog.SingleMeshCheckBox.Enabled := False;
-    OptionDialog.NamePrefixEdit.Enabled := False;
+    if OptionDialog=nil then
+      OptionDialog := TImport3dsForm.Create(Application.MainForm);
+    OptionDialog.NamePrefixEdit.Text := ChangeFileExt(ExtractFileName(Self.FileName),'');
+    if Assigned(Self.MeshImpToUpdate) then
+    begin
+      OptionDialog.SingleMeshCheckBox.Checked := True;
+      OptionDialog.SingleMeshCheckBox.Enabled := False;
+      OptionDialog.NamePrefixEdit.Enabled := False;
+    end else
+    begin
+      OptionDialog.SingleMeshCheckBox.Enabled := True;
+      OptionDialog.NamePrefixEdit.Enabled := True;
+    end;
+    if OptionDialog.ShowModal=mrCancel then
+      Abort;
+    Self.NamePrefix := OptionDialog.GetValidatedName(OptionDialog.NamePrefixEdit.Text);
+    Self.MeshScale := StrToIntDef(OptionDialog.MeshScaleEdit.Text,100) / 100.0;
+    Self.DataFile.IncludeVertexColors := OptionDialog.ColorsCheckBox.Checked;
+    Self.AutoCenter := OptionDialog.AutoCenterCheckBox.Checked;
+    Self.AutoScale := OptionDialog.AutoScaleCheckBox.Checked;
+    Self.InvertNormals := OptionDialog.InvertNormalsCheckBox.Checked;
+    Self.SingleMesh := OptionDialog.SingleMeshCheckBox.Checked;
+    Self.DataFile.IncludeTextureCoords := OptionDialog.TexCoordsCheckBox.Checked;
   end else
   begin
-    OptionDialog.SingleMeshCheckBox.Enabled := True;
-    OptionDialog.NamePrefixEdit.Enabled := True;
+    Self.MeshScale := 1.0;
+    Self.AutoCenter := True;
+    Self.InvertNormals := False;
+    Self.SingleMesh := True;
+    Self.DataFile.IncludeVertexColors := Self.IncludeVertexColors;
+    Self.DataFile.IncludeTextureCoords := True;
   end;
-  if OptionDialog.ShowModal=mrCancel then
-    Abort;
-  Self.NamePrefix := OptionDialog.GetValidatedName(OptionDialog.NamePrefixEdit.Text);
-  Self.MeshScale := StrToIntDef(OptionDialog.MeshScaleEdit.Text,100) / 100.0;
-  Self.DataFile.IncludeVertexColors := OptionDialog.ColorsCheckBox.Checked;
-  Self.AutoCenter := OptionDialog.AutoCenterCheckBox.Checked;
-  Self.AutoScale := OptionDialog.AutoScaleCheckBox.Checked;
-  Self.InvertNormals := OptionDialog.InvertNormalsCheckBox.Checked;
-  Self.SingleMesh := OptionDialog.SingleMeshCheckBox.Checked;
-  Self.DataFile.IncludeTextureCoords := OptionDialog.TexCoordsCheckBox.Checked;
 
   Self.DataFile.Parse;
 
