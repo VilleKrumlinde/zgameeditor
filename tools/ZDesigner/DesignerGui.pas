@@ -1673,7 +1673,7 @@ var
       Imp := T3dsImport.Create(D.FileName);
       try
         Imp.MeshImpToUpdate := Component as TMeshImport;
-        Imp.Import;
+        Imp.Import(True);
         Component.Change;
       finally
         Imp.Free;

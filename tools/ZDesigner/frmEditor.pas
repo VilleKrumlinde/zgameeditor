@@ -3246,7 +3246,7 @@ begin
     begin
       Imp := T3dsImport.Create(S);
       try
-        Imp.Import;
+        Imp.Import(True);
         Node := InsertAndRenameComponent(Imp.ResultModelGroup, Parent);
         Node.Expand(False);
         //Auto-select the Model-component

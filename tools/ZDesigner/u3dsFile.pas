@@ -111,7 +111,7 @@ type
     ResultModelGroup : TZComponent; //Set after import to new group
     constructor Create(const FileName : string);
     destructor Destroy; override;
-    procedure Import(ShowDialog : boolean = True);
+    procedure Import(ShowDialog : boolean);
   end;
 
   T3dsExport = class
@@ -132,7 +132,10 @@ type
 implementation
 
 uses ZLog,SysUtils,ZMath,Renderer,
-  frm3dsImportOptions, Vcl.Controls, Vcl.Forms, Vcl.Graphics;
+  {$ifndef zgeviz}
+  frm3dsImportOptions,
+  {$endif}
+  Vcl.Controls, Vcl.Forms, Vcl.Graphics;
 
 function ColorToZColor(C : TColor) : TZColorf;
 begin
@@ -484,7 +487,7 @@ begin
       Stream.Write(Sm,2);
     end;
 
-    if DataFile.IncludeVertexColors and ((InMesh.UsedMaterials>1) or SingleMesh) then
+    if DataFile.IncludeVertexColors and (InMesh.UsedMaterials>0) then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to InMesh.NVertices - 1 do
@@ -599,15 +602,18 @@ begin
   Result := M;
 end;
 
+{$ifndef zgeviz}
 var
   OptionDialog : TImport3dsForm;
+{$endif}
 
-procedure T3dsImport.Import(ShowDialog : boolean = True);
+procedure T3dsImport.Import(ShowDialog : boolean);
 var
   Group,MeshGroup : TLogicalGroup;
   I : integer;
   Mesh : T3dsMesh;
 begin
+  {$ifndef zgeviz}
   if ShowDialog then
   begin
     if OptionDialog=nil then
@@ -634,6 +640,7 @@ begin
     Self.SingleMesh := OptionDialog.SingleMeshCheckBox.Checked;
     Self.DataFile.IncludeTextureCoords := OptionDialog.TexCoordsCheckBox.Checked;
   end else
+  {$endif}
   begin
     Self.MeshScale := 1.0;
     Self.AutoCenter := True;
@@ -793,6 +800,8 @@ begin
     Inc(Self.Faces[ Self.NFaces + I ].V2, Self.NVertices );
     Inc(Self.Faces[ Self.NFaces + I ].V3, Self.NVertices );
   end;
+
+  Inc(Self.UsedMaterials,M.UsedMaterials);
 
   Inc(Self.NVertices,M.NVertices);
   Inc(Self.NFaces,M.NFaces);

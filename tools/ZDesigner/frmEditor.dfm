@@ -152,13 +152,7 @@ object EditorForm: TEditorForm
           BevelInner = bvNone
           BevelOuter = bvNone
           Color = 2976796
-          Font.Charset = ANSI_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -15
-          Font.Name = 'Arial'
-          Font.Style = []
           ItemHeight = 14
-          ParentFont = False
           PopupMenu = LogPopupMenu
           TabOrder = 0
           OnDrawItem = LogListBoxDrawItem
@@ -281,6 +275,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -304,12 +302,6 @@ object EditorForm: TEditorForm
               Alignment = taRightJustify
               AutoSize = False
               Caption = 'ViewTranslateLabel'
-              Font.Charset = ANSI_CHARSET
-              Font.Color = clWindowText
-              Font.Height = -10
-              Font.Name = 'Arial'
-              Font.Style = []
-              ParentFont = False
               WordWrap = True
             end
             object Label2: TLabel
@@ -324,7 +316,7 @@ object EditorForm: TEditorForm
               Caption = 'Rotate X'
             end
             object Label3: TLabel
-              Left = 138
+              Left = 104
               Top = 27
               Width = 42
               Height = 13
@@ -335,7 +327,7 @@ object EditorForm: TEditorForm
               Caption = 'Rotate Y'
             end
             object Label4: TLabel
-              Left = 267
+              Left = 198
               Top = 27
               Width = 42
               Height = 13
@@ -359,7 +351,7 @@ object EditorForm: TEditorForm
             object ViewRotateXTrackBar: TTrackBar
               Left = 0
               Top = 0
-              Width = 123
+              Width = 97
               Height = 30
               Margins.Left = 4
               Margins.Top = 4
@@ -372,9 +364,9 @@ object EditorForm: TEditorForm
             end
             object TrackBar2: TTrackBar
               Tag = 1
-              Left = 128
+              Left = 94
               Top = 0
-              Width = 123
+              Width = 97
               Height = 30
               Margins.Left = 4
               Margins.Top = 4
@@ -387,9 +379,9 @@ object EditorForm: TEditorForm
             end
             object TrackBar3: TTrackBar
               Tag = 2
-              Left = 257
+              Left = 188
               Top = 0
-              Width = 123
+              Width = 97
               Height = 30
               Margins.Left = 4
               Margins.Top = 4
