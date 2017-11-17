@@ -365,6 +365,8 @@ type
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
     procedure Activate{$ifndef minimal}(const NoApp : boolean = False){$endif};
+    function GetPixelHeight : integer;
+    function GetPixelWidth : integer;
   end;
 
   TSetRenderTarget = class(TRenderCommand)
@@ -2143,22 +2145,8 @@ begin
     A := nil;
   {$endif}
 
-  W := Self.CustomWidth;
-  if W=0 then
-  begin
-    if Self.Width>=rts128 then
-      W := 128 shl (Ord(Self.Width)-Ord(rts128))
-    else
-      W := A.ViewportWidth shr Ord(Self.Width);
-  end;
-  H := Self.CustomHeight;
-  if H=0 then
-  begin
-    if Self.Height>=rts128 then
-      H := 128 shl (Ord(Self.Height)-Ord(rts128))
-    else
-      H := A.ViewportHeight shr Ord(Self.Height);
-  end;
+  W := Self.GetPixelWidth;
+  H := Self.GetPixelHeight;
 
   if Self.AutoPowerOfTwo then
   begin
@@ -2286,6 +2274,30 @@ destructor TRenderTarget.Destroy;
 begin
   CleanUp;
   inherited;
+end;
+
+function TRenderTarget.GetPixelHeight: integer;
+begin
+  Result := Self.CustomHeight;
+  if Result=0 then
+  begin
+    if Self.Height>=rts128 then
+      Result := 128 shl (Ord(Self.Height)-Ord(rts128))
+    else
+      Result := ZApp.ViewportHeight shr Ord(Self.Height);
+  end;
+end;
+
+function TRenderTarget.GetPixelWidth: integer;
+begin
+  Result := Self.CustomWidth;
+  if Result=0 then
+  begin
+    if Self.Width>=rts128 then
+      Result := 128 shl (Ord(Self.Width)-Ord(rts128))
+    else
+      Result := ZApp.ViewportWidth shr Ord(Self.Width);
+  end;
 end;
 
 procedure TRenderTarget.UseTextureBegin;
