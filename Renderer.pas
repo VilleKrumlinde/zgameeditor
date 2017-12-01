@@ -275,6 +275,7 @@ type
     FloatMultiply : single;  //Multiplicera floatref innan print, för att visa decimaltal
     UseModelSpace : boolean;
     StretchY : single;
+    TextExpression : TZExpressionPropValue;
     procedure Execute; override;
     procedure ResetGpuResources; override;
     {$ifndef minimal}
@@ -884,6 +885,10 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'UseModelSpace',{$ENDIF}(@UseModelSpace), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'StretchY',{$ENDIF}(@StretchY), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1;
+  List.AddProperty({$IFNDEF MINIMAL}'TextExpression',{$ENDIF}@TextExpression, zptExpression);
+    {$ifndef minimal}List.GetLast.ExpressionKind := ekiGetStringValue;{$endif}
+    {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
+    {$ifndef minimal}List.GetLast.DefaultValue.ExpressionValue.Source := '//"Hello " + "World " + IntToStr(App.FpsCounter)';{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}'CharX',{$ENDIF}(@CharX), zptFloat);
     List.GetLast.NeverPersist:=True;
@@ -935,7 +940,11 @@ begin
   end;
   CurFont.Prepare;
 
-  if TextFloatRef.Code.Count>0 then
+  if TextExpression.Code.Count>0 then
+  begin
+    TheText := PByte(ExpGetPointer(TextExpression.Code));
+  end
+  else if TextFloatRef.Code.Count>0 then
   begin
     //If textref is set then convert float-value to string
     ZStrConvertInt(
@@ -2129,6 +2138,7 @@ var
   W,H : integer;
   ActualW,ActualH,I : integer;
   A : TZApplication;
+  IsFirstUse : boolean;
 begin
   if not FbosSupported then
     Exit;
@@ -2165,11 +2175,13 @@ begin
   LastW := W; LastH := H;
   {$endif}
 
+  IsFirstUse := False;
   if TexId=0 then
   begin
     //http://www.songho.ca/opengl/gl_fbo.html
     //For android: http://blog.shayanjaved.com/2011/05/13/android-opengl-es-2-0-render-to-texture/
     // create a texture object
+    IsFirstUse := True;
     glGenTextures(1, @TexId);
     glBindTexture(GL_TEXTURE_2D, TexId);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2231,7 +2243,7 @@ begin
   {$endif}
     A.UpdateViewport(W, H);
 
-  if Self.ClearBeforeUse then
+  if Self.ClearBeforeUse or IsFirstUse then
   begin
     glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);

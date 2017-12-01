@@ -1352,6 +1352,11 @@ begin
           S := 'private void __f(int param) { ' + CloseComment(S) + #13#10' }';
           Compiler.AllowFunctions := True;
         end;
+      ekiGetStringValue:
+        begin
+          S := 'return ' + S + ';';
+          ReturnType.Kind := zctString;
+        end;
     end;
 
     Compiler.SymTab := SymTab;

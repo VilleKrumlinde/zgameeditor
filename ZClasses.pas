@@ -258,7 +258,7 @@ type
   end;
 
   TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap,
-    ekiMesh,ekiThread);
+    ekiMesh,ekiThread,ekiGetStringValue);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
