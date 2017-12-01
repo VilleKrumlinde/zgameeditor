@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application">
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
   <Content>
     <Group Comment="Bitmaps">
       <Children>
-        <Bitmap Comment="Anti-Aliased Circle">
+        <Bitmap Comment="Anti-Aliased Circle" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -29,7 +29,7 @@ Pixel.B = 1;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Anti-Aliased Polygon">
+        <Bitmap Comment="Anti-Aliased Polygon" Width="16" Height="16">
           <Producers>
             <BitmapExpression UseBlankSource="1">
               <Expression>
@@ -95,7 +95,7 @@ Pixel.B *= Pixel.A;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="glowDesigner">
+        <Bitmap Comment="glowDesigner" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -125,7 +125,7 @@ pixel+=.6;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="superform">
+        <Bitmap Comment="superform" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -145,7 +145,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Squarey">
+        <Bitmap Comment="Squarey" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -165,7 +165,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Ruffled">
+        <Bitmap Comment="Ruffled" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -185,7 +185,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Penta">
+        <Bitmap Comment="Penta" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -205,7 +205,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Pointy" Width="3" Height="3">
+        <Bitmap Comment="Pointy" Width="128" Height="128">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -225,7 +225,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Glow">
+        <Bitmap Comment="Glow" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -245,7 +245,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Block" Filter="2">
+        <Bitmap Comment="Block" Width="16" Height="16" Filter="2">
           <Producers>
             <BitmapExpression Comment="2D Superformula">
               <Expression>
@@ -264,7 +264,7 @@ Pixel.A=Tp*S;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Beam">
+        <Bitmap Comment="Beam" Width="16" Height="16">
           <Producers>
             <BitmapExpression>
               <Expression>
@@ -287,7 +287,7 @@ pixel.a=1-abs(sin(.5-x))*2.3;]]>
             </BitmapExpression>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Ring">
+        <Bitmap Comment="Ring" Width="16" Height="16">
           <Producers>
             <BitmapExpression Comment="nose" UseBlankSource="1">
               <Expression>
@@ -326,7 +326,7 @@ Tp=R-pow(pow(abs(cos(M*T/4)/1),N2)+pow(abs(sin(M*T/4)/1),N3),-1/N1);
             <BitmapCombine Comment="base" Method="1"/>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Halo" Width="4" Height="4">
+        <Bitmap Comment="Halo" Width="256" Height="256">
           <Producers>
             <BitmapExpression UseBlankSource="1">
               <Expression>
@@ -372,7 +372,7 @@ Pixel.b-=rnd();]]>
             <BitmapExpression Expression="Pixel.a=Pixel.r*8;"/>
           </Producers>
         </Bitmap>
-        <Bitmap Comment="Superformula" Width="4" Height="4">
+        <Bitmap Comment="Superformula" Width="256" Height="256">
           <Producers>
             <BitmapExpression Comment="2D Superformula">
               <Expression>
@@ -784,7 +784,7 @@ v.Z *= 0.3;]]>
         </Model>
         <Model Comment="Zwidget">
           <Definitions>
-            <Bitmap Name="zWidgetXbmp" Width="4">
+            <Bitmap Name="zWidgetXbmp" Width="256" Height="16">
               <Producers>
                 <BitmapFromFile Comment="Imported from X.gif">
                   <BitmapFile>
@@ -798,7 +798,7 @@ v.Z *= 0.3;]]>
                 <MaterialTexture Texture="zWidgetXbmp" TextureWrapMode="2" TexCoords="1"/>
               </Textures>
             </Material>
-            <Bitmap Name="zWidgetYbmp" Height="4">
+            <Bitmap Name="zWidgetYbmp" Width="16" Height="256">
               <Producers>
                 <BitmapFromFile Comment="Imported from Y.gif">
                   <BitmapFile>
@@ -812,7 +812,7 @@ v.Z *= 0.3;]]>
                 <MaterialTexture Texture="zWidgetYbmp" TextureWrapMode="2" TexCoords="1"/>
               </Textures>
             </Material>
-            <Bitmap Name="zWidgetZbmp" Width="4">
+            <Bitmap Name="zWidgetZbmp" Width="256" Height="16">
               <Producers>
                 <BitmapFromFile Comment="Imported from Z.gif">
                   <BitmapFile>
@@ -844,6 +844,106 @@ v.Z *= 0.3;]]>
     <Group Comment="Examples">
       <Children>
         <AppState Comment="2D Culling">
+          <Definitions>
+            <Array Name="kbInput" Type="1" SizeDim1="2"/>
+            <Array Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
+            <Model Name="MyCamera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
+              <OnUpdate>
+                <ZExpression>
+                  <Expression>
+<![CDATA[//
+
+CurrentModel.Rotation.Z += kbInput[0]*App.DeltaTime*-1;
+
+//
+
+if(CurrentModel.Rotation.Z < 0)CurrentModel.Rotation.Z += 1;
+if(CurrentModel.Rotation.Z > 1)CurrentModel.Rotation.Z -= 1;
+
+//
+
+float Angle = 0.125;
+
+//
+
+float Index = CurrentModel.Rotation.Z;
+
+Culling[0,0] = 0;
+Culling[1,0] = 0;
+Culling[0,1] = 0;
+Culling[1,1] = 0;
+
+if(Index >= 0          && Index < 0.25+Angle)Culling[0,0] = 1;
+if(Index >= 0.25-Angle && Index < 0.5 +Angle)Culling[0,1] = 1;
+if(Index >= 0.5 -Angle && Index < 0.75+Angle)Culling[1,1] = 1;
+if(Index >= 0.75-Angle && Index < 1         )Culling[1,0] = 1;
+
+if(Index >= 1   -Angle && Index < 1         )Culling[0,0] = 1;
+if(Index >= 0          && Index < Angle     )Culling[1,0] = 1;
+
+//
+
+CurrentModel.Velocity.X = sin(CurrentModel.Rotation.Z*Pi*2)*kbInput[1]*-1;
+CurrentModel.Velocity.Y = cos(CurrentModel.Rotation.Z*Pi*2)*kbInput[1];
+
+//
+
+App.CameraPosition.X = CurrentModel.Position.X;
+App.CameraPosition.Y = CurrentModel.Position.Y;]]>
+                  </Expression>
+                </ZExpression>
+              </OnUpdate>
+              <OnRender>
+                <UseMaterial Material="DefaultMaterial"/>
+                <RenderNet>
+                  <RenderVertexExpression>
+<![CDATA[//
+
+if(this.Vertex.Y < 0)
+{
+  this.Vertex = 0;
+}
+else
+{
+  this.Vertex.X *= 2;
+  this.Vertex.Y *= 4;
+}]]>
+                  </RenderVertexExpression>
+                </RenderNet>
+              </OnRender>
+            </Model>
+            <Model Name="Building">
+              <OnRender>
+                <Condition>
+                  <Expression>
+<![CDATA[//
+
+int   U, V;
+float X, Y;
+
+//
+
+X = CurrentModel.Position.X-MyCamera.Position.X;
+Y = CurrentModel.Position.Y-MyCamera.Position.Y;
+
+//
+
+if(X < 0)U = 0; else U = 1;
+if(Y > 0)V = 0; else V = 1;
+
+//
+
+if(abs(X) < 1 && abs(Y) < 1)return 1;
+else return Culling[U,V];]]>
+                  </Expression>
+                  <OnTrue>
+                    <RenderSprite/>
+                  </OnTrue>
+                </Condition>
+              </OnRender>
+            </Model>
+            <Material Name="DefaultMaterial" Shading="2" Light="0"/>
+          </Definitions>
           <OnStart>
             <SpawnModel Model="MyCamera" SpawnStyle="1"/>
             <Repeat Comment="X">
@@ -954,116 +1054,10 @@ kbInput[1] -= 1;]]>
               </Children>
             </Group>
           </OnRender>
-          <Definitions>
-            <Array Name="kbInput" Type="1" SizeDim1="2"/>
-            <Array Name="Culling" Type="1" Dimensions="1" SizeDim1="2" SizeDim2="2"/>
-            <Model Name="MyCamera" Position="3.4044 0.7244 0" Rotation="0 0 0.4432">
-              <OnUpdate>
-                <ZExpression>
-                  <Expression>
-<![CDATA[//
-
-CurrentModel.Rotation.Z += kbInput[0]*App.DeltaTime*-1;
-
-//
-
-if(CurrentModel.Rotation.Z < 0)CurrentModel.Rotation.Z += 1;
-if(CurrentModel.Rotation.Z > 1)CurrentModel.Rotation.Z -= 1;
-
-//
-
-float Angle = 0.125;
-
-//
-
-float Index = CurrentModel.Rotation.Z;
-
-Culling[0,0] = 0;
-Culling[1,0] = 0;
-Culling[0,1] = 0;
-Culling[1,1] = 0;
-
-if(Index >= 0          && Index < 0.25+Angle)Culling[0,0] = 1;
-if(Index >= 0.25-Angle && Index < 0.5 +Angle)Culling[0,1] = 1;
-if(Index >= 0.5 -Angle && Index < 0.75+Angle)Culling[1,1] = 1;
-if(Index >= 0.75-Angle && Index < 1         )Culling[1,0] = 1;
-
-if(Index >= 1   -Angle && Index < 1         )Culling[0,0] = 1;
-if(Index >= 0          && Index < Angle     )Culling[1,0] = 1;
-
-//
-
-CurrentModel.Velocity.X = sin(CurrentModel.Rotation.Z*Pi*2)*kbInput[1]*-1;
-CurrentModel.Velocity.Y = cos(CurrentModel.Rotation.Z*Pi*2)*kbInput[1];
-
-//
-
-App.CameraPosition.X = CurrentModel.Position.X;
-App.CameraPosition.Y = CurrentModel.Position.Y;]]>
-                  </Expression>
-                </ZExpression>
-              </OnUpdate>
-              <OnRender>
-                <UseMaterial Material="DefaultMaterial"/>
-                <RenderNet>
-                  <RenderVertexExpression>
-<![CDATA[//
-
-if(this.Vertex.Y < 0)
-{
-  this.Vertex = 0;
-}
-else
-{
-  this.Vertex.X *= 2;
-  this.Vertex.Y *= 4;
-}]]>
-                  </RenderVertexExpression>
-                </RenderNet>
-              </OnRender>
-            </Model>
-            <Model Name="Building">
-              <OnRender>
-                <Condition>
-                  <Expression>
-<![CDATA[//
-
-int   U, V;
-float X, Y;
-
-//
-
-X = CurrentModel.Position.X-MyCamera.Position.X;
-Y = CurrentModel.Position.Y-MyCamera.Position.Y;
-
-//
-
-if(X < 0)U = 0; else U = 1;
-if(Y > 0)V = 0; else V = 1;
-
-//
-
-if(abs(X) < 1 && abs(Y) < 1)return 1;
-else return Culling[U,V];]]>
-                  </Expression>
-                  <OnTrue>
-                    <RenderSprite/>
-                  </OnTrue>
-                </Condition>
-              </OnRender>
-            </Model>
-            <Material Name="DefaultMaterial" WireframeWidth="1" Shading="2" Light="0"/>
-          </Definitions>
         </AppState>
         <AppState Comment="GLSL Fog">
-          <OnStart>
-            <SpawnModel Model="o_test"/>
-          </OnStart>
-          <OnUpdate>
-            <AnimatorSimple Duration="3" AutoStart="255" Target="App.CameraPosition.Z" AutoReverse="255" RepeatCount="-1" FromValue="30" ToValue="130" Smooth="255"/>
-          </OnUpdate>
           <Definitions>
-            <Bitmap Name="b_cells">
+            <Bitmap Name="b_cells" Width="16" Height="16">
               <Producers>
                 <BitmapCells CellStyle="4" RandomSeed="46"/>
               </Producers>
@@ -1116,8 +1110,18 @@ gl_FragColor = mix(color, vec4(0,0,0,1), Distance/100.0);
               </OnRender>
             </Model>
           </Definitions>
+          <OnStart>
+            <SpawnModel Model="o_test"/>
+          </OnStart>
+          <OnUpdate>
+            <AnimatorSimple Duration="3" AutoStart="255" Target="App.CameraPosition.Z" AutoReverse="255" RepeatCount="-1" FromValue="30" ToValue="130" Smooth="255"/>
+          </OnUpdate>
         </AppState>
         <AppState Comment="HSV ColorExample Library Example">
+          <Definitions>
+            <Array Name="ColorExample" SizeDim1="3"/>
+            <Material Name="DefaultMaterialHSV" Shading="1" Light="0" ZBuffer="0"/>
+          </Definitions>
           <OnStart>
             <ZLibrary Comment="HSV Library">
               <Source>
@@ -1191,12 +1195,11 @@ DebugHSV.Color.B = ColorExample[2];]]>
             <RenderSetColor Name="DebugHSV" Color="1 0.5 0.5 0"/>
             <RenderSprite/>
           </OnRender>
-          <Definitions>
-            <Array Name="ColorExample" SizeDim1="3"/>
-            <Material Name="DefaultMaterialHSV" Shading="1" Light="0" ZBuffer="0"/>
-          </Definitions>
         </AppState>
         <AppState Comment="Matrix Library Example">
+          <Definitions>
+            <Material Name="MatrixMaterial" Shading="2" Light="0" DrawBackFace="255"/>
+          </Definitions>
           <OnStart>
             <ZLibrary Comment="Matrix Library">
               <Source>
@@ -1447,34 +1450,13 @@ Debug.Translate = transformPoint(m, vector3(0.5, 0.5, 0));]]>
               </Children>
             </RenderTransformGroup>
           </OnRender>
-          <Definitions>
-            <Material Name="MatrixMaterial" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
-          </Definitions>
         </AppState>
         <AppState Comment="Proportional Type">
-          <OnRender>
-            <Group Comment="Text">
-              <Children>
-                <UseMaterial Material="ArialMaterial"/>
-                <RenderText TextArray="String" X="-5" Scale="5" Align="1" UseModelSpace="255">
-                  <RenderCharExpression>
-<![CDATA[//
-
-if(CharI != 0)
-{
-  float L = Letter[String[CharI-1]];
-  CharX -= 1-L;
-}]]>
-                  </RenderCharExpression>
-                </RenderText>
-              </Children>
-            </Group>
-          </OnRender>
           <Definitions>
             <Group Comment="Arial">
               <Children>
                 <Font Name="Arial" Bitmap="ArialBitmap" FirstChar="32" CharPixelWidth="24" CharPixelHeight="24"/>
-                <Bitmap Name="ArialBitmap" Width="4" Height="4">
+                <Bitmap Name="ArialBitmap" Width="256" Height="256">
                   <Producers>
                     <BitmapFromFile Transparency="2" HasAlphaLayer="1">
                       <BitmapFile>
@@ -1501,8 +1483,29 @@ if(CharI != 0)
               </Children>
             </Group>
           </Definitions>
+          <OnRender>
+            <Group Comment="Text">
+              <Children>
+                <UseMaterial Material="ArialMaterial"/>
+                <RenderText TextArray="String" X="-5" Scale="5" Align="1" UseModelSpace="255">
+                  <RenderCharExpression>
+<![CDATA[//
+
+if(CharI != 0)
+{
+  float L = Letter[String[CharI-1]];
+  CharX -= 1-L;
+}]]>
+                  </RenderCharExpression>
+                </RenderText>
+              </Children>
+            </Group>
+          </OnRender>
         </AppState>
         <AppState Comment="Input">
+          <Definitions>
+            <Array Name="Input" Dimensions="2" SizeDim1="2" SizeDim2="4" SizeDim3="4"/>
+          </Definitions>
           <OnStart>
             <ZExpression>
               <Expression>
@@ -1697,11 +1700,14 @@ return this.iteration < Input.SizeDim1;]]>
               </WhileExp>
             </Repeat>
           </OnRender>
-          <Definitions>
-            <Array Name="Input" Dimensions="2" SizeDim1="2" SizeDim2="4" SizeDim3="4"/>
-          </Definitions>
         </AppState>
         <AppState Comment="RayCast">
+          <Definitions>
+            <Array Name="RCVector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
+            <Constant Name="Epsilon" Value="0.001"/>
+            <Material Name="Wireframe" Shading="2" Light="0" DrawBackFace="255"/>
+            <Variable Name="DebugVar"/>
+          </Definitions>
           <OnStart>
             <ZLibrary Comment="RayCast Library">
               <Source>
@@ -1862,14 +1868,29 @@ if(this.Vertex.X > 0)
               </Children>
             </RenderTransformGroup>
           </OnRender>
-          <Definitions>
-            <Array Name="RCVector" Dimensions="1" SizeDim1="6" SizeDim2="3"/>
-            <Constant Name="Epsilon" Value="0.001"/>
-            <Material Name="Wireframe" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
-            <Variable Name="DebugVar"/>
-          </Definitions>
         </AppState>
         <AppState Comment="Trail">
+          <Definitions>
+            <Array Name="Mouse" Dimensions="1" SizeDim1="64" SizeDim2="4"/>
+            <Variable Name="MouseIndex" Type="1"/>
+            <Variable Name="MouseIndexLast" Type="1"/>
+            <Bitmap Name="Bitmap" Width="16" Height="256">
+              <Producers>
+                <BitmapExpression>
+                  <Expression>
+<![CDATA[//
+
+pixel = Y;]]>
+                  </Expression>
+                </BitmapExpression>
+              </Producers>
+            </Bitmap>
+            <Material Name="TrailMaterial" Light="0" ZBuffer="0">
+              <Textures>
+                <MaterialTexture Texture="Bitmap" TexCoords="1"/>
+              </Textures>
+            </Material>
+          </Definitions>
           <OnStart>
             <ZExpression>
               <Expression>
@@ -1967,29 +1988,66 @@ else
               </RenderVertexExpression>
             </RenderNet>
           </OnRender>
-          <Definitions>
-            <Array Name="Mouse" Dimensions="1" SizeDim1="64" SizeDim2="4"/>
-            <Variable Name="MouseIndex" Type="1"/>
-            <Variable Name="MouseIndexLast" Type="1"/>
-            <Bitmap Name="Bitmap" Width="0" Height="4">
-              <Producers>
-                <BitmapExpression>
-                  <Expression>
-<![CDATA[//
-
-pixel = Y;]]>
-                  </Expression>
-                </BitmapExpression>
-              </Producers>
-            </Bitmap>
-            <Material Name="TrailMaterial" Light="0" ZBuffer="0">
-              <Textures>
-                <MaterialTexture Texture="Bitmap" TexCoords="1"/>
-              </Textures>
-            </Material>
-          </Definitions>
         </AppState>
         <AppState Comment="ViewFrustrum Culling">
+          <Definitions>
+            <Mesh Name="meshFrustrum">
+              <Producers>
+                <MeshBox/>
+                <MeshExpression>
+                  <Expression>
+<![CDATA[//V : current vertex
+//N : current normal (turn off AutoNormals when modifying normals)
+//C : current color (turn on VertexColors)
+
+if( v.Z < 0 ){
+  v.Z = 0;
+  v.X = 0;
+  v.Y = 0;
+  //c = 1;
+  }
+
+if( v.Z > 0 ){
+  // float ratio = tan( viewAngle * 2 * PI );
+  v.Z = 1;
+  v.X *= viewRatio;
+  v.Y *= viewRatio;
+  // c = .5;
+  // c.B = 0;
+  }]]>
+                  </Expression>
+                </MeshExpression>
+              </Producers>
+            </Mesh>
+            <Mesh Name="meshBox">
+              <Producers>
+                <MeshBox/>
+              </Producers>
+            </Mesh>
+            <Model Name="modelFrustum">
+              <OnRender>
+                <ZExpression Comment="update rotation">
+                  <Expression>
+<![CDATA[rtg_FrustrumX.Rotate.Y = viewRotation[ 0 ];
+rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
+                  </Expression>
+                </ZExpression>
+                <RenderTransformGroup Name="rtg_FrustrumX">
+                  <Children>
+                    <RenderTransformGroup Name="rtg_FrustrumY">
+                      <Children>
+                        <UseMaterial Material="matWireframe"/>
+                        <RenderSetColor Color="0 0 1 1"/>
+                        <RenderMesh Mesh="meshFrustrum"/>
+                      </Children>
+                    </RenderTransformGroup>
+                  </Children>
+                </RenderTransformGroup>
+              </OnRender>
+            </Model>
+            <Material Name="matWireframe" Shading="2" Light="0" DrawBackFace="255"/>
+            <Material Name="matSmooth" Color="0.7529 0.7529 0.7529 1"/>
+          </Definitions>
           <OnStart>
             <Group Comment="VFCMatrix Lib">
               <Children>
@@ -2276,64 +2334,6 @@ rtg_TestBox.Translate.Z = VFCMatrix[ 0, 2, 0 ];]]>
             <UseMaterial Material="matSmooth"/>
             <RenderText TextFloatRef="App.FpsCounter" X="-1" Y="0.95" Align="1"/>
           </OnRender>
-          <Definitions>
-            <Mesh Name="meshFrustrum">
-              <Producers>
-                <MeshBox/>
-                <MeshExpression>
-                  <Expression>
-<![CDATA[//V : current vertex
-//N : current normal (turn off AutoNormals when modifying normals)
-//C : current color (turn on VertexColors)
-
-if( v.Z < 0 ){
-  v.Z = 0;
-  v.X = 0;
-  v.Y = 0;
-  //c = 1;
-  }
-
-if( v.Z > 0 ){
-  // float ratio = tan( viewAngle * 2 * PI );
-  v.Z = 1;
-  v.X *= viewRatio;
-  v.Y *= viewRatio;
-  // c = .5;
-  // c.B = 0;
-  }]]>
-                  </Expression>
-                </MeshExpression>
-              </Producers>
-            </Mesh>
-            <Mesh Name="meshBox">
-              <Producers>
-                <MeshBox/>
-              </Producers>
-            </Mesh>
-            <Model Name="modelFrustum">
-              <OnRender>
-                <ZExpression Comment="update rotation">
-                  <Expression>
-<![CDATA[rtg_FrustrumX.Rotate.Y = viewRotation[ 0 ];
-rtg_FrustrumY.Rotate.X = viewRotation[ 1 ];]]>
-                  </Expression>
-                </ZExpression>
-                <RenderTransformGroup Name="rtg_FrustrumX">
-                  <Children>
-                    <RenderTransformGroup Name="rtg_FrustrumY">
-                      <Children>
-                        <UseMaterial Material="matWireframe"/>
-                        <RenderSetColor Color="0 0 1 1"/>
-                        <RenderMesh Mesh="meshFrustrum"/>
-                      </Children>
-                    </RenderTransformGroup>
-                  </Children>
-                </RenderTransformGroup>
-              </OnRender>
-            </Model>
-            <Material Name="matWireframe" WireframeWidth="1" Shading="2" Light="0" DrawBackFace="255"/>
-            <Material Name="matSmooth" Color="0.7529 0.7529 0.7529 1"/>
-          </Definitions>
         </AppState>
       </Children>
     </Group>
@@ -3396,9 +3396,9 @@ int BASS_ChannelPause(int handle) {}]]>
   Adapter to the SunVox Library.
   http://www.warmplace.ru/soft/sunvox
 
-  Created by Rado1(c)2012-2013
+  Created by Rado1(c)2012-2017
 
-  Download the library from http://www.warmplace.ru/soft/sunvox/sunvox_dll.zip
+  Download the library from the URL above.
   More info: http://www.emix8.org/forum/viewtopic.php?p=5446
 
 */
@@ -3406,7 +3406,7 @@ int BASS_ChannelPause(int handle) {}]]>
 // Constants
 
 const int SV_NOTECMD_NOTE_OFF = 128;
-const int SV_NOTECMD_ALL_NOTES_OFF  = 129; // notes of all synths off
+const int SV_NOTECMD_ALL_NOTES_OFF = 129; // notes of all synths off
 const int SV_NOTECMD_CLEAN_SYNTHS = 130; // stop and clean all synths
 const int SV_NOTECMD_STOP = 131;
 const int SV_NOTECMD_PLAY = 132;
@@ -3415,7 +3415,7 @@ const int SV_INIT_FLAG_NO_DEBUG_OUTPUT = 1 << 0;
 const int SV_INIT_FLAG_USER_AUDIO_CALLBACK = 1 << 1;
 const int SV_INIT_FLAG_AUDIO_INT16 = 1 << 2;
 const int SV_INIT_FLAG_AUDIO_FLOAT32 = 1 << 3;
-const int SV_INIT_FLAG_ONE_THREAD =  1 << 4;
+const int SV_INIT_FLAG_ONE_THREAD = 1 << 4;
 
 const int SV_MODULE_FLAG_EXISTS = 1;
 const int SV_MODULE_FLAG_EFFECT = 2;
@@ -3429,7 +3429,7 @@ const int SV_STYPE_INT32 = 1;
 const int SV_STYPE_FLOAT32 = 2;
 const int SV_STYPE_FLOAT64 = 3;
 
-// Initialization functions
+// Initialization
 
 int sv_init(string dev, int freq, int channels, int flags) {}
 int sv_deinit() {}
@@ -3440,7 +3440,7 @@ int sv_unlock_slot(int slot) {}
 int sv_load(int slot, string name) {}
 int sv_load_from_memory(int slot, xptr data, int data_size) {}
 
-// Functions to control song playing
+// Song playing control
 
 int sv_play(int slot) {}
 int sv_play_from_beginning(int slot) {}
@@ -3448,11 +3448,17 @@ int sv_stop(int slot) {}
 int sv_set_autostop(int slot, int autostop) {}
   // autostop values: 0 - disable autostop; 1 - enable autostop.
   // When disabled, song is playing infinitely in the loop.
-int sv_rewind(int slot, int t) {}
+int sv_rewind(int slot, int line_num) {}
 int sv_volume(int slot, int vol) {}
 int sv_send_event(int slot, int channel_num, int note, int vel, int module, int ctl, int ctl_val) {}
+  //  channel_num: from 0 to 15;
+  //  note: 0 - nothing; 1..127 - note num; 128 - note off; 129, 130... - see NOTECMD_xxx defines;
+  //  vel: velocity 1..129; 0 - default;
+  //  module: 0 - nothing; 1..255 - module number;
+  //ctl - 0xCCEE. CC - number of a controller (1..255). EE - std effect
+  //ctl_val - value of controller/effect
 
-// Functions to get info about the engine, song and its playing
+// Getting info about the engine, song and its playing
 
 int sv_audio_callback(xptr buf, int frames, int latency, int out_time) {}
   // Get the next piece of SunVox audio.
@@ -3482,31 +3488,34 @@ int sv_get_ticks() {}
   // SunVox engine uses its own time space, measured in ticks.
 int sv_get_ticks_per_second() {}
   // Returns the number of SunVox ticks per second.
+
+// Module management
+
+int sv_new_module(int slot, string type, string name, int x, int y, int z) {}
+  // Use it between sv_lock_slot() and sv_unlock_slot()
+int sv_remove_module(int slot, int mod_num) {}
+  // Use it between sv_lock_slot() and sv_unlock_slot()
+int sv_connect_module(int slot, int source, int destination) {}
+  // Use it between sv_lock_slot() and sv_unlock_slot()
+int sv_disconnect_module(int slot, int source, int destination) {}
+  // Use it between sv_lock_slot() and sv_unlock_slot()
+int sv_load_module(int slot, string file_name, int x, int y, int z) {}
+int sv_sampler_load(int slot, int sampler_module, string file_name, int sample_slot) {}
 int sv_get_number_of_modules(int slot) {}
 int sv_get_module_flags(int slot, int mod_num) {}
 string sv_get_module_name(int slot, int mod_num) {}
-int[] sv_get_module_inputs(int slot, int mod_num) {}
-int[] sv_get_module_outputs(int slot, int mod_num) {}
 int sv_get_module_xy(int slot, int mod_num) {}
 int sv_get_module_color(int slot, int mod_num) {}
-byte[] sv_get_module_scope(int slot, int mod_num, int channel, int[] offset, int[] buffer_size) {}
+int sv_get_number_of_module_ctls(int slot, int mod_num) {}
+string sv_get_module_ctl_name(int slot, int mod_num, int ctl_num) {}
+int sv_get_module_ctl_value(int slot, int mod_num, int ctl_num, int scaled) {}
 int sv_get_number_of_patterns(int slot) {}
 int sv_get_pattern_x(int slot, int pat_num) {}
 int sv_get_pattern_y(int slot, int pat_num) {}
 int sv_get_pattern_tracks(int slot, int pat_num) {}
 int sv_get_pattern_lines(int slot, int pat_num) {}
-byte[] sv_get_pattern_data(int slot, int pat_num) {}
-  // Returns array of structures:
-  // typedef struct {
-  //   unsigned char  note;    // 0 - nothing; 1..127 - note num; 128 - note off; 129, 130... - see NOTECMD_xxx
-  //   unsigned char  vel;     // Velocity 1..129; 0 - default
-  //   unsigned char  module;  // 0 - nothing; 1..255 - module number
-  //   unsigned char  nothing;
-  //   unsigned short ctl;     // CCXX. CC - number of controller. XX - std effect
-  //   unsigned short ctl_val; // Value of controller
-  // } sunvox_note;
 int sv_pattern_mute(int slot, int pat_num, int mute) {}
-  // Use it with sv_lock_slot() and sv_unlock_slot()]]>
+  // Use it between sv_lock_slot() and sv_unlock_slot()]]>
           </Source>
         </ZExternalLibrary>
         <ZExternalLibrary Comment="MikMod sound library" ModuleName="libmikmod" CallingConvention="1" BeforeInitExp="if(ANDROID) this.ModuleName = &quot;./libmikmod.so&quot;;">
@@ -3957,7 +3966,7 @@ string ouya_GetGameData(string name) {}]]>
         <Group Name="DinaFontGroup" Comment="Dina">
           <Children>
             <Font Name="DinaFont" Bitmap="DinaBitmap" FirstChar="32" CharPixelWidth="8" CharPixelHeight="16"/>
-            <Bitmap Name="DinaBitmap" Comment="Font from http://www.donationcoder.com/Software/Jibz/Dina/index.html" Width="3" Height="3" Filter="1">
+            <Bitmap Name="DinaBitmap" Comment="Font from http://www.donationcoder.com/Software/Jibz/Dina/index.html" Width="128" Height="128" Filter="1">
               <Producers>
                 <BitmapFromFile Transparency="1">
                   <BitmapFile>
