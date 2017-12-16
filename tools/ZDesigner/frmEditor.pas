@@ -991,6 +991,7 @@ procedure TEditorForm.ReadAppSettingsFromIni;
 var
   Ini : TIniFile;
   Section,S : string;
+  OldState : TWindowState;
 begin
   Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
   try
@@ -1003,7 +1004,9 @@ begin
 
     Self.MainScaling := Ini.ReadInteger(Section,'Scaling',100);
 
+    OldState := Self.WindowState; //ChangeScale switches from Maximized to Normal
     ChangeScale(Self.MainScaling,100);
+    Self.WindowState := OldState;
 
     GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
     if GuiLayout=0 then
@@ -4139,8 +4142,10 @@ begin
   begin
     for Id := Low(TZClassIds) to High(TZClassIds) do
     begin
+      if Id=AnyComponentClassId then
+        Continue;
       Ci := ComponentManager.GetInfoFromId(Id);
-      if Ci.ZClass.InheritsFrom(TCommand) and (not Ci.ZClass.InheritsFrom(TContentProducer)) then
+      if Assigned(Ci) and Ci.ZClass.InheritsFrom(TCommand) and (not Ci.ZClass.InheritsFrom(TContentProducer)) then
         InAdd([ComponentManager.GetInfoFromId(Id).ZClassName]);
     end;
   end
