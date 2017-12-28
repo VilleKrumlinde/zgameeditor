@@ -275,10 +275,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -521,8 +517,8 @@ object EditorForm: TEditorForm
             BevelOuter = bvNone
             TabOrder = 1
             object DisableShadersCheckBox: TCheckBox
-              Left = 236
-              Top = 2
+              Left = 147
+              Top = 4
               Width = 120
               Height = 21
               Hint = 'Click to disable OpenGL shaders'
@@ -535,8 +531,8 @@ object EditorForm: TEditorForm
               OnClick = DisableShadersCheckBoxClick
             end
             object DisableFBOCheckBox: TCheckBox
-              Left = 236
-              Top = 22
+              Left = 147
+              Top = 21
               Width = 120
               Height = 21
               Hint = 'Click to disable OpenGL FBO (render to texture)'
@@ -585,10 +581,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 1
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object Panel1: TPanel
             Left = 0
             Top = 0
@@ -624,10 +616,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           ImageIndex = 3
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
         end
       end
     end
@@ -2316,5 +2304,10 @@ object EditorForm: TEditorForm
     Title = 'Open style'
     Left = 56
     Top = 368
+  end
+  object HighDPIImageListContainer: TImageList
+    ColorDepth = cd32Bit
+    Left = 56
+    Top = 208
   end
 end

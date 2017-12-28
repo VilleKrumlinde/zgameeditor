@@ -234,6 +234,7 @@ type
     PropEditParentPanel: TPanel;
     LogShowTraceOnly: TMenuItem;
     Findunsedcomponents1: TMenuItem;
+    HighDPIImageListContainer: TImageList;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -375,6 +376,7 @@ type
     procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString; Level : TLogLevel);
     procedure OpenProject(const FileName: string; const IsTemplate : boolean = False);
     procedure NewProject(const FromTemplate : string = '');
+    procedure CommitAllEdits;
     function CloseProject: boolean;
     procedure BuildBinary(const PlayerName, OutputName: string);
     procedure ExecToolAndWait(const ExeFile, ParamString: string);
@@ -417,6 +419,7 @@ type
     procedure OnDetachedPropEditorClose(Sender: TObject; var Action: TCloseAction);
     procedure FillQuickCompList;
     procedure OnPropEditFocusControl(Sender: TObject; Prop : TZProperty; Component : TZComponent);
+    procedure ResizeImageListImagesforHighDPI(const imgList: TImageList);
   protected
     procedure CreateWnd; override;
   public
@@ -861,6 +864,8 @@ begin
   ReadProjectSettingsFromIni;
   Tree.Invalidate;
   Tree.Items[0].Selected := True;  //Select "App" component as default
+  //After scaling, hscroll position is sometimes not left 0
+  Tree.Perform(WM_HSCROLL, MakeWParam(SB_PAGELEFT, 0), 0);
 end;
 
 function TEditorForm.OnGetLibraryPath : string;
@@ -1006,6 +1011,11 @@ begin
 
     OldState := Self.WindowState; //ChangeScale switches from Maximized to Normal
     ChangeScale(Self.MainScaling,100);
+    if Self.MainScaling<>100 then
+    begin
+      ResizeImageListImagesforHighDPI(Self.ActionImageList);
+      ResizeImageListImagesforHighDPI(Self.ActionDisabledImageList);
+    end;
     Self.WindowState := OldState;
 
     GuiLayout := Min(Ini.ReadInteger(Section,'GuiLayout',1),1);
@@ -1067,6 +1077,76 @@ begin
     EnableThreadedProcessingMenuItem.OnClick(EnableThreadedProcessingMenuItem);
   finally
     Ini.Free;
+  end;
+end;
+
+procedure TEditorForm.ResizeImageListImagesforHighDPI(const imgList: TImageList);
+//Credits: http://zarko-gajic.iz.hr/resizing-delphis-timagelist-bitmaps-to-fit-high-dpi-scaling-size-for-menus-toolbars-trees-etc/
+const
+  DevImgSIZE = 16;
+var
+  ii : integer;
+  mb, ib, sib, smb : TBitmap;
+begin
+  if Self.MainScaling=100 then Exit;
+
+  //clear images
+  highDPIImageListContainer.Clear;
+
+  //add from source image list
+  for ii := 0 to -1 + imgList.Count do
+    highDPIImageListContainer.AddImage(imgList, ii);
+
+  //set size to match DPI size (like 250% of 16px = 40px)
+  imgList.SetSize(MulDiv(DevImgSIZE, Self.MainScaling, 100), MulDiv(DevImgSIZE, Self.MainScaling, 100));
+
+  //add images back to original ImageList stretched (if DPI scaling > 150%) or centered (if DPI scaling <= 150%)
+  for ii := 0 to -1 + highDPIImageListContainer.Count do
+  begin
+    sib := TBitmap.Create; //stretched (or centered) image
+    smb := TBitmap.Create; //stretched (or centered) mask
+    try
+      sib.Width := imgList.Width;
+      sib.Height := imgList.Height;
+      sib.Canvas.FillRect(sib.Canvas.ClipRect);
+      smb.Width := imgList.Width;
+      smb.Height := imgList.Height;
+      smb.Canvas.FillRect(smb.Canvas.ClipRect);
+
+      ib := TBitmap.Create;
+      mb := TBitmap.Create;
+      try
+        ib.Width := DevImgSIZE;
+        ib.Height := DevImgSIZE;
+        ib.Canvas.FillRect(ib.Canvas.ClipRect);
+
+        mb.Width := DevImgSIZE;
+        mb.Height := DevImgSIZE;
+        mb.Canvas.FillRect(mb.Canvas.ClipRect);
+
+        ImageList_DrawEx(highDPIImageListContainer.Handle, ii, ib.Canvas.Handle, 0, 0, ib.Width, ib.Height, CLR_NONE, CLR_NONE, ILD_NORMAL);
+        ImageList_DrawEx(highDPIImageListContainer.Handle, ii, mb.Canvas.Handle, 0, 0, mb.Width, mb.Height, CLR_NONE, CLR_NONE, ILD_MASK);
+
+        if Screen.PixelsPerInch * 100 / 96 <= 150 then //center if <= 150%
+        begin
+          sib.Canvas.Draw((sib.Width - ib.Width) DIV 2, (sib.Height - ib.Height) DIV 2, ib);
+          smb.Canvas.Draw((smb.Width - mb.Width) DIV 2, (smb.Height - mb.Height) DIV 2, mb);
+        end
+        else //stretch if > 150%
+        begin
+          sib.Canvas.StretchDraw(Rect(0, 0, sib.Width, sib.Width), ib);
+          smb.Canvas.StretchDraw(Rect(0, 0, smb.Width, smb.Width), mb);
+        end;
+      finally
+        ib.Free;
+        mb.Free;
+      end;
+
+      imgList.Add(sib, smb);
+    finally
+      sib.Free;
+      smb.Free;
+    end;
   end;
 end;
 
@@ -2427,6 +2507,7 @@ var
   SymTemp : TSymbolTable;
   C : TZComponent;
 begin
+  CommitAllEdits;
   Stream := ComponentManager.SaveXmlToStream(Self.Root) as TMemoryStream;
   try
     SetLength(Sa,Stream.Size);
@@ -3618,20 +3699,11 @@ begin
     (Tree.Selected.Index>0);
 end;
 
-function TEditorForm.CloseProject : boolean;
+procedure TEditorForm.CommitAllEdits;
 var
   F : TForm;
   C : TCompEditFrameBase;
 begin
-  Result := True;
-  if not Assigned(Root) then
-    Exit;
-
-  WriteProjectSettingsToIni;
-
-  ShowNode := nil;
-  Tree.LockShowNode := nil;
-
   //Close and save all detached editors
   for F in DetachedCompEditors.Values do
   begin
@@ -3647,6 +3719,20 @@ begin
     (F as TCustomPropEditBaseForm).SaveChanges;
   end;
   DetachedPropEditors.Clear;
+end;
+
+function TEditorForm.CloseProject : boolean;
+begin
+  Result := True;
+  if not Assigned(Root) then
+    Exit;
+
+  WriteProjectSettingsToIni;
+
+  ShowNode := nil;
+  Tree.LockShowNode := nil;
+
+  CommitAllEdits;
 
   //This force current expression-editor to be saved
   Tree.Selected := nil;

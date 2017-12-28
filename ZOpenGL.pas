@@ -818,6 +818,8 @@ const
   GL_LUMINANCE_ALPHA                = $190A;
   GL_DEPTH_COMPONENT16              = $81A5;
 
+  GL_DEPTH24_STENCIL8 = $88F0;
+
   GL_R32F = $822E; //OpenGL 3+
 
   // PixelMap

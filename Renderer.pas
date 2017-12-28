@@ -2138,10 +2138,12 @@ var
   W,H : integer;
   ActualW,ActualH,I : integer;
   A : TZApplication;
-  IsFirstUse : boolean;
+  IsFirstUse,WithStencil : boolean;
 begin
   if not FbosSupported then
     Exit;
+
+  WithStencil := False;
 
   {$ifndef minimal}
   if not NoApp then
@@ -2150,6 +2152,7 @@ begin
     A := ZApp;
     //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
     A.UpdateViewport;
+    WithStencil := A.UseStencilBuffer;
   {$ifndef minimal}
   end else
     A := nil;
@@ -2203,10 +2206,19 @@ begin
     glTexImage2D(GL_TEXTURE_2D, 0, InternalFormats[ Ord(Self.InternalFormat) ] , ActualW, ActualH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+
+    {$ifdef android}
+    I := GL_DEPTH_COMPONENT16;
+    {$else}
+    if WithStencil then
+      I := GL_DEPTH24_STENCIL8
+    else
+      I := GL_DEPTH_COMPONENT;
+    {$endif}
     // create a renderbuffer object to store depth info
     glGenRenderbuffers(1, @RboId);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, RboId);
-    glRenderbufferStorage(GL_RENDERBUFFER_EXT, {$ifdef android}GL_DEPTH_COMPONENT16{$else}GL_DEPTH_COMPONENT{$endif},ActualW, ActualH);
+    glRenderbufferStorage(GL_RENDERBUFFER_EXT, I, ActualW, ActualH);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
@@ -2218,6 +2230,9 @@ begin
 
     // attach the renderbuffer to depth attachment point
     glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
+
+    if WithStencil then
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
 
     {$ifdef android}
     if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
@@ -2246,7 +2261,10 @@ begin
   if Self.ClearBeforeUse or IsFirstUse then
   begin
     glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    I := GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT;
+    if WithStencil then
+      I := I or GL_STENCIL_BUFFER_BIT;
+    glClear( I );
   end;
 end;
 
