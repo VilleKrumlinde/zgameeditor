@@ -189,7 +189,7 @@ procedure TObjImport.UpdateMeshImp(MeshImp: TMeshImport);
 //Write to MeshImp from 3dsMesh
 var
   I,Color : integer;
-  Stream,StU,StV : TMemoryStream;
+  Stream{,StU,StV} : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   Sm : smallint;

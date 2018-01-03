@@ -615,10 +615,15 @@ begin
 end;
 
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
+{$IFNDEF MINIMAL}
+  {$IFNDEF ZGEVIZ}
+    {$DEFINE GUARD_LIMIT}
+  {$ENDIF}
+{$ENDIF}
 const
   NilP : pointer = nil;
 var
-{$ifndef minimal}
+{$ifdef GUARD_LIMIT}
   GuardLimit,GuardAllocLimit : integer;
 {$endif}
   LocalEnv : TExecutionEnvironment;
@@ -637,7 +642,7 @@ begin
 
   Env.StackPushPointer(NilP); //Push return adress nil
 
-  {$ifndef minimal}
+  {$ifdef GUARD_LIMIT}
   GuardLimit := High(Integer);
   GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000*10;
   {$endif}
@@ -647,7 +652,7 @@ begin
     if Env.gCurrentPc=nil then
        break;
     Inc(Env.gCurrentPc);
-    {$ifndef minimal}
+    {$ifdef GUARD_LIMIT}
     Dec(GuardLimit);
     if GuardLimit=0 then
       ZHalt('Infinite loop?');
