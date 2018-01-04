@@ -463,6 +463,8 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     DefineLabel(LExit);
   end;
 
+var
+  I : integer;
 begin
   case Op.Kind of
     zcMul : DoGenBinary(vbkMul);
@@ -489,6 +491,9 @@ begin
     zcReinterpretCast : GenValue(Op.Child(0));
     zcMod : DoGenBinary(vbkMod);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, True);
+    zcBlock :
+      for I := 0 to Op.Children.Count-1 do
+        GenValue(Op.Child(I));
   else
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;

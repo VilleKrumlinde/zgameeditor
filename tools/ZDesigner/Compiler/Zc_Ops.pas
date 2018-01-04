@@ -122,6 +122,9 @@ type
     //For external functions
     IsExternal : boolean;
     ExtLib : TZExternalLibrary;
+    //For inlining
+    ReturnCount : integer;
+    IsRecursive: boolean;
     function NeedFrame : boolean;
   end;
 
@@ -174,7 +177,7 @@ function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
-function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
@@ -561,7 +564,7 @@ begin
     zcNot : Result := '!(' + Child(0).ToString +')';
     zcReturn :
       begin
-        Result := 'return';
+        Result := 'return ';
         if Children.Count>0 then
           Result := Result + Child(0).ToString;
         Result := Result + ';';
@@ -626,6 +629,11 @@ var
   procedure DoIntConstant(const NewValue : double);
   begin
     Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
+  end;
+
+  procedure DoBoolConstant(const NewValue : boolean);
+  begin
+    Result := TZcOpLiteral.Create(C1.Typ.Kind, IfThen(NewValue,1,0) );
   end;
 
 begin
@@ -695,6 +703,12 @@ begin
         zcBinaryShiftL : DoIntConstant(Trunc(C1.Value) shl Trunc(C2.Value));
         zcBinaryShiftR : DoIntConstant(Trunc(C1.Value) shr Trunc(C2.Value));
         zcMod : DoConstant(Trunc(C1.Value) mod Trunc(C2.Value));
+        zcCompLE : DoBoolConstant(C1.Value <= C2.Value);
+        zcCompLT : DoBoolConstant(C1.Value < C2.Value);
+        zcCompGT : DoBoolConstant(C1.Value > C2.Value);
+        zcCompGE : DoBoolConstant(C1.Value >= C2.Value);
+        zcCompNE : DoBoolConstant(C1.Value <> C2.Value);
+        zcCompEQ : DoBoolConstant(C1.Value = C2.Value);
       end;
     end;
   end;
@@ -1205,7 +1219,92 @@ begin
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
 
-function VerifyFunctionCall(Op : TZcOp; var Error : String) : boolean;
+{.$DEFINE INLINING}
+
+{$IFDEF INLINING}
+function DoInline(Func : TZcOpFunctionUserDefined; CallerOp : TZcOp) : TZcOp;
+var
+  ArgMap : array of TZcOp;
+
+  function DoClone(Op : TZcOp) : TZcOp;
+  begin
+    Op := Op.Optimize;
+    Result := nil;
+    case Op.Kind of
+      zcConstLiteral:
+        begin
+          Result := TZcOpLiteral.Create(TZcOpLiteral(Op).Typ.Kind, TZcOpLiteral(Op).Value);
+          Result.Ref := Op.Ref;
+          TZcOpLiteral(Result).StringValue := TZcOpLiteral(Op).StringValue;
+        end;
+      zcIdentifier :
+        begin
+          if Assigned(Op.Ref) and (Op.Ref is TZcOpArgumentVar)  then
+            Result := ArgMap[ Func.Arguments.IndexOf(TZcOpArgumentVar(Op.Ref)) ];
+        end;
+      zcPlus,zcMul,zcDiv,zcMinus,zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ :
+        begin
+          Result := MakeBinary(Op.Kind,DoClone(Op.Child(0)),DoClone(Op.Child(1)) )
+        end;
+      zcConditional :
+        begin
+          Result := MakeOp(zcConditional,[ DoClone(Op.Child(0)),DoClone(Op.Child(1)),DoClone(Op.Child(2)) ])
+        end
+    else
+      Assert(False);
+    end;
+    Result := Result.Optimize;
+  end;
+
+var
+  I : integer;
+  OutOp,Op : TZcOp;
+begin
+  OutOp := MakeOp(zcBlock);
+
+  SetLength(ArgMap,Func.Arguments.Count);
+  for I := 0 to Func.Arguments.Count-1 do
+  begin
+    Op := CallerOp.Child(I);
+    Op := Op.Optimize;
+    if Op.Kind=zcConstLiteral then
+      ArgMap[I] := Op
+    else
+      assert(false);
+  end;
+
+  for I := 0 to Func.Statements.Count-1 do
+  begin
+    Op := TZcOp(Func.Statements[I]);
+    if Op.Kind=zcReturn then
+    begin
+      OutOp.Children.Add( DoClone(Op.Children.First) );
+    end;
+  end;
+
+  Result := OutOp;
+end;
+{$ENDIF}
+
+function VerifyFunctionCall(var Op : TZcOp; var Error : String) : boolean;
+
+  {$IFDEF INLINING}
+  function CanInline(Func : TZcOpFunctionUserDefined) : boolean;
+  begin
+    Result := False;
+    if (Func.Statements.Count<10) and
+      (Func.ReturnCount<=1) and
+      (not Func.IsRecursive)
+      then
+      {Todo: test
+         multiple return statements
+         ref arguments
+         recursive function
+      }
+      Result := True;
+  end;
+  {$ENDIF}
+
 var
   FOp : TZcOpFunctionBase;
   I : integer;
@@ -1221,6 +1320,13 @@ begin
     end;
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
+    {$IFDEF INLINING}
+    if (FOp is TZcOpFunctionUserDefined) then
+    begin
+      if CanInline(FOp as TZcOpFunctionUserDefined) then
+        Op := DoInline(FOp as TZcOpFunctionUserDefined, Op);
+    end;
+    {$ENDIF}
   end else
   begin
     Error := 'Unknown function: ' + Op.Id;

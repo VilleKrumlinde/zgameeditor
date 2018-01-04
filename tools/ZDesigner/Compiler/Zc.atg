@@ -695,6 +695,7 @@ EmbeddedStatement<var OutOp : TZcOp>
           else
             OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
         end;
+        Inc(CurrentFunction.ReturnCount);
     .)
 .
 /*------------------------------------------------------------------------*/
@@ -1063,6 +1064,8 @@ Primary<var OutOp : TZcOp>
            if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
              ZError('Unexpected "("');
            OutOp.Kind:=zcFuncCall;
+           if OutOp.Ref=CurrentFunction then
+             CurrentFunction.IsRecursive := True;
          .)
         [Argument<Op> (. OutOp.Children.Add(Op); .)
           {"," Argument<Op> (. OutOp.Children.Add(Op); .)

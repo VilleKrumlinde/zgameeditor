@@ -1375,6 +1375,7 @@ begin
           else
             OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
         end;
+        Inc(CurrentFunction.ReturnCount);
     
   end
   else SynError(5);
@@ -1883,6 +1884,8 @@ begin
            if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
              ZError('Unexpected "("');
            OutOp.Kind:=zcFuncCall;
+           if OutOp.Ref=CurrentFunction then
+             CurrentFunction.IsRecursive := True;
          
          if InSet(CurrentInputSymbol,7) then
          begin
