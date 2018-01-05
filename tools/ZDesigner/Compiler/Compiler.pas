@@ -349,6 +349,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Kind := TExpConvertKind(99);
     FromOp := Cop.Child(0);
     IsValue := True;
+
+    if (Cop.ToType.Kind in [zctByte,zctInt,zctFloat]) and (Cop.ToType.Kind=FromOp.GetDataType.Kind) then
+    begin //Superflous conversions can exits after inlining
+      GenValue(Op.Child(0));
+      Exit;
+    end;
+
     case FromOp.GetDataType.Kind of
       zctFloat :
         case Cop.ToType.Kind of
@@ -467,6 +474,7 @@ var
   I : integer;
 begin
   case Op.Kind of
+    zcNop : ;
     zcMul : DoGenBinary(vbkMul);
     zcDiv : DoGenBinary(vbkDiv);
     zcPlus : DoGenBinary(vbkPlus);
@@ -494,8 +502,10 @@ begin
     zcBlock :
       for I := 0 to Op.Children.Count-1 do
         GenValue(Op.Child(I));
+    zcInlineBlock : Gen(Op);
   else
-    raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
+    Gen(Op); //Any op can occur in a value block because of inlining
+//    raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 
@@ -927,6 +937,21 @@ var
     RestoreBreak;
   end;
 
+  procedure DoInlineBlock(Op : TZcOp);
+  var
+    LBreak : TZCodeLabel;
+    I : integer;
+  begin
+    LBreak := NewLabel;
+    SetBreak(LBreak);
+
+    for I := 0 to Op.Children.Count-1 do
+      Gen(Op.Children[I]);
+
+    DefineLabel(LBreak);
+    RestoreBreak;
+  end;
+
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -952,8 +977,10 @@ begin
         raise ECodeGenError.Create('Continue can only be used in loops');
     zcSwitch : DoGenSwitch(Op as TZcOpSwitch);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
+    zcInlineBlock : DoInlineBlock(Op);
   else
-    raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
+    GenValue(Op); //Value expressions (return values) can appear because of inlining
+    //raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 

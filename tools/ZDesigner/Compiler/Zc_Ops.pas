@@ -15,7 +15,7 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod);
+          zcReinterpretCast,zcMod,zcInlineBlock);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -177,7 +177,7 @@ function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
-function VerifyFunctionCall(var Op : TZcOp; var Error : String) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
@@ -529,7 +529,7 @@ begin
     zcCompGE : Result := Child(0).ToString + '>=' + Child(1).ToString;
     zcCompNE : Result := Child(0).ToString + '!=' + Child(1).ToString;
     zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
-    zcBlock :
+    zcBlock,zcInlineBlock :
       begin
         if Children.Count=1 then
           Result := Child(0).ToString
@@ -709,6 +709,8 @@ begin
         zcCompGE : DoBoolConstant(C1.Value >= C2.Value);
         zcCompNE : DoBoolConstant(C1.Value <> C2.Value);
         zcCompEQ : DoBoolConstant(C1.Value = C2.Value);
+        zcAnd : DoBoolConstant( (C1.Value>0) and (C2.Value>0) );
+        zcOr : DoBoolConstant( (C1.Value>0) or (C2.Value>0) );
       end;
     end;
   end;
@@ -866,8 +868,11 @@ begin
   if (Child(0).Kind=zcConstLiteral) then
   begin
     C1 := Child(0) as TZcOpLiteral;
-    Result := TZcOpLiteral.Create(Self.ToType.Kind,C1.Value);
+    Exit( TZcOpLiteral.Create(Self.ToType.Kind,C1.Value) );
   end;
+  if Children.First.GetDataType.Kind=Self.ToType.Kind then
+    //After inlining, conversion might not be needed
+    Result := Children.First;
 end;
 
 function TZcOpConvert.ToString: string;
@@ -1222,14 +1227,25 @@ end;
 {.$DEFINE INLINING}
 
 {$IFDEF INLINING}
-function DoInline(Func : TZcOpFunctionUserDefined; CallerOp : TZcOp) : TZcOp;
+function DoInline(Func,CurrentFunction : TZcOpFunctionUserDefined; CallerOp : TZcOp) : TZcOp;
 var
   ArgMap : array of TZcOp;
+  LocMap : TDictionary<TZcOpLocalVar,TZcOpLocalVar>;
 
   function DoClone(Op : TZcOp) : TZcOp;
+
+    procedure DoCloneList(L1,L2 : TZcOpList);
+    var
+      Op : TZcOp;
+    begin
+      for Op in L1 do
+       L2.Add(DoClone(Op))
+    end;
+
   begin
+    if Op=nil then
+      Exit(Op);
     Op := Op.Optimize;
-    Result := nil;
     case Op.Kind of
       zcConstLiteral:
         begin
@@ -1240,27 +1256,101 @@ var
       zcIdentifier :
         begin
           if Assigned(Op.Ref) and (Op.Ref is TZcOpArgumentVar)  then
-            Result := ArgMap[ Func.Arguments.IndexOf(TZcOpArgumentVar(Op.Ref)) ];
+            Result := ArgMap[ Func.Arguments.IndexOf(TZcOpArgumentVar(Op.Ref)) ]
+          else if Assigned(Op.Ref) and (Op.Ref is TZcOpLocalVar) then
+          begin
+            Result := MakeOp(zcIdentifier);
+            if LocMap.ContainsKey(Op.Ref as TZcOpLocalVar) then
+              Result.Ref := LocMap[ Op.Ref as TZcOpLocalVar ]
+            else
+              Result.Ref := Op.Ref;
+            Result.Id := TZcOpLocalVar(Result.Ref).Id;
+          end else
+          begin
+            Result := MakeOp(zcIdentifier);
+            Result.Id := Op.Id;
+            Result.Ref := Op.Ref;
+            DoCloneList(Op.Children,Result.Children);
+          end;
         end;
       zcPlus,zcMul,zcDiv,zcMinus,zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ :
         begin
           Result := MakeBinary(Op.Kind,DoClone(Op.Child(0)),DoClone(Op.Child(1)) )
         end;
-      zcConditional :
+      zcReturn :
         begin
-          Result := MakeOp(zcConditional,[ DoClone(Op.Child(0)),DoClone(Op.Child(1)),DoClone(Op.Child(2)) ])
+          if Func.ReturnCount>1 then
+          begin
+            if Func.ReturnType.Kind<>zctVoid then
+            begin
+              Result := MakeOp(zcBlock);
+              Result.Children.Add( DoClone(Op.Children.First) );
+              Result.Children.Add( MakeOp(zcBreak) );
+            end
+            else
+              Result := MakeOp(zcBreak);
+          end
+          else
+          begin
+            if Func.ReturnType.Kind<>zctVoid then
+              Result := DoClone(Op.Children.First)
+            else
+              Result := MakeOp(zcNop);
+          end;
+        end;
+      zcConvert :
+        begin
+          Result := TZcOpConvert.Create( TZcOpConvert(Op).ToType, DoClone(Op.Children.First) );
+        end;
+      zcArrayAccess:
+        begin
+          //todo: test if ref is local array
+          Result := TZcOpArrayAccess.Create(Op.Id, DoClone(TZcOpArrayAccess(Op).ArrayOp));
+          Result.Ref := Op.Ref;
+          DoCloneList(Op.Children,Result.Children);
+        end;
+      zcSwitch :
+        begin
+          Result := TZcOpSwitch.Create(nil);
+          TZcOpSwitch(Result).HasDefault := TZcOpSwitch(Op).HasDefault;
+          TZcOpSwitch(Result).ValueOp := DoClone(TZcOpSwitch(Op).ValueOp);
+          DoCloneList(TZcOpSwitch(Op).CaseOps,TZcOpSwitch(Result).CaseOps);
+          DoCloneList(TZcOpSwitch(Op).StatementsOps,TZcOpSwitch(Result).StatementsOps);
+        end;
+      zcInvokeComponent :
+        begin
+          Result := TZcOpInvokeComponent.Create(nil);
+          DoCloneList(Op.Children,Result.Children);
+        end;
+      zcReinterpretCast :
+        begin
+          Result := TZcOpReinterpretCast.Create(nil);
+          TZcOpReinterpretCast(Result).Typ := TZcOpReinterpretCast(Op).Typ;
+          DoCloneList(Op.Children,Result.Children);
         end
     else
-      Assert(False);
+      begin
+        Result := MakeOp(Op.Kind);
+        Result.Ref := Op.Ref;
+        Result.Id := Op.Id;
+        DoCloneList(Op.Children,Result.Children);
+      end
     end;
     Result := Result.Optimize;
   end;
 
 var
   I : integer;
-  OutOp,Op : TZcOp;
+  OutOp,Op,NewOp : TZcOp;
+  Loc,NewLoc : TZcOpLocalVar;
+  CastOp : TZcOpReinterpretCast;
 begin
-  OutOp := MakeOp(zcBlock);
+  if Func.ReturnCount>1 then
+    OutOp := MakeOp(zcInlineBlock)
+  else
+    OutOp := MakeOp(zcBlock);
+
+  LocMap := TDictionary<TZcOpLocalVar,TZcOpLocalVar>.Create;
 
   SetLength(ArgMap,Func.Arguments.Count);
   for I := 0 to Func.Arguments.Count-1 do
@@ -1270,36 +1360,70 @@ begin
     if Op.Kind=zcConstLiteral then
       ArgMap[I] := Op
     else
-      assert(false);
+    begin
+      NewLoc := MakeTemp(Op.GetDataType.Kind);
+      NewLoc.Typ := Op.GetDataType;
+      CurrentFunction.AddLocal(NewLoc);
+      NewOp := MakeOp(zcIdentifier);;
+      NewOp.Ref := NewLoc;
+      NewOp.Id := NewLoc.Id;
+      ArgMap[I] := NewOp;
+      OutOp.Children.Add( MakeAssign(atAssign, NewOp,Op) );
+    end;
+  end;
+
+  for Loc in Func.Locals do
+  begin
+    NewLoc := MakeTemp(Loc.Typ.Kind);
+    NewLoc.Typ := Loc.Typ;
+    if Assigned(Loc.InitExpression) then
+      NewLoc.InitExpression := DoClone(Loc.InitExpression);
+    CurrentFunction.AddLocal(NewLoc);
+    LocMap.Add(Loc,NewLoc);
   end;
 
   for I := 0 to Func.Statements.Count-1 do
   begin
     Op := TZcOp(Func.Statements[I]);
-    if Op.Kind=zcReturn then
-    begin
-      OutOp.Children.Add( DoClone(Op.Children.First) );
-    end;
+    OutOp.Children.Add( DoClone(Op) );
+  end;
+
+  LocMap.Free;
+
+  if Func.ReturnType.Kind<>zctVoid then
+  begin
+    //Last we must add cast to give the inlined function a type
+    //This won't generate any code
+    CastOp := TZcOpReinterpretCast.Create(nil);
+    CastOp.Typ := Func.ReturnType;
+    CastOp.Children.Add(OutOp);
+    OutOp := CastOp;
   end;
 
   Result := OutOp;
 end;
 {$ENDIF}
 
-function VerifyFunctionCall(var Op : TZcOp; var Error : String) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
 
   {$IFDEF INLINING}
   function CanInline(Func : TZcOpFunctionUserDefined) : boolean;
+  var
+    Arg : TZcOpArgumentVar;
   begin
     Result := False;
+
+    for Arg in Func.Arguments do
+      if Arg.Typ.IsPointer then
+        Exit(False);
+
     if (Func.Statements.Count<10) and
-      (Func.ReturnCount<=1) and
-      (not Func.IsRecursive)
+      //(Func.ReturnCount<=1) and
+      (not Func.IsRecursive) and
+      (CurrentFunction.Lib=Func.Lib)
       then
       {Todo: test
-         multiple return statements
          ref arguments
-         recursive function
       }
       Result := True;
   end;
@@ -1324,7 +1448,7 @@ begin
     if (FOp is TZcOpFunctionUserDefined) then
     begin
       if CanInline(FOp as TZcOpFunctionUserDefined) then
-        Op := DoInline(FOp as TZcOpFunctionUserDefined, Op);
+        Op := DoInline(FOp as TZcOpFunctionUserDefined, CurrentFunction, Op);
     end;
     {$ENDIF}
   end else

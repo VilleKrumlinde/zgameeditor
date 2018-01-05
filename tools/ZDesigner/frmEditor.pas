@@ -3989,7 +3989,7 @@ begin
   //Clear area in listbox-color, this avoids highlighting selected
   C.FillRect(Rect);
 
-  C.TextOut(Rect.Left + 2, Rect.Top, LogChars[ (Log.ID mod Length(LogChars))+1 ] );
+//  C.TextOut(Rect.Left + 2, Rect.Top, LogChars[ (Log.ID mod Length(LogChars))+1 ] );
 
 //  C.Font.Color := LogColors[ Log.ID mod High(LogColors) ];
   S := (Control as TListBox).Items[Index];

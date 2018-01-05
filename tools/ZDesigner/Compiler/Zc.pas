@@ -1899,7 +1899,7 @@ begin
            end;
          end;
           
-           if not VerifyFunctionCall(OutOp,S) then
+           if not VerifyFunctionCall(OutOp,S,CurrentFunction) then
              ZError(S);
         
          Expect(rparSym);

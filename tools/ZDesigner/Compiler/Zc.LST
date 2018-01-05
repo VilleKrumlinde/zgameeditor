@@ -1123,7 +1123,7 @@ Listing
  1072            }
  1073          ]
  1074          (.
- 1075             if not VerifyFunctionCall(OutOp,S) then
+ 1075             if not VerifyFunctionCall(OutOp,S,CurrentFunction) then
  1076               ZError(S);
  1077          .)
  1078      ")"

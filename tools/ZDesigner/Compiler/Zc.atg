@@ -1072,7 +1072,7 @@ Primary<var OutOp : TZcOp>
           }
         ]
         (.
-           if not VerifyFunctionCall(OutOp,S) then
+           if not VerifyFunctionCall(OutOp,S,CurrentFunction) then
              ZError(S);
         .)
     ")"
