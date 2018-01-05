@@ -950,7 +950,7 @@ procedure TEditorForm.AddOneLogString(const S : string; Log : TLog; Level : TLog
 var
   Data : TListLogItem;
 begin
-  while LogListBox.Items.Count>2000 do
+  while LogListBox.Items.Count>10000 do
   begin
     LogListBox.Items.Objects[0].Free;
     LogListBox.Items.Delete(0);

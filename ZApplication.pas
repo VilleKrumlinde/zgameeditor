@@ -1050,6 +1050,7 @@ begin
   SymTab.Add('this',C);
   try
     Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,Prop.ExpressionKind);
+    //ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');

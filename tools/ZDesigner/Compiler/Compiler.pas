@@ -499,10 +499,6 @@ begin
     zcReinterpretCast : GenValue(Op.Child(0));
     zcMod : DoGenBinary(vbkMod);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, True);
-    zcBlock :
-      for I := 0 to Op.Children.Count-1 do
-        GenValue(Op.Child(I));
-    zcInlineBlock : Gen(Op);
   else
     Gen(Op); //Any op can occur in a value block because of inlining
 //    raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );

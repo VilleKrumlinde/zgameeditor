@@ -1422,12 +1422,10 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction 
         Exit(False);
 
     if (Func.Statements.Count<10) and
-      //(Func.ReturnCount<=1) and
       (not Func.IsRecursive) and
       (CurrentFunction.Lib=Func.Lib)
       then
       {Todo: test
-         ref arguments
       }
       Result := True;
   end;
