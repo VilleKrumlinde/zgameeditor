@@ -863,6 +863,7 @@ end;
 function TZcOpConvert.Optimize: TZcOp;
 var
   C1 : TZcOpLiteral;
+  ChildType : TZcDataType;
 begin
   Result := inherited Optimize;
   if (Child(0).Kind=zcConstLiteral) then
@@ -870,7 +871,10 @@ begin
     C1 := Child(0) as TZcOpLiteral;
     Exit( TZcOpLiteral.Create(Self.ToType.Kind,C1.Value) );
   end;
-  if Children.First.GetDataType.Kind=Self.ToType.Kind then
+
+  ChildType := Children.First.GetDataType;
+  if (ChildType.Kind=Self.ToType.Kind) and (ChildType.TheArray=nil) and
+    (ChildType.IsPointer=ToType.IsPointer) then
     //After inlining, conversion might not be needed
     Result := Children.First;
 end;
