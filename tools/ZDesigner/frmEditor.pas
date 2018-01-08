@@ -3767,7 +3767,13 @@ begin
 
   if IsAppRunning then
     AppPreviewStopAction.Execute;
-  ZApp.Terminate;
+
+  try
+    ZApp.Terminate;
+  except
+    on E : Exception do ShowMessage(E.Message);
+  end;
+
   Root.Free;
   Root := nil;
   ZApp := nil;

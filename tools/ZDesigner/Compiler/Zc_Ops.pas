@@ -832,7 +832,7 @@ var
 begin
   UseCurly := (Self.Id<>'');// or ((Statements.Count>1) or (Locals.Count>0));
   if UseCurly then
-    Result := '{'#13#10;
+    Result := Id + '{'#13#10;
   for I := 0 to Locals.Count-1 do
     Result := Result + TZcOp(Locals[I]).ToString;
   for I := 0 to Statements.Count-1 do

@@ -106,6 +106,7 @@ type
     procedure RestoreReturn;
     procedure GenInvoke(Op: TZcOpInvokeComponent; IsValue: boolean);
     function GenArrayAddress(Op : TZcOp) : TObject;
+    procedure PostOptimize;
   public
     procedure GenRoot(StmtList : Classes.TList);
     constructor Create;
@@ -886,12 +887,15 @@ var
     DefineLabel(LReturn);
     RestoreReturn;
 
-    Ret := TExpReturn.Create(Target);
-    Ret.HasFrame := Func.NeedFrame;
-    Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
-    Ret.Arguments := Func.Arguments.Count;
-    if IsLibrary then
-      Ret.Lib := Component as TZLibrary;
+    if not IsExternalLibrary then
+    begin
+      Ret := TExpReturn.Create(Target);
+      Ret.HasFrame := Func.NeedFrame;
+      Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
+      Ret.Arguments := Func.Arguments.Count;
+      if IsLibrary then
+        Ret.Lib := Component as TZLibrary;
+    end;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
@@ -1072,6 +1076,7 @@ begin
   end;
 
   ResolveLabels;
+  PostOptimize;
 end;
 
 procedure TZCodeGen.ResolveLabels;
@@ -1090,6 +1095,34 @@ begin
       U := TLabelUse(Lbl.Usage[J]);
       Adr := Lbl.Definition - U.AdrPC - 1;
       U.AdrPtr^ := Adr;
+    end;
+  end;
+end;
+
+procedure TZCodeGen.PostOptimize;
+var
+  I : integer;
+  O : TZComponent;
+begin
+  for I := 0 to Target.Count-1 do
+  begin
+    O := TZComponent(Target[I]);
+    if (O is TExpJump) and (TExpJump(O).Kind=jsJumpAlways)
+    then
+    begin
+      if TExpJump(O).Destination=0 then
+      begin //Replace jump0 with nops
+        O.OwnerList:=nil;
+        Target[I].Free;
+        Target[I] := TExpMisc.Create(nil,emNop);
+        TZComponent(Target[I]).OwnerList := Target;
+      end else
+      begin //Replace jump to jump, with final jump
+        if (Target[I+TExpJump(O).Destination+1] is TExpJump) and
+        (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways)
+        then
+          Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination);
+      end;
     end;
   end;
 end;

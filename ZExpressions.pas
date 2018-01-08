@@ -52,13 +52,13 @@ type
     ZcStackPtr : PStackElement;
   private
     function StackGetDepth : integer; inline;
-    procedure StackPopTo(var X);
-    procedure StackPopToPointer(var X);
+    procedure StackPopTo(var X); {$IFDEF RELEASE}inline;{$ENDIF}
+    procedure StackPopToPointer(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     function StackPopFloat : single;
   public
     function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
-    procedure StackPush(const X);
-    procedure StackPushPointer(const X);
+    procedure StackPush(const X); {$IFDEF RELEASE}inline;{$ENDIF}
+    procedure StackPushPointer(const X); {$IFDEF RELEASE}inline;{$ENDIF}
     procedure Init;
   end;
 
@@ -355,7 +355,7 @@ type
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
-    emPtrDerefPointer, emNotifyPropChanged, emLoadNull);
+    emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -1602,6 +1602,7 @@ begin
         P := nil;
         Env.StackPushPointer(P);
       end;
+    emNop : ;
   end;
 end;
 
