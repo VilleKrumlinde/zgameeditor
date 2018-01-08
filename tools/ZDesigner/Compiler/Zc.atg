@@ -213,7 +213,7 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
-ZcFuncRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
+ZcFuncRest<Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean>
 (.
 var
   Func : TZcOpFunctionUserDefined;
@@ -229,6 +229,7 @@ var
           Func := TZcOpFunctionUserDefined.Create(GlobalNames);
         Func.Id := Name;
         Func.ReturnType := Typ;
+        Func.IsInline := IsInline;
         if IsPrivate then
           SymTab.Add(Func.Id,Func)
         else
@@ -251,7 +252,7 @@ Zc (. var
         Typ : TZcDataType;
         Func : TZcOpFunctionUserDefined;
         Name : string;
-        IsPrivate : boolean;
+        IsPrivate,IsInline : boolean;
     .)
 =
   IF (. AllowFunctions .)
@@ -261,12 +262,13 @@ Zc (. var
       [ "private" (. IsPrivate:= True; .) ]
       ConstantDeclarationList<IsPrivate>
     |
-      (. IsPrivate := False; .)
+      (. IsPrivate := False; IsInline := False; .)
       [ "private" (. IsPrivate:= True; .) ]
+      [ "inline" (. IsInline:= True; .) ]
       ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (. Name := LexString; .)
        /* Need to separate between global variable and method declarations */
        (
-         "(" ZcFuncRest<Typ,Name,IsPrivate>
+         "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline>
          | GlobalVarDecl<Typ,Name,IsPrivate> ";"
        )
   }

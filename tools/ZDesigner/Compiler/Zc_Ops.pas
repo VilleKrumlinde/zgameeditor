@@ -15,7 +15,7 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod,zcInlineBlock);
+          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -123,6 +123,7 @@ type
     IsExternal : boolean;
     ExtLib : TZExternalLibrary;
     //For inlining
+    IsInline : boolean;
     ReturnCount : integer;
     IsRecursive: boolean;
     function NeedFrame : boolean;
@@ -531,11 +532,15 @@ begin
     zcCompEQ : Result := Child(0).ToString + '==' + Child(1).ToString;
     zcBlock,zcInlineBlock :
       begin
+        if Kind=zcInlineBlock then
+          Result := '(inlined) '
+        else
+          Result := '';
         if Children.Count=1 then
-          Result := Child(0).ToString
+          Result := Result + Child(0).ToString
         else
         begin
-          Result := '{'#13#10;
+          Result := Result + '{'#13#10;
           for I := 0 to Children.Count-1 do
             Result := Result + Child(I).ToString + '; ' + #13#10;
           Result := Result + '}';//#13#10;
@@ -565,6 +570,13 @@ begin
     zcReturn :
       begin
         Result := 'return ';
+        if Children.Count>0 then
+          Result := Result + Child(0).ToString;
+        Result := Result + ';';
+      end;
+    zcInlineReturn :
+      begin
+        Result := 'inlinereturn ';
         if Children.Count>0 then
           Result := Result + Child(0).ToString;
         Result := Result + ';';
@@ -1228,7 +1240,7 @@ begin
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
 
-{.$DEFINE INLINING}
+{$DEFINE INLINING}
 
 {$IFDEF INLINING}
 function DoInline(Func,CurrentFunction : TZcOpFunctionUserDefined; CallerOp : TZcOp) : TZcOp;
@@ -1283,24 +1295,8 @@ var
         end;
       zcReturn :
         begin
-          if Func.ReturnCount>1 then
-          begin
-            if Func.ReturnType.Kind<>zctVoid then
-            begin
-              Result := MakeOp(zcBlock);
-              Result.Children.Add( DoClone(Op.Children.First) );
-              Result.Children.Add( MakeOp(zcBreak) );
-            end
-            else
-              Result := MakeOp(zcBreak);
-          end
-          else
-          begin
-            if Func.ReturnType.Kind<>zctVoid then
-              Result := DoClone(Op.Children.First)
-            else
-              Result := MakeOp(zcNop);
-          end;
+          Result := MakeOp(zcInlineReturn);
+          DoCloneList(Op.Children,Result.Children);
         end;
       zcConvert :
         begin
@@ -1349,10 +1345,7 @@ var
   Loc,NewLoc : TZcOpLocalVar;
   CastOp : TZcOpReinterpretCast;
 begin
-  if Func.ReturnCount>1 then
-    OutOp := MakeOp(zcInlineBlock)
-  else
-    OutOp := MakeOp(zcBlock);
+  OutOp := MakeOp(zcInlineBlock);
 
   LocMap := TDictionary<TZcOpLocalVar,TZcOpLocalVar>.Create;
 
@@ -1362,6 +1355,7 @@ begin
     Op := CallerOp.Child(I);
     Op := Op.Optimize;
     if Op.Kind=zcConstLiteral then
+      //todo: check that arguments are not assigned in inlined block
       ArgMap[I] := Op
     else
     begin
@@ -1421,8 +1415,7 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction 
       if Arg.Typ.IsPointer then
         Exit(False);
 
-    if (Func.Statements.Count<10) and
-      (not Func.IsRecursive) and
+    if (not Func.IsRecursive) and
       (CurrentFunction.Lib=Func.Lib)
       then
       {Todo: test
@@ -1447,7 +1440,7 @@ begin
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
     {$IFDEF INLINING}
-    if (FOp is TZcOpFunctionUserDefined) then
+    if (FOp is TZcOpFunctionUserDefined) and TZcOpFunctionUserDefined(FOp).IsInline then
     begin
       if CanInline(FOp as TZcOpFunctionUserDefined) then
         Op := DoInline(FOp as TZcOpFunctionUserDefined, CurrentFunction, Op);
@@ -1932,7 +1925,7 @@ const
 begin
   Result := TZcOpLocalVar.Create(nil);
   Inc(TempCounter);
-  Result.Id := '#temp' + IntToStr(TempCounter);
+  Result.Id := '#t' + IntToStr(TempCounter);
   Result.Typ.Kind := Kind;
 end;
 

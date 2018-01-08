@@ -2353,8 +2353,9 @@ begin
     begin
       ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
-      for I := 0 to Value.ExpressionValue.Code.Count - 1 do
-        Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+      if Value.ExpressionValue.Code.Count<100 then
+        for I := 0 to Value.ExpressionValue.Code.Count - 1 do
+          Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
 
     if F.Component=Self.Tree.ZSelected.Component then

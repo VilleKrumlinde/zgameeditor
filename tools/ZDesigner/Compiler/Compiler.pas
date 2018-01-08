@@ -80,11 +80,10 @@ type
     ZApp : TZApplication;
     SymTab : TSymbolTable;
     Labels : Contnrs.TObjectList;
-    LReturn : TZCodeLabel;
     CurrentFunction : TZcOpFunctionUserDefined;
     IsLibrary,IsExternalLibrary : boolean;
-    BreakLabel,ContinueLabel : TZCodeLabel;
-    BreakStack,ContinueStack : TStack<TZCodeLabel>;
+    BreakLabel,ContinueLabel,ReturnLabel : TZCodeLabel;
+    BreakStack,ContinueStack,ReturnStack : TStack<TZCodeLabel>;
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataTypeKind = zctFloat);
     function NewLabel : TZCodeLabel;
@@ -101,8 +100,10 @@ type
     procedure MakeStringLiteralOp(const Value : string);
     procedure SetBreak(L : TZCodeLabel);
     procedure SetContinue(L : TZCodeLabel);
+    procedure SetReturn(L : TZCodeLabel);
     procedure RestoreBreak;
     procedure RestoreContinue;
+    procedure RestoreReturn;
     procedure GenInvoke(Op: TZcOpInvokeComponent; IsValue: boolean);
     function GenArrayAddress(Op : TZcOp) : TObject;
   public
@@ -351,7 +352,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     IsValue := True;
 
     if (Cop.ToType.Kind in [zctByte,zctInt,zctFloat]) and (Cop.ToType.Kind=FromOp.GetDataType.Kind) then
-    begin //Superflous conversions can exits after inlining
+    begin //Superflous conversions can exist after inlining
       GenValue(Op.Child(0));
       Exit;
     end;
@@ -470,8 +471,6 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     DefineLabel(LExit);
   end;
 
-var
-  I : integer;
 begin
   case Op.Kind of
     zcNop : ;
@@ -499,9 +498,10 @@ begin
     zcReinterpretCast : GenValue(Op.Child(0));
     zcMod : DoGenBinary(vbkMod);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, True);
+    zcInlineBlock : Gen(Op);
   else
-    Gen(Op); //Any op can occur in a value block because of inlining
-//    raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
+    //Gen(Op); //Any op can occur in a value block because of inlining
+    raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 
@@ -813,9 +813,6 @@ var
     L : TExpAccessLocal;
   begin
     //"return x", generate value + jump to exit
-    if not Assigned(LReturn) then
-      //Global label shared for all return statements
-      LReturn := NewLabel;
     if CurrentFunction.ReturnType.Kind<>zctVoid then
     begin
       GenValue(Op.Child(0));
@@ -824,7 +821,15 @@ var
       L.Index := 0;
       L.Kind := loStore;
     end;
-    GenJump(jsJumpAlways,LReturn);
+    GenJump(jsJumpAlways,ReturnLabel);
+  end;
+
+  procedure DoGenInlineReturn;
+  begin
+    //"return x", generate value + jump to exit
+    if Op.Children.Count>0 then
+      GenValue(Op.Child(0));
+    GenJump(jsJumpAlways,ReturnLabel);
   end;
 
   procedure DoGenFunction(Func : TZcOpFunctionUserDefined);
@@ -833,9 +838,14 @@ var
     Frame : TExpStackFrame;
     Ret : TExpReturn;
     L : TZcOpLocalVar;
+    LReturn:TZCodeLabel;
   begin
     if (Func.Id='') and (Func.Statements.Count=0) then
       Exit; //Don't generate code for empty nameless function (such as Repeat.WhileExp)
+
+    LReturn := NewLabel;
+    SetReturn(LReturn);
+
     if IsLibrary then
     begin
       Func.Lib := Component as TZLibrary;
@@ -867,15 +877,15 @@ var
           Size3 := TDefineArray(L.Typ.TheArray).SizeDim3;
         end;
     end;
+
     for I := 0 to Func.Statements.Count - 1 do
     begin
       Gen(Func.Statements[I] as TZcOp);
     end;
-    if Assigned(LReturn) then
-    begin
-      DefineLabel(LReturn);
-      LReturn := nil;
-    end;
+
+    DefineLabel(LReturn);
+    RestoreReturn;
+
     Ret := TExpReturn.Create(Target);
     Ret.HasFrame := Func.NeedFrame;
     Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
@@ -933,19 +943,19 @@ var
     RestoreBreak;
   end;
 
-  procedure DoInlineBlock(Op : TZcOp);
+  procedure DoGenInlineBlock(Op : TZcOp);
   var
-    LBreak : TZCodeLabel;
+    LReturn : TZCodeLabel;
     I : integer;
   begin
-    LBreak := NewLabel;
-    SetBreak(LBreak);
+    LReturn := NewLabel;
+    SetReturn(LReturn);
 
     for I := 0 to Op.Children.Count-1 do
       Gen(Op.Children[I]);
 
-    DefineLabel(LBreak);
-    RestoreBreak;
+    DefineLabel(LReturn);
+    RestoreReturn;
   end;
 
 begin
@@ -973,10 +983,11 @@ begin
         raise ECodeGenError.Create('Continue can only be used in loops');
     zcSwitch : DoGenSwitch(Op as TZcOpSwitch);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
-    zcInlineBlock : DoInlineBlock(Op);
+    zcInlineBlock : DoGenInlineBlock(Op);
+    zcInlineReturn : DoGenInlineReturn;
   else
-    GenValue(Op); //Value expressions (return values) can appear because of inlining
-    //raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
+    //GenValue(Op); //Value expressions (return values) can appear because of inlining
+    raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
   end;
 end;
 
@@ -985,6 +996,7 @@ begin
   Labels.Free;
   BreakStack.Free;
   ContinueStack.Free;
+  ReturnStack.Free;
   inherited;
 end;
 
@@ -993,6 +1005,7 @@ begin
   Labels := Contnrs.TObjectList.Create;
   BreakStack := TStack<TZCodeLabel>.Create;
   ContinueStack := TStack<TZCodeLabel>.Create;
+  ReturnStack := TStack<TZCodeLabel>.Create;
 end;
 
 procedure TZCodeGen.DefineLabel(Lbl: TZCodeLabel);
@@ -1037,11 +1050,27 @@ end;
 procedure TZCodeGen.GenRoot(StmtList: Classes.TList);
 var
   I : integer;
+  LReturn : TZCodeLabel;
 begin
   IsLibrary := Component is TZLibrary;
   IsExternalLibrary := Component is TZExternalLibrary;
+
+  LReturn:=nil;
+  if (not IsLibrary) and (not IsExternalLibrary) then
+  begin //For ZExpression, define label for "return"
+    LReturn := NewLabel;
+    SetReturn(LReturn);
+  end;
+
   for I := 0 to StmtList.Count-1 do
     Gen(StmtList[I]);
+
+  if Assigned(LReturn) then
+  begin
+    DefineLabel(LReturn);
+    RestoreReturn;
+  end;
+
   ResolveLabels;
 end;
 
@@ -1075,6 +1104,11 @@ begin
   ContinueLabel := ContinueStack.Pop;
 end;
 
+procedure TZCodeGen.RestoreReturn;
+begin
+  ReturnLabel := ReturnStack.Pop;
+end;
+
 procedure TZCodeGen.SetBreak(L: TZCodeLabel);
 begin
   BreakStack.Push(Self.BreakLabel);
@@ -1085,6 +1119,12 @@ procedure TZCodeGen.SetContinue(L: TZCodeLabel);
 begin
   ContinueStack.Push(Self.ContinueLabel);
   Self.ContinueLabel := L;
+end;
+
+procedure TZCodeGen.SetReturn(L: TZCodeLabel);
+begin
+  ReturnStack.Push(Self.ReturnLabel);
+  Self.ReturnLabel := L;
 end;
 
 //Fall igenom om false, annars hoppa till Lbl

@@ -33,7 +33,7 @@ type
     
   protected
 
-    procedure _ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
+    procedure _ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean);
     procedure _FormalParams;
     procedure _ZcFuncBody;
     procedure _Zc;
@@ -111,14 +111,14 @@ const
 	rshiftSym = 31;	scolonSym = 32;	tildeSym = 33;	timesSym = 34;	xorSym = 35;
 	MaterialSym = 36;	SoundSym = 37;	ShaderSym = 38;	BitmapSym = 39;	MeshSym = 40;
 	CameraSym = 41;	FontSym = 42;	SampleSym = 43;	FileSym = 44;	ComponentSym = 45;
-	privateSym = 46;	voidSym = 47;	refSym = 48;	floatSym = 49;	intSym = 50;
-	byteSym = 51;	stringSym = 52;	modelSym = 53;	xptrSym = 54;	mat_fourSym = 55;
-	vec_twoSym = 56;	vec_threeSym = 57;	vec_fourSym = 58;	constSym = 59;	ifSym = 60;
-	elseSym = 61;	switchSym = 62;	whileSym = 63;	forSym = 64;	breakSym = 65;
-	continueSym = 66;	returnSym = 67;	_plus_equalSym = 68;	_minus_equalSym = 69;	_star_equalSym = 70;
-	_slash_equalSym = 71;	caseSym = 72;	defaultSym = 73;	_querySym = 74;	_bar_barSym = 75;
-	_and_andSym = 76;	reinterpret_underscorecastSym = 77;	_atSym = 78;	nullSym = 79;	_NOSYMB = 80;
-	_slash_starSym = 81;	_slash_slashSym = 82;
+	privateSym = 46;	inlineSym = 47;	voidSym = 48;	refSym = 49;	floatSym = 50;
+	intSym = 51;	byteSym = 52;	stringSym = 53;	modelSym = 54;	xptrSym = 55;
+	mat_fourSym = 56;	vec_twoSym = 57;	vec_threeSym = 58;	vec_fourSym = 59;	constSym = 60;
+	ifSym = 61;	elseSym = 62;	switchSym = 63;	whileSym = 64;	forSym = 65;
+	breakSym = 66;	continueSym = 67;	returnSym = 68;	_plus_equalSym = 69;	_minus_equalSym = 70;
+	_star_equalSym = 71;	_slash_equalSym = 72;	caseSym = 73;	defaultSym = 74;	_querySym = 75;
+	_bar_barSym = 76;	_and_andSym = 77;	reinterpret_underscorecastSym = 78;	_atSym = 79;	nullSym = 80;
+	_NOSYMB = 81;	_slash_starSym = 82;	_slash_slashSym = 83;
 
 var ZcSymSets: TSetArray;
 
@@ -644,7 +644,7 @@ begin
 end;
 
 
-procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
+procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean);
 
 var
   Func : TZcOpFunctionUserDefined;
@@ -660,6 +660,7 @@ begin
           Func := TZcOpFunctionUserDefined.Create(GlobalNames);
         Func.Id := Name;
         Func.ReturnType := Typ;
+        Func.IsInline := IsInline;
         if IsPrivate then
           SymTab.Add(Func.Id,Func)
         else
@@ -713,7 +714,7 @@ procedure TZc._Zc;
         Typ : TZcDataType;
         Func : TZcOpFunctionUserDefined;
         Name : string;
-        IsPrivate : boolean;
+        IsPrivate,IsInline : boolean;
     
 begin
   if InSet(CurrentInputSymbol,2) and ( AllowFunctions ) then
@@ -732,11 +733,16 @@ begin
          end
          else if InSet(CurrentInputSymbol,4) then
          begin
-         IsPrivate := False; 
+         IsPrivate := False; IsInline := False; 
               if (CurrentInputSymbol=privateSym) then
               begin
                 Get;
                      IsPrivate:= True; 
+              end;
+              if (CurrentInputSymbol=inlineSym) then
+              begin
+                Get;
+                    IsInline:= True; 
               end;
               if (CurrentInputSymbol=voidSym) then
               begin
@@ -753,7 +759,7 @@ begin
               if (CurrentInputSymbol=lparSym) then
               begin
                    Get;
-                   _ZcFuncRest(Typ,Name,IsPrivate);
+                   _ZcFuncRest(Typ,Name,IsPrivate,IsInline);
               end
               else if (CurrentInputSymbol in [commaSym, scolonSym]) then
               begin
@@ -2044,13 +2050,14 @@ const TokenStrings: array[0.._NOSYMB] of String = ('EOF'
 	,'">>"'	,'";"'	,'"~"'	,'"*"'	,'"^"'
 	,'"Material"'	,'"Sound"'	,'"Shader"'	,'"Bitmap"'	,'"Mesh"'
 	,'"Camera"'	,'"Font"'	,'"Sample"'	,'"File"'	,'"Component"'
-	,'"private"'	,'"void"'	,'"ref"'	,'"float"'	,'"int"'
-	,'"byte"'	,'"string"'	,'"model"'	,'"xptr"'	,'"mat4"'
-	,'"vec2"'	,'"vec3"'	,'"vec4"'	,'"const"'	,'"if"'
-	,'"else"'	,'"switch"'	,'"while"'	,'"for"'	,'"break"'
-	,'"continue"'	,'"return"'	,'"+="'	,'"-="'	,'"*="'
-	,'"/="'	,'"case"'	,'"default"'	,'"?"'	,'"||"'
-	,'"&&"'	,'"reinterpret_cast"'	,'"@"'	,'"null"'  ,'not');
+	,'"private"'	,'"inline"'	,'"void"'	,'"ref"'	,'"float"'
+	,'"int"'	,'"byte"'	,'"string"'	,'"model"'	,'"xptr"'
+	,'"mat4"'	,'"vec2"'	,'"vec3"'	,'"vec4"'	,'"const"'
+	,'"if"'	,'"else"'	,'"switch"'	,'"while"'	,'"for"'
+	,'"break"'	,'"continue"'	,'"return"'	,'"+="'	,'"-="'
+	,'"*="'	,'"/="'	,'"case"'	,'"default"'	,'"?"'
+	,'"||"'	,'"&&"'	,'"reinterpret_cast"'	,'"@"'	,'"null"'
+  ,'not');
 begin
   if n in [0.._NOSYMB] then
     Result := TokenStrings[n]
@@ -2120,12 +2127,12 @@ begin
 	  States[63] := 53;  States[64] := 56;
     end;
     ZcLiterals := CreateLiterals(True,
-	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','File','Component','private','void','ref','float'
-		,'int','byte','string','model','xptr','mat4','vec2','vec3','vec4','const','if','else','switch','while','for','break','continue'
-		,'return','case','default','reinterpret_cast','null'],
-	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,-FileSym,-ComponentSym,privateSym,voidSym
-		,refSym,floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,constSym
-		,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym,reinterpret_underscorecastSym
+	['Material','Sound','Shader','Bitmap','Mesh','Camera','Font','Sample','File','Component','private','inline','void'
+		,'ref','float','int','byte','string','model','xptr','mat4','vec2','vec3','vec4','const','if','else','switch','while','for'
+		,'break','continue','return','case','default','reinterpret_cast','null'],
+	[-MaterialSym,-SoundSym,-ShaderSym,-BitmapSym,-MeshSym,-CameraSym,-FontSym,-SampleSym,-FileSym,-ComponentSym,privateSym,inlineSym
+		,voidSym,refSym,floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym
+		,constSym,ifSym,elseSym,switchSym,whileSym,forSym,breakSym,continueSym,returnSym,caseSym,defaultSym,reinterpret_underscorecastSym
 		,nullSym]
      );
   end;
@@ -2152,9 +2159,9 @@ begin
   InitSymSets(ZcSymSets,[
     	{ 0} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, refSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 1} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
-	{ 2} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
-	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
-	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 2} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
 	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
