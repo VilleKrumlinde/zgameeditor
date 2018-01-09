@@ -1121,7 +1121,7 @@ begin
         if (Target[I+TExpJump(O).Destination+1] is TExpJump) and
         (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways)
         then
-          Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination);
+          Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination+1);
       end;
     end;
   end;

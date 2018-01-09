@@ -1065,7 +1065,7 @@ function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
 begin
   case Typ of
     zctByte : Result := 1;
-    zctModel,zctString,zctXptr,zctVoid,zctNull : Result := SizeOf(Pointer);
+    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray : Result := SizeOf(Pointer);
     zctMat4 : Result := SizeOf(single) * 16;
     zctVec2 : Result := SizeOf(single) * 2;
     zctVec3 : Result := SizeOf(single) * 3;

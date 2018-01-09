@@ -2176,7 +2176,7 @@ begin
           else
             UseStack := True;
         end;
-      zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4 :
+      zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4,zctArray :
         begin
           if IntI<IntRegCount then
           begin
