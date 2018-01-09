@@ -198,12 +198,18 @@ function Prototypes : TPrototypes;
 var
   //Nodes owned by the current compiled function/expression
   //Used for memory management
+  //Update: This now holds all created ASTs and is cleared in App.Compile.
+  //Full AST are kept to enable function inlining.
   FunctionCleanUps : Contnrs.TObjectList;
 
   //State shared between this unit and Zc-compiler
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
+  end;
+
+  CompilerOptions : record
+    InliningEnabled : boolean;
   end;
 
 implementation
@@ -1415,8 +1421,8 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction 
       if Arg.Typ.IsPointer then
         Exit(False);
 
-    if (not Func.IsRecursive) and
-      (CurrentFunction.Lib=Func.Lib)
+    if (not Func.IsRecursive)
+      //and (CurrentFunction.Lib=Func.Lib)
       then
       {Todo: test
       }
@@ -1440,7 +1446,7 @@ begin
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
     {$IFDEF INLINING}
-    if (FOp is TZcOpFunctionUserDefined) and TZcOpFunctionUserDefined(FOp).IsInline then
+    if CompilerOptions.InliningEnabled and (FOp is TZcOpFunctionUserDefined) and TZcOpFunctionUserDefined(FOp).IsInline then
     begin
       if CanInline(FOp as TZcOpFunctionUserDefined) then
         Op := DoInline(FOp as TZcOpFunctionUserDefined, CurrentFunction, Op);
@@ -1959,5 +1965,6 @@ end;
 initialization
 
   FunctionCleanUps := Contnrs.TObjectList.Create(True);
+  CompilerOptions.InliningEnabled := True;
 
 end.

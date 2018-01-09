@@ -353,11 +353,16 @@ begin
   {$ifdef minimal}
   if not NoSound then
     Platform_ShutdownAudio;
+  {$endif}
+
   if (Self.CurrentState<>nil) then
     Self.CurrentState.OnLeave.ExecuteCommands;
   OnClose.ExecuteCommands;
+
+  {$ifdef minimal}
   Platform_ShutdownScreen;
   {$endif}
+
   HasShutdown:=True;
 end;
 
@@ -974,6 +979,8 @@ begin
   //Remove stringconstants
   ClearConstantPool;
 
+  Zc_Ops.FunctionCleanUps.Clear;
+
   List := TObjectList.Create(False);
   try
     Self.GetAllChildren(List,False);
@@ -1050,7 +1057,7 @@ begin
   SymTab.Add('this',C);
   try
     Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,Prop.ExpressionKind);
-    //ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
+    //if not (C is TZExternalLibrary) then ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');

@@ -618,7 +618,6 @@ end;
 
 procedure TZc.CleanUp;
 begin
-  Zc_Ops.FunctionCleanUps.Clear;
   ZFunctions.Free;
 end;
 

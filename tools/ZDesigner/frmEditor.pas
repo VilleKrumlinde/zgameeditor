@@ -235,6 +235,7 @@ type
     LogShowTraceOnly: TMenuItem;
     Findunsedcomponents1: TMenuItem;
     HighDPIImageListContainer: TImageList;
+    EnableFunctionInlining: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -321,6 +322,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure LogShowTraceOnlyClick(Sender: TObject);
     procedure Findunsedcomponents1Click(Sender: TObject);
+    procedure EnableFunctionInliningClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -2554,6 +2556,11 @@ begin
   finally
     SymTemp.Free;
   end;
+end;
+
+procedure TEditorForm.EnableFunctionInliningClick(Sender: TObject);
+begin
+  CompilerOptions.InliningEnabled := (Sender as TMenuItem).Checked;
 end;
 
 procedure TEditorForm.EnableThreadedProcessingMenuItemClick(Sender: TObject);

@@ -1394,10 +1394,6 @@ var
 begin
   Env.StackPopToPointer(A);
   P := A.PopAndGetElement(Env);
-  {$ifndef minimal}
-  if P=nil then
-    ZHalt('Array assign outside range: ' + String(A.Name));
-  {$endif}
   Env.StackPushPointer(P);
 end;
 
