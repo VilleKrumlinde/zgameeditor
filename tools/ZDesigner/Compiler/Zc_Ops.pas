@@ -1363,6 +1363,9 @@ begin
     if Op.Kind=zcConstLiteral then
       //todo: check that arguments are not assigned in inlined block
       ArgMap[I] := Op
+    else if (Op.Kind=zcIdentifier) and Assigned(Op.Ref) and
+      ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar)) then
+      ArgMap[I] := Op
     else
     begin
       NewLoc := MakeTemp(Op.GetDataType.Kind);
