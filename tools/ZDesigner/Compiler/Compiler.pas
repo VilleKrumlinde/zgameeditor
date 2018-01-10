@@ -1118,10 +1118,17 @@ begin
         TZComponent(Target[I]).OwnerList := Target;
       end else
       begin //Replace jump to jump, with final jump
-        if (Target[I+TExpJump(O).Destination+1] is TExpJump) and
-        (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways)
-        then
-          Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination+1);
+        while True do
+        begin
+          if (Target[I+TExpJump(O).Destination+1] is TExpJump) and
+          (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways)
+          then
+          begin
+            Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination+1);
+          end
+          else
+            Break;
+        end;
       end;
     end;
   end;
