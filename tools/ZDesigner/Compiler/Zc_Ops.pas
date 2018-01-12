@@ -51,6 +51,7 @@ type
   public
     Ordinal : integer;
     Typ : TZcDataType;
+    ReadCount,WriteCount : integer;
     function GetDataType : TZcDataType; override;
   end;
 
@@ -935,7 +936,8 @@ begin
     else
       Assert(False);
     end;
-  end;
+  end else if (Result.Ref is TZcOpVariableBase) then
+    Inc(TZcOpVariableBase(Result.Ref).ReadCount);
 end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
@@ -1157,6 +1159,9 @@ begin
   else
     Result := nil;
   end;
+
+  if Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpVariableBase) then
+    Inc(TZcOpVariableBase(LeftOp.Ref).WriteCount);
 end;
 
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
@@ -1242,6 +1247,9 @@ begin
 
   if Kind in [atMulAssign,atDivAssign,atPlusAssign,atMinusAssign] then  //Convert x*=2 to x=x*2
     RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
+
+  if Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpVariableBase) then
+    Inc(TZcOpVariableBase(LeftOp.Ref).WriteCount);
 
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
@@ -1360,11 +1368,16 @@ begin
   begin
     Op := CallerOp.Child(I);
     Op := Op.Optimize;
-    if Op.Kind=zcConstLiteral then
+    if (Op.Kind=zcConstLiteral) and (Func.Arguments[I].WriteCount=0) then
       //todo: check that arguments are not assigned in inlined block
       ArgMap[I] := Op
     else if (Op.Kind=zcIdentifier) and Assigned(Op.Ref) and
+      //Locals and arguments can be passed as-is
       ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar)) then
+      ArgMap[I] := Op
+    //todo: also test for component names (references), pass as-is
+    //todo: for complex ops, still use as-is, if ReadCount=1 and WriteCount=0.
+    else if (Func.Arguments[I].WriteCount=0) and (Func.Arguments[I].ReadCount<=1) then
       ArgMap[I] := Op
     else
     begin

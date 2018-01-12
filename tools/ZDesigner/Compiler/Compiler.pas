@@ -887,15 +887,13 @@ var
     DefineLabel(LReturn);
     RestoreReturn;
 
-    if not IsExternalLibrary then
-    begin
-      Ret := TExpReturn.Create(Target);
-      Ret.HasFrame := Func.NeedFrame;
-      Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
-      Ret.Arguments := Func.Arguments.Count;
-      if IsLibrary then
-        Ret.Lib := Component as TZLibrary;
-    end;
+    //Todo: Skip return if IsExternalLib and PropName='Source'
+    Ret := TExpReturn.Create(Target);
+    Ret.HasFrame := Func.NeedFrame;
+    Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
+    Ret.Arguments := Func.Arguments.Count;
+    if IsLibrary then
+      Ret.Lib := Component as TZLibrary;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);

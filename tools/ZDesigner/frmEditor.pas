@@ -3781,7 +3781,11 @@ begin
     on E : Exception do ShowMessage(E.Message);
   end;
 
-  Root.Free;
+  try
+    Root.Free;
+  except
+    on E : Exception do ShowMessage(E.Message);
+  end;
   Root := nil;
   ZApp := nil;
 end;
