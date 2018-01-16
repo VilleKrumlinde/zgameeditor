@@ -1279,15 +1279,21 @@ begin
        _Expr(SwitchValueOp);
        Expect(rparSym);
         
-         Loc := MakeTemp(SwitchValueOp.GetDataType.Kind);
-         SymTab.Add(Loc.Id,Loc);
-         CurrentFunction.AddLocal(Loc);
-
          OutOp := MakeOp(zcBlock);
-         OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),SwitchValueOp) );
 
          SwitchOp := TZcOpSwitch.Create(nil);
-         SwitchOp.ValueOp := MakeIdentifier(Loc.Id);
+
+         if (SwitchValueOp.Ref is TZcOpVariableBase) or (SwitchValueOp.Kind=zcConstLiteral) then
+           SwitchOp.ValueOp := SwitchValueOp
+         else
+         begin
+           Loc := MakeTemp(SwitchValueOp.GetDataType.Kind);
+           SymTab.Add(Loc.Id,Loc);
+           CurrentFunction.AddLocal(Loc);
+           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),SwitchValueOp) );
+           SwitchOp.ValueOp := MakeIdentifier(Loc.Id);
+         end;
+
          OutOp.Children.Add(SwitchOp);
       
        Expect(lbraceSym);

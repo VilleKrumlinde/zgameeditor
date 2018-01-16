@@ -355,9 +355,11 @@ begin
     Platform_ShutdownAudio;
   {$endif}
 
+  {$if defined(minimal) or defined(zgeviz)}
   if (Self.CurrentState<>nil) then
     Self.CurrentState.OnLeave.ExecuteCommands;
-  OnClose.ExecuteCommands;
+  OnClose.ExecuteCommands; //Running OnClose in designer crashes too often
+  {$endif}
 
   {$ifdef minimal}
   Platform_ShutdownScreen;
@@ -1057,7 +1059,9 @@ begin
   SymTab.Add('this',C);
   try
     Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,Prop.ExpressionKind);
+    {$IFDEF DEBUG}
     //if not (C is TZExternalLibrary) then ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
+    {$ENDIF}
   finally
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');

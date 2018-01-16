@@ -743,6 +743,14 @@ begin
       end;
   end;
 
+  //Test for case when function inlining has resulted in a single statement
+  if (Kind=zcInlineBlock) and
+   (Children.First.Kind=zcInlineReturn) and
+   (Children.First.Children.First.Kind=zcConstLiteral) then
+  begin
+    Exit( Children.First.Children.First );
+  end;
+
   //Optimize for trees such as:
   //   plus ( plus(i,1) , const(1) )
   //replaced with:
@@ -1410,7 +1418,9 @@ begin
 
   LocMap.Free;
 
-  if Func.ReturnType.Kind<>zctVoid then
+  if (Func.ReturnType.Kind<>zctVoid) and
+    //No need for convert if InlineBlock is single statement
+    (OutOp.Children.First.Kind<>zcInlineReturn) then
   begin
     //Last we must add cast to give the inlined function a type
     //This won't generate any code
@@ -1748,7 +1758,8 @@ end;
 function TZcOpSwitch.Optimize: TZcOp;
 //also remember to check ExprEdit removeconstants
 var
-  I : integer;
+  I,J : integer;
+  Op : TZcOp;
 begin
   for I := 0 to CaseOps.Count-1 do
     CaseOps[I] := TZcOp(CaseOps[I]).Optimize;
@@ -1756,6 +1767,25 @@ begin
     StatementsOps[I] := TZcOp(StatementsOps[I]).Optimize;
   ValueOp := ValueOp.Optimize;
   Result := Self;
+
+  if (Self.ValueOp.Kind=zcConstLiteral) and (Self.ValueOp.GetDataType.Kind in [zctInt,zctFloat]) then
+  begin
+    for I := 0 to CaseOps.Count-1 do
+    begin
+      Op := CaseOps[I];
+      for J := 0 to Op.Children.Count-1 do
+      begin
+        if Assigned(Op.Children[J]) and (Op.Children[J].Kind=zcConstLiteral) and
+          SameValue(TZcOpLiteral(Op.Children[J]).Value,TZcOpLiteral(ValueOp).Value) then
+        begin
+          Result := MakeOp(zcBlock);
+          Result.Children.AddRange( StatementsOps[I].Children );
+          Exit;
+        end;
+      end;
+    end;
+  end;
+  
 end;
 
 function TZcOpSwitch.ToString: string;
