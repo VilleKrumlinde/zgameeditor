@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZLibrary>
+      <Source>
+<![CDATA[inline void assignsarg(int x) {
+  int y=x;
+}
+
+inline float one() {
+   return 1.0;
+}
+
+//float copy(float x) {
+//  return x;
+//}
+
+//float add(float x, float y) {
+//  return x+y;
+//}
+
+inline float min(float v1, float v2) {
+	return v1 <= v2 ? v1 : v2;
+}
+
+//float recursive() {
+//  recursive();
+//}
+
+//float locals(float x) {
+//  float y=x*2;
+//  return y;
+//}
+
+
+//float angle(float X)
+//{
+//  if(X >= 0 && X < 360)return X;
+//  if(X > 360)return X-floor(X/360)* 360;
+//  if(X <   0)return X+floor(X/360)*-360;
+//}
+
+//float arrayparam(float[] x) {
+//  return x[0];
+//}
+
+//float global;
+
+inline float coeffCalc(float coeff, float expectedFps)
+{
+	return one() + min(coeff,expectedFps);
+}
+
+//trace(inttostr(test()));
+
+
+inline float testInlined() {
+ //  return one();
+//  return copy(2);
+//  return add(1,2);
+//  return min(2,5);
+//      float x=4;
+//    return locals(x);
+ //     return angle(42);
+
+//  global = coeffCalc(1,2);
+  float x1=2; float x2=4;
+  float y;
+   for(int i=0; i<10000000; i++) {
+    y=coeffCalc(x1,x2);
+  }
+  return y;
+}
+
+inline void fortytwo(ref int x) {
+  x=42;
+}
+
+inline int casetest(int x) {
+  switch(x) {
+    case 0 : return 1;
+    case 1 : return 2;
+    case 2 :
+    case 3 : return 3;
+  }
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExternalLibrary ModuleName="kernel32.dll">
+      <Source>
+<![CDATA[//Import a DLL-library by setting ModuleName to name of the DLL
+//and then declaring the function headers here. For example:
+//
+//  int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { } 
+//  int SetWindowTextA(int hWnd,string lpString) { }
+int GetTickCount() { }]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[// int x=casetest(0);
+
+int x=1;
+fortytwo(x);
+
+//int x;
+//fortytwo(x);
+//trace(inttostr(x));
+
+/*  int start=gettickcount();
+
+float x1=42.0;
+float x2=88.0;
+
+ for(int i=0; i<1000000; i++) {
+  float y=min(x1,x2) + min(x2,x1) +
+    min(x1,x2) + min(x2,x1) +
+    min(x1,x2) + min(x2,x1) +
+    min(x1,x2) + min(x2,x1) +
+    min(x1,x2) + min(x2,x1) +
+    min(x1,x2) + min(x2,x1);
+}
+
+trace(inttostr(gettickcount()-start));*/]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+</ZApplication>

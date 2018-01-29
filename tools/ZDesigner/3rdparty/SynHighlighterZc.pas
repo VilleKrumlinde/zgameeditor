@@ -61,7 +61,7 @@ type
     FTokenID: TtkTokenKind;
     FExtTokenID: TxtkTokenKind;
     //**VK: update to upper limit in KeyIndices
-    fIdentFuncTable: array[0..16] of TIdentFuncTableFunc;
+    fIdentFuncTable: array[0..18] of TIdentFuncTableFunc;
     fAsmAttri: TSynHighlighterAttributes;
     fCommentAttri: TSynHighlighterAttributes;
     fDirecAttri: TSynHighlighterAttributes;
@@ -186,13 +186,14 @@ uses
 
 const
   // as this language is case-insensitive keywords *must* be in lowercase
-  KeyWords: array[0..15] of UnicodeString = (
-    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if', 'int', 
-    'model', 'private', 'return', 'string', 'switch', 'while', 'void' 
+  KeyWords: array[0..16] of UnicodeString = (
+    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if',
+    'inline', 'int', 'model', 'private', 'return', 'string', 'switch', 'while',
+    'void'
   );
 
-  KeyIndices: array[0..16] of Integer = (
-    3, 5, -1, 0, 7, 9, 14, 15, 13, 10, 1, 8, 6, 4, 12, 11, 2 
+  KeyIndices: array[0..18] of Integer = (
+    3, 8, 7, 12, 0, 11, 4, 5, 16, -1, 9, -1, 15, 14, 10, 6, 13, 2, 1
   );
 
 
@@ -202,10 +203,10 @@ begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 898 + Ord(Str^) * 332;
+    Result := Result * 749 + Ord(Str^) * 223;
     inc(Str);
   end;
-  Result := Result mod 17;
+  Result := Result mod 19;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
