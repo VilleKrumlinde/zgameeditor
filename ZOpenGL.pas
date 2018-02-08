@@ -1243,6 +1243,9 @@ const
 
   GL_TEXTURE_2D_MULTISAMPLE = $9100;
 
+  GL_DRAW_FRAMEBUFFER_BINDING = $8CA6;
+  GL_READ_FRAMEBUFFER = $8CA8;
+  GL_DRAW_FRAMEBUFFER = $8CA9;
 
 {******************************************************************************}
 
@@ -1472,6 +1475,7 @@ var
   glGetFramebufferAttachmentParameteriv: procedure(target: GLenum; attachment: GLenum; pname: GLenum; params: PGLint); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glGenerateMipmap: procedure(target: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glRenderbufferStorageMultisample : procedure(target: GLenum; samples: GLsizei; internalformat: GLenum; width: GLsizei; height: GLsizei); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glBlitFramebuffer :  procedure(srcX0: GLint; srcY0: GLint; srcX1: GLint; srcY1: GLint; dstX0: GLint; dstY0: GLint; dstX1: GLint; dstY1: GLint; mask: GLbitfield; filter: GLenum); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   // GL_ARB_texture_multisample
   glTexImage2DMultisample : procedure(target: GLenum; samples: GLsizei; internalformat: GLint; width: GLsizei; height: GLsizei; fixedsamplelocations: GLboolean); {$IFDEF WIN32}stdcall; {$ELSE}cdecl; {$ENDIF}
@@ -1523,7 +1527,7 @@ end;
 
 //OpenGL 2.0
 //Must be loaded as extensions on Windows because Opengl32.dll does not export 2.0 procs
-const ExtFuncArray : packed array[0..43
+const ExtFuncArray : packed array[0..44
   {$if (not defined(minimal)) or defined(android)}+5{$ifend}
   {$ifdef MSWINDOWS}+1{$endif}] of
   packed record
@@ -1616,6 +1620,7 @@ const ExtFuncArray : packed array[0..43
 (Name : 'glGenerateMipmap'; Ptr : @@glGenerateMipmap),
 (Name : 'glRenderbufferStorageMultisample'; Ptr : @@glRenderbufferStorageMultisample),
 (Name : 'glTexImage2DMultisample'; Ptr : @@glTexImage2DMultisample),
+(Name : 'glBlitFramebuffer'; Ptr : @@glBlitFramebuffer),
 
 {$ifdef MSWINDOWS}
 (Name : 'wglSwapIntervalEXT'; Ptr : @@wglSwapIntervalEXT),

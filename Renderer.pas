@@ -343,10 +343,19 @@ type
     {$endif}
   end;
 
+  {$ifdef zgeviz}
+    {$define RT_MULTISAMPLE}
+  {$endif}
+
   TRenderQuality = (rtsScreenSize,rtsHalfScreen,rtsQuartScreen,rts128,rts256,rts512,rts1024);
   TRenderTarget = class(TZComponent)
   strict private
     RboId : integer;
+    {$ifdef RT_MULTISAMPLE}
+    RboId_Ms : integer;
+    TexId_Ms,FboId_Ms : integer;
+    {$endif}
+    WasActivated : boolean;
     {$ifndef minimal}
     LastW,LastH : integer;
     {$endif}
@@ -362,6 +371,11 @@ type
     TexId,FboId : integer; //read by zgeviz
     Filter : TBitmapFilterType;
     InternalFormat : (infRGBA,infRGBA16);
+    {$ifdef RT_MULTISAMPLE}
+    UseMultiSample : boolean;
+    MultiSampleCount : integer;
+    procedure RefreshTextureFromMultisample;
+    {$endif}
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure UseTextureBegin;
@@ -2136,7 +2150,7 @@ const
   InternalFormats : array[0..2] of integer = (GL_RGBA, GL_RGBA16, GL_R32F);
 var
   W,H : integer;
-  ActualW,ActualH,I : integer;
+  ActualW,ActualH,I,DepthFormat : integer;
   A : TZApplication;
   IsFirstUse,WithStencil : boolean;
 begin
@@ -2208,17 +2222,17 @@ begin
 
 
     {$ifdef android}
-    I := GL_DEPTH_COMPONENT16;
+    DepthFormat := GL_DEPTH_COMPONENT16;
     {$else}
     if WithStencil then
-      I := GL_DEPTH24_STENCIL8
+      DepthFormat := GL_DEPTH24_STENCIL8
     else
-      I := GL_DEPTH_COMPONENT;
+      DepthFormat := GL_DEPTH_COMPONENT;
     {$endif}
     // create a renderbuffer object to store depth info
     glGenRenderbuffers(1, @RboId);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, RboId);
-    glRenderbufferStorage(GL_RENDERBUFFER_EXT, I, ActualW, ActualH);
+    glRenderbufferStorage(GL_RENDERBUFFER_EXT, DepthFormat, ActualW, ActualH);
     glBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
 
     // create a framebuffer object
@@ -2244,12 +2258,53 @@ begin
     // check FBO status
     {$ifndef minimal}
     if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
-    begin
       ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)) );
+    {$endif}
+
+    {$ifdef RT_MULTISAMPLE}
+    if Self.UseMultiSample then
+    begin
+      //References:
+      //-- http://ake.in.th/2013/04/02/offscreening-and-multisampling-with-opengl/
+      //-- https://github.com/ake-koomsin/mapnik_nvpr/blob/392d8a6bd27067cb16753c9c5248e246697307b1/src/agg/agg_renderer.cpp
+      //For multisample we need another set of objects, so do it all again
+      glGenTextures(1, @TexId_Ms);
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId_Ms);
+
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, Self.MultiSampleCount, InternalFormats[ Ord(Self.InternalFormat) ] , ActualW, ActualH, GL_TRUE);
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+      // create a renderbuffer object to store depth info
+      glGenRenderbuffers(1, @RboId_Ms);
+      glBindRenderbuffer(GL_RENDERBUFFER_EXT, RboId_Ms);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER_EXT, Self.MultiSampleCount, DepthFormat, ActualW, ActualH);
+      glBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
+
+      // create a framebuffer object
+      glGenFramebuffers(1, @FboId_Ms);
+      glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId_Ms);
+
+      // attach the texture to FBO color attachment point
+      glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D_MULTISAMPLE, TexId_Ms, 0);
+
+      // attach the renderbuffer to depth attachment point
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId_Ms);
+
+      {$ifndef minimal}
+      if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
+        ZLog.GetLog(Self.ClassName).Warning( 'Fbo_ms error: ' + IntToStr(glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)) );
+      {$endif}
     end;
     {$endif}
   end else
-    glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
+  begin
+    {$ifdef RT_MULTISAMPLE}
+    if Self.UseMultiSample then
+      glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId_Ms)
+    else
+    {$endif}
+      glBindFramebuffer(GL_FRAMEBUFFER_EXT, FboId);
+  end;
 
   {$ifndef minimal}
   if NoApp then
@@ -2266,6 +2321,8 @@ begin
       I := I or GL_STENCIL_BUFFER_BIT;
     glClear( I );
   end;
+
+  Self.WasActivated := True;
 end;
 
 procedure TRenderTarget.DefineProperties(List: TZPropertyList);
@@ -2297,6 +2354,15 @@ begin
     glDeleteFramebuffers(1, @FboId);
     glDeleteRenderbuffers(1, @RboId);
     TexId := 0;
+    {$ifdef RT_MULTISAMPLE}
+    if UseMultiSample then
+    begin
+      glDeleteTextures(1, @TexId_Ms);
+      glDeleteFramebuffers(1, @FboId_Ms);
+      glDeleteRenderbuffers(1, @RboId_Ms);
+      TexId_Ms := 0;
+    end;
+    {$endif}
   end;
 end;
 
@@ -2330,8 +2396,33 @@ begin
   end;
 end;
 
+{$ifdef RT_MULTISAMPLE}
+procedure TRenderTarget.RefreshTextureFromMultisample;
+var
+  W,H,SaveFb : integer;
+begin
+  {$ifdef debug}
+  Assert(Self.UseMultiSample);
+  {$endif}
+  //Before we can use the fbo as texture, it must be blitted to normal (non-ms) fbo.
+  W := GetPixelWidth; H := GetPixelHeight;
+  glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,@SaveFb);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, FboId_Ms);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FboId);
+  glBlitFramebuffer(0, 0, W, H, 0, 0, W, H, GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, SaveFb);
+end;
+{$endif}
+
 procedure TRenderTarget.UseTextureBegin;
 begin
+  {$ifdef RT_MULTISAMPLE}
+  if Self.UseMultiSample and Self.WasActivated then
+  begin
+    Self.WasActivated := False;
+    RefreshTextureFromMultisample;
+  end;
+  {$endif}
   glBindTexture(GL_TEXTURE_2D, TexId);
 end;
 
