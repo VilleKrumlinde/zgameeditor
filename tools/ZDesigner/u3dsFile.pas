@@ -26,6 +26,10 @@ interface
 
 uses ZClasses, Classes, Contnrs, Meshes;
 
+{$IFDEF ZGEVIZ}
+  {$DEFINE HugeMeshes}
+{$ENDIF}
+
 type
   TChunkInfo = record
     Id : word;
@@ -427,6 +431,9 @@ var
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   Sm : smallint;
+  {$IFDEF HugeMeshes}
+  J : integer;
+  {$ENDIF}
 begin
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
 
@@ -470,6 +477,18 @@ begin
         InMesh.Faces[I].V3 := W;
       end;
 
+    {$IFDEF HugeMeshes}
+    MeshImp.AreIndicesUncompressed := True;
+    for I := 0 to InMesh.NFaces - 1 do
+    begin
+      J := InMesh.Faces[I].V1;
+      Stream.Write(J,4);
+      J := InMesh.Faces[I].V2;
+      Stream.Write(J,4);
+      J := InMesh.Faces[I].V3;
+      Stream.Write(J,4);
+    end;
+    {$ELSE}
     //Delta-encode indices
     Sm := InMesh.Faces[0].V1;
     Stream.Write(Sm,2);
@@ -486,6 +505,7 @@ begin
       Sm := InMesh.Faces[I].V3 - InMesh.Faces[I-1].V3;
       Stream.Write(Sm,2);
     end;
+    {$ENDIF}
 
     if DataFile.IncludeVertexColors and (InMesh.UsedMaterials>0) then
     begin

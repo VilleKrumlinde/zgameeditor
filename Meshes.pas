@@ -135,6 +135,10 @@ type
     AutoNormals,VertexColors,HasTexCoords : boolean;
   end;
 
+  {$IFDEF ZGEVIZ}
+    {$DEFINE HugeMeshes}
+  {$ENDIF}
+
   //Created by 3ds-import
   TMeshImport = class(TMeshProducer)
   protected
@@ -144,6 +148,9 @@ type
     HasVertexColors : boolean;
     HasTextureCoords : boolean;
     MeshData : TZBinaryPropValue;
+    {$IFDEF HugeMeshes}
+    AreIndicesUncompressed : boolean;
+    {$ENDIF}
   end;
 
   //Combine the vertexes of two meshes
@@ -1811,6 +1818,13 @@ begin
   //Indices
   IndP := pointer(Mesh.Indices);
   PrevIndP := IndP;
+  {$IFDEF HugeMeshes}
+  if Self.AreIndicesUncompressed then
+    Stream.Read(IndP^,((TriCount-1)*3)*SizeOf(TMeshVertexIndex))
+  else
+  begin
+  {$ENDIF}
+
   {$if sizeof(TMeshVertexIndex)=2}
   Stream.Read(IndP^,2*3);
   Inc(IndP,3);
@@ -1829,6 +1843,10 @@ begin
     Inc(IndP);
     Inc(PrevIndP);
   end;
+
+  {$IFDEF HugeMeshes}
+  end;
+  {$ENDIF}
 
   //Vertex colors
   if Self.HasVertexColors then
