@@ -1820,7 +1820,7 @@ begin
   PrevIndP := IndP;
   {$IFDEF HugeMeshes}
   if Self.AreIndicesUncompressed then
-    Stream.Read(IndP^,((TriCount-1)*3)*SizeOf(TMeshVertexIndex))
+    Stream.Read(IndP^,(TriCount*3)*SizeOf(TMeshVertexIndex))
   else
   begin
   {$ENDIF}
