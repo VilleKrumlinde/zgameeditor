@@ -2290,6 +2290,9 @@ begin
       // attach the renderbuffer to depth attachment point
       glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId_Ms);
 
+      if WithStencil then
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId_Ms);
+
       {$ifndef minimal}
       if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
         ZLog.GetLog(Self.ClassName).Warning( 'Fbo_ms error: ' + IntToStr(glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)) );
