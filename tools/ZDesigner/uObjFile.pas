@@ -26,6 +26,10 @@ interface
 
 uses ZClasses, Classes, Generics.Collections, Meshes;
 
+{$IFDEF ZGEVIZ}
+  {$DEFINE HugeMeshes}
+{$ENDIF}
+
 type
   TObjFace = record
     Index : array[0..2] of integer;
@@ -45,8 +49,9 @@ type
     procedure UpdateMeshImp(MeshImp: TMeshImport);
     function GenerateMesh : TZComponent;
     procedure AddMaterialLib(const MatFileName : string);
+    procedure ScaleAndCenter;
   public
-    IncludeVertexColors : boolean;
+    AutoScale,AutoCenter,IncludeVertexColors : boolean;
     MeshImpToUpdate : TMeshImport;
     ResultMesh : TMesh;
     constructor Create(const FileName : string);
@@ -56,7 +61,7 @@ type
 
 implementation
 
-uses SysUtils, ZMath;
+uses SysUtils, ZMath, ZLog;
 
 { TObjImport }
 
@@ -82,6 +87,53 @@ begin
   Faces.Free;
   Materials.Free;
   inherited;
+end;
+
+procedure TObjImport.ScaleAndCenter;
+var
+  MinV,MaxV,DV,ScaleV,TransV,V : TZVector3f;
+  I : integer;
+  Mat : TZMatrix4f;
+  Scale : single;
+begin
+  MinV := Vector3f(10000,10000,10000);
+  MaxV := Vector3f(-10000,-10000,-10000);
+
+  for I := 0 to Self.Verts.Count-1 do
+  begin
+    MinV[0] := Min(MinV[0],Self.Verts[I][0]);
+    MinV[1] := Min(MinV[1],Self.Verts[I][1]);
+    MinV[2] := Min(MinV[2],Self.Verts[I][2]);
+    MaxV[0] := Max(MaxV[0],Self.Verts[I][0]);
+    MaxV[1] := Max(MaxV[1],Self.Verts[I][1]);
+    MaxV[2] := Max(MaxV[2],Self.Verts[I][2]);
+  end;
+  VecSub3(MaxV,MinV,DV);
+
+  if AutoScale then
+  begin
+    Scale := 1 / DV[0];
+    ScaleV := Vector3f(Scale,Scale,Scale);
+  end
+  else
+    ScaleV := Vector3f(1,1,1);
+
+  if AutoCenter then
+  begin
+    VecScalarMult3(MinV,-1,V);
+    VecSub3(V, VecScalarMult3(DV,0.5) ,TransV);
+    VecMult3(TransV,ScaleV);
+  end
+  else
+    TransV := Vector3f(0,0,0);
+
+  CreateScaleAndTranslationMatrix(ScaleV, TransV, Mat);
+
+  for I := 0 to Self.Verts.Count-1 do
+  begin
+    VectorTransform(Self.Verts[I],Mat,V);
+    Self.Verts[I] := V;
+  end;
 end;
 
 procedure TObjImport.AddMaterialLib(const MatFileName : string);
@@ -126,8 +178,18 @@ var
   S : string;
   L,L2 : TStringList;
   Face : TObjFace;
-  I : integer;
+  I,J : integer;
   Mat : TObjMaterial;
+
+  function FaceIndex(I : integer) : integer;
+  begin
+    if I<0 then
+      //Negative index means relative postion of vertex
+      Exit(Self.Verts.Count+I)
+    else
+      Exit(I-1);
+  end;
+
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
@@ -155,16 +217,30 @@ begin
     end
     else if L[0]='f' then
     begin
-      if L.Count<>4 then
-        raise Exception.Create('OBJ-reader: Only triangle surfaces supported');
-      for I := 0 to 2 do
+      if L.Count in [4,5] then
       begin
-        L2.DelimitedText := L[1+I];
-        Face.Index[I] := StrToInt(L2[0])-1;
-        if Assigned(Mat) then
-          Colors[ Face.Index[I] ] := Mat.Diffuse;
-      end;
-      Self.Faces.Add(Face);
+        for I := 0 to 2 do
+        begin
+          L2.DelimitedText := L[1+I];
+          Face.Index[I] := FaceIndex(StrToInt(L2[0]));
+          if Assigned(Mat) then
+            Colors[ Face.Index[I] ] := Mat.Diffuse;
+        end;
+        Self.Faces.Add(Face);
+        if L.Count=5 then
+        begin  //Split quad into two tris
+          //3 4 1
+          J := Face.Index[2];
+          Face.Index[2] := Face.Index[0];
+          Face.Index[0] := J;
+          L2.DelimitedText := L[1+3];
+          Face.Index[1] := FaceIndex(StrToInt(L2[0]));
+          if Assigned(Mat) then
+            Colors[ Face.Index[1] ] := Mat.Diffuse;
+          Self.Faces.Add(Face);
+        end;
+      end else
+        raise Exception.Create('OBJ-reader: Only triangle surfaces supported');
     end
     else if L[0]='mtllib' then
     begin
@@ -179,6 +255,9 @@ begin
   L.Free;
   L2.Free;
 
+  if AutoScale or AutoCenter then
+    ScaleAndCenter;
+
   if Assigned(Self.MeshImpToUpdate) then
     UpdateMeshImp(Self.MeshImpToUpdate)
   else
@@ -192,9 +271,13 @@ var
   Stream{,StU,StV} : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
+  {$IFDEF HugeMeshes}
+  J : integer;
+  {$ELSE}
   Sm : smallint;
+  {$ENDIF}
 begin
-//  MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
+  ZLog.GetLog(Self.ClassName).Write('Obj-file vertcount: ' + IntToStr(Self.Verts.Count) );
 
   Stream := TMemoryStream.Create;
   try
@@ -228,6 +311,18 @@ begin
       Stream.Write(W,2);
     end;
 
+    {$IFDEF HugeMeshes}
+    MeshImp.AreIndicesUncompressed := True;
+    for I := 0 to Self.Faces.Count - 1 do
+    begin
+      J := Self.Faces[I].Index[0];
+      Stream.Write(J,4);
+      J := Self.Faces[I].Index[1];
+      Stream.Write(J,4);
+      J := Self.Faces[I].Index[2];
+      Stream.Write(J,4);
+    end;
+    {$ELSE}
     //Delta-encode indices
     Sm := Self.Faces[0].Index[0];
     Stream.Write(Sm,2);
@@ -244,6 +339,7 @@ begin
       Sm := Self.Faces[I].Index[2] - Self.Faces[I-1].Index[2];
       Stream.Write(Sm,2);
     end;
+    {$ENDIF}
 
    if Self.IncludeVertexColors then
     begin
