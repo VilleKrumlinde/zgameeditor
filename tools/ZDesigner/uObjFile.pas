@@ -42,7 +42,7 @@ type
   TObjImport = class
   strict private
     Lines : TStringList;
-    Verts,Normals,Colors : TList<TZVector3f>;
+    Verts,Normals,Colors,TexCoords : TList<TZVector3f>;
     Faces : TList<TObjFace>;
     FileName : string;
     Materials : TObjectDictionary<string,TObjMaterial>;
@@ -51,7 +51,7 @@ type
     procedure AddMaterialLib(const MatFileName : string);
     procedure ScaleAndCenter;
   public
-    AutoScale,AutoCenter,IncludeVertexColors : boolean;
+    AutoScale,AutoCenter,IncludeVertexColors,IncludeTextureCoords : boolean;
     MeshImpToUpdate : TMeshImport;
     ResultMesh : TMesh;
     constructor Create(const FileName : string);
@@ -72,6 +72,7 @@ begin
   Verts := TList<TZVector3f>.Create;
   Colors := TList<TZVector3f>.Create;
   Normals := TList<TZVector3f>.Create;
+  TexCoords := TList<TZVector3f>.Create;
   Faces := TList<TObjFace>.Create;
   Materials := TObjectDictionary<string,TObjMaterial>.Create([doOwnsValues]);
   Self.FileName := FileName;
@@ -84,6 +85,7 @@ begin
   Verts.Free;
   Colors.Free;
   Normals.Free;
+  TexCoords.Free;
   Faces.Free;
   Materials.Free;
   inherited;
@@ -215,6 +217,11 @@ begin
     begin
       Normals.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  )
     end
+    else if L[0]='vt' then
+    begin
+      if L.Count>=3 then
+        TexCoords.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),0  )  );
+    end
     else if L[0]='f' then
     begin
       if L.Count in [4,5] then
@@ -233,6 +240,7 @@ begin
           J := Face.Index[2];
           Face.Index[2] := Face.Index[0];
           Face.Index[0] := J;
+
           L2.DelimitedText := L[1+3];
           Face.Index[1] := FaceIndex(StrToInt(L2[0]));
           if Assigned(Mat) then
@@ -268,14 +276,13 @@ procedure TObjImport.UpdateMeshImp(MeshImp: TMeshImport);
 //Write to MeshImp from 3dsMesh
 var
   I,Color : integer;
-  Stream{,StU,StV} : TMemoryStream;
+  Stream,StU,StV : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   {$IFDEF HugeMeshes}
   J : integer;
-  {$ELSE}
-  Sm : smallint;
   {$ENDIF}
+  Sm : smallint;
 begin
   ZLog.GetLog(Self.ClassName).Write('Obj-file vertcount: ' + IntToStr(Self.Verts.Count) );
 
@@ -355,23 +362,23 @@ begin
       end;
     end;
 
-{    if DataFile.IncludeTextureCoords and (Length(InMesh.TextureCoords)>0) then
+    if Self.IncludeTextureCoords and (Self.TexCoords.Count=Self.Verts.Count) then
     begin
       MeshImp.HasTextureCoords := True;
       StU := TMemoryStream.Create;
       StV := TMemoryStream.Create;
 
       //Delta-encode in separate streams
-      W := Round( Frac(InMesh.TextureCoords[0][0]) * High(Smallint) );
+      W := Round( Frac(Self.TexCoords[0][0]) * High(Smallint) );
       StU.Write(W,2);
-      W := Round( Frac(InMesh.TextureCoords[0][1]) * High(Smallint) );
+      W := Round( Frac(Self.TexCoords[0][1]) * High(Smallint) );
       StV.Write(W,2);
 
-      for I := 1 to High(InMesh.TextureCoords) do
+      for I := 1 to Self.TexCoords.Count-1 do
       begin
-        Sm := Round( (InMesh.TextureCoords[I][0]-InMesh.TextureCoords[I-1][0]) * High(SmallInt) );
+        Sm := Round( (Self.TexCoords[I][0]-Self.TexCoords[I-1][0]) * High(SmallInt) );
         StU.Write(Sm,2);
-        Sm := Round( (InMesh.TextureCoords[I][1]-InMesh.TextureCoords[I-1][1]) * High(SmallInt) );
+        Sm := Round( (Self.TexCoords[I][1]-Self.TexCoords[I-1][1]) * High(SmallInt) );
         StV.Write(Sm,2);
       end;
       StU.SaveToStream(Stream);
@@ -379,7 +386,7 @@ begin
       StU.Free;
       StV.Free;
       //Stream.Write(InMesh.TextureCoords[0],8 * InMesh.NVertices);
-    end;}
+    end;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then

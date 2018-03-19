@@ -373,7 +373,7 @@ type
     InternalFormat : (infRGBA,infRGBA16);
     {$ifdef RT_MULTISAMPLE}
     UseMultiSample : boolean;
-    MultiSampleCount : integer;
+    MultiSampleCount,MsWidth,MsHeight : integer;
     procedure RefreshTextureFromMultisample;
     {$endif}
     destructor Destroy; override;
@@ -2268,6 +2268,9 @@ begin
       //-- http://ake.in.th/2013/04/02/offscreening-and-multisampling-with-opengl/
       //-- https://github.com/ake-koomsin/mapnik_nvpr/blob/392d8a6bd27067cb16753c9c5248e246697307b1/src/agg/agg_renderer.cpp
       //For multisample we need another set of objects, so do it all again
+      Self.MsWidth := ActualW;
+      Self.MsHeight := ActualH;
+
       glGenTextures(1, @TexId_Ms);
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TexId_Ms);
 
@@ -2408,7 +2411,7 @@ begin
   Assert(Self.UseMultiSample);
   {$endif}
   //Before we can use the fbo as texture, it must be blitted to normal (non-ms) fbo.
-  W := GetPixelWidth; H := GetPixelHeight;
+  W := Self.MsWidth; H := Self.MsHeight;
   glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,@SaveFb);
   glBindFramebuffer(GL_READ_FRAMEBUFFER, FboId_Ms);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FboId);
