@@ -372,7 +372,7 @@ type
     Filter : TBitmapFilterType;
     InternalFormat : (infRGBA,infRGBA16);
     {$ifdef RT_MULTISAMPLE}
-    UseMultiSample : boolean;
+    UseMultiSample,WithStencil : boolean;
     MultiSampleCount,MsWidth,MsHeight : integer;
     procedure RefreshTextureFromMultisample;
     {$endif}
@@ -2152,12 +2152,10 @@ var
   W,H : integer;
   ActualW,ActualH,I,DepthFormat : integer;
   A : TZApplication;
-  IsFirstUse,WithStencil : boolean;
+  IsFirstUse : boolean;
 begin
   if not FbosSupported then
     Exit;
-
-  WithStencil := False;
 
   {$ifndef minimal}
   if not NoApp then
@@ -2166,7 +2164,6 @@ begin
     A := ZApp;
     //Reset viewport so that ViewportW/H is the full size before the code below that reads from it
     A.UpdateViewport;
-    WithStencil := A.UseStencilBuffer;
   {$ifndef minimal}
   end else
     A := nil;
@@ -2224,7 +2221,7 @@ begin
     {$ifdef android}
     DepthFormat := GL_DEPTH_COMPONENT16;
     {$else}
-    if WithStencil then
+    if Self.WithStencil then
       DepthFormat := GL_DEPTH24_STENCIL8
     else
       DepthFormat := GL_DEPTH_COMPONENT;
@@ -2245,7 +2242,7 @@ begin
     // attach the renderbuffer to depth attachment point
     glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
 
-    if WithStencil then
+    if Self.WithStencil then
       glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId);
 
     {$ifdef android}
@@ -2293,7 +2290,7 @@ begin
       // attach the renderbuffer to depth attachment point
       glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId_Ms);
 
-      if WithStencil then
+      if Self.WithStencil then
         glFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT, RboId_Ms);
 
       {$ifndef minimal}
@@ -2323,7 +2320,7 @@ begin
   begin
     glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
     I := GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT;
-    if WithStencil then
+    if Self.WithStencil then
       I := I or GL_STENCIL_BUFFER_BIT;
     glClear( I );
   end;
