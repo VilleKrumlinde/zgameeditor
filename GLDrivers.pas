@@ -289,6 +289,7 @@ begin
         mbC_1MSC : glBlendFunc(GL_SRC_COLOR,GL_ONE_MINUS_SRC_COLOR);
         mbAlphaSat_1 : glBlendFunc(GL_SRC_ALPHA_SATURATE,GL_ONE);
         mb1MSA_A : glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+        mb1_1MSA : glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
       end;
     end;
   end;

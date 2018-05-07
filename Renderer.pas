@@ -43,7 +43,7 @@ type
     Shading : TMaterialShading;
     Color : TZColorf;
     Light : boolean;
-    Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1,mb1MSA_A);
+    Blend : (mbNoBlend,mbA_1MSA,mbA_1,mbC_1MSC,mbAlphaSat_1,mb1MSA_A,mb1_1MSA);
     ZBuffer : boolean;
     DrawBackFace : boolean;
     Font : TFont;
@@ -371,8 +371,9 @@ type
     TexId,FboId : integer; //read by zgeviz
     Filter : TBitmapFilterType;
     InternalFormat : (infRGBA,infRGBA16);
+    WithStencil : boolean;
     {$ifdef RT_MULTISAMPLE}
-    UseMultiSample,WithStencil : boolean;
+    UseMultiSample : boolean;
     MultiSampleCount,MsWidth,MsHeight : integer;
     procedure RefreshTextureFromMultisample;
     {$endif}
@@ -608,7 +609,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'EmissionColor',{$ENDIF}(@EmissionColor), zptColorf);
   List.AddProperty({$IFNDEF MINIMAL}'Shininess',{$ENDIF}(@Shininess), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'Blend',{$ENDIF}(@Blend), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One','OneMinusSourceAlpha/Alpha']);{$endif}
+    {$ifndef minimal}List.GetLast.SetOptions(['None','Alpha/OneMinusSourceAlpha','Alpha/One','Color/OneMinusSourceColor','AlphaSaturate/One','OneMinusSourceAlpha/Alpha','One/OneMinusSourceAlpha']);{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'ZBuffer',{$ENDIF}(@ZBuffer), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue:=True;
   List.AddProperty({$IFNDEF MINIMAL}'DrawBackFace',{$ENDIF}(@DrawBackFace), zptBoolean);
@@ -2221,6 +2222,7 @@ begin
     {$ifdef android}
     DepthFormat := GL_DEPTH_COMPONENT16;
     {$else}
+
     if Self.WithStencil then
       DepthFormat := GL_DEPTH24_STENCIL8
     else
