@@ -2752,6 +2752,9 @@ begin
           ZApp.SymTab.Add(String(PAnsiChar(P3)),TZComponent(P1));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
+        //If we set an expression, then compile this now so it will execute in same run.
+        if Prop.PropertyType=zptExpression then
+          Self.ZApp.CompileProperty(TZComponent(P1),TZComponent(P1).GetProperty(Prop),Prop);
       end;
     fcSetObjectProperty :
       begin
