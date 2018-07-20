@@ -2523,7 +2523,7 @@ begin
       case Prop.PropertyType of
         zptString :
           {$ifndef fpc}
-          if (AnsiStrings.AnsiPos(#13,Value.StringValue)=0) {and
+          if (AnsiStrings.AnsiPos(#10,Value.StringValue)=0) {and
             (Pos('<',Value.StringValue)=0) and
             (Pos('>',Value.StringValue)=0)} then
             NormalProps.Add(Prop)
@@ -2536,7 +2536,7 @@ begin
           if Value.BinaryValue.Size>0 then
             NestedProps.Add(Prop);
         zptExpression :
-          if (Pos(#13,Value.ExpressionValue.Source)=0) then
+          if (Pos(#10,Value.ExpressionValue.Source)=0) then
             NormalProps.Add(Prop)
           else
             NestedProps.Add(Prop);
