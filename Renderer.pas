@@ -1832,14 +1832,13 @@ begin
 
   //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
-  if Driver.CurrentMaterial<>nil then
-    for I := 0 to Driver.CurrentMaterial.Textures.Count-1 do
-    begin
-      TexVar[3]:=ansichar(ord('1') + I);
-      J := glGetUniformLocation(ProgHandle,pansichar(@TexVar));
-      if J>-1 then
-        glUniform1i(J,I);
-    end;
+  for I := 0 to 7 do
+  begin
+    TexVar[3]:=ansichar(ord('1') + I);
+    J := glGetUniformLocation(ProgHandle,pansichar(@TexVar));
+    if J>-1 then
+      glUniform1i(J,I);
+  end;
 
   IsChanged := False;
 end;
