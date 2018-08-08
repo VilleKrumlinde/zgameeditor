@@ -3,7 +3,11 @@
   <OnLoaded>
     <ZLibrary>
       <Source>
-<![CDATA[inline void assignsarg(int x) {
+<![CDATA[private void xx() {
+  xx();
+}
+
+inline void assignsarg(int x) {
   int y=x;
 }
 
@@ -19,7 +23,12 @@ inline float one() {
 //  return x+y;
 //}
 
+
 inline float min(float v1, float v2) {
+	return v1 <= v2 ? v1 : v2;
+}
+
+inline float min(float v1, float v2,float v3) {
 	return v1 <= v2 ? v1 : v2;
 }
 
@@ -83,6 +92,16 @@ inline int casetest(int x) {
     case 2 :
     case 3 : return 3;
   }
+}
+
+int globalx;
+
+inline int getGlobal() {
+  return globalx;
+}
+
+inline void setGlobal(int x) {
+  globalx=x;
 }]]>
       </Source>
     </ZLibrary>
@@ -98,10 +117,19 @@ int GetTickCount() { }]]>
     </ZExternalLibrary>
     <ZExpression>
       <Expression>
-<![CDATA[// int x=casetest(0);
+<![CDATA[//setGlobal(1);
 
-int x=1;
-fortytwo(x);
+int x=min(0,1);
+x=min(1,1,2);
+
+//   int x=globalx;
+
+   //getGlobal();
+
+// int x=casetest(0);
+
+//int x=1;
+//fortytwo(x);
 
 //int x;
 //fortytwo(x);

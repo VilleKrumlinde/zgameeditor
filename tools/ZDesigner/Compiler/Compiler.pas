@@ -1361,14 +1361,19 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       TExpMisc.Create(Target, emPop);
   end;
 
+var
+  MangledName : string;
+  O : TObject;
 begin
   Assert(Op.Kind=zcFuncCall);
-  if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunctionUserDefined) then
+  MangledName := MangleFunc(Op.Id,Op.Children.Count);
+  O := SymTab.Lookup(MangledName);
+  if Assigned(O) and (O is TZcOpFunctionUserDefined) then
   begin
-    DoGenUserFunc(SymTab.Lookup(Op.Id) as TZcOpFunctionUserDefined);
-  end else if SymTab.Contains(Op.Id) and (SymTab.Lookup(Op.Id) is TZcOpFunctionBuiltIn) then
+    DoGenUserFunc(O as TZcOpFunctionUserDefined);
+  end else if Assigned(O) and (O is TZcOpFunctionBuiltIn) then
   begin
-    DoGenBuiltInFunc(SymTab.Lookup(Op.Id) as TZcOpFunctionBuiltIn);
+    DoGenBuiltInFunc(O as TZcOpFunctionBuiltIn);
   end else raise ECodeGenError.Create('Unknown function: ' + Op.Id);
 end;
 

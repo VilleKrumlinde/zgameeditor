@@ -4119,21 +4119,25 @@ var
     Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
   end;
 
+var
+  Ins : string;
 begin
   C := TSynCompletionProposal(Context);
   Desc := '';
+  Ins := S;
   if (Item is TZComponent) then
     Desc := String((Item as TZComponent).GetDisplayName)
   else if (Item is TZcOpFunctionBase) then
   begin
     if (Item is TZcOpFunctionBuiltIn) and (TZcOpFunctionBuiltIn(Item).FuncId=fcGenLValue) then
       Exit; //Skip internal function
-    Desc := InGetSig(Item as TZcOpFunctionBase)
+    Desc := InGetSig(Item as TZcOpFunctionBase);
+    Ins := (Item as TZcOpFunctionBase).Id; //Use the unmangled-name
   end
   else
     Desc := S;
   C.ItemList.Add(Desc);
-  C.InsertList.Add(S);
+  C.InsertList.Add(Ins);
 end;
 
 procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;

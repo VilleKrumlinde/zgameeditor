@@ -660,11 +660,6 @@ begin
         Func.Id := Name;
         Func.ReturnType := Typ;
         Func.IsInline := IsInline;
-        if IsPrivate then
-          SymTab.Add(Func.Id,Func)
-        else
-          SymTab.AddPrevious(Func.Id,Func);
-        ZFunctions.Add(Func);
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
@@ -674,6 +669,16 @@ begin
     _FormalParams;
   end;
   Expect(rparSym);
+        
+        Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
+        if SymTab.Contains(Func.MangledName) then
+          ZError('Name already defined: ' + Name);
+        if IsPrivate then
+          SymTab.AddPrevious(Func.MangledName,Func)
+        else
+          SymTab.AddPrevious(Func.MangledName,Func,2);
+        ZFunctions.Add(Func);
+      
   Expect(lbraceSym);
   _ZcFuncBody;
   Expect(rbraceSym);
@@ -1895,8 +1900,6 @@ begin
            if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
              ZError('Unexpected "("');
            OutOp.Kind:=zcFuncCall;
-           if OutOp.Ref=CurrentFunction then
-             CurrentFunction.IsRecursive := True;
          
          if InSet(CurrentInputSymbol,7) then
          begin

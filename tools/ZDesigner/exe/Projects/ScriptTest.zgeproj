@@ -102,6 +102,16 @@ void globalF() {
 
 void modv3(vec3 v) {
   v[0]=1;
+}
+
+//overload
+
+int overload1() {
+  return 42;
+}
+
+int overload1(int x) {
+  return x;
 }]]>
       </Source>
     </ZLibrary>
@@ -831,6 +841,15 @@ if(s!="test42")
   if (Global1!=10)
     Error=2002;
 }]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="overload">
+      <Expression>
+<![CDATA[if(overload1()!=42)
+  Error=2100;
+
+if(overload1(1)!=1)
+  Error=2101;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>

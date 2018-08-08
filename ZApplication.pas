@@ -928,7 +928,7 @@ begin
   for I := 0 to BuiltInFunctions.Count - 1 do
   begin
     Func := TZcOpFunctionBuiltIn(BuiltInFunctions[I]);
-    SymTab.Add(Func.Id,Func);
+    SymTab.Add(Func.MangledName,Func);
   end;
 
   //Scope 1: object names
@@ -963,8 +963,8 @@ begin
   for I := 0 to ZcGlobalNames.Count - 1 do
   begin
     //Remove user function names from symtab
-    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains((ZcGlobalNames[I] as TZcOp).Id) then
-      SymTab.Remove(TZcOp(ZcGlobalNames[I]).Id)
+    if (ZcGlobalNames[I] is TZcOpFunctionUserDefined) and SymTab.Contains( TZcOpFunctionUserDefined(ZcGlobalNames[I]).MangledName ) then
+      SymTab.Remove( TZcOpFunctionUserDefined(ZcGlobalNames[I]).MangledName )
     else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
       //Also remove inline constants
       SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name));

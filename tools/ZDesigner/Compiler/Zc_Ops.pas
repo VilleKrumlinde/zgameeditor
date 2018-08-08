@@ -104,6 +104,7 @@ type
     Arguments : TObjectList<TZcOpArgumentVar>;
     Statements : Contnrs.TObjectList;
     ReturnType : TZcDataType;
+    MangledName : string;
     constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
@@ -195,6 +196,8 @@ function GetBuiltInConstants : Contnrs.TObjectList;
 procedure CleanUp;
 
 function Prototypes : TPrototypes;
+
+function MangleFunc(const Func : string; const ArgCount : integer) : string;
 
 var
   //Nodes owned by the current compiled function/expression
@@ -1459,11 +1462,18 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction 
 var
   FOp : TZcOpFunctionBase;
   I : integer;
+  MangledName : string;
+  O : TObject;
 begin
   Result := False;
-  if CompilerContext.SymTab.Contains(Op.Id) and (CompilerContext.SymTab.Lookup(Op.Id) is TZcOpFunctionBase) then
+  MangledName := MangleFunc(Op.Id,Op.Children.Count);
+  O := CompilerContext.SymTab.Lookup(MangledName);
+  if Assigned(O) and (O is TZcOpFunctionBase) then
   begin  //Function
-    FOp := CompilerContext.SymTab.Lookup(Op.Id) as TZcOpFunctionBase;
+    FOp := O as TZcOpFunctionBase;
+    Op.Ref := FOp;
+    if FOp=CurrentFunction then
+      CurrentFunction.IsRecursive := True;
     if FOp.Arguments.Count<>Op.Children.Count then
     begin
       Error := 'Wrong nr of arguments';
@@ -1607,6 +1617,7 @@ var
         Arg.Typ.IsPointer := True;
       F.AddArgument(Arg);
     end;
+    F.MangledName := MangleFunc(F.Id,F.Arguments.Count);
 
     BuiltInFunctions.Add(F);
   end;
@@ -1981,6 +1992,10 @@ begin
   Result.Typ.Kind := Kind;
 end;
 
+function MangleFunc(const Func : string; const ArgCount : integer) : string;
+begin
+  Result := Func + '@' + IntToStr(ArgCount);
+end;
 
 { TPrototypes }
 
