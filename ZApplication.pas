@@ -571,7 +571,7 @@ procedure TZApplication.Run;
 begin
   Init;
   //Skip initial tree update for now because it triggers AppState.OnStart etc. which can cause trouble
-  //Any component needing init should ovveride Loaded instead.
+  //Any component needing init should override InitAfterPropsAreSet instead.
   //Self.Update;
   OnLoaded.ExecuteCommands;
   Platform_Run(Self.Main);

@@ -30,6 +30,7 @@ type
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
     function IsConst : boolean;
+    function GetInitializer : TZcOpFunctionUserDefined;
     
   protected
 
@@ -40,6 +41,7 @@ type
     procedure _ConstantDeclarationList(IsPrivate : boolean);
     procedure _Type(var Typ : TZcDataType);
     procedure _GlobalVarDecl(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
+    procedure _Block(var OutOp : TZcOp);
     procedure _Statement(var OutOp : TZcOp);
     procedure _Par;
     procedure _LocalVarDecl(var OutOp : TZcOp);
@@ -52,7 +54,6 @@ type
     procedure _SimpleType(var Typ : TZcDataType);
     procedure _ConstantDeclaration(var Typ : TZcDataType; IsPrivate : boolean);
     procedure _EmbeddedStatement(var OutOp : TZcOp);
-    procedure _Block(var OutOp : TZcOp);
     procedure _StatementExpr(var OutOp : TZcOp);
     procedure _SwitchSection(SwitchOp : TZcOpSwitch);
     procedure _ForInit(var OutOp : TZcOp);
@@ -81,10 +82,11 @@ type
     ZFunctions : TObjectList;
     SymTab : TSymbolTable;
     ReturnType : TZcDataType;
-    AllowFunctions : boolean;
+    AllowFunctions,AllowInitializer : boolean;
     GlobalNames : TObjectList;
     TempCounter : integer;
     ZApp : TZApplication;
+    InitializerFunction : TZcOpFunctionUserDefined;
     destructor Destroy; override;
     procedure CheckHomograph(var sym: Integer); override;
 
@@ -642,6 +644,18 @@ begin
     ((CurrentInputSymbol=privateSym) and (Symbols[2].Id=constSym));
 end;
 
+function TZc.GetInitializer : TZcOpFunctionUserDefined;
+begin
+  if not Self.AllowInitializer then
+    ZError('Initializers only allowed in ZLibrary components located in App.OnLoaded');
+  if not Assigned(InitializerFunction) then
+  begin
+    Self.InitializerFunction := TZcOpFunctionUserDefined.Create(nil);
+    Self.ZFunctions.Insert(0,Self.InitializerFunction);
+  end;
+  Result := Self.InitializerFunction;
+end;
+
 
 procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean);
 
@@ -719,6 +733,7 @@ procedure TZc._Zc;
         Func : TZcOpFunctionUserDefined;
         Name : string;
         IsPrivate,IsInline : boolean;
+        Op : TZcOp;
     
 begin
   if InSet(CurrentInputSymbol,2) and ( AllowFunctions ) then
@@ -765,12 +780,17 @@ begin
                    Get;
                    _ZcFuncRest(Typ,Name,IsPrivate,IsInline);
               end
-              else if (CurrentInputSymbol in [commaSym, scolonSym]) then
+              else if (CurrentInputSymbol in [assgnSym, commaSym, scolonSym]) then
               begin
                    _GlobalVarDecl(Typ,Name,IsPrivate);
                    Expect(scolonSym);
               end
               else SynError(1);
+         end
+         else if (CurrentInputSymbol=lbraceSym) then
+         begin
+              _Block(Op);
+                   GetInitializer.Statements.Add(Op); 
          end
          ;
        end;
@@ -879,6 +899,23 @@ begin
   end;
 end;
 
+procedure TZc._Block(var OutOp : TZcOp);
+     var
+       Op : TZcOp;
+  
+begin
+     Op := nil;
+     OutOp := MakeOp(zcBlock);
+  
+  Expect(lbraceSym);
+  while InSet(CurrentInputSymbol,1) do
+  begin
+    _Statement(Op);
+                        if Assigned(Op) then OutOp.Children.Add(Op); 
+  end;
+  Expect(rbraceSym);
+end;
+
 procedure TZc._Statement(var OutOp : TZcOp);
 begin
   if (CurrentInputSymbol=constSym) then
@@ -981,7 +1018,7 @@ begin
 end;
 
 procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
-                                                                              var V : TDefineVariableBase; 
+ var V : TDefineVariableBase; InitOp : TZcOp; 
 begin
        
         if SymTab.ScopeContains(Name) then
@@ -1008,6 +1045,14 @@ begin
         else
           SymTab.AddPrevious(Name,V);
      
+  if (CurrentInputSymbol=assgnSym) then
+  begin
+    Get;
+    _Init(InitOp);
+                          
+       GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
+       
+  end;
 end;
 
 procedure TZc._GlobalVar(Typ : TZcDataType; IsPrivate : boolean);
@@ -1395,23 +1440,6 @@ begin
     
   end
   else SynError(5);
-end;
-
-procedure TZc._Block(var OutOp : TZcOp);
-     var
-       Op : TZcOp;
-  
-begin
-     Op := nil;
-     OutOp := MakeOp(zcBlock);
-  
-  Expect(lbraceSym);
-  while InSet(CurrentInputSymbol,1) do
-  begin
-    _Statement(Op);
-                        if Assigned(Op) then OutOp.Children.Add(Op); 
-  end;
-  Expect(rbraceSym);
 end;
 
 procedure TZc._StatementExpr(var OutOp : TZcOp);
@@ -2167,8 +2195,8 @@ begin
   InitSymSets(ZcSymSets,[
     	{ 0} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, refSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 1} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,
-	{ 2} _EOFSYMB, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
-	{ 3} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 2} _EOFSYMB, lbraceSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
+	{ 3} lbraceSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, -1,
 	{ 4} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, inlineSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} _EOFSYMB, intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, constSym, ifSym, switchSym, whileSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, nullSym, -1,

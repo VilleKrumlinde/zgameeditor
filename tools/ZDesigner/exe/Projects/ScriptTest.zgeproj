@@ -30,7 +30,7 @@ float f4() {
 }]]>
       </Source>
     </ZLibrary>
-    <ZLibrary Name="Lib2">
+    <ZLibrary Name="Lib2" HasInitializer="1">
       <Source>
 <![CDATA[float g1(float x,float y,float z) {
   if( (x==1) && (y==2) && (z==3) )
@@ -112,6 +112,15 @@ int overload1() {
 
 int overload1(int x) {
   return x;
+}
+
+//Initializers
+
+int globIntInit=42;
+string globStringInit;
+
+{
+  globStringInit = "hello";
 }]]>
       </Source>
     </ZLibrary>
@@ -850,6 +859,15 @@ if(s!="test42")
 
 if(overload1(1)!=1)
   Error=2101;]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression Comment="initializers">
+      <Expression>
+<![CDATA[if(globStringInit != "hello")
+  Error=2200;
+
+if(globIntInit != 42)
+  Error=2201;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>

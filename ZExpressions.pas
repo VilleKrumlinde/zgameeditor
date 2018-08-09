@@ -76,6 +76,7 @@ type
   TZLibrary = class(TZComponent)
   strict private
     Lock : pointer;
+    HasExecutedInitializer : boolean;
   private
     procedure AquireLock;
     procedure ReleaseLock;
@@ -84,8 +85,11 @@ type
   public
     UseThreadLock : boolean;
     Source : TZExpressionPropValue;
+    HasInitializer : boolean;
+    procedure Update; override;
     {$ifndef minimal}
     destructor Destroy; override;
+    procedure DesignerReset; override;
     {$endif}
   end;
 
@@ -1623,6 +1627,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}(@Source), zptExpression);
     {$ifndef minimal}List.GetLast.ExpressionKind := ekiLibrary;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'UseThreadLock',{$ENDIF}@UseThreadLock, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasInitializer',{$ENDIF}@HasInitializer, zptBoolean);
+   {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
 procedure TZLibrary.AquireLock;
@@ -1637,11 +1643,27 @@ begin
   Platform_LeaveMutex(Lock);
 end;
 
+procedure TZLibrary.Update;
+begin
+  inherited;
+  if Self.HasInitializer and (not Self.HasExecutedInitializer) then
+  begin
+    ZExpressions.RunCode(Source.Code);
+    Self.HasExecutedInitializer := True;
+  end;
+end;
+
 {$ifndef minimal}
 destructor TZLibrary.Destroy;
 begin
   if Lock<>nil then
     Platform_FreeMutex(Lock);
+  inherited;
+end;
+
+procedure TZLibrary.DesignerReset;
+begin
+  Self.HasExecutedInitializer := False;
   inherited;
 end;
 {$endif}

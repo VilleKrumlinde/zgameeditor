@@ -1443,7 +1443,10 @@ begin
     case ExpKind of
       ekiNormal: ;
       ekiLibrary:
-        Compiler.AllowFunctions := True;
+        begin
+          Compiler.AllowFunctions := True;
+          Compiler.AllowInitializer := (ThisC is TZLibrary) and (ThisC.OwnerList=ThisC.ZApp.OnLoaded);
+        end;
       ekiGetValue:
         begin
           S := 'return ' + S + ';';
@@ -1495,6 +1498,9 @@ begin
         Compiler.ZFunctions[I] := TZcOp(Compiler.ZFunctions[I]).Optimize;
     end else
       raise EParseError.Create('Compilation failed');
+
+    if ThisC is TZLibrary then
+      (ThisC as TZLibrary).HasInitializer := Assigned(Compiler.InitializerFunction);
 
     Target.Clear;
     CodeGen := TZCodeGen.Create;
