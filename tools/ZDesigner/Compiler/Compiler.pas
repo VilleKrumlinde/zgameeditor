@@ -43,7 +43,7 @@ type
 procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   const Ze : TZExpressionPropValue;
   SymTab : TSymbolTable;
-  ReturnType : TZcDataType;
+  const ReturnType : TZcDataType;
   GlobalNames : Contnrs.TObjectList;
   ExpKind : TExpressionKind);
 
@@ -500,6 +500,16 @@ begin
     zcMod : DoGenBinary(vbkMod);
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, True);
     zcInlineBlock : Gen(Op);
+    zcBinaryNot :
+      begin
+       GenValue(Op.Child(0));
+       TExpMisc.Create(Target,emBinaryNot);
+      end;
+    zcNot :
+      begin
+       GenValue(Op.Child(0));
+       TExpMisc.Create(Target,emNot);
+      end
   else
     //Gen(Op); //Any op can occur in a value block because of inlining
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
@@ -790,7 +800,7 @@ var
     RestoreContinue;
   end;
 
-  procedure DoWhile;
+  procedure DoWhile(PreTest : boolean);
   var
     LExit,LLoop : TZCodeLabel;
   begin
@@ -803,12 +813,21 @@ var
     SetBreak(LExit);
     SetContinue(LLoop);
 
-    if Assigned(Op.Child(0)) then
-      FallTrue(Op.Child(0),LExit);
+    if PreTest then
+    begin
+      if Assigned(Op.Child(0)) then
+        FallTrue(Op.Child(0),LExit);
 
-    if Assigned(Op.Child(1)) then
-      Gen(Op.Child(1));
-    GenJump(jsJumpAlways,LLoop);
+      if Assigned(Op.Child(1)) then
+        Gen(Op.Child(1));
+      GenJump(jsJumpAlways,LLoop);
+    end else
+    begin //do while
+      if Assigned(Op.Child(1)) then
+        Gen(Op.Child(1));
+      if Assigned(Op.Child(0)) then
+        FallFalse(Op.Child(0),LLoop);
+    end;
 
     DefineLabel(LExit);
     RestoreBreak;
@@ -978,7 +997,8 @@ begin
     zcFuncCall : GenFuncCall(Op,False);
     zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
-    zcWhile : DoWhile;
+    zcWhile : DoWhile(True);
+    zcDoWhile : DoWhile(False);
     zcBreak :
       if Assigned(Self.BreakLabel) then
         GenJump(jsJumpAlways,Self.BreakLabel)
@@ -1421,7 +1441,7 @@ begin
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
-  SymTab : TSymbolTable; ReturnType : TZcDataType;
+  SymTab : TSymbolTable; const ReturnType : TZcDataType;
   GlobalNames : Contnrs.TObjectList;
   ExpKind : TExpressionKind);
 var
@@ -1441,46 +1461,41 @@ begin
   Compiler := TZc.Create(nil);
   try
     case ExpKind of
-      ekiNormal: ;
+      ekiNormal:
+        begin
+          S := 'private ' + GetZcTypeName(ReturnType) + ' __f() { '#13#10 + S + #13#10'}';
+        end;
       ekiLibrary:
         begin
-          Compiler.AllowFunctions := True;
           Compiler.AllowInitializer := (ThisC is TZLibrary) and (ThisC.OwnerList=ThisC.ZApp.OnLoaded);
         end;
       ekiGetValue:
         begin
-          S := 'return ' + S + ';';
-          ReturnType.Kind := zctFloat;
+          S := 'private float __f() { return ' + S + #13#10'; }';
         end;
       ekiGetPointer:
         begin
-          ReturnType.Kind := zctModel;
-          S := '__getLValue( ' + S + ' ); return null;';
+          S := 'private Model __f() { __getLValue( ' + S + #13#10' ); return null; }';
         end;
       ekiBitmap :
         begin
           S := 'private void __f(float x, float y, vec4 pixel) { ' + CloseComment(S) + #13#10' }';
-          Compiler.AllowFunctions := True;
         end;
       ekiMesh :
         begin
           S := 'private void __f(vec3 v, vec3 n, vec4 c, vec2 texcoord) { ' + CloseComment(S) + #13#10' }';
-          Compiler.AllowFunctions := True;
         end;
       ekiThread :
         begin
           S := 'private void __f(int param) { ' + CloseComment(S) + #13#10' }';
-          Compiler.AllowFunctions := True;
         end;
       ekiGetStringValue:
         begin
-          S := 'return ' + S + ';';
-          ReturnType.Kind := zctString;
+          S := 'private string __f() { return ' + S + '; }';
         end;
     end;
 
     Compiler.SymTab := SymTab;
-    Compiler.ReturnType := ReturnType;
     Compiler.GlobalNames := GlobalNames;
     Compiler.ZApp := ZApp;
 

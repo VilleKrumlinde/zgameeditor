@@ -359,7 +359,8 @@ type
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
-    emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop);
+    emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop, emBinaryNot,
+    emNot);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -1603,6 +1604,21 @@ begin
         Env.StackPushPointer(P);
       end;
     emNop : ;
+    emBinaryNot :
+      begin
+        Env.StackPopTo(V);
+        V := not V;
+        Env.StackPush(V);
+      end;
+    emNot :
+      begin
+        Env.StackPopTo(V);
+        if V=0 then
+          V := 1
+        else
+          V := 0;
+        Env.StackPush(V);
+      end;
   end;
 end;
 

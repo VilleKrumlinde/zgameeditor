@@ -257,7 +257,39 @@ if((i^j)!=0)
   Error=15;
 i=2; j=4;
 if((i^j)!=6)
-  Error=16;]]>
+  Error=16;
+
+if( (~0!=0xFFFFFFFF) || (~0xFFFFFFFF!=0))
+  Error=17;
+
+i=0;
+if(~i!=0xFFFFFFFF)
+  Error=18;
+
+i=1;
+i|=2;
+if(i!=3)
+  Error=19;
+
+i=1;
+i= -i;
+if(i!=-1)
+  Error=20;
+
+i=1;
+i&=3;
+if(i!=1)
+  Error=21;
+
+i=1;
+i<<=1;
+if(i!=2)
+  Error=22;
+
+i=2;
+i>>=1;
+if(i!=1)
+  Error=23;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="byte tests">
@@ -329,7 +361,22 @@ for(int i=0; i<10; i++) {
     continue;
 }
 if(sum!=36)
-  Error=103;]]>
+  Error=103;
+
+
+sum=0;
+do {
+  sum++;
+} while (0);
+if(sum!=1)
+  Error=104;
+
+sum=0;
+do {
+  sum++;
+} while (sum<4);
+if(sum!=4)
+  Error=105;]]>
       </Expression>
     </ZExpression>
     <ZExpression Comment="Assignment as value">

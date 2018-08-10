@@ -7,13 +7,14 @@ interface
 uses Contnrs, ZClasses, ZExpressions, uSymTab, Generics.Collections;
 
 type
-  TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign);
+  TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign,
+    atOrAssign,atShiftLeftAssign,atShiftRightAssign,atAndAssign);
   TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,zcConstLiteral,zcIdentifier,zcAssign,zcIf,
           zcCompLT,zcCompGT,zcCompLE,zcCompGE,zcCompNE,zcCompEQ,
           zcBlock,zcNegate,zcOr,zcAnd,zcFuncCall,zcReturn,zcArrayAccess,
           zcFunction,zcConvert,zcForLoop,
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
-          zcWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,
+          zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
           zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn);
 
@@ -563,6 +564,7 @@ begin
     zcBinaryXor : Result := Child(0).ToString + ' ^ ' + Child(1).ToString;
     zcBinaryShiftL : Result := Child(0).ToString + ' << ' + Child(1).ToString;
     zcBinaryShiftR : Result := Child(0).ToString + ' >> ' + Child(1).ToString;
+    zcBinaryNot : Result :=  '~' + Child(0).ToString;
     zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
     zcFuncCall :
       begin
@@ -626,6 +628,14 @@ begin
         Result := Result + ')';
         if Assigned(Child(1)) then
           Result := Result + Child(1).ToString;
+      end;
+    zcDoWhile :
+      begin
+        Result := 'do ';
+        if Assigned(Child(1)) then
+          Result := Result + Child(1).ToString;
+        if Assigned(Child(0)) then
+          Result := Result + ' while( ' + Child(0).ToString + ');';
       end;
     zcBreak : Result := 'break';
     zcContinue : Result := 'continue';
@@ -743,6 +753,7 @@ begin
     if C1.Typ.Kind<>zctString then
       case Kind of
         zcNegate : Exit( TZcOpLiteral.Create(C1.Typ.Kind,C1.Value * -1) );
+        zcBinaryNot : Exit( TZcOpLiteral.Create(C1.Typ.Kind, not Round(C1.Value) ));
       end;
   end;
 
@@ -1177,7 +1188,8 @@ end;
 
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
 const
-  AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus);
+  AssignMap : array[TZcAssignType] of TZcOpKind = (zcNop,zcMul,zcDiv,zcPlus,zcMinus,
+    zcBinaryOr,zcBinaryShiftL,zcBinaryShiftR,zcBinaryAnd);
 var
   Etyp : TZcIdentifierInfo;
   LeftTyp : TZcDataType;
@@ -1256,7 +1268,8 @@ begin
 
   RightOp := MakeCompatible(RightOp,LeftTyp);
 
-  if Kind in [atMulAssign,atDivAssign,atPlusAssign,atMinusAssign] then  //Convert x*=2 to x=x*2
+
+  if Kind>atAssign then  //Convert x*=2 to x=x*2
     RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
 
   if Assigned(LeftOp.Ref) and (LeftOp.Ref is TZcOpVariableBase) then

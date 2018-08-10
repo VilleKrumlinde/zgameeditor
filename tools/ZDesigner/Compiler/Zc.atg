@@ -7,8 +7,7 @@ uses = (. Zc_Ops, Contnrs, uSymTab, ZClasses, Compiler, SysUtils, ZExpressions, 
 public = (.
     ZFunctions : TObjectList;
     SymTab : TSymbolTable;
-    ReturnType : TZcDataType;
-    AllowFunctions,AllowInitializer : boolean;
+    AllowInitializer : boolean;
     GlobalNames : TObjectList;
     TempCounter : integer;
     ZApp : TZApplication;
@@ -269,13 +268,11 @@ var
 
 Zc (. var
         Typ : TZcDataType;
-        Func : TZcOpFunctionUserDefined;
         Name : string;
         IsPrivate,IsInline : boolean;
         Op : TZcOp;
     .)
 =
-  IF (. AllowFunctions .)
   {
     IF(. IsConst .)
       (. IsPrivate := False; .)
@@ -292,32 +289,9 @@ Zc (. var
          | GlobalVarDecl<Typ,Name,IsPrivate> ";"
        )
     |
-      Block<Op> (. GetInitializer.Statements.Add(Op); .)
-  }
-  | IF (. not AllowFunctions .)
-  {
-
-  (.
-       Func := TZcOpFunctionUserDefined.Create(nil);
-       Func.ReturnType := Self.ReturnType;
-       Self.CurrentFunction := Func;
-       try
-         SymTab.PushScope;
-         try
-           ZFunctions.Add(Func);
-  .)
-  /* A zc-expression is treated like the body of a nameless function
-     to allow local var declarations  */
-
-  ZcFuncBody
-  (.
-         finally
-           SymTab.PopScope;
-         end;
-       except on E: Exception do
-         ZError(E.Message);
-       end;
-  .)
+      (. CurrentFunction := GetInitializer; .)
+      Block<Op>
+      (. GetInitializer.Statements.Add(Op); CurrentFunction := nil; .)
   }
 
 .
@@ -592,7 +566,10 @@ ident (. CnsName := LexString; .) "=" Expr<Op>
 
    Lit := Op as TZcOpLiteral;
 
-   if (Lit.Typ.Kind<>Typ.Kind) and not ((Typ.Kind=zctByte) and (Lit.Typ.Kind=zctInt))then
+   if (Lit.Typ.Kind<>Typ.Kind)
+     and not ((Typ.Kind=zctByte) and (Lit.Typ.Kind=zctInt))
+     and not ((Typ.Kind=zctInt) and (Lit.Typ.Kind=zctFloat))
+     then
      ZError('Constant expression is not of the expected type: ' + Op.ToString);
 
    Cns := TDefineConstant.Create(nil);
@@ -701,7 +678,21 @@ EmbeddedStatement<var OutOp : TZcOp>
          SymTab.PopScope;
        end;
    .)
+
  /* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
+ | "do"
+     (. try
+         SymTab.PushScope;
+         WhileCondOp := nil; WhileBodyOp := nil; .)
+   EmbeddedStatement<WhileBodyOp>
+   "while" "(" Expr<WhileCondOp> ")" ";"
+   (.
+         OutOp := MakeOp(zcDoWhile,[WhileCondOp,WhileBodyOp]);
+       finally
+         SymTab.PopScope;
+       end;
+   .)
+
  | "for"
     (. try
          SymTab.PushScope;
@@ -743,7 +734,15 @@ Block<var OutOp : TZcOp>
 = (. Op := nil;
      OutOp := MakeOp(zcBlock);
   .)
-  "{" {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) } "}".
+  "{" (. SymTab.PushScope;
+         try .)
+     {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+  "}" (.
+         finally
+           SymTab.PopScope;
+         end;
+      .)
+  .
 
 /*------------------------------------------------------------------------*/
 StatementExpr<var OutOp : TZcOp>           (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
@@ -765,6 +764,10 @@ AssignOp<var Kind : TZcAssignType>
   | "-="  (. Kind := atMinusAssign; .)
   | "*="  (. Kind := atMulAssign; .)
   | "/="  (. Kind := atDivAssign; .)
+  | "|="  (. Kind := atOrAssign; .)
+  | "<<="  (. Kind := atShiftLeftAssign; .)
+  | ">>="  (. Kind := atShiftRightAssign; .)
+  | "&="  (. Kind := atAndAssign; .)
 /*  | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" */
 .
 
@@ -803,7 +806,7 @@ LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
 /*------------------------------------------------------------------------*/
 
 ForInc<var OutOp : TZcOp>      (. var Op : TZcOp; .)
-= (. Op:=nil; 
+= (. Op:=nil;
      OutOp := MakeOp(zcBlock);
   .) 
 (
@@ -947,25 +950,28 @@ Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
     (
       /* "+" | */
       "-"   (. Kind := zcNegate; .) |
-      "++"  (. Kind := zcPreInc; .) |    
+      "++"  (. Kind := zcPreInc; .) |
       "--"  (. Kind := zcPreDec; .) |
-      "!"   (. Kind := zcNot; .)
+      "!"   (. Kind := zcNot; .)    |
+      "~"   (. Kind := zcBinaryNot; .)
       /* | "~" | "*" */
     )
     (.
-       if Kind in [zcNegate,zcNot] then
+       if Kind in [zcNot,zcBinaryNot] then
        begin
          Tmp := MakeOp(Kind);
          if LastOp<>nil then
            LastOp.Children.Add(Tmp);
          LastOp := Tmp;
        end else if Assigned(LastOp) then
-         ZError('-- and ++ cannot be combined with other unary ops');
+         ZError('- ,-- and ++ cannot be combined with other unary ops');
     .)
   }
   Primary<Tmp>
     (.
-       if Kind in [zcNop,zcNegate,zcNot] then
+       if Kind=zcNegate then
+         OutOp := MakeBinary(zcMinus, TZcOpLiteral.Create(Tmp.GetDataType.Kind,0), Tmp)
+       else if Kind in [zcNop,zcNot,zcBinaryNot] then
        begin
          if LastOp<>nil then
          begin

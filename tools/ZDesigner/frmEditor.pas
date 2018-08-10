@@ -3185,7 +3185,7 @@ end;
 
 procedure TEditorForm.SetCurrentFileName(const F: string);
 const
-  MruListMax=8;
+  MruListMax=16;
 begin
   CurrentFileName := F;
   if F<>'' then
