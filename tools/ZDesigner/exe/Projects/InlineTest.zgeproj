@@ -122,6 +122,13 @@ int GetTickCount() { }]]>
 int x=min(0,1);
 x=min(1,1,2);
 
+
+{
+  int b;
+}
+{
+  int b;
+}
 //   int x=globalx;
 
    //getGlobal();

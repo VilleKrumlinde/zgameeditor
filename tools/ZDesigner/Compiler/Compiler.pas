@@ -1475,7 +1475,7 @@ begin
         end;
       ekiGetPointer:
         begin
-          S := 'private Model __f() { __getLValue( ' + S + #13#10' ); return null; }';
+          S := 'private model __f() { __getLValue( ' + S + ' ); return null; }';
         end;
       ekiBitmap :
         begin
