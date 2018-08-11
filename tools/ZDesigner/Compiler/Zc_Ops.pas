@@ -1007,6 +1007,10 @@ begin
       (ExistingType.Kind=zctModel) then
     Exit(Op); //Ok to cast model to Component
 
+  if (WantedType.Kind=zctReference) and (WantedType.ReferenceClassId=DefineArrayClassId) and
+      (ExistingType.Kind=zctArray) then
+    Exit(Op); //Ok to cast local array to reference
+
   if (WantedType.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
     (ExistingType.Kind=WantedType.Kind) and
     (Op.Kind=zcArrayAccess) then
