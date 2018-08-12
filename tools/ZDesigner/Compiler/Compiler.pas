@@ -877,7 +877,7 @@ var
       Func.Lib := Component as TZLibrary;
       Func.LibIndex := Target.Count;
     end;
-    if IsExternalLibrary and (Func.Id<>'') then
+    if IsExternalLibrary and (Func.Id<>'') and (Func.Id<>'__f') then
     begin
       Func.IsExternal := True;
       if Func.Statements.Count>0 then
