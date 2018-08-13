@@ -5,6 +5,8 @@
       <Source>
 <![CDATA[//Based on https://github.com/begoon/jasper
 
+  const int DEBUGTRACE = 0;
+
   const int tstatesPerInterrupt = ((3.5 * 1e6) / 50);
 
   const int IM0 = 0;
@@ -27,6 +29,13 @@
 
   private const int true = 1;
   private const int false = 0;
+
+  int getSignedByte(int b) {
+    if(b&0x80)
+      return 0-((b^255) +1);
+    else
+      return b;
+  }
 
   {
     for ( int i = 0; i < 256; i++ ) {
@@ -163,8 +172,9 @@
     _HL = word;
   }
 
-    int  PC() { return _PC; }
-    void PC( int word ) {
+  int  PC() { return _PC; }
+
+  void PC( int word ) {
     _PC = word;
   }
 
@@ -311,10 +321,26 @@
 
 
   /** IO ports */
-   void outb( int port, int bite, int tstates ) {
+  void outb( int port, int bite, int tstates ) {
   }
-   int inb( int port ) {
-    return 0xff;
+
+  int inb( int port ) {
+		int res = 0xff;
+
+		if ( (port & 0x0001) == 0 ) {
+			if ( (port & 0x8000) == 0 ) { res = (~(1<<4))&0xff; }
+
+			/*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
+			if ( (port & 0x4000) == 0 ) { res &= _H_ENT; }
+			if ( (port & 0x2000) == 0 ) { res &= _Y_P;   }
+			if ( (port & 0x1000) == 0 ) { res &= _6_0;   }
+			if ( (port & 0x0800) == 0 ) { res &= _1_5;   }
+			if ( (port & 0x0400) == 0 ) { res &= _Q_T;   }
+			if ( (port & 0x0200) == 0 ) { res &= _A_G;   }
+			if ( (port & 0x0100) == 0 ) { res &= _CAPS_V;}*/
+		}
+
+    return(res);
   }
 
   /** Interrupt handlers */
@@ -323,7 +349,6 @@
   }
 
    int interrupt() {
-   trace("interrupt");
     // If not a non-maskable interrupt
     if ( !IFF1() ) {
       return 0;
@@ -3205,6 +3230,15 @@
       local_tstates -= tstatesPerInterrupt - interrupt();
     }
 
+
+    if(DEBUGTRACE) {
+    trace("pc: " + inttostr(_PC));
+//    if((_PC>16384) && (_PC<16384))
+//      trace("High PC, instruction: " + inttostr(mem[_PC]) + " " + inttostr(mem[_PC-1]) + " " + inttostr(mem[_PC-2]) );
+    if(_PC>16384)
+      return; //////////
+    }
+
     REFRESH( 1 );
 
     switch ( nxtpcb() ) {
@@ -3226,7 +3260,7 @@
 
       B( b = qdec8( B() ) );
       if (b != 0) {
-        byte d =  nxtpcb();
+        int d =  getSignedByte(nxtpcb());
         PC( (PC()+d)&0xffff );
         local_tstates += ( 13 );
       }
@@ -3238,7 +3272,7 @@
     }
     case 24: /* JR dis */
     {
-      byte d = nxtpcb();
+      int d = getSignedByte(nxtpcb());
       PC( (PC()+d)&0xffff );
       local_tstates += ( 12 );
       break;
@@ -3247,7 +3281,7 @@
     case 32:    /* JR NZ,dis */
     {
       if (!Zset()) {
-        byte d = nxtpcb();
+        int d = getSignedByte(nxtpcb());
         PC( (PC()+d)&0xffff );
         local_tstates += ( 12 );
       }
@@ -3260,7 +3294,7 @@
     case 40:    /* JR Z,dis */
     {
       if ( Zset()) {
-        byte d = nxtpcb();
+        int d = getSignedByte(nxtpcb());
         PC( (PC()+d)&0xffff );
         local_tstates += ( 12 );
       }
@@ -3273,7 +3307,7 @@
     case 48:    /* JR NC,dis */
     {
       if (!Cset()) {
-        byte d = nxtpcb();
+        int d = getSignedByte(nxtpcb());
         PC( (PC()+d)&0xffff );
         local_tstates += ( 12 );
       }
@@ -3286,7 +3320,7 @@
     case 56:    /* JR C,dis */
     {
       if ( Cset()) {
-        byte d = nxtpcb();
+        int d = getSignedByte(nxtpcb());
         PC( (PC()+d)&0xffff );
         local_tstates += ( 12 );
       }
@@ -4257,20 +4291,71 @@ for(int i=0; i<RomBytes.SizeDim1; i++)
   mem[i]=RomBytes[i];
 trace("done");
 
+//fill video ram
+//for(int i=16384; i<16384+6144; i++) {
+//  mem[i]=0x80;
+//}
+
 trace("Start emu");
-//startThread(Thread1,0);]]>
+startThread(Thread1,0);]]>
+      </Expression>
+    </ZExpression>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
+    </ZExternalLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[//setZ(1);
+//if(!Zset())
+//  trace("not set");]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
   <OnRender>
-    <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
-    <UseMaterial Material="SpeccyMaterial"/>
-    <RenderTransformGroup Scale="4 4 1">
+    <Group Comment="shader render" DesignDisable="255">
       <Children>
-        <RenderSprite/>
+        <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
+        <UseMaterial Material="SpeccyMaterial"/>
+        <RenderTransformGroup Scale="8 8 1">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+        <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
       </Children>
-    </RenderTransformGroup>
-    <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
+    </Group>
+    <Group Comment="gl raster render">
+      <Children>
+        <ZExpression>
+          <Expression>
+<![CDATA[byte[6144] video;
+//for(int i=0; i<video.SizeDim1; i++)
+//  video[i]=mem[16384+i];//rnd()*255;
+
+
+int i=0;
+for(int y=192; y>0; y--) {
+  int offset = 16384 +
+    (y>>6) * 2048 +
+    (y&7) * (32*8) +
+    (y>>3) * 32;
+  for(int x=offset; x<(offset+32); x++)
+    video[i++]=mem[x];//rnd()*255;
+}
+
+
+glBitmap(256,192,0,0,0,0,video[0]);]]>
+          </Expression>
+        </ZExpression>
+      </Children>
+    </Group>
   </OnRender>
   <OnClose>
     <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
@@ -4296,11 +4381,26 @@ void main()
 {
   vec4 color;
 
-  vec2 uv = vec2(gl_TexCoord[0].s ,0.0);
-  color.r=texture2D(mem, uv).r*512;
-  if(color.r!=0)
-    color.g=1.0;
-  color.b=gl_TexCoord[0].t;
+  float specX=gl_TexCoord[0].s * 256.0;
+  float specY=gl_TexCoord[0].t * 192.0;
+
+  float index=0 + specY*32 + specX/8;
+  float u=index / 65536.0;
+
+  vec2 uv = vec2(u ,0.0);
+
+  color.r=texture2D(mem, uv).r*8388607.0;
+
+/*  int pixelbyte=int(texture2D(mem, uv).r);
+  if(pixelbyte) & (1<<int(specX)&7) )
+    color.r=1;
+  else
+    color.r=0;*/
+
+//  if(color.r!=0)
+//    color.g=1.0;
+  color.b=0.3;
+  color.a=1.0;
 
   gl_FragColor = color;
 }]]>
