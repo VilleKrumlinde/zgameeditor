@@ -7,7 +7,18 @@
 
   const int DEBUGTRACE = 0;
 
-  const int tstatesPerInterrupt = ((3.5 * 1e6) / 50);
+  private const float clockSpeed = 3.5;
+  private const int tstatesPerInterrupt = ((clockSpeed * 1e6) / 50);
+
+
+  int Keys_B_SPC  = 0xff;
+  int Keys_H_ENT  = 0xff;
+  int Keys_Y_P    = 0xff;
+  int Keys_6_0    = 0xff;
+  int Keys_1_5    = 0xff;
+  int Keys_Q_T    = 0xff;
+  int Keys_A_G    = 0xff;
+  int Keys_CAPS_V = 0xff;
 
   const int IM0 = 0;
   const int IM1 = 1;
@@ -325,20 +336,20 @@
   }
 
   int inb( int port ) {
-		int res = 0xff;
+    int res = 0xff;
 
-		if ( (port & 0x0001) == 0 ) {
-			if ( (port & 0x8000) == 0 ) { res = (~(1<<4))&0xff; }
+    if ( (port & 0x0001) == 0 ) {
+      if ( (port & 0x0800) == 0 ) { res &= Keys_1_5;   }
 
-			/*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
-			if ( (port & 0x4000) == 0 ) { res &= _H_ENT; }
-			if ( (port & 0x2000) == 0 ) { res &= _Y_P;   }
-			if ( (port & 0x1000) == 0 ) { res &= _6_0;   }
-			if ( (port & 0x0800) == 0 ) { res &= _1_5;   }
-			if ( (port & 0x0400) == 0 ) { res &= _Q_T;   }
-			if ( (port & 0x0200) == 0 ) { res &= _A_G;   }
-			if ( (port & 0x0100) == 0 ) { res &= _CAPS_V;}*/
-		}
+      /*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
+      if ( (port & 0x4000) == 0 ) { res &= _H_ENT; }
+      if ( (port & 0x2000) == 0 ) { res &= _Y_P;   }
+      if ( (port & 0x1000) == 0 ) { res &= _6_0;   }
+      if ( (port & 0x0800) == 0 ) { res &= _1_5;   }
+      if ( (port & 0x0400) == 0 ) { res &= _Q_T;   }
+      if ( (port & 0x0200) == 0 ) { res &= _A_G;   }
+      if ( (port & 0x0100) == 0 ) { res &= _CAPS_V;}*/
+    }
 
     return(res);
   }
@@ -3219,24 +3230,26 @@
   }
 
 
+  int global_tstates = -tstatesPerInterrupt;
 
   /** Z80 fetch/execute loop */
-  void execute() {
-    int    local_tstates = -tstatesPerInterrupt;
+  void execute(float time) {
+  
+    int    local_tstates = global_tstates;
 
-    while ( true ) {
+    int ticksLimit = local_tstates + round(time * clockSpeed * 1e6);
+
+    while ( local_tstates < ticksLimit ) {
 
     if ( interruptTriggered( local_tstates ) ) {
-      local_tstates -= tstatesPerInterrupt - interrupt();
+      int intTime=tstatesPerInterrupt - interrupt();
+      local_tstates -= intTime;
+      ticksLimit -= intTime;
     }
 
 
     if(DEBUGTRACE) {
-    trace("pc: " + inttostr(_PC));
-//    if((_PC>16384) && (_PC<16384))
-//      trace("High PC, instruction: " + inttostr(mem[_PC]) + " " + inttostr(mem[_PC-1]) + " " + inttostr(mem[_PC-2]) );
-    if(_PC>16384)
-      return; //////////
+      trace("pc: " + inttostr(_PC));
     }
 
     REFRESH( 1 );
@@ -4236,6 +4249,8 @@
     }
 
     } // end while
+    
+    global_tstates = local_tstates;
   }
 
 
@@ -4335,12 +4350,6 @@
   }]]>
       </Source>
     </ZLibrary>
-    <Thread Name="Thread1">
-      <Expression>
-<![CDATA[//int param : parameter passed in the createThread call
-execute();]]>
-      </Expression>
-    </Thread>
     <ZExpression>
       <Expression>
 <![CDATA[trace("Loading rom...");
@@ -4360,10 +4369,7 @@ trace("done");
 //fill video ram
 //for(int i=16384; i<16384+6144; i++) {
 //  mem[i]=0x80;
-//}
-
-trace("Start emu");
-startThread(Thread1,0);]]>
+//}]]>
       </Expression>
     </ZExpression>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
@@ -4376,27 +4382,26 @@ startThread(Thread1,0);]]>
 }]]>
       </BeforeInitExp>
     </ZExternalLibrary>
-    <ZExpression>
-      <Expression>
-<![CDATA[//setZ(1);
-//if(!Zset())
-//  trace("not set");]]>
-      </Expression>
-    </ZExpression>
   </OnLoaded>
+  <OnUpdate>
+    <KeyPress Name="KeyTest1_5" Keys="12345">
+      <OnPressed>
+        <ZExpression>
+          <Expression>
+<![CDATA[//Keys_1_5 &=
+//_1_5=1;
+
+Keys_1_5 = 0xff;
+Keys_1_5 &=  (~(1 << KeyTest1_5.KeyIndex))&0xff;
+
+//trace(inttostr(Keys_1_5));]]>
+          </Expression>
+        </ZExpression>
+      </OnPressed>
+    </KeyPress>
+    <ZExpression Expression="execute(App.DeltaTime);"/>
+  </OnUpdate>
   <OnRender>
-    <Group Comment="shader render" DesignDisable="255">
-      <Children>
-        <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
-        <UseMaterial Material="SpeccyMaterial"/>
-        <RenderTransformGroup Scale="8 8 1">
-          <Children>
-            <RenderSprite/>
-          </Children>
-        </RenderTransformGroup>
-        <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
-      </Children>
-    </Group>
     <Group Comment="gl raster render">
       <Children>
         <ZExpression>
@@ -4425,6 +4430,18 @@ glRasterPos2f(-1,-2);
 glBitmap(256,192,0,0,0,0,video[0]);]]>
           </Expression>
         </ZExpression>
+      </Children>
+    </Group>
+    <Group Comment="shader render" DesignDisable="255">
+      <Children>
+        <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
+        <UseMaterial Material="SpeccyMaterial"/>
+        <RenderTransformGroup Scale="8 8 1">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+        <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
       </Children>
     </Group>
   </OnRender>
