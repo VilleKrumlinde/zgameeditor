@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+<ZApplication Name="App" Caption="2" FileVersion="2">
   <OnLoaded>
     <ZLibrary HasInitializer="1">
       <Source>
@@ -19,6 +19,7 @@
   int Keys_Q_T    = 0xff;
   int Keys_A_G    = 0xff;
   int Keys_CAPS_V = 0xff;
+  int JoyState = 0;
 
   const int IM0 = 0;
   const int IM1 = 1;
@@ -338,7 +339,9 @@
   int inb( int port ) {
     int res = 0xff;
 
-    if ( (port & 0x0001) == 0 ) {
+    if((port & 31) == 31) {
+      res=JoyState;
+    } else if ( (port & 0x0001) == 0 ) {
       if ( (port & 0x0800) == 0 ) { res &= Keys_1_5;   }
 
       /*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
@@ -4384,10 +4387,19 @@ trace("done");
     </ZExternalLibrary>
   </OnLoaded>
   <OnUpdate>
-    <KeyPress Name="KeyTest1_5" Keys="12345">
-      <OnPressed>
-        <ZExpression>
-          <Expression>
+    <ZExpression>
+      <Expression>
+<![CDATA[execute(App.DeltaTime);
+
+App.Caption = intToStr(App.FpsCounter);]]>
+      </Expression>
+    </ZExpression>
+    <Group Comment="input">
+      <Children>
+        <KeyPress Name="KeyTest1_5" Keys="12345">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
 <![CDATA[//Keys_1_5 &=
 //_1_5=1;
 
@@ -4395,11 +4407,32 @@ Keys_1_5 = 0xff;
 Keys_1_5 &=  (~(1 << KeyTest1_5.KeyIndex))&0xff;
 
 //trace(inttostr(Keys_1_5));]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
+        <ZExpression>
+          <Expression>
+<![CDATA[JoyState=0;
+
+float axis=joyGetAxis(0,0);
+if(axis<-0.1)
+  JoyState |= 2;
+if(axis>0.1)
+  JoyState |= 1;
+
+axis=joyGetAxis(0,1);
+if(axis<-0.1)
+  JoyState |= 8;
+if(axis>0.1)
+  JoyState |= 4;
+
+if(joyGetButton(0,0))
+  JoyState |= 16;]]>
           </Expression>
         </ZExpression>
-      </OnPressed>
-    </KeyPress>
-    <ZExpression Expression="execute(App.DeltaTime);"/>
+      </Children>
+    </Group>
   </OnUpdate>
   <OnRender>
     <Group Comment="gl raster render">
@@ -4410,17 +4443,14 @@ Keys_1_5 &=  (~(1 << KeyTest1_5.KeyIndex))&0xff;
 //for(int i=0; i<video.SizeDim1; i++)
 //  video[i]=mem[16384+i];//rnd()*255;
 
-
-int i=0;
-for(int y=192; y>0; y--) {
-  int offset = 16384 +
-    (y>>6) * 2048 +
-    (y&7) * (32*8) +
-    (y>>3) * 32;
-  for(int x=offset; x<(offset+32); x++)
-    video[i++]=mem[x];//rnd()*255;
+for(int addr=16384; addr<(16384+192*32); ) {
+	int y = ((addr&0x00e0)>>2) +
+			 ((addr&0x0700)>>8) +
+       ((addr&0x1800)>>5);
+  int offset=(191-y)*32;
+  for(int x=0; x<32; x++)
+    video[offset+x]=mem[addr++];
 }
-
 
 /*glMatrixMode(GL_PROJECTION_MATRIX);
 glLoadIdentity();
@@ -4430,18 +4460,6 @@ glRasterPos2f(-1,-2);
 glBitmap(256,192,0,0,0,0,video[0]);]]>
           </Expression>
         </ZExpression>
-      </Children>
-    </Group>
-    <Group Comment="shader render" DesignDisable="255">
-      <Children>
-        <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
-        <UseMaterial Material="SpeccyMaterial"/>
-        <RenderTransformGroup Scale="8 8 1">
-          <Children>
-            <RenderSprite/>
-          </Children>
-        </RenderTransformGroup>
-        <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
       </Children>
     </Group>
   </OnRender>
@@ -4503,5 +4521,17 @@ void main()
       </UniformVariables>
     </Shader>
     <Material Name="SpeccyMaterial" Shader="SpeccyShader"/>
+    <Group Comment="shader render" DesignDisable="255">
+      <Children>
+        <ZExpression Expression="MemSampler.ValueArrayRef=mem;"/>
+        <UseMaterial Material="SpeccyMaterial"/>
+        <RenderTransformGroup Scale="8 8 1">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+        <ZExpression Expression="MemSampler.ValueArrayRef=null;"/>
+      </Children>
+    </Group>
   </Content>
 </ZApplication>
