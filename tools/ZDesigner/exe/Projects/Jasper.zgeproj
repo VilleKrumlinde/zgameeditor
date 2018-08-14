@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="2" FileVersion="2">
+<ZApplication Name="App" Caption="3" FileVersion="2">
   <OnLoaded>
     <ZLibrary HasInitializer="1">
       <Source>
@@ -78,7 +78,7 @@
    int        _IM = 2;
 
   /** Memory */
-  int[ 65536 ]  mem;
+  byte[ 65536 ]  mem;
 
     /** Main registers */
    int        _A = 0, _HL = 0, _B = 0, _C = 0, _DE = 0;
@@ -86,30 +86,31 @@
    int    f3 = false, fPV = false, fN = false, fC = false;
 
   /** Flag access */
-    void setZ( int f ) { fZ = f; }
-    void setC( int f ) { fC = f; }
-    void setS( int f ) { fS = f; }
-    void setH( int f ) { fH = f; }
-    void setN( int f ) { fN = f; }
-    void setPV( int f ) {fPV = f;}
-    void set3( int f ) { f3 = f; }
-    void set5( int f ) { f5 = f; }
+    inline void setZ( int f ) { fZ = f; }
+    inline void setC( int f ) { fC = f; }
+    inline void setS( int f ) { fS = f; }
+    inline void setH( int f ) { fH = f; }
+    inline void setN( int f ) { fN = f; }
+    inline void setPV( int f ) {fPV = f;}
+    inline void set3( int f ) { f3 = f; }
+    inline void set5( int f ) { f5 = f; }
 
-    int Zset()  { return fZ; }
-    int Cset()  { return fC; }
-    int Sset()  { return fS; }
-    int Hset()  { return fH; }
-    int Nset()  { return fN; }
-    int PVset() { return fPV; }
+    inline int Zset()  { return fZ; }
+    inline int Cset()  { return fC; }
+    inline int Sset()  { return fS; }
+    inline int Hset()  { return fH; }
+    inline int Nset()  { return fN; }
+    inline int PVset() { return fPV; }
 
 
   /** 8 bit register access */
-  int  A() { return _A; }
-  void A( int bite ) {
+  inline int  A() { return _A; }
+
+  inline void A( int bite ) {
     _A = bite;
   }
 
-  int F() {
+  inline int F() {
     return  (Sset()  ? F_S  : 0)  |
       (Zset()  ? F_Z  : 0)  |
       (f5      ? F_5  : 0)  |
@@ -119,7 +120,7 @@
       (Nset()  ? F_N  : 0)  |
       (Cset()  ? F_C  : 0);
   }
-    void F( int bite ) {
+  inline void F( int bite ) {
     fS  = (bite & F_S)  != 0;
     fZ  = (bite & F_Z)  != 0;
     f5  = (bite & F_5)  != 0;
@@ -131,136 +132,136 @@
   }
 
 
-    int  B() { return _B; }
-    void B( int bite ) {
+  inline int  B() { return _B; }
+  inline void B( int bite ) {
     _B = bite;
   }
-    int  C() { return _C; }
-    void C( int bite ) {
+  inline int  C() { return _C; }
+  inline void C( int bite ) {
     _C = bite;
   }
 
-    int  D() { return (_DE >> 8); }
-    void D( int bite ) {
+  inline int D() { return (_DE >> 8); }
+  inline void D( int bite ) {
     _DE = (bite << 8) | (_DE & 0x00ff);
   }
-    int  E() { return (_DE & 0xff); }
-    void E( int bite ) {
+  inline int  E() { return (_DE & 0xff); }
+  inline void E( int bite ) {
     _DE = (_DE & 0xff00) | bite;
   }
 
-    int  H() { return (_HL >> 8); }
+  inline int  H() { return (_HL >> 8); }
 
-    void H( int bite ) {
+  inline void H( int bite ) {
     _HL = (bite << 8) | (_HL & 0x00ff);
   }
 
-    int  L() { return (_HL & 0xff); }
-    void L( int bite ) {
+  inline int L() { return (_HL & 0xff); }
+  inline void L( int bite ) {
     _HL = (_HL & 0xff00) | bite;
   }
 
   /** 16 bit register access */
-  int  AF() { return (A() << 8) | F(); }
+  inline int AF() { return (A() << 8) | F(); }
 
-  void AF( int word ) {
+  inline void AF( int word ) {
     A( word >> 8 );
     F( word & 0xff );
   }
 
-  int  BC() { return (B() << 8) | C(); }
-  void BC( int word ) {
+  inline int BC() { return (B() << 8) | C(); }
+  inline void BC( int word ) {
     B( word >> 8 );
     C( word & 0xff );
   }
 
-  int  DE() { return _DE; }
-  void DE( int word ) {
+  inline int  DE() { return _DE; }
+  inline void DE( int word ) {
     _DE = word;
   }
 
-    int  HL() { return _HL; }
-    void HL( int word ) {
+  inline int  HL() { return _HL; }
+  inline void HL( int word ) {
     _HL = word;
   }
 
-  int  PC() { return _PC; }
+  inline int PC() { return _PC; }
 
-  void PC( int word ) {
+  inline void PC( int word ) {
     _PC = word;
   }
 
-    int  SP() { return _SP; }
-    void SP( int word ) {
+  inline int  SP() { return _SP; }
+  inline void SP( int word ) {
     _SP = word;
   }
 
-    int  ID() { return _ID; }
-    void ID( int word ) {
+  inline int ID() { return _ID; }
+  inline void ID( int word ) {
     _ID = word;
   }
 
-    int  IX() { return _IX; }
-    void IX( int word ) {
+  inline int IX() { return _IX; }
+  inline void IX( int word ) {
     _IX = word;
   }
 
-    int  IY() { return _IY; }
-    void IY( int word ) {
+  inline int IY() { return _IY; }
+  inline void IY( int word ) {
     _IY = word;
   }
 
 
 
 
-    int  IDH() { return (_ID >> 8); }
-    void IDH( int bite ) {
+  inline int  IDH() { return (_ID >> 8); }
+  inline void IDH( int bite ) {
     _ID = (bite << 8) | (_ID & 0x00ff);
   }
-    int  IDL() { return (_ID & 0xff); }
-    void IDL( int bite ) {
+  inline int  IDL() { return (_ID & 0xff); }
+  inline void IDL( int bite ) {
     _ID = (_ID & 0xff00) | bite;
   }
 
 
   /** Memory refresh register */
-    int  R7() { return _R7; }
-    int  R() { return (_R & 0x7f) | _R7; }
-    void R( int bite ) {
+  inline int  R7() { return _R7; }
+  inline int  R() { return (_R & 0x7f) | _R7; }
+  inline void R( int bite ) {
     _R  = bite;
     _R7 = bite & 0x80;
   }
 
-    void REFRESH( int t ) {
+  inline void REFRESH( int t ) {
     _R += t;
   }
 
 
   /** Interrupt modes/register */
-    int  I() { return _I; }
-    void I( int bite ) {
+  int  I() { return _I; }
+  void I( int bite ) {
     _I = bite;
   }
 
-    int IFF1() { return _IFF1; }
-    void IFF1( int iff1 ) {
+  int IFF1() { return _IFF1; }
+  void IFF1( int iff1 ) {
     _IFF1 = iff1;
   }
 
-    int IFF2() { return _IFF2; }
-    void IFF2( int iff2 ) {
+  int IFF2() { return _IFF2; }
+  void IFF2( int iff2 ) {
     _IFF2 = iff2;
   }
 
-    int IM() { return _IM; }
-    void IM( int im ) {
+  int IM() { return _IM; }
+  void IM( int im ) {
     _IM = im;
   }
 
 
 
   /** Byte access */
-  private  int peekb( int addr ) {
+  private inline int peekb( int addr ) {
     return mem[ addr ];
   }
 
@@ -309,12 +310,13 @@
 
 
   /** Stack access */
-    void pushw( int word ) {
+  void pushw( int word ) {
     int        sp = ((SP()-2) & 0xffff);
     SP( sp );
     pokew( sp, word );
   }
-    int popw() {
+
+  int popw() {
     int sp = SP();
     int t  = peekb( sp );
       sp++;
@@ -325,8 +327,8 @@
 
 
   /** Call stack */
-     void pushpc() { pushw( PC() ); }
-    void poppc()  { PC( popw() ); }
+  void pushpc() { pushw( PC() ); }
+  void poppc()  { PC( popw() ); }
 
 
 
@@ -343,6 +345,7 @@
       res=JoyState;
     } else if ( (port & 0x0001) == 0 ) {
       if ( (port & 0x0800) == 0 ) { res &= Keys_1_5;   }
+      if ( (port & 0x1000) == 0 ) { res &= Keys_6_0;   }
 
       /*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
       if ( (port & 0x4000) == 0 ) { res &= _H_ENT; }
@@ -395,16 +398,16 @@
   }
 
   /** Quick Increment : no flags */
-  private int inc16( int a ) { return (a + 1) & 0xffff; }
-  private int qinc8( int a ) { return (a + 1) & 0xff; }
+  private inline int inc16( int a ) { return (a + 1) & 0xffff; }
+  private inline int qinc8( int a ) { return (a + 1) & 0xff; }
 
   /** Quick Decrement : no flags */
-  private int dec16( int a ) { return (a - 1) & 0xffff; }
-  private int qdec8( int a ) { return (a - 1) & 0xff; }
+  private inline int dec16( int a ) { return (a - 1) & 0xffff; }
+  private inline int qdec8( int a ) { return (a - 1) & 0xff; }
 
   /** Bit toggling */
-  private int res( int bit, int val ) { return val & ~bit; }
-  private int set( int bit, int val ) { return val |  bit; }
+  private inline int res( int bit, int val ) { return val & ~bit; }
+  private inline int set( int bit, int val ) { return val |  bit; }
 
   private  int in_bc() {
     int        ans = inb( BC() );
@@ -3242,6 +3245,9 @@
 
     int ticksLimit = local_tstates + round(time * clockSpeed * 1e6);
 
+    //trace("delta: " + inttostr(time*1000));
+    //trace("ticks: " + inttostr(round(time * clockSpeed * 1e6)));
+
     while ( local_tstates < ticksLimit ) {
 
     if ( interruptTriggered( local_tstates ) ) {
@@ -4291,14 +4297,14 @@
     IM( IM0 );
   }
 
-  private void readBytes(byte[] data, ref int position, int[] dest, int offset, int count) {
+  private void readBytes(byte[] data, ref int position, byte[] dest, int offset, int count) {
     for(int i=0; i<count; i++)
       dest[offset+i]=data[position++];
   }
 
   void loadSna(byte[] data) {
     int position=0;
-    int[27] header;
+    byte[27] header;
 
     readBytes( data, position, header, 0,        27 );
     readBytes( data, position, mem,    16384, 49152 );
@@ -4411,20 +4417,31 @@ Keys_1_5 &=  (~(1 << KeyTest1_5.KeyIndex))&0xff;
             </ZExpression>
           </OnPressed>
         </KeyPress>
+        <KeyPress Name="KeyTest6_0" Keys="67890">
+          <OnPressed>
+            <ZExpression>
+              <Expression>
+<![CDATA[Keys_6_0 = 0xff;
+Keys_6_0 &=  (~(1 << (4-KeyTest6_0.KeyIndex)))&0xff;]]>
+              </Expression>
+            </ZExpression>
+          </OnPressed>
+        </KeyPress>
         <ZExpression>
           <Expression>
 <![CDATA[JoyState=0;
+const float threshold = 0.25;
 
 float axis=joyGetAxis(0,0);
-if(axis<-0.1)
+if(axis<-threshold)
   JoyState |= 2;
-if(axis>0.1)
+if(axis>threshold)
   JoyState |= 1;
 
 axis=joyGetAxis(0,1);
-if(axis<-0.1)
+if(axis<-threshold)
   JoyState |= 8;
-if(axis>0.1)
+if(axis>threshold)
   JoyState |= 4;
 
 if(joyGetButton(0,0))
