@@ -516,6 +516,16 @@ type
     _Type : TZcDataTypeKind;
   end;
 
+  TExpSwitchTable = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    LowBound,HighBound : integer;
+    DefaultOrExit : integer;
+    Jumps : TZBinaryPropValue;
+  end;
+
   TCodeReturnValue = record
   case boolean of
     True : (PointerValue : pointer);
@@ -2893,6 +2903,32 @@ begin
   end;
 end;
 
+{ TExpSwitchTable }
+
+procedure TExpSwitchTable.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'LowBound',{$ENDIF}@LowBound, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'HighBound',{$ENDIF}@HighBound, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'DefaultOrExit',{$ENDIF}@DefaultOrExit, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Jumps',{$ENDIF}@Jumps, zptBinary);
+end;
+
+procedure TExpSwitchTable.Execute(Env: PExecutionEnvironment);
+var
+  V,Destination : integer;
+begin
+  Env.StackPopTo(V);
+  if (V<LowBound) or (V>HighBound) then
+    Destination := Self.DefaultOrExit
+  else
+  begin
+    Dec(V,LowBound);
+    Destination := PIntegerArray(Self.Jumps.Data)^[V];
+  end;
+  Inc(Env.gCurrentPc,Destination);
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -2970,6 +3006,8 @@ initialization
   ZClasses.Register(TExpGetRawMemElement,ExpGetRawMemElementClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpArrayUtil,ExpArrayUtilClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpSwitchTable,ExpSwitchTableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
   {$ifndef minimal}

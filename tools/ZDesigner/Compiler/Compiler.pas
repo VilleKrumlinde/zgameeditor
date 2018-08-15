@@ -52,7 +52,7 @@ var
 
 implementation
 
-uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections;
+uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections, Math;
 
 
 type
@@ -928,6 +928,11 @@ var
     CaseType : TZcDataType;
     LExit,LDefault : TZCodeLabel;
     CaseOp,StatOp : TZcOp;
+
+    Jt : TExpSwitchTable;
+    Value,MinValue,MaxValue,JumpCount : integer;
+    UseJumpTable : boolean;
+    U : TLabelUse;
   begin
     //todo: verify no duplicate values
     CaseCount := Op.CaseOps.Count;
@@ -936,28 +941,90 @@ var
     LExit := NewLabel;
     SetBreak(LExit);
     LDefault := nil;
-    //Generate jumps
-    for I := 0 to CaseCount-1 do
+
+    UseJumpTable := False;
+    JumpCount := 0;
+    MinValue := High(Integer);
+    MaxValue := Low(Integer);
+    if CaseType.Kind=zctInt then
     begin
-      CaseLabels[I] := NewLabel;
-      CaseOp := Op.CaseOps[I];
-      for J := 0 to CaseOp.Children.Count - 1 do
+      for I := 0 to CaseCount-1 do
       begin
-        if CaseOp.Child(J)=nil then
+        CaseOp := Op.CaseOps[I];
+        for J := 0 to CaseOp.Children.Count - 1 do
         begin
-          LDefault := CaseLabels[I];
-        end else
-        begin
-          GenValue(Op.ValueOp);
-          GenValue(CaseOp.Child(J));
-          GenJump(jsJumpEQ,CaseLabels[I],CaseType.Kind);
+          if Assigned(CaseOp.Child(J)) then
+          begin
+            Value := Round((CaseOp.Child(J) as TZcOpLiteral).Value);
+            MinValue := Min(MinValue,Value);
+            MaxValue := Max(MaxValue,Value);
+            Inc(JumpCount);
+          end;
         end;
       end;
+      UseJumpTable := (JumpCount>3) and (JumpCount > ((MaxValue-MinValue) div 2));
     end;
-    if LDefault<>nil then
-      GenJump(jsJumpAlways,LDefault,CaseType.Kind)
-    else
-      GenJump(jsJumpAlways,LExit,CaseType.Kind);
+
+    if (not UseJumpTable) then
+    begin //Gen as a series of "if" statements
+      //Generate jumps
+      for I := 0 to CaseCount-1 do
+      begin
+        CaseLabels[I] := NewLabel;
+        CaseOp := Op.CaseOps[I];
+        for J := 0 to CaseOp.Children.Count - 1 do
+        begin
+          if CaseOp.Child(J)=nil then
+          begin
+            LDefault := CaseLabels[I];
+          end else
+          begin
+            GenValue(Op.ValueOp);
+            GenValue(CaseOp.Child(J));
+            GenJump(jsJumpEQ,CaseLabels[I],CaseType.Kind);
+          end;
+        end;
+      end;
+      if LDefault<>nil then
+        GenJump(jsJumpAlways,LDefault,CaseType.Kind)
+      else
+        GenJump(jsJumpAlways,LExit,CaseType.Kind);
+    end else
+    begin //Gen using a jumptable
+      GenValue(Op.ValueOp);
+
+      Jt := TExpSwitchTable.Create(Target);
+      Jt.Jumps.Size := JumpCount*4;
+      Jt.LowBound := MinValue;
+      Jt.HighBound := MaxValue;
+      GetMem(Jt.Jumps.Data,Jt.Jumps.Size);
+
+      for I := 0 to CaseCount-1 do
+      begin
+        CaseLabels[I] := NewLabel;
+        CaseOp := Op.CaseOps[I];
+        for J := 0 to CaseOp.Children.Count - 1 do
+        begin
+          if Assigned(CaseOp.Child(J)) then
+          begin
+            Value := Round((CaseOp.Child(J) as TZcOpLiteral).Value);
+            U := TLabelUse.Create;
+            U.AdrPtr := @PIntegerArray(Jt.Jumps.Data)^[Value - MinValue];
+            U.AdrPC := Target.Count-1;
+            CaseLabels[I].Usage.Add( U );
+          end else
+            LDefault := CaseLabels[I];
+        end;
+      end;
+      U := TLabelUse.Create;
+      U.AdrPC := Target.Count-1;
+      U.AdrPtr := @Jt.DefaultOrExit;
+      if Assigned(LDefault) then
+        LDefault.Usage.Add( U )
+      else
+        LExit.Usage.Add( U );
+    end;
+
     //Generate statements
     for I := 0 to CaseCount-1 do
     begin
@@ -966,6 +1033,7 @@ var
       for J := 0 to StatOp.Children.Count - 1 do
         Gen( StatOp.Child(J) );
     end;
+
     DefineLabel(LExit);
     RestoreBreak;
   end;
