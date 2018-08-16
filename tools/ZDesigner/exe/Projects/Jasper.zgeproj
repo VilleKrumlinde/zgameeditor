@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="3" FileVersion="2">
+<ZApplication Name="App" Caption="1" FileVersion="2">
   <OnLoaded>
+    <ZExternalLibrary ModuleName="kernel32.dll">
+      <Source>
+<![CDATA[//Import a DLL-library by setting ModuleName to name of the DLL
+//and then declaring the function headers here. For example:
+//
+//  int SetWindowLongA(int hWnd, int nIndex, int dwNewLong) { } 
+//  int SetWindowTextA(int hWnd,string lpString) { }
+int GetTickCount() { }]]>
+      </Source>
+    </ZExternalLibrary>
     <ZLibrary HasInitializer="1">
       <Source>
 <![CDATA[//Based on https://github.com/begoon/jasper
 
   const int DEBUGTRACE = 0;
+  const int PROFILE = 0;
 
   private const float clockSpeed = 3.5;
   private const int tstatesPerInterrupt = ((clockSpeed * 1e6) / 50);
@@ -3248,7 +3259,21 @@
     //trace("delta: " + inttostr(time*1000));
     //trace("ticks: " + inttostr(round(time * clockSpeed * 1e6)));
 
+    int lastticks;
+    if(PROFILE)
+      lastticks=GetTickCount();
+
     while ( local_tstates < ticksLimit ) {
+
+    int instruction;
+
+    if(PROFILE) {
+      int now=GetTickCount();
+      if(now-lastticks>10) {
+        trace("Instruction " + intToStr(instruction) + " took " + inttostr(now-lastticks) + "ms");
+      }
+      lastticks=GetTickCount();
+    }
 
     if ( interruptTriggered( local_tstates ) ) {
       int intTime=tstatesPerInterrupt - interrupt();
@@ -3263,7 +3288,9 @@
 
     REFRESH( 1 );
 
-    switch ( nxtpcb() ) {
+
+    instruction=nxtpcb();
+    switch ( instruction ) {
 
     case 0:    /* NOP */
     {
@@ -4375,10 +4402,10 @@ loadSna(GameBytes);
 trace("done");
 
 
-//fill video ram
-//for(int i=16384; i<16384+6144; i++) {
-//  mem[i]=0x80;
-//}]]>
+//fill ram
+/*for(int i=0; i<mem.SizeDim1; i++) {
+  mem[i]=0;//45;
+}*/]]>
       </Expression>
     </ZExpression>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">

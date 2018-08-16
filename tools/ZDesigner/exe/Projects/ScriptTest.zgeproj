@@ -195,7 +195,7 @@ for(i=0; i<11; i++) {
     case 1 : hits[i]++; break;
     case 2 : hits[i]++; break;
     case 3 : hits[i]++; break;
-    case 4 : hits[i]++; break;
+//    case 4 : hits[i]++; break;  GAP
     case 5 : hits[i]++; break;
     case 6 : hits[i]++; break;
     case 7 : hits[i]++; break;
@@ -204,10 +204,10 @@ for(i=0; i<11; i++) {
     default : defaultHit++;
   }
 }
-if(defaultHit!=1)
+if(defaultHit!=2)
   Error=11;
 for(i=0; i<hits.SizeDim1; i++)
-  if(hits[i]!=1)
+  if((hits[i]!=1) && (i!=4))
     Error=12;]]>
       </Expression>
     </ZExpression>

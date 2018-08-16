@@ -84,6 +84,7 @@ type
     IsLibrary,IsExternalLibrary : boolean;
     BreakLabel,ContinueLabel,ReturnLabel : TZCodeLabel;
     BreakStack,ContinueStack,ReturnStack : TStack<TZCodeLabel>;
+    procedure UseLabel(Lbl : TZCodeLabel; Addr : pointer);
     procedure Gen(Op : TZcOp);
     procedure GenJump(Kind : TExpOpJumpKind; Lbl : TZCodeLabel; T : TZcDataTypeKind = zctFloat);
     function NewLabel : TZCodeLabel;
@@ -923,32 +924,31 @@ var
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
   var
-    I,J,CaseCount : integer;
+    I,J,CaseBlockCount : integer;
     CaseLabels : array of TZCodeLabel;
     CaseType : TZcDataType;
     LExit,LDefault : TZCodeLabel;
     CaseOp,StatOp : TZcOp;
 
     Jt : TExpSwitchTable;
-    Value,MinValue,MaxValue,JumpCount : integer;
+    Value,MinValue,MaxValue,CaseCount,JumpCount : integer;
     UseJumpTable : boolean;
-    U : TLabelUse;
   begin
     //todo: verify no duplicate values
-    CaseCount := Op.CaseOps.Count;
+    CaseBlockCount := Op.CaseOps.Count; //nr of blocks of code
     CaseType := Op.ValueOp.GetDataType;
-    SetLength(CaseLabels,CaseCount);
+    SetLength(CaseLabels,CaseBlockCount);
     LExit := NewLabel;
     SetBreak(LExit);
     LDefault := nil;
 
     UseJumpTable := False;
-    JumpCount := 0;
+    CaseCount := 0; //actual total nr of "case", including those that map to same label
     MinValue := High(Integer);
     MaxValue := Low(Integer);
-    if CaseType.Kind=zctInt then
+    if CaseType.Kind in [zctInt,zctByte] then
     begin
-      for I := 0 to CaseCount-1 do
+      for I := 0 to CaseBlockCount-1 do
       begin
         CaseOp := Op.CaseOps[I];
         for J := 0 to CaseOp.Children.Count - 1 do
@@ -958,17 +958,17 @@ var
             Value := Round((CaseOp.Child(J) as TZcOpLiteral).Value);
             MinValue := Min(MinValue,Value);
             MaxValue := Max(MaxValue,Value);
-            Inc(JumpCount);
+            Inc(CaseCount);
           end;
         end;
       end;
-      UseJumpTable := (JumpCount>3) and (JumpCount > ((MaxValue-MinValue) div 2));
+      UseJumpTable := (CaseCount>3) and (CaseCount > ((MaxValue-MinValue) div 2));
     end;
 
     if (not UseJumpTable) then
     begin //Gen as a series of "if" statements
       //Generate jumps
-      for I := 0 to CaseCount-1 do
+      for I := 0 to CaseBlockCount-1 do
       begin
         CaseLabels[I] := NewLabel;
         CaseOp := Op.CaseOps[I];
@@ -993,13 +993,16 @@ var
     begin //Gen using a jumptable
       GenValue(Op.ValueOp);
 
+      JumpCount := (MaxValue-MinValue)+1;
+
       Jt := TExpSwitchTable.Create(Target);
       Jt.Jumps.Size := JumpCount*4;
       Jt.LowBound := MinValue;
       Jt.HighBound := MaxValue;
       GetMem(Jt.Jumps.Data,Jt.Jumps.Size);
+      FillChar(Jt.Jumps.Data^,Jt.Jumps.Size,0);
 
-      for I := 0 to CaseCount-1 do
+      for I := 0 to CaseBlockCount-1 do
       begin
         CaseLabels[I] := NewLabel;
         CaseOp := Op.CaseOps[I];
@@ -1008,25 +1011,32 @@ var
           if Assigned(CaseOp.Child(J)) then
           begin
             Value := Round((CaseOp.Child(J) as TZcOpLiteral).Value);
-            U := TLabelUse.Create;
-            U.AdrPtr := @PIntegerArray(Jt.Jumps.Data)^[Value - MinValue];
-            U.AdrPC := Target.Count-1;
-            CaseLabels[I].Usage.Add( U );
+            UseLabel(CaseLabels[I],@PIntegerArray(Jt.Jumps.Data)^[Value - MinValue]);
+            PIntegerArray(Jt.Jumps.Data)^[Value - MinValue] := 1; //signal that jump is used
           end else
             LDefault := CaseLabels[I];
         end;
       end;
-      U := TLabelUse.Create;
-      U.AdrPC := Target.Count-1;
-      U.AdrPtr := @Jt.DefaultOrExit;
+
+      for I := 0 to JumpCount-1 do
+      begin //assign unused slots (gaps) to default/exit
+        if PIntegerArray(Jt.Jumps.Data)^[I]=0 then
+        begin
+          if Assigned(LDefault) then
+            UseLabel(LDefault,@PIntegerArray(Jt.Jumps.Data)^[I])
+          else
+            UseLabel(LExit,@PIntegerArray(Jt.Jumps.Data)^[I])
+        end;
+      end;
+
       if Assigned(LDefault) then
-        LDefault.Usage.Add( U )
+        UseLabel(LDefault,@Jt.DefaultOrExit)
       else
-        LExit.Usage.Add( U );
+        UseLabel(LExit,@Jt.DefaultOrExit)
     end;
 
     //Generate statements
-    for I := 0 to CaseCount-1 do
+    for I := 0 to CaseBlockCount-1 do
     begin
       DefineLabel(CaseLabels[I]);
       StatOp := Op.StatementsOps[I];
@@ -1120,7 +1130,6 @@ end;
 procedure TZCodeGen.GenJump(Kind: TExpOpJumpKind; Lbl: TZCodeLabel; T : TZcDataTypeKind = zctFloat);
 var
   Op : TExpJump;
-  U : TLabelUse;
 begin
   Op := TExpJump.Create(Target);
   Op.Kind := Kind;
@@ -1137,10 +1146,7 @@ begin
   else
     raise ECodeGenError.Create('Invalid datatype for jump');
   end;
-  U := TLabelUse.Create;
-  U.AdrPtr := @Op.Destination;
-  U.AdrPC := Target.Count-1;
-  Lbl.Usage.Add( U );
+  UseLabel(Lbl,@Op.Destination);
 end;
 
 procedure TZCodeGen.GenRoot(StmtList: Classes.TList);
@@ -1257,6 +1263,16 @@ procedure TZCodeGen.SetReturn(L: TZCodeLabel);
 begin
   ReturnStack.Push(Self.ReturnLabel);
   Self.ReturnLabel := L;
+end;
+
+procedure TZCodeGen.UseLabel(Lbl: TZCodeLabel; Addr: pointer);
+var
+  U : TLabelUse;
+begin
+  U := TLabelUse.Create;
+  U.AdrPC := Target.Count-1;
+  U.AdrPtr := Addr;
+  Lbl.Usage.Add(U);
 end;
 
 //Fall igenom om false, annars hoppa till Lbl
