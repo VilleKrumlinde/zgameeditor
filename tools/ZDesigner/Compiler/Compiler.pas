@@ -553,7 +553,7 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
       L := TExpAccessLocal.Create(Target);
       L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loLoad;
-    end else if Assigned(Op.Ref) and (Op.Ref is TZcOpLocalVar) then
+    end else if Assigned(Op.Ref) and ((Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar)) then
     begin //Get the address to a local variable
       L := TExpAccessLocal.Create(Target);
       L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
