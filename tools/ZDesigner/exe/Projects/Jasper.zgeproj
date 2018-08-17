@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="0" ViewportRatio="2" FileVersion="2">
+<ZApplication Name="App" Caption="4" ViewportRatio="2" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary ModuleName="kernel32.dll">
       <Source>
@@ -10,6 +10,16 @@
 //  int SetWindowTextA(int hWnd,string lpString) { }
 int GetTickCount() { }]]>
       </Source>
+    </ZExternalLibrary>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
     </ZExternalLibrary>
     <ZLibrary Comment="jasper" HasInitializer="1">
       <Source>
@@ -4689,7 +4699,7 @@ int GetTickCount() { }]]>
 }]]>
       </Source>
     </ZLibrary>
-    <ZExpression>
+    <ZExpression Comment="init emulator">
       <Expression>
 <![CDATA[trace("Loading rom...");
 byte[] RomBytes;
@@ -4714,16 +4724,6 @@ trace("done");
 }*/]]>
       </Expression>
     </ZExpression>
-    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
-      <BeforeInitExp>
-<![CDATA[if(ANDROID) {
-  if(App.GLBase==0)
-    this.ModuleName="libGLESv1_CM.so";
-  else
-    this.ModuleName="libGLESv2.so";
-}]]>
-      </BeforeInitExp>
-    </ZExternalLibrary>
     <ZExpression Comment="timing test">
       <Expression>
 <![CDATA[/*
@@ -4871,6 +4871,7 @@ if(AttributesBitmap.Handle) {
           <FragmentShaderSource>
 <![CDATA[uniform sampler2D tex1, tex2;
 uniform float bordercolor;
+uniform float flashtime;
 
 const float sat = 0.9;
 const float[8] rLookup = { 0.0, 0.0, sat, sat, 0.0, 0.0, sat, sat };
@@ -4917,6 +4918,19 @@ void main()
     int pap = ((attr>>3) & 0x07);
     vec3 papColor = vec3(rLookup[pap],gLookup[pap],bLookup[pap]);
 
+    //flash bit
+    if( ((attr&128)>0) && (flashtime>0.0)) {
+      vec3 temp=papColor;
+      papColor=inkColor;
+      inkColor=temp;
+    }
+
+    //bright bit
+    if( (attr&64)>0 ) {
+      papColor*=1.1;
+      inkColor*=1.1;
+    }
+
     //test pixel
     uv = vec2(u ,v);
     int byte=int( texture2D(tex1, uv)[ (specX>>3)&3 ] *255.0 );
@@ -4935,6 +4949,7 @@ void main()
           </FragmentShaderSource>
           <UniformVariables>
             <ShaderVariable VariableName="bordercolor" ValuePropRef="bordercolor"/>
+            <ShaderVariable VariableName="flashtime" ValuePropRef="frac(App.Time)&lt;0.5"/>
           </UniformVariables>
         </Shader>
         <Bitmap Name="VideoBitmap" Width="8" Height="192" Filter="1"/>
