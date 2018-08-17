@@ -358,17 +358,20 @@ int GetTickCount() { }]]>
     if((port & 31) == 31) {
       res=JoyState;
     } else if ( (port & 0x0001) == 0 ) {
+      if ( (port & 0x8000) == 0 ) { res &= Keys_B_SPC; }
       if ( (port & 0x0800) == 0 ) { res &= Keys_1_5;   }
-      if ( (port & 0x1000) == 0 ) { res &= Keys_6_0;   }
       if ( (port & 0x4000) == 0 ) { res &= Keys_H_ENT; }
+      if ( (port & 0x1000) == 0 ) { res &= Keys_6_0;   }
+      if ( (port & 0x2000) == 0 ) { res &= Keys_Y_P;   }
+      if ( (port & 0x0200) == 0 ) { res &= Keys_A_G;   }
+      if ( (port & 0x0400) == 0 ) { res &= Keys_Q_T;   }
+      if ( (port & 0x0100) == 0 ) { res &= Keys_CAPS_V;}
 
       /*if ( (port & 0x8000) == 0 ) { res &= _B_SPC; }
       if ( (port & 0x4000) == 0 ) { res &= _H_ENT; }
-      if ( (port & 0x2000) == 0 ) { res &= _Y_P;   }
       if ( (port & 0x1000) == 0 ) { res &= _6_0;   }
       if ( (port & 0x0800) == 0 ) { res &= _1_5;   }
       if ( (port & 0x0400) == 0 ) { res &= _Q_T;   }
-      if ( (port & 0x0200) == 0 ) { res &= _A_G;   }
       if ( (port & 0x0100) == 0 ) { res &= _CAPS_V;}*/
     }
 
@@ -376,7 +379,7 @@ int GetTickCount() { }]]>
   }
 
   /** Interrupt handlers */
-  private int interruptTriggered( int tstates ) {
+  private inline int interruptTriggered( int tstates ) {
     return (tstates >= 0);
   }
 
@@ -4754,7 +4757,12 @@ App.Caption = intToStr(App.FpsCounter);]]>
           <Expression>
 <![CDATA[Keys_1_5=0xff;
 Keys_6_0=0xff;
-Keys_H_ENT=0xff;]]>
+Keys_H_ENT=0xff;
+Keys_A_G=0xff;
+Keys_CAPS_V=0xff;
+Keys_B_SPC=0xff;
+Keys_Q_T=0xff;
+Keys_Y_P=0xff;]]>
           </Expression>
         </ZExpression>
         <KeyPress Name="KeyTest1_5" Keys="12345">
@@ -4770,6 +4778,26 @@ Keys_H_ENT=0xff;]]>
         <KeyPress Name="KeyTestEnter" CharCode="13">
           <OnPressed>
             <ZExpression Expression="Keys_H_ENT = 254;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestL_H" Keys="LKJH">
+          <OnPressed>
+            <ZExpression Expression="Keys_H_ENT &amp;=  (~(2 &lt;&lt; KeyTestL_H.KeyIndex))&amp;0xff;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestA_G" Keys="ASDFG">
+          <OnPressed>
+            <ZExpression Expression="Keys_A_G &amp;=  (~(1 &lt;&lt; KeyTestA_G.KeyIndex))&amp;0xff;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestP_Y" Keys="POIUY">
+          <OnPressed>
+            <ZExpression Expression="Keys_Y_P &amp;=  (~(1 &lt;&lt; KeyTestP_Y.KeyIndex))&amp;0xff;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestM_B" Keys="MNB">
+          <OnPressed>
+            <ZExpression Expression="Keys_B_SPC &amp;=  (~(4 &lt;&lt; KeyTestM_B.KeyIndex))&amp;0xff;"/>
           </OnPressed>
         </KeyPress>
         <ZExpression Comment="kempston">
