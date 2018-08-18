@@ -1516,18 +1516,15 @@ int GetTickCount() { }]]>
       dest = DE();
       from = HL();
       REFRESH( -2 );
-      do {
-        pokeb(dest, peekb(from) );
-        from  = inc16( from );
-        dest  = inc16( dest );
-        count = dec16( count );
 
-        _local_tstates += ( 21 );
-        REFRESH( 2 );
-        if ( interruptTriggered( _local_tstates ) ) {
-          break;
-        }
-      } while (count != 0);
+      pokeb(dest, peekb(from) );
+      from  = inc16( from );
+      dest  = inc16( dest );
+      count = dec16( count );
+
+      _local_tstates += ( 21 );
+      REFRESH( 2 );
+
       if (count != 0) {
         PC( (PC()-2)&0xffff );
         setH( false );
@@ -1605,18 +1602,15 @@ int GetTickCount() { }]]>
       dest = DE();
       from = HL();
       REFRESH ( -2 );
-      do {
-        pokeb(dest, peekb(from));
-        from  = dec16( from );
-        dest  = dec16( dest );
-        count = dec16( count );
+      
+      pokeb(dest, peekb(from));
+      from  = dec16( from );
+      dest  = dec16( dest );
+      count = dec16( count );
 
-        _local_tstates += ( 21 );
-        REFRESH( 2 );
-        if ( interruptTriggered( _local_tstates ) ) {
-          break;
-        }
-      } while (count != 0);
+      _local_tstates += ( 21 );
+      REFRESH( 2 );
+
       if (count != 0) {
         PC( (PC()-2)&0xffff );
         setH( false );
