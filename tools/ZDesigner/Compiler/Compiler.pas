@@ -1547,7 +1547,7 @@ begin
     case ExpKind of
       ekiNormal:
         begin
-          S := 'private ' + GetZcTypeName(ReturnType) + ' __f() { '#13#10 + S + #13#10'}';
+          S := 'private ' + GetZcTypeName(ReturnType) + ' __f() { '#13#10 + CloseComment(S) + #13#10'}';
         end;
       ekiLibrary:
         begin
@@ -1555,11 +1555,11 @@ begin
         end;
       ekiGetValue:
         begin
-          S := 'private float __f() { return ' + S + #13#10'; }';
+          S := 'private float __f() { return ' + CloseComment(S) + #13#10'; }';
         end;
       ekiGetPointer:
         begin
-          S := 'private model __f() { __getLValue( ' + S + ' ); return null; }';
+          S := 'private model __f() { __getLValue( ' + CloseComment(S) + ' ); return null; }';
         end;
       ekiBitmap :
         begin
@@ -1575,7 +1575,7 @@ begin
         end;
       ekiGetStringValue:
         begin
-          S := 'private string __f() { return ' + S + '; }';
+          S := 'private string __f() { return ' + CloseComment(S) + '; }';
         end;
     end;
 
