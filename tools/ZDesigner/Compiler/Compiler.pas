@@ -1534,6 +1534,7 @@ var
   I : integer;
   S : string;
   Target : TZComponentList;
+  HasCode : boolean;
 begin
   S := Ze.Source;
   Target := Ze.Code;
@@ -1630,6 +1631,16 @@ begin
             Break;
           end;
         end;
+      end;
+
+     if (ExpKind=ekiNormal) and (Target.Count<=2) then
+      begin //An expression that is only ExpStackFrame and ExpReturn can be omitted (empty WhileExp etc)
+        HasCode := False;
+        for I := 0 to Target.Count-1 do
+          if not ((Target[I] is TExpStackFrame) or (Target[I] is TExpReturn)) then
+            HasCode := True;
+        if not HasCode then
+          Target.Clear;
       end;
 
       if (ExpKind > ekiLibrary) and (Target.Count>0) then
