@@ -1430,12 +1430,10 @@ var
   I : integer;
 begin
   Result := S;
-  {$IF CompilerVersion>29}  //LastIndexOf is broken in Xe8
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
-  {$ENDIF}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
