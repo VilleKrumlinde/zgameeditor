@@ -52,7 +52,11 @@ var
 
 implementation
 
-uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections;
+uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections
+  {$if defined(zgeviz) and defined(fpc)}
+  ,WideStrings
+  {$endif}
+  ;
 
 
 type
