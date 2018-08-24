@@ -43,6 +43,7 @@ begin
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
   SynEdit.SearchEngine := TSynEditSearch.Create(Self);
   SynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
+  SynEdit.MaxScrollWidth := 4096;
 end;
 
 end.
