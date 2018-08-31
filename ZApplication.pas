@@ -508,8 +508,10 @@ begin
       {$ifend}
     end;
 
+    {$ifndef zgeviz}
     if ManagedHeap_GetAllocCount>0 then
       ManagedHeap_GarbageCollect;
+    {$endif}
 
     {$ifdef minimal}
     if FrameRateStyle<>frsFree then

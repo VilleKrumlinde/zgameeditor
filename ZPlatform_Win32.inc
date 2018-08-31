@@ -41,7 +41,7 @@ implementation
 uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplication, AudioPlayer,
   Commands
  {$ifndef minimal}
-  ,SysUtils
+  ,SysUtils, System.IOUtils
  {$endif}
  {$IFDEF FPC}
   ,WinEvent
@@ -803,7 +803,7 @@ var
 begin
 
   //Open file relative to path of exe-file
-  if IsRelative then
+  if IsRelative {$ifndef zminimal}and (not TPath.IsPathRooted(string(FileName))){$endif} then
   begin
     MakeFullPath(FileName,Buf);
     FileName := @Buf;

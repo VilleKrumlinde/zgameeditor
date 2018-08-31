@@ -62,7 +62,7 @@ type
  ExpAssign4ClassId,ExpAssign1ClassId,ExpAssignPointerClassId,ExpStringConstantClassId,ExpStringConCatClassId,
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
  ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,ExpGetRawMemElementClassId,
- ExpArrayUtilClassId,
+ ExpArrayUtilClassId,ExpSwitchTableClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -765,9 +765,15 @@ var
 {$endif}
 
 
+{$ifndef MINIMAL}
+//Faster TDictionary based GC
+  {$define UseDictionaryGC}
+{$endif}
+
 //Managed Heap
 var
-  mh_Targets,mh_Allocations,mh_Values : TZArrayList;
+  mh_Targets,mh_Allocations : TZArrayList;
+  mh_Values : {$ifdef UseDictionaryGC}TDictionary<pointer,boolean>{$else}TZArrayList{$endif};
   mh_LastCount : integer;
   mh_Lock : pointer;
 
@@ -778,7 +784,11 @@ procedure ManagedHeap_Create;
 begin
   mh_Targets := TZArrayList.CreateReferenced;
   mh_Allocations := TZArrayList.CreateReferenced;
+  {$ifdef UseDictionaryGC}
+  mh_Values := TDictionary<pointer,boolean>.Create;
+  {$else}
   mh_Values := TZArrayList.CreateReferenced;
+  {$endif}
   mh_Lock := Platform_CreateMutex;
 end;
 
@@ -873,7 +883,8 @@ end;
 
 procedure ManagedHeap_GarbageCollect;
 var
-  I,J : integer;
+  I : integer;
+  {$ifndef UseDictionaryGC}J : integer;{$endif}
   PP : PPointer;
   P : pointer;
 begin
@@ -889,7 +900,11 @@ begin
     PP := PPointer(mh_Targets[I]);
     P := PP^;
     if (P<>nil) and (P<>@NilString) then
+      {$ifdef UseDictionaryGC}
+      mh_Values.AddOrSetValue(P,True);
+      {$else}
       mh_Values.Add(P);
+      {$endif}
   end;
 
   Platform_EnterMutex(mh_Lock);
@@ -898,6 +913,11 @@ begin
   while I<mh_Allocations.Count do
   begin
     P := Pointer( NativeInt(mh_Allocations[I]) and (not 1) );
+    {$ifdef UseDictionaryGC}
+    if not mh_Values.ContainsKey(P) then
+      ManagedHeap_FreeMemAt(I);
+    Inc(I);
+    {$else}
     J := mh_Values.IndexOf(P);
     if J=-1 then
     begin
@@ -910,6 +930,7 @@ begin
       mh_Values.SwapRemoveAt(J);
       Inc(I);
     end;
+    {$endif}
   end;
 
   Platform_LeaveMutex(mh_Lock);

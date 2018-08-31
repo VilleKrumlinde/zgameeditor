@@ -236,6 +236,7 @@ type
     Findunsedcomponents1: TMenuItem;
     HighDPIImageListContainer: TImageList;
     EnableFunctionInlining: TMenuItem;
+    OpenAllProjectsMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -323,6 +324,7 @@ type
     procedure LogShowTraceOnlyClick(Sender: TObject);
     procedure Findunsedcomponents1Click(Sender: TObject);
     procedure EnableFunctionInliningClick(Sender: TObject);
+    procedure OpenAllProjectsMenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -591,6 +593,7 @@ begin
   SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
   DetailedBuildReportMenuItem.Visible := DebugHook<>0;
+  OpenAllProjectsMenuItem.Visible := DebugHook<>0;
 
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
@@ -814,6 +817,20 @@ begin
     ReopenMenuItem.Add(M);
   end;
   ReopenMenuItem.Enabled := ReopenMenuItem.Count>0;
+end;
+
+procedure TEditorForm.OpenAllProjectsMenuItemClick(Sender: TObject);
+var
+  Path,FileName : string;
+begin
+  //Debug code to test opening all projects
+  Path := Self.ExePath + 'Projects';
+  for FileName in TDirectory.GetFiles(Path,'*.zgeproj',TSearchOption.soAllDirectories) do
+  begin
+    CloseProject;
+    OutputDebugString(PWideChar(FileName));
+    OpenProject(FileName);
+  end;
 end;
 
 procedure TEditorForm.OpenProject(const FileName : string; const IsTemplate : boolean = False);

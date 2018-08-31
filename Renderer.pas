@@ -1853,9 +1853,13 @@ var
   var
     Count : integer;
     P : pointer;
+    GlDataType : integer;
   begin
     Count := Sv.ValueArrayRef.CalcLimit;
     P := Sv.ValueArrayRef.GetData;
+    GlDataType := GL_FLOAT;
+    if Sv.ValueArrayRef._Type=zctInt then
+      GlDataType := GL_INT;
     case Sv.ArrayKind of
       sakTexture2D :
         begin
@@ -1871,7 +1875,7 @@ var
             glGenTextures(1, @Sv.TextureHandle);
             glBindTexture(GL_TEXTURE_2D, Sv.TextureHandle);
             //Store array as 2d-texture with height 1 (because there seems to be problems with 1d textures)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Count, 1, 0, GL_RED, GL_FLOAT, P);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, Count, 1, 0, GL_RED, GlDataType, P);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -1880,7 +1884,7 @@ var
           end else
           begin
             glBindTexture(GL_TEXTURE_2D, Sv.TextureHandle);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Count, 1, GL_RED, GL_FLOAT, P);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Count, 1, GL_RED, GlDataType, P);
           end;
           glUniform1i(Sv.Location,Self.FirstTexIndex + Self.TexCount);
           Inc(Self.TexCount);

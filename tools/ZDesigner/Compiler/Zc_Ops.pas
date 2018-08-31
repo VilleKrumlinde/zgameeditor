@@ -791,7 +791,24 @@ begin
     Exit( Child(0) );
   end;
 
-end;
+  if (Kind=zcFuncCall) and Assigned(Ref) and (Ref is TZcOpFunctionBuiltIn) and (TZcOpFunctionBuiltIn(Ref).FuncId=fcOrd)
+   and (Child(0).Kind=zcConstLiteral)
+   then
+  begin //ord('x')
+    C1 := TZcOpLiteral(Child(0));
+    if Length(C1.StringValue)>0 then
+      Exit( TZcOpLiteral.Create(zctInt, Ord(C1.StringValue[1]) ) );
+  end;
+
+  if (Kind=zcFuncCall) and Assigned(Ref) and (Ref is TZcOpFunctionBuiltIn) and (TZcOpFunctionBuiltIn(Ref).FuncId=fcChr)
+   and (Child(0).Kind=zcConstLiteral)
+   then
+  begin //chr(42)
+    C1 := TZcOpLiteral(Child(0));
+    Exit( TZcOpLiteral.Create(zctString, '"' + Chr(Round(C1.Value)) + '"' ) );
+  end;
+
+  end;
 
 { TZcOpFunctionBase }
 
@@ -1006,6 +1023,10 @@ begin
   if (WantedType.Kind=zctReference) and (WantedType.ReferenceClassId=AnyComponentClassId) and
       (ExistingType.Kind=zctModel) then
     Exit(Op); //Ok to cast model to Component
+
+  if (WantedType.Kind=zctReference) and (WantedType.ReferenceClassId=DefineArrayClassId) and
+      (ExistingType.Kind=zctArray) then
+    Exit(Op); //Ok to cast local array to reference
 
   if (WantedType.Kind in [zctVec2,zctVec3,zctVec4,zctMat4]) and
     (ExistingType.Kind=WantedType.Kind) and
