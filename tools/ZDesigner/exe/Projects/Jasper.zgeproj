@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="12" ViewportRatio="2" FileVersion="2">
+<ZApplication Name="App" Caption="14" ViewportRatio="2" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary ModuleName="kernel32.dll">
       <Source>
@@ -4885,10 +4885,10 @@ void main()
     color = texture2D(tex3, vec2( float(bor)/7.0 ,0.0) );
   } else {
     u -= sideborder;
-    u *= (1.0/(1.0-(sideborder*2)));
+    u *= (1.0/(1.0-(sideborder*2.0)));
 
     v -= topborder;
-    v *= (1.0/(1.0-(topborder*2)));
+    v *= (1.0/(1.0-(topborder*2.0)));
 
     int specX=int(u * 256.0);
     int specY=int(v * 192.0);

@@ -355,7 +355,7 @@ begin
     Platform_ShutdownAudio;
   {$endif}
 
-  {$if defined(minimal) or defined(zgeviz)}
+  {$if defined(minimal)}
   if (Self.CurrentState<>nil) then
     Self.CurrentState.OnLeave.ExecuteCommands;
   OnClose.ExecuteCommands; //Running OnClose in designer crashes too often
