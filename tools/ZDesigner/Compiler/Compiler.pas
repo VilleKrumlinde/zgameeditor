@@ -936,7 +936,7 @@ var
 
     Jt : TExpSwitchTable;
     Value,MinValue,MaxValue,CaseCount,JumpCount : integer;
-    UseJumpTable : boolean;
+    UseJumpTable,CaseIsConstant : boolean;
   begin
     //todo: verify no duplicate values
     CaseBlockCount := Op.CaseOps.Count; //nr of blocks of code
@@ -952,6 +952,7 @@ var
     MaxValue := Low(Integer);
     if CaseType.Kind in [zctInt,zctByte] then
     begin
+      CaseIsConstant := True;
       for I := 0 to CaseBlockCount-1 do
       begin
         CaseOp := Op.CaseOps[I];
@@ -959,6 +960,11 @@ var
         begin
           if Assigned(CaseOp.Child(J)) then
           begin
+            if not (CaseOp.Child(J) is TZcOpLiteral) then
+            begin
+              CaseIsConstant := False; //case expression is not constant
+              Break;
+            end;
             Value := Round((CaseOp.Child(J) as TZcOpLiteral).Value);
             MinValue := Min(MinValue,Value);
             MaxValue := Max(MaxValue,Value);
@@ -966,7 +972,7 @@ var
           end;
         end;
       end;
-      UseJumpTable := (CaseCount>3) and (CaseCount > ((MaxValue-MinValue) div 2));
+      UseJumpTable := CaseIsConstant and (CaseCount>3) and (CaseCount > ((MaxValue-MinValue) div 2));
     end;
 
     if (not UseJumpTable) then
@@ -1534,6 +1540,7 @@ var
   I : integer;
   S : string;
   Target : TZComponentList;
+  HasCode : boolean;
 begin
   S := Ze.Source;
   Target := Ze.Code;
@@ -1630,6 +1637,16 @@ begin
             Break;
           end;
         end;
+      end;
+
+     if (ExpKind=ekiNormal) and (Target.Count<=2) then
+      begin //An expression that is only ExpStackFrame and ExpReturn can be omitted (empty WhileExp etc)
+        HasCode := False;
+        for I := 0 to Target.Count-1 do
+          if not ((Target[I] is TExpStackFrame) or (Target[I] is TExpReturn)) then
+            HasCode := True;
+        if not HasCode then
+          Target.Clear;
       end;
 
       if (ExpKind > ekiLibrary) and (Target.Count>0) then
