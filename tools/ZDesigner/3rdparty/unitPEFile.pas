@@ -132,7 +132,7 @@ public
 
 
   procedure LoadFromStream (s : TStream); override;
-  procedure LoadFromFile (const name : ansistring); override;
+  procedure LoadFromFile (const name : string); override;
 
   procedure SaveToStream (s : TStream); override;
 //  procedure SaveToFile (const name : ansistring); override;
@@ -721,7 +721,7 @@ end;
  |                                                                      |
  | Load the module from a file                                          |
  *----------------------------------------------------------------------*)
-procedure TPEModule.LoadFromFile(const name: ansistring);
+procedure TPEModule.LoadFromFile(const name: string);
 var
   f : TFileStream;
 begin

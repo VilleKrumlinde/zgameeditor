@@ -64,8 +64,8 @@ public
   procedure SaveToStream (stream : TStream); virtual;
   procedure LoadFromStream (stream : TStream); virtual;
 
-  procedure SaveToFile (const FileName : ansistring); virtual;
-  procedure LoadFromFile (const FileName : ansistring); virtual;
+  procedure SaveToFile (const FileName : string); virtual;
+  procedure LoadFromFile (const FileName : string); virtual;
   procedure SortResources; virtual;
 
   function FindResource (const tp, Name : ansistring; ALanguage : Integer) : TResourceDetails;
@@ -672,7 +672,7 @@ end;
  | Load from file.  This can be overriden but usually isn't as it       |
  | relies on LoadFromStream, which must be.                             |
  *----------------------------------------------------------------------*)
-procedure TResourceModule.LoadFromFile(const FileName: ansistring);
+procedure TResourceModule.LoadFromFile(const FileName: string);
 var
   s : TFileStream;
 begin
@@ -696,7 +696,7 @@ end;
  | Save to file.  This can be overriden but usually isn't as it         |
  | relies on SaveToStream, which must be.                               |
  *----------------------------------------------------------------------*)
-procedure TResourceModule.SaveToFile(const FileName: ansistring);
+procedure TResourceModule.SaveToFile(const FileName: string);
 var
   s : TFileStream;
 begin

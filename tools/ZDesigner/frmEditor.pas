@@ -2622,7 +2622,7 @@ var
 begin
   M := TPEResourceModule.Create;
   try
-    M.LoadFromFile( AnsiString(ExeFile) );
+    M.LoadFromFile( ExeFile );
 
     R := M.FindResource('10','DATA_FILE',1053);
     Assert(R<>nil);
@@ -2680,7 +2680,7 @@ begin
     //Important, otherwise Win7 won't recognize program icon
     M.SortResources;
 
-    M.SaveToFile( AnsiString(OutFile) );
+    M.SaveToFile( OutFile );
   finally
     M.Free;
   end;
