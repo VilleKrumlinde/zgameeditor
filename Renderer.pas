@@ -2376,6 +2376,8 @@ end;
 
 destructor TRenderTarget.Destroy;
 begin
+  if Self=CurrentRenderTarget then
+    CurrentRenderTarget := nil;
   CleanUp;
   inherited;
 end;

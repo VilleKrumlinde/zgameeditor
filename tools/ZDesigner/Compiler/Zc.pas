@@ -964,7 +964,7 @@ begin
           SynError(201)
         else
         begin
-          Arg := TZcOpArgumentVar.Create;
+          Arg := TZcOpArgumentVar.Create(nil);
           Arg.Id := LexString;
           Arg.Typ := Typ;
           CurrentFunction.AddArgument(Arg);
@@ -987,7 +987,7 @@ begin
 end;
 
 procedure TZc._LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
-                                                  var Loc : TZcOpLocalVar; InitOp : TZcOp; 
+                                                  var Loc : TZcOpLocalVar; InitOp : TZcOp;
 begin
   Expect(identSym);
         

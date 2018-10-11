@@ -328,7 +328,7 @@ var
           SynError(201)
         else
         begin
-          Arg := TZcOpArgumentVar.Create;
+          Arg := TZcOpArgumentVar.Create(nil);
           Arg.Id := LexString;
           Arg.Typ := Typ;
           CurrentFunction.AddArgument(Arg);

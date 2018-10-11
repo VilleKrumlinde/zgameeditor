@@ -818,7 +818,7 @@ begin
   Kind := zcFunction;
   Statements := Contnrs.TObjectList.Create(False);
   Locals := TObjectList<TZcOpLocalVar>.Create(False);
-  Arguments := TObjectList<TZcOpArgumentVar>.Create(True);
+  Arguments := TObjectList<TZcOpArgumentVar>.Create(False);
 end;
 
 destructor TZcOpFunctionBase.Destroy;
@@ -1645,7 +1645,7 @@ var
     F.ReturnType := ParseType(Sig,I);
     while I<=Length(Sig) do
     begin
-      Arg := TZcOpArgumentVar.Create;
+      Arg := TZcOpArgumentVar.Create(BuiltInCleanUps);
       Arg.Typ := ParseType(Sig,I);
       if Arg.Typ.Kind=zctVoid then
         Arg.Typ.IsPointer := True;
