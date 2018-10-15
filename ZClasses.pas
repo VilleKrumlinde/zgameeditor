@@ -459,6 +459,7 @@ type
     function SaveXmlToStream(Component: TZComponent) : TObject;
     function GetAllInfos : PComponentInfoArray;
     function GetInfoFromName(const ZClassName : string) : TZComponentInfo;
+    function LoadBinaryFromFile(const FileName : string) : TZComponent;
   {$ENDIF}
     function LoadBinary : TZComponent;
   end;
@@ -1985,6 +1986,25 @@ function TZComponentManager.GetAllInfos: PComponentInfoArray;
 begin
   Result := @ComponentInfos;
 end;
+
+function TZComponentManager.LoadBinaryFromFile(const FileName : string) : TZComponent;
+var
+  Ms : TMemoryStream;
+  Stream : TZInputStream;
+  Reader : TZBinaryReader;
+begin
+  Ms := TMemoryStream.Create;
+  Ms.LoadFromFile(FileName);
+  Ms.Position := 0;
+
+  Stream := TZInputStream.CreateFromMemory(Ms.Memory, Ms.Size);
+  Reader := TZBinaryReader.Create(Stream);
+  Result := Reader.ReadRootComponent;
+  Reader.Free;
+  Stream.Free;
+
+  Ms.Free;
+end;
 {$ENDIF}
 
 function TZComponentManager.LoadBinary: TZComponent;
@@ -3037,6 +3057,9 @@ procedure TZBinaryReader.OnDocumentEnd;
 var
   I,ObjId : integer;
   P : PPointer;
+  {$ifndef minimal}
+  PropType : TZPropertyType;
+  {$endif}
 begin
   //component references
   for I := 0 to FixUps.Count-1 do
@@ -3054,7 +3077,11 @@ begin
 
   ObjIds.Free;
 
-  //todo: gör free på pstreams?
+  {$ifndef minimal}
+  //gör free på pstreams
+  for PropType := Low(Self.PStreams) to High(Self.PStreams) do
+    Self.PStreams[PropType].Free;
+  {$endif}
 end;
 
 procedure TZBinaryReader.OnDocumentStart;

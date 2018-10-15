@@ -1771,6 +1771,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}(@MeshData), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}(@HasVertexColors), zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}(@HasTextureCoords), zptBoolean);
+  {$IFDEF HugeMeshes}
+  List.AddProperty({$IFNDEF MINIMAL}'AreIndicesUncompressed',{$ENDIF}@AreIndicesUncompressed, zptBoolean);
+  {$ENDIF}
 end;
 
 procedure TMeshImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
