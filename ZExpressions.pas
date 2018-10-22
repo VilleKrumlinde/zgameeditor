@@ -2195,7 +2195,7 @@ begin
   {$ifdef MSWINDOWS}
   StackOffs := $28;
   {$else}
-  StackOffs := 0;
+  StackOffs := 8;
   {$endif}
   
   FloatI := 0; IntI := 0;
