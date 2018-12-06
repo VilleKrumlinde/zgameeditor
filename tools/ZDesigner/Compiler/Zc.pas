@@ -83,7 +83,6 @@ type
     SymTab : TSymbolTable;
     AllowInitializer : boolean;
     GlobalNames : TObjectList;
-    TempCounter : integer;
     ZApp : TZApplication;
     InitializerFunction : TZcOpFunctionUserDefined;
     destructor Destroy; override;

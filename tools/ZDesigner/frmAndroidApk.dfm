@@ -62,7 +62,6 @@ object AndroidApkForm: TAndroidApkForm
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 2
-    ExplicitTop = 277
   end
   object Button2: TButton
     Left = 169
@@ -73,7 +72,6 @@ object AndroidApkForm: TAndroidApkForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 3
-    ExplicitTop = 277
   end
   object VersionNameEdit: TLabeledEdit
     Left = 16
@@ -107,7 +105,8 @@ object AndroidApkForm: TAndroidApkForm
     Text = 'Landscape'
     Items.Strings = (
       'Landscape'
-      'Portrait')
+      'Portrait'
+      'sensorLandscape')
   end
   object AndroidVersionComboBox: TComboBox
     Left = 96

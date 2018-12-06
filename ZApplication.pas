@@ -147,7 +147,7 @@ type
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
-    AndroidPortrait : boolean;
+    AndroidPortrait : byte;
     AndroidSdk : byte;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
@@ -1269,7 +1269,7 @@ begin
   List.AddProperty('AndroidVersionNumber',(@AndroidVersionNumber), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 1;
     List.SetDesignerProperty;
-  List.AddProperty('AndroidPortrait',(@AndroidPortrait), zptBoolean);
+  List.AddProperty('AndroidPortrait',@AndroidPortrait, zptByte);
     List.SetDesignerProperty;
   List.AddProperty('AndroidSdk',(@AndroidSdk), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['2.2 (API Level 8)','4.1 (API Level 16)']);{$endif}

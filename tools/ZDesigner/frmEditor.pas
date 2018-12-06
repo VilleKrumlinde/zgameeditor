@@ -4932,7 +4932,7 @@ begin
     F.AppNameEdit.Text := String(Self.ZApp.Caption);
     F.VersionNameEdit.Text := String(Self.ZApp.AndroidVersionName);
     F.VersionNumberEdit.Text := IntToStr(Self.ZApp.AndroidVersionNumber);
-    F.OrientationComboBox.ItemIndex := IfThen(Self.ZApp.AndroidPortrait,1,0);
+    F.OrientationComboBox.ItemIndex := Self.ZApp.AndroidPortrait;
 
     for S in ZApp.GetProperties.GetByName('AndroidSdk').Options do
       F.AndroidVersionComboBox.Items.Add(S);
@@ -4944,7 +4944,7 @@ begin
     Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
     Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
     Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
-    Self.ZApp.AndroidPortrait := (F.OrientationComboBox.ItemIndex=1);
+    Self.ZApp.AndroidPortrait := F.OrientationComboBox.ItemIndex;
 
     SdkChanged := Self.ZApp.AndroidSdk <> F.AndroidVersionComboBox.ItemIndex;
     Self.ZApp.AndroidSdk := F.AndroidVersionComboBox.ItemIndex;
@@ -4982,10 +4982,12 @@ begin
     Lookups.Add('$title$', String(Self.ZApp.Caption) );
     Lookups.Add('$versionname$', String(Self.ZApp.AndroidVersionName) );
     Lookups.Add('$versionnumber$', IntToStr(Self.ZApp.AndroidVersionNumber) );
-    if Self.ZApp.AndroidPortrait then
-      Lookups.Add('$orientation$', 'portrait')
-    else
-      Lookups.Add('$orientation$', 'landscape');
+
+    case Self.ZApp.AndroidPortrait of
+      0 : Lookups.Add('$orientation$', 'landscape');
+      1 : Lookups.Add('$orientation$', 'portrait');
+      2 : Lookups.Add('$orientation$', 'sensorLandscape');
+    end;
     Lookups.Add('$antpath$', Self.AndroidAntPath);
 
     if not IsDebug then
