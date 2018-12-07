@@ -277,7 +277,8 @@ type
      ,fcGenLValue,
      //IDE
      fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty,
-     fcSetObjectProperty,fcSaveComponentToTextFile
+     fcSetObjectProperty,fcSaveComponentToTextFile,
+     fcGetStringProperty
      {$endif}
      );
 
@@ -2721,6 +2722,8 @@ var
   V : single;
   I : integer;
   Stream : TMemoryStream;
+  TmpS : ansistring;
+  Dest : PAnsiChar;
 begin
   case Kind of
     fcFindComponent :
@@ -2826,6 +2829,26 @@ begin
         Stream := ComponentManager.SaveXmlToStream(TZComponent(P1)) as TMemoryStream;
         Stream.SaveToFile( String(PAnsiChar(P2)) );
         Stream.Free;
+      end;
+    fcGetStringProperty :
+      begin
+        Env.StackPopToPointer(P2); //propname
+        Env.StackPopToPointer(P1); //comp
+        Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
+        if Prop=nil then
+          ZHalt('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+        Value := TZComponent(P1).GetProperty(Prop);
+        case Prop.PropertyType of
+          zptString : TmpS := Value.StringValue;
+          zptExpression : TmpS := AnsiString(Value.ExpressionValue.Source);
+        else
+          ZHalt('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+        end;
+
+        Dest := ManagedHeap_Alloc(Length(TmpS)+1);
+        ZStrCopy(Dest,PAnsiChar(TmpS));
+
+        Env.StackPush(Dest);
       end;
   end;
 end;

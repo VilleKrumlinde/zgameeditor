@@ -1413,7 +1413,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     begin
       F := TExpMat4FuncCall.Create(Target);
     end else if Func.FuncId in [fcFindComponent,fcCreateComponent,fcSetNumericProperty,fcSetStringProperty,
-      fcSetObjectProperty,fcSaveComponentToTextFile] then
+      fcSetObjectProperty,fcSaveComponentToTextFile,fcGetStringProperty] then
     begin
       F := TExpIDEFuncCall.Create(Target);
     end else

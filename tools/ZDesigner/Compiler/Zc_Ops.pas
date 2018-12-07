@@ -1719,6 +1719,8 @@ begin
   MakeOne('setObjectProperty',fcSetObjectProperty,'VR{Component}SR{Component}');
   MakeOne('saveComponentToTextFile',fcSaveComponentToTextFile,'VR{Component}S');
 
+  MakeOne('getStringProperty',fcGetStringProperty,'SR{Component}S');
+
   //Special built-in function for getting pointer of expression. Used for ExpGetPointer expression properties.
   MakeOne('__getLValue',fcGenLValue,'VF');
   TZcOpFunctionBuiltIn(BuiltInFunctions.Last).Arguments.Last.Typ.IsPointer := True;
