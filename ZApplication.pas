@@ -824,8 +824,10 @@ begin
       TLight(Lights[J]).RemoveLight(J);
   end;
 
-  //End frame
+  {$ifndef zgeviz} //Sometimes crash on Intel GPU on Mac if using flush here
   glFlush;
+  {$endif}
+  //End frame
   {$ifdef minimal}
   //I designer så ansvarar GL-komponenten för swapbuffer
   Platform_SwapBuffers;
