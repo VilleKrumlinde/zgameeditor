@@ -782,7 +782,7 @@ begin
 
     if (ClearScreenMode=csmClear) and (CurrentRenderTarget=nil) then
     begin
-      glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+      glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],ClearColor.V[3]);
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     end;
 
@@ -881,7 +881,7 @@ begin
 
   Self.ApplyCameraTransform;
 
-  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+  glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],ClearColor.V[3]);
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 

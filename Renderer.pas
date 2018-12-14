@@ -2323,7 +2323,7 @@ begin
 
   if Self.ClearBeforeUse or IsFirstUse then
   begin
-    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],0);
+    glClearColor(ClearColor.V[0],ClearColor.V[1],ClearColor.V[2],ClearColor.V[3]);
     I := GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT;
     if Self.WithStencil then
       I := I or GL_STENCIL_BUFFER_BIT;
