@@ -1793,7 +1793,10 @@ procedure TShader.ReInit;
     Result := glCreateShader(Kind);
 
     {$if not defined(minimal) and defined(macos)} //Give shaders a chance to ifdef around macos specifics (in zgeviz)
-    S := ansistring('#define macos'#13) + Source;
+    if (Length(Source)>0) and (Source[1]<>'#') then
+      S := ansistring('#define macos'#13) + Source;
+    else
+      S := Source;
     glShaderSource(Result,1, @S,nil);
     {$else}
     glShaderSource(Result,1,@Source,nil);
@@ -1998,7 +2001,8 @@ begin
 
   //Update uniform variables once each frame
   if (UniformVariables.Count>0) and
-    ((LastVariableUpdate=0) or (LastVariableUpdate<>ZApp.Time) or Self.UpdateVarsOnEachUse)
+    ((LastVariableUpdate=0) or (LastVariableUpdate<>ZApp.Time) or
+    {$ifdef zgeviz}True{$else}Self.UpdateVarsOnEachUse{$endif})
     then
   begin
     if ReinitDone then
