@@ -1794,7 +1794,7 @@ procedure TShader.ReInit;
 
     {$if not defined(minimal) and defined(macos)} //Give shaders a chance to ifdef around macos specifics (in zgeviz)
     if (Length(Source)>0) and (Source[1]<>'#') then
-      S := ansistring('#define macos'#13) + Source;
+      S := ansistring('#define macos'#13) + Source
     else
       S := Source;
     glShaderSource(Result,1, @S,nil);

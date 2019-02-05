@@ -76,10 +76,11 @@ type
     procedure MainSlice;
     procedure Init;
     procedure Shutdown;
-    procedure UpdateScreen;
-    {$ifdef zgeviz}
+  {$ifdef zgeviz}
     procedure ViewportChanged;
-    {$endif}
+  public
+  {$endif}
+    procedure UpdateScreen;
   private
     CurrentState : TAppState;
     procedure ApplyCameraTransform;
@@ -1376,34 +1377,42 @@ var
   W,H : single;
   D : TGLDriverBase;
 begin
-  //Setup view and camera
-
   D := Self.ZApp.Driver;
 
-  D.MatrixMode(GL_PROJECTION);
-  D.LoadIdentity;
-  case Self.Kind of
-    catPerspective :
-      begin
-        D.Perspective(Self.FOV, Aspect, Self.ClipNear, Self.ClipFar);
-      end;
+  //Setup view and camera
+  {$ifdef zgeviz}
+  if Assigned(Self.ZApp.ZgeVizCameraCallback) then
+    Self.ZApp.ZgeVizCameraCallback(Self.ZApp)
   else
-    begin
-      //Ortho
-      {$ifndef minimal}
-      if Abs(Self.OrthoZoom)>0.000001 then
-      begin //Avoid divide by zero
-      {$endif}
-      H := Self.OrthoZoom;
-      W := Aspect * H;
-      D.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
-      {$ifndef minimal}
+  begin
+  {$endif}
+    D.MatrixMode(GL_PROJECTION);
+    D.LoadIdentity;
+    case Self.Kind of
+      catPerspective :
+        begin
+          D.Perspective(Self.FOV, Aspect, Self.ClipNear, Self.ClipFar);
+        end;
+    else
+      begin
+        //Ortho
+        {$ifndef minimal}
+        if Abs(Self.OrthoZoom)>0.000001 then
+        begin //Avoid divide by zero
+        {$endif}
+        H := Self.OrthoZoom;
+        W := Aspect * H;
+        D.Ortho(-W,W,-H,H,Self.ClipNear, Self.ClipFar);
+        {$ifndef minimal}
+        end;
+        {$endif}
       end;
-      {$endif}
     end;
+    D.MatrixMode(GL_MODELVIEW);
+    D.LoadIdentity;
+  {$ifdef zgeviz}
   end;
-  D.MatrixMode(GL_MODELVIEW);
-  D.LoadIdentity;
+  {$endif}
 
   //Reverse order to make XYZ-rotation
   D.Rotate( (Rotation[0]*360) , 1, 0, 0);
