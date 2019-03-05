@@ -1120,9 +1120,10 @@ begin
     begin
       //Skip if code is not in a component inside model (because code outside should be able to set the global values)
       Owner := CompilerContext.ThisC;
-      repeat
-        Owner := Owner.GetOwner;
-      until (Owner=nil) or (ComponentManager.GetInfo(Owner).ClassId=ModelClassId);
+      if Assigned(Owner) then
+        repeat
+          Owner := Owner.GetOwner;
+        until (Owner=nil) or (ComponentManager.GetInfo(Owner).ClassId=ModelClassId);
       while Owner<>nil do
       begin //Check in closest parent model including any hierarchy
         PropValue := Owner.GetProperty( Owner.GetProperties.GetByName('Definitions'));
@@ -1141,7 +1142,7 @@ begin
 
   if (Op.Kind in [zcIdentifier,zcSelect])
     and ((Op.Ref is TDefineVariable) or (Op.Ref is TDefineConstant))
-    and (CompilerContext.ThisC.GetProperties.GetByName(Op.Id)=nil)
+    and ((not Assigned(CompilerContext.ThisC)) or (not Assigned(CompilerContext.ThisC.GetProperties.GetByName(Op.Id))))
   then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
@@ -1159,7 +1160,7 @@ begin
   end else if (Op.Kind=zcIdentifier) and (Op.Ref=nil) then
   begin
     //Qualifies identifier referencing property of current component with "this"-prefix
-    if CompilerContext.ThisC.GetProperties.GetByName(Op.Id)<>nil then
+    if Assigned(CompilerContext.ThisC) and Assigned(CompilerContext.ThisC.GetProperties.GetByName(Op.Id)) then
     begin
       Result := MakeOp(zcSelect,[ MakeIdentifier('this') ]);
       Result.Id := Op.Id;

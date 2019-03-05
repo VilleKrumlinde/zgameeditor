@@ -47,6 +47,10 @@ procedure Compile(ZApp : TZApplication; ThisC : TZComponent;
   GlobalNames : Contnrs.TObjectList;
   ExpKind : TExpressionKind);
 
+function CompileEvalExpression(const Expr : string;
+  App : TZApplication;
+  TargetCode : TZComponentList) : TZcDataType;
+
 var
   CompileDebugString : string;
 
@@ -1668,6 +1672,53 @@ begin
     Compiler.Free;
   end;
 
+end;
+
+function CompileEvalExpression(const Expr : string;
+  App : TZApplication;
+  TargetCode : TZComponentList) : TZcDataType;
+var
+  Compiler : TZc;
+  CodeGen : TZCodeGen;
+begin
+  Result.Kind := zctVoid;
+
+  CompilerContext.SymTab := App.SymTab;
+  CompilerContext.ThisC := nil;
+
+  Compiler := TZc.Create(nil);
+  try
+    Compiler.SymTab := App.SymTab;
+    Compiler.ZApp := App;
+
+    Compiler.SetSource(Expr);
+    Compiler.ParseEvalExpression;
+
+    if not Compiler.Successful then
+      raise EParseError.Create('Compilation failed');
+
+    Result := (Compiler.ZFunctions.First as TZcOp).GetDataType;
+
+    TargetCode.Clear;
+    CodeGen := TZCodeGen.Create;
+    try
+      CodeGen.Target := TargetCode;
+      CodeGen.Component := nil;
+      CodeGen.SymTab := App.SymTab;
+      CodeGen.ZApp := App;
+      try
+        CodeGen.GenRoot(Compiler.ZFunctions);
+      except
+        TargetCode.Clear;
+        raise;
+      end;
+    finally
+      CodeGen.Free;
+    end;
+
+  finally
+    Compiler.Free;
+  end;
 end;
 
 { EZcErrorBase }

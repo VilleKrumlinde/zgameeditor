@@ -237,6 +237,7 @@ type
     HighDPIImageListContainer: TImageList;
     EnableFunctionInlining: TMenuItem;
     OpenAllProjectsMenuItem: TMenuItem;
+    EvalEdit: TEdit;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -325,6 +326,8 @@ type
     procedure Findunsedcomponents1Click(Sender: TObject);
     procedure EnableFunctionInliningClick(Sender: TObject);
     procedure OpenAllProjectsMenuItemClick(Sender: TObject);
+    procedure EvalEditKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -353,6 +356,7 @@ type
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
     DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
     MainScaling : integer;
+    EvalHistory : TStringList;
     procedure SelectComponent(C : TZComponent);
     procedure DrawModel;
     procedure OnGlDraw(Sender : TObject);
@@ -424,6 +428,7 @@ type
     procedure FillQuickCompList;
     procedure OnPropEditFocusControl(Sender: TObject; Prop : TZProperty; Component : TZComponent);
     procedure ResizeImageListImagesforHighDPI(const imgList: TImageList);
+    procedure ParseEvalExpression(const Expr : string);
   protected
     procedure CreateWnd; override;
   public
@@ -606,6 +611,8 @@ begin
   FillNewMenuTemplateItems;
 
   FillQuickCompList;
+
+  EvalHistory := TStringList.Create;
 end;
 
 
@@ -2016,6 +2023,7 @@ begin
   SysLibrary.Free;
   Driver.Free;
   GamutZBitmap.Free;
+  EvalHistory.Free;
 end;
 
 
@@ -2583,6 +2591,30 @@ end;
 procedure TEditorForm.EnableThreadedProcessingMenuItemClick(Sender: TObject);
 begin
   ZClasses.Tasks.Enabled := (Sender as TMenuItem).Checked;
+end;
+
+procedure TEditorForm.EvalEditKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key=13 then
+  begin
+    Key := 0;
+    Self.EvalHistory.Add(EvalEdit.Text);
+    EvalEdit.Tag := Self.EvalHistory.Count-1;
+    Self.ParseEvalExpression( EvalEdit.Text );
+  end;
+  if Key=VK_UP then
+  begin
+    EvalEdit.Tag := Abs( (EvalEdit.Tag - 1) mod EvalHistory.Count);
+    EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
+    Key := 0;
+  end;
+  if Key=VK_DOWN then
+  begin
+    EvalEdit.Tag := Abs( (EvalEdit.Tag + 1) mod EvalHistory.Count);
+    EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
+    Key := 0;
+  end;
 end;
 
 procedure TEditorForm.ExecToolAndWait(const ExeFile,ParamString : string);
@@ -3836,6 +3868,11 @@ procedure TEditorForm.FormKeyPress(Sender: TObject; var Key: Char);
 var
   F : TForm;
 begin
+  if (ActiveControl=EvalEdit) and (Key=#13) then
+  begin
+    Key := #0; //Eat the beep
+    Exit;
+  end;
   if (Key = #13) and (not (ActiveControl is TSynEdit)) and
     (not (ActiveControl is TCustomMemo)) and
     (not IsAppRunning) then
@@ -4344,6 +4381,37 @@ begin
   end;
 end;
 
+procedure TEditorForm.ParseEvalExpression(const Expr: string);
+var
+  TargetCode : TZComponentList;
+  Ret : TCodeReturnValue;
+  RetType : TZcDataType;
+  S : string;
+begin
+  TargetCode := TZComponentList.Create(Self.ZApp);
+  try
+    try
+      RetType := Compiler.CompileEvalExpression(Expr + ';',Self.ZApp,TargetCode);
+    except
+      on E : Exception do
+      begin
+        Log.Write(E.Message);
+        Exit;
+      end;
+    end;
+    Ret := ZExpressions.RunCode(TargetCode);
+    S := '';
+    case RetType.Kind of
+      zctFloat: S := FloatToStr(PFloat(@Ret.PointerValue)^);
+      zctInt,zctByte : S := IntToStr(NativeInt(Ret.PointerValue));
+      zctString: S := String(PAnsiChar(Ret.PointerValue));
+    end;
+    if S<>'' then
+      Log.Write(S);
+  finally
+    TargetCode.Free;
+  end;
+end;
 
 type
   TMapName = class

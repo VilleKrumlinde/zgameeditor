@@ -142,7 +142,7 @@ object EditorForm: TEditorForm
           Left = 0
           Top = 0
           Width = 209
-          Height = 192
+          Height = 171
           Margins.Left = 4
           Margins.Top = 4
           Margins.Right = 4
@@ -157,6 +157,20 @@ object EditorForm: TEditorForm
           TabOrder = 0
           OnDrawItem = LogListBoxDrawItem
           OnMouseMove = LogListBoxMouseMove
+        end
+        object EvalEdit: TEdit
+          Left = 0
+          Top = 171
+          Width = 209
+          Height = 21
+          Hint = 'Evaluate. Type expression here and press enter.'
+          Align = alBottom
+          Color = clInactiveCaption
+          TabOrder = 1
+          OnKeyDown = EvalEditKeyDown
+          ExplicitLeft = 48
+          ExplicitTop = 88
+          ExplicitWidth = 121
         end
       end
       object PropEditParentPanel: TPanel
@@ -275,6 +289,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0

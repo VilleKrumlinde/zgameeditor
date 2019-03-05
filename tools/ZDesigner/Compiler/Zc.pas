@@ -94,6 +94,8 @@ type
     function  CreateScanner: TBaseScanner; override;
     function Execute: Boolean; override;
 
+    procedure ParseEvalExpression;
+
     constructor Create(AOwner: TComponent); override;
 
   end;
@@ -704,13 +706,13 @@ begin
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
-     
+
   if InSet(CurrentInputSymbol,0) then
   begin
     _FormalParams;
   end;
   Expect(rparSym);
-        
+
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
         if SymTab.Contains(Func.MangledName) then
           ZError('Name already defined: ' + Name);
@@ -719,11 +721,11 @@ begin
         else
           SymTab.AddPrevious(Func.MangledName,Func,2);
         ZFunctions.Add(Func);
-      
+
   Expect(lbraceSym);
   _ZcFuncBody;
   Expect(rbraceSym);
-          
+
           finally
             SymTab.PopScope;
           end;
@@ -2201,6 +2203,28 @@ begin
   Result := Successful;
 end;
 
+procedure TZc.ParseEvalExpression;
+var
+  OutOp : TZcOp;
+  Typ : TZcDataType;
+  Func : TZcOpFunctionUserDefined;
+begin
+  Reinit;
+  OutOp := nil;
+  _Expr(OutOp);
+  Typ := OutOp.GetDataType;
+
+  Func := TZcOpFunctionUserDefined.Create(nil);
+  Func.ReturnType := Typ;
+  Self.CurrentFunction := Func;
+
+  if Typ.Kind<>zctVoid then
+  begin
+    OutOp := MakeOp(zcReturn,[OutOp]);
+  end;
+  Func.Statements.Add(OutOp);
+  Self.ZFunctions.Add(Func);
+end;
 
 function TZc.CreateScanner: TBaseScanner;
 begin
