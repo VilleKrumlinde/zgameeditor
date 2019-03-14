@@ -1527,6 +1527,7 @@ procedure TModels.FlushRemoveList;
 var
   I,J,K : integer;
   M : TModel;
+  Found : boolean;
 begin
   for I := 0 to RemoveList.Count-1 do
   begin
@@ -1547,7 +1548,10 @@ begin
     else
       Get(M.Category).RemoveAt(J);
 
-    if M.IsSpawnedAsReference then
+    //If it cannot be found then this model was never spawned
+    Found := J<>-1;
+
+    if M.IsSpawnedAsReference or (not Found) then
       //If referenced, remove from list to keep it from being freed below
       RemoveList[I]:=nil;
   end;
