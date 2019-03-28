@@ -207,14 +207,14 @@ begin
       end;
 {$ifdef minimal}
     else
-      Result := DefWindowProc(hWnd, Msg, wParam, lParam);    // Default result if nothing happens
+      Result := DefWindowProcA(hWnd, Msg, wParam, lParam);    // Default result if nothing happens
 {$endif}
   end;
 
   {$ifdef zgeviz}
   //Always pass on the message to avoid zgeviz stealing keypresses from FL-studio
   if (Msg=WM_KEYDOWN) or (Msg=WM_KEYUP) then
-    Result := DefWindowProc(hWnd, Msg, wParam, lParam);
+    Result := DefWindowProcA(hWnd, Msg, wParam, lParam);
   {$endif}
 end;
 
@@ -762,6 +762,10 @@ begin
   {$endif}
 end;
 
+var
+  WriteFile : function(hFile: THandle; const Buffer; nNumberOfBytesToWrite: DWORD;
+    var lpNumberOfBytesWritten: DWORD; lpOverlapped: POverlapped): BOOL; stdcall;
+
 procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);
 var
   Handle : THandle;
@@ -790,6 +794,8 @@ begin
   end;
 
   SetFilePointer(Handle, 0, nil, FILE_END);
+  if not Assigned(WriteFile) then
+    WriteFile := GetProcAddress( LoadLibrary(kernel32), 'WriteFile');
   WriteFile(Handle, Memory^, Size, Dummy, nil);
 
   CloseHandle(Handle);
@@ -803,7 +809,7 @@ var
 begin
 
   //Open file relative to path of exe-file
-  if IsRelative {$ifndef zminimal}and (not TPath.IsPathRooted(string(FileName))){$endif} then
+  if IsRelative {$ifndef minimal}and (not TPath.IsPathRooted(string(FileName))){$endif} then
   begin
     MakeFullPath(FileName,Buf);
     FileName := @Buf;
@@ -911,7 +917,7 @@ var
   Size : integer;
 begin
   Result := nil;
-  HResInfo := FindResource(HInstance,'data_file', RT_RCDATA);
+  HResInfo := FindResource(HInstance,pointer(42), RT_RCDATA);
   //if HResInfo = 0 then Error;
   HGlobal := LoadResource(HInstance, HResInfo);
   //if HGlobal = 0 then Error;
@@ -1169,7 +1175,6 @@ begin
 
   //Create and start thread
   PlaybackThreadHandle := CreateThread(nil, 0, @PlaybackThread_Execute, nil, 0, PlaybackThreadID);
-  SetThreadPriority(PlaybackThreadHandle,THREAD_PRIORITY_ABOVE_NORMAL);
 end;
 
 
@@ -1703,18 +1708,19 @@ const
   INTERNET_FLAG_ASYNC = $10000000;                  { this request is asynchronous (where supported) }
   winetdll = 'wininet.dll';
 
-function InternetOpenA(lpszAgent: PAnsiChar; dwAccessType: DWORD;
-  lpszProxy, lpszProxyBypass: PAnsiChar; dwFlags: DWORD): HINTERNET; stdcall; external winetdll;
-function InternetSetStatusCallback(hInet: HINTERNET;
-  lpfnInternetCallback: pointer): pointer; stdcall; external winetdll;
-function InternetOpenUrlA(hInet: HINTERNET; lpszUrl: PAnsiChar;
-  lpszHeaders: PAnsiChar; dwHeadersLength: DWORD; dwFlags: DWORD;
-  dwContext: DWORD): HINTERNET; stdcall; external winetdll;
-function InternetQueryDataAvailable(hFile: HINTERNET; var lpdwNumberOfBytesAvailable: DWORD;
-  dwFlags, dwContext: DWORD): BOOL; stdcall; external winetdll;
-function InternetReadFile(hFile: HINTERNET; lpBuffer: Pointer;
-  dwNumberOfBytesToRead: DWORD; var lpdwNumberOfBytesRead: DWORD): BOOL; stdcall; external winetdll;
-function InternetCloseHandle(hInet: HINTERNET): BOOL; stdcall; external winetdll;
+var
+  InternetOpenA : function(lpszAgent: PAnsiChar; dwAccessType: DWORD;
+    lpszProxy, lpszProxyBypass: PAnsiChar; dwFlags: DWORD): HINTERNET; stdcall;
+  InternetSetStatusCallback : function (hInet: HINTERNET;
+    lpfnInternetCallback: pointer): pointer; stdcall;
+  InternetOpenUrlA : function (hInet: HINTERNET; lpszUrl: PAnsiChar;
+     lpszHeaders: PAnsiChar; dwHeadersLength: DWORD; dwFlags: DWORD;
+     dwContext: DWORD): HINTERNET; stdcall;
+  InternetQueryDataAvailable : function(hFile: HINTERNET; var lpdwNumberOfBytesAvailable: DWORD;
+     dwFlags, dwContext: DWORD): BOOL; stdcall;
+  InternetReadFile : function(hFile: HINTERNET; lpBuffer: Pointer;
+    dwNumberOfBytesToRead: DWORD; var lpdwNumberOfBytesRead: DWORD): BOOL; stdcall;
+  InternetCloseHandle : function(hInet: HINTERNET): BOOL; stdcall;
 
 var
   SessionHandle : HINTERNET;
@@ -1748,21 +1754,36 @@ begin
 
 end;
 
-function ShellExecuteA(hWnd: HWND; Operation, FileName, Parameters,
-  Directory: PAnsiChar; ShowCmd: Integer): HINST; stdcall;  external 'shell32.dll';
+var
+  IsNetInit : boolean;
 
 procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+var
+  ShellEx : function(hWnd: HWND; Operation, FileName, Parameters, Directory: PAnsiChar; ShowCmd: Integer): HINST; stdcall;
+  H : HModule;
 begin
   if InBrowser then
   begin
     //Workaround for mouse/key-up messages being lost
     FillChar(Keys,SizeOf(Keys),0);
-    ShellExecuteA(0, PAnsiChar('open'),Url, nil, nil, SW_SHOWDEFAULT);
+    ShellEx := GetProcAddress( LoadLibrary('shell32.dll'), 'ShellExecuteA');
+    ShellEx(0, PAnsiChar('open'),Url, nil, nil, SW_SHOWDEFAULT);
   end
   else
   begin
     if SessionHandle=nil then
     begin
+      if not IsNetInit then
+      begin
+        IsNetInit := True;
+        H := LoadLibrary(winetdll);
+        InternetOpenA := GetProcAddress(H,'InternetOpenA');
+        InternetSetStatusCallback := GetProcAddress(H,'InternetSetStatusCallback');
+        InternetOpenUrlA := GetProcAddress(H,'InternetOpenUrlA');
+        InternetQueryDataAvailable := GetProcAddress(H,'InternetQueryDataAvailable');
+        InternetReadFile := GetProcAddress(H,'InternetReadFile');
+        InternetCloseHandle := GetProcAddress(H,'InternetCloseHandle');
+      end;
       SessionHandle := InternetOpenA(PAnsiChar('ZGE'),
         INTERNET_OPEN_TYPE_PRECONFIG,
         nil,nil,INTERNET_FLAG_ASYNC);

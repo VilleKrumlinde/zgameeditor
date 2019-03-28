@@ -2656,7 +2656,7 @@ begin
   try
     M.LoadFromFile( ExeFile );
 
-    R := M.FindResource('10','DATA_FILE',1053);
+    R := M.FindResource('10','42',1053);
     Assert(R<>nil);
 
     NewData := TMemoryStream.Create;
