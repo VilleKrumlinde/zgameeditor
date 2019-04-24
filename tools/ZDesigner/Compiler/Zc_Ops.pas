@@ -1104,7 +1104,7 @@ begin
         'Z','B' : I := 2;
         'W','A' : I := 3;
       else
-        I := 0;
+        raise ECodeGenError.Create('Unknown identifier: ' + Op.Id);
       end;
       Result := MakeArrayAccess(Op.Children.First);
       Result.Children.Add( TZcOpLiteral.Create(zctInt,I) );
