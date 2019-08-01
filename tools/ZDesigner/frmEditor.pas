@@ -2603,17 +2603,23 @@ begin
     EvalEdit.Tag := Self.EvalHistory.Count-1;
     Self.ParseEvalExpression( EvalEdit.Text );
   end;
-  if Key=VK_UP then
+  if EvalHistory.Count>0 then
   begin
-    EvalEdit.Tag := Abs( (EvalEdit.Tag - 1) mod EvalHistory.Count);
-    EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
-    Key := 0;
-  end;
-  if Key=VK_DOWN then
-  begin
-    EvalEdit.Tag := Abs( (EvalEdit.Tag + 1) mod EvalHistory.Count);
-    EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
-    Key := 0;
+    if Key=VK_UP then
+    begin
+      if EvalEdit.Tag=0 then
+        EvalEdit.Tag := EvalHistory.Count-1
+      else
+        EvalEdit.Tag := (EvalEdit.Tag - 1) mod EvalHistory.Count;
+      EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
+      Key := 0;
+    end;
+    if Key=VK_DOWN then
+    begin
+      EvalEdit.Tag := (EvalEdit.Tag + 1) mod EvalHistory.Count;
+      EvalEdit.Text := EvalHistory[ EvalEdit.Tag ];
+      Key := 0;
+    end;
   end;
 end;
 
