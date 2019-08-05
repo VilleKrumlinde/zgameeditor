@@ -88,6 +88,7 @@ const
   WM_MOUSEWHEEL       = $020A;
   WM_LBUTTONDBLCLK    = $0203;
 
+  BM_GETCHECK = $00F0;
   BM_SETCHECK = $00F1;
   CBN_SELCHANGE  = 1;
 
@@ -1412,76 +1413,72 @@ const
   ID_CHECKBOX = 101;  // ID number of the checkbox.
 
 
-function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint): Bool; stdcall;
+function Options(Dialog: HWnd; Message, WParam: Longint; LParam: Longint) : BOOL; stdcall;
 const
   xstr = 'x'#0;
-  DesktopStr : ansistring = 'Use Desktop resolution'#0;
-  App : TZApplication = nil;
+  DesktopStr: AnsiString = 'Use Desktop resolution'#0;
+  App: TZApplication = nil;
 var
-  I : integer;
-  Tmp1 : array[0..10] of AnsiChar;
-  Str : array[0..100] of AnsiChar;
-  R : TRect;
+  I: Integer;
+  Tmp1: array [0 .. 10] of AnsiChar;
+  Str: array [0 .. 100] of AnsiChar;
+  R: TRect;
 begin
-//  Result := True;
+  // Result := True;
   case Message of
-    wm_InitDialog:
-    begin
-      App := TZApplication(LParam);
-      for I := 0 to High(ScreenModes) do
+    WM_INITDIALOG:
       begin
-        if I=0 then
-          ZStrCopy(Str,PAnsiChar(DesktopStr))
-        else
+        App := TZApplication(LParam);
+        for I := 0 to High(ScreenModes) do
         begin
-          ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Str));
-          ZStrCat(Str,xstr);
-          ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
-          ZStrCat(Str,Tmp1);
+          if I = 0 then
+            ZStrCopy(Str, PAnsiChar(DesktopStr))
+          else
+          begin
+            ZStrConvertInt(ScreenModes[I].W, PAnsiChar(@Str));
+            ZStrCat(Str, xstr);
+            ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
+            ZStrCat(Str, Tmp1);
+          end;
+          SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
         end;
-        SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
+        SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_SETCURSEL, byte(App.ScreenMode), 0);
+
+        SendDlgItemMessageA(Dialog, ID_CHECKBOX, BM_SETCHECK, Ord(App.Fullscreen), 0);
+
+        // Center on screen
+        GetWindowRect(GetDesktopWindow, R);
+        SetWindowPos(Dialog, HWND_TOP, (R.Right div 2) - 104,
+          (R.Bottom div 2) - 60, 0, 0, // Ignores size arguments.
+          SWP_NOSIZE);
       end;
-      SendDlgItemMessageA(Dialog,ID_COMBOBOX,CB_SETCURSEL,byte(App.ScreenMode),0);
 
-      //Center on screen
-      GetWindowRect(GetDesktopWindow, R);
-      SetWindowPos(Dialog,
-                 HWND_TOP,
-                 (R.right div 2) - 104,
-                 (R.bottom div 2) - 60,
-                 0, 0,          // Ignores size arguments.
-                 SWP_NOSIZE);
+    WM_COMMAND:
+      begin
+        case LoWord(WParam) of
+          ID_OK, ID_CANCEL:
+            begin
+              EndDialog(Dialog, LoWord(WParam));
+              // Exit;
+            end;
 
-    end;
+          ID_CHECKBOX:
+            begin
+              App.Fullscreen := SendDlgItemMessageA(Dialog, ID_CHECKBOX, BM_GETCHECK, 0, 0)<>0;
+            end;
 
-    wm_Command:
-    begin
-      case LoWord(WParam) of
-        ID_OK,ID_CANCEL:
-        begin
-          EndDialog(Dialog, LoWord(WParam));
-          //Exit;
+          ID_COMBOBOX:
+            case HiWord(WParam) of
+              CBN_SELCHANGE:
+                byte(App.ScreenMode) := SendMessage(LParam, CB_GETCURSEL, 0, 0);
+            end;
         end;
-
-        ID_CHECKBOX:
-        begin
-          App.Fullscreen := not App.Fullscreen;
-          SendMessage(LParam, BM_SETCHECK, Ord(App.Fullscreen), 0);
-        end;
-
-        ID_COMBOBOX:
-        case HiWord(WParam) of
-          CBN_SELCHANGE:
-            byte(App.ScreenMode) := SendMessage(LParam,CB_GETCURSEL,0,0);
-        end;
-
       end;
-    end;
   end;
   Result := False;
 end;
 
-function Platform_ShowOptionDialog(App : pointer) : boolean;
+function Platform_ShowOptionDialog(App: pointer) : boolean;
 begin
   Result := DialogBoxParamA(0, PAnsiChar('IDDLG_OPTIONSDIALOG'), 0,@Options,NativeInt(App))=ID_OK;
 end;
