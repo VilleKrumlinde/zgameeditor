@@ -3,8 +3,9 @@ unit frmShaderPropEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmCustomPropEditBase, Vcl.StdCtrls, SynEdit;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
+  SynEdit, frmCustomPropEditBase;
 
 type
   TShaderPropEditForm = class(TCustomPropEditBaseForm)
@@ -14,9 +15,7 @@ type
     procedure FormCreate(Sender: TObject);
   private
     procedure OnShaderExprChanged(Sender: TObject);
-    { Private declarations }
   public
-    { Public declarations }
     ShaderSynEdit : TSynEdit;
     procedure SaveChanges; override;
   end;
@@ -25,14 +24,15 @@ implementation
 
 {$R *.dfm}
 
-uses dmCommon, SynHighlighterCpp, SynEditSearch;
+uses
+  dmCommon, SynHighlighterGLSL, SynEditSearch;
 
 procedure TShaderPropEditForm.FormCreate(Sender: TObject);
 begin
   inherited;
 
   ShaderSynEdit := TSynEdit.Create(Self);
-  ShaderSynEdit.Highlighter := TSynCppSyn.Create(Self);
+  ShaderSynEdit.Highlighter := TSynGLSLSyn.Create(Self);
   ShaderSynEdit.Align := alClient;
   ShaderSynEdit.Gutter.Visible := True;
   ShaderSynEdit.Gutter.ShowLineNumbers := True;
