@@ -41,9 +41,6 @@ inherited ShaderPropEditForm: TShaderPropEditForm
       TabOrder = 0
       Transparent = False
       Visible = False
-      ExplicitLeft = 90
-      ExplicitTop = 188
-      ExplicitWidth = 305
     end
   end
   object CompileShaderButton: TButton
