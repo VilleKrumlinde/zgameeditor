@@ -19,6 +19,16 @@ inherited ShaderPropEditForm: TShaderPropEditForm
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = '&Shader editor'
     TabOrder = 1
+    object Splitter: TSplitter
+      Left = 2
+      Top = 189
+      Width = 554
+      Height = 3
+      Cursor = crVSplit
+      Align = alBottom
+      ExplicitTop = 15
+      ExplicitWidth = 177
+    end
     object CompileErrorLabel: TStaticText
       Left = 2
       Top = 192
@@ -33,7 +43,7 @@ inherited ShaderPropEditForm: TShaderPropEditForm
       Color = clWhite
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clRed
-      Font.Height = -20
+      Font.Height = -16
       Font.Name = 'MS Sans Serif'
       Font.Style = []
       ParentColor = False

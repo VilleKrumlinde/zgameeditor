@@ -168,9 +168,6 @@ object EditorForm: TEditorForm
           Color = clInactiveCaption
           TabOrder = 1
           OnKeyDown = EvalEditKeyDown
-          ExplicitLeft = 48
-          ExplicitTop = 88
-          ExplicitWidth = 121
         end
       end
       object PropEditParentPanel: TPanel
@@ -289,10 +286,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -1091,7 +1084,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 96
     Bitmap = {
-      494C01010F001100040010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C01010F0018000C0010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1803,7 +1796,7 @@ object EditorForm: TEditorForm
     Left = 208
     Top = 152
     Bitmap = {
-      494C01010C001100040010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C01010C0018000C0010001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -662,6 +662,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
 
     F.ShaderPanel.Caption := F.ShaderPanel.Caption + ' (' + Prop.Name + ')';
     F.ShaderSynEdit.Text := String(Component.GetProperty(Prop).StringValue);
+    F.ShaderSynEdit.ResetModificationIndicator;
 
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
@@ -2283,7 +2284,7 @@ begin
     SetFileChanged(True);
     try
       (F.Component as TShader).UseShader; //Force a compile
-      F.CompileErrorLabel.Hide;
+      F.HideError;
       glUseProgram(0); //Then turn it off
       OnPropValueChange;
       if F.Component=Self.Tree.ZSelected.Component then
@@ -2291,9 +2292,7 @@ begin
     except
       on E : EShaderException do
       begin
-        F.CompileErrorLabel.Caption := E.Message;
-        F.CompileErrorLabel.Hint := E.Message;
-        F.CompileErrorLabel.Show;
+        F.ShowError(E.Message);
       end;
     end;
   end;
