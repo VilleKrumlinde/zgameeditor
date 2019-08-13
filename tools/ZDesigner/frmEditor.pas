@@ -646,6 +646,7 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F.ExprPanel.Caption := F.ExprPanel.Caption + ' (' + Prop.Name + ')';
 
     F.ExprSynEdit.Text := Component.GetProperty(Prop).ExpressionValue.Source;
+    F.ExprSynEdit.ResetModificationIndicator;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
     F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
@@ -2347,9 +2348,7 @@ begin
         F.ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
         F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
-        F.CompileErrorLabel.Caption := E.Message;
-        F.CompileErrorLabel.Hint := E.Message;
-        F.CompileErrorLabel.Show;
+        F.ShowError(E.Message);
         Log.Write(E.Message);
       end;
     end;
@@ -2364,7 +2363,7 @@ begin
       end else
       begin
         F.CompileErrorLabel.BevelKind := bkTile;
-        F.CompileErrorLabel.Caption := E.Message;
+        F.ShowError(E.Message);
         Log.Write(E.Message);
       end;
     end;
@@ -2372,9 +2371,7 @@ begin
 //  Tree.RefreshNode(Tree.Selected,Selected);
   if Success then
   begin
-    F.CompileErrorLabel.Caption := '';
-    F.CompileErrorLabel.BevelKind := bkNone;
-    F.CompileErrorLabel.Hide;
+    F.HideError;
     if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
       ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
@@ -4160,19 +4157,25 @@ var
     I : integer;
     Arg : TZcOpArgumentVar;
   begin
-    Result := Func.Id + '(';
+    Result := '\style{+B}' + Func.Id + '\style{-B}(';
 
     for I := 0 to Func.Arguments.Count - 1 do
     begin
       Arg := Func.Arguments[I] as TZcOpArgumentVar;
-      if I>0 then
-        Result := Result + ',';
+      if I > 0 then
+        Result := Result + ', ';
       if Arg.Typ.IsPointer then
         Result := Result + 'ref ';
       if Arg.Typ.Kind=zctArray then
       begin
-        Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[] ' + Arg.Id;
+        if Arg.Id = '' then
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[]'
+        else
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[] ' + Arg.Id;
       end else
+      if Arg.Id = '' then
+        Result := Result + GetZcTypeName(Arg.Typ)
+      else
         Result := Result + GetZcTypeName(Arg.Typ) + ' ' + Arg.Id;
     end;
     Result := Result + ') : ' + GetZcTypeName(Func.ReturnType);
@@ -4319,7 +4322,7 @@ begin
   else
   begin
     //List global identifiers
-    ZApp.SymTab.Iterate(AutoCompAddOne,Comp);
+    ZApp.SymTab.Iterate(AutoCompAddOne, Comp);
     InAdd(['CurrentModel','this','string','int','float','while','for','vec2','vec3','vec4','mat4']);
   end;
   (Comp.ItemList as TStringList).Sort;

@@ -49,15 +49,14 @@ begin
   ShaderSynEdit.Highlighter := TSynGLSLSyn.Create(Self);
   ShaderSynEdit.Align := alClient;
   ShaderSynEdit.Gutter.Visible := True;
-  ShaderSynEdit.Gutter.ShowLineNumbers := True;
+  ShaderSynEdit.Gutter.ShowModification := True;
+  ShaderSynEdit.Gutter.ShowLineNumbers := False;
   ShaderSynEdit.Parent := ShaderPanel;
   ShaderSynEdit.OnChange := OnShaderExprChanged;
   ShaderSynEdit.OnMouseMove := EditorMouseMove;
   ShaderSynEdit.OnStatusChange := EditorStatusChange;
   ShaderSynEdit.OnSpecialLineColors := EditorSpecialLineColors;
   ShaderSynEdit.OnGutterPaint := EditorGutterPaint;
-  ShaderSynEdit.Gutter.ShowModification := True;
-  ShaderSynEdit.Gutter.ShowLineNumbers := False;
   ShaderSynEdit.WantTabs := True;
   ShaderSynEdit.TabWidth := 2;
   ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
@@ -88,20 +87,20 @@ begin
 
   // eventualy invalid old highlighted line
   if FUnderLine > 0 then
-    ShaderSynEdit.InvalidateLine(FUnderLine);
+    TSynEdit(Sender).InvalidateLine(FUnderLine);
 
   // check whether word in line should be shown as "link"
   if ssCtrl in Shift then
   begin
     // extract current line
-    MouseCoord := ShaderSynEdit.PixelsToRowColumn(X, Y);
-    UnderLine := ShaderSynEdit.DisplayToBufferPos(MouseCoord).Line;
+    MouseCoord := TSynEdit(Sender).PixelsToRowColumn(X, Y);
+    UnderLine := TSynEdit(Sender).DisplayToBufferPos(MouseCoord).Line;
 
     // check if line is different to previous line and eventually invalidate
     if UnderLine <> FUnderLine then
     begin
       FUnderLine := UnderLine;
-      ShaderSynEdit.InvalidateLine(FUnderLine);
+      TSynEdit(Sender).InvalidateLine(FUnderLine);
     end;
   end
   else

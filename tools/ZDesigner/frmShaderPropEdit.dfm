@@ -26,6 +26,7 @@ inherited ShaderPropEditForm: TShaderPropEditForm
       Height = 3
       Cursor = crVSplit
       Align = alBottom
+      Visible = False
       ExplicitTop = 15
       ExplicitWidth = 177
     end
