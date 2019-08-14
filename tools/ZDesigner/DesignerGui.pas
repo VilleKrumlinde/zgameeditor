@@ -91,7 +91,7 @@ type
 procedure GetAllObjects(C : TZComponent; List : TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
 function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
-procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList; IncomingAll : TObjectList = nil);
 function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
 function ZColorToColor(C : TZColorf) : TColor;
@@ -1149,7 +1149,7 @@ begin
   C.GetAllChildren(List,True);
 end;
 
-procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList; IncomingAll : TObjectList = nil);
 //Returns all objects that refers to component Target
 var
   PropList : TZPropertyList;
@@ -1159,9 +1159,14 @@ var
   All : TObjectList;
   C : TZComponent;
 begin
-  All := TObjectList.Create(False);
-  try
+  if IncomingAll=nil then
+  begin
+    All := TObjectList.Create(False);
     GetAllObjects(Root,All);
+  end
+  else
+    All := IncomingAll;
+  try
     for I := 0 to All.Count-1 do
     begin
       C := TZComponent(All[I]);
@@ -1182,30 +1187,35 @@ begin
       end;
     end;
   finally
-    All.Free;
+    if IncomingAll=nil then
+      All.Free;
   end;
 end;
 
 function HasReferers(Root, Target : TZComponent; Deep : boolean = True) : boolean;
 var
-  TargetList,List : TObjectList;
+  TargetList,List,All : TObjectList;
   I,J : integer;
   C : TZComponent;
 begin
   TargetList:= TObjectList.Create(False);
   List:=TObjectList.Create(False);
+  All:=TObjectList.Create(False);
   try
     //Hämta alla barnen till Target
     if Deep then
       GetAllObjects(Target,TargetList)
     else
       TargetList.Add(Target);
+    GetAllObjects(Root,All);
     for I := 0 to TargetList.Count-1 do
     begin
       //Kolla alla barnen om det finns referens som är utanför targetlist
       C := TargetList[I] as TZComponent;
+      if Length(C.Name)=0 then
+        Continue; //Not possible to have reference to unnamed component?
       List.Clear;
-      GetReferersTo(Root,C,List);
+      GetReferersTo(Root,C,List,All);
       for J := 0 to List.Count-1 do
       begin
         if TargetList.IndexOf(List[J])=-1 then
@@ -1219,6 +1229,7 @@ begin
   finally
     List.Free;
     TargetList.Free;
+    All.Free;
   end;
 end;
 

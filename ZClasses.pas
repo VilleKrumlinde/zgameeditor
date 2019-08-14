@@ -2521,7 +2521,7 @@ var
   begin
     Mem := TMemoryStream.Create;
     try
-      Zs := TCompressionStream.Create(clMax,Mem);
+      Zs := TCompressionStream.Create(clDefault,Mem);
       try
         Zs.Write(BinaryValue.Data^,BinaryValue.Size)
       finally
