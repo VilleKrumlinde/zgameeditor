@@ -2135,10 +2135,13 @@ begin
     for I := 0 to L.Count-1 do
     begin
       C := TZComponent(L[I]);
-      if (C is TContent) or
-        (C is TShader) or
-        (C is TMaterial) or
-        ((C is TDefineVariableBase) and not (C is TDefineConstant))then
+
+      if (Length(C.Name)>0)
+        and (not (C is TDefineConstant))
+        and (not (C is TCommand))
+        and (not (C is TZApplication))
+        and (not (C is TLogicalGroup))
+      then
       begin
         if not Counts.ContainsKey(C) then
           Counts.Add(C,0);
@@ -2154,9 +2157,7 @@ begin
               Value := C.GetProperty(Prop);
               if Value.ComponentValue=nil then
                 Continue;
-              if not Counts.ContainsKey(Value.ComponentValue) then
-                Counts.Add(Value.ComponentValue,0);
-              Counts[Value.ComponentValue] := Counts[Value.ComponentValue]+1;
+              Counts.AddOrSetValue(Value.ComponentValue,1);
             end;
         end;
       end;
@@ -2165,7 +2166,7 @@ begin
     S := '';
     for C in Counts.Keys do
     begin
-      if Counts[C]=0 then
+      if (Counts[C]=0) and (not HasReferers(Root,C)) then
       begin
         if S='' then
           S := string(C.Name)
