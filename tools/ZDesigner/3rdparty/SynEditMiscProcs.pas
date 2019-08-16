@@ -45,30 +45,22 @@ unit SynEditMiscProcs;
 interface
 
 uses
-{$IFDEF SYN_CLX}
-  Types,
-  kTextDrawer,
-  QGraphics,
-  QSynEditTypes,
-  QSynEditHighlighter,
-  QSynUnicode,
-{$ELSE}
   Windows,
-  Vcl.Graphics,
+  Graphics,
   SynEditTypes,
   SynEditHighlighter,
   SynUnicode,
-{$ENDIF}
 {$IFDEF SYN_COMPILER_4_UP}
   Math,
 {$ENDIF}
   Classes;
 
-const MaxListSize = 1000000; //Ville
+const
+  MaxIntArraySize = MaxInt div 16;
 
 type
   PIntArray = ^TIntArray;
-  TIntArray = array[0..MaxListSize - 1] of Integer;
+  TIntArray = array[0..MaxIntArraySize - 1] of Integer;
 
 {$IFNDEF SYN_COMPILER_4_UP}
 function Max(x, y: Integer): Integer;
@@ -80,11 +72,9 @@ procedure SwapInt(var l, r: Integer);
 function MaxPoint(const P1, P2: TPoint): TPoint;
 function MinPoint(const P1, P2: TPoint): TPoint;
 
-function GetIntArray(Count: Cardinal; InitialValue: integer): PIntArray;
+function GetIntArray(Count: Cardinal; InitialValue: Integer): PIntArray;
 
-{$IFNDEF SYN_CLX}
 procedure InternalFillRect(dc: HDC; const rcPaint: TRect);
-{$ENDIF}
 
 // Converting tabs to spaces: To use the function several times it's better
 // to use a function pointer that is set to the fastest conversion function.
@@ -148,13 +138,6 @@ function StringReplace(const S, OldPattern, NewPattern: UnicodeString;
   Flags: TReplaceFlags): UnicodeString;
 {$ENDIF}
 
-{$IFDEF SYN_CLX}
-function GetRValue(RGBValue: TColor): byte;
-function GetGValue(RGBValue: TColor): byte;
-function GetBValue(RGBValue: TColor): byte;
-function RGB(r, g, b: Byte): Cardinal;
-{$ENDIF}
-
 type
   THighlighterAttriProc = function (Highlighter: TSynCustomHighlighter;
     Attri: TSynHighlighterAttributes; UniqueAttriName: string;
@@ -172,8 +155,9 @@ function EnumHighlighterAttris(Highlighter: TSynCustomHighlighter;
 function CalcFCS(const ABuf; ABufSize: Cardinal): Word;
 {$ENDIF}
 
-procedure SynDrawGradient(const ACanvas: TCanvas; const AStartColor, AEndColor: TColor;
-  ASteps: Integer; const ARect: TRect; const AHorizontal: Boolean);
+procedure SynDrawGradient(const ACanvas: TCanvas; const AStartColor,
+  AEndColor: TColor; ASteps: Integer; const ARect: TRect;
+  const AHorizontal: Boolean); overload;
 
 function DeleteTypePrefixAndSynSuffix(S: string): string;
 
@@ -181,11 +165,7 @@ implementation
 
 uses
   SysUtils,
-  {$IFDEF SYN_CLX}
-  QSynHighlighterMulti;
-  {$ELSE}
   SynHighlighterMulti;
-  {$ENDIF}
 
 {$IFNDEF SYN_COMPILER_4_UP}
 function Max(x, y: Integer): Integer;
@@ -247,12 +227,10 @@ begin
   end;
 end;
 
-{$IFNDEF SYN_CLX}
 procedure InternalFillRect(dc: HDC; const rcPaint: TRect);
 begin
   ExtTextOut(dc, 0, 0, ETO_OPAQUE, @rcPaint, nil, 0, nil);
 end;
-{$ENDIF}
 
 // Please don't change this function; no stack frame and efficient register use.
 function GetHasTabs(pLine: PWideChar; var CharsBefore: Integer): Boolean;
@@ -262,7 +240,8 @@ begin
   begin
     while pLine^ <> #0 do 
     begin
-      if pLine^ = #9 then break;
+      if pLine^ = #9 then
+        Break;
       Inc(CharsBefore);
       Inc(pLine);
     end;
@@ -280,7 +259,7 @@ var
   nBeforeTab: Integer;
 begin
   Result := Line;  // increment reference count only
-  if GetHasTabs(pointer(Line), nBeforeTab) then
+  if GetHasTabs(Pointer(Line), nBeforeTab) then
   begin
     HasTabs := True;
     pDest := @Result[nBeforeTab + 1]; // this will make a copy of Line
@@ -309,7 +288,7 @@ var
   pSrc, pDest: PWideChar;
 begin
   Result := Line;  // increment reference count only
-  if GetHasTabs(pointer(Line), DestLen) then
+  if GetHasTabs(Pointer(Line), DestLen) then
   begin
     HasTabs := True;
     pSrc := @Line[1 + DestLen];
@@ -354,7 +333,7 @@ begin
             pDest^ := pSrc^;
             Inc(pDest);
           until (pSrc^ = #0);
-          exit;
+          Exit;
         end;
       end
       else
@@ -384,7 +363,7 @@ var
   pSrc, pDest: PWideChar;
 begin
   Result := Line;  // increment reference count only
-  if GetHasTabs(pointer(Line), DestLen) then
+  if GetHasTabs(Pointer(Line), DestLen) then
   begin
     HasTabs := True;
     pSrc := @Line[1 + DestLen];
@@ -425,7 +404,7 @@ begin
             pDest^ := pSrc^;
             Inc(pDest);
           until (pSrc^ = #0);
-          exit;
+          Exit;
         end;
       end
       else
@@ -454,7 +433,8 @@ var
 begin
   nW := 2;
   repeat
-    if (nW >= TabWidth) then break;
+    if (nW >= TabWidth) then
+      Break;
     Inc(nW, nW);
   until (nW >= $10000);  // we don't want 64 kByte spaces...
   Result := (nW = TabWidth);
@@ -503,7 +483,7 @@ begin
 // possible sanity check here: Index := Max(Index, Length(Line));
   if Index > 1 then
   begin
-    if (TabWidth <= 1) or not GetHasTabs(pointer(Line), iChar) then
+    if (TabWidth <= 1) or not GetHasTabs(Pointer(Line), iChar) then
       Result := Index
     else
     begin
@@ -523,7 +503,7 @@ begin
             #0:
               begin
                 Inc(Result, Index);
-                break;
+                Break;
               end;
             #9:
               begin
@@ -555,7 +535,7 @@ begin
   InsideTabChar := False;
   if Position > 1 then
   begin
-    if (TabWidth <= 1) or not GetHasTabs(pointer(Line), iPos) then
+    if (TabWidth <= 1) or not GetHasTabs(Pointer(Line), iPos) then
       Result := Position
     else
     begin
@@ -571,16 +551,18 @@ begin
         while iPos < Position do
         begin
           case pNext^ of
-            #0: break;
-            #9: begin
-                  Inc(iPos, TabWidth);
-                  Dec(iPos, iPos mod TabWidth);
-                  if iPos > Position then
-                  begin
-                    InsideTabChar := True;
-                    break;
-                  end;
+            #0:
+              Break;
+            #9:
+              begin
+                Inc(iPos, TabWidth);
+                Dec(iPos, iPos mod TabWidth);
+                if iPos > Position then
+                begin
+                  InsideTabChar := True;
+                  Break;
                 end;
+              end;
             else
               Inc(iPos);
           end;
@@ -606,7 +588,7 @@ begin
       if IsOfCategory(p^) then
       begin
         Result := Start;
-        exit;
+        Exit;
       end;
       Inc(p);
       Inc(Start);
@@ -722,7 +704,7 @@ begin
   while Result > 0 do
   begin
     if (S[Result] <> #0) and (StrScan(P, S[Result]) <> nil) then
-      exit;
+      Exit;
     Dec(Result);
   end;
 end;
@@ -767,36 +749,6 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF SYN_CLX}
-type
-  TColorRec = packed record
-    Blue: Byte;
-    Green: Byte;
-    Red: Byte;
-    Unused: Byte;
-  end;
-
-function GetRValue(RGBValue: TColor): byte;
-begin
-  Result := TColorRec(RGBValue).Red;
-end;
-
-function GetGValue(RGBValue: TColor): byte;
-begin
-  Result := TColorRec(RGBValue).Green;
-end;
-
-function GetBValue(RGBValue: TColor): byte;
-begin
-  Result := TColorRec(RGBValue).Blue;
-end;
-
-function RGB(r, g, b: Byte): Cardinal;
-begin
-  Result := (r or (g shl 8) or (b shl 16));
-end;
-{$ENDIF}
-
 function DeleteTypePrefixAndSynSuffix(S: string): string;
 begin
   Result := S;
@@ -820,7 +772,7 @@ begin
     if HighlighterList[i] = Highlighter then
       Exit
     else if Assigned(HighlighterList[i]) and (TObject(HighlighterList[i]).ClassType = Highlighter.ClassType) then
-      inc(Result);
+      Inc(Result);
 end;
 
 function InternalEnumHighlighterAttris(Highlighter: TSynCustomHighlighter;
