@@ -21,6 +21,16 @@ inherited ExprPropEditForm: TExprPropEditForm
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = '&Code editor'
     TabOrder = 1
+    object Splitter: TSplitter
+      Left = 2
+      Top = 183
+      Width = 600
+      Height = 3
+      Cursor = crVSplit
+      Align = alBottom
+      Visible = False
+      ExplicitTop = 182
+    end
     object CompileErrorLabel: TStaticText
       Left = 2
       Top = 186
