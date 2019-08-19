@@ -55,6 +55,7 @@ type
     procedure StackPopTo(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     procedure StackPopToPointer(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     function StackPopFloat : single;
+    function StackPopAndGetPtr(const Count : integer) : PStackElement; inline;
   public
     function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
     procedure StackPush(const X); {$IFDEF RELEASE}inline;{$ENDIF}
@@ -567,6 +568,12 @@ procedure TExecutionEnvironment.Init;
 begin
   ZcStackPtr := @ZcStack;
   gCurrentBP := 0;
+end;
+
+function TExecutionEnvironment.StackPopAndGetPtr(const Count: integer): PStackElement;
+begin
+  Dec(ZcStackPtr,Count);
+  Result := ZcStackPtr;
 end;
 
 function TExecutionEnvironment.StackGetDepth : integer;
@@ -2198,7 +2205,7 @@ begin
   {$else}
   StackOffs := 8;
   {$endif}
-  
+
   FloatI := 0; IntI := 0;
   for I := 0 to ArgCount-1 do
   begin
@@ -2207,7 +2214,7 @@ begin
     {$ifdef MSWINDOWS}
     //MS-calling convention uses registers for 4 first parameters only, regardless of float or int.
     //Rest of the world uses 6 int + 8 float registers depending on argument types.
-    FloatI := I; 
+    FloatI := I;
     IntI := I;
     {$endif}
 
@@ -2279,7 +2286,7 @@ begin
       Inc(StackOffs, 8);
     end;
 
-    Inc(Offs, SizeOf(NativeInt) );
+    Inc(Offs, SizeOf(TExecutionEnvironment.TStackElement) );
   end;
 
   W([$49,$bb]); //mov r11,x
@@ -2298,9 +2305,7 @@ type
   TFunc = function(Args : pointer) : NativeUInt;
   PFunc = ^TFunc;
 var
-  I : integer;
   RetVal : NativeUInt;
-  Args : array[0..31] of NativeInt;
 begin
   if Self.Proc=nil then
   begin
@@ -2314,14 +2319,7 @@ begin
     {$endif}
   end;
 
-  //Transfer arguments from Zc-stack to hardware stack
-  for I := ArgCount-1 downto 0 do
-    if GetZcTypeSize(TZcDataTypeKind(Ord(Self.ArgTypes[I])-1))=SizeOf(Pointer) then
-      Env.StackPopToPointer(Args[I])
-    else
-      Env.StackPopTo(Args[I]);
-
-  Retval := TFunc(Self.Trampoline)(@Args);
+  Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
 
   if Self.ReturnType.Kind<>zctVoid then
   begin
