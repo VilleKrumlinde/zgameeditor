@@ -4199,8 +4199,17 @@ begin
   end
   else
     Desc := S;
-  C.ItemList.Add(Desc);
+  C.ItemList.AddObject(Desc,TObject(PChar(Ins)));
   C.InsertList.Add(Ins);
+end;
+
+function AutoCompSort(List: TStringList; Index1, Index2: Integer): Integer;
+var
+  P1, P2 : PChar;
+begin
+  P1 := PChar(List.Objects[Index1]);
+  P2 := PChar(List.Objects[Index2]);
+  Result := CompareText( String(P1), String(P2) );
 end;
 
 procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
@@ -4221,7 +4230,7 @@ var
     for S in Items do
     begin
       Comp.InsertList.Add(S);
-      Comp.ItemList.Add(S);
+      Comp.ItemList.AddObject(S,TObject(PChar(S)));
     end;
   end;
 
@@ -4326,8 +4335,8 @@ begin
     ZApp.SymTab.Iterate(AutoCompAddOne, Comp);
     InAdd(['CurrentModel','this','string','int','float','while','for','vec2','vec3','vec4','mat4']);
   end;
-  (Comp.ItemList as TStringList).Sort;
   (Comp.InsertList as TStringList).Sort;
+  (Comp.ItemList as TStringList).CustomSort(AutoCompSort);
 end;
 
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
