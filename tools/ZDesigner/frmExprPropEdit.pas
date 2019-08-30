@@ -163,7 +163,7 @@ var
   SynEdit: TSynEdit;
   num: string;
   numRct: TRect;
-  GutterWidth, ImgIndex: Integer;
+  GutterWidth : Integer;
   OldFont: TFont;
 const
   CTickSizes : array [Boolean] of Integer = (2, 5);

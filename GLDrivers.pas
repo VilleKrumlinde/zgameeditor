@@ -620,12 +620,13 @@ begin
 
   glDisableClientState(GL_VERTEX_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
-  for I := CurrentMaterial.Textures.Count-1 downto 0 do
-  begin
-    if MultiTextureSupported then
-      glClientActiveTexture(GL_TEXTURE0 + I);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  end;
+  if CurrentMaterial<>nil then
+    for I := CurrentMaterial.Textures.Count-1 downto 0 do
+    begin
+      if MultiTextureSupported then
+        glClientActiveTexture(GL_TEXTURE0 + I);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    end;
   glDisableClientState(GL_COLOR_ARRAY);
 
   {$ifndef minimal}
