@@ -417,7 +417,6 @@ procedure CleanUp;
 procedure DesignerRenderStop;
 
 var
-  IsRendering : boolean;
   NormalsVisible : boolean;
   CollisionBoundsVisible : boolean;
 {$endif}

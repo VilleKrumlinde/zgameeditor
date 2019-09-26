@@ -4119,7 +4119,9 @@ begin
     if Threads=nil then
     begin
       {$ifdef zlog}
+      {$ifndef minimal}
       ZLog.GetLog(Self.ClassName).Write('Worker count: ' + IntToStr(WorkerCount));
+      {$endif}
       {$endif}
       IsMultiThread:=True; //Tell the Delphi mm that we are multithreaded
       //Create threads
