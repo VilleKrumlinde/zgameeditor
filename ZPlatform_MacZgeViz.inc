@@ -2,20 +2,22 @@
 
 //Mac version to be used with ZGameEditor Visualizer
 
+
+var
+  //Current mouse pos, written to in eventhandling
+  MacLastMouse : array[0..1] of integer;
+  MacKeys : array[0..511] of boolean;
+
+
 implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses AudioPlayer, ZApplication, SyncObjs, 
+uses AudioPlayer, ZApplication, SyncObjs, Classes,
   {$ifdef fpc}dl,CocoaAll{$else}Posix.Dlfcn{$endif}, ZOpenGL,
   {$ifndef minimal}Sysutils{$endif};
 
 var
-  //Current mouse pos, written to in eventhandling
-  SdlMousePos : TZPointi;
-  Keys : array[0..511] of boolean;
-  KeyMap : array[AnsiChar] of word;
-  gZApp: TZApplication;
   StartTime : double;
 
 {$ifndef minimal}
@@ -72,6 +74,7 @@ end;
 
 function Platform_IsKeyPressed(C : AnsiChar) : boolean;
 begin
+  Result := MacKeys[ Ord(C) ];
 end;
 
 function Platform_CommandLine(Switch : PAnsiChar) : boolean;
@@ -85,6 +88,8 @@ end;
 
 function Platform_GetMousePos : TZPointi;
 begin
+  Result.x := MacLastMouse[0];
+  Result.y := MacLastMouse[1];
 end;
 
 procedure Platform_SetMousePos(const X,Y : integer);
@@ -171,24 +176,9 @@ begin
   System.Close(F);
 end;
 
-procedure InitKeyMap;
-var
-  I : integer;
-begin
-  for I := 0 to 255 do
-    KeyMap[AnsiChar(I)] := I;
-  for I := ord('A') to ord('Z') do
-    KeyMap[AnsiChar(I)] := I + (ord('a')-ord('A'));;
-
-//  KeyMap[UpKey] := SDLK_UP;
-//  KeyMap[DownKey] := SDLK_DOWN;
-//  KeyMap[LeftKey] := SDLK_LEFT;
-//  KeyMap[RightKey] := SDLK_RIGHT;
-end;
-
 procedure Platform_InitGlobals;
 begin
-  InitKeyMap;
+  
 end;
 
 procedure Platform_InitAudio;
