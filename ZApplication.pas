@@ -89,7 +89,6 @@ type
     {$endif}
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
-    procedure UpdateStateVars;
     {$if (not defined(minimal)) or defined(android)}public{$ifend}
     function Main : boolean;
   protected
@@ -435,11 +434,6 @@ begin
   {$endif}
 end;
 
-procedure TZApplication.UpdateStateVars;
-begin
-  PZVector2f(@MousePosition)^ := NormalizeToScreen(Platform_GetMousePos);
-end;
-
 procedure TZApplication.CenterMouse;
 begin
   Platform_SetMousePos(ZApp.ScreenWidth shr 1,ZApp.ScreenHeight shr 1);
@@ -491,7 +485,9 @@ begin
 
     UpdateTime;
 
-    UpdateStateVars;
+    {$ifndef zgeviz}
+    PZVector2f(@MousePosition)^ := NormalizeToScreen(Platform_GetMousePos);
+    {$endif}
 
     Self.MainSlice;
 
