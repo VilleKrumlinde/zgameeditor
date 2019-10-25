@@ -11,7 +11,7 @@ FOR %%A IN (%*) DO (
   if "%%A"=="OSX" set zgeproduct=OSX
 )
 
-Delphi Berlin
+rem Delphi Berlin
 if "%BIT%"=="64" (
   set dcc="C:\Program Files (x86)\Embarcadero\Studio\18.0\bin\dcc64.exe"
   set commonparams=-B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr
@@ -49,11 +49,19 @@ rem -DZDEBUG to make debug player (large)
 
 if %zgeproduct%==NORMAL (
   rem Normal
-  %dcc% -DMINIMAL %commonparams% -GD
+  rem  %dcc% -DMINIMAL %commonparams% -GD
+
+  rem Bloated (required to avoid Windows antivirus to complain about false positive)
+  %dcc% -DZDEBUG -U.\tools\ZDesigner\3rdparty;.\3rdparty;.\tools\ZDesigner\Compiler;.\components;.\tools\ZDesigner -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner -NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Xml;Data;Datasnap;Web;Soap ZzDC.dpr -GD
+
   set playername=Player.bin
 ) else if %zgeproduct%==SS (
   rem Screensaver
-  %dcc% -DMINIMAL -Dzzdc_screensaver %commonparams%
+  rem %dcc% -DMINIMAL -Dzzdc_screensaver %commonparams%
+
+  rem Bloated (required to avoid Windows antivirus to complain about false positive)
+  %dcc% -DZDEBUG;zzdc_screensaver -U.\tools\ZDesigner\3rdparty;.\3rdparty;.\tools\ZDesigner\Compiler;.\components;.\tools\ZDesigner -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner -NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Xml;Data;Datasnap;Web;Soap ZzDC.dpr -GD
+
   set playername=Player_SS.bin
 ) else if %zgeproduct%==OSX (
   %dccosx% -DZZDC_SDL;DARWIN;UNIX;MINIMAL -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner ZzDC.dpr

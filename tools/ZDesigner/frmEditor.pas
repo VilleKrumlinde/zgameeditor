@@ -4158,7 +4158,7 @@ var
     I : integer;
     Arg : TZcOpArgumentVar;
   begin
-    Result := '\style{+B}' + Func.Id + '\style{-B}(';
+    Result := Func.Id + '(';
 
     for I := 0 to Func.Arguments.Count - 1 do
     begin
@@ -4201,15 +4201,6 @@ begin
     Desc := S;
   C.ItemList.AddObject(Desc,TObject(PChar(Ins)));
   C.InsertList.Add(Ins);
-end;
-
-function AutoCompSort(List: TStringList; Index1, Index2: Integer): Integer;
-var
-  P1, P2 : PChar;
-begin
-  P1 := PChar(List.Objects[Index1]);
-  P2 := PChar(List.Objects[Index2]);
-  Result := CompareText( String(P1), String(P2) );
 end;
 
 procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
@@ -4336,7 +4327,7 @@ begin
     InAdd(['CurrentModel','this','string','int','float','while','for','vec2','vec3','vec4','mat4']);
   end;
   (Comp.InsertList as TStringList).Sort;
-  (Comp.ItemList as TStringList).CustomSort(AutoCompSort);
+  (Comp.ItemList as TStringList).Sort;
 end;
 
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
