@@ -118,20 +118,20 @@ var
   SoundGraphReadIndex : integer;
   SoundGraphMaxLength : integer;
   SoundGraphPixelPos : integer;
-  SoundGraphBuffer : array[0..(5*AudioRate)*AudioPlayer.StereoChannels] of TSoundOutputUnit;
+  SoundGraphBuffer : array[0..(5*AudioRate)] of TSoundOutputUnit;
   SoundGraphBitmap : TBitmap;
   SoundGraphSavePenPos : array[0..StereoChannels-1] of TPoint;
 
 
-procedure ReceiveAudioFunc(P : pointer; SampleCount : integer);
+procedure ReceiveAudioFunc(P : pointer; FrameCount : integer);
 begin
   Platform_EnterMutex(SoundGraphMutex);
-    if SoundGraphWriteIndex+(SampleCount * AudioPlayer.StereoChannels)>SoundGraphMaxLength then
-      SampleCount := (SoundGraphMaxLength - SoundGraphWriteIndex) div AudioPlayer.StereoChannels;
-    if SampleCount>0 then
+    if SoundGraphWriteIndex+FrameCount>SoundGraphMaxLength then
+      FrameCount := (SoundGraphMaxLength - SoundGraphWriteIndex);
+    if FrameCount>0 then
     begin
-      Move( P^, SoundGraphBuffer[SoundGraphWriteIndex], SampleCount * SizeOf(TSoundOutputUnit) * AudioPlayer.StereoChannels);
-      Inc(SoundGraphWriteIndex,SampleCount * AudioPlayer.StereoChannels);
+      Move( P^, SoundGraphBuffer[SoundGraphWriteIndex], FrameCount * SizeOf(TSoundOutputUnit));
+      Inc(SoundGraphWriteIndex,FrameCount);
     end;
   Platform_LeaveMutex(SoundGraphMutex);
 end;
@@ -159,7 +159,7 @@ begin
   try
     SoundGraphWriteIndex := 0;
     SoundGraphReadIndex := 0;
-    SoundGraphMaxLength := Round(Min(NoteLength * AudioRate * StereoChannels,High(SoundGraphBuffer)));
+    SoundGraphMaxLength := Round(Min(NoteLength * AudioRate,High(SoundGraphBuffer)));
     SoundGraphPixelPos := 0;
     if SoundGraphBitmap=nil then
     begin
@@ -475,7 +475,7 @@ begin
 
 
     //Antal samples att stega i buffer för varje pixel
-    D := Round( (SoundGraphMaxLength/StereoChannels)/SoundGraphBitmap.Width );
+    D := Round( SoundGraphMaxLength/SoundGraphBitmap.Width );
     //Max antal pixels att rita under en timeranrop
     MaxDots := Round(Min(SoundGraphBitmap.Width div 5,50));
     SoundGraphBitmap.Canvas.Pen.Color := clRed;
@@ -486,22 +486,25 @@ begin
       (I<MaxDots) do
     begin
 
-      for J := 0 to StereoChannels-1 do
-      begin
-        FSample := SoundGraphBuffer[SoundGraphReadIndex+J];
+      FSample := SoundGraphBuffer[SoundGraphReadIndex].Left;
+      Y := (YSize + 0*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := SoundGraphSavePenPos[0];
+      if SoundGraphPixelPos=0 then
+        SoundGraphBitmap.Canvas.PenPos := Point(0,Y)
+      else
+        SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
+      SoundGraphSavePenPos[0] := SoundGraphBitmap.Canvas.PenPos;
 
-        Y := (YSize + J*(YSize*2)) -
-          Round(FSample * YSize);
+      FSample := SoundGraphBuffer[SoundGraphReadIndex].Right;
+      Y := (YSize + 1*(YSize*2)) - Round(FSample * YSize);
+      SoundGraphBitmap.Canvas.PenPos := SoundGraphSavePenPos[1];
+      if SoundGraphPixelPos=0 then
+        SoundGraphBitmap.Canvas.PenPos := Point(0,Y)
+      else
+        SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
+      SoundGraphSavePenPos[1] := SoundGraphBitmap.Canvas.PenPos;
 
-        SoundGraphBitmap.Canvas.PenPos := SoundGraphSavePenPos[J];
-        if SoundGraphPixelPos=0 then
-          SoundGraphBitmap.Canvas.PenPos := Point(0,Y)
-        else
-          SoundGraphBitmap.Canvas.LineTo(SoundGraphPixelPos,Y);
-        SoundGraphSavePenPos[J] := SoundGraphBitmap.Canvas.PenPos;
-      end;
-
-      Inc(SoundGraphReadIndex,D * StereoChannels);
+      Inc(SoundGraphReadIndex,D);
       Inc(SoundGraphPixelPos);
       Inc(I);
     end;

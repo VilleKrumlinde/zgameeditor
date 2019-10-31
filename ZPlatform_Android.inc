@@ -358,17 +358,17 @@ end;
 
 
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize * 2; //todo skip *2 when float output
+  MixBufferSamplesSize = SoundBufferFramesSize * 2; //todo skip *2 when float output
 var
-  MixBuffer : packed array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
+  MixBuffer : packed array[0..MixBufferFramesSize-1] of TSoundMixUnit;
   AudioTerminated : boolean;
 
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; SampleCount : integer);
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; FrameCount : integer);
 var
   I : integer;
   Val : integer;
 begin
-  for I := 0 to (SampleCount * StereoChannels)-1 do
+  for I := 0 to FrameCount-1 do
   begin //Convert from float to smallint. Todo: on Lollipop floats are accepted directly.
 
     //Fast version: no clipping
@@ -376,16 +376,26 @@ begin
 //    Dest^ := Val;
 
     //Slow version
-    Val := Round(Source^ * High(Smallint));
+    Val := Round(Source.Left^ * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then
       Dest^ := Low(SmallInt)
     else
       Dest^ := Val;
+    Inc(Dest);
+
+    Val := Round(Source.Right^ * High(Smallint));
+    if Val>High(Smallint) then
+      Dest^ := High(Smallint)
+    else if Val<Low(SmallInt) then
+      Dest^ := Low(SmallInt)
+    else
+      Dest^ := Val;
+    Inc(Dest);
 
     Inc(Source);
-    Inc(Dest);
+
   end;
 end;
 
@@ -396,25 +406,25 @@ end;}
 
 procedure MixAndCopyData(Destination : pointer; len: Integer);
 var
-  BytesToWrite,SamplesToWrite : integer;
+  BytesToWrite,FramesToWrite : integer;
 begin
   BytesToWrite := Len;
 
 //  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
-  SamplesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
+  FramesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
 
-  if SamplesToWrite*StereoChannels>High(MixBuffer) then
+  if FramesToWrite>High(MixBuffer) then
     //test for high limit on buffer
     Exit;
 
-  FillChar(MixBuffer,SamplesToWrite * StereoChannels * SizeOf(TSoundMixUnit),0);
+  FillChar(MixBuffer,FramesToWrite * SizeOf(TSoundMixUnit),0);
 
   Platform_EnterMutex(VoicesMutex);
-    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
+    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],FramesToWrite);
   Platform_LeaveMutex(VoicesMutex);
 
   //Flytta paint buffer till dma-soundbuffer
-  ClipAndCopy(@MixBuffer[0],Destination,SamplesToWrite);
+  ClipAndCopy(@MixBuffer[0],Destination,FramesToWrite);
 end;
 
 

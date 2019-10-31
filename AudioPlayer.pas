@@ -40,13 +40,16 @@ const
 
 type
   //Type used when mixing/generating sounds
-  TSoundMixUnit = single;
+  TSoundMixUnit =
+    packed record
+      Left,Right : single;
+    end;
   PSoundMixUnit = ^TSoundMixUnit;
   TSoundMixUnits = array[0..100000] of TSoundMixUnit;
   PSoundMixUnits = ^TSoundMixUnits;
 
   //One unit of sound when output to platform
-  TSoundOutputUnit = single;
+  TSoundOutputUnit = TSoundMixUnit;
   PSoundOutputUnit = ^TSoundOutputUnit;
 
   TWaveform = (wfSquare,wfSaw,wfNoise,wfSine);
@@ -105,7 +108,7 @@ type
     //Copied into a modulation when a new voice is allocated
     OriginalDestinationValue : single;
     DestinationPtr : PSingle;
-    Interpolation : TSoundMixUnit;
+    Interpolation : single;
   end;
   TModulations = array[0..MaxModulations-1] of TModulation;
 
@@ -141,8 +144,8 @@ type
     //Sampled waveform
     SampleRef : pointer;  //Pointer to TSample-component
     SampleData : pointer;
-    SampleRepeatPosition,SampleStep : integer;
-    SamplePosition : NativeUInt;
+    SampleRepeatPosition : integer;
+    SamplePosition,SampleStep : single;
     SampleCount: integer;  //Nr of samples in sample (size/2 if 16 bit)
     UseSampleHz : boolean;
 
@@ -163,7 +166,7 @@ type
 const
   AudioRate = 44100;  //44khz
 
-  OutputBits = SizeOf(TSoundOutputUnit)*8;
+  OutputBits = 32;
 
   MaxVoices = 32;
   MaxChannels = 16;
@@ -178,11 +181,11 @@ const
   //Det blir en fördröjning av nya ljud som är lika med dma-buffer size eftersom denna
   //buffer loopar och man fyller hela tiden på med data precis före playingposition.
   //Bör därför ej vara längre än en tiondels sekund för ljudeffekter.
-  SoundBufferSamplesSize = Round(AudioRate/20);
-  SoundBufferByteSize = SoundBufferSamplesSize * SizeOf(TSoundOutputUnit) * StereoChannels;
+  SoundBufferFramesSize = Round(AudioRate/20);
+  SoundBufferByteSize = SoundBufferFramesSize * SizeOf(TSoundOutputUnit);
 
-  AudioFrameLength = 1.0 / 100;                      //Tid mellan varje uppdatering av modulations
-  FrameSampleCount = Round(AudioFrameLength * AudioRate);  //Antal samples i varje frame
+  AudioModulateLength = 1.0 / 100;                      //Time between updates of modulations
+  ModulateFrameCount = Round(AudioModulateLength * AudioRate);
 
 var
   VoicesMutex : pointer;
@@ -205,7 +208,7 @@ type
 procedure EmitNote(Note: TNoteEmitEntry);
 
 function GetChannel(I : integer) : PChannel;
-procedure RenderToMixBuffer(Buf : PSoundMixUnit; Count : integer);
+procedure RenderToMixBuffer(Buf : PSoundMixUnit; FrameCount : integer);
 
 procedure AddNoteToEmitList(Note: TNoteEmitEntry);
 procedure EmitSoundsInEmitList;
@@ -223,8 +226,6 @@ uses ZPlatform,ZMath,ZClasses,AudioComponents;
 const
   DelayBufferSampleCount = 2 * AudioRate;  //2 seconds delay
 
-  SamplePosPBits = 8;
-
   //Antal bits för hur många steg channel volume går i
   ChannelVolBits = 6;
 
@@ -235,7 +236,7 @@ var
 
   Channels : array[0..MaxChannels-1] of TChannel;
   //Buffer where the voices for each channel are rendered before mix with mixbuffer
-  ChannelBuffer : array[0..(FrameSampleCount*StereoChannels)-1] of TSoundMixUnit;
+  ChannelBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
 
 function GetChannel(I : integer) : PChannel;
 begin
@@ -432,13 +433,13 @@ begin
       if J=0 then
         Modulation.DestinationPtr^ := Value
       else
-        Modulation.Interpolation := (Value-Modulation.DestinationPtr^) / FrameSampleCount;
+        Modulation.Interpolation := (Value-Modulation.DestinationPtr^) / ModulateFrameCount;
     end;
 
   end;
 end;
 
-procedure SetVoiceFrameConstants(V : PVoiceEntry);
+procedure SetVoiceModulateConstants(V : PVoiceEntry);
 //Uppdatera värden i Voice som gäller tills nästa gång update anropas
 var
   NoteNr : single;
@@ -464,7 +465,7 @@ begin
     //440 / (22050 * (22050/8363))
 //    V.SampleStep := Round(V.Osc1.Frequency / (AudioRate * (AudioRate/8363)) * (1 shl SamplePosPBits));
     //11025 /  (11025 * (AudioRate/11025) ))
-    V.SampleStep := Round((V.Osc1.Frequency / AudioRate) * (1 shl SamplePosPBits));
+    V.SampleStep := V.Osc1.Frequency / AudioRate;
   end;
 
   //Måste ta freq*2 pga MixFullRange ej kan representeras som en integer-konstant
@@ -496,12 +497,13 @@ var
   I,J : integer;
   HasSample : boolean;
   Sample1,Sample2 : TSampleUnit;
-  SamplePos,SampleFraction : integer;
+  SamplePos : integer;
+  SampleFraction : single;
   Modulation : PModulation;
   FilterFb : single;
   //Buffer where voice is rendered before mix with channelbuffer
   //Voicebuffer is always mono
-  VoiceBuffer : array[0..FrameSampleCount-1] of TSoundMixUnit;
+  VoiceBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
 begin
   //Write to voice buffer
 
@@ -517,7 +519,8 @@ begin
     Exit;  //No point rendering nothing
   end;      }
 
-  Value1 := 0;  //Get rid of warning
+  Value1.Left := 0;  //Get rid of warning
+  Value1.Right := 0;  //Get rid of warning
 
   HasSample := V.SampleData<>nil;
 
@@ -534,40 +537,75 @@ begin
       case V.Osc1.Waveform of
         wfSquare :
           if W1 >= V.Osc1.IPulseWidth then
-            Value1 := VoiceHighestValue
+            Value1.Left := VoiceHighestValue
           else
-            Value1 := VoiceLowestValue;
+            Value1.Left := VoiceLowestValue;
         wfSaw :
-          Value1 := VoiceLowestValue + Round(W1 div 65536)/65536;
+          Value1.Left := VoiceLowestValue + Round(W1 div 65536)/65536;
         wfNoise :
           if W1>=0 then
           begin
             //Value1 := IntRandom div (1 shl (MixToOutputBits));
-            Value1 := VoiceLowestValue + System.Random*VoiceFullRange;
+            Value1.Left := VoiceLowestValue + System.Random*VoiceFullRange;
             Dec(W1, High(integer) div 2 );
           end;
         wfSine :
           begin
-            Value1 := Sin(W1 * (1.0/High(integer)* PI*2) );
+            Value1.Left := Sin(W1 * (1.0/High(integer)* PI*2) );
           end;
       end;
+
+      if V.HardSync then
+      begin
+        if (LastW1>0) and (W1<0) then
+          //HardSync: Restart osc2 when osc1 restarts
+          W2 := W1;
+        LastW1 := W1;
+      end;
+
+      Inc(W1,V.Osc1.WStep);
+
+      //Osc 2
+      if V.UseOsc2 then
+      begin
+        case V.Osc2.Waveform of
+          wfSquare :
+            if W2<0 then
+              Value2.Left := VoiceLowestValue
+            else
+              Value2.Left := VoiceHighestValue;
+          wfSaw :
+            Value2.Left := VoiceLowestValue + Round(W2 div 65536)/65536;
+        else
+          Value2.Left := 0;
+        end;
+        Inc(W2,V.Osc2.WStep);
+
+        Value2.Left := Value2.Left * V.Osc2Volume;
+
+        Value1.Left := Value1.Left + Value2.Left; //Mix osc1 + osc2
+      end;
+
+      Value1.Right := Value1.Left;
     end
     else
     begin
       //Sampled waveform
-      SamplePos := V.SamplePosition shr SamplePosPBits;
+      SamplePos := Round(V.SamplePosition);
       if (SamplePos>=V.SampleCount) then
       begin
         //Sample pos is beyond end (repeat=-1)
-        Value1 := 0
+        Value1.Left := 0;
+        Value1.Right := 0;
       end
       else
       begin
-        SampleFraction := V.SamplePosition and ((1 shl SamplePosPBits)-1);
+        SampleFraction := Frac(V.SamplePosition);
         //Value=(Sample1 * (1-Fraction)) + (Sample2 * Fraction)
 
         Sample1 := GetSample(V,SamplePos);
-        Sample1 := (Sample1 * ((1 shl SamplePosPBits) - SampleFraction)) div (1 shl SamplePosPBits);
+        Sample1.Left := Sample1.Left * (1 - SampleFraction);
+        Sample1.Right := Sample1.Right * (1 - SampleFraction);
 
         if SamplePos<V.SampleCount-1 then
           Inc(SamplePos)
@@ -575,50 +613,22 @@ begin
           SamplePos := 0;
 
         Sample2 := GetSample(V,SamplePos);
-        Sample2 := (Sample2 * SampleFraction) div (1 shl SamplePosPBits);
+        Sample2.Left := (Sample2.Left * SampleFraction);
+        Sample2.Right := (Sample2.Right * SampleFraction);
 
-        Value1 := (Sample1 + Sample2) / High(TSampleUnit);
-        Inc(V.SamplePosition,V.SampleStep);
-        if (V.SamplePosition shr SamplePosPBits>=V.SampleCount) and
+        Value1.Left := (Sample1.Left + Sample2.Left);
+        Value1.Right := (Sample1.Right + Sample2.Right);
+
+        V.SamplePosition := V.SamplePosition + V.SampleStep;
+        if (V.SamplePosition>=V.SampleCount) and
           (V.SampleRepeatPosition>=0) then
-          V.SamplePosition := (V.SampleRepeatPosition shl SamplePosPBits) or
-            V.SamplePosition and ((1 shl SamplePosPBits)-1);
+          V.SamplePosition := V.SampleRepeatPosition;
       end;
-    end;
-
-    if V.HardSync then
-    begin
-      if (LastW1>0) and (W1<0) then
-        //HardSync: Restart osc2 when osc1 restarts
-        W2 := W1;
-      LastW1 := W1;
-    end;
-
-    Inc(W1,V.Osc1.WStep);
-
-    //Osc 2
-    if V.UseOsc2 then
-    begin
-      case V.Osc2.Waveform of
-        wfSquare :
-          if W2<0 then
-            Value2 := VoiceLowestValue
-          else
-            Value2 := VoiceHighestValue;
-        wfSaw :
-          Value2 := VoiceLowestValue + Round(W2 div 65536)/65536;
-      else
-        Value2 := 0;
-      end;
-      Inc(W2,V.Osc2.WStep);
-
-      Value2 := Value2 * V.Osc2Volume;
-
-      Value1 := Value1 + Value2; //Mix osc1 + osc2
     end;
 
     //Volume
-    Value1 := Value1 * V.Volume;
+    Value1.Left := Value1.Left * V.Volume;
+    Value1.Right := Value1.Right * V.Volume;
 
     for J := 0 to MaxModulations-1 do
     begin
@@ -642,8 +652,11 @@ begin
     FilterFb := (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff));
     for I := 0 to Count-1 do
     begin
-      V.Buf0 := V.Buf0 + V.FilterCutoff * (Buf^ - V.Buf0 + FilterFb * (V.Buf0 - V.Buf1));
-      V.Buf1 := V.Buf1 + V.FilterCutoff * (V.Buf0 - V.Buf1);
+      V.Buf0.Left := V.Buf0.Left + V.FilterCutoff * (Buf^.Left - V.Buf0.Left + FilterFb * (V.Buf0.Left - V.Buf1.Left));
+      V.Buf0.Right := V.Buf0.Right + V.FilterCutoff * (Buf^.Right - V.Buf0.Right + FilterFb * (V.Buf0.Right - V.Buf1.Right));
+
+      V.Buf1.Left := V.Buf1.Left + V.FilterCutoff * (V.Buf0.Left - V.Buf1.Left);
+      V.Buf1.Right := V.Buf1.Right + V.FilterCutoff * (V.Buf0.Right - V.Buf1.Right);
 
       Buf^ := V.Buf1;
 
@@ -656,19 +669,11 @@ begin
   DestBuf := @ChannelBuffer[0];
   for I := 0 to Count-1 do
   begin
-
     Value1 := Buf^;
 
-    //Stereo
-//    if StereoChannels=2 then
-//    begin
-      //Left
-      DestBuf^ := DestBuf^ + Value1 * V.PanL;
-      Inc(DestBuf);
-      //Right
-      DestBuf^ := DestBuf^ + Value1 * V.PanR;
-      Inc(DestBuf);
-//    end;
+    DestBuf^.Left := DestBuf^.Left + Value1.Left * V.PanL;
+    DestBuf^.Right := DestBuf^.Right + Value1.Right * V.PanR;
+    Inc(DestBuf);
 
     Inc(Buf);
   end;
@@ -679,9 +684,10 @@ procedure AddToMixBuffer(Source : PSoundMixUnit; Dest : PSoundMixUnit; Count : i
 var
   I : integer;
 begin
-  for I := 0 to (Count * StereoChannels)-1 do
+  for I := 0 to Count-1 do
   begin
-    Dest^ := Dest^ + Source^;
+    Dest^.Left := Dest^.Left + Source^.Left;
+    Dest^.Right := Dest^.Right + Source^.Right;
     Inc(Source);
     Inc(Dest);
   end;
@@ -701,8 +707,8 @@ begin
   end;
 end;
 
-//Tick all voices and channels with Frame-length
-procedure UpdateFrame;
+//Tick all voices and channels with Modulate-length
+procedure UpdateModulate;
 var
   I,J : integer;
   PrevVoice,Voice : PVoiceEntry;
@@ -719,9 +725,9 @@ begin
       if Channel.UseDelay then
       begin
         Channel.DelayOutPoint := Channel.DelayInPoint -
-          Trunc(Channel.DelayLength*DelayBufferSampleCount)*StereoChannels;
+          Trunc(Channel.DelayLength*DelayBufferSampleCount);
         while Channel.DelayOutPoint<0 do
-          Inc(Channel.DelayOutPoint,DelayBufferSampleCount*StereoChannels);
+          Inc(Channel.DelayOutPoint,DelayBufferSampleCount);
       end;
 
       //Update global lfos
@@ -729,7 +735,7 @@ begin
       begin
         Lfo := @GlobalLfos[J];
         if Lfo.Active then
-          UpdateLfo(Lfo,AudioFrameLength);
+          UpdateLfo(Lfo,AudioModulateLength);
       end;
 
       //Update channel voices
@@ -758,13 +764,13 @@ begin
         end;
 
         //Don't allow voice.time>voice.length
-        DTime := AudioFrameLength;
+        DTime := AudioModulateLength;
         if Voice.Time + DTime>Voice.Length then
           DTime:=Voice.Length - Voice.Time;
         Voice.Time := Voice.Time + DTime;
 
         UpdateModulators(Voice,DTime);
-        SetVoiceFrameConstants(Voice);
+        SetVoiceModulateConstants(Voice);
 
         PrevVoice := Voice;
         Voice := Voice.Next;
@@ -778,37 +784,36 @@ end;
 procedure ChannelApplyDelay(Channel : PChannel; Count : integer);
 var
   Buf : PSoundMixUnit;
-  I,J : integer;
+  I : integer;
   Value : TSoundMixUnit;
 begin
   Buf := @ChannelBuffer;
   for I := 0 to Count-1 do
   begin
     {$ifndef minimal}
-    Assert(Channel.DelayOutPoint<DelayBufferSampleCount*StereoChannels);
-    Assert(Channel.DelayInPoint<DelayBufferSampleCount*StereoChannels);
+    Assert(Channel.DelayOutPoint<DelayBufferSampleCount);
+    Assert(Channel.DelayInPoint<DelayBufferSampleCount);
     {$endif}
-    for J := 0 to StereoChannels-1 do
-    begin
-      //Läs från delay
-      Value := Channel.DelayBuffer[ Channel.DelayOutPoint+J ];
 
-      //Mixa med input
-      Value := (Value * 0.25) + Buf^;
+    //Läs från delay
+    Value := Channel.DelayBuffer[ Channel.DelayOutPoint ];
 
-      //Skriv det mixade värdet till delay-buffer för feedback
-      Channel.DelayBuffer[ Channel.DelayInPoint+J ]:=Value;
+    //Mixa med input
+    Value.Left := (Value.Left * 0.25) + Buf^.Left;
+    Value.Right := (Value.Left * 0.25) + Buf^.Right;
 
-      Buf^ := Value;
-      Inc(Buf);
-    end;
+    //Skriv det mixade värdet till delay-buffer för feedback
+    Channel.DelayBuffer[ Channel.DelayInPoint ] := Value;
 
-    Inc(Channel.DelayOutPoint,StereoChannels);
-    if Channel.DelayOutPoint>=DelayBufferSampleCount*StereoChannels then
+    Buf^ := Value;
+    Inc(Buf);
+
+    Inc(Channel.DelayOutPoint);
+    if Channel.DelayOutPoint>=DelayBufferSampleCount then
       Channel.DelayOutPoint := 0;
 
-    Inc(Channel.DelayInPoint,StereoChannels);
-    if Channel.DelayInPoint>=DelayBufferSampleCount*StereoChannels then
+    Inc(Channel.DelayInPoint);
+    if Channel.DelayInPoint>=DelayBufferSampleCount then
       Channel.DelayInPoint := 0;
   end;
 end;
@@ -819,7 +824,7 @@ var
   Buf : PSoundMixUnit;
   I : integer;
 begin
-  FillChar(ChannelBuffer,Count * SizeOf(TSoundMixUnit) * StereoChannels,0);
+  FillChar(ChannelBuffer,Count * SizeOf(TSoundMixUnit),0);
   if Channel.Volume<0.00001 then
     Exit;
 
@@ -837,33 +842,34 @@ begin
 
   //Volume
   Buf := @ChannelBuffer;
-  for I := 0 to (Count * AudioPlayer.StereoChannels)-1 do
+  for I := 0 to Count-1 do
   begin
-    Buf^ := Buf^ * Channel.Volume;
+    Buf^.Left := Buf^.Left * Channel.Volume;
+    Buf^.Right := Buf^.Right * Channel.Volume;
     Inc(Buf);
   end;
 end;
 
 var
-  //Minne var någonstans i frame man befinner sig mellan anrop till RenderToMixBuffer
+  //Minne var någonstans i modulate man befinner sig mellan anrop till RenderToMixBuffer
   RenderCounter : integer;
 
 //Main render routine, called from thread
-procedure RenderToMixBuffer(Buf : PSoundMixUnit; Count : integer);
+procedure RenderToMixBuffer(Buf : PSoundMixUnit; FrameCount : integer);
 var
   I : integer;
-  FrameCrossOvers,FramesLeft,FrameCount : integer;
+  ModulateCrossOvers,ModulateLeft,ModulateCount : integer;
   Finished : boolean;
   Channel : PChannel;
   VBuf : PSoundMixUnit;
 begin
-  FrameCrossOvers := (RenderCounter+Count) div FrameSampleCount;
-  if FrameCrossOvers>0 then
-    FrameCount := FrameSampleCount - RenderCounter
+  ModulateCrossOvers := (RenderCounter+FrameCount) div ModulateFrameCount;
+  if ModulateCrossOvers>0 then
+    ModulateCount := ModulateFrameCount - RenderCounter
   else
-    FrameCount := Count;
+    ModulateCount := FrameCount;
 
-  FramesLeft := FrameCrossOvers;
+  ModulateLeft := ModulateCrossOvers;
   repeat
 
     Channel := @Channels[0];
@@ -871,9 +877,9 @@ begin
     begin
       if Channel.Active and ((Channel.Voices<>nil) or Channel.UseDelay) then
       begin
-        RenderChannel(Channel,FrameCount);
+        RenderChannel(Channel,ModulateCount);
         //Add channel to main mix
-        AddToMixBuffer(@ChannelBuffer,Buf,FrameCount);
+        AddToMixBuffer(@ChannelBuffer,Buf,ModulateCount);
       end;
       Inc(Channel);
     end;
@@ -883,39 +889,40 @@ begin
     begin
       //Volume
       VBuf := Buf;
-      for I := 0 to (FrameCount * AudioPlayer.StereoChannels)-1 do
+      for I := 0 to ModulateCount-1 do
       begin
-        VBuf^ := VBuf^ * MasterVolume;
+        VBuf^.Left := VBuf^.Left * MasterVolume;
+        VBuf^.Right := VBuf^.Right * MasterVolume;
         Inc(VBuf);
       end;
     end;
 
-    if FramesLeft>0 then
+    if ModulateLeft>0 then
     begin
-      //Ny frame, uppdatera modulators
-      UpdateFrame;
-      Dec(FramesLeft);
-      Inc(Buf,FrameCount * StereoChannels);
-      Dec(Count,FrameCount);
-      if Count>FrameSampleCount then
-        FrameCount := FrameSampleCount
+      //New, update modulations
+      UpdateModulate;
+      Dec(ModulateLeft);
+      Inc(Buf,ModulateCount);
+      Dec(FrameCount,ModulateCount);
+      if FrameCount>ModulateFrameCount then
+        ModulateCount := ModulateFrameCount
       else
-        FrameCount := Count;
-      Finished := FrameCount<=0;
+        ModulateCount := FrameCount;
+      Finished := ModulateCount<=0;
 
       //And update midi music
       if AudioComponents.CurrentMusic<>nil then
-        AudioComponents.CurrentMusic.AdvanceMusic(FrameSampleCount / AudioRate);
+        AudioComponents.CurrentMusic.AdvanceMusic(ModulateFrameCount / AudioRate);
     end
     else
       Finished := True;
 
   until Finished;
 
-  if FrameCrossOvers>0 then
-    RenderCounter := FrameCount
+  if ModulateCrossOvers>0 then
+    RenderCounter := ModulateCount
   else
-    Inc(RenderCounter,Count);
+    Inc(RenderCounter,FrameCount);
 end;
 
 
@@ -991,7 +998,7 @@ begin
     begin
       V.Envelopes[J,I].State := esInit;
       if J=1 then //offset for interpolation
-        UpdateEnvelope(@V.Envelopes[J,I],V,AudioFrameLength);
+        UpdateEnvelope(@V.Envelopes[J,I],V,AudioModulateLength);
     end;
 
   //Determine the nr of samples in sampledata (size in bytes / sampleformat)
@@ -1027,7 +1034,7 @@ begin
     end;
   end;
   UpdateModulators(V, 0);
-  SetVoiceFrameConstants(V);
+  SetVoiceModulateConstants(V);
   AddVoiceToChannel(V, Channel);
 end;
 
@@ -1053,7 +1060,7 @@ end;
 
 procedure InitChannels;
 const
-  DelayBufferByteSize = DelayBufferSampleCount * SizeOf(TSoundMixUnit) * StereoChannels;
+  DelayBufferByteSize = DelayBufferSampleCount * SizeOf(TSoundMixUnit);
 var
   I : integer;
   Channel : PChannel;

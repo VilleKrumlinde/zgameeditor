@@ -1134,7 +1134,7 @@ begin
   Fmt.nChannels := AudioPlayer.StereoChannels;  // mono/stereo
   Fmt.nSamplesPerSec := AudioPlayer.AudioRate;  // set the 44.1KHz rate
   Fmt.wBitsPerSample := AudioPlayer.OutputBits;
-  Fmt.nBlockAlign := Fmt.nChannels * SizeOf(TSoundOutputUnit);
+  Fmt.nBlockAlign := SizeOf(TSoundOutputUnit);
   Fmt.nAvgBytesPerSec := Fmt.nSamplesPerSec * Fmt.nBlockAlign;
   Fmt.cbSize := 0;
 
@@ -1218,12 +1218,12 @@ end;
 
 { TPlaybackThread }
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize;  //Måste vara lika stor som dma-buffern
+  MixBufferSamplesSize = SoundBufferFramesSize;  //Måste vara lika stor som dma-buffern
 var
-  MixBuffer : array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
+  MixBuffer : array[0..MixBufferSamplesSize-1] of TSoundMixUnit;
 
 {.$DEFINE CLIP} //Skip audioclipping for now, Kjell says it give better audio quality
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; SampleCount : integer);
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSoundOutputUnit; FrameCount : integer);
 {$IFDEF CLIP}
 var
   I : integer;
@@ -1231,7 +1231,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF CLIP}
-  for I := 0 to (SampleCount * StereoChannels)-1 do
+  for I := 0 to FrameCount-1 do
   begin
     Val := Source^;
     if Val>1.0 then
@@ -1244,15 +1244,15 @@ begin
     Inc(Dest);
   end;
   {$ELSE}
-  Move(Source^,Dest^,SampleCount*StereoChannels*SizeOf(TSoundMixUnit));
+  Move(Source^,Dest^,FrameCount*SizeOf(TSoundMixUnit));
   {$ENDIF}
 
   {$ifndef minimal}
   //Kopiera mixad data tillbaka till gui för att visa display
   if Assigned(FAudioCallBack) then
   begin
-    Dec(Dest,SampleCount*StereoChannels);
-    FAudioCallBack(Dest,SampleCount);
+    Dec(Dest,FrameCount);
+    FAudioCallBack(Dest,FrameCount);
   end;
   {$endif}
 end;
@@ -1264,7 +1264,7 @@ var
   LockSize1,LockSize2 : LongWord;
   LockSamples1 : integer;
   LockPtr1,LockPtr2 : pointer;
-  BytesToWrite,SamplesToWrite : integer;
+  BytesToWrite,FramesToWrite : integer;
 begin
   while not PlaybackThread_Terminated do
   begin
@@ -1272,7 +1272,7 @@ begin
     //Ändrat till en åttondel.
     //Om för lång sleep så blir det brus.
     //Obs, behöver anropa TimeBeginPeriod i init för att sleep ska bete sig rätt?
-    Sleep( Round(((SoundBufferSamplesSize/AudioRate)/8) * 1000) );
+    Sleep( Round(((SoundBufferFramesSize/AudioRate)/8) * 1000) );
 
     DSBuffer.Vtbl.GetCurrentPosition(DSBuffer,@PlayCursorPos,@WriteCursorPos);
 
@@ -1290,19 +1290,19 @@ begin
     end;
     {$endif}
 
-    SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
-    if (SamplesToWrite<AudioRate div 1000) then
+    FramesToWrite := BytesToWrite div SizeOf(TSoundOutputUnit);
+    if (FramesToWrite<AudioRate div 1000) then
       //Loop om för få samples
       Continue;
-    if SamplesToWrite>MixBufferSamplesSize then
+    if FramesToWrite>MixBufferSamplesSize then
       //Safety mot för många samples
-      SamplesToWrite := MixBufferSamplesSize;
-    FillChar(MixBuffer,SamplesToWrite * SizeOf(TSoundMixUnit) * StereoChannels,0);
+      FramesToWrite := MixBufferSamplesSize;
+    FillChar(MixBuffer,FramesToWrite * SizeOf(TSoundMixUnit),0);
 
     Platform_EnterMutex(VoicesMutex);
-      //Skriv SamplesToWrite samples från LastWritePosition
+      //Skriv FramesToWrite samples från LastWritePosition
       //dela upp i två anrop ifall buffer-wrap
-      AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
+      AudioPlayer.RenderToMixBuffer(@MixBuffer[0],FramesToWrite);
     Platform_LeaveMutex(VoicesMutex);
 
     DSBuffer.Vtbl.Lock(DSBuffer,LastWritePosition,BytesToWrite,@LockPtr1,@LockSize1, @LockPtr2,@LockSize2,0);
@@ -1310,13 +1310,13 @@ begin
     //Flytta paint buffer till dsoundbuffer
     //Sker i två anrop ifall buffer har wrappats
     //Locksize är i bytes, räkna om till samples
-    LockSamples1 := LockSize1 div (SizeOf(TSoundOutputUnit)*StereoChannels);
+    LockSamples1 := LockSize1 div SizeOf(TSoundOutputUnit);
     ClipAndCopy(@MixBuffer[0],LockPtr1,LockSamples1);
     if LockPtr2<>nil then
     begin
-      ClipAndCopy(@MixBuffer[LockSamples1 * StereoChannels],
+      ClipAndCopy(@MixBuffer[LockSamples1],
         LockPtr2,
-        LockSize2 div (SizeOf(TSoundOutputUnit)*StereoChannels) );
+        LockSize2 div SizeOf(TSoundOutputUnit) );
     end;
 
     DSBuffer.Vtbl.Unlock(DSBuffer,LockPtr1,BytesToWrite,LockPtr2,0);

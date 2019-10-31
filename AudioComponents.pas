@@ -102,7 +102,7 @@ type
     procedure Execute; override;
   end;
 
-  TSampleUnit = smallint;
+  TSampleUnit = TSoundMixUnit;
   PSampleUnit = ^TSampleUnit;
   TSampleUnits = array[0..10000] of TSampleUnit;
   PSampleUnits = ^TSampleUnits;
@@ -646,9 +646,10 @@ begin
     TimeStep := S.Length/S.SampleCount;
     for I := 0 to S.SampleCount-1 do
     begin
-      Self.Sample := P^ / High(TSampleUnit);
+      Self.Sample := P^.Left;
       ZExpressions.RunCode(Expression.Code);
-      P^ := Round(Clamp(Self.Sample,-1,1) * High(TSampleUnit));
+      P^.Left := Self.Sample;
+      P^.Right := Self.Sample;
       Inc(P);
       Self.Time := Self.Time + TimeStep;
     end;
@@ -731,10 +732,20 @@ var vf:POggVorbis_File;
   function GetSample(const I : integer) : TSampleUnit;
   begin
     case Channels of
-     1: Exit( Data^[i] );
-     2: Exit( (Data^[(i*2)+0]+Data^[(i*2)+1]) shr 1 );
+     1:
+       begin
+         Result.Left :=Data^[i]/High(SmallInt);
+         Result.Right := Result.Left;
+       end;
+     2:
+       begin
+         Result.Left := Data^[(i*2)]/High(SmallInt);
+         Result.Right := Data^[(i*2)+1]/High(SmallInt);
+       end;
+     {$ifndef minimal}
      else
-       Exit( Data^[(i*Channels)+0] );
+       Assert(False,'Non-supported channel count');
+     {$endif}
      end;
   end;
 
@@ -774,8 +785,7 @@ begin
 
     if Total > 0 then
     begin
-//      if S.Length = 0 then
-        S.Length := TotalSamples / SampleRate;
+      S.Length := TotalSamples / SampleRate;
 
       P := S.GetMemory;
 
@@ -798,53 +808,6 @@ begin
         SourcePosFloat := SourcePosFloat + SourceStep;
         SourcePos := Trunc(SourcePosFloat);
       end;
-
-      // 3:begin
-      // // Left, middle, right
-      // for i:=0 to TotalSamples-1 do begin
-      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*3)+0]+Data^[(i*3)+1],1);
-      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*3)+2]+Data^[(i*3)+1],1);
-      // end;
-      // end;
-      // 4:begin
-      // // Front left, front right, back left, back right
-      // for i:=0 to TotalSamples-1 do begin
-      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*4)+0]+Data^[(i*4)+2],1);
-      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*4)+1]+Data^[(i*4)+3],1);
-      // end;
-      // end;
-      // 5:begin
-      // // Front left, front middle, front right, back left, back right
-      // for i:=0 to TotalSamples-1 do begin
-      // FinalData^[(i*2)+0]:=(Data^[(i*5)+0]+Data^[(i*5)+1]+Data^[(i*5)+3]) div 3;
-      // FinalData^[(i*2)+1]:=(Data^[(i*5)+2]+Data^[(i*5)+1]+Data^[(i*5)+4]) div 3;
-      // end;
-      // end;
-      // 6:begin
-      // // Front left, front middle, front right, back left, back right, LFE channel (subwoofer)
-      // for i:=0 to TotalSamples-1 do begin
-      // FinalData^[(i*2)+0]:=SARLongint(Data^[(i*6)+0]+Data^[(i*6)+1]+Data^[(i*6)+3]+Data^[(i*6)+5],2);
-      // FinalData^[(i*2)+1]:=SARLongint(Data^[(i*6)+2]+Data^[(i*6)+1]+Data^[(i*6)+4]+Data^[(i*6)+5],2);
-      // end;
-      // end;
-      // else begin
-      // // Undefined, so get only the first two channels in account
-      // for i:=0 to TotalSamples-1 do begin
-      // FinalData^[(i*2)+0]:=Data^[(i*Channels)+0];
-      // FinalData^[(i*2)+1]:=Data^[(i*Channels)+1];
-      // end;
-      // end;
-      // end;
-      // DestSample.SampleLength:=TotalSamples;
-      // DestSample.SampleRate:=SampleRate;
-      // DestSample.Loop.Mode:=SoundLoopModeNONE;
-      // DestSample.Loop.StartSample:=0;
-      // DestSample.Loop.EndSample:=0;
-      // DestSample.SustainLoop.Mode:=SoundLoopModeNONE;
-      // DestSample.SustainLoop.StartSample:=0;
-      // DestSample.SustainLoop.EndSample:=0;
-      // DestSample.Data:=pointer(FinalData);
-      // result:=true;
     end;
 
     FreeMem(Data);
@@ -864,11 +827,11 @@ var
   function GetSample(const I : integer) : TSampleUnit;
   begin
     case Self.SampleFormat of
-      sfoSigned8bit :
-        Exit( ShortInt(PBytes(Self.SampleData.Data)^[ I ]) shl 8)
+      sfoSigned8bit : Result.Left := ShortInt(PBytes(Self.SampleData.Data)^[ I ]) / High(ShortInt)
       else //sfoSigned16bit :
-        Exit( SmallInt(PWords(Self.SampleData.Data)^[ I ]) );
+        Result.Left := SmallInt(PWords(Self.SampleData.Data)^[ I ]) / High(SmallInt);
     end;
+    Result.Right := Result.Left;
   end;
 
 begin
@@ -879,8 +842,7 @@ begin
     sffRaw :
       begin
         SourceCount := Self.SampleData.Size shr (ord(Self.SampleFormat));
-//        if S.Length=0 then
-          S.Length := SourceCount / AudioRate;
+        S.Length := SourceCount / AudioRate;
 
         P := S.GetMemory;
 

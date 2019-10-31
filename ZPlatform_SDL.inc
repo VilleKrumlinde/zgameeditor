@@ -330,48 +330,59 @@ end;
 
 //Audio
 const
-  MixBufferSamplesSize = SoundBufferSamplesSize * 2; //todo skip *2 when float output
+  MixBufferSamplesSize = SoundBufferFramesSize * 2; //todo skip *2 when float output
 var
-  MixBuffer : array[0..(MixBufferSamplesSize*StereoChannels)-1] of TSoundMixUnit;
+  MixBuffer : array[0..MixBufferSamplesSize-1] of TSoundMixUnit;
 
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; SampleCount : integer);
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; FrameCount : integer);
 var
   I : integer;
   Val : integer;
 begin
-  for I := 0 to (SampleCount * StereoChannels)-1 do
+  for I := 0 to SampleCount-1 do
   begin //Convert from float to smallint. Todo: SDL 2.0 supports floats directly.
-    Val := Round(Source^ * High(Smallint));
+
+    Val := Round(Source.Left^ * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then
       Dest^ := Low(SmallInt)
     else
       Dest^ := Val;
-    Inc(Source);
     Inc(Dest);
+
+    Val := Round(Source.Right^ * High(Smallint));
+    if Val>High(Smallint) then
+      Dest^ := High(Smallint)
+    else if Val<Low(SmallInt) then
+      Dest^ := Low(SmallInt)
+    else
+      Dest^ := Val;
+    Inc(Dest);
+
+    Inc(Source);
   end;
 end;
 
 procedure SdlAudioCallback(userdata: Pointer; stream: PUInt8; len: Integer ); cdecl;
 var
-  BytesToWrite,SamplesToWrite : integer;
+  BytesToWrite,FramesToWrite : integer;
 begin
   BytesToWrite := Len;
 
 //  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
-  SamplesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
+  FramesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
 
-  FillChar(MixBuffer,SamplesToWrite * SizeOf(TSoundMixUnit) * StereoChannels,0);
+  FillChar(MixBuffer,FramesToWrite * SizeOf(TSoundMixUnit),0);
 
   Platform_EnterMutex(VoicesMutex);
     //Skriv SamplesToWrite samples från LastWritePosition
     //dela upp i två anrop ifall buffer-wrap
-    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],SamplesToWrite);
+    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],FramesToWrite);
   Platform_LeaveMutex(VoicesMutex);
 
   //Flytta paint buffer till dma-soundbuffer
-  ClipAndCopy(@MixBuffer[0],Pointer(Stream),SamplesToWrite);
+  ClipAndCopy(@MixBuffer[0],Pointer(Stream),FramesToWrite);
 end;
 
 procedure Platform_InitAudio;
@@ -385,7 +396,7 @@ begin
   else
     ZHalt('only 16 bit audio supported');
   desired.channels:=AudioPlayer.StereoChannels;
-  desired.samples:=AudioPlayer.SoundBufferSamplesSize;
+  desired.samples:=AudioPlayer.SoundBufferFramesSize;
   desired.callback:=@SdlAudioCallback;
 //  desired->userdata=NULL;
 
