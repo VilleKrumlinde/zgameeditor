@@ -844,7 +844,7 @@ end;
 
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
-  {$ifdef debug}
+  {$ifdef extra_gc_checks} //These checks are very inefficient so dont't enable by default even in debug build
   if mh_Targets.IndexOf(P)>-1 then
   begin
     GetLog('MH').Warning('Add target already in list');
@@ -858,7 +858,7 @@ end;
 
 procedure ManagedHeap_RemoveTarget(const P : pointer);
 begin
-  {$ifdef debug}
+  {$ifdef extra_gc_checks}
   if mh_Targets.IndexOf(P)=-1 then
   begin
     GetLog('MH').Warning('Remove target not found');

@@ -949,6 +949,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'PointerValue',{$ENDIF}(@PointerValue), zptPointer);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
+    {$ifdef zgeviz} //In zgeviz whole apps are cloned and then copy pointervalue is not correct behavior
+    List.GetLast.DontClone := True;
+    {$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
