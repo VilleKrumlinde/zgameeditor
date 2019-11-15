@@ -916,8 +916,9 @@ begin
     P := Pointer( NativeInt(mh_Allocations[I]) and (not 1) );
     {$ifdef UseDictionaryGC}
     if not mh_Values.ContainsKey(P) then
-      ManagedHeap_FreeMemAt(I);
-    Inc(I);
+      ManagedHeap_FreeMemAt(I)
+    else
+      Inc(I);
     {$else}
     J := mh_Values.IndexOf(P);
     if J=-1 then

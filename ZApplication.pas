@@ -156,6 +156,8 @@ type
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
     OnGetLibraryPath : function : string of object;
+    OnShaderCacheUse : function(Shader : TShader) : boolean of object;
+    OnShaderCacheAdd : procedure(Shader : TShader) of object;
     HasScriptCreatedComponents : boolean;
     {$endif}
     {$ifdef zgeviz}

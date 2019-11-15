@@ -95,7 +95,6 @@ type
   {$endif}
   TShader = class(TZComponent)
   strict private
-    VShaderHandle,FShaderHandle,GShaderHandle : cardinal;
     LastVariableUpdate : single;
     TexCount,FirstTexIndex : integer;
     procedure ReInit;
@@ -105,14 +104,17 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
+    ProgHandle,VShaderHandle,FShaderHandle,GShaderHandle : cardinal;
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
     GeometryShaderSource : TPropString;
     UniformVariables : TZComponentList;
     UpdateVarsOnEachUse : boolean;
-    ProgHandle : integer;
     BeforeLinkExpression : TZExpressionPropValue;
     MvpLoc,MvLoc,ProjLoc,TexMatLoc,NormMatLoc,GlobColLoc : Integer;
+    {$ifndef minimal}
+    HasExternalHandle : boolean;  //Used in ZgeViz
+    {$endif}
     destructor Destroy; override;
     procedure ResetGpuResources; override;
     procedure DetachArrayVariables;
@@ -1817,20 +1819,28 @@ var
 begin
   CleanUp;
 
-  ProgHandle := glCreateProgram;
+  {$ifndef minimal}
+  if (not Assigned(Self.ZApp.OnShaderCacheUse)) or (not Self.ZApp.OnShaderCacheUse(Self)) then
+  {$endif}
+  begin
+    ProgHandle := glCreateProgram;
 
-  VShaderHandle := InCreate(VertexShaderSource,GL_VERTEX_SHADER);
-  FShaderHandle := InCreate(FragmentShaderSource,GL_FRAGMENT_SHADER);
-  GShaderHandle := InCreate(GeometryShaderSource,GL_GEOMETRY_SHADER);
+    VShaderHandle := InCreate(VertexShaderSource,GL_VERTEX_SHADER);
+    FShaderHandle := InCreate(FragmentShaderSource,GL_FRAGMENT_SHADER);
+    GShaderHandle := InCreate(GeometryShaderSource,GL_GEOMETRY_SHADER);
 
-  Driver := Self.ZApp.Driver;
-  Driver.BeforeLinkShader(Self);
-  ZExpressions.RunCode(BeforeLinkExpression.Code);
+    Driver := Self.ZApp.Driver;
+    Driver.BeforeLinkShader(Self);
+    ZExpressions.RunCode(BeforeLinkExpression.Code);
 
-  glLinkProgram(ProgHandle);
-  {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
+    glLinkProgram(ProgHandle);
+    {$ifdef glsl_error_check}InCheckProgramStatus;{$endif}
 
-  Driver.AfterLinkShader(Self);
+    Driver.AfterLinkShader(Self);
+    {$ifndef minimal}
+    if Assigned(Self.ZApp.OnShaderCacheAdd) then Self.ZApp.OnShaderCacheAdd(Self);
+    {$endif}
+  end;
 
   //Initialize uniform variables for accessing multi-textures
   glUseProgram(ProgHandle);
@@ -2026,6 +2036,11 @@ procedure TShader.CleanUp;
   end;
 
 begin
+  {$ifndef minimal}
+  if HasExternalHandle then
+    ProgHandle := 0;
+  {$endif}
+
   if ProgHandle=0 then
     Exit;
 
