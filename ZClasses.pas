@@ -1433,6 +1433,9 @@ begin
     PInteger(CleanUps[I])^:=0;
   CleanUps.Free;
 
+  {$ifndef minimal}
+  if Self.HasZApp then
+  {$endif}
   Result._ZApp := Self.ZApp;
 end;
 
@@ -3801,6 +3804,9 @@ procedure TContent.RefreshFromProducers;
 var
   Stack : TZArrayList;
   Save : TGlobalContent;
+  {$ifndef minimal}
+  NewContent : TContent;
+  {$endif}
 begin
   {$ifndef minimal}
   if Producers.Count>0 then
@@ -3819,9 +3825,19 @@ begin
     GlobalContent.Content := Self;
     GlobalContent.Stack := Stack;
 
-    //Execute producers as commands
-    //This way Repeat and Condition-statements can be used
-    Producers.ExecuteCommands;
+    {$ifndef minimal}
+    if HasZApp and Assigned(Self.ZApp.OnContentCacheUse) and Self.ZApp.OnContentCacheUse(Self,NewContent) then
+      Stack.Add(NewContent)
+    else
+    begin
+    {$endif}
+      //Execute producers as commands
+      //This way Repeat and Condition-statements can be used
+      Producers.ExecuteCommands;
+    {$ifndef minimal}
+      if HasZApp and Assigned(Self.ZApp.OnContentCacheAdd) then Self.ZApp.OnContentCacheAdd(Self,TContent(Stack[0]));
+    end;
+    {$endif}
 
     if Stack.Count>0 then
       CopyAndDestroy(TContent(Stack.Pop));

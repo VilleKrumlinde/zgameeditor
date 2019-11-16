@@ -158,6 +158,8 @@ type
     OnGetLibraryPath : function : string of object;
     OnShaderCacheUse : function(Shader : TShader) : boolean of object;
     OnShaderCacheAdd : procedure(Shader : TShader) of object;
+    OnContentCacheUse : function(OriginalContent : TContent; out NewContent : TContent) : boolean of object;
+    OnContentCacheAdd : procedure(OriginalContent,Content : TContent) of object;
     HasScriptCreatedComponents : boolean;
     {$endif}
     {$ifdef zgeviz}

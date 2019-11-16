@@ -466,6 +466,7 @@ var
   SWidth,SHeight,SPixelSize,
   DWidth,DHeight,
   X,Y : integer;
+  OwnsMem : boolean;
 begin
   BM := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
   Nj := nil;
@@ -519,8 +520,6 @@ begin
       end;
   end;
 
-  GetMem(Mem,DWidth*DHeight*4);
-  FillChar(Mem^,DWidth*DHeight*4,0);
 
   if Self.HasAlphaLayer then
     SPixelSize := 4
@@ -528,25 +527,35 @@ begin
     SPixelSize := 3;
 
   //Source image is upside-down. This is how it should be sent to opengl too.
-
-  SPStart := SP;
-  for Y := 0 to Min(SHeight,DHeight)-1 do
+  if (SPixelSize=4) and (DWidth=SWidth) and (DHeight=SHeight) and (Transparency=btAlphaLayer) then
   begin
-    DP := @Mem[(DHeight-1-Y)*DWidth*4];
-    SP := @SPStart[(SHeight-1-Y)*SWidth*SPixelSize];
-    for X := 0 to Min(SWidth,DWidth)-1 do
+    Mem := SP;
+    OwnsMem := False;
+  end
+  else
+  begin
+    OwnsMem := True;
+    GetMem(Mem,DWidth*DHeight*4);
+    FillChar(Mem^,DWidth*DHeight*4,0);
+    SPStart := SP;
+    for Y := 0 to Min(SHeight,DHeight)-1 do
     begin
-      Move(SP^,DP^,SPixelSize);
-      case Self.Transparency of
-        btNone : DP[3] := High(Byte);
-        btBlackColor :
-          if PInteger(DP)^=0 then
-            DP[3] := 0
-          else
-            DP[3] := High(Byte);
+      DP := @Mem[(DHeight-1-Y)*DWidth*4];
+      SP := @SPStart[(SHeight-1-Y)*SWidth*SPixelSize];
+      for X := 0 to Min(SWidth,DWidth)-1 do
+      begin
+        Move(SP^,DP^,SPixelSize);
+        case Self.Transparency of
+          btNone : DP[3] := High(Byte);
+          btBlackColor :
+            if PInteger(DP)^=0 then
+              DP[3] := 0
+            else
+              DP[3] := High(Byte);
+        end;
+        Inc(SP,SPixelSize);
+        Inc(DP,4);
       end;
-      Inc(SP,SPixelSize);
-      Inc(DP,4);
     end;
   end;
 
@@ -557,7 +566,7 @@ begin
 
   Nj.Free;
 
-  if Mem<>nil then
+  if OwnsMem then
     FreeMem(Mem);
 
   Stack.Push(BM);
