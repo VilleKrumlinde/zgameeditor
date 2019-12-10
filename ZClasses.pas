@@ -3835,7 +3835,7 @@ begin
       //This way Repeat and Condition-statements can be used
       Producers.ExecuteCommands;
     {$ifndef minimal}
-      if HasZApp and Assigned(Self.ZApp.OnContentCacheAdd) then Self.ZApp.OnContentCacheAdd(Self,TContent(Stack[0]));
+      if HasZApp and Assigned(Self.ZApp.OnContentCacheAdd) and (Stack.Count>0) then Self.ZApp.OnContentCacheAdd(Self,TContent(Stack[0]));
     end;
     {$endif}
 
