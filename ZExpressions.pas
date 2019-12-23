@@ -2209,7 +2209,9 @@ begin
   StackOffs := 8;
   {$endif}
 
+  {$ifndef MSWINDOWS}
   FloatI := 0; IntI := 0;
+  {$endif}
   for I := 0 to ArgCount-1 do
   begin
     UseStack := False;
@@ -2306,7 +2308,7 @@ end;
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 type
   TFunc = function(Args : pointer) : NativeUInt;
-  PFunc = ^TFunc;
+  TFloatFunc = function(Args : pointer) : single;
 var
   RetVal : NativeUInt;
 begin
@@ -2322,7 +2324,12 @@ begin
     {$endif}
   end;
 
-  Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+  if Self.ReturnType.Kind=zctFloat then
+  begin //Float returns in xmm0
+    PSingle(@RetVal)^ := TFloatFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+  end
+  else //other return types return in rax
+    Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
 
   if Self.ReturnType.Kind<>zctVoid then
   begin
