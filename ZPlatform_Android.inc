@@ -360,7 +360,7 @@ end;
 const
   MixBufferSamplesSize = SoundBufferFramesSize * 2; //todo skip *2 when float output
 var
-  MixBuffer : packed array[0..MixBufferFramesSize-1] of TSoundMixUnit;
+  MixBuffer : packed array[0..MixBufferSamplesSize-1] of TSoundMixUnit;
   AudioTerminated : boolean;
 
 procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; FrameCount : integer);
@@ -376,7 +376,7 @@ begin
 //    Dest^ := Val;
 
     //Slow version
-    Val := Round(Source.Left^ * High(Smallint));
+    Val := Round(Source^.Left * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then
@@ -385,7 +385,7 @@ begin
       Dest^ := Val;
     Inc(Dest);
 
-    Val := Round(Source.Right^ * High(Smallint));
+    Val := Round(Source^.Right * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then
