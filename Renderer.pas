@@ -2473,6 +2473,7 @@ end;
 procedure TSetRenderTarget.Execute;
 var
   NewRt : TRenderTarget;
+  OldTexId : integer;
 begin
   if not FbosSupported then
     Exit;
@@ -2482,11 +2483,13 @@ begin
     Exit;
   {$endif}
 
-  if (CurrentRenderTarget<>nil) and (CurrentRenderTarget<>Self.RenderTarget) then
+  if (CurrentRenderTarget<>nil) and (CurrentRenderTarget<>Self.RenderTarget) and (CurrentRenderTarget.Filter=bmfMipmap)  then
   begin
     //update texture mipmap of current render target
+    glGetIntegerv(GL_TEXTURE_BINDING_2D,@OldTexId);
     CurrentRenderTarget.UseTextureBegin;
     glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, OldTexId);
   end;
 
   NewRt := Self.RenderTarget;
