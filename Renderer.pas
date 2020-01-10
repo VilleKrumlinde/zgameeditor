@@ -2489,7 +2489,8 @@ begin
     glGetIntegerv(GL_TEXTURE_BINDING_2D,@OldTexId);
     CurrentRenderTarget.UseTextureBegin;
     glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, OldTexId);
+    if OldTexId<>0 then
+      glBindTexture(GL_TEXTURE_2D, OldTexId);
   end;
 
   NewRt := Self.RenderTarget;
