@@ -2016,6 +2016,7 @@ var
   Stream : TZInputStream;
   Reader : TZBinaryReader;
 
+  {$IFNDEF MSWINDOWS}
   function InLoadPiggyback : TZInputStream;
   var
     FileName : PAnsiChar;
@@ -2039,13 +2040,16 @@ var
     Dec(Stream.Size,4);
     Result := Stream;
   end;
+  {$ENDIF}
 
 begin
   //First check linked data, returns nil if not present
   Stream := Platform_LoadLinkedResource;
   //Second: check piggyback data
+  {$IFNDEF MSWINDOWS}
   if Stream=nil then
     Stream := InLoadPiggyback;
+  {$ENDIF}
   //Last try: load from file
   if Stream=nil then
     Stream := TZInputStream.CreateFromFile('zzdc.dat',True);

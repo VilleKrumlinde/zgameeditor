@@ -511,13 +511,13 @@ begin
     zcInlineBlock : Gen(Op);
     zcBinaryNot :
       begin
-       GenValue(Op.Child(0));
-       TExpMisc.Create(Target,emBinaryNot);
+        GenValue(Op.Child(0));
+        TExpMisc.Create(Target,emBinaryNot);
       end;
     zcNot :
       begin
-       GenValue(Op.Child(0));
-       TExpMisc.Create(Target,emNot);
+        GenValue(Op.Child(0));
+        TExpMisc.Create(Target,emNot);
       end
   else
     //Gen(Op); //Any op can occur in a value block because of inlining
@@ -703,17 +703,21 @@ begin
      GenValue(LeftOp);
   end else if LeftOp.Kind=zcArrayAccess then
   begin
-    if LeaveValue=alvPost then
-      raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
     A := GenArrayAddress(LeftOp);
     GenValue(Op.Child(1));
     if LeftOp.GetDataType.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
     begin //These types are copied by value into arrays (to allow VBO arrays with vec3 etc)
       with TExpArrayUtil.Create(Target) do
         Kind := auArrayToRawMem;
+      if LeaveValue=alvPost then
+        raise ECodeGenError.Create('Assign syntax not supported for this kind of variable');
     end
     else
+    begin
       Target.AddComponent( MakeAssignOp((A as TDefineArray).GetElementSize) );
+      if LeaveValue=alvPost then
+        GenValue(LeftOp);
+    end;
   end else
     raise ECodeGenError.Create('Assignment destination must be variable or array: ' + Op.Child(0).Id);
 

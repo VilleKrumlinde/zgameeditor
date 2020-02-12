@@ -342,7 +342,7 @@ begin
   for I := 0 to SampleCount-1 do
   begin //Convert from float to smallint. Todo: SDL 2.0 supports floats directly.
 
-    Val := Round(Source.Left^ * High(Smallint));
+    Val := Round(Source^.Left * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then
@@ -351,7 +351,7 @@ begin
       Dest^ := Val;
     Inc(Dest);
 
-    Val := Round(Source.Right^ * High(Smallint));
+    Val := Round(Source^.Right * High(Smallint));
     if Val>High(Smallint) then
       Dest^ := High(Smallint)
     else if Val<Low(SmallInt) then

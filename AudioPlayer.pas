@@ -705,6 +705,12 @@ begin
     if M.Active then
       M.DestinationPtr^ := M.OriginalDestinationValue;
   end;
+  for I := 0 to High(V.Lfos) do
+    with V.Lfos[I] do
+    begin
+      Value := 0;
+      Counter := 0;
+    end;
 end;
 
 //Tick all voices and channels with Modulate-length

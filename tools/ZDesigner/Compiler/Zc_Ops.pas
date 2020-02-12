@@ -808,7 +808,31 @@ begin
     Exit( TZcOpLiteral.Create(zctString, '"' + Chr(Round(C1.Value)) + '"' ) );
   end;
 
+  if (Kind=zcOr) and (Child(0).Kind=zcConstLiteral) then
+  begin //if(1 || x)  >=  if(1)
+    C1 := Child(0) as TZcOpLiteral;
+    if (C1.Typ.Kind<>zctString) and (C1.Value<>0) then
+      Exit( TZcOpLiteral.Create(C1.Typ.Kind,1) );
   end;
+
+  if (Kind=zcAnd) then
+  begin
+    if Child(0).Kind=zcConstLiteral then
+    begin //if(0 && x)  >=  if(0)
+      C1 := Child(0) as TZcOpLiteral;
+      if (C1.Typ.Kind<>zctString) and (C1.Value=0) then
+        Exit( TZcOpLiteral.Create(C1.Typ.Kind,0) );
+    end;
+    if Child(1).Kind=zcConstLiteral then
+    begin //if(x && 1)  >=  if(x)
+      C1 := Child(1) as TZcOpLiteral;
+      if (C1.Typ.Kind<>zctString) and (C1.Value<>0) then
+        Exit( Child(0) );
+    end;
+  end;
+
+
+end;
 
 { TZcOpFunctionBase }
 
