@@ -30,6 +30,7 @@ program ZzDC;
   {$ifdef fpc}
     {$R Data.res}
     {$R 'OptionsDialog.res'}
+    {$APPTYPE GUI}
   {$else}
     {$R 'Data.res' 'Data.rc'}
     {$R 'OptionsDialog.res' 'OptionsDialog.rc'}

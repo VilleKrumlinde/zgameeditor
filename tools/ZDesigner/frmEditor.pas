@@ -24,6 +24,8 @@ unit frmEditor;
 
 interface
 
+{$DEFINE ZZDC_FPC} //Runtime engine built with Freepascal
+
 uses
   Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
   Vcl.Dialogs, ZClasses, DesignerGui, GLPanel, Vcl.ComCtrls, Vcl.Menus, Vcl.StdCtrls,
@@ -2671,6 +2673,7 @@ begin
     end;
 
     //Remove the other two resource (packageinfo), saves about 1kb
+{$IFNDEF ZZDC_FPC}
     if ExtractFileExt(OutFile)<>'.ocx' then
     begin
       R := M.FindResource('10','DVCLAL',0);
@@ -2684,6 +2687,7 @@ begin
       else
         Log.Warning('Resource not found');
     end;
+{$ENDIF}
 
     if not ZApp.ShowOptionsDialog then
     begin
@@ -4485,6 +4489,10 @@ var
   end;
 
 begin
+  {$IFDEF ZZDC_FPC}
+  Exit; //TODO: check if this still works after building ZZDC with Freepascal
+  {$ENDIF}
+
   DisplayDetailedReport := DetailedBuildReportMenuItem.Checked;
 
   Section := Module.ImageSection[0];

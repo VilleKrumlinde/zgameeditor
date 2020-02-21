@@ -2321,7 +2321,11 @@ begin
           //Write null-terminated string
           Temp := Length(Value.StringValue);
           if Temp>0 then
-            PStream.Write(Value.StringValue[1],Temp);
+            for J := 1 to Temp do
+            begin
+              B := Ord(Value.StringValue[J]) xor $aa;
+              PStream.Write(B,1);
+            end;
           B := 0;
           PStream.Write(B,1);
         end;
@@ -2956,11 +2960,10 @@ begin
           if Temp>0 then
           begin
             {$IFDEF MINIMAL}
-            //Value.StringValue := PChar(PStream.GetMemory);
-            //Inc(PStream.Position,Temp+1);
             GetMem(Value.StringValue,Temp+1);
             PStream.Read(Value.StringValue^,Temp+1);
-            //Value.StringValue[Temp] := #0;
+            for J := 0 to Temp-1 do
+              PBytes(Value.StringValue)[J] := PBytes(Value.StringValue)[J] xor $aa;
             {$ELSE}
             SetLength(Value.StringValue,Temp);
             PStream.Read(Value.StringValue[1],Temp);
