@@ -2738,7 +2738,7 @@ begin
       begin
         Env.StackPopToPointer(P1);
         P2 := ZApp.Symtab.Lookup(String(PAnsiChar(P1)));
-        Env.StackPush(P2);
+        Env.StackPushPointer(P2);
       end;
     fcCreateComponent :
       begin
@@ -2762,7 +2762,7 @@ begin
           C.ZApp.HasScriptCreatedComponents := True;
         end;
 
-        Env.StackPush(C);
+        Env.StackPushPointer(C);
         ZLog.GetLog('Zc').Write('Creating component: ' + Ci.ZClassName,lleNormal);
       end;
     fcSetNumericProperty :
@@ -2856,7 +2856,7 @@ begin
         Dest := ManagedHeap_Alloc(Length(TmpS)+1);
         ZStrCopy(Dest,PAnsiChar(TmpS));
 
-        Env.StackPush(Dest);
+        Env.StackPushPointer(Dest);
       end;
   end;
 end;
