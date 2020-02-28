@@ -353,10 +353,6 @@ type
   TRenderTarget = class(TZComponent)
   strict private
     RboId : integer;
-    {$ifdef RT_MULTISAMPLE}
-    RboId_Ms : integer;
-    TexId_Ms,FboId_Ms : integer;
-    {$endif}
     WasActivated : boolean;
     {$ifndef minimal}
     LastW,LastH : integer;
@@ -377,6 +373,8 @@ type
     {$ifdef RT_MULTISAMPLE}
     UseMultiSample : boolean;
     MultiSampleCount,MsWidth,MsHeight : integer;
+    RboId_Ms : integer;
+    TexId_Ms,FboId_Ms : integer;
     procedure RefreshTextureFromMultisample;
     {$endif}
     destructor Destroy; override;
