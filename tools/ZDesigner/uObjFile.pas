@@ -46,6 +46,7 @@ type
     Faces : TList<TObjFace>;
     FileName : string;
     Materials : TObjectDictionary<string,TObjMaterial>;
+    HasVertexColors : boolean;
     procedure UpdateMeshImp(MeshImp: TMeshImport);
     function GenerateMesh : TZComponent;
     procedure AddMaterialLib(const MatFileName : string);
@@ -77,6 +78,7 @@ begin
   Materials := TObjectDictionary<string,TObjMaterial>.Create([doOwnsValues]);
   Self.FileName := FileName;
   Self.IncludeVertexColors := True;
+  Self.IncludeTextureCoords := True;
 end;
 
 destructor TObjImport.Destroy;
@@ -231,7 +233,10 @@ begin
           L2.DelimitedText := L[1+I];
           Face.Index[I] := FaceIndex(StrToInt(L2[0]));
           if Assigned(Mat) then
+          begin
             Colors[ Face.Index[I] ] := Mat.Diffuse;
+            Self.HasVertexColors := True;
+          end;
         end;
         Self.Faces.Add(Face);
         if L.Count=5 then
@@ -244,7 +249,10 @@ begin
           L2.DelimitedText := L[1+3];
           Face.Index[1] := FaceIndex(StrToInt(L2[0]));
           if Assigned(Mat) then
+          begin
             Colors[ Face.Index[1] ] := Mat.Diffuse;
+            Self.HasVertexColors := True;
+          end;
           Self.Faces.Add(Face);
         end;
       end else
@@ -348,7 +356,7 @@ begin
     end;
     {$ENDIF}
 
-   if Self.IncludeVertexColors then
+   if Self.IncludeVertexColors and Self.HasVertexColors then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to Self.Colors.Count - 1 do
