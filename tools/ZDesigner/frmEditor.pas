@@ -330,6 +330,8 @@ type
     procedure OpenAllProjectsMenuItemClick(Sender: TObject);
     procedure EvalEditKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure QuickCompListViewCustomDrawItem(Sender: TCustomListView;
+      Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -359,6 +361,7 @@ type
     DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
     MainScaling : integer;
     EvalHistory : TStringList;
+    QuickCompEnabledList : array of boolean;
     procedure SelectComponent(C : TZComponent);
     procedure DrawModel;
     procedure OnGlDraw(Sender : TObject);
@@ -431,6 +434,7 @@ type
     procedure OnPropEditFocusControl(Sender: TObject; Prop : TZProperty; Component : TZComponent);
     procedure ResizeImageListImagesforHighDPI(const imgList: TImageList);
     procedure ParseEvalExpression(const Expr : string);
+    procedure FilterQuickCompList;
   protected
     procedure CreateWnd; override;
   public
@@ -736,6 +740,7 @@ begin
     Item.Data := Ci;
     Item.ImageIndex := Ci.ImageIndex;
   end;
+  SetLength(QuickCompEnabledList,QuickCompListView.Items.Count);
 //  ListView_SetColumnWidth(QuickCompListView.Handle, 0, 200);
 end;
 
@@ -1526,7 +1531,7 @@ begin
     //Then focus back to tree to make tree-navigation with cursorkeys possible
     OldFocus := Self.ActiveControl;
     Ed.WantsFocus.SetFocus;
-    if Assigned(OldFocus) and (OldFocus.Visible) then
+    if Assigned(OldFocus) and OldFocus.Visible and OldFocus.Enabled then
       Self.ActiveControl := OldFocus;
   end;
 end;
@@ -1738,6 +1743,67 @@ begin
   SetFileChanged(True);
 end;
 
+procedure TEditorForm.FilterQuickCompList;
+var
+  Ci : TZComponentInfo;
+  Prop : TZProperty;
+  ParentComps,ParentLists : TStringList;
+  CurParent : TZComponentTreeNode;
+  Item : TListItem;
+  I,J : integer;
+  PassedFilter,Enabled : boolean;
+begin
+  if (not Assigned(Tree.Selected)) or (not Assigned(Tree.ZSelected.ComponentList)) then
+    Exit;
+
+  Prop := Tree.ZSelected.Prop;
+
+  ParentComps := TStringList.Create;
+  ParentLists := TStringList.Create;
+  try
+    CurParent := Tree.ZSelected;
+    while CurParent<>nil do
+    begin
+      if Assigned(CurParent.Component) then
+        ParentComps.Add(ComponentManager.GetInfo(CurParent.Component).ZClassName)
+      else if Assigned(CurParent.ComponentList) then
+        ParentLists.Add(CurParent.Text);
+      CurParent := CurParent.Parent as TZComponentTreeNode;
+    end;
+
+    for I := 0 to QuickCompListView.Items.Count - 1 do
+    begin
+      Item := QuickCompListView.Items[I];
+      Ci := TZComponentInfo(Item.Data);
+
+      Enabled := True;
+      if (Ci.NeedParentComp<>'') and (ParentComps.IndexOf(Ci.NeedParentComp)=-1) then
+        Enabled := False;
+
+      if High(Prop.ChildClasses)>-1 then
+      begin
+        PassedFilter :=False;
+        for J := 0 to High(Prop.ChildClasses) do
+          if (Ci.ZClass = Prop.ChildClasses[J]) or
+            (Ci.ZClass.InheritsFrom(Prop.ChildClasses[J])) then
+          begin
+            PassedFilter := True;
+            Break;
+          end;
+        if not PassedFilter then
+          Enabled := False;
+      end;
+
+      QuickCompEnabledList[I] := Enabled;
+    end;
+
+  finally
+    ParentComps.Free;
+    ParentLists.Free;
+  end;
+  QuickCompListView.Invalidate;
+end;
+
 procedure TEditorForm.OnTreeSelectItem(Sender: TObject; Node : TTreeNode);
 begin
   if (Tree.ZSelected<>nil) and (Tree.ZSelected.Component<>nil) then
@@ -1750,6 +1816,7 @@ begin
   begin
     PropListParent.Visible := False;
     QuickCompListParent.Visible := True;
+    FilterQuickCompList;
     Ed.SetComponent(nil);
   end
   else
@@ -3688,9 +3755,37 @@ var
 begin
   if QuickCompListView.Selected=nil then
     Exit;
+  if not QuickCompEnabledList[QuickCompListView.Selected.Index] then
+    Exit;
   Ci := TZComponentInfo(QuickCompListView.Selected.Data);
   C := Ci.ZClass.Create(nil);
   AddNewComponentToTree(C, QuickCompListView.Tag<>0);
+end;
+
+procedure TEditorForm.QuickCompListViewCustomDrawItem(Sender: TCustomListView;
+  Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+//Reference: http://theroadtodelphi.wordpress.com/2012/03/14/vcl-styles-and-owner-draw/
+var
+  LStyles   : TCustomStyleServices;
+  LColor    : TColor;
+  Fs : TThemedTreeView;
+begin
+  LStyles := StyleServices;
+
+  if QuickCompEnabledList[Item.Index] then
+    Fs := ttItemNormal
+  else
+    Fs := ttItemDisabled;
+  if not LStyles.GetElementColor(LStyles.GetElementDetails(Fs), ecTextColor, LColor) or (LColor = clNone) then
+  begin
+    if QuickCompEnabledList[Item.Index] then
+	    LColor := LStyles.GetSystemColor(clWindowText)
+    else
+	    LColor := LStyles.GetSystemColor(clGrayText);
+  end;
+
+  Sender.Canvas.Font.Color  := LColor;
+  Sender.Canvas.Brush.Color := LStyles.GetStyleColor(scListView);
 end;
 
 procedure TEditorForm.QuickCompListViewMouseDown(Sender: TObject;

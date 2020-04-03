@@ -75,7 +75,7 @@ type
     xtkSquareOpen, xtkStar, xtkSubtract, xtkSubtractAssign, xtkXor,
     xtkXorAssign);
 
-  TRangeState = (rsUnknown, rsAnsiC, rsDirective, rsDirectiveComment,
+  TRangeState = (rsUnknown, rsDirective, rsDirectiveComment,
     rsMultiLineString, rsMultiLineDirective);
 
   PIdentFuncTableFunc = ^TIdentFuncTableFunc;
@@ -590,7 +590,6 @@ begin
 
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment, SYNS_FriendlyAttrComment);
   FCommentAttri.Style:= [fsItalic];
-  FCommentAttri.Foreground := clGray;
   FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier, SYNS_FriendlyAttrIdentifier);
   FInterfaceQualifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrInterfaceQualifier, SYNS_FriendlyAttrInterfaceQualifier);
   FInterfaceQualifierAttri.Style:= [fsBold];
@@ -1278,8 +1277,6 @@ begin
     '*':                               {c style comments}
       begin
         FTokenID := tkComment;
-        if FRange <> rsDirectiveComment then
-          FRange := rsAnsiC;
         Inc(Run, 2);
         while FLine[Run] <> #0 do
           case FLine[Run] of
@@ -1294,11 +1291,7 @@ begin
                 Break;
               end else Inc(Run);
             #10, #13:
-              begin
-                if FRange = rsDirectiveComment then
-                  FRange := rsAnsiC;
-                Break;
-              end;
+              Break;
           else Inc(Run);
           end;
       end;
@@ -1460,7 +1453,7 @@ begin
   FAsmStart := False;
   FTokenPos := Run;
   case FRange of
-    rsAnsiC, rsDirectiveComment: AnsiCProc;
+    rsDirectiveComment: AnsiCProc;
     rsMultiLineDirective: DirectiveEndProc;
     rsMultilineString: StringEndProc;
   else

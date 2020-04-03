@@ -168,9 +168,6 @@ object EditorForm: TEditorForm
           Color = clInactiveCaption
           TabOrder = 1
           OnKeyDown = EvalEditKeyDown
-          ExplicitLeft = 48
-          ExplicitTop = 88
-          ExplicitWidth = 121
         end
       end
       object PropEditParentPanel: TPanel
@@ -255,6 +252,7 @@ object EditorForm: TEditorForm
             TabOrder = 0
             ViewStyle = vsList
             OnClick = QuickCompListViewClick
+            OnCustomDrawItem = QuickCompListViewCustomDrawItem
             OnMouseDown = QuickCompListViewMouseDown
           end
           object Panel3: TPanel
@@ -289,10 +287,6 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
-          ExplicitLeft = 0
-          ExplicitTop = 0
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
