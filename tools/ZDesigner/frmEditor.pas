@@ -240,6 +240,7 @@ type
     EnableFunctionInlining: TMenuItem;
     OpenAllProjectsMenuItem: TMenuItem;
     EvalEdit: TEdit;
+    BuildZ80MenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -332,6 +333,7 @@ type
       Shift: TShiftState);
     procedure QuickCompListViewCustomDrawItem(Sender: TCustomListView;
       Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+    procedure BuildZ80MenuItemClick(Sender: TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -3755,8 +3757,6 @@ var
 begin
   if QuickCompListView.Selected=nil then
     Exit;
-  if not QuickCompEnabledList[QuickCompListView.Selected.Index] then
-    Exit;
   Ci := TZComponentInfo(QuickCompListView.Selected.Data);
   C := Ci.ZClass.Create(nil);
   AddNewComponentToTree(C, QuickCompListView.Tag<>0);
@@ -5001,6 +5001,182 @@ begin
     M.RadioItem := True;
     StyleMenuItem.Add(M);
   end;
+end;
+
+procedure TEditorForm.BuildZ80MenuItemClick(Sender: TObject);
+var
+  Zex : TZExpression;
+  I : integer;
+  C : TZComponent;
+  Z80Strings,
+  Z80Code : TMemoryStream;
+  Z80File : TMemoryStream;
+  OutFile : string;
+
+  procedure InCode(const Code : array of byte; Stream : TMemoryStream = nil);
+  var
+    B : integer;
+  begin
+    if Stream=nil then
+      Stream := Z80Code;
+    for B in Code do
+      Stream.Write(B,1);
+  end;
+
+  procedure InCodeWord(const W : word; Stream : TMemoryStream = nil);
+  var
+    B : byte;
+  begin
+    if Stream=nil then
+      Stream := Z80Code;
+    B := Lo(W);
+    Stream.Write(B,1);
+    B := Hi(W);
+    Stream.Write(B,1);
+  end;
+
+  procedure InCodeString(const S : string; Stream : TMemoryStream = nil);
+  var
+    Buf : array of byte;
+  begin
+    if Stream=nil then
+      Stream := Z80Code;
+    SetLength(Buf,Length(S) div 2);
+    HexToBin(PWideChar(S),Buf[0],Length(Buf));
+    Stream.Write(Buf[0],Length(Buf));
+  end;
+
+var
+  StringConstant : TExpStringConstant;
+begin
+  if not CompileAll then
+    Exit;
+
+{
+LoadComponent TExpStringConstant
+LoadPropOffset 1
+AddToPointer
+PtrDerefPointer (misc)
+Call Trace
+Return 0 0 0 *null*
+
+https://chuntey.wordpress.com/2012/12/18/how-to-write-zx-spectrum-games-chapter-1/
+
+ld a,2              ; upper screen
+call 5633           ; open channel
+ld de,string        ; address of string
+ld bc,eostr-string  ; length of string to print
+call 8252           ; print our string
+
+https://www.asm80.com/
+}
+  Z80Code := TMemoryStream.Create;
+  Z80Strings := TMemoryStream.Create;
+
+  InCode([$21,$58,$27,$d9]);  //ld hl,10072:exx
+  InCode([$3e,$02,$cd,$01,$16]); //open print channel
+//InCode([$18,$fe]); //infinite loop
+
+  StringConstant := nil;
+  Zex := nil;
+  for I := 0 to Self.ZApp.OnLoaded.ComponentCount-1 do
+  begin
+    if Self.ZApp.OnLoaded[I] is TZExpression then
+    begin
+      Zex := Self.ZApp.OnLoaded[I] as TZExpression;
+      Break;
+    end;
+  end;
+
+  for I := 0 to Zex.Expression.Code.Count-1 do
+  begin
+    C := Zex.Expression.Code[I] as TZComponent;
+    if (C is TExpLoadComponent) and (TExpLoadComponent(C).Component is TExpStringConstant) then
+    begin
+      StringConstant := TExpLoadComponent(C).Component as TExpStringConstant;
+    end else if (C is TExpExternalFuncCall) then
+    begin
+      if TExpExternalFuncCall(C).FuncName='print' then
+      begin
+        InCode([$11]);
+        InCodeWord(29000 + Z80Strings.Position);
+        InCode([$01]);
+        InCodeWord( Length(StringConstant.Value) );
+        InCode([$cd,$3c,$20]);
+        Z80Strings.Write(StringConstant.Value^,Length(StringConstant.Value));
+      end else if TExpExternalFuncCall(C).FuncName='gotoxy' then
+      begin
+        InCode([62,22,$d7]);  //ld a,22 rst 16
+        InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
+        InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
+      end
+      else
+        Assert(False,'Invalid func call');
+    end else if (C is TExpConstantInt) then
+    begin
+      InCode([$21]);  //ld hl,
+      InCodeWord(TExpConstantInt(C).Constant);
+      InCode([$e5]);  //push hl
+    end
+    else
+      Log.Write('Skipping: ' + C.ClassName);
+  end;
+
+  InCode([$18,$fe]); //infinite loop
+
+  //http://www.worldofspectrum.org/faq/reference/z80format.htm
+  Z80File := TMemoryStream.Create;
+  InCode([$00,$5c,$ff,$ff,$a8,$10],Z80File);
+  InCodeWord(30000,Z80File);
+  InCode([$46,$ff,$ef,$9f,$2e-32,$91,$5c,$4b],Z80File);
+  InCode([$17,$06,$00,$7f,$10,$00,$44,$3a],Z80File);
+  InCode([$5c,$ff,$ff,$00,$00,$01],Z80File);
+
+  //Screen attributes
+  Z80File.SetSize((16384+6144)-16384+30);
+  Z80File.Position := Z80File.Size;
+  for I := 0 to 767 do
+    InCode([$38],Z80File);
+
+  //Default BASIC system variables
+  Z80File.SetSize((23296+256)-16384+30);
+  Z80File.Position := Z80File.Size;
+  InCodeString(
+    'FF000000FF0000000023050000000000'+
+    '010006000B0001000100060010000000'+
+    '00000000000000000000000000000000'+
+    '000000000000003C400000002150FF00'+
+    '0000000000000000380000CB5C0000B6'+
+    '5CB65CCB5C0000CA5CCC5CCC5C000000'+
+    '00CE5CCE5CCE5C00925C100200000000'+
+    '0000000000000000FC110058FF000021'+
+    '005B05170040FC502118051701380038'+
+    '00000000000000000000000000000000'+
+    '00000000000000000000000000000000'+
+    '000057FFFFFFF409A8104BF409C41553'+
+    '810FC41552F409C4155080800D80', Z80File);
+
+  Z80File.SetSize(29000-16384+30);
+  Z80File.Position := Z80File.Size;
+  Z80Strings.Position := 0;
+  Z80File.CopyFrom(Z80Strings,Z80Strings.Size);
+
+  Z80File.SetSize(30000-16384+30);
+  Z80File.Position := Z80File.Size;
+  Z80Code.Position := 0;
+  Z80File.CopyFrom(Z80Code,Z80Code.Size);
+
+  Z80File.SetSize(48*1024+30);
+
+  if CurrentFileName='' then
+    OutFile := ExePath + 'untitled.z80'
+  else
+    OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
+  Z80File.SaveToFile(OutFile);
+
+  Z80Code.Free;
+  Z80File.Free;
+  Z80Strings.Free;
 end;
 
 procedure TEditorForm.AndroidBuildDebugApkActionExecute(Sender: TObject);

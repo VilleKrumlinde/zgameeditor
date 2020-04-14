@@ -287,6 +287,10 @@ object EditorForm: TEditorForm
           Margins.Bottom = 4
           Caption = 'ViewerGlTabSheet'
           TabVisible = False
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object RotateModelPanel: TPanel
             Left = 0
             Top = 0
@@ -1710,6 +1714,10 @@ object EditorForm: TEditorForm
       end
       object BuildMacOSXIntelbinary1: TMenuItem
         Action = GenerateReleaseOsx86Action
+      end
+      object BuildZ80MenuItem: TMenuItem
+        Caption = 'Build Z80 file'
+        OnClick = BuildZ80MenuItemClick
       end
       object N17: TMenuItem
         Caption = '-'

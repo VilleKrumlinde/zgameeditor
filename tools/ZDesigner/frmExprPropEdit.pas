@@ -37,7 +37,7 @@ implementation
 
 {$R *.dfm}
 
-uses dmCommon, SynHighlighterZc, SynEditSearch;
+uses dmCommon, SynHighlighterZc, SynEditSearch, Types;
 
 procedure TExprPropEditForm.ExprHelpButtonClick(Sender: TObject);
 begin
@@ -62,8 +62,8 @@ begin
   ExprSynEdit.WantTabs := True;
   ExprSynEdit.TabWidth := 2;
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
-    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
   ExprSynEdit.MaxScrollWidth := 2048;

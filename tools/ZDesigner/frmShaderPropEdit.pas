@@ -39,7 +39,7 @@ implementation
 {$R *.dfm}
 
 uses
-  dmCommon, SynHighlighterGLSL, SynEditSearch;
+  dmCommon, SynHighlighterGLSL, SynEditSearch, Types;
 
 procedure TShaderPropEditForm.FormCreate(Sender: TObject);
 begin
@@ -60,8 +60,8 @@ begin
   ShaderSynEdit.WantTabs := True;
   ShaderSynEdit.TabWidth := 2;
   ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
-    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 end;
