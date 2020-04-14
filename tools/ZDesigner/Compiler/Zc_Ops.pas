@@ -658,7 +658,7 @@ var
     Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;
 
-  procedure DoIntConstant(const NewValue : double);
+  procedure DoIntConstant(const NewValue : integer);
   begin
     Result := TZcOpLiteral.Create(C1.Typ.Kind,NewValue);
   end;

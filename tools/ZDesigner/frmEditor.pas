@@ -476,7 +476,7 @@ uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
   SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
   frmAndroidApk, Winapi.Imm, Vcl.ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
-  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit, uObjFile;
+  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit, uObjFile, ZFile;
 
 { TEditorForm }
 
@@ -5006,7 +5006,6 @@ end;
 procedure TEditorForm.BuildZ80MenuItemClick(Sender: TObject);
 var
   Zex : TZExpression;
-  I : integer;
   C : TZComponent;
   Z80Strings,
   Z80Code : TMemoryStream;
@@ -5046,8 +5045,18 @@ var
     Stream.Write(Buf[0],Length(Buf));
   end;
 
+type
+  TFixUp =
+    record
+      Offset,Target : integer;
+    end;
 var
   StringConstant : TExpStringConstant;
+  W : word;
+  Fixups : array of TFixUp;
+  I,J : integer;
+  InstructionOffsets : TList;
+  List : TObjectList;
 begin
   if not CompileAll then
     Exit;
@@ -5072,6 +5081,7 @@ https://www.asm80.com/
 }
   Z80Code := TMemoryStream.Create;
   Z80Strings := TMemoryStream.Create;
+  InstructionOffsets := TList.Create;
 
   InCode([$21,$58,$27,$d9]);  //ld hl,10072:exx
   InCode([$3e,$02,$cd,$01,$16]); //open print channel
@@ -5090,6 +5100,8 @@ https://www.asm80.com/
 
   for I := 0 to Zex.Expression.Code.Count-1 do
   begin
+    InstructionOffsets.Add( pointer( Z80Code.Position ) );
+
     C := Zex.Expression.Code[I] as TZComponent;
     if (C is TExpLoadComponent) and (TExpLoadComponent(C).Component is TExpStringConstant) then
     begin
@@ -5109,6 +5121,12 @@ https://www.asm80.com/
         InCode([62,22,$d7]);  //ld a,22 rst 16
         InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
         InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
+      end else if TExpExternalFuncCall(C).FuncName='poke' then
+      begin
+        InCodeString('c1e17977',Z80Code); //pop bc, pop hl, ld a,c, ld (hl),a
+      end else if TExpExternalFuncCall(C).FuncName='writeport' then
+      begin
+        InCodeString('e1c145ed41',Z80Code); //pop hl, pop bc, ld b,l, out (c),b
       end
       else
         Assert(False,'Invalid func call');
@@ -5117,15 +5135,73 @@ https://www.asm80.com/
       InCode([$21]);  //ld hl,
       InCodeWord(TExpConstantInt(C).Constant);
       InCode([$e5]);  //push hl
-    end
-    else
+    end else if (C is TExpAccessLocal) then
+    begin
+      W := 28000 + TExpAccessLocal(C).Index*2;
+      case TExpAccessLocal(C).Kind of
+      loLoad :
+        begin
+          InCode([$2a]);  //ld hl,(nn)
+          InCodeWord(W);
+          InCode([$e5]);  //push hl
+        end;
+      loStore :
+        begin
+          InCode([$e1,$22]); //pop hl, ld (nn),hl
+          InCodeWord(W);
+        end;
+      else
+        Assert(False,'Invalid TExpAccessLocal');
+      end;
+    end else if (C is TExpJump) then
+    begin
+      W := 0;
+      case TExpJump(C).Kind of
+        jsJumpEQ :
+          begin
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$3f,$ed,$52,$ca]);  //pop hl, pop de, ccf, sbc hl,de, jp z,nn
+          end;
+        jsJumpAlways :
+          begin
+            InCode([$c3]);  //jp
+          end;
+      end;
+      J := Length(Fixups);
+      SetLength(Fixups,J+1);
+      Fixups[J].Offset := Z80Code.Position;
+      Fixups[J].Target := I + TExpJump(C).Destination;
+      InCodeWord(W);
+    end else if (C is TExpOpBinaryInt) then
+    begin
+      case TExpOpBinaryInt(C).Kind of
+        vbkPlus :
+          begin
+            InCode([$e1,$d1,$19,$e5]);  //pop hl, pop de, add hl,de, push hl
+          end;
+      else
+        Assert(False,'wrong TExpOpBinaryInt');
+      end;
+    end else
       Log.Write('Skipping: ' + C.ClassName);
   end;
 
   InCode([$18,$fe]); //infinite loop
 
+  //Resolving fixups
+  for I := 0 to High(Fixups) do
+  begin
+    Z80Code.Position := Fixups[I].Offset;
+    InCodeWord( 30000 + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
+  end;
+
   //http://www.worldofspectrum.org/faq/reference/z80format.htm
   Z80File := TMemoryStream.Create;
+
+  //48kb + header
+  Z80File.SetSize(48*1024+30);
+  FillChar(Z80File.Memory^,Z80File.Size,0);
+
   InCode([$00,$5c,$ff,$ff,$a8,$10],Z80File);
   InCodeWord(30000,Z80File);
   InCode([$46,$ff,$ef,$9f,$2e-32,$91,$5c,$4b],Z80File);
@@ -5156,17 +5232,31 @@ https://www.asm80.com/
     '000057FFFFFFF409A8104BF409C41553'+
     '810FC41552F409C4155080800D80', Z80File);
 
+  //Write strings
   Z80File.SetSize(29000-16384+30);
   Z80File.Position := Z80File.Size;
   Z80Strings.Position := 0;
   Z80File.CopyFrom(Z80Strings,Z80Strings.Size);
 
+  //Write code
   Z80File.SetSize(30000-16384+30);
   Z80File.Position := Z80File.Size;
   Z80Code.Position := 0;
   Z80File.CopyFrom(Z80Code,Z80Code.Size);
 
-  Z80File.SetSize(48*1024+30);
+  //Embedded files, comment holds their target address
+  List := TObjectList.Create(False);
+  GetAllObjects(Self.ZApp,List);
+  for I := 0 to List.Count-1 do
+  begin
+    if (List[I] is TZFile) then
+    begin
+      C := List[I] as TZComponent;
+      Z80File.Position := StrToInt( string(TZFile(C).Comment) )-16384+30;
+      Z80File.Write(TZFile(C).FileEmbedded.Data^,TZFile(C).FileEmbedded.Size);
+    end;
+  end;
+  List.Free;
 
   if CurrentFileName='' then
     OutFile := ExePath + 'untitled.z80'
@@ -5177,6 +5267,7 @@ https://www.asm80.com/
   Z80Code.Free;
   Z80File.Free;
   Z80Strings.Free;
+  InstructionOffsets.Free;
 end;
 
 procedure TEditorForm.AndroidBuildDebugApkActionExecute(Sender: TObject);
