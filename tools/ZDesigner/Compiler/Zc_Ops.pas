@@ -759,6 +759,7 @@ begin
 
   //Test for case when function inlining has resulted in a single statement
   if (Kind=zcInlineBlock) and
+   (Children.Count>0) and
    (Children.First.Kind=zcInlineReturn) and
    (Children.First.Children.First.Kind=zcConstLiteral) then
   begin

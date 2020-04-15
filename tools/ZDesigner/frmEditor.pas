@@ -621,6 +621,8 @@ begin
   FillQuickCompList;
 
   EvalHistory := TStringList.Create;
+
+  BuildZ80MenuItem.Visible := DebugHook<>0;
 end;
 
 
@@ -1533,7 +1535,7 @@ begin
     //Then focus back to tree to make tree-navigation with cursorkeys possible
     OldFocus := Self.ActiveControl;
     Ed.WantsFocus.SetFocus;
-    if Assigned(OldFocus) and OldFocus.Visible and OldFocus.Enabled then
+    if Assigned(OldFocus) and OldFocus.Visible and OldFocus.Enabled and OldFocus.CanFocus then
       Self.ActiveControl := OldFocus;
   end;
 end;
@@ -5116,17 +5118,12 @@ https://www.asm80.com/
         InCodeWord( Length(StringConstant.Value) );
         InCode([$cd,$3c,$20]);
         Z80Strings.Write(StringConstant.Value^,Length(StringConstant.Value));
-      end else if TExpExternalFuncCall(C).FuncName='gotoxy' then
+      end else if TExpExternalFuncCall(C).FuncName='emit' then
       begin
-        InCode([62,22,$d7]);  //ld a,22 rst 16
-        InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
-        InCode([$e1,$7d,$d7]);  //pop hl, ld a,l, rst 16
-      end else if TExpExternalFuncCall(C).FuncName='poke' then
+        InCodeString(String(StringConstant.Value));
+      end else if TExpExternalFuncCall(C).FuncName='push' then
       begin
-        InCodeString('c1e17977',Z80Code); //pop bc, pop hl, ld a,c, ld (hl),a
-      end else if TExpExternalFuncCall(C).FuncName='writeport' then
-      begin
-        InCodeString('e1c145ed41',Z80Code); //pop hl, pop bc, ld b,l, out (c),b
+        //do nothing
       end
       else
         Assert(False,'Invalid func call');
@@ -5160,12 +5157,19 @@ https://www.asm80.com/
         jsJumpEQ :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$3f,$ed,$52,$ca]);  //pop hl, pop de, ccf, sbc hl,de, jp z,nn
+            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
+          end;
+        jsJumpNE :
+          begin
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$a7,$ed,$52,$c2]);  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
           end;
         jsJumpAlways :
           begin
             InCode([$c3]);  //jp
           end;
+      else
+        Assert(False,'invalid TExpJump');
       end;
       J := Length(Fixups);
       SetLength(Fixups,J+1);
@@ -5178,6 +5182,14 @@ https://www.asm80.com/
         vbkPlus :
           begin
             InCode([$e1,$d1,$19,$e5]);  //pop hl, pop de, add hl,de, push hl
+          end;
+        vbkMinus :
+          begin
+            InCodeString('d1e1a7ed52e5');  //pop hl, pop de, and a, sbc hl,de, push hl
+          end;
+        vbkBinaryAnd :
+          begin
+            InCodeString('e1d17ba56f2600e5'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
           end;
       else
         Assert(False,'wrong TExpOpBinaryInt');
@@ -5263,6 +5275,7 @@ https://www.asm80.com/
   else
     OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
   Z80File.SaveToFile(OutFile);
+  Log.Write('File generated: ' + OutFile);
 
   Z80Code.Free;
   Z80File.Free;
