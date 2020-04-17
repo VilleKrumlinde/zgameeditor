@@ -62,7 +62,7 @@ begin
   ExprSynEdit.WantTabs := True;
   ExprSynEdit.TabWidth := 2;
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars,
+    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars, eoScrollPastEol,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;

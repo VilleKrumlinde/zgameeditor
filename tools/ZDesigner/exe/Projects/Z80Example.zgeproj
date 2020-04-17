@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZExternalLibrary>
+      <Source>
+<![CDATA[//Predefined support routines generated from ZGE
+
+void print(string s) { }
+
+void emit(string s) { }
+
+//push argument on stack to be used by "emit"
+void push(int value) { }]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZLibrary>
+      <Source>
+<![CDATA[/*
+  All routines needs to be declared "inline".
+
+  To write asm-code to use with "emit"-statement, try this online assembler:
+    https://www.asm80.com/
+
+  Full ZX Spectrum ROM disassembly:
+    http://primrosebank.net/computers/zxspectrum/docs/CompleteSpectrumROMDisassemblyThe.pdf
+*/
+
+//write byte
+inline void poke(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e17977"); //pop bc, pop hl, ld a,c, ld (hl),a
+}
+
+//write word
+inline void pokew(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e1712370"); //pop bc, pop hl, ld (hl),c, inc hl, ld (hl),b
+}
+
+//read byte
+inline int peek(int addr) {
+  push(addr);
+  emit("e14e0600c5"); //pop hl, ld c,(hl), ld b,0, push bc
+}
+
+//read word
+inline int peekw(int addr) {
+  push(addr);
+  emit("e14e2346c5"); //pop hl, ld c,(hl), inc hl, ld b,(hl), push bc
+}
+
+inline void writeport(int port,byte value) {
+  push(port);
+  push(value);
+  emit("e1c145ed41");  //pop hl, pop bc, ld b,l, out (c),b
+}
+
+inline void setBorderColor(int value) {
+  writeport(254,value);
+}
+
+inline void waitVsync () {
+  emit("fb76"); //ei, halt
+}
+
+inline void printChar(int value) {
+  push(value);
+  emit("c179d7"); //pop bc, ld a,c, rst 16
+}
+
+inline void setPaperColor(int value) {
+  printChar(0x11);
+  printChar(value);
+}
+
+inline void setInkColor(int value) {
+  printChar(0x10);
+  printChar(value);
+}
+
+inline int readport(int port) {
+  push(port);
+  emit("c1ed48c5"); //pop bc, in c,(c), push bc
+}
+
+inline void gotoxy(int x,int y) {
+  push(x);
+  push(y);
+  emit("3e16d7");  //ld a,22 rst 16
+  emit("e17dd7");  //pop hl, ld a,l, rst 16
+  emit("e17dd7");  //pop hl, ld a,l, rst 16
+}
+
+inline int getPixelAddress(int x,int y) {
+  push(y);
+  push(x);
+  emit("c1e145cdaa22e5"); //pop bc, pop hl, ld b,l, call 22aa, push hl
+}
+
+inline void memset(int dest, int value, int count) {
+/*
+pop bc
+pop hl
+pop de
+ld a,l
+ld (de),a
+ld hl,de
+inc de
+ldir
+*/
+  push(dest);
+  push(value);
+  push(count);
+  emit("c1e1d17d12626b13edb0");
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[/*
+  Whole Z80 program needs to be defined in a single ZExpression located in OnLoaded.
+
+  Only "int" type is supported and treated like a 16 bit unsigned number.
+
+  Constant string values is supported only for "print" and "emit" functions.
+
+  "File" components are mapped to their address that is specified in their Comment property.
+
+  Build using "Project - Build Z80 file"
+
+  The resulting Z80 file can be opened in ZX Spectrum emulators such as https://github.com/chernandezba/zesarux/releases
+*/
+
+//Custom font, ripped from Boggit using this technique https://markhardisty.wordpress.com/2018/01/23/how-to-rip-a-zx-spectrum-games-font/
+pokew(23606, 40000);
+
+//setPaperColor(47);
+gotoxy(2,2);
+print("ZGAMEEDITOR FOR ZX SPECTRUM");
+
+gotoxy(0,4);
+print("PRESS 1 AND 2 TO MOVE CHARACTER");
+
+/*for(int i=0; i!=5; i++) {
+  gotoxy(i,10);
+  printChar(65+i);
+}*/
+
+int spritex=32;
+int sabreSpriteX=0;
+int frame=0;
+int bordercolor=0;
+
+//Set up colors
+int attraddress=16384+6144;
+memset(attraddress,2,768/3); attraddress+=768/3;
+memset(attraddress,7,768/3); attraddress+=768/3;
+memset(attraddress,5,768/3);
+
+while(1) {
+  waitVsync();
+  frame++;
+
+//  int key=readport(32766);
+//  poke(16384,key);
+
+
+  {
+    //Sprite data, converted using c:\temp\ffmpeg -i test.png -pix_fmt monow -f rawvideo out.raw
+    int sprite=50000;
+    int animframe=spritex & 7;
+    for(int i=0; i <animframe; i++)
+      sprite += (4*32);
+    for(int i=0; i<32; i++) {
+      int screen=getPixelAddress(spritex,45-i);
+
+      poke(screen-1,0);
+      pokew(screen, peekw(sprite)  ); screen+=2; sprite+=2;
+      pokew(screen, peekw(sprite)  ); sprite+=2;
+    }
+  }
+
+  {
+    //sabreman
+    int sprite=52000;
+    if((sabreSpriteX&7) != 0)
+      sprite += 48;
+    for(int i=0; i<24; i++) {
+      int screen=getPixelAddress(sabreSpriteX,100-i);
+      poke(screen-1,0);
+      pokew(screen, peekw(sprite)  );
+      sprite+=2;
+    }
+    if((frame&15)==0) {
+      sabreSpriteX+=4;
+      if(sabreSpriteX==200) {
+        //wrap around, and erase video mem so there is no leftover at right edge
+        sabreSpriteX=0;
+        memset(16384 + 2048,0,2048);
+      }
+    }
+  }
+
+  int key=readport(0xf7fe);
+  if((key & 2)==0) {
+     if(spritex<256-24)
+       spritex++;
+  } else if((key & 1)==0) {
+     if(spritex!=0)
+       spritex--;
+  }
+
+  if((frame&15)==0)
+    setBorderColor(bordercolor++);
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <Content>
+    <File Name="FontFile" Comment="40000">
+      <FileEmbedded>
+<![CDATA[789C5D515B6B1341143EEDCA3A90250494B26048FB10FBD007595D0841D6DD3C59E98B17A40F45C2E2844D213156571B1FE28C8A17C4BB82F74B55FA60DA426244DB58F357F20B2AF901938E6736298ADFCE9ED96FBE33E7CC37DBFBDA586BF6DA5FDACD5E6763A5DD5BEDB4EABD6663E587586EAF35C4F2F7D6A6586DFCECF67FD5D7D7FB1BF5CD6FFD4EABD5DD5EEA76BB12148410236214A3D0C5F8F11327CFCC8A58EC2052220E89B1B42814E994E7093175E0984A2A1482C3C214567C2F92492166C43F9818CE9E0ABB8938BB2D65E5A29497E47F58FA78FD86BC79EBF690DEC5F79EBCFFE0A17CF4F889DC7AF65B3E7FF152099F067A75F172EDCE55FE5A5E7BFAE6AD94EFE4FB0F6AF9F3C08182A58031531E2EA4591A07B8A579375672C9855305B267FFB4E2CE3C72C330A334C38C60984604134CE6B04822C4256450CB342D8CAEFBB71968BA615A7E0E92194A692609D9A80C0327500207AEE9E31A75418F8F4D1EE5BACE7DDF551C454671E634AA002E12C531784A57CDD418CE964A320D1D39C3075B2319ECD35251A233339BCF39EA1C9CD200F255CA68350F29DBF77D3B05B500CF17D4C00B7DE6871EF6F56BA8E07EFF3C2D1E0154794829B0393CFE1C034FD734E58706E55AA5486101937DCA6191974A25AC5FF16C4438BAE39BD936B3AC2BD13D9CCBEC1B4173AC1C50553FF22B5FA97B7120B4317FD08F56DD24A114EBF10C28E256A9D223FF7C3A9ECC861C204E1071749C9B48905D000B09C40240227B1A3F76FE84FC03568E1F24]]>
+      </FileEmbedded>
+    </File>
+    <File Name="NodesSpriteFile" Comment="50000">
+      <FileEmbedded>
+<![CDATA[789C95934B6813511486FF7B67EC903E32952A4134CD14175D08938242C53674C4457775AD880845C18D7DA0A4B58F5C5C2B74293EA0E0C29DBA6B84DA0C584B4050BB6F9B210D54A4CDA44921B58D8D7F1A449736E4CBE44C60BE9BFF9C8331A0E300383B0774BE55E8AC3888961CD8510BF61B129D45DCB710CF3BB8DEE5607C4561C2076B522045C0DC03FC49F24121B3EA22F2C4C59D0E85BBDFF95B1A3056C80B324F8EBBFC70617E5530F90CDD50D0231EF49E61E80F77A12716A1572F40CF16A1FFC82298DD833D5DC4B9E91CA29A8E682CCDBA00BB0AB209AB9A47B84CF63771ADE261B0A2707E1BC0122062BCEEAB4344D9855CEF85E15460A85D689E07E11DD16FD0DF43FF14FDBF3CD8CCCD3A7010AE2A847D8553E577D0F693D0B693685EEA42736FCD5F478B2B68AFC9479ECB6370EB44AB65A120E997F44BFA25FD927E49BFA45FD26FD01FA2FFE42B1DA1976984160AAC3D841220165AAB16826BCE212D446CD1799BCF7E4EDEF3FFDFC45F6EA0FE4AF17ECA3D3C83300B10E124F39A84E8CB42249E418C8C433C18E1750A5A6A1C4DA951342E3F42D3971CBF8FA129318C46F620509E41C09FC1B14C8D13D0FB6C88F97BD0961F43638FD14D470F8931EC18EB8B0B944FF3CDC1E3F9E1F07A99415EE100F67300FB3980573980031CC0010E603E3A2B377C4BCEE51D591876E4C6BC92990C642ACFAC98DBCF1D17E5A2A70DE53C23B2E819A934B4BE56A099CE363A5B9873701788D063B321F7DB5C8C992E7A4D8560F0E8FE12FD3EFD99359E81333595839820F11A9F38F09F15864E2BEC0C02A53F7ED24DCF2572A68B359BDE106118ED0CE0FF1650700105175070010517903561DFB880C2E4126EE5EAAC92F66F40031B1DE0C2994F3963B3FF70ABDE7F334956F01B96AE353C]]>
+      </FileEmbedded>
+    </File>
+    <File Name="SabreSpriteFile" Comment="52000">
+      <FileEmbedded>
+<![CDATA[789C6360E06F903CA0B7432F41B341CDC17243FA07FE030E0C2F1A3C0F441C88617064883FE0D7207B4041C0E283CC03062060FCC06CC17A9DF50CAB01CB0976339E7F8C3F38186427704B705B705B703470CFE0FCC0F001A82C81A180A102A41E00F8B01C53]]>
+      </FileEmbedded>
+    </File>
+  </Content>
+</ZApplication>

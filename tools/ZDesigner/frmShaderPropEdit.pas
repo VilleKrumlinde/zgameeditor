@@ -60,7 +60,7 @@ begin
   ShaderSynEdit.WantTabs := True;
   ShaderSynEdit.TabWidth := 2;
   ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
-    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars,
+    eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars, eoScrollPastEol,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;

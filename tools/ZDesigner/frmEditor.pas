@@ -437,6 +437,7 @@ type
     procedure ResizeImageListImagesforHighDPI(const imgList: TImageList);
     procedure ParseEvalExpression(const Expr : string);
     procedure FilterQuickCompList;
+    procedure BuildZ80(const OutFile : string);
   protected
     procedure CreateWnd; override;
   public
@@ -621,8 +622,6 @@ begin
   FillQuickCompList;
 
   EvalHistory := TStringList.Create;
-
-  BuildZ80MenuItem.Visible := DebugHook<>0;
 end;
 
 
@@ -5007,12 +5006,32 @@ end;
 
 procedure TEditorForm.BuildZ80MenuItemClick(Sender: TObject);
 var
+  OutFile : string;
+begin
+  if CurrentFileName='' then
+    OutFile := ExePath + 'untitled.z80'
+  else
+    OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
+  try
+    BuildZ80(OutFile);
+  except on E : Exception do
+    ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check Z80Example demo project.'+#13+#13+E.Message);
+  end;
+end;
+
+procedure TEditorForm.BuildZ80(const OutFile : string);
+type
+  TFixUp =
+    record
+      Offset,Target : integer;
+    end;
+var
   Zex : TZExpression;
   C : TZComponent;
   Z80Strings,
   Z80Code : TMemoryStream;
   Z80File : TMemoryStream;
-  OutFile : string;
+  Fixups : array of TFixUp;
 
   procedure InCode(const Code : array of byte; Stream : TMemoryStream = nil);
   var
@@ -5047,16 +5066,26 @@ var
     Stream.Write(Buf[0],Length(Buf));
   end;
 
-type
-  TFixUp =
-    record
-      Offset,Target : integer;
-    end;
+  procedure InAddFixup(const Destination : integer);
+  var
+    I : integer;
+  begin
+    I := Length(Fixups);
+    SetLength(Fixups,I+1);
+    Fixups[I].Offset := Z80Code.Position;
+    Fixups[I].Target := Destination;;
+    InCodeWord(0);
+  end;
+
+  procedure InFail(const Msg : string);
+  begin
+    raise Exception.Create(Msg);
+  end;
+
 var
   StringConstant : TExpStringConstant;
   W : word;
-  Fixups : array of TFixUp;
-  I,J : integer;
+  I : integer;
   InstructionOffsets : TList;
   List : TObjectList;
 begin
@@ -5069,15 +5098,6 @@ LoadPropOffset 1
 AddToPointer
 PtrDerefPointer (misc)
 Call Trace
-Return 0 0 0 *null*
-
-https://chuntey.wordpress.com/2012/12/18/how-to-write-zx-spectrum-games-chapter-1/
-
-ld a,2              ; upper screen
-call 5633           ; open channel
-ld de,string        ; address of string
-ld bc,eostr-string  ; length of string to print
-call 8252           ; print our string
 
 https://www.asm80.com/
 }
@@ -5085,7 +5105,6 @@ https://www.asm80.com/
   Z80Strings := TMemoryStream.Create;
   InstructionOffsets := TList.Create;
 
-  InCode([$21,$58,$27,$d9]);  //ld hl,10072:exx
   InCode([$3e,$02,$cd,$01,$16]); //open print channel
 //InCode([$18,$fe]); //infinite loop
 
@@ -5100,14 +5119,22 @@ https://www.asm80.com/
     end;
   end;
 
-  for I := 0 to Zex.Expression.Code.Count-1 do
+  I := 0;
+  while I<Zex.Expression.Code.Count do
   begin
+    while InstructionOffsets.Count<I do
+      InstructionOffsets.Add(nil);
     InstructionOffsets.Add( pointer( Z80Code.Position ) );
 
     C := Zex.Expression.Code[I] as TZComponent;
     if (C is TExpLoadComponent) and (TExpLoadComponent(C).Component is TExpStringConstant) then
     begin
       StringConstant := TExpLoadComponent(C).Component as TExpStringConstant;
+      Assert(Zex.Expression.Code[I+1] is TExpLoadPropOffset);
+      Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
+      Assert(Zex.Expression.Code[I+3] is TExpMisc);
+      Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
+      Continue;
     end else if (C is TExpExternalFuncCall) then
     begin
       if TExpExternalFuncCall(C).FuncName='print' then
@@ -5126,7 +5153,7 @@ https://www.asm80.com/
         //do nothing
       end
       else
-        Assert(False,'Invalid func call');
+        InFail('Invalid func call');
     end else if (C is TExpConstantInt) then
     begin
       InCode([$21]);  //ld hl,
@@ -5148,34 +5175,59 @@ https://www.asm80.com/
           InCodeWord(W);
         end;
       else
-        Assert(False,'Invalid TExpAccessLocal');
+        InFail('Invalid TExpAccessLocal');
       end;
     end else if (C is TExpJump) then
     begin
-      W := 0;
       case TExpJump(C).Kind of
         jsJumpEQ :
           begin
             Assert( TExpJump(C)._Type=jutInt );
             InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
+            InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpNE :
           begin
             Assert( TExpJump(C)._Type=jutInt );
             InCode([$e1,$d1,$a7,$ed,$52,$c2]);  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
+            InAddFixup(I + TExpJump(C).Destination);
+          end;
+        jsJumpGE :
+          begin //https://retrocomputing.stackexchange.com/questions/9163/comparing-signed-numbers-on-z80-8080-in-assembly
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a, sbc hl,de, jp z,nn
+            InAddFixup(I + TExpJump(C).Destination);
+            InCode([$ea]);  //jp pe,nn
+            InAddFixup(I + TExpJump(C).Destination);
+          end;
+        jsJumpGT :
+          begin
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$a7,$ed,$52,$ea]);  //pop hl, pop de, and a, sbc hl,de, jp pe,nn
+            InAddFixup(I + TExpJump(C).Destination);
+          end;
+        jsJumpLT :
+          begin
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$a7,$ed,$52,$fa]);  //pop hl, pop de, and a, sbc hl,de, jp m,nn
+            InAddFixup(I + TExpJump(C).Destination);
+          end;
+        jsJumpLE :
+          begin
+            Assert( TExpJump(C)._Type=jutInt );
+            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a, sbc hl,de, jp z,nn
+            InAddFixup(I + TExpJump(C).Destination);
+            InCode([$fa]);  //jp m,nn
+            InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpAlways :
           begin
             InCode([$c3]);  //jp
+            InAddFixup(I + TExpJump(C).Destination);
           end;
       else
-        Assert(False,'invalid TExpJump');
+        InFail('invalid TExpJump');
       end;
-      J := Length(Fixups);
-      SetLength(Fixups,J+1);
-      Fixups[J].Offset := Z80Code.Position;
-      Fixups[J].Target := I + TExpJump(C).Destination;
-      InCodeWord(W);
     end else if (C is TExpOpBinaryInt) then
     begin
       case TExpOpBinaryInt(C).Kind of
@@ -5192,10 +5244,15 @@ https://www.asm80.com/
             InCodeString('e1d17ba56f2600e5'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
           end;
       else
-        Assert(False,'wrong TExpOpBinaryInt');
+        InFail('wrong TExpOpBinaryInt');
       end;
+    end else if (C is TExpReturn) or (C is TExpStackFrame) then
+    begin
+      //ignore these
     end else
-      Log.Write('Skipping: ' + C.ClassName);
+      InFail('Unsupported instruction: ' + C.ClassName);
+
+    Inc(I);
   end;
 
   InCode([$18,$fe]); //infinite loop
@@ -5270,10 +5327,6 @@ https://www.asm80.com/
   end;
   List.Free;
 
-  if CurrentFileName='' then
-    OutFile := ExePath + 'untitled.z80'
-  else
-    OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
   Z80File.SaveToFile(OutFile);
   Log.Write('File generated: ' + OutFile);
 
