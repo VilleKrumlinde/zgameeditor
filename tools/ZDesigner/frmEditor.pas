@@ -5025,6 +5025,11 @@ type
     record
       Offset,Target : integer;
     end;
+  TResourceFixUp =
+    record
+      Resource : TZComponent;
+      Offset : integer;
+    end;
 var
   Zex : TZExpression;
   C : TZComponent;
@@ -5032,6 +5037,7 @@ var
   Z80Code : TMemoryStream;
   Z80File : TMemoryStream;
   Fixups : array of TFixUp;
+  ResourceFixups : array of TResourceFixUp;
 
   procedure InCode(const Code : array of byte; Stream : TMemoryStream = nil);
   var
@@ -5077,6 +5083,46 @@ var
     InCodeWord(0);
   end;
 
+  procedure InAddResourceFixup(const Resource : TZComponent);
+  var
+    I : integer;
+  begin
+    I := Length(ResourceFixups);
+    SetLength(ResourceFixups,I+1);
+    ResourceFixups[I].Offset := Z80Code.Position;
+    ResourceFixups[I].Resource := Resource;;
+    InCodeWord(0);
+  end;
+
+  procedure InWriteBitmap(B : TZBitmap);
+  var
+    P,OriginalP : PLongWord;
+    PixelCount,X,Y : integer;
+    OutByte : byte;
+  begin
+    PixelCount := B.PixelHeight * B.PixelWidth;
+    GetMem(OriginalP,PixelCount * 4);
+    B.UseTextureBegin;
+    glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,OriginalP);
+    for Y := 0 to B.PixelHeight-1 do
+    begin
+      P := OriginalP;
+      Inc(P,(B.PixelHeight-1-Y) * B.PixelWidth); //Image is upside down
+      OutByte := 0;
+      for X := 0 to B.PixelWidth-1 do
+      begin
+        if P^=$FF000000 then
+          OutByte := (OutByte shl 1)
+        else
+          OutByte := (OutByte shl 1) or 1;
+        if ((X and 7)=7) then
+          Z80Code.Write(OutByte,1);
+        Inc(P);
+      end;
+    end;
+    FreeMem(OriginalP);
+  end;
+
   procedure InFail(const Msg : string);
   begin
     raise Exception.Create(Msg);
@@ -5087,7 +5133,7 @@ var
   W : word;
   I : integer;
   InstructionOffsets : TList;
-  List : TObjectList;
+  ResourceNames : TStringList;
 begin
   if not CompileAll then
     Exit;
@@ -5127,14 +5173,17 @@ https://www.asm80.com/
     InstructionOffsets.Add( pointer( Z80Code.Position ) );
 
     C := Zex.Expression.Code[I] as TZComponent;
-    if (C is TExpLoadComponent) and (TExpLoadComponent(C).Component is TExpStringConstant) then
+    if (C is TExpLoadComponent) then
     begin
-      StringConstant := TExpLoadComponent(C).Component as TExpStringConstant;
-      Assert(Zex.Expression.Code[I+1] is TExpLoadPropOffset);
-      Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
-      Assert(Zex.Expression.Code[I+3] is TExpMisc);
-      Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
-      Continue;
+      if (TExpLoadComponent(C).Component is TExpStringConstant) then
+      begin
+        StringConstant := TExpLoadComponent(C).Component as TExpStringConstant;
+        Assert(Zex.Expression.Code[I+1] is TExpLoadPropOffset);
+        Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
+        Assert(Zex.Expression.Code[I+3] is TExpMisc);
+        Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
+        Continue;
+      end;
     end else if (C is TExpExternalFuncCall) then
     begin
       if TExpExternalFuncCall(C).FuncName='print' then
@@ -5148,6 +5197,11 @@ https://www.asm80.com/
       end else if TExpExternalFuncCall(C).FuncName='emit' then
       begin
         InCodeString(String(StringConstant.Value));
+      end else if TExpExternalFuncCall(C).FuncName='getResourceAddress' then
+      begin
+        InCode([$21]);  //ld hl,nn
+        InAddResourceFixup( (Zex.Expression.Code[I-1] as TExpLoadComponent).Component );
+        InCode([$e5]);  //push hl
       end else if TExpExternalFuncCall(C).FuncName='push' then
       begin
         //do nothing
@@ -5278,14 +5332,12 @@ https://www.asm80.com/
   InCode([$5c,$ff,$ff,$00,$00,$01],Z80File);
 
   //Screen attributes
-  Z80File.SetSize((16384+6144)-16384+30);
-  Z80File.Position := Z80File.Size;
+  Z80File.Position := (16384+6144)-16384+30;
   for I := 0 to 767 do
     InCode([$38],Z80File);
 
   //Default BASIC system variables
-  Z80File.SetSize((23296+256)-16384+30);
-  Z80File.Position := Z80File.Size;
+  Z80File.Position := (23296+256)-16384+30;
   InCodeString(
     'FF000000FF0000000023050000000000'+
     '010006000B0001000100060010000000'+
@@ -5302,30 +5354,35 @@ https://www.asm80.com/
     '810FC41552F409C4155080800D80', Z80File);
 
   //Write strings
-  Z80File.SetSize(29000-16384+30);
-  Z80File.Position := Z80File.Size;
+  Z80File.Position := 29000-16384+30;
   Z80Strings.Position := 0;
   Z80File.CopyFrom(Z80Strings,Z80Strings.Size);
 
+  //Embedded files, comment holds their target address
+  ResourceNames := TStringList.Create;
+  for I := 0 to High(ResourceFixups) do
+  begin
+    if ResourceNames.IndexOf( string(ResourceFixups[I].Resource.Name) )=-1 then
+    begin
+      Z80Code.Position := Z80Code.Size;
+      ResourceNames.AddObject(string(ResourceFixups[I].Resource.Name), TObject(NativeInt(Z80Code.Position)) );
+      if ResourceFixups[I].Resource is TZFile then
+        Z80Code.Write(TZFile(ResourceFixups[I].Resource).FileEmbedded.Data^,
+          TZFile(ResourceFixups[I].Resource).FileEmbedded.Size)
+      else if ResourceFixups[I].Resource is TZBitmap then
+        InWriteBitmap(TZBitmap(ResourceFixups[I].Resource))
+      else
+        InFail('Wrong type of resource: ' + ResourceFixups[I].Resource.ClassName);
+    end;
+    Z80Code.Position := ResourceFixups[I].Offset;
+    InCodeWord( 30000 + Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
+  end;
+  ResourceNames.Free;
+
   //Write code
-  Z80File.SetSize(30000-16384+30);
-  Z80File.Position := Z80File.Size;
+  Z80File.Position := 30000-16384+30;
   Z80Code.Position := 0;
   Z80File.CopyFrom(Z80Code,Z80Code.Size);
-
-  //Embedded files, comment holds their target address
-  List := TObjectList.Create(False);
-  GetAllObjects(Self.ZApp,List);
-  for I := 0 to List.Count-1 do
-  begin
-    if (List[I] is TZFile) then
-    begin
-      C := List[I] as TZComponent;
-      Z80File.Position := StrToInt( string(TZFile(C).Comment) )-16384+30;
-      Z80File.Write(TZFile(C).FileEmbedded.Data^,TZFile(C).FileEmbedded.Size);
-    end;
-  end;
-  List.Free;
 
   Z80File.SaveToFile(OutFile);
   Log.Write('File generated: ' + OutFile);
