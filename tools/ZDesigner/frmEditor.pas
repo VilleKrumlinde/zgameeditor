@@ -5050,15 +5050,10 @@ var
   end;
 
   procedure InCodeWord(const W : word; Stream : TMemoryStream = nil);
-  var
-    B : byte;
   begin
     if Stream=nil then
       Stream := Z80Code;
-    B := Lo(W);
-    Stream.Write(B,1);
-    B := Hi(W);
-    Stream.Write(B,1);
+    Stream.Write(W,2);
   end;
 
   procedure InCodeString(const S : string; Stream : TMemoryStream = nil);
@@ -5182,6 +5177,7 @@ https://www.asm80.com/
         Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
         Assert(Zex.Expression.Code[I+3] is TExpMisc);
         Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
+        //todo: if next is TExternal 'emit' then hold in stringconstant, else push string address + length
         Continue;
       end;
     end else if (C is TExpExternalFuncCall) then
@@ -5233,6 +5229,7 @@ https://www.asm80.com/
       end;
     end else if (C is TExpJump) then
     begin
+      //Compared with codegen from z88dk
       case TExpJump(C).Kind of
         jsJumpEQ :
           begin
@@ -5249,29 +5246,25 @@ https://www.asm80.com/
         jsJumpGE :
           begin //https://retrocomputing.stackexchange.com/questions/9163/comparing-signed-numbers-on-z80-8080-in-assembly
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a, sbc hl,de, jp z,nn
-            InAddFixup(I + TExpJump(C).Destination);
-            InCode([$ea]);  //jp pe,nn
+            InCode([$d1,$e1,$a7,$ed,$52,$d2]);  //pop de, pop hl, and a, sbc hl,de, jp nc,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpGT :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$ea]);  //pop hl, pop de, and a, sbc hl,de, jp pe,nn
+            InCode([$e1,$d1,$a7,$ed,$52,$da]);  //pop hl, pop de, and a, sbc hl,de, jp c,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpLT :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$fa]);  //pop hl, pop de, and a, sbc hl,de, jp m,nn
+            InCode([$d1,$e1,$a7,$ed,$52,$fa]);  //pop de, pop hl, and a, sbc hl,de, jp m,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpLE :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a, sbc hl,de, jp z,nn
-            InAddFixup(I + TExpJump(C).Destination);
-            InCode([$fa]);  //jp m,nn
+            InCode([$e1,$d1,$a7,$ed,$52,$d2]);  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpAlways :
@@ -5296,6 +5289,18 @@ https://www.asm80.com/
         vbkBinaryAnd :
           begin
             InCodeString('e1d17ba56f2600e5'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
+          end;
+        vbkBinaryOr :
+          begin
+            InCodeString('e1d17bb56f2600e5'); //pop hl, pop de, ld a,e, or l, ld l,a, ld h,0, push hl
+          end;
+        vbkBinaryShiftLeft :
+          begin
+            InCodeString('d1e14378b72806cb25cb1410fae5'); //pop de, pop hl, ld b,e, jr z skip, sla l, rl h, djnz next, push hl
+          end;
+        vbkBinaryShiftRight :
+          begin
+            InCodeString('d1e14378b72806cb3ccb1d10fae5'); //pop de, pop hl, ld b,e, jr z skip, srl h, rr l, djnz next, push hl
           end;
       else
         InFail('wrong TExpOpBinaryInt');

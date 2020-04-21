@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
   <OnLoaded>
-    <ZExternalLibrary>
+    <ZExternalLibrary Name="Z80Lib">
       <Source>
 <![CDATA[//Predefined support routines generated from ZGE
 
@@ -116,6 +116,16 @@ ldir
   push(value);
   push(count);
   emit("c1e1d17d12626b13edb0");
+}
+
+inline void printHex(int value) {
+  for(int i=12; i>=0; i-=4) {
+    int digit=(value>>i)&15;
+    if(digit<10)
+      printChar(48 + digit);
+    else
+      printChar(65-10 + digit);
+  }
 }]]>
       </Source>
     </ZLibrary>
@@ -128,12 +138,19 @@ ldir
 
   Constant string values is supported only for "print" and "emit" functions.
 
-  "File" components are mapped to their address that is specified in their Comment property.
-
   Build using "Project - Build Z80 file"
 
   The resulting Z80 file can be opened in ZX Spectrum emulators such as https://github.com/chernandezba/zesarux/releases
 */
+
+/*for(int i=0; i<10; i++) {
+  if(i<5)
+    printChar(65);
+  if(i>5)
+    printChar(66);
+}
+return;*/
+
 
 //Custom font, ripped from Boggit using this technique https://markhardisty.wordpress.com/2018/01/23/how-to-rip-a-zx-spectrum-games-font/
 pokew(23606, getResourceAddress(FontFile) );
@@ -144,11 +161,6 @@ print("ZGAMEEDITOR FOR ZX SPECTRUM");
 
 gotoxy(0,4);
 print("PRESS 1 AND 2 TO MOVE CHARACTER");
-
-/*for(int i=0; i!=5; i++) {
-  gotoxy(i,10);
-  printChar(65+i);
-}*/
 
 int spritex=32;
 int sabreSpriteX=0;
@@ -161,10 +173,19 @@ memset(attraddress,2,768/3); attraddress+=768/3;
 memset(attraddress,7,768/3); attraddress+=768/3;
 memset(attraddress,5,768/3);
 
+int rot=1;
 while(1) {
   waitVsync();
   frame++;
 
+//  gotoxy(0,0);
+//  printHex(frame);
+//  printHex(0xAB12);
+
+  pokew(16384+32,rot);
+  if((frame&7)==0)
+    rot<<=1;
+//    rot=rot|1;
 //  int key=readport(32766);
 //  poke(16384,key);
 
@@ -217,6 +238,12 @@ while(1) {
   if((frame&15)==0)
     setBorderColor(bordercolor++);
 }]]>
+      </Expression>
+    </ZExpression>
+    <ZExpression>
+      <Expression>
+<![CDATA[//int x=0;
+//if(x>10);]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
