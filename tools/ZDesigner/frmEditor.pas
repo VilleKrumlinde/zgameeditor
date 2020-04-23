@@ -5033,7 +5033,6 @@ type
 var
   Zex : TZExpression;
   C : TZComponent;
-  Z80Strings,
   Z80Code : TMemoryStream;
   Z80File : TMemoryStream;
   Fixups : array of TFixUp;
@@ -5143,7 +5142,6 @@ Call Trace
 https://www.asm80.com/
 }
   Z80Code := TMemoryStream.Create;
-  Z80Strings := TMemoryStream.Create;
   InstructionOffsets := TList.Create;
 
   InCode([$3e,$02,$cd,$01,$16]); //open print channel
@@ -5172,25 +5170,25 @@ https://www.asm80.com/
     begin
       if (TExpLoadComponent(C).Component is TExpStringConstant) then
       begin
-        StringConstant := TExpLoadComponent(C).Component as TExpStringConstant;
         Assert(Zex.Expression.Code[I+1] is TExpLoadPropOffset);
         Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
         Assert(Zex.Expression.Code[I+3] is TExpMisc);
         Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
-        //todo: if next is TExternal 'emit' then hold in stringconstant, else push string address + length
+        //if next is TExternal 'emit' then hold in stringconstant, else push string address
+        if (Zex.Expression.Code[I] is TExpExternalFuncCall) and
+          (TExpExternalFuncCall(Zex.Expression.Code[I]).FuncName='emit') then
+          StringConstant := TExpLoadComponent(C).Component as TExpStringConstant
+        else
+        begin
+          InCode([$21]);  //ld hl,
+          InAddResourceFixup( TExpLoadComponent(C).Component );
+          InCode([$e5]);  //push hl
+        end;
         Continue;
       end;
     end else if (C is TExpExternalFuncCall) then
     begin
-      if TExpExternalFuncCall(C).FuncName='print' then
-      begin
-        InCode([$11]);
-        InCodeWord(29000 + Z80Strings.Position);
-        InCode([$01]);
-        InCodeWord( Length(StringConstant.Value) );
-        InCode([$cd,$3c,$20]);
-        Z80Strings.Write(StringConstant.Value^,Length(StringConstant.Value));
-      end else if TExpExternalFuncCall(C).FuncName='emit' then
+      if TExpExternalFuncCall(C).FuncName='emit' then
       begin
         InCodeString(String(StringConstant.Value));
       end else if TExpExternalFuncCall(C).FuncName='getResourceAddress' then
@@ -5199,6 +5197,9 @@ https://www.asm80.com/
         InAddResourceFixup( (Zex.Expression.Code[I-1] as TExpLoadComponent).Component );
         InCode([$e5]);  //push hl
       end else if TExpExternalFuncCall(C).FuncName='push' then
+      begin
+        //do nothing
+      end else if TExpExternalFuncCall(C).FuncName='pushString' then
       begin
         //do nothing
       end
@@ -5358,15 +5359,12 @@ https://www.asm80.com/
     '000057FFFFFFF409A8104BF409C41553'+
     '810FC41552F409C4155080800D80', Z80File);
 
-  //Write strings
-  Z80File.Position := 29000-16384+30;
-  Z80Strings.Position := 0;
-  Z80File.CopyFrom(Z80Strings,Z80Strings.Size);
-
-  //Embedded files, comment holds their target address
+  //Components
   ResourceNames := TStringList.Create;
   for I := 0 to High(ResourceFixups) do
   begin
+    if ResourceFixups[I].Resource.Name='' then
+      ResourceFixups[I].Resource.SetString('Name','@tempresource' + AnsiString(IntToStr(I)));
     if ResourceNames.IndexOf( string(ResourceFixups[I].Resource.Name) )=-1 then
     begin
       Z80Code.Position := Z80Code.Size;
@@ -5376,6 +5374,8 @@ https://www.asm80.com/
           TZFile(ResourceFixups[I].Resource).FileEmbedded.Size)
       else if ResourceFixups[I].Resource is TZBitmap then
         InWriteBitmap(TZBitmap(ResourceFixups[I].Resource))
+      else if ResourceFixups[I].Resource is TExpStringConstant then
+        Z80Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value))
       else
         InFail('Wrong type of resource: ' + ResourceFixups[I].Resource.ClassName);
     end;
@@ -5394,7 +5394,6 @@ https://www.asm80.com/
 
   Z80Code.Free;
   Z80File.Free;
-  Z80Strings.Free;
   InstructionOffsets.Free;
 end;
 

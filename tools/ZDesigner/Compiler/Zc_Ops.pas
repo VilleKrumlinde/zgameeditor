@@ -809,6 +809,14 @@ begin
     Exit( TZcOpLiteral.Create(zctString, '"' + Chr(Round(C1.Value)) + '"' ) );
   end;
 
+  if (Kind=zcFuncCall) and Assigned(Ref) and (Ref is TZcOpFunctionBuiltIn) and (TZcOpFunctionBuiltIn(Ref).FuncId=fcStringLength)
+   and (Child(0).Kind=zcConstLiteral)
+   then
+  begin //length("test")
+    C1 := TZcOpLiteral(Child(0));
+    Exit( TZcOpLiteral.Create(zctInt ,  Length(C1.StringValue)) );
+  end;
+
   if (Kind=zcOr) and (Child(0).Kind=zcConstLiteral) then
   begin //if(1 || x)  >=  if(1)
     C1 := Child(0) as TZcOpLiteral;

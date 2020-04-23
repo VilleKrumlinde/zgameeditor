@@ -5,12 +5,12 @@
       <Source>
 <![CDATA[//Predefined support routines generated from ZGE
 
-void print(string s) { }
-
 void emit(string s) { }
 
 //push argument on stack to be used by "emit"
 void push(int value) { }
+
+void pushString(string value) { }
 
 int getResourceAddress(Component c) { }]]>
       </Source>
@@ -51,6 +51,12 @@ inline int peek(int addr) {
 inline int peekw(int addr) {
   push(addr);
   emit("e14e2346c5"); //pop hl, ld c,(hl), inc hl, ld b,(hl), push bc
+}
+
+inline void print(string s) {
+  pushString(s);
+  push(length(s));
+  emit("c1d1cd3c20"); //pop bc, pop de, call 203c
 }
 
 inline void writeport(int port,byte value) {
