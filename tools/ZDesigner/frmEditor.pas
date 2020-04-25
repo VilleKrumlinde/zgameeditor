@@ -437,7 +437,7 @@ type
     procedure ResizeImageListImagesforHighDPI(const imgList: TImageList);
     procedure ParseEvalExpression(const Expr : string);
     procedure FilterQuickCompList;
-    procedure BuildZ80(const OutFile : string);
+    procedure BuildZ80(OutFile : string);
   protected
     procedure CreateWnd; override;
   public
@@ -1492,8 +1492,6 @@ begin
 end;
 
 procedure TEditorForm.SelectComponent(C: TZComponent);
-var
-  OldFocus : TWinControl;
 
   function InCheckForGraphParent : boolean;
   //Do not change shownode if parent is bitmap or mesh
@@ -1516,6 +1514,8 @@ var
     end;
   end;
 
+var
+  TreeHadFocus : boolean;
 begin
   Selected := C;
   if (not LockShow) and (not InCheckForGraphParent) then
@@ -1532,10 +1532,10 @@ begin
   begin
     //Focus editor to make code-editor visible
     //Then focus back to tree to make tree-navigation with cursorkeys possible
-    OldFocus := Self.ActiveControl;
+    TreeHadFocus := Self.ActiveControl=Self.Tree;
     Ed.WantsFocus.SetFocus;
-    if Assigned(OldFocus) and OldFocus.Visible and OldFocus.Enabled and OldFocus.CanFocus then
-      Self.ActiveControl := OldFocus;
+    if TreeHadFocus then
+      Self.Tree.SetFocus;
   end;
 end;
 
@@ -5019,7 +5019,7 @@ begin
   end;
 end;
 
-procedure TEditorForm.BuildZ80(const OutFile : string);
+procedure TEditorForm.BuildZ80(OutFile : string);
 type
   TFixUp =
     record
@@ -5122,29 +5122,63 @@ var
     raise Exception.Create(Msg);
   end;
 
+{
+  https://www.asm80.com/
+}
 var
   StringConstant : TExpStringConstant;
   W : word;
   I : integer;
   InstructionOffsets : TList;
   ResourceNames : TStringList;
+  Target : (z80Spectrum,z80MasterSystem);
+  CodeBase,VarBase : integer;
 begin
   if not CompileAll then
     Exit;
 
-{
-LoadComponent TExpStringConstant
-LoadPropOffset 1
-AddToPointer
-PtrDerefPointer (misc)
-Call Trace
+  Target := z80Spectrum;
 
-https://www.asm80.com/
-}
+  C := Self.ZApp.SymTab.Lookup('Z80Platform') as TZComponent;
+  if Assigned(C) and (C is TDefineConstant) then
+  begin
+    if TDefineConstant(C).StringValue='ZXSpectrum' then
+      Target := z80Spectrum
+    else if TDefineConstant(C).StringValue='MasterSystem' then
+      Target := z80MasterSystem
+    else
+      InFail('Unknown target: ' + String(TDefineConstant(C).StringValue));
+  end;
+
   Z80Code := TMemoryStream.Create;
   InstructionOffsets := TList.Create;
 
-  InCode([$3e,$02,$cd,$01,$16]); //open print channel
+  case Target of
+    z80Spectrum:
+      begin
+        CodeBase := 30000;
+        VarBase := 28000;
+        end;
+    z80MasterSystem:
+      begin
+        CodeBase := 0;
+        VarBase := $c000;
+      end;
+  else
+    begin
+      CodeBase := 0;
+      VarBase := 0;
+    end;
+  end;
+
+  //Init
+  case Target of
+    z80Spectrum:
+      InCode([$3e,$02,$cd,$01,$16]); //open print channel
+    z80MasterSystem:
+      InCode([$31,$f0,$df,$f3,$ed,$56]); //ld sp, $dff0, di, im 1
+  end;
+
 //InCode([$18,$fe]); //infinite loop
 
   StringConstant := nil;
@@ -5212,7 +5246,7 @@ https://www.asm80.com/
       InCode([$e5]);  //push hl
     end else if (C is TExpAccessLocal) then
     begin
-      W := 28000 + TExpAccessLocal(C).Index*2;
+      W := VarBase + TExpAccessLocal(C).Index*2;
       case TExpAccessLocal(C).Kind of
       loLoad :
         begin
@@ -5321,43 +5355,8 @@ https://www.asm80.com/
   for I := 0 to High(Fixups) do
   begin
     Z80Code.Position := Fixups[I].Offset;
-    InCodeWord( 30000 + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
+    InCodeWord( CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
   end;
-
-  //http://www.worldofspectrum.org/faq/reference/z80format.htm
-  Z80File := TMemoryStream.Create;
-
-  //48kb + header
-  Z80File.SetSize(48*1024+30);
-  FillChar(Z80File.Memory^,Z80File.Size,0);
-
-  InCode([$00,$5c,$ff,$ff,$a8,$10],Z80File);
-  InCodeWord(30000,Z80File);
-  InCode([$46,$ff,$ef,$9f,$2e-32,$91,$5c,$4b],Z80File);
-  InCode([$17,$06,$00,$7f,$10,$00,$44,$3a],Z80File);
-  InCode([$5c,$ff,$ff,$00,$00,$01],Z80File);
-
-  //Screen attributes
-  Z80File.Position := (16384+6144)-16384+30;
-  for I := 0 to 767 do
-    InCode([$38],Z80File);
-
-  //Default BASIC system variables
-  Z80File.Position := (23296+256)-16384+30;
-  InCodeString(
-    'FF000000FF0000000023050000000000'+
-    '010006000B0001000100060010000000'+
-    '00000000000000000000000000000000'+
-    '000000000000003C400000002150FF00'+
-    '0000000000000000380000CB5C0000B6'+
-    '5CB65CCB5C0000CA5CCC5CCC5C000000'+
-    '00CE5CCE5CCE5C00925C100200000000'+
-    '0000000000000000FC110058FF000021'+
-    '005B05170040FC502118051701380038'+
-    '00000000000000000000000000000000'+
-    '00000000000000000000000000000000'+
-    '000057FFFFFFF409A8104BF409C41553'+
-    '810FC41552F409C4155080800D80', Z80File);
 
   //Components
   ResourceNames := TStringList.Create;
@@ -5376,18 +5375,66 @@ https://www.asm80.com/
         InWriteBitmap(TZBitmap(ResourceFixups[I].Resource))
       else if ResourceFixups[I].Resource is TExpStringConstant then
         Z80Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value))
+      else if ResourceFixups[I].Resource is TDefineArray then
+        Z80Code.Write(TDefineArray(ResourceFixups[I].Resource).Values.Data^,TDefineArray(ResourceFixups[I].Resource).Values.Size)
       else
         InFail('Wrong type of resource: ' + ResourceFixups[I].Resource.ClassName);
     end;
     Z80Code.Position := ResourceFixups[I].Offset;
-    InCodeWord( 30000 + Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
+    InCodeWord( CodeBase + Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
   end;
   ResourceNames.Free;
 
-  //Write code
-  Z80File.Position := 30000-16384+30;
   Z80Code.Position := 0;
-  Z80File.CopyFrom(Z80Code,Z80Code.Size);
+
+  Z80File := TMemoryStream.Create;
+
+  case Target of
+    z80Spectrum:
+      begin
+        //http://www.worldofspectrum.org/faq/reference/z80format.htm
+        //48kb + header
+        Z80File.SetSize(48*1024+30);
+        FillChar(Z80File.Memory^,Z80File.Size,0);
+
+        InCode([$00,$5c,$ff,$ff,$a8,$10],Z80File);
+        InCodeWord(CodeBase,Z80File); //PC
+        InCode([$46,$ff,$ef,$9f,$2e-32,$91,$5c,$4b],Z80File);
+        InCode([$17,$06,$00,$7f,$10,$00,$44,$3a],Z80File);
+        InCode([$5c,$ff,$ff,$00,$00,$01],Z80File);
+
+        //Screen attributes
+        Z80File.Position := (16384+6144)-16384+30;
+        for I := 0 to 767 do
+          InCode([$38],Z80File);
+
+        //Default BASIC system variables
+        Z80File.Position := (23296+256)-16384+30;
+        InCodeString(
+          'FF000000FF0000000023050000000000'+
+          '010006000B0001000100060010000000'+
+          '00000000000000000000000000000000'+
+          '000000000000003C400000002150FF00'+
+          '0000000000000000380000CB5C0000B6'+
+          '5CB65CCB5C0000CA5CCC5CCC5C000000'+
+          '00CE5CCE5CCE5C00925C100200000000'+
+          '0000000000000000FC110058FF000021'+
+          '005B05170040FC502118051701380038'+
+          '00000000000000000000000000000000'+
+          '00000000000000000000000000000000'+
+          '000057FFFFFFF409A8104BF409C41553'+
+          '810FC41552F409C4155080800D80', Z80File);
+
+        //Write code
+        Z80File.Position := CodeBase-16384+30;
+        Z80File.CopyFrom(Z80Code,Z80Code.Size);
+      end;
+    z80MasterSystem:
+      begin
+        OutFile := ChangeFileExt(OutFile,'.sms');
+        Z80File.CopyFrom(Z80Code,Z80Code.Size);
+      end;
+  end;
 
   Z80File.SaveToFile(OutFile);
   Log.Write('File generated: ' + OutFile);

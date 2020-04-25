@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZExternalLibrary Name="Z80Lib">
+      <Source>
+<![CDATA[//Predefined support routines generated from ZGE
+
+void emit(string s) { }
+
+//push argument on stack to be used by "emit"
+void push(int value) { }
+
+void pushString(string value) { }
+
+int getResourceAddress(Component c) { }]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZLibrary>
+      <Source>
+<![CDATA[/*
+  All routines needs to be declared "inline".
+
+  To write asm-code to use with "emit"-statement, try this online assembler:
+    https://www.asm80.com/
+*/
+
+
+const string Z80Platform = "MasterSystem";
+
+//write byte
+inline void poke(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e17977"); //pop bc, pop hl, ld a,c, ld (hl),a
+}
+
+//write word
+inline void pokew(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e1712370"); //pop bc, pop hl, ld (hl),c, inc hl, ld (hl),b
+}
+
+//read byte
+inline int peek(int addr) {
+  push(addr);
+  emit("e14e0600c5"); //pop hl, ld c,(hl), ld b,0, push bc
+}
+
+//read word
+inline int peekw(int addr) {
+  push(addr);
+  emit("e14e2346c5"); //pop hl, ld c,(hl), inc hl, ld b,(hl), push bc
+}
+
+inline void print(string s) {
+  push(length(s));
+  pushString(s);
+  emit("e1c14116207e92d3beafd3be2310f6");
+
+/*
+0000   E1                     POP   hl
+0001   C1                     POP   bc
+0002   41                     LD   b,c
+0003   16 20                  LD   d,32
+0003   7E           LOP2:     LD   a,(hl)
+0006   92                     SUB   d
+0004   D3 BE                  OUT   (VDPData),a
+0006   AF                     XOR   a
+0007   D3 BE                  OUT   (VDPData),a
+0009   23                     INC   hl
+000A   10 F6                  DJNZ   lop2   */
+
+}
+
+
+
+
+inline void writeport(int port,byte value) {
+  push(port);
+  push(value);
+  emit("e1c145ed41");  //pop hl, pop bc, ld b,l, out (c),b
+}
+
+inline void waitVsync () {
+//  emit("fb76"); //ei, halt
+}
+
+inline void printChar(int value) {
+//  push(value);
+//  emit("c179d7"); //pop bc, ld a,c, rst 16
+}
+
+inline int readport(int port) {
+  push(port);
+  emit("c1ed48c5"); //pop bc, in c,(c), push bc
+}
+
+inline void gotoxy(int x,int y) {
+/*  push(x);
+  push(y);
+  emit("3e16d7");  //ld a,22 rst 16
+  emit("e17dd7");  //pop hl, ld a,l, rst 16
+  emit("e17dd7");  //pop hl, ld a,l, rst 16*/
+}
+
+inline void memset(int dest, int value, int count) {
+/*
+pop bc
+pop hl
+pop de
+ld a,l
+ld (de),a
+ld hl,de
+inc de
+ldir
+*/
+  push(dest);
+  push(value);
+  push(count);
+  emit("c1e1d17d12626b13edb0");
+}
+
+inline void printHex(int value) {
+  for(int i=12; i>=0; i-=4) {
+    int digit=(value>>i)&15;
+    if(digit<10)
+      printChar(48 + digit);
+    else
+      printChar(65-10 + digit);
+  }
+}
+
+inline void setVdpAddress(int addr) {
+  push(addr);
+  emit("e17dd3bf7cd3bf");
+/*
+E1                     POP   hl
+7D                     LD   a,l
+D3 BF                  OUT   ($bf),a
+7C                     LD   a,h
+D3 BF                  OUT   ($bf),a
+*/
+}
+
+inline void copyToVdp(int addr, int size) {
+  push(size);
+  push(addr);
+  emit("e1c17ed3be230b78b120f7");
+/*
+000A   E1                     POP   hl
+000B   C1                     POP   bc
+000C   7E           LOP:      LD   a,(hl)   ; Get data byte
+000D   D3 BE                  OUT   (VDPData),a
+000F   23                     INC   hl   ; Point to next letter
+0010   0B                     DEC   bc
+0011   78                     LD   a,b
+0012   B1                     OR   c
+0013   20 F7                  JR   nz,lop
+*/
+}
+
+inline void copyToVdpControl(int addr, int size) {
+  push(size);
+  push(addr);
+  emit("e1c17ed3bf230b78b120f7");
+/*
+000A   E1                     POP   hl
+000B   C1                     POP   bc
+000C   7E           LOP:      LD   a,(hl)   ; Get data byte
+000D   D3 BF                  OUT   (VDPControl),a
+000F   23                     INC   hl   ; Point to next item
+0010   0B                     DEC   bc
+0011   78                     LD   a,b
+0012   B1                     OR   c
+0013   20 F7                  JR   nz,lop
+*/
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[/*
+  Whole Z80 program needs to be defined in a single ZExpression located in OnLoaded.
+
+  Only "int" type is supported and treated like a 16 bit unsigned number.
+
+  Constant string values are supported.
+
+  Build using "Project - Build Z80 file"
+
+  The resulting .sms file can be opened in Sega Master System emulator such as MEKA: https://www.smspower.org/meka/
+*/
+
+//Based on this: https://www.smspower.org/maxim/HowToProgram/Lesson1AllOnOnePage
+
+const int VDPControl = 0xbf;
+const int VDPData = 0xbe;
+const int VRAMWrite = 0x4000;
+const int CRAMWrite = 0xc000;
+
+//Set up VDP registers
+copyToVdpControl(getResourceAddress(VdpInitDataArray),18);
+
+//Clear VRAM
+setVdpAddress(0x0000 | VRAMWrite);
+for(int i=0; i<16384; i++)
+  writeport(VDPData,0);
+
+
+//Load tiles (font)
+setVdpAddress(0x0000 | VRAMWrite);
+copyToVdp(getResourceAddress(FontFile),3040);
+
+
+//Load palette
+//1. Set VRAM write address to CRAM (palette) address 0
+setVdpAddress(0x0000 | CRAMWrite);
+//2. Output colour data
+copyToVdp(getResourceAddress(PaletteArray),2);
+
+
+//Write text to name table
+//1. Set VRAM write address to tilemap index 0
+setVdpAddress((0x3800) | VRAMWrite);
+//2. Output tilemap data
+print("Hello world! ZGameEditor on SMS!");
+
+
+//Turn screen on
+writePort(VdpControl,64);
+writePort(VdpControl,0x81);]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <Content>
+    <File Name="FontFile" Comment="Imported from font.bin">
+      <FileEmbedded>
+<![CDATA[789C9556BB6AC34010DCCA292252ABF047388D3044C89022DF716030C1718C2B2785903F3DD1E11D3419EDD96461D0DDAD766FDF92D96DAA03183D0F84881AC7459E8DF3AB119B11EF23BA118F2306D29F46ECFCBD7CB6F2FDC2F96BBA3FAF3F9DFF42FA211711F381DACF4DF695C5FA6AB7B915DB995F134FF94A78476D1EEEC8A93C68217627E2659B73BC8EAEFFECFB9674AD6D5E0383C8EB1D117FE94FD65FF979DE1F5C0E7186CFD9DEDE65557E493EF5CE63FE10D806B07DBB60ADFC8E74ADED2F696F946A80D72B9BE745EB0F34C813C4EFAB9F6C3FCEB57F39FF7B7FA682FF03AD77CEE798EB9AE51381E3FB6DD7BCB3DE839FC35FC8F5B41EEEF05370FFD1E6F9E57B23FFB867A3FACF355109308BA01FFE9CC45F137B19D0BF1DF165D7B9F9E1D83AD8FEB3CBB08FECBF02FE6BCE4AF103F66E7F5390E75CB27CF2B5F66F29BEA8CFC8F652FE980779C40AB1BB783C357E90617F553FDE61FBA2F9926CCA9FC614407F98CDFB7E413CCC1C45E77CB6F9D5FE473F769D9F8DDFDFDB341B75CE20779D4DB310B6C31F8E551FC8A30E387FEC0FCB770579F4BBCE7FB55FBF9DAC1F316D6FD88FFC23CFFA0D6CEFF0334EA49FE700F77F24C7FA41F877E219C054B21FA47DACFA4B730014C5EF81F8D9A7B3CDE707CB279BEA08F551CADD52E4D537AD8F52FF83740634C28F6640493FD70F08FF2DFAFFC3DFDD13ADF17D8FFEAB79BFA2FD13AD51DFCFEED39BC5F40B1BD59F91]]>
+      </FileEmbedded>
+    </File>
+    <Array Name="PaletteArray" Type="4" SizeDim1="2" Persistent="255">
+      <Values>
+<![CDATA[789C63B0070000410040]]>
+      </Values>
+    </Array>
+    <Array Name="VdpInitDataArray" Type="4" SizeDim1="18" Persistent="255">
+      <Values>
+<![CDATA[789C63696068FCDFF4BFF57FDBFF76860E86CEFF5D0057C009B0]]>
+      </Values>
+    </Array>
+  </Content>
+</ZApplication>
