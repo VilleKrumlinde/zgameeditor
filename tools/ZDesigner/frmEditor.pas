@@ -5147,6 +5147,7 @@ var
 }
 var
   StringConstant : TExpStringConstant;
+  IntConstant : TExpConstantInt;
   W : word;
   I : integer;
   InstructionOffsets : TList;
@@ -5202,6 +5203,7 @@ begin
 //InCode([$18,$fe]); //infinite loop
 
   StringConstant := nil;
+  IntConstant := nil;
   Zex := nil;
   for I := 0 to Self.ZApp.OnLoaded.ComponentCount-1 do
   begin
@@ -5257,14 +5259,24 @@ begin
       end else if TExpExternalFuncCall(C).FuncName='pushString' then
       begin
         //do nothing
+      end else if TExpExternalFuncCall(C).FuncName='emitByte' then
+      begin
+        InCode([ IntConstant.Constant ]);
       end
       else
         InFail('Invalid func call');
     end else if (C is TExpConstantInt) then
     begin
-      InCode([$21]);  //ld hl,
-      InCodeWord(TExpConstantInt(C).Constant);
-      InCodeString('e5');  //push hl
+      //if next is TExternal 'emitByte' then hold in variable, else push integer value
+      if (Zex.Expression.Code[I+1] is TExpExternalFuncCall) and
+        (TExpExternalFuncCall(Zex.Expression.Code[I+1]).FuncName='emitByte') then
+        IntConstant := C as TExpConstantInt
+      else
+      begin
+        InCode([$21]);  //ld hl,
+        InCodeWord(TExpConstantInt(C).Constant);
+        InCodeString('e5');  //push hl
+      end;
     end else if (C is TExpAccessLocal) then
     begin
       W := VarBase + TExpAccessLocal(C).Index*2;
