@@ -5015,7 +5015,7 @@ begin
   try
     BuildZ80(OutFile);
   except on E : Exception do
-    ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check Z80Example demo project.'+#13+#13+E.Message);
+    ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check the Z80 demo projects.'+#13+#13+E.Message);
   end;
 end;
 
@@ -5037,6 +5037,7 @@ var
   Z80File : TMemoryStream;
   Fixups : array of TFixUp;
   ResourceFixups : array of TResourceFixUp;
+  RedundantLoadsRemoved : integer;
 
   procedure InCode(const Code : array of byte; Stream : TMemoryStream = nil);
   var
@@ -5055,14 +5056,33 @@ var
     Stream.Write(W,2);
   end;
 
-  procedure InCodeString(const S : string; Stream : TMemoryStream = nil);
+  procedure InCodeString(S : string; Stream : TMemoryStream = nil);
   var
     Buf : array of byte;
+    LastOpCode : byte;
   begin
+    S := StringReplace(S,' ','',[rfReplaceAll]);
+    LastOpCode := 0;
     if Stream=nil then
+    begin
       Stream := Z80Code;
+      if Stream.Position>0 then
+        LastOpCode := (PByte(Stream.Memory)+Stream.Position-1)^;
+    end;
     SetLength(Buf,Length(S) div 2);
     HexToBin(PWideChar(S),Buf[0],Length(Buf));
+
+    if (LastOpCode=$e5) and (Length(Buf)>0) then
+    begin
+      if Buf[0]=$e1 then
+      begin //Remove pair: push hl, pop hl
+        Inc(RedundantLoadsRemoved);
+        Stream.Position := Stream.Position-1;
+        Stream.Write(Buf[1],Length(Buf)-1);
+        Exit;
+      end;
+    end;
+
     Stream.Write(Buf[0],Length(Buf));
   end;
 
@@ -5192,6 +5212,7 @@ begin
     end;
   end;
 
+  RedundantLoadsRemoved := 0;
   I := 0;
   while I<Zex.Expression.Code.Count do
   begin
@@ -5216,7 +5237,7 @@ begin
         begin
           InCode([$21]);  //ld hl,
           InAddResourceFixup( TExpLoadComponent(C).Component );
-          InCode([$e5]);  //push hl
+          InCodeString('e5');  //push hl
         end;
         Continue;
       end;
@@ -5229,7 +5250,7 @@ begin
       begin
         InCode([$21]);  //ld hl,nn
         InAddResourceFixup( (Zex.Expression.Code[I-1] as TExpLoadComponent).Component );
-        InCode([$e5]);  //push hl
+        InCodeString('e5');  //push hl
       end else if TExpExternalFuncCall(C).FuncName='push' then
       begin
         //do nothing
@@ -5243,7 +5264,7 @@ begin
     begin
       InCode([$21]);  //ld hl,
       InCodeWord(TExpConstantInt(C).Constant);
-      InCode([$e5]);  //push hl
+      InCodeString('e5');  //push hl
     end else if (C is TExpAccessLocal) then
     begin
       W := VarBase + TExpAccessLocal(C).Index*2;
@@ -5252,11 +5273,11 @@ begin
         begin
           InCode([$2a]);  //ld hl,(nn)
           InCodeWord(W);
-          InCode([$e5]);  //push hl
+          InCodeString('e5');  //push hl
         end;
       loStore :
         begin
-          InCode([$e1,$22]); //pop hl, ld (nn),hl
+          InCodeString('e1 22'); //pop hl, ld (nn),hl
           InCodeWord(W);
         end;
       else
@@ -5269,37 +5290,37 @@ begin
         jsJumpEQ :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$ca]);  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
+            InCodeString('e1 d1 a7 ed 52 ca');  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpNE :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$c2]);  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
+            InCodeString('e1 d1 a7 ed 52 c2');  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpGE :
           begin //https://retrocomputing.stackexchange.com/questions/9163/comparing-signed-numbers-on-z80-8080-in-assembly
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$d1,$e1,$a7,$ed,$52,$d2]);  //pop de, pop hl, and a, sbc hl,de, jp nc,nn
+            InCodeString('d1 e1 a7 ed 52 d2');  //pop de, pop hl, and a, sbc hl,de, jp nc,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpGT :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$da]);  //pop hl, pop de, and a, sbc hl,de, jp c,nn
+            InCodeString('e1 d1 a7 ed 52 da');  //pop hl, pop de, and a, sbc hl,de, jp c,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpLT :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$d1,$e1,$a7,$ed,$52,$fa]);  //pop de, pop hl, and a, sbc hl,de, jp m,nn
+            InCodeString('d1 e1 a7 ed 52 fa');  //pop de, pop hl, and a, sbc hl,de, jp m,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpLE :
           begin
             Assert( TExpJump(C)._Type=jutInt );
-            InCode([$e1,$d1,$a7,$ed,$52,$d2]);  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
+            InCodeString('e1 d1 a7 ed 52 d2');  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
             InAddFixup(I + TExpJump(C).Destination);
           end;
         jsJumpAlways :
@@ -5315,11 +5336,11 @@ begin
       case TExpOpBinaryInt(C).Kind of
         vbkPlus :
           begin
-            InCode([$e1,$d1,$19,$e5]);  //pop hl, pop de, add hl,de, push hl
+            InCodeString('e1 d1 19 e5');  //pop hl, pop de, add hl,de, push hl
           end;
         vbkMinus :
           begin
-            InCodeString('d1e1a7ed52e5');  //pop hl, pop de, and a, sbc hl,de, push hl
+            InCodeString('d1 e1 a7 ed 52 e5');  //pop hl, pop de, and a, sbc hl,de, push hl
           end;
         vbkBinaryAnd :
           begin
@@ -5350,6 +5371,9 @@ begin
   end;
 
   InCode([$18,$fe]); //infinite loop
+
+  if RedundantLoadsRemoved>0 then
+    Log.Write('RedundantLoadsRemoved: ' + IntToStr(RedundantLoadsRemoved) );
 
   //Resolving fixups
   for I := 0 to High(Fixups) do
@@ -5432,6 +5456,7 @@ begin
     z80MasterSystem:
       begin
         OutFile := ChangeFileExt(OutFile,'.sms');
+        //todo: add sms cart header
         Z80File.CopyFrom(Z80Code,Z80Code.Size);
       end;
   end;
