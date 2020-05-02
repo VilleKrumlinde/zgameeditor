@@ -5031,13 +5031,14 @@ type
       Offset : integer;
     end;
 var
-  Zex : TZExpression;
   C : TZComponent;
   Z80Code : TMemoryStream;
   Z80File : TMemoryStream;
   Fixups : array of TFixUp;
   ResourceFixups : array of TResourceFixUp;
   RedundantLoadsRemoved : integer;
+  InstructionOffsets : TList;
+  CodeBase,VarBase,VarSize : integer;
 
   procedure InCode(const Code : array of byte; Stream : TMemoryStream = nil);
   var
@@ -5080,6 +5081,12 @@ var
         Stream.Position := Stream.Position-1;
         Stream.Write(Buf[1],Length(Buf)-1);
         Exit;
+      end;
+      if Buf[0]=$d1 then
+      begin //Replace "push hl, pop de" with "ex de, hl"
+        Inc(RedundantLoadsRemoved);
+        Stream.Position := Stream.Position-1;
+        Buf[0] := $eb;
       end;
     end;
 
@@ -5142,18 +5149,214 @@ var
     raise Exception.Create(Msg);
   end;
 
+  procedure InGenList(Exp : TZComponentList; IsFunc : boolean);
+  var
+    I : integer;
+    W : word;
+    StringConstant : TExpStringConstant;
+    IntConstant : TExpConstantInt;
+    Ar : TDefineArray;
+  begin
+    StringConstant := nil;
+    IntConstant := nil;
+    I := 0;
+    while I<Exp.Count do
+    begin
+      while InstructionOffsets.Count<I do
+        InstructionOffsets.Add(nil);
+      InstructionOffsets.Add( pointer( Z80Code.Position ) );
+
+      C := Exp[I] as TZComponent;
+      if (C is TExpLoadComponent) then
+      begin
+        if (TExpLoadComponent(C).Component is TExpStringConstant) then
+        begin
+          Assert(Exp[I+1] is TExpLoadPropOffset);
+          Assert(Exp[I+2] is TExpAddToPointer);
+          Assert(Exp[I+3] is TExpMisc);
+          Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
+          //if next is TExternal 'emit' then hold in stringconstant, else push string address
+          if (Exp[I] is TExpExternalFuncCall) and
+            (TExpExternalFuncCall(Exp[I]).FuncName='emit') then
+            StringConstant := TExpLoadComponent(C).Component as TExpStringConstant
+          else
+          begin
+            InCode([$21]);  //ld hl,
+            InAddResourceFixup( TExpLoadComponent(C).Component );
+            InCodeString('e5');  //push hl
+          end;
+          Continue;
+        end;
+      end else if (C is TExpExternalFuncCall) then
+      begin
+        if TExpExternalFuncCall(C).FuncName='emit' then
+        begin
+          InCodeString(String(StringConstant.Value));
+        end else if TExpExternalFuncCall(C).FuncName='getResourceAddress' then
+        begin
+          InCode([$21]);  //ld hl,nn
+          InAddResourceFixup( (Exp[I-1] as TExpLoadComponent).Component );
+          InCodeString('e5');  //push hl
+        end else if TExpExternalFuncCall(C).FuncName='push' then
+        begin
+          //do nothing
+        end else if TExpExternalFuncCall(C).FuncName='pushString' then
+        begin
+          //do nothing
+        end else if TExpExternalFuncCall(C).FuncName='emitByte' then
+        begin
+          InCode([ IntConstant.Constant ]);
+        end
+        else
+          InFail('Invalid func call');
+      end else if (C is TExpConstantInt) then
+      begin
+        //if next is TExternal 'emitByte' then hold in variable, else push integer value
+        if (Exp[I+1] is TExpExternalFuncCall) and
+          (TExpExternalFuncCall(Exp[I+1]).FuncName='emitByte') then
+          IntConstant := C as TExpConstantInt
+        else
+        begin
+          InCode([$21]);  //ld hl,
+          InCodeWord(TExpConstantInt(C).Constant);
+          InCodeString('e5');  //push hl
+        end;
+      end else if (C is TExpAccessLocal) then
+      begin
+        W := VarBase + TExpAccessLocal(C).Index*2;
+        case TExpAccessLocal(C).Kind of
+        loLoad :
+          begin
+            InCode([$2a]);  //ld hl,(nn)
+            InCodeWord(W);
+            InCodeString('e5');  //push hl
+          end;
+        loStore :
+          begin
+            InCodeString('e1 22'); //pop hl, ld (nn),hl
+            InCodeWord(W);
+          end;
+        else
+          InFail('Invalid TExpAccessLocal');
+        end;
+      end else if (C is TExpJump) then
+      begin
+        //Compared with codegen from z88dk
+        case TExpJump(C).Kind of
+          jsJumpEQ :
+            begin
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('e1 d1 a7 ed 52 ca');  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpNE :
+            begin
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('e1 d1 a7 ed 52 c2');  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpGE :
+            begin //https://retrocomputing.stackexchange.com/questions/9163/comparing-signed-numbers-on-z80-8080-in-assembly
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('d1 e1 a7 ed 52 d2');  //pop de, pop hl, and a, sbc hl,de, jp nc,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpGT :
+            begin
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('e1 d1 a7 ed 52 da');  //pop hl, pop de, and a, sbc hl,de, jp c,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpLT :
+            begin
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('d1 e1 a7 ed 52 fa');  //pop de, pop hl, and a, sbc hl,de, jp m,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpLE :
+            begin
+              Assert( TExpJump(C)._Type=jutInt );
+              InCodeString('e1 d1 a7 ed 52 d2');  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+          jsJumpAlways :
+            begin
+              InCode([$c3]);  //jp
+              InAddFixup(I + TExpJump(C).Destination);
+            end;
+        else
+          InFail('invalid TExpJump');
+        end;
+      end else if (C is TExpOpBinaryInt) then
+      begin
+        case TExpOpBinaryInt(C).Kind of
+          vbkPlus :
+            begin
+              InCodeString('e1 d1 19 e5');  //pop hl, pop de, add hl,de, push hl
+            end;
+          vbkMinus :
+            begin
+              InCodeString('d1 e1 a7 ed 52 e5');  //pop hl, pop de, and a, sbc hl,de, push hl
+            end;
+          vbkBinaryAnd :
+            begin
+              InCodeString('e1d17ba56f2600e5'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
+            end;
+          vbkBinaryOr :
+            begin
+              InCodeString('e1d17bb56f2600e5'); //pop hl, pop de, ld a,e, or l, ld l,a, ld h,0, push hl
+            end;
+          vbkBinaryShiftLeft :
+            begin
+              InCodeString('d1e14378b72806cb25cb1410fae5'); //pop de, pop hl, ld b,e, jr z skip, sla l, rl h, djnz next, push hl
+            end;
+          vbkBinaryShiftRight :
+            begin
+              InCodeString('d1e14378b72806cb3ccb1d10fae5'); //pop de, pop hl, ld b,e, jr z skip, srl h, rr l, djnz next, push hl
+            end;
+        else
+          InFail('wrong TExpOpBinaryInt');
+        end;
+      end else if (C is TExpArrayGetElement) then
+      begin
+        Ar := (Exp[I-1] as TExpLoadComponent).Component as TDefineArray;
+        Assert(Ar._Type=zctByte,'Wrong array type');
+        InCode([$21]);  //ld hl,nn
+        InAddResourceFixup( Ar );
+        InCodeString('d1 19 e5'); //pop de, add hl,de, push hl
+      end else if (C is TExpAssign1) then
+      begin
+        InCodeString('d1 e1 73'); //pop de, pop hl, ld (hl),e
+      end else if (C is TExpMisc) then
+      begin
+        case (C as TExpMisc).Kind of
+          emPtrDeref1 :
+            begin
+              InCodeString('e1 6e 26 00 e5'); //pop hl, ld l,(hl), ld h,0, push hl
+            end;
+        else
+          InFail('Unsupported misc instruction: ' + C.ClassName);
+        end;
+      end else if (C is TExpReturn) or (C is TExpStackFrame) then
+      begin
+        if (C is TExpStackFrame) then
+          Inc(VarSize, TExpStackFrame(C).Size*2);
+        //ignore these
+      end else
+        InFail('Unsupported instruction: ' + C.ClassName);
+
+      Inc(I);
+    end;
+  end;
 {
   https://www.asm80.com/
 }
 var
-  StringConstant : TExpStringConstant;
-  IntConstant : TExpConstantInt;
-  W : word;
+  Zex : TZExpression;
   I : integer;
-  InstructionOffsets : TList;
   ResourceNames : TStringList;
   Target : (z80Spectrum,z80MasterSystem);
-  CodeBase,VarBase : integer;
+  Ar : TDefineArray;
 begin
   if not CompileAll then
     Exit;
@@ -5178,8 +5381,8 @@ begin
     z80Spectrum:
       begin
         CodeBase := 30000;
-        VarBase := 28000;
-        end;
+        VarBase := 60000;
+      end;
     z80MasterSystem:
       begin
         CodeBase := 0;
@@ -5191,6 +5394,7 @@ begin
       VarBase := 0;
     end;
   end;
+  VarSize := 0;
 
   //Init
   case Target of
@@ -5202,8 +5406,6 @@ begin
 
 //InCode([$18,$fe]); //infinite loop
 
-  StringConstant := nil;
-  IntConstant := nil;
   Zex := nil;
   for I := 0 to Self.ZApp.OnLoaded.ComponentCount-1 do
   begin
@@ -5215,172 +5417,8 @@ begin
   end;
 
   RedundantLoadsRemoved := 0;
-  I := 0;
-  while I<Zex.Expression.Code.Count do
-  begin
-    while InstructionOffsets.Count<I do
-      InstructionOffsets.Add(nil);
-    InstructionOffsets.Add( pointer( Z80Code.Position ) );
 
-    C := Zex.Expression.Code[I] as TZComponent;
-    if (C is TExpLoadComponent) then
-    begin
-      if (TExpLoadComponent(C).Component is TExpStringConstant) then
-      begin
-        Assert(Zex.Expression.Code[I+1] is TExpLoadPropOffset);
-        Assert(Zex.Expression.Code[I+2] is TExpAddToPointer);
-        Assert(Zex.Expression.Code[I+3] is TExpMisc);
-        Inc(I,4); //Skip the rest of the load constant, load propoffset, addtopointer, ptrdereference
-        //if next is TExternal 'emit' then hold in stringconstant, else push string address
-        if (Zex.Expression.Code[I] is TExpExternalFuncCall) and
-          (TExpExternalFuncCall(Zex.Expression.Code[I]).FuncName='emit') then
-          StringConstant := TExpLoadComponent(C).Component as TExpStringConstant
-        else
-        begin
-          InCode([$21]);  //ld hl,
-          InAddResourceFixup( TExpLoadComponent(C).Component );
-          InCodeString('e5');  //push hl
-        end;
-        Continue;
-      end;
-    end else if (C is TExpExternalFuncCall) then
-    begin
-      if TExpExternalFuncCall(C).FuncName='emit' then
-      begin
-        InCodeString(String(StringConstant.Value));
-      end else if TExpExternalFuncCall(C).FuncName='getResourceAddress' then
-      begin
-        InCode([$21]);  //ld hl,nn
-        InAddResourceFixup( (Zex.Expression.Code[I-1] as TExpLoadComponent).Component );
-        InCodeString('e5');  //push hl
-      end else if TExpExternalFuncCall(C).FuncName='push' then
-      begin
-        //do nothing
-      end else if TExpExternalFuncCall(C).FuncName='pushString' then
-      begin
-        //do nothing
-      end else if TExpExternalFuncCall(C).FuncName='emitByte' then
-      begin
-        InCode([ IntConstant.Constant ]);
-      end
-      else
-        InFail('Invalid func call');
-    end else if (C is TExpConstantInt) then
-    begin
-      //if next is TExternal 'emitByte' then hold in variable, else push integer value
-      if (Zex.Expression.Code[I+1] is TExpExternalFuncCall) and
-        (TExpExternalFuncCall(Zex.Expression.Code[I+1]).FuncName='emitByte') then
-        IntConstant := C as TExpConstantInt
-      else
-      begin
-        InCode([$21]);  //ld hl,
-        InCodeWord(TExpConstantInt(C).Constant);
-        InCodeString('e5');  //push hl
-      end;
-    end else if (C is TExpAccessLocal) then
-    begin
-      W := VarBase + TExpAccessLocal(C).Index*2;
-      case TExpAccessLocal(C).Kind of
-      loLoad :
-        begin
-          InCode([$2a]);  //ld hl,(nn)
-          InCodeWord(W);
-          InCodeString('e5');  //push hl
-        end;
-      loStore :
-        begin
-          InCodeString('e1 22'); //pop hl, ld (nn),hl
-          InCodeWord(W);
-        end;
-      else
-        InFail('Invalid TExpAccessLocal');
-      end;
-    end else if (C is TExpJump) then
-    begin
-      //Compared with codegen from z88dk
-      case TExpJump(C).Kind of
-        jsJumpEQ :
-          begin
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('e1 d1 a7 ed 52 ca');  //pop hl, pop de, and a (clear carry), sbc hl,de, jp z,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpNE :
-          begin
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('e1 d1 a7 ed 52 c2');  //pop hl, pop de, and a, sbc hl,de, jp nz,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpGE :
-          begin //https://retrocomputing.stackexchange.com/questions/9163/comparing-signed-numbers-on-z80-8080-in-assembly
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('d1 e1 a7 ed 52 d2');  //pop de, pop hl, and a, sbc hl,de, jp nc,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpGT :
-          begin
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('e1 d1 a7 ed 52 da');  //pop hl, pop de, and a, sbc hl,de, jp c,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpLT :
-          begin
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('d1 e1 a7 ed 52 fa');  //pop de, pop hl, and a, sbc hl,de, jp m,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpLE :
-          begin
-            Assert( TExpJump(C)._Type=jutInt );
-            InCodeString('e1 d1 a7 ed 52 d2');  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-        jsJumpAlways :
-          begin
-            InCode([$c3]);  //jp
-            InAddFixup(I + TExpJump(C).Destination);
-          end;
-      else
-        InFail('invalid TExpJump');
-      end;
-    end else if (C is TExpOpBinaryInt) then
-    begin
-      case TExpOpBinaryInt(C).Kind of
-        vbkPlus :
-          begin
-            InCodeString('e1 d1 19 e5');  //pop hl, pop de, add hl,de, push hl
-          end;
-        vbkMinus :
-          begin
-            InCodeString('d1 e1 a7 ed 52 e5');  //pop hl, pop de, and a, sbc hl,de, push hl
-          end;
-        vbkBinaryAnd :
-          begin
-            InCodeString('e1d17ba56f2600e5'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
-          end;
-        vbkBinaryOr :
-          begin
-            InCodeString('e1d17bb56f2600e5'); //pop hl, pop de, ld a,e, or l, ld l,a, ld h,0, push hl
-          end;
-        vbkBinaryShiftLeft :
-          begin
-            InCodeString('d1e14378b72806cb25cb1410fae5'); //pop de, pop hl, ld b,e, jr z skip, sla l, rl h, djnz next, push hl
-          end;
-        vbkBinaryShiftRight :
-          begin
-            InCodeString('d1e14378b72806cb3ccb1d10fae5'); //pop de, pop hl, ld b,e, jr z skip, srl h, rr l, djnz next, push hl
-          end;
-      else
-        InFail('wrong TExpOpBinaryInt');
-      end;
-    end else if (C is TExpReturn) or (C is TExpStackFrame) then
-    begin
-      //ignore these
-    end else
-      InFail('Unsupported instruction: ' + C.ClassName);
-
-    Inc(I);
-  end;
+  InGenList(Zex.Expression.Code,False);
 
   InCode([$18,$fe]); //infinite loop
 
@@ -5403,7 +5441,8 @@ begin
     if ResourceNames.IndexOf( string(ResourceFixups[I].Resource.Name) )=-1 then
     begin
       Z80Code.Position := Z80Code.Size;
-      ResourceNames.AddObject(string(ResourceFixups[I].Resource.Name), TObject(NativeInt(Z80Code.Position)) );
+      ResourceNames.AddObject(string(ResourceFixups[I].Resource.Name),
+        TObject(NativeInt(CodeBase + Z80Code.Position)) );
       if ResourceFixups[I].Resource is TZFile then
         Z80Code.Write(TZFile(ResourceFixups[I].Resource).FileEmbedded.Data^,
           TZFile(ResourceFixups[I].Resource).FileEmbedded.Size)
@@ -5412,12 +5451,27 @@ begin
       else if ResourceFixups[I].Resource is TExpStringConstant then
         Z80Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value))
       else if ResourceFixups[I].Resource is TDefineArray then
-        Z80Code.Write(TDefineArray(ResourceFixups[I].Resource).Values.Data^,TDefineArray(ResourceFixups[I].Resource).Values.Size)
+      begin
+        Ar := ResourceFixups[I].Resource as TDefineArray;
+        if Ar.Persistent then
+          Z80Code.Write(Ar.Values.Data^,Ar.Values.Size)
+        else
+        begin
+          //Memory array, allocate in var area
+          ResourceNames.Objects[ResourceNames.Count-1] := TObject(NativeInt(VarBase + VarSize));
+          if Ar._Type=zctByte then
+            Inc(VarSize,Ar.SizeDim1)
+          else if Ar._Type=zctInt then
+            Inc(VarSize,Ar.SizeDim1*2)
+          else
+            InFail('wrong array type');
+        end;
+      end
       else
         InFail('Wrong type of resource: ' + ResourceFixups[I].Resource.ClassName);
     end;
     Z80Code.Position := ResourceFixups[I].Offset;
-    InCodeWord( CodeBase + Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
+    InCodeWord( Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
   end;
   ResourceNames.Free;
 

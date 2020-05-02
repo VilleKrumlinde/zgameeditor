@@ -27,6 +27,8 @@ int getResourceAddress(Component c) { }]]>
     http://primrosebank.net/computers/zxspectrum/docs/CompleteSpectrumROMDisassemblyThe.pdf
 */
 
+byte[32] CharArray;
+
 //write byte
 inline void poke(int addr,int value) {
   push(addr);
@@ -157,9 +159,14 @@ inline void printHex(int value) {
 }
 return;*/
 
+for(int i=0; i<32; i++)
+  CharArray[i]=48+i;
 
 //Custom font, ripped from Boggit using this technique https://markhardisty.wordpress.com/2018/01/23/how-to-rip-a-zx-spectrum-games-font/
 pokew(23606, getResourceAddress(FontFile) );
+
+//remove two fixed lines at the bottom
+poke(23659,0);
 
 //setPaperColor(47);
 gotoxy(2,2);
@@ -232,6 +239,17 @@ while(1) {
     }
   }
 
+  //Characters from chararray
+  if ((frame&7)==0){
+    int char=(frame>>3)&31;
+    gotoxy(char,22);
+    CharArray[char]=CharArray[char]+1;
+    if(CharArray[char]==91)
+      CharArray[char]=48;
+    printChar( CharArray[char] );
+  }
+
+  //Controls
   int key=readport(0xf7fe);
   if((key & 2)==0) {
      if(spritex<256-24)
@@ -249,7 +267,8 @@ while(1) {
     <ZExpression>
       <Expression>
 <![CDATA[//int x=0;
-//if(x>10);]]>
+//if(x>10);
+//testarray[0]=1;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
