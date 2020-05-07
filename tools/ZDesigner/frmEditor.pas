@@ -5115,7 +5115,7 @@ var
     InCodeWord(0);
   end;
 
-  procedure InWriteBitmap(B : TZBitmap);
+  procedure InWriteBitmap_Zx(Stream : TMemoryStream; B : TZBitmap);
   var
     P,OriginalP : PLongWord;
     PixelCount,X,Y : integer;
@@ -5137,9 +5137,55 @@ var
         else
           OutByte := (OutByte shl 1) or 1;
         if ((X and 7)=7) then
-          Z80Code.Write(OutByte,1);
+          Stream.Write(OutByte,1);
         Inc(P);
       end;
+    end;
+    FreeMem(OriginalP);
+  end;
+
+  procedure InWriteBitmap_Sms(Stream : TMemoryStream; B : TZBitmap);
+  var
+    P,OriginalP : PLongWord;
+    PixelCount,X,Y,TileX,TileY : integer;
+    OutByte : byte;
+  begin
+    PixelCount := B.PixelHeight * B.PixelWidth;
+    GetMem(OriginalP,PixelCount * 4);
+    B.UseTextureBegin;
+    glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,OriginalP);
+
+    Y := 0;
+    while Y<B.PixelHeight do
+    begin
+      X := 0;
+      while X<B.PixelWidth do
+      begin
+        P := OriginalP;
+        Inc(P,(B.PixelHeight-1-Y) * B.PixelWidth); //Image is upside down
+        Inc(P,X);
+        for TileY := 0 to 8-1 do
+        begin
+          OutByte := 0;
+          for TileX := 0 to 8-1 do
+          begin
+            if P^=$FF000000 then
+              OutByte := (OutByte shl 1)
+            else
+              OutByte := (OutByte shl 1) or 1;
+            Inc(P);
+          end;
+          //todo: only monochrome bitmap yet supported
+          Stream.Write(OutByte,1);
+          OutByte := 0;
+          Stream.Write(OutByte,1);
+          Stream.Write(OutByte,1);
+          Stream.Write(OutByte,1);
+          Dec(P,B.PixelWidth+8);
+        end;
+        Inc(X,8);
+      end;
+      Inc(Y,8);
     end;
     FreeMem(OriginalP);
   end;
@@ -5321,6 +5367,7 @@ var
       begin
         Ar := (Exp[I-1] as TExpLoadComponent).Component as TDefineArray;
         Assert(Ar._Type=zctByte,'Wrong array type');
+        Assert(Ar.Dimensions=dadOne,'Only 1D array supported');
         InCode([$21]);  //ld hl,nn
         InAddResourceFixup( Ar );
         InCodeString('d1 19 e5'); //pop de, add hl,de, push hl
@@ -5330,6 +5377,7 @@ var
       end else if (C is TExpMisc) then
       begin
         case (C as TExpMisc).Kind of
+          emNop : ;
           emPtrDeref1 :
             begin
               InCodeString('e1 6e 26 00 e5'); //pop hl, ld l,(hl), ld h,0, push hl
@@ -5447,7 +5495,14 @@ begin
         Z80Code.Write(TZFile(ResourceFixups[I].Resource).FileEmbedded.Data^,
           TZFile(ResourceFixups[I].Resource).FileEmbedded.Size)
       else if ResourceFixups[I].Resource is TZBitmap then
-        InWriteBitmap(TZBitmap(ResourceFixups[I].Resource))
+      begin
+        case Target of
+          z80Spectrum : InWriteBitmap_Zx(Z80Code,TZBitmap(ResourceFixups[I].Resource));
+          z80MasterSystem : InWriteBitmap_Sms(Z80Code,TZBitmap(ResourceFixups[I].Resource));
+        else
+          InFail('bitmap not supported for this target');
+        end;
+      end
       else if ResourceFixups[I].Resource is TExpStringConstant then
         Z80Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value))
       else if ResourceFixups[I].Resource is TDefineArray then
