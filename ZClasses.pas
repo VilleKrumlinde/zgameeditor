@@ -649,7 +649,7 @@ var
 implementation
 
 uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
-  {$ifndef minimal},LibXmlParser,{$ifndef fpc}AnsiStrings,{$endif}SysUtils,Math,zlib
+  {$ifndef minimal},LibXmlParserU,{$ifndef fpc}AnsiStrings,{$endif}SysUtils,Math,zlib
   ,Zc_Ops
   {$endif}
   {$ifdef fpc}
@@ -740,7 +740,7 @@ type
 
   TZXmlReader = class(TZReader)
   private
-    MainXml : LibXmlParser.TXmlParser;
+    MainXml : LibXmlParserU.TXmlParser;
     FixUps : TZArrayList;
     SymTab : TSymbolTable;
     OldSeparator : char;
@@ -960,13 +960,13 @@ end;
 //Utility
 
 {$ifndef minimal}
-procedure GetAllObjects(C : TZComponent; List : TObjectList);
+procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);
 //Returns all objects
 begin
   C.GetAllChildren(List,True);
 end;
 
-procedure GetReferersTo(Root, Target : TZComponent; List : TObjectList);
+procedure GetReferersTo(Root, Target : TZComponent; List : contnrs.TObjectList);
 //Returns all objects that refers to component Target
 var
   PropList : TZPropertyList;
@@ -1595,7 +1595,7 @@ begin
     Result := nil;
 end;
 
-procedure TZComponent.GetAllChildren(List : TObjectList; IncludeExpressions : boolean);
+procedure TZComponent.GetAllChildren(List : contnrs.TObjectList; IncludeExpressions : boolean);
 //Returns all objects
 var
   PropList : TZPropertyList;
@@ -3187,7 +3187,7 @@ var
   PropList : TZPropertyList;
   Value : TZPropertyValue;
   Prop,NestedProp : TZProperty;
-  S : ansistring;
+  S : string;
   L,NotFounds : TStringList;
   Fix : TZXmlFixUp;
   Found : boolean;
@@ -3283,7 +3283,7 @@ var
     Xml.Scan;
     Assert(Xml.CurName='SampleData');
     Xml.Scan;
-    SampleDataString := Xml.CurContent;
+    SampleDataString := AnsiString(Xml.CurContent);
     Xml.Scan;
     Assert(Xml.CurName='SampleData');
     Xml.Scan;
@@ -3326,28 +3326,28 @@ var
     C.SetProperty(C.GetProperties.GetByName('FileFormat'),Value);
   end;
 
-  function PatchOldPropRef(const S : ansistring) : ansistring;
+  function PatchOldPropRef(const S : string) : string;
   var
-    C : ansichar;
+    C : char;
     SpaceCount,SpecialCount : integer;
     L  : TStringList;
   begin
     Result := S;
-    if (Length(S)>0) and (UpCase(S[1]) in ['A'..'Z']) then
+    if (Length(S)>0) and ( CharInSet(UpCase(S[1]),['A'..'Z']) ) then
     begin
       SpaceCount := 0; SpecialCount := 0;
       for C in S do
       begin
         if C=' ' then
           Inc(SpaceCount);
-        if C in ['.','+','-','*','/'] then
+        if CharInSet(C,['.','+','-','*','/']) then
           Inc(SpecialCount);
       end;
       if (SpaceCount>0) and (SpaceCount<3) and (SpecialCount=0) then
       begin
         L := TStringList.Create;
         L.Delimiter := ' ';
-        L.DelimitedText := String(S);
+        L.DelimitedText := S;
         if LowerCase(L[L.Count-1])='value' then
           L.Delete(L.Count-1)
         else if StrToIntDef(L[L.Count-1],99) in [0..3] then
@@ -3358,26 +3358,22 @@ var
           ) then
           L.Add('X');
         L.Delimiter := '.';
-        Result := AnsiString(L.DelimitedText);
+        Result := L.DelimitedText;
         GetLog(Self.ClassName).Write(String('Patched propref: ' + S + ' -> ' + Result) );
         L.Free;
       end;
     end;
   end;
 
-  function PatchBitmapExp(const S : ansistring) : ansistring;
+  function PatchBitmapExp(const S : string) : string;
   var
-    L : ansistring;
+    L : string;
 
-    procedure One(const Name,NewName : ansistring);
+    procedure One(const Name,NewName : string);
     begin
       if AnsiPos(Name,L)=0 then
         Exit;
-      {$ifdef fpc}
-      Result := ReplaceText(Result,Name,NewName);
-      {$else}
-      Result := AnsiReplaceText(Result,Name,NewName);
-      {$endif}
+      Result := StringReplace(Result,Name,NewName,[rfReplaceAll]);
     end;
 
   begin
@@ -3399,7 +3395,7 @@ var
   end;
 
 begin
-  ZClassName := string(Xml.CurName);
+  ZClassName := Xml.CurName;
 
   if ZClassName='DefineArray' then
     ZClassName := 'Array'
@@ -3423,23 +3419,23 @@ begin
 
     for I := 0 to Xml.CurAttr.Count-1 do
     begin
-      S:=Xml.CurAttr.Name(I);
+      S := Xml.CurAttr.Name(I);
       Found := False;
       for J := 0 to PropList.Count-1 do
       begin
         Prop := TZProperty(PropList[J]);
-        if SameText(Prop.Name,String(S)) then
+        if SameText(Prop.Name,S) then
         begin
           S := Xml.CurAttr.Value(I);
           Found := True;
           case Prop.PropertyType of
             zptString :
-              Value.StringValue := S;
+              Value.StringValue := AnsiString(S);
             zptFloat,zptScalar :
-              Value.FloatValue := StrToFloatDef(String(S),0);
+              Value.FloatValue := StrToFloatDef(S,0);
             zptRectf :
               begin
-                L.DelimitedText := String(S);
+                L.DelimitedText := S;
                 Value.RectfValue.Area[0] := StrToFloatDef(L[0],0);
                 Value.RectfValue.Area[1] := StrToFloatDef(L[1],0);
                 Value.RectfValue.Area[2] := StrToFloatDef(L[2],0);
@@ -3447,7 +3443,7 @@ begin
               end;
             zptColorf :
               begin
-                L.DelimitedText := String(S);
+                L.DelimitedText := S;
                 Value.ColorfValue.V[0] := StrToFloatDef(L[0],0);
                 Value.ColorfValue.V[1] := StrToFloatDef(L[1],0);
                 Value.ColorfValue.V[2] := StrToFloatDef(L[2],0);
@@ -3455,7 +3451,7 @@ begin
               end;
             zptVector3f :
               begin
-                L.DelimitedText := String(S);
+                L.DelimitedText := S;
                 Value.Vector3fValue[0] := StrToFloatDef(L[0],0);
                 //Allow a single value to be specified, this is copied to all three elements
                 //Used when switching type from float to vector3d (material.texturescale)
@@ -3469,15 +3465,15 @@ begin
                   Value.Vector3fValue[2] := Value.Vector3fValue[0];
               end;
             zptInteger :
-              Value.IntegerValue := StrToInt(String(S));
+              Value.IntegerValue := StrToInt(S);
             zptByte :
-              Value.ByteValue := StrToInt(String(S));
+              Value.ByteValue := StrToInt(S);
             zptBoolean :
-              Value.BooleanValue := ByteBool(StrToInt(String(S)));
+              Value.BooleanValue := ByteBool(StrToInt(S));
             zptComponentRef :
               begin
                 Fix := TZXmlFixUp.Create;
-                Fix.Name := String(LowerCase(S));
+                Fix.Name := LowerCase(S);
                 Fix.Prop := Prop;
                 Fix.Obj := C;
                 FixUps.Add( Fix );
@@ -3502,7 +3498,7 @@ begin
         end;
       end;
       if not Found then
-        NotFounds.Values[String(S)] := String(Xml.CurAttr.Value(I));
+        NotFounds.Values[S] := Xml.CurAttr.Value(I);
     end;
 
     if (NotFounds.Count>0) then
@@ -3528,7 +3524,7 @@ begin
               for I := 0 to PropList.Count-1 do
               begin
                 Prop := TZProperty(PropList[I]);
-                if SameText(Prop.Name,String(Xml.CurName)) and
+                if SameText(Prop.Name,Xml.CurName) and
                   (Prop.PropertyType in [zptComponentList,zptString,zptExpression,zptBinary]) then
                 begin
                   NestedProp := Prop;
@@ -3536,7 +3532,7 @@ begin
                 end;
               end;
               if NestedProp=nil then
-                raise Exception.Create('TZXmlReader: Unknown nested property ' + String(Xml.CurName));
+                raise Exception.Create('TZXmlReader: Unknown nested property ' + Xml.CurName);
               Value := C.GetProperty(NestedProp);
               while Xml.Scan do
                 case Xml.CurPartType of
@@ -3545,7 +3541,7 @@ begin
                       zptComponentList : DoReadComponent(Value.ComponentListValue);
                       zptString :
                         begin
-                          Value.StringValue := Xml.CurContent;
+                          Value.StringValue := AnsiString(Xml.CurContent);
                           C.SetProperty(NestedProp,Value);
                         end;
                       zptExpression :
@@ -3553,7 +3549,7 @@ begin
                           S := Trim(Xml.CurContent);
                           if Prop.ExpressionKind in [ekiBitmap,ekiMesh] then
                             S := PatchBitmapExp(S);
-                          Value.ExpressionValue.Source := String(S);
+                          Value.ExpressionValue.Source := S;
                           C.SetProperty(NestedProp,Value);
                         end;
                       zptBinary :
@@ -3567,7 +3563,7 @@ begin
                         end;
                     end;
                   ptEndTag :
-                    if SameText(NestedProp.Name,String(Xml.CurName)) then
+                    if SameText(NestedProp.Name,Xml.CurName) then
                       Break;
                 end;
             end;

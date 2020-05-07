@@ -44,7 +44,7 @@ uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplicati
   ,SysUtils, System.IOUtils
  {$endif}
  {$IFDEF FPC}
-  ,WinEvent
+  //,WinEvent
  {$ENDIF}
  ;
 
