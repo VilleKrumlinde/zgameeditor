@@ -5147,14 +5147,27 @@ var
   procedure InWriteBitmap_Sms(Stream : TMemoryStream; B : TZBitmap);
   var
     P,OriginalP : PLongWord;
-    PixelCount,X,Y,TileX,TileY : integer;
-    OutByte : byte;
+    PixelCount,X,Y,TileX,TileY,Bit,I,J : integer;
+    Color,OutByte : byte;
+    //Map all possible colors to paletteindex, $ff=unused.
+    AllColors : array[0..63] of byte;
+    PixelRow : array[0..7] of byte;
+    ColorsUsed,ColorIndex : integer;
+    SavePosPal,SavePosEnd : integer;
   begin
+    FillChar(AllColors,SizeOf(AllColors),$ff);
     PixelCount := B.PixelHeight * B.PixelWidth;
     GetMem(OriginalP,PixelCount * 4);
     B.UseTextureBegin;
     glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,OriginalP);
 
+    //Make room for palette first
+    SavePosPal := Stream.Position;
+    OutByte := 0;
+    for I := 0 to 15 do
+      Stream.Write(OutByte,1);
+
+    ColorsUsed := 0;
     Y := 0;
     while Y<B.PixelHeight do
     begin
@@ -5169,18 +5182,26 @@ var
           OutByte := 0;
           for TileX := 0 to 8-1 do
           begin
-            if P^=$FF000000 then
-              OutByte := (OutByte shl 1)
-            else
-              OutByte := (OutByte shl 1) or 1;
+            Color := ((P^ and 255) shr 6) or
+              ((((P^ shr 8) and 255) shr 6) shl 2) or
+              ((((P^ shr 16) and 255) shr 6) shl 4);
+            if AllColors[Color]=$FF then
+            begin
+              AllColors[Color] := ColorsUsed;
+              ColorIndex := ColorsUsed;
+              Inc(ColorsUsed);
+            end else
+              ColorIndex := AllColors[Color];
+            PixelRow[TileX] := ColorIndex;
             Inc(P);
           end;
-          //todo: only monochrome bitmap yet supported
-          Stream.Write(OutByte,1);
-          OutByte := 0;
-          Stream.Write(OutByte,1);
-          Stream.Write(OutByte,1);
-          Stream.Write(OutByte,1);
+          for Bit := 0 to 3 do
+          begin
+            OutByte := 0;
+            for I := 0 to 7 do
+              OutByte := (OutByte shl 1) or ((PixelRow[I] shr Bit) and 1);
+            Stream.Write(OutByte,1);
+          end;
           Dec(P,B.PixelWidth+8);
         end;
         Inc(X,8);
@@ -5188,6 +5209,26 @@ var
       Inc(Y,8);
     end;
     FreeMem(OriginalP);
+    if ColorsUsed>16 then
+      Log.Write('Too many unique colors: ' + String(B.Name));
+
+    //Write palette
+    SavePosEnd := Stream.Position;
+    Stream.Position := SavePosPal;
+    for I := 0 to 15 do
+    begin
+      Color := 0;
+      for J := 0 to High(AllColors) do
+      begin
+        if AllColors[J]=I then
+        begin
+          Color := J;
+          Break;
+        end;
+      end;
+      Stream.Write(Color,1);
+    end;
+    Stream.Position := SavePosEnd;
   end;
 
   procedure InFail(const Msg : string);

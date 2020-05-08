@@ -120,13 +120,17 @@ inline void waitVBlank() {
 <![CDATA[// Write initial value of VDP Registers
 copyToVdpControl(getResourceAddress(VdpInitDataArray),22);
 
+//The tiles data is composed of palette + tiles.
+int spriteTiles = getResourceAddress(TileBitmap);
+
 // Load Palette
-setVdpAddress(0xC011);
-writeport(0xbe,0x3f);
+setVdpAddress(0xC010);
+copyToVdp(spriteTiles,16);
 
 // Load Tiles
+spriteTiles += 16;
 setVdpAddress(0x6000);
-copyToVdp(getResourceAddress(TileBitmap),0x10*8);
+copyToVdp(spriteTiles,0x10*8);
 
 // Enable 2 sprites (invader is 2 sprites wide)
 setVdpAddress(0x7F02);
@@ -180,13 +184,28 @@ while(1)
 <![CDATA[789C53696068FCDFF4BF99BDE57FEBFF368676860E86CEFF5D007B570ADE]]>
       </Values>
     </Array>
-    <Bitmap Name="TileBitmap" Width="32" Height="8">
+    <Bitmap Name="TileBitmap" Width="32" Height="8" Filter="1">
       <Producers>
         <BitmapFromFile Comment="Imported from Invader.bmp" DataWidth="32" DataHeight="8">
           <BitmapFile>
 <![CDATA[789C63604080FF60C0805704BF381E5964415C6C5C5A301978D4A3998C473DA92EC10FA8A21E97ABA8A59E46EE27A885D420C51A0B981AF12823523D00CAFF6CA2]]>
           </BitmapFile>
         </BitmapFromFile>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+//Sample expression: Pixel.R=abs(sin(X*16));
+if( (Y>0.75) && (Pixel.R>0) ) {
+  Pixel.B=0;
+  Pixel.G=0;
+} else if( (Y>0.25) && (Pixel.R>0) ) {
+  Pixel.R=0;
+  Pixel.B=0;
+//  Pixel.G=0;
+}]]>
+          </Expression>
+        </BitmapExpression>
       </Producers>
     </Bitmap>
   </Content>
