@@ -120,21 +120,42 @@ inline void waitVBlank() {
 <![CDATA[// Write initial value of VDP Registers
 copyToVdpControl(getResourceAddress(VdpInitDataArray),22);
 
-//The tiles data is composed of palette + tiles.
-int spriteTiles = getResourceAddress(TileBitmap);
 
-// Load Palette
-setVdpAddress(0xC010);
-copyToVdp(spriteTiles,16);
+{
+//The bitmap data is composed of palette + tiles.
+  int data=getResourceAddress(SpritesBitmap);
 
-// Load Tiles
-spriteTiles += 16;
-setVdpAddress(0x6000);
-copyToVdp(spriteTiles,0x10*8);
+  // Load Palette 2
+  setVdpAddress(0xC010);
+  copyToVdp(data,16);
 
-// Enable 2 sprites (invader is 2 sprites wide)
-setVdpAddress(0x7F02);
-writeport(0xbe,0xd0); //Set 0xd0 to signal end of sprites used
+  // Load Tiles
+  data+=16;
+  setVdpAddress(0x6000);
+  copyToVdp(data,4*32);
+
+  // Enable 2 sprites (invader is 2 sprites wide)
+  setVdpAddress(0x7F02);
+  writeport(0xbe,0xd0); //Set 0xd0 to signal end of sprites used
+}
+
+//Background
+{
+  //Palette 1
+  int data=getResourceAddress(BackgroundBitmap);
+  setVdpAddress(0xC000);
+  copyToVdp(data,16);
+
+  //Copy background tiles pixels
+  data+=16;
+  setVdpAddress(0x4000);
+  copyToVdp(data,3*32);
+
+  //Background tilemap
+  setVdpAddress(0x7800);
+  copyToVdp(getResourceAddress(TileMapArray),32*28);
+}
+
 
 // Enable Display
 setVdpAddress(0x8140);
@@ -184,7 +205,7 @@ while(1)
 <![CDATA[789C53696068FCDFF4BF99BDE57FEBFF368676860E86CEFF5D007B570ADE]]>
       </Values>
     </Array>
-    <Bitmap Name="TileBitmap" Width="32" Height="8" Filter="1">
+    <Bitmap Name="SpritesBitmap" Width="32" Height="8" Filter="1">
       <Producers>
         <BitmapFromFile Comment="Imported from Invader.bmp" DataWidth="32" DataHeight="8">
           <BitmapFile>
@@ -196,17 +217,46 @@ while(1)
 <![CDATA[//X,Y : current coordinate (0..1)
 //Pixel : current color (rgb)
 //Sample expression: Pixel.R=abs(sin(X*16));
-if( (Y>0.75) && (Pixel.R>0) ) {
-  Pixel.B=0;
-  Pixel.G=0;
-} else if( (Y>0.25) && (Pixel.R>0) ) {
-  Pixel.R=0;
-  Pixel.B=0;
-//  Pixel.G=0;
+
+//File is monochrome so just color it a bit
+if( (Y>0.35) && (Pixel.R>0) ) {
+  Pixel.R=1;
+  Pixel.G=0.5;
+  Pixel.B=0.1;
 }]]>
           </Expression>
         </BitmapExpression>
       </Producers>
     </Bitmap>
+    <Bitmap Name="BackgroundBitmap" Width="24" Height="8" Filter="1">
+      <Producers>
+        <BitmapFromFile Comment="Imported from Tiles-bg2.png" Transparency="2" HasAlphaLayer="1" DataWidth="24" DataHeight="8">
+          <BitmapFile>
+<![CDATA[789CBB337DF3FF3B407CB36D2518DF41E3C3F0B1BAD9608CCC86A925A41F9F1A185D5F5F0FC6203E321B661F888D6C2FCC2D84EC40D687EE0F62F5E35383EC76747FC0D4C0EC43D64F4AF8110A7F64FFE0132337FC29896362C21F3D7ED1C387D2F0C7A71F003E8A4085]]>
+          </BitmapFile>
+        </BitmapFromFile>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[//X,Y : current coordinate (0..1)
+//Pixel : current color (rgb)
+//Sample expression: Pixel.R=abs(sin(X*16));
+
+if(Pixel.G<0.5) {
+  //Increase contrast a bit
+  Pixel.R*=0.75;
+  Pixel.G=0;
+}
+
+//And darken
+Pixel*=0.75;]]>
+          </Expression>
+        </BitmapExpression>
+      </Producers>
+    </Bitmap>
+    <Array Name="TileMapArray" Type="4" Dimensions="1" SizeDim1="32" SizeDim2="28" Persistent="255">
+      <Values>
+<![CDATA[789C63646462606262040206AC808909BBF8281805A3807200003AC90011]]>
+      </Values>
+    </Array>
   </Content>
 </ZApplication>

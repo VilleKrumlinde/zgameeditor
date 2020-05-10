@@ -260,7 +260,7 @@ while(1) {
   }
 
   if((frame&15)==0)
-    setBorderColor(bordercolor++);
+    setBorderColor((bordercolor++)&7);
 }]]>
       </Expression>
     </ZExpression>

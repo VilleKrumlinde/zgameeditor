@@ -5013,6 +5013,7 @@ begin
   else
     OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
   try
+    wglMakeCurrent(Glp.Canvas.Handle,Glp.GetHrc);
     BuildZ80(OutFile);
   except on E : Exception do
     ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check the Z80 demo projects.'+#13+#13+E.Message);
@@ -5160,6 +5161,7 @@ var
     GetMem(OriginalP,PixelCount * 4);
     B.UseTextureBegin;
     glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,OriginalP);
+    CheckGLError;
 
     //Make room for palette first
     SavePosPal := Stream.Position;
@@ -5530,8 +5532,10 @@ begin
     if ResourceNames.IndexOf( string(ResourceFixups[I].Resource.Name) )=-1 then
     begin
       Z80Code.Position := Z80Code.Size;
+
       ResourceNames.AddObject(string(ResourceFixups[I].Resource.Name),
         TObject(NativeInt(CodeBase + Z80Code.Position)) );
+
       if ResourceFixups[I].Resource is TZFile then
         Z80Code.Write(TZFile(ResourceFixups[I].Resource).FileEmbedded.Data^,
           TZFile(ResourceFixups[I].Resource).FileEmbedded.Size)
