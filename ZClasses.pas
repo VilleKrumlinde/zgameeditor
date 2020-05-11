@@ -3371,9 +3371,9 @@ var
 
     procedure One(const Name,NewName : string);
     begin
-      if AnsiPos(Name,L)=0 then
+      if Pos(Name,L)=0 then
         Exit;
-      Result := StringReplace(Result,Name,NewName,[rfReplaceAll]);
+      Result := StringReplace(Result,Name,NewName,[rfReplaceAll,rfIgnoreCase]);
     end;
 
   begin
