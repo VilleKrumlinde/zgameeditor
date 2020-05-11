@@ -153,7 +153,11 @@ copyToVdpControl(getResourceAddress(VdpInitDataArray),22);
 
   //Background tilemap
   setVdpAddress(0x7800);
-  copyToVdp(getResourceAddress(TileMapArray),32*28);
+  for(int data=getResourceAddress(TileMapArray), i=0; i<32*28; i++) {
+    writeport(0xbe,peek(data++));
+    //TileMapArray holds 1-byte per tile but VRAM has 2-bytes per tile so write a zero as the second byte
+    writeport(0xbe,0);
+  }
 }
 
 
@@ -253,9 +257,9 @@ Pixel*=0.75;]]>
         </BitmapExpression>
       </Producers>
     </Bitmap>
-    <Array Name="TileMapArray" Type="4" Dimensions="1" SizeDim1="32" SizeDim2="28" Persistent="255">
+    <Array Name="TileMapArray" Type="4" Dimensions="1" SizeDim1="28" SizeDim2="32" Persistent="255">
       <Values>
-<![CDATA[789C63646462606262040206AC808909BBF8281805A3807200003AC90011]]>
+<![CDATA[789C63646462606262040206AC808909BB38B5E447C12818C9000054450019]]>
       </Values>
     </Array>
   </Content>
