@@ -255,6 +255,16 @@ var
   end;
   {$endif}
 begin
+  {$ifndef minimal}
+  if HasExternalHandle then
+  begin
+    IsChanged := False;
+    Producers.IsChanged := False;
+    IsInitialized := True;
+    Exit;
+  end;
+  {$endif}
+
   CleanUp;
 
   if Producers.Count>0 then
@@ -368,7 +378,7 @@ end;
 procedure TZBitmap.UseTextureBegin;
 begin
   if (not IsInitialized)
-   {$ifndef minimal}or Producers.IsChanged or IsChanged and (not HasExternalHandle){$endif} then
+   {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
     ReInit;
 
   glBindTexture(GL_TEXTURE_2D, Handle);
@@ -377,7 +387,7 @@ end;
 procedure TZBitmap.Update;
 begin
   //Dynamic bitmap must be updated before draw begins since backbuffer is being used
-  if (not IsInitialized) or (Producers.IsChanged) or (IsChanged) then
+  if (not IsInitialized) or Producers.IsChanged or IsChanged then
     ReInit;
 end;
 
