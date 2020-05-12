@@ -149,11 +149,11 @@ copyToVdpControl(getResourceAddress(VdpInitDataArray),22);
   //Copy background tiles pixels
   data+=16;
   setVdpAddress(0x4000);
-  copyToVdp(data,3*32);
+  copyToVdp(data,9*32);
 
   //Background tilemap
   setVdpAddress(0x7800);
-  for(int data=getResourceAddress(TileMapArray), i=0; i<32*28; i++) {
+  for(int data=getResourceAddress(TileMapArray), i=0; i<32*24; i++) {
     writeport(0xbe,peek(data++));
     //TileMapArray holds 1-byte per tile but VRAM has 2-bytes per tile so write a zero as the second byte
     writeport(0xbe,0);
@@ -232,34 +232,18 @@ if( (Y>0.35) && (Pixel.R>0) ) {
         </BitmapExpression>
       </Producers>
     </Bitmap>
-    <Bitmap Name="BackgroundBitmap" Width="24" Height="8" Filter="1">
+    <Bitmap Name="BackgroundBitmap" Width="72" Height="8" Filter="1">
       <Producers>
-        <BitmapFromFile Comment="Imported from Tiles-bg2.png" Transparency="2" HasAlphaLayer="1" DataWidth="24" DataHeight="8">
+        <BitmapFromFile Comment="Imported from Untitled.png" Transparency="2" HasAlphaLayer="1" DataWidth="72" DataHeight="8">
           <BitmapFile>
-<![CDATA[789CBB337DF3FF3B407CB36D2518DF41E3C3F0B1BAD9608CCC86A925A41F9F1A185D5F5F0FC6203E321B661F888D6C2FCC2D84EC40D687EE0F62F5E35383EC76747FC0D4C0EC43D64F4AF8110A7F64FFE0132337FC29896362C21F3D7ED1C387D2F0C7A71F003E8A4085]]>
+<![CDATA[789CAD966B12C230088473C95E32978C328A83B80B8BFA834E333C0A5F28C95AE7AC422E7BECBB9CADCB7EF8986F8EA548F6D9D7A7787CA63741BAEEDBD1AEE232E6F3646212F34775BA8DBF47BF9C1BABBF63C3F84CFD7FE6936A8B357B7CCF23B2403CE33AFBB2FE61B5317D8CDFF1315B994FD743AEDF98CF1B13C01531AB6AE8F8A8FFD73FF8BCF21FCC9F5C1FF4CFBD03F8B21EE8EACBFCF2BA6384E6A7C448E923D63BC5CC62313A3E4CEF36F1BDEBA5BC5F0A1B365FAB5992E747C955E013F347BA3857D0FE308E93735465343DA3BFBD1F28F92B39287700C6CEFC6FB7B0EB4D]]>
           </BitmapFile>
         </BitmapFromFile>
-        <BitmapExpression>
-          <Expression>
-<![CDATA[//X,Y : current coordinate (0..1)
-//Pixel : current color (rgb)
-//Sample expression: Pixel.R=abs(sin(X*16));
-
-if(Pixel.G<0.5) {
-  //Increase contrast a bit
-  Pixel.R*=0.75;
-  Pixel.G=0;
-}
-
-//And darken
-Pixel*=0.75;]]>
-          </Expression>
-        </BitmapExpression>
       </Producers>
     </Bitmap>
-    <Array Name="TileMapArray" Type="4" Dimensions="1" SizeDim1="28" SizeDim2="32" Persistent="255">
+    <Array Name="TileMapArray" Type="4" Dimensions="1" SizeDim1="24" SizeDim2="32" Persistent="255">
       <Values>
-<![CDATA[789C63646462606262040206AC808909BB38B5E447C12818C9000054450019]]>
+<![CDATA[789C636065C30B19D839F04206563606064626069C809D8381819905B73C483F3E00D28F0F8CEA1FE9FA294ABF005E320433]]>
       </Values>
     </Array>
   </Content>
