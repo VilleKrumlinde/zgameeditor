@@ -5022,6 +5022,7 @@ end;
 
 procedure TEditorForm.BuildZ80(OutFile : string);
 type
+  TRtlRoutine = (rrtSwitch);
   TFixUp =
     record
       Offset,Target : integer;
@@ -5031,12 +5032,18 @@ type
       Resource : TZComponent;
       Offset : integer;
     end;
+  TRtlFixUp =
+    record
+      Routine : TRtlRoutine;
+      Offset : integer;
+    end;
 var
   C : TZComponent;
   Z80Code : TMemoryStream;
   Z80File : TMemoryStream;
   Fixups : array of TFixUp;
   ResourceFixups : array of TResourceFixUp;
+  RtlFixups : array of TRtlFixUp;
   RedundantLoadsRemoved : integer;
   InstructionOffsets : TList;
   CodeBase,VarBase,VarSize : integer;
@@ -5101,7 +5108,7 @@ var
     I := Length(Fixups);
     SetLength(Fixups,I+1);
     Fixups[I].Offset := Z80Code.Position;
-    Fixups[I].Target := Destination;;
+    Fixups[I].Target := Destination;
     InCodeWord(0);
   end;
 
@@ -5112,7 +5119,18 @@ var
     I := Length(ResourceFixups);
     SetLength(ResourceFixups,I+1);
     ResourceFixups[I].Offset := Z80Code.Position;
-    ResourceFixups[I].Resource := Resource;;
+    ResourceFixups[I].Resource := Resource;
+    InCodeWord(0);
+  end;
+
+  procedure InAddRtlFixup(const Routine : TRtlRoutine);
+  var
+    I : integer;
+  begin
+    I := Length(RtlFixups);
+    SetLength(RtlFixups,I+1);
+    RtlFixups[I].Offset := Z80Code.Position;
+    RtlFixups[I].Routine:= Routine;
     InCodeWord(0);
   end;
 
@@ -5240,10 +5258,11 @@ var
 
   procedure InGenList(Exp : TZComponentList; IsFunc : boolean);
   var
-    I : integer;
+    I,J : integer;
     W : word;
     StringConstant : TExpStringConstant;
     IntConstant : TExpConstantInt;
+    Switch : TExpSwitchTable;
     Ar : TDefineArray;
   begin
     StringConstant := nil;
@@ -5433,6 +5452,30 @@ var
         if (C is TExpStackFrame) then
           Inc(VarSize, TExpStackFrame(C).Size*2);
         //ignore these
+      end else if (C is TExpSwitchTable) then
+      begin
+        Switch := (C as TExpSwitchTable);
+        if (Switch.LowBound<0) or (Switch.HighBound>128) then
+          InFail('case statements must be in range 0-128');
+
+        InCodeString('e1'); //pop hl
+
+        if Switch.LowBound<>0 then
+        begin
+          InCode([$3e,Switch.LowBound,$bd,$da]); //ld a,lowbound, cp l, jp c,nn
+          InAddFixup(I + Switch.DefaultOrExit);
+        end;
+
+        InCode([$3e,Switch.HighBound,$bd,$fa]); //ld a,highbound, cp l, jp m,nn
+        InAddFixup(I + Switch.DefaultOrExit);
+
+        InCode([$cd]); //call
+        InAddRtlFixup(rrtSwitch);
+
+        //emit jumptable
+        for J := 0 to Switch.HighBound-Switch.LowBound do
+          InAddFixup(I + PIntegerArray(Switch.Jumps.Data)^[J]);
+
       end else
         InFail('Unsupported instruction: ' + C.ClassName);
 
@@ -5448,6 +5491,7 @@ var
   ResourceNames : TStringList;
   Target : (z80Spectrum,z80MasterSystem);
   Ar : TDefineArray;
+  RtlAddress : array[TRtlRoutine] of word;
 begin
   if not CompileAll then
     Exit;
@@ -5574,6 +5618,30 @@ begin
     InCodeWord( Word(ResourceNames.Objects[ ResourceNames.IndexOf(string(ResourceFixups[I].Resource.Name)) ]) );
   end;
   ResourceNames.Free;
+
+  FillChar(RtlAddress,SizeOf(RtlAddress),0);
+  for I := 0 to High(RtlFixups) do
+  begin
+    if RtlAddress[RtlFixups[I].Routine]=0 then
+    begin
+      Z80Code.Position := Z80Code.Size;
+      RtlAddress[RtlFixups[I].Routine] := CodeBase + Z80Code.Position;
+      case RtlFixups[I].Routine of
+        rrtSwitch :
+          InCodeString('d1 CB25 19 5e 23 56 626b e9');  //pop de, sla l, add hl,de,
+            // 5E                     LD   e,(hl)
+            // 23                     INC   hl
+            // 56                     LD   d,(hl)
+            // 62 6B                  LD   hl,de
+            // E9                     JP   (hl)
+      else
+        InFail('rtl not handled');
+      end;
+    end;
+    Z80Code.Position := RtlFixups[I].Offset;
+    InCodeWord( RtlAddress[RtlFixups[I].Routine] );
+  end;
+
 
   Z80Code.Position := 0;
 
