@@ -16,7 +16,7 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn);
+          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -593,6 +593,10 @@ begin
           Result := Result + Child(0).ToString;
         Result := Result + ';';
       end;
+    zcInitLocalArray :
+      begin
+        Result := Id + '={init};';
+      end;
     zcForLoop :
       begin
         Result := 'for(';
@@ -987,7 +991,7 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
-  if (Kind in [zcIdentifier,zcSelect]) then
+  if (Kind in [zcIdentifier,zcSelect,zcInitLocalArray]) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
 

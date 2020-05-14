@@ -876,7 +876,6 @@ var
     I : integer;
     Frame : TExpStackFrame;
     Ret : TExpReturn;
-    L : TZcOpLocalVar;
     LReturn:TZCodeLabel;
   begin
     if (Func.Id='') and (Func.Statements.Count=0) then
@@ -902,19 +901,6 @@ var
     begin
       Frame := TExpStackFrame.Create(Target);
       Frame.Size := Func.GetStackSize;
-    end;
-    for L in Func.Locals do
-    begin
-      if L.Typ.Kind in [zctArray, zctMat4,zctVec2,zctVec3,zctVec4] then
-        with TExpInitLocalArray.Create(Target) do
-        begin
-          StackSlot := L.Ordinal;
-          Dimensions := TDefineArray(L.Typ.TheArray).Dimensions;
-          _Type := TDefineArray(L.Typ.TheArray)._Type;
-          Size1 := TDefineArray(L.Typ.TheArray).SizeDim1;
-          Size2 := TDefineArray(L.Typ.TheArray).SizeDim2;
-          Size3 := TDefineArray(L.Typ.TheArray).SizeDim3;
-        end;
     end;
 
     for I := 0 to Func.Statements.Count - 1 do
@@ -1081,6 +1067,22 @@ var
     RestoreReturn;
   end;
 
+  procedure DoGenInitLocalArray(Op : TZcOp);
+  var
+    Loc : TZcOpLocalVar;
+  begin
+    Loc := Op.Ref as TZcOpLocalVar;
+    with TExpInitLocalArray.Create(Target) do
+    begin
+      StackSlot := Loc.Ordinal;
+      Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
+      _Type := TDefineArray(Loc.Typ.TheArray)._Type;
+      Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
+      Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
+      Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
+    end;
+  end;
+
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -1109,6 +1111,7 @@ begin
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
     zcInlineBlock : DoGenInlineBlock(Op);
     zcInlineReturn : DoGenInlineReturn;
+    zcInitLocalArray : DoGenInitLocalArray(Op);
   else
     //GenValue(Op); //Value expressions (return values) can appear because of inlining
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );

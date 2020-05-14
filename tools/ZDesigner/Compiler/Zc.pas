@@ -1009,6 +1009,19 @@ begin
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
+        if (Loc.Typ.Kind in [zctArray, zctMat4,zctVec2,zctVec3,zctVec4]) then
+        begin
+          //Alloc new local array.
+          //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy).
+          if (not Assigned(Loc.InitExpression)) or
+            (not (Loc.InitExpression.GetDataType.Kind in [Loc.Typ.Kind, zctNull])) then
+          begin
+            if OutOp=nil then
+              OutOp := MakeOp(zcBlock);
+            OutOp.Children.Add( MakeOp(zcInitLocalArray,Loc.Id) );
+          end;
+        end;
+
         if Assigned(Loc.InitExpression) then
         begin
           //Generate tree for initial assignment
@@ -1017,7 +1030,6 @@ begin
           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
         end;
 
-     
 end;
 
 procedure TZc._Init(var OutOp : TZcOp);
