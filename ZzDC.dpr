@@ -20,7 +20,6 @@ THE SOFTWARE.}
 
 program ZzDC;
 
-{$WEAKLINKRTTI ON}
 
 {$if defined(CPUX64)}
   {$EXCESSPRECISION OFF} //Needed for fast single-precision math
@@ -32,6 +31,7 @@ program ZzDC;
     {$R 'OptionsDialog.res'}
     {$APPTYPE GUI}
   {$else}
+    {$WEAKLINKRTTI ON}
     {$R 'Data.res' 'Data.rc'}
     {$R 'OptionsDialog.res' 'OptionsDialog.rc'}
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
@@ -74,11 +74,17 @@ uses
   ImplicitMeshes in 'ImplicitMeshes.pas',
   ZFile in 'ZFile.pas',
   NanoJpeg in 'NanoJpeg.pas',
-  GLDrivers in 'GLDrivers.pas';
+  GLDrivers in 'GLDrivers.pas'
+  {$ifdef fpc},Math{$endif}
+  ;
 
 var
   ZApp : TZApplication;
 begin
+  {$ifdef fpc}
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide,
+                     exOverflow, exUnderflow, exPrecision]);
+  {$endif}
 
   ZApp := ZApplication.LoadApplicationComponent;
   ZApp.Run;

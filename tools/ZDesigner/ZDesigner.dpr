@@ -97,7 +97,8 @@ uses
   frmExprPropEdit in 'frmExprPropEdit.pas' {ExprPropEditForm},
   frmFloatPropEdit in 'frmFloatPropEdit.pas' {FloatPropEditForm},
   frmShaderPropEdit in 'frmShaderPropEdit.pas' {ShaderPropEditForm},
-  uObjFile in 'uObjFile.pas';
+  uObjFile in 'uObjFile.pas',
+  RetroCoding in 'RetroCoding.pas';
 
 {$R *.res}
 
