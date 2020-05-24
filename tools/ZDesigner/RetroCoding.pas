@@ -2,40 +2,20 @@ unit RetroCoding;
 
 interface
 
-uses Classes, ZApplication, ZClasses, ZBitmap;
+uses System.Classes, ZApplication, ZClasses, ZBitmap;
 
 type
   TRtlRoutine = (rrtSwitch);
   TRetroBuilder = class;
-  TRetroTarget = (rtaSpectrum,rtaMasterSystem);
-
-  TCpuZ80 =  class
-  strict private
-    procedure GenBitmap_Zx(Bitmap :  TZBitmap);
-    procedure GenBitmap_Sms(Bitmap :  TZBitmap);
-  private
-    Builder : TRetroBuilder;
-    RedundantLoadsRemoved : integer;
-    VarBase,VarSize,CodeBase : integer;
-    procedure GenInit;
-    procedure GenFinish;
-    procedure Gen(C : TZComponent);
-    procedure GenLoadResource(C : TZComponent);
-    procedure GenLoadInteger(Value : integer);
-    procedure GenArrayGetElement(C : TZComponent);
-    procedure GenBitmap(Bitmap :  TZBitmap);
-    procedure GenRtl(Routine : TRtlRoutine);
-    procedure GenFile(Ms : TMemoryStream; var FileName : string);
-    procedure PeepholeWrite(const Buf : array of byte);
-  public
-    Target : TRetroTarget;
-  end;
+  TRetroTarget = (rtaSpectrum,rtaMasterSystem,rtaVectrex);
+  TRetroCpu = class;
 
   TRetroBuilder = class
   strict private type
     TFixUp =
       record
         Offset,Target : integer;
+        IsRelative : boolean;
       end;
     TResourceFixUp =
       record
@@ -63,16 +43,72 @@ type
     procedure WriteFileAddress(Ad : integer; Ms : TMemoryStream);
     procedure GenList(Exp : TZComponentList; IsFunc : boolean);
     procedure Fail(const ErrorMessage : string);
-    procedure AddFixup(const Destination : integer);
+    procedure AddFixup(const Destination : integer; IsRelative : boolean = False);
     procedure AddResourceFixup(const Resource : TZComponent);
     procedure AddRtlFixup(const Routine : TRtlRoutine);
   public
     ZApp : TZApplication;
-    Cpu : TCpuZ80;
+    Cpu : TRetroCpu;
     FileName : string;
     constructor Create;
     destructor Destroy; override;
     procedure Execute;
+  end;
+
+  TRetroCpu = class abstract
+  private
+    Builder: TRetroBuilder;
+    CodeBase: integer;
+    VarBase: integer;
+    RedundantLoadsRemoved: integer;
+    VarSize: integer;
+    procedure GenBitmap(Bitmap: TZBitmap); virtual; abstract;
+    procedure GenInit; virtual; abstract;
+    procedure GenFinish; virtual; abstract;
+    procedure Gen(C: TZComponent); virtual; abstract;
+    procedure GenLoadResource(C: TZComponent); virtual; abstract;
+    procedure GenLoadInteger(Value: integer); virtual; abstract;
+    procedure GenArrayGetElement(C: TZComponent); virtual; abstract;
+    procedure GenRtl(Routine: TRtlRoutine); virtual; abstract;
+    procedure GenFile(Ms: TMemoryStream; var FileName: string); virtual; abstract;
+    procedure GenAddress(const Address : integer; Ms : TMemoryStream); virtual; abstract;
+    procedure PeepholeWrite(const Buf: array of byte); virtual; abstract;
+  public
+    Target: TRetroTarget;
+  end;
+
+  TCpuZ80 = class(TRetroCpu)
+  strict private
+    procedure GenBitmap_Zx(Bitmap: TZBitmap);
+    procedure GenBitmap_Sms(Bitmap: TZBitmap);
+  private
+    procedure GenInit; override;
+    procedure GenFinish; override;
+    procedure Gen(C: TZComponent); override;
+    procedure GenLoadResource(C: TZComponent); override;
+    procedure GenLoadInteger(Value: integer); override;
+    procedure GenArrayGetElement(C: TZComponent); override;
+    procedure GenBitmap(Bitmap: TZBitmap); override;
+    procedure GenRtl(Routine: TRtlRoutine); override;
+    procedure GenFile(Ms: TMemoryStream; var FileName: string); override;
+    procedure PeepholeWrite(const Buf: array of byte); override;
+    procedure GenAddress(const Address : integer; Ms : TMemoryStream); override;
+  end;
+
+  TCpu6809 = class(TRetroCpu)
+  strict private
+  private
+    procedure GenInit; override;
+    procedure GenFinish; override;
+    procedure Gen(C: TZComponent); override;
+    procedure GenLoadResource(C: TZComponent); override;
+    procedure GenLoadInteger(Value: integer); override;
+    procedure GenArrayGetElement(C: TZComponent); override;
+    procedure GenBitmap(Bitmap: TZBitmap); override;
+    procedure GenRtl(Routine: TRtlRoutine); override;
+    procedure GenFile(Ms: TMemoryStream; var FileName: string); override;
+    procedure GenAddress(const Address : integer; Ms : TMemoryStream); override;
+    procedure PeepholeWrite(const Buf: array of byte); override;
   end;
 
 implementation
@@ -94,7 +130,7 @@ begin
   inherited;
 end;
 
-procedure TRetroBuilder.AddFixup(const Destination: integer);
+procedure TRetroBuilder.AddFixup(const Destination: integer; IsRelative : boolean = False);
 var
   I : integer;
 begin
@@ -102,6 +138,7 @@ begin
   SetLength(Fixups,I+1);
   Fixups[I].Offset := Code.Position;
   Fixups[I].Target := Self.CurrentInstructionIndex + Destination;
+  Fixups[I].IsRelative := IsRelative;
   WriteCodeAddress(0);
 end;
 
@@ -159,7 +196,10 @@ begin
   for I := 0 to High(Fixups) do
   begin
     Code.Position := Fixups[I].Offset;
-    WriteCodeAddress( Cpu.CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
+    if Fixups[I].IsRelative then
+      WriteCodeAddress( NativeInt(InstructionOffsets[ Fixups[I].Target+1 ]) - Code.Position )
+    else
+      WriteCodeAddress( Cpu.CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
   end;
 
   //Components
@@ -329,11 +369,8 @@ end;
 
 procedure TRetroBuilder.WriteCodeAddress(Ad: integer);
 //Write nativeint for the platform
-var
-  W : word;
 begin
-  W := Ad;
-  Code.Write(W,2);
+  Cpu.GenAddress(Ad,Self.Code);
 end;
 
 procedure TRetroBuilder.WriteCodeString(S: string);
@@ -358,12 +395,8 @@ begin
 end;
 
 procedure TRetroBuilder.WriteFileAddress(Ad: integer; Ms: TMemoryStream);
-//Write nativeint for the platform
-var
-  W : word;
 begin
-  W := Ad;
-  Ms.Write(W,2);
+  Cpu.GenAddress(Ad,Ms);
 end;
 
 procedure TRetroBuilder.WriteFileString(S: string; Ms: TMemoryStream);
@@ -458,6 +491,14 @@ begin
   Builder.WriteCode([$18,$fe]); //infinite loop
   if RedundantLoadsRemoved>0 then
     ZLog.GetLog(Self.ClassName).Write('Redundant loads: ' + IntToStr(RedundantLoadsRemoved) );
+end;
+
+procedure TCpuZ80.GenAddress(const Address: integer; Ms: TMemoryStream);
+var
+  W : word;
+begin
+  W := Address;
+  Ms.Write(W,2);
 end;
 
 procedure TCpuZ80.GenArrayGetElement(C: TZComponent);
@@ -806,6 +847,241 @@ begin
 
   end else
     Builder.Fail('Unsupported instruction: ' + C.ClassName);
+end;
+
+{ TCpu6809 }
+
+procedure TCpu6809.GenInit;
+begin
+  case Self.Target of
+    rtaVectrex :
+      begin
+        VarBase := $c880;
+        //Variable length header
+//        Builder.WriteCodeString(
+//          '67 20 47 43 45 20 32 30 30 34 80 FD 0D FC 30 72'+
+//          'A8 54 48 52 55 53 54 20 46 4F 52 20 56 45 43 54'+
+//          '52 45 58 20 31 2E 32 80 FC 30 60 A8 42 59 20 56'+
+//          '49 4C 4C 45 20 6A 80 00');
+
+        //dp=d0
+        Builder.WriteCodeString('86 D0 1F 8B'); //LDA   #0xD0, TFR   a,dp
+      end;
+  end;
+end;
+
+procedure TCpu6809.GenFinish;
+begin
+
+end;
+
+procedure TCpu6809.Gen(C: TZComponent);
+var
+  I : integer;
+  W : word;
+  Switch : TExpSwitchTable;
+begin
+  if (C is TExpAccessLocal) then
+  begin
+    W := VarBase + TExpAccessLocal(C).Index*2;
+    case TExpAccessLocal(C).Kind of
+    loLoad :
+      begin
+        Builder.WriteCode([$fc]);  //ldd
+        Builder.WriteCodeAddress(W);
+        Builder.WriteCodeString('3406');  //pshs d
+      end;
+    loStore :
+      begin
+        Builder.WriteCodeString('3506 fd'); //puls d, std
+        Builder.WriteCodeAddress(W);
+      end;
+    else
+      Builder.Fail('Invalid TExpAccessLocal');
+    end;
+  end else if (C is TExpJump) then
+  begin
+    //Compared with codegen from z88dk
+    case TExpJump(C).Kind of
+      jsJumpEQ :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('ece1 10a3e1 1027');  //ldd ,s++  cmpd ,s++  lbeq
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpNE :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('todo');  //
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpGE :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('todo');  //
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpGT :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('todo');
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpLT :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('todo');  //pop de, pop hl, and a, sbc hl,de, jp m,nn
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpLE :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
+          Builder.WriteCodeString('todo');  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpAlways :
+        begin
+          Builder.WriteCode([$7e]);  //jmp
+          Builder.AddFixup(TExpJump(C).Destination);
+        end;
+    else
+      Builder.Fail('invalid TExpJump');
+    end;
+  end else if (C is TExpOpBinaryInt) then
+  begin
+    case TExpOpBinaryInt(C).Kind of
+      vbkPlus :
+        begin
+          Builder.WriteCodeString('todo');  //pop hl, pop de, add hl,de, push hl
+        end;
+      vbkMinus :
+        begin
+          Builder.WriteCodeString('todo');  //pop hl, pop de, and a, sbc hl,de, push hl
+        end;
+      vbkBinaryAnd :
+        begin
+          Builder.WriteCodeString('todo'); //pop hl, pop de, ld a,e, and l, ld l,a, ld h,0, push hl
+        end;
+      vbkBinaryOr :
+        begin
+          Builder.WriteCodeString('todo'); //pop hl, pop de, ld a,e, or l, ld l,a, ld h,0, push hl
+        end;
+      vbkBinaryShiftLeft :
+        begin
+          Builder.WriteCodeString('todo'); //pop de, pop hl, ld b,e, jr z skip, sla l, rl h, djnz next, push hl
+        end;
+      vbkBinaryShiftRight :
+        begin
+          Builder.WriteCodeString('todo'); //pop de, pop hl, ld b,e, jr z skip, srl h, rr l, djnz next, push hl
+        end;
+    else
+      Builder.Fail('wrong TExpOpBinaryInt');
+    end;
+  end else if (C is TExpAssign1) then
+  begin
+    Builder.WriteCodeString('3506 3510 a784'); //puls d  puls x  sta ,x
+  end else if (C is TExpMisc) then
+  begin
+    case (C as TExpMisc).Kind of
+      emNop : ;
+      emPtrDeref1 :
+        begin
+          Builder.WriteCodeString('todo'); //pop hl, ld l,(hl), ld h,0, push hl
+        end;
+    else
+      Builder.Fail('Unsupported misc instruction: ' + C.ClassName);
+    end;
+  end else if (C is TExpReturn) or (C is TExpStackFrame) then
+  begin
+    if (C is TExpStackFrame) then
+      Inc(Self.VarSize,TExpStackFrame(C).Size*2);
+    //ignore these
+  end else if (C is TExpSwitchTable) then
+  begin
+    Assert(False);
+//    Switch := (C as TExpSwitchTable);
+//    if (Switch.LowBound<0) or (Switch.HighBound>128) then
+//      Builder.Fail('case statements must be in range 0-128');
+//
+//    Builder.WriteCodeString('e1'); //pop hl
+//
+//    if Switch.LowBound<>0 then
+//    begin
+//      Builder.WriteCode([$3e,Switch.LowBound,$bd,$da]); //ld a,lowbound, cp l, jp c,nn
+//      Builder.AddFixup(Switch.DefaultOrExit);
+//    end;
+//
+//    Builder.WriteCode([$3e,Switch.HighBound,$bd,$fa]); //ld a,highbound, cp l, jp m,nn
+//    Builder.AddFixup(Switch.DefaultOrExit);
+//
+//    Builder.WriteCode([$cd]); //call
+//    Builder.AddRtlFixup(rrtSwitch);
+//
+//    //emit jumptable
+//    for I := 0 to Switch.HighBound-Switch.LowBound do
+//      Builder.AddFixup(PIntegerArray(Switch.Jumps.Data)^[I]);
+
+  end else
+    Builder.Fail('Unsupported instruction: ' + C.ClassName);
+end;
+
+procedure TCpu6809.GenBitmap(Bitmap: TZBitmap);
+begin
+
+end;
+
+procedure TCpu6809.GenFile(Ms: TMemoryStream; var FileName: string);
+begin
+  case Target of
+    rtaVectrex:
+      begin
+        FileName := ChangeFileExt(FileName,'.rom');
+        Ms.CopyFrom(Builder.Code,Builder.Code.Size);
+      end;
+  end;
+end;
+
+procedure TCpu6809.GenLoadInteger(Value: integer);
+begin
+  Builder.WriteCode([$cc]);  //ldd #
+  Builder.WriteCodeAddress(Value);
+  Builder.WriteCodeString('3406');  //pshs d
+end;
+
+procedure TCpu6809.GenLoadResource(C: TZComponent);
+begin
+  Builder.WriteCode([$cc]);  //ldd #
+  Builder.AddResourceFixup( C );
+  Builder.WriteCodeString('3406');  //pshd d
+end;
+
+procedure TCpu6809.GenAddress(const Address: integer; Ms: TMemoryStream);
+var
+  W : word;
+  B : byte;
+begin
+  W := Address;
+  B := Hi(W);
+  Ms.Write(B,1);
+  B := Lo(W);
+  Ms.Write(B,1);
+end;
+
+procedure TCpu6809.GenArrayGetElement(C: TZComponent);
+begin
+  Builder.WriteCode([$cc]);  //ldd #
+  Builder.AddResourceFixup( C );
+  Builder.WriteCodeString('e3e4 ede4'); //addd ,s  std ,s
+end;
+
+procedure TCpu6809.GenRtl(Routine: TRtlRoutine);
+begin
+  raise Exception.Create('Error Message');
+end;
+
+procedure TCpu6809.PeepholeWrite(const Buf: array of byte);
+begin
+  Builder.Code.Write(Buf[0],Length(Buf));
 end;
 
 end.

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZExternalLibrary>
+      <Source>
+<![CDATA[//
+
+void emit(string data){}
+void emitByte(int data){}
+int getResourceAddress(Component c){}
+void push(int short){}
+void pushString(string data){}]]>
+      </Source>
+    </ZExternalLibrary>
+    <ZLibrary Comment="6809">
+      <Source>
+<![CDATA[//
+
+const string RetroPlatform = "Vectrex";
+
+/*
+//write byte
+inline void poke(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e17977"); //pop bc, pop hl, ld a,c, ld (hl),a
+}
+
+//write word
+inline void pokew(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("c1e1712370"); //pop bc, pop hl, ld (hl),c, inc hl, ld (hl),b
+}
+
+//read byte
+inline int peek(int addr) {
+  push(addr);
+  emit("e14e0600c5"); //pop hl, ld c,(hl), ld b,0, push bc
+}
+
+//read word
+inline int peekw(int addr) {
+  push(addr);
+  emit("e14e2346c5"); //pop hl, ld c,(hl), inc hl, ld b,(hl), push bc
+}
+
+
+inline void writeport(int port,byte value) {
+  push(port);
+  push(value);
+  emit("e1c145ed41");  //pop hl, pop bc, ld b,l, out (c),b
+}
+
+inline int readport(int port) {
+  push(port);
+  emit("c1ed48c5"); //pop bc, in c,(c), push bc
+} */]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Vectrex">
+      <Source>
+<![CDATA[inline void waitVBlank() {
+  //jsr waitrecal
+  emit("BD F1 92");
+}
+
+inline void setIntensity(int value) {
+  //puls d  jsr intensity_to_a
+  push(value);
+  emit("3506 BDF2AB");
+}
+
+inline void drawDot(int x, int y) {
+/*
+A6 E1                  LDA   ,s++
+E6 E1                  LDB   ,s++
+jsr dot_at_d*/
+  push(x);
+  push(y);
+  emit("a6e1 e6e1 bdf2c3");
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[setIntensity(0x80);
+
+while(1) {
+  waitVBlank();
+  drawDot(50,50);
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+</ZApplication>

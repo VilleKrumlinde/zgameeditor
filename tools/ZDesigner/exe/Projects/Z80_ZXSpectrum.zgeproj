@@ -27,6 +27,8 @@ int getResourceAddress(Component c) { }]]>
     http://primrosebank.net/computers/zxspectrum/docs/CompleteSpectrumROMDisassemblyThe.pdf
 */
 
+const string RetroPlatform = "ZXSpectrum";
+
 byte[32] CharArray;
 
 //write byte
@@ -151,13 +153,16 @@ inline void printHex(int value) {
   The resulting Z80 file can be opened in ZX Spectrum emulators such as https://github.com/chernandezba/zesarux/releases
 */
 
-/*for(int i=0; i<10; i++) {
-  if(i<5)
-    printChar(65);
-  if(i>5)
-    printChar(66);
+//Test switch statement
+int xx=0;
+switch(xx) {
+  case 0 : print("0"); break;
+  case 1 : print("1"); break;
+  case 2 : print("2"); break;
+  case 3 : print("3"); break;
+  case 4 : print("4"); break;
+  default : print("5");
 }
-return;*/
 
 for(int i=0; i<32; i++)
   CharArray[i]=48+i;

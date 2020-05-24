@@ -16,7 +16,7 @@ void pushString(string data){}]]>
       <Source>
 <![CDATA[//
 
-const string Z80Platform = "MasterSystem";
+const string RetroPlatform = "MasterSystem";
 
 
 //write byte

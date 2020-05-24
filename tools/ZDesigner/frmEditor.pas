@@ -5026,25 +5026,36 @@ var
   Target : RetroCoding.TRetroTarget;
   C : TZComponent;
   Builder : TRetroBuilder;
-  Cpu : TCpuZ80;
+  Cpu : TRetroCpu;
 begin
   if not CompileAll then
     Exit;
 
   Target := rtaSpectrum;
 
-  C := Self.ZApp.SymTab.Lookup('Z80Platform') as TZComponent;
+  Cpu := nil;
+  C := Self.ZApp.SymTab.Lookup('RetroPlatform') as TZComponent;
   if Assigned(C) and (C is TDefineConstant) then
   begin
     if TDefineConstant(C).StringValue='ZXSpectrum' then
+    begin
+      Cpu := TCpuZ80.Create;
       Target := rtaSpectrum
+    end
     else if TDefineConstant(C).StringValue='MasterSystem' then
+    begin
+      Cpu := TCpuZ80.Create;
       Target := rtaMasterSystem
+    end
+    else if TDefineConstant(C).StringValue='Vectrex' then
+    begin
+      Cpu := TCpu6809.Create;
+      Target := rtaVectrex
+    end
     else
       raise Exception.Create('Unknown target: ' + String(TDefineConstant(C).StringValue));
   end;
 
-  Cpu := TCpuZ80.Create;
   Builder := TRetroBuilder.Create;
   try
     Cpu.Target := Target;
