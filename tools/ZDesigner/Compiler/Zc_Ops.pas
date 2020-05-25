@@ -701,6 +701,13 @@ begin
     end;
   end;
 
+  if (Self.Kind=zcNot) and (Child(0).Kind=zcConstLiteral) then
+  begin
+    C1 := Child(0) as TZcOpLiteral;
+    if (C1.Typ.Kind in [zctFloat,zctInt,zctByte]) then
+      Exit( TZcOpLiteral.Create(C1.Typ.Kind, IfThen(IsZero(C1.Value),1,0) ) );
+  end;
+
   if Self.Kind=zcConditional then
   begin
     if Child(0).Kind=zcConstLiteral then

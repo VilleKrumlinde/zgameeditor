@@ -197,7 +197,8 @@ begin
   begin
     Code.Position := Fixups[I].Offset;
     if Fixups[I].IsRelative then
-      WriteCodeAddress( NativeInt(InstructionOffsets[ Fixups[I].Target+1 ]) - Code.Position )
+      //+2 here is pointer size
+      WriteCodeAddress( NativeInt(InstructionOffsets[ Fixups[I].Target+1 ]) - (Code.Position+2) )
     else
       WriteCodeAddress( Cpu.CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
   end;
@@ -858,11 +859,11 @@ begin
       begin
         VarBase := $c880;
         //Variable length header
-//        Builder.WriteCodeString(
-//          '67 20 47 43 45 20 32 30 30 34 80 FD 0D FC 30 72'+
-//          'A8 54 48 52 55 53 54 20 46 4F 52 20 56 45 43 54'+
-//          '52 45 58 20 31 2E 32 80 FC 30 60 A8 42 59 20 56'+
-//          '49 4C 4C 45 20 6A 80 00');
+        Builder.WriteCodeString(
+          '67 20 47 43 45 20 32 30 30 34 80 FD 0D FC 30 72'+
+          'A8 54 48 52 55 53 54 20 46 4F 52 20 56 45 43 54'+
+          '52 45 58 20 31 2E 32 80 FC 30 60 A8 42 59 20 56'+
+          '49 4C 4C 45 20 6A 80 00');
 
         //dp=d0
         Builder.WriteCodeString('86 D0 1F 8B'); //LDA   #0xD0, TFR   a,dp

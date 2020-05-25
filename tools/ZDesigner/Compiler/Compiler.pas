@@ -1326,9 +1326,16 @@ procedure TZCodeGen.FallFalse(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
-    GenValue(Op);
-    MakeLiteralOp(0, Op.GetDataType);
-    GenJump(jsJumpNE,Lbl, Op.GetDataType.Kind);
+    if (Op.Kind=zcConstLiteral) and (TZcOpLiteral(Op).Typ.Kind in [zctInt,zctByte]) then
+    begin
+      if TZcOpLiteral(Op).Value<>0 then
+        GenJump(jsJumpAlways,Lbl, Op.GetDataType.Kind);
+    end else
+    begin
+      GenValue(Op);
+      MakeLiteralOp(0, Op.GetDataType);
+      GenJump(jsJumpNE,Lbl, Op.GetDataType.Kind);
+    end;
   end;
 
 begin
@@ -1378,9 +1385,16 @@ procedure TZCodeGen.FallTrue(Op: TZcOp; Lbl: TZCodeLabel);
   procedure DoGenValue;
   begin
     //if(1) blir: value,0, compare and jump
-    GenValue(Op);
-    MakeLiteralOp(0, Op.GetDataType);
-    GenJump(jsJumpEQ,Lbl,Op.GetDataType.Kind);
+    if (Op.Kind=zcConstLiteral) and (TZcOpLiteral(Op).Typ.Kind in [zctInt,zctByte]) then
+    begin
+      if TZcOpLiteral(Op).Value=0 then
+        GenJump(jsJumpAlways,Lbl, Op.GetDataType.Kind);
+    end else
+    begin
+      GenValue(Op);
+      MakeLiteralOp(0, Op.GetDataType);
+      GenJump(jsJumpEQ,Lbl,Op.GetDataType.Kind);
+    end;
   end;
 
 begin
