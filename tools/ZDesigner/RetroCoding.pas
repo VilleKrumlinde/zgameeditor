@@ -74,7 +74,9 @@ type
     procedure GenAddress(const Address : integer; Ms : TMemoryStream); virtual; abstract;
     procedure PeepholeWrite(const Buf: array of byte); virtual; abstract;
   public
-    Target: TRetroTarget;
+    Target : TRetroTarget;
+    ShouldTerminateStrings : boolean;
+    StringTerminator : byte;
   end;
 
   TCpuZ80 = class(TRetroCpu)
@@ -224,7 +226,11 @@ begin
         Cpu.GenBitmap(TZBitmap(ResourceFixups[I].Resource));
       end
       else if ResourceFixups[I].Resource is TExpStringConstant then
-        Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value))
+      begin
+        Code.Write(TExpStringConstant(ResourceFixups[I].Resource).Value^,Length(TExpStringConstant(ResourceFixups[I].Resource).Value));
+        if Cpu.ShouldTerminateStrings then
+          Code.Write(Cpu.StringTerminator,1);
+      end
       else if ResourceFixups[I].Resource is TDefineArray then
       begin
         Ar := ResourceFixups[I].Resource as TDefineArray;
@@ -867,6 +873,8 @@ begin
 
         //dp=d0
         Builder.WriteCodeString('86 D0 1F 8B'); //LDA   #0xD0, TFR   a,dp
+        Self.ShouldTerminateStrings := True;
+        Self.StringTerminator := $80;
       end;
   end;
 end;
@@ -913,31 +921,32 @@ begin
       jsJumpNE :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('todo');  //
+          Builder.WriteCodeString('ece1 10a3e1 1026');  //ldd ,s++  cmpd ,s++  lbne
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpGE :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('todo');  //
+          //todo: not correct yet
+          Builder.WriteCodeString('ece1 10a3e1 102c');  //ldd ,s++  cmpd ,s++  lbge
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpGT :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('todo');
+          Builder.WriteCodeString('ece1 10a3e1 102e');  //ldd ,s++  cmpd ,s++  lbgt
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpLT :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('todo');  //pop de, pop hl, and a, sbc hl,de, jp m,nn
+          Builder.WriteCodeString('ece1 10a3e1 102d');  //ldd ,s++  cmpd ,s++  lblt
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpLE :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('todo');  //pop hl, pop de, and a, sbc hl,de, jp nc,nn
+          Builder.WriteCodeString('ece1 10a3e1 1023');  //ldd ,s++  cmpd ,s++  lbls
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpAlways :
@@ -953,11 +962,11 @@ begin
     case TExpOpBinaryInt(C).Kind of
       vbkPlus :
         begin
-          Builder.WriteCodeString('todo');  //pop hl, pop de, add hl,de, push hl
+          Builder.WriteCodeString('3506 e3e4 ede4');  //puls d, addd ,s  std ,s
         end;
       vbkMinus :
         begin
-          Builder.WriteCodeString('todo');  //pop hl, pop de, and a, sbc hl,de, push hl
+          Builder.WriteCodeString('ec62 a3e1 ede4');  //ld 2,s  subd ,s++  std ,s
         end;
       vbkBinaryAnd :
         begin

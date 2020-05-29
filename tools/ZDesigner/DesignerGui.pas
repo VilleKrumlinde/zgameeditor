@@ -427,7 +427,7 @@ begin
 
   if Prop.PropertyType=zptExpression then
   begin
-    Edit.Text := Value.ExpressionValue.Source.Substring(1,100);
+    Edit.Text := Value.ExpressionValue.Source.Substring(0,100);
     Edit.Tag:=100;
     Self.IsExpression := True;
   end

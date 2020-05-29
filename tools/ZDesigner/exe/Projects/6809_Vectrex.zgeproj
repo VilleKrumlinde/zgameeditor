@@ -18,6 +18,22 @@ void pushString(string data){}]]>
 
 const string RetroPlatform = "Vectrex";
 
+inline void pokew(int addr,int value) {
+  push(addr);
+  push(value);
+  emit("3506 3510 ed00"); //puls d, puls x, std ,x
+}
+
+inline byte peek(int addr) {
+  push(addr);
+  emit("3510 e600 4f 3406"); //puls x, ldb 0,x, clra, pshs d
+}
+
+inline int peekw(int addr) {
+  push(addr);
+  emit("3510 ec00 3406"); //puls x, ldd 0,x, pshs d
+}
+
 /*
 //write byte
 inline void poke(int addr,int value) {
@@ -27,11 +43,6 @@ inline void poke(int addr,int value) {
 }
 
 //write word
-inline void pokew(int addr,int value) {
-  push(addr);
-  push(value);
-  emit("c1e1712370"); //pop bc, pop hl, ld (hl),c, inc hl, ld (hl),b
-}
 
 //read byte
 inline int peek(int addr) {
@@ -66,29 +77,102 @@ inline int readport(int port) {
 }
 
 inline void setIntensity(int value) {
-  //puls d  jsr intensity_to_a
+  //puls d  tfr b,a  jsr intensity_to_a
   push(value);
-  emit("3506 BDF2AB");
+  emit("3506 1F98 BDF2AB");
+}
+
+inline void resetPen() {
+  //jsr reset0ref
+  emit("BD f354");
 }
 
 inline void drawDot(int x, int y) {
 /*
+leas 1,s
 A6 E1                  LDA   ,s++
-E6 E1                  LDB   ,s++
+E6 E1                  LDB   ,s+
 jsr dot_at_d*/
   push(x);
   push(y);
-  emit("a6e1 e6e1 bdf2c3");
+  emit("3261 a6e1 e6e0 bdf2c3");
+}
+
+inline void drawTo(int x, int y) {
+/*
+leas 1,s
+A6 E1                  LDA   ,s++
+E6 E1                  LDB   ,s+
+jsr draw_to_d*/
+  push(x);
+  push(y);
+  emit("3261 a6e1 e6e0 bdf3df");
+}
+
+inline void moveTo(int x, int y) {
+/*
+leas 1,s
+A6 E1                  LDA   ,s++
+E6 E1                  LDB   ,s+
+jsr move_to_d*/
+  push(x);
+  push(y);
+  emit("3261 a6e1 e6e0 bdf312");
+}
+
+
+const int
+  stick1Button1=0xc812,
+  stick1Button2=0xc813,
+  stick1Button3=0xc814,
+  stick1Button4=0xc815;
+
+inline void readJoystick() {
+  emit("BD f1f8");
+}
+
+inline void readSwitches() {
+  emit("4f BD f1b4"); //clra,  jsr readswitches
+}
+
+inline void displayString(int x, int y, string text) {
+  resetPen();
+  moveTo(x,y);
+  pushString(text);
+  emit("eee1 bdf495");  //ldu ,s++  jsr displaystring
 }]]>
       </Source>
     </ZLibrary>
     <ZExpression>
       <Expression>
-<![CDATA[setIntensity(0x80);
+<![CDATA[//Init joystick
+pokew(0xc81f,0x0103);
 
+setIntensity(0x7f);
+
+int frame=0;
+int y=0;
 while(1) {
   waitVBlank();
-  drawDot(50,50);
+
+  displayString(-20,0,"ZGE VECTREX");
+
+  readSwitches();
+  int startX=-32;
+  for(int i=0; i!=5; i++) {
+    resetPen();
+    moveTo(startX,y);
+    drawTo(25,25);
+
+    startX+=12;
+  }
+
+  if(peek(stick1Button1))
+    y++;
+  else if(peek(stick1Button2))
+    y--;
+//  drawDot(50,50);
+//  drawDot(0,0);
 }]]>
       </Expression>
     </ZExpression>
