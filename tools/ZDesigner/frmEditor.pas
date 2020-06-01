@@ -2035,6 +2035,10 @@ begin
       ZApp.Driver.Translate(-Model.Position[0],-Model.Position[1],-Model.Position[2]);
       Renderer.RenderModel(Model);
     except
+      on E : TModelDefinedException do ;
+        //This exception can trigger when previewing a model that has a Base-model.
+        //(these cannot be previewed as they require the model to be cloned to work correctly)
+        //Catch to silently ignore it.
       on E : Exception do
       begin //Detect errors in onrender-list
         RenderAborted := True;

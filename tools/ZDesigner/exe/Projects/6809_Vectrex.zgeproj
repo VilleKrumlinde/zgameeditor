@@ -140,6 +140,22 @@ inline void displayString(int x, int y, string text) {
   moveTo(x,y);
   pushString(text);
   emit("eee1 bdf495");  //ldu ,s++  jsr displaystring
+}
+
+inline void DrawList(int list,int scale,int count) {
+  push(list);
+  push(scale);
+  push(count);
+
+/*
+leas 1,s
+LDA   ,s++
+LDB   ,s+
+puls x
+jsr move_then_draw_VL_with_count4
+*/
+  emit("3261 a6e1 e6e0 3510 bdF3B7");
+
 }]]>
       </Source>
     </ZLibrary>
@@ -158,14 +174,16 @@ while(1) {
   displayString(-20,0,"ZGE VECTREX");
 
   readSwitches();
-  int startX=-32;
-  for(int i=0; i!=5; i++) {
+/*  int startX=-32;
+  for(int i=0; i<5; i++) {
     resetPen();
-    moveTo(startX,y);
     drawTo(25,25);
 
     startX+=12;
-  }
+  }*/
+
+  moveTo(0,y);
+  DrawList(getResourceAddress(ShipVectorList),127,10);
 
   if(peek(stick1Button1))
     y++;
@@ -177,4 +195,11 @@ while(1) {
       </Expression>
     </ZExpression>
   </OnLoaded>
+  <Content>
+    <Array Name="ShipVectorList" Type="4" Dimensions="1" SizeDim1="10" SizeDim2="2" Persistent="255">
+      <Values>
+<![CDATA[789C3360D87187E1CB0B091E1E06892F3C12120C5F3CEE00004AC40731]]>
+      </Values>
+    </Array>
+  </Content>
 </ZApplication>

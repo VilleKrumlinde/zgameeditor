@@ -55,6 +55,7 @@ type
 
   {$ifndef minimal}
   EZHalted = class(Exception);
+  TModelDefinedException = exception;
   {$endif}
 
 

@@ -927,26 +927,25 @@ begin
       jsJumpGE :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          //todo: not correct yet
+          Builder.WriteCodeString('ece1 10a3e1 1023');  //ldd ,s++  cmpd ,s++  lbls
+          Builder.AddFixup(TExpJump(C).Destination,True);
+        end;
+      jsJumpLE :
+        begin
+          Assert( TExpJump(C)._Type=jutInt );
           Builder.WriteCodeString('ece1 10a3e1 102c');  //ldd ,s++  cmpd ,s++  lbge
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpGT :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('ece1 10a3e1 102e');  //ldd ,s++  cmpd ,s++  lbgt
+          Builder.WriteCodeString('ece1 10a3e1 102d');  //ldd ,s++  cmpd ,s++  lblt
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpLT :
         begin
           Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('ece1 10a3e1 102d');  //ldd ,s++  cmpd ,s++  lblt
-          Builder.AddFixup(TExpJump(C).Destination,True);
-        end;
-      jsJumpLE :
-        begin
-          Assert( TExpJump(C)._Type=jutInt );
-          Builder.WriteCodeString('ece1 10a3e1 1023');  //ldd ,s++  cmpd ,s++  lbls
+          Builder.WriteCodeString('ece1 10a3e1 102e');  //ldd ,s++  cmpd ,s++  lbgt
           Builder.AddFixup(TExpJump(C).Destination,True);
         end;
       jsJumpAlways :

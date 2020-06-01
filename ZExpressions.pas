@@ -2526,12 +2526,11 @@ var
   C : TZComponent;
 begin
   Env.StackPopToPointer(M);
-  {$ifdef debug}
-  CheckNilDeref(M);
+  {$ifndef minimal}
   if (Self.DefinedIndex>=M.Definitions.Count) or
     (not SameText(String(TZComponent(M.Definitions[Self.DefinedIndex]).Name),String(DefinedName))) then
   begin
-    ZHalt('Defined var mismatch "' + DefinedName + '" in model "' + String(M.Name) + '" must be at position ' + IntToStr(Self.DefinedIndex) + ' in Definitions-list.');
+    raise TModelDefinedException.Create('Defined var mismatch "' + DefinedName + '" in model "' + String(M.Name) + '" must be at position ' + IntToStr(Self.DefinedIndex) + ' in Definitions-list.');
   end;
   {$endif}
   C := TZComponent(M.Definitions[Self.DefinedIndex]);
