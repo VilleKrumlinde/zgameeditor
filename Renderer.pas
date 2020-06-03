@@ -1212,6 +1212,8 @@ begin
   end else
   begin
     //Use imported texture
+    if IsFirst then
+      Bitmap.UseTextureBegin;  //Only switch texture on first call to reduce state changes
     Dec(Char,Self.FirstChar);
     if Char>=0 then
     begin
@@ -1225,8 +1227,6 @@ begin
           BmStruct.TopLeftY - (BmStruct.TransY*((Char div BmStruct.CharsPerRow)+1)),0);
       Driver.Scale(BmStruct.ScaleX,BmStruct.ScaleY,1);
       Driver.MatrixMode(GL_MODELVIEW);
-        if IsFirst then
-          Bitmap.UseTextureBegin;  //Only switch texture on first call to reduce state changes
         Driver.RenderUnitQuad;
         //Bitmap.UseTextureEnd;
       Driver.MatrixMode(GL_TEXTURE);
