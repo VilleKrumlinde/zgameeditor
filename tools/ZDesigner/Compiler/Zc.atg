@@ -705,12 +705,14 @@ EmbeddedStatement<var OutOp : TZcOp>
  | "while"
      (. try
          SymTab.PushScope;
+         CurrentFunc.PushScope;
          WhileCondOp := nil; WhileBodyOp := nil; .)
    "(" Expr<WhileCondOp> ")" EmbeddedStatement<WhileBodyOp>
    (.
          OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunc.PopScope;
        end;
    .)
 
@@ -718,6 +720,7 @@ EmbeddedStatement<var OutOp : TZcOp>
  | "do"
      (. try
          SymTab.PushScope;
+         CurrentFunc.PushScope;
          WhileCondOp := nil; WhileBodyOp := nil; .)
    EmbeddedStatement<WhileBodyOp>
    "while" "(" Expr<WhileCondOp> ")" ";"
@@ -725,18 +728,21 @@ EmbeddedStatement<var OutOp : TZcOp>
          OutOp := MakeOp(zcDoWhile,[WhileCondOp,WhileBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunc.PopScope;
        end;
    .)
 
  | "for"
     (. try
          SymTab.PushScope;
+         CurrentFunc.PushScope;
          ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
    "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp>
    (.
          OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunc.PopScope;
        end;
    .)
 /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
@@ -770,11 +776,13 @@ Block<var OutOp : TZcOp>
      OutOp := MakeOp(zcBlock);
   .)
   "{" (. SymTab.PushScope;
+         CurrentFunc.PushScope;
          try .)
      {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
   "}" (.
          finally
            SymTab.PopScope;
+           CurrentFunc.PopScope;
          end;
       .)
   .

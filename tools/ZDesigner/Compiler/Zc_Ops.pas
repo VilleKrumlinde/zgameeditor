@@ -4,7 +4,7 @@ unit Zc_Ops;
 
 interface
 
-uses Contnrs, ZClasses, ZExpressions, uSymTab, Generics.Collections;
+uses Contnrs, ZClasses, ZExpressions, uSymTab, Generics.Collections, Classes;
 
 type
   TZcAssignType = (atAssign,atMulAssign,atDivAssign,atPlusAssign,atMinusAssign,
@@ -98,8 +98,9 @@ type
   end;
 
   TZcOpFunctionBase = class(TZcOp)
-  private
-    StackSlot : integer;
+  strict private
+    StackSlot,HighestStackSlot : integer;
+    SavedSlots : TList;
   public
     Locals : TObjectList<TZcOpLocalVar>;
     Arguments : TObjectList<TZcOpArgumentVar>;
@@ -114,6 +115,8 @@ type
     procedure AddArgument(Arg: TZcOpArgumentVar);
     function GetStackSize : integer;
     function GetDataType : TZcDataType; override;
+    procedure PushScope;
+    procedure PopScope;
   end;
 
   TZcOpFunctionUserDefined = class(TZcOpFunctionBase)
@@ -219,7 +222,7 @@ var
 
 implementation
 
-uses SysUtils,Math,Compiler,Classes,StrUtils;
+uses SysUtils,Math,Compiler,StrUtils;
 
 var
   BuiltInFunctions : Contnrs.TObjectList=nil;
@@ -863,6 +866,7 @@ begin
   Statements := Contnrs.TObjectList.Create(False);
   Locals := TObjectList<TZcOpLocalVar>.Create(False);
   Arguments := TObjectList<TZcOpArgumentVar>.Create(False);
+  SavedSlots := TList.Create;
 end;
 
 destructor TZcOpFunctionBase.Destroy;
@@ -870,6 +874,7 @@ begin
   Statements.Free;
   Locals.Free;
   Arguments.Free;
+  SavedSlots.Free;
   inherited;
 end;
 
@@ -879,6 +884,7 @@ begin
   if ReturnType.Kind<>zctVoid then
     Inc(Local.Ordinal);
   Inc(Self.StackSlot);
+  Self.HighestStackSlot := Max(HighestStackSlot,StackSlot);
   Locals.Add(Local);
 end;
 
@@ -901,7 +907,8 @@ end;
 function TZcOpFunctionBase.GetStackSize: integer;
 begin
   //One entry per local var + one entry for return value
-  Result := Locals.Count;
+  Assert(Self.SavedSlots.Count=0);
+  Result := Self.HighestStackSlot;
   if ReturnType.Kind<>zctVoid then
     Inc(Result);
 end;
@@ -913,6 +920,19 @@ begin
   for I := 0 to Statements.Count-1 do
     Statements[I] := TZcOp(Statements[I]).Optimize;
   Result := Self;
+end;
+
+procedure TZcOpFunctionBase.PushScope;
+begin
+  //Keep track of current stackslot to be able to reuse locations for scoped variables.
+  //This keeps stack total size down and could improve performance.
+  SavedSlots.Add(pointer(Self.StackSlot));
+end;
+
+procedure TZcOpFunctionBase.PopScope;
+begin
+  Self.StackSlot := IntPtr(Self.SavedSlots[SavedSlots.Count-1]);
+  SavedSlots.Delete(SavedSlots.Count-1);
 end;
 
 function TZcOpFunctionBase.ToString: string;
@@ -1453,6 +1473,8 @@ begin
 
   LocMap := TDictionary<TZcOpLocalVar,TZcOpLocalVar>.Create;
 
+  CurrentFunction.PushScope;
+
   SetLength(ArgMap,Func.Arguments.Count);
   for I := 0 to Func.Arguments.Count-1 do
   begin
@@ -1511,6 +1533,8 @@ begin
     CastOp.Children.Add(OutOp);
     OutOp := CastOp;
   end;
+
+  CurrentFunction.PopScope;
 
   Result := OutOp;
 end;

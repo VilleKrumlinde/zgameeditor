@@ -910,16 +910,18 @@ begin
   
   Expect(lbraceSym);
          SymTab.PushScope;
-         try 
+         CurrentFunction.PushScope;
+         try
   while InSet(CurrentInputSymbol,1) do
   begin
     _Statement(Op);
-                       if Assigned(Op) then OutOp.Children.Add(Op); 
+                       if Assigned(Op) then OutOp.Children.Add(Op);
   end;
   Expect(rbraceSym);
-        
+
          finally
            SymTab.PopScope;
+           CurrentFunction.PopScope;
          end;
       
 end;
@@ -1382,15 +1384,17 @@ begin
        Get;
         try
          SymTab.PushScope;
-         WhileCondOp := nil; WhileBodyOp := nil; 
+         CurrentFunction.PushScope;
+         WhileCondOp := nil; WhileBodyOp := nil;
        Expect(lparSym);
        _Expr(WhileCondOp);
        Expect(rparSym);
        _EmbeddedStatement(WhileBodyOp);
-     
+
          OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunction.PopScope;
        end;
    
   end
@@ -1418,7 +1422,8 @@ begin
        Get;
        try
          SymTab.PushScope;
-         ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; 
+         CurrentFunction.PushScope;
+         ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil;
        Expect(lparSym);
        if InSet(CurrentInputSymbol,9) then
        begin
@@ -1436,12 +1441,13 @@ begin
        end;
        Expect(rparSym);
        _EmbeddedStatement(ForBodyOp);
-     
+
          OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunction.PopScope;
        end;
-   
+
   end
   else if (CurrentInputSymbol=breakSym) then
   begin
@@ -1479,7 +1485,7 @@ begin
             OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
         end;
         Inc(CurrentFunction.ReturnCount);
-    
+
   end
   else SynError(5);
 end;
