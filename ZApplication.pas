@@ -684,17 +684,11 @@ var
   List : TZArrayList;
   Matrix,TmpM : TZMatrix4f;
   V : TZVector3f;
+  HasMatrix : boolean;
 begin
   DepthList.Clear;
 
-  {$ifndef android}
-  glGetFloatv(GL_PROJECTION_MATRIX, @Matrix);
-  glGetFloatv(GL_MODELVIEW_MATRIX, @TmpM);
-  Matrix := MatrixMultiply(TmpM,Matrix);
-  {$else}
-  Matrix := IdentityHmgMatrix;
-  {$endif}
-
+  HasMatrix := False;
   for I := 0 to Models.Cats.Count-1 do
   begin
     List := Models.Get(I);
@@ -703,6 +697,13 @@ begin
       Model := TModel(List[J]);
       if Model.RenderOrder=roDepthsorted then
       begin
+        if not HasMatrix then
+        begin
+          Driver.GetMatrix(GL_PROJECTION_MATRIX-GL_MODELVIEW_MATRIX, @Matrix);
+          Driver.GetMatrix(GL_MODELVIEW_MATRIX-GL_MODELVIEW_MATRIX, @TmpM);
+          Matrix := MatrixMultiply(TmpM,Matrix);
+          HasMatrix := True;
+        end;
         //Get screen Z-position
         VectorTransform(Model.Position,Matrix,V);
         Model.SortKey := V[2];
