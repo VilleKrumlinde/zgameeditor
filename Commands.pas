@@ -157,11 +157,16 @@ begin
 end;
 
 procedure TRepeat.Execute;
+{$IFNDEF MINIMAL}
+  {$IFNDEF ZGEVIZ}
+    {$DEFINE GUARD_LIMIT}
+  {$ENDIF}
+{$ENDIF}
 var
   I : integer;
-  {$ifndef minimal}BailOutTime : single;{$endif}
+  {$ifdef GUARD_LIMIT}BailOutTime : single;{$endif}
 begin
-  {$ifndef minimal}BailOutTime:=Platform_GetTime + 3.0;{$endif}
+  {$ifdef GUARD_LIMIT}BailOutTime:=Platform_GetTime + 3.0;{$endif}
   Iteration := 0;
   if WhileExp.Code.Count>0 then
   begin
@@ -171,7 +176,7 @@ begin
         Break;
       OnIteration.ExecuteCommands;
       Inc(Iteration);
-      {$ifndef minimal}
+      {$ifdef GUARD_LIMIT}
       if (Platform_GetTime>BailoutTime) and (Iteration>1) then
         ZHalt('Repeat-loop timeout. Check your repeat-components for infinite loops.');
       {$endif}
