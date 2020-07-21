@@ -2155,7 +2155,7 @@ var
   R : TRect;
 begin
   F := Self.PropEditor;
-  F.Caption := 'Editing: ' + String(F.Component.GetDisplayName) + ' ' + F.Prop.Name;
+  F.Caption := 'Editing: ' + String(F.Component.GetDisplayName) + ' ' + F.Prop.Name + ' ' + String(F.Component.Comment);
 
   R := F.BoundsRect;
 //  F.SetBounds(CompEditor.ClientToScreen(Point(0,0)).X,CompEditor.ClientToScreen(Point(0,0)).Y,CompEditor.Width,CompEditor.Height);

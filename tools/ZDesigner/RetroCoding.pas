@@ -1089,8 +1089,33 @@ begin
 end;
 
 procedure TCpu6809.PeepholeWrite(const Buf: array of byte);
+var
+  LastOpCode1, LastOpCode2 : byte;
+  Ms : TMemoryStream;
 begin
-  Builder.Code.Write(Buf[0],Length(Buf));
+  Ms := Builder.Code;
+
+  LastOpCode1 := 0;
+  LastOpCode2 := 0;
+  if Builder.Code.Position>1 then
+  begin
+    LastOpCode1 := (PByte(Ms.Memory)+Ms.Position-2)^;
+    LastOpCode2 := (PByte(Ms.Memory)+Ms.Position-1)^;
+  end;
+
+  if (LastOpCode1=$34) and (LastOpCode2=$06) and (Length(Buf)>1) then
+  begin
+    if ((Buf[0]=$35) and (Buf[1]=$06)) or
+      ((Buf[0]=$ec) and (Buf[1]=$e1))  then
+    begin //Remove pair: pshs d, puls d (ldd ,s++)
+      Inc(RedundantLoadsRemoved);
+      Ms.Position := Ms.Position-2;
+      Ms.Write(Buf[2],Length(Buf)-2);
+      Exit;
+    end;
+  end;
+
+  Ms.Write(Buf[0],Length(Buf));
 end;
 
 end.

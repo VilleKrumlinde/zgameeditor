@@ -1572,6 +1572,7 @@ begin
 
   CompilerContext.SymTab := SymTab;
   CompilerContext.ThisC := ThisC;
+  CompilerContext.FunctionCleanUps := ZApp.FunctionCleanUps;
 
   SymTab.PushScope; //Create a scope for private vars and functions
   Compiler := TZc.Create(nil);
@@ -1706,6 +1707,7 @@ begin
 
   CompilerContext.SymTab := App.SymTab;
   CompilerContext.ThisC := nil;
+  CompilerContext.FunctionCleanUps := App.FunctionCleanUps;
 
   Compiler := TZc.Create(nil);
   try

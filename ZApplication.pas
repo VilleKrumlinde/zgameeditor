@@ -155,6 +155,7 @@ type
     //Zc-parsing
     SymTab : TSymbolTable;
     ZcGlobalNames : TObjectList;
+    FunctionCleanUps : TObjectList;
     OnGetLibraryPath : function : string of object;
     OnShaderCacheUse : function(Shader : TShader) : boolean of object;
     OnShaderCacheAdd : procedure(Shader : TShader) of object;
@@ -247,6 +248,7 @@ begin
   ConstantMap := TDictionary<AnsiString,TObject>.Create;
   SymTab := TSymbolTable.Create;
   ZcGlobalNames := TObjectList.Create(True);
+  FunctionCleanUps := TObjectList.Create(True);
   {$endif}
 end;
 
@@ -270,6 +272,7 @@ begin
   ConstantMap.Free;
   SymTab.Free;
   ZcGlobalNames.Free;
+  FunctionCleanUps.Free;
   {$endif}
   inherited;
 end;
@@ -987,7 +990,7 @@ begin
   //Remove stringconstants
   ClearConstantPool;
 
-  Zc_Ops.FunctionCleanUps.Clear;
+  FunctionCleanUps.Clear;
 
   List := TObjectList.Create(False);
   try

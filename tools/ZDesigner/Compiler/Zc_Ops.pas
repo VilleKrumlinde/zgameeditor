@@ -204,16 +204,15 @@ function Prototypes : TPrototypes;
 function MangleFunc(const Func : string; const ArgCount : integer) : string;
 
 var
-  //Nodes owned by the current compiled function/expression
-  //Used for memory management
-  //Update: This now holds all created ASTs and is cleared in App.Compile.
-  //Full AST are kept to enable function inlining.
-  FunctionCleanUps : Contnrs.TObjectList;
-
   //State shared between this unit and Zc-compiler
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
+    //Nodes owned by the current compiled function/expression
+    //Used for memory management
+    //Update: This now holds all created ASTs and is cleared in App.Compile.
+    //Full AST are kept to enable function inlining.
+    FunctionCleanUps : TObjectList;
   end;
 
   CompilerOptions : record
@@ -280,7 +279,7 @@ end;
 constructor TZcOp.Create(Owner : Contnrs.TObjectList);
 begin
   if Owner=nil then
-    Owner := FunctionCleanUps;
+    Owner := CompilerContext.FunctionCleanUps;
   Owner.Add(Self);
   Create;
 end;
@@ -1929,7 +1928,6 @@ end;
 
 procedure CleanUp;
 begin
-  FreeAndNil(FunctionCleanUps);
   FreeAndNil(BuiltInFunctions);
   FreeAndNil(BuiltInConstants);
   FreeAndNil(BuiltInCleanUps);
@@ -2130,7 +2128,6 @@ end;
 
 initialization
 
-  FunctionCleanUps := Contnrs.TObjectList.Create(True);
   CompilerOptions.InliningEnabled := True;
 
 end.
