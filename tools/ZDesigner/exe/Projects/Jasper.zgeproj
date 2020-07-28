@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="30" ViewportRatio="2" FileVersion="2">
+<ZApplication Name="App" Caption="14" ViewportRatio="2" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary ModuleName="kernel32.dll">
       <Source>
@@ -21,17 +21,66 @@ int GetTickCount() { }]]>
 }]]>
       </BeforeInitExp>
     </ZExternalLibrary>
+    <ZLibrary Comment="util">
+      <Source>
+<![CDATA[int isKeyPressed(int key) {
+  KeyTesterResult=0;
+  KeyTester.CharCode=key;
+  @CallComponent(Component : KeyTester);
+  return KeyTesterResult;
+}
+
+private int nextScreenDumpFileName;
+
+void saveScreenDump() {
+  //Based on code by Kjell http://www.emix8.org/forum/viewtopic.php?f=1&t=1156&p=7242&hilit=save+image#p7242
+  int w=App.ViewportWidth;
+  int h=App.ViewportHeight;
+
+  byte[18] header;
+
+  header[2] = 2;
+  header[16] = 32;
+  header[17] = 8;
+
+  header[12] = w;
+  header[13] = w >> 8;
+
+  header[14] = h;
+  header[15] = h >> 8;
+
+  byte[] image;
+  image.SizeDim1=w*h*4;
+  glReadPixels(App.ViewportX, App.ViewportY, w, h, 0x80E1, 0x1401, image);
+
+  byte[] buffer;
+  buffer.SizeDim1 = header.SizeDim1 + image.SizeDim1;
+
+  int dst=0;
+  for(int i=0; i<header.SizeDim1; i++)
+    buffer[dst++]=header[i];
+  for(int i=0; i<image.SizeDim1; i++)
+    buffer[dst++]=image[i];
+
+  string filename="t:\\pic" + intToStr(nextScreenDumpFileName++) + ".tga";
+  @FileAction( File : @File(FileName : filename, Encoding : 1, TargetArray : buffer), Action : 1 );
+}]]>
+      </Source>
+    </ZLibrary>
     <ZLibrary Comment="jasper" HasInitializer="1">
       <Source>
 <![CDATA[//Based on https://github.com/begoon/jasper
 
   const int DEBUGTRACE = 0;
   const int PROFILE = 0;
-  const int ANALYSE = 1;
+  const int ANALYSE = 0;
+  const int ANALYSE_CHECK_HOTSPOTS = 0;
+  const int ANALYSE_CHECK_PC = 0;
 
   int analyse_frameRenderIndicator = 0;
   int analyse_checkFrameWrites = 0;
-  int[65535] analyse_HotSpots;
+  int[65536] analyse_HotSpots;
+  int[65536] analyse_AddrFlags;
 
   private const float clockSpeed = 3.5;
   private const int tstatesPerInterrupt = ((clockSpeed * 1e6) / 50);
@@ -299,9 +348,13 @@ int GetTickCount() { }]]>
     mem[ addr ] = newByte;
 
     if(ANALYSE) {
+      //if(addr==50176)
+      //  trace("mod: " + intToStr(_PC));
+
       if(analyse_checkFrameWrites && addr>16384 && addr<16384+6912) {
-        analyse_frameRenderIndicator=1;
-        analyse_HotSpots[_PC]++;
+        analyse_frameRenderIndicator=1; //Trigger screen refresh on each byte written to video RAM
+        if(ANALYSE_CHECK_HOTSPOTS)
+          analyse_HotSpots[_PC]++;
       }
     }
 
@@ -3305,10 +3358,18 @@ int GetTickCount() { }]]>
 
     if(ANALYSE) {
       if(analyse_frameRenderIndicator) {
+        //saveScreenDump();
         analyse_frameRenderIndicator = 0;
         break;
       }
+      if(ANALYSE_CHECK_PC) {
+        if(_PC==0x6792)
+          analyse_AddrFlags[_HL]=1;
+        //if(_PC==0x00008ea8 && _B==4 && ((_BC_ & 255)==3))
+        //  analyse_AddrFlags[_DE]=1;
+      }
     }
+
 
     if ( interruptTriggered( local_tstates ) ) {
       int intTime=tstatesPerInterrupt - interrupt();
@@ -4260,6 +4321,9 @@ int GetTickCount() { }]]>
     case 205:    /* CALL nn */
     {
       int t = nxtpcw();
+        //if(t==0x6794)
+        //  trace("Height " + intToStr(_C*2) + " de: " + intToStr(DE()));
+
       pushpc();
       PC( t );
       local_tstates += ( 17 );
@@ -4710,16 +4774,6 @@ int GetTickCount() { }]]>
   }]]>
       </Source>
     </ZLibrary>
-    <ZLibrary Comment="util">
-      <Source>
-<![CDATA[int isKeyPressed(int key) {
-  KeyTesterResult=0;
-  KeyTester.CharCode=key;
-  @CallComponent(Component : KeyTester);
-  return KeyTesterResult;
-}]]>
-      </Source>
-    </ZLibrary>
     <ZExpression Comment="init emulator">
       <Expression>
 <![CDATA[trace("Loading rom...");
@@ -4729,15 +4783,34 @@ for(int i=0; i<RomBytes.SizeDim1; i++)
   mem[i]=RomBytes[i];
 trace("done");
 
+
+
 trace("Loading game...");
 byte[] GameBytes;
+
+//@FileAction(Action : 0, File : @File(FileName : "Z80Example.z80", TargetArray : GameBytes));
 getBinaryProp(GameFile.FileEmbedded,GameBytes);
+
 if(GameBytes.SizeDim1==49179)
   loadSna(GameBytes);
 else
   loadZ80(GameBytes,GameBytes.SizeDim1);
 trace("done");
 
+
+//Cheat code for Ghost'n'Goblins
+if(0) {
+  mem[36056]=0;
+  mem[24756]=0;
+/*  mem[36432]=0;
+  mem[36433]=195;
+  mem[36434]=163;
+  mem[36435]=96;*/
+  mem[39857]=135;
+  mem[39858]=50;
+  mem[39859]=180;
+  mem[39860]=191;
+}
 
 //dump ram
 //@FileAction(Action : 1, File : @File(FileName : "dump.bin", TargetArray : Mem));
@@ -4799,10 +4872,10 @@ Keys_Y_P=0xff;]]>
 <![CDATA[if(analyse_checkFrameWrites)
   analyse_checkFrameWrites = 0;
 else {
-  analyse_checkFrameWrites=1;
-
   for(int i=16384; i<16384+6144; i++)
     mem[i]=0xff;
+
+  analyse_checkFrameWrites=1;
 }]]>
                   </Expression>
                 </ZExpression>
@@ -4992,7 +5065,7 @@ void main()
       color=papColor;
   }
 
-  gl_FragColor = color;
+  gl_FragColor = vec4(color.xyz,1.0);
 }]]>
           </FragmentShaderSource>
           <UniformVariables>
@@ -5040,7 +5113,7 @@ switch( round(X*7) ) {
       <Expression>
 <![CDATA[MemSampler.ValueArrayRef=null;
 
-if(ANALYSE) {
+if(ANALYSE_CHECK_HOTSPOTS) {
   int prevWasHotSpot=0;
   for(int i=16384; i<analyse_hotspots.SizeDim1; i++) {
     int count=analyse_hotspots[i];
@@ -5052,7 +5125,13 @@ if(ANALYSE) {
     } else
       prevWasHotSpot=0;
   }
-}]]>
+}
+
+if(ANALYSE_CHECK_PC)
+  for(int i=16384+6912; i<analyse_AddrFlags.SizeDim1; i++) {
+    if(analyse_AddrFlags[i])
+      trace(intToStr(i));
+  }]]>
       </Expression>
     </ZExpression>
   </OnClose>

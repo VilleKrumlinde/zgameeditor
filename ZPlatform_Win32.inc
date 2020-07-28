@@ -758,8 +758,13 @@ begin
   end;
   {$else}
   Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
-  ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
-  ZStrCat(PAnsiChar(@Buf),FileName);
+  if (Length(FileName)>2) and (FileName[1]=':') then
+    ZStrCopy(PAnsiChar(@Buf),FileName)  //Absolute path specified
+  else
+  begin
+    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+    ZStrCat(PAnsiChar(@Buf),FileName);
+  end;
   {$endif}
 end;
 
