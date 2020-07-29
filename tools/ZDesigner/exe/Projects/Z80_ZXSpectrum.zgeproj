@@ -136,6 +136,12 @@ inline void printHex(int value) {
     else
       printChar(65-10 + digit);
   }
+}
+
+//Test non-inline function
+void printHexAt(int x, int y, int value) {
+  gotoxy(x,y);
+  printhex(value);
 }]]>
       </Source>
     </ZLibrary>
@@ -152,6 +158,8 @@ inline void printHex(int value) {
 
   The resulting Z80 file can be opened in ZX Spectrum emulators such as https://github.com/chernandezba/zesarux/releases
 */
+
+//printHexAt(5,0,42);
 
 //Test switch statement
 int xx=0;

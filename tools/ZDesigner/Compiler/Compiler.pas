@@ -1499,6 +1499,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F := TExpUserFuncCall.Create(Target);
       F.Lib := UserFunc.Lib;
       F.Index := UserFunc.LibIndex;
+      F.Ref := UserFunc;
     end;
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then

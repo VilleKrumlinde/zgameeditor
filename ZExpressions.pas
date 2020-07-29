@@ -382,6 +382,9 @@ type
   public
     Lib : TZLibrary;
     Index : integer;
+    {$ifndef minimal}
+    Ref : TObject; //points to TZcOpFunctionUserDefined, used in RetroCoding
+    {$endif}
   end;
 
   TExpExternalFuncCall = class(TExpBase)

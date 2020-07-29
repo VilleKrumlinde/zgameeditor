@@ -2,7 +2,7 @@ unit RetroCoding;
 
 interface
 
-uses System.Classes, ZApplication, ZClasses, ZBitmap;
+uses System.Classes, ZApplication, ZClasses, ZBitmap, Zc_Ops;
 
 type
   TRtlRoutine = (rrtSwitch);
@@ -27,25 +27,35 @@ type
         Routine : TRtlRoutine;
         Offset : integer;
       end;
+    TFcFixUp =
+      record
+        Func : TZcOpFunctionUserDefined;
+        Offset : integer;
+      end;
   strict private
     InstructionOffsets : TList;
     Fixups : array of TFixUp;
     ResourceFixups : array of TResourceFixUp;
     RtlFixups : array of TRtlFixUp;
+    FuncCallFixups : array of TFcFixUp;
     CurrentInstructionIndex : integer;
+    FuncsToGenerate : TStringList;
   private
     Code : TMemoryStream;
+    CurrentFunc : TZcOpFunctionUserDefined;
+    ArgMap : TStringList;
     procedure WriteCode(const Code : array of byte);
     procedure WriteCodeString(S : string);
     procedure WriteCodeAddress(Ad : integer);
     procedure WriteFile(const Code : array of byte; Ms : TMemoryStream);
     procedure WriteFileString(S : string; Ms : TMemoryStream);
     procedure WriteFileAddress(Ad : integer; Ms : TMemoryStream);
-    procedure GenList(Exp : TZComponentList; IsFunc : boolean);
+    procedure GenList(Exp : TZComponentList; StartIndex : integer; IsFunc : boolean);
     procedure Fail(const ErrorMessage : string);
     procedure AddFixup(const Destination : integer; IsRelative : boolean = False);
     procedure AddResourceFixup(const Resource : TZComponent);
     procedure AddRtlFixup(const Routine : TRtlRoutine);
+    procedure AddFuncCallFixup(const Fc : TZcOpFunctionUserDefined);
   public
     ZApp : TZApplication;
     Cpu : TRetroCpu;
@@ -72,6 +82,7 @@ type
     procedure GenRtl(Routine: TRtlRoutine); virtual; abstract;
     procedure GenFile(Ms: TMemoryStream; var FileName: string); virtual; abstract;
     procedure GenAddress(const Address : integer; Ms : TMemoryStream); virtual; abstract;
+    procedure GenFuncCall(Func : TZcOpFunctionUserDefined); virtual; abstract;
     procedure PeepholeWrite(const Buf: array of byte); virtual; abstract;
   public
     Target : TRetroTarget;
@@ -95,6 +106,7 @@ type
     procedure GenFile(Ms: TMemoryStream; var FileName: string); override;
     procedure PeepholeWrite(const Buf: array of byte); override;
     procedure GenAddress(const Address : integer; Ms : TMemoryStream); override;
+    procedure GenFuncCall(Func : TZcOpFunctionUserDefined); override;
   end;
 
   TCpu6809 = class(TRetroCpu)
@@ -123,12 +135,16 @@ constructor TRetroBuilder.Create;
 begin
   Code := TMemoryStream.Create;
   InstructionOffsets := TList.Create;
+  FuncsToGenerate := TStringList.Create;
+  ArgMap := TStringList.Create;
+  ArgMap.Sorted := True;
 end;
 
 destructor TRetroBuilder.Destroy;
 begin
   Code.Free;
   InstructionOffsets.Free;
+  FuncsToGenerate.Free;
   inherited;
 end;
 
@@ -166,14 +182,27 @@ begin
   WriteCodeAddress(0);
 end;
 
+procedure TRetroBuilder.AddFuncCallFixup(const Fc : TZcOpFunctionUserDefined);
+var
+  I : integer;
+begin
+  I := Length(FuncCallFixups);
+  SetLength(FuncCallFixups,I+1);
+  FuncCallFixups[I].Offset := Code.Position;
+  FuncCallFixups[I].Func := Fc;
+  WriteCodeAddress(0);
+end;
+
 procedure TRetroBuilder.Execute;
 var
   Zex : TZExpression;
-  I : integer;
+  I,J : integer;
   ResourceNames : TStringList;
   Ar : TDefineArray;
   OutFile : TMemoryStream;
   RtlAddress : array[TRtlRoutine] of word;
+  Func : TZcOpFunctionUserDefined;
+  S : string;
 begin
   Cpu.Builder := Self;
   Cpu.GenInit;
@@ -189,20 +218,21 @@ begin
     end;
   end;
 
-  GenList(Zex.Expression.Code,False);
+  GenList(Zex.Expression.Code,0,False);
 
   Cpu.GenFinish;
 
-
-  //Resolving fixups
-  for I := 0 to High(Fixups) do
+  //User functions
+  I := 0;
+  while I<Self.FuncsToGenerate.Count do
   begin
-    Code.Position := Fixups[I].Offset;
-    if Fixups[I].IsRelative then
-      //+2 here is pointer size
-      WriteCodeAddress( NativeInt(InstructionOffsets[ Fixups[I].Target+1 ]) - (Code.Position+2) )
-    else
-      WriteCodeAddress( Cpu.CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
+    ZApp.BindComponent<TZcOpFunctionUserDefined>(Self.FuncsToGenerate[I],Func);
+
+    FuncsToGenerate.Objects[I] := TObject(Cpu.CodeBase + Code.Position);
+    Self.CurrentFunc := Func;
+    GenList(Func.Lib.Source.Code, Func.LibIndex, True);
+
+    Inc(I);
   end;
 
   //Components
@@ -256,7 +286,7 @@ begin
   end;
   ResourceNames.Free;
 
-
+  //Rtl fixup
   FillChar(RtlAddress,SizeOf(RtlAddress),0);
   for I := 0 to High(RtlFixups) do
   begin
@@ -268,6 +298,16 @@ begin
     end;
     Code.Position := RtlFixups[I].Offset;
     WriteCodeAddress( RtlAddress[RtlFixups[I].Routine] );
+  end;
+
+  //Fixup for user defined function calls
+  for I := 0 to High(FuncCallFixups) do
+  begin
+    S := FuncCallFixups[I].Func.MangledName;
+    J := FuncsToGenerate.IndexOf(S);
+    Assert(J>=0);
+    Code.Position := FuncCallFixups[I].Offset;
+    WriteCodeAddress( Integer(FuncsToGenerate.Objects[J]) );
   end;
 
   Code.Position := 0;
@@ -287,17 +327,23 @@ begin
   raise Exception.Create(ErrorMessage);
 end;
 
-procedure TRetroBuilder.GenList(Exp: TZComponentList; IsFunc: boolean);
+procedure TRetroBuilder.GenList(Exp: TZComponentList; StartIndex : integer; IsFunc: boolean);
 var
-  I : integer;
+  I,J : integer;
   StringConstant : TExpStringConstant;
   IntConstant : TExpConstantInt;
   Ar : TDefineArray;
   C : TZComponent;
+  Fc : TExpUserFuncCall;
+  Func : TZcOpFunctionUserDefined;
+  S : string;
 begin
+  InstructionOffsets.Clear;
+  SetLength(Fixups,0);
+
   StringConstant := nil;
   IntConstant := nil;
-  I := 0;
+  I := StartIndex;
   while I<Exp.Count do
   begin
     while InstructionOffsets.Count<I do
@@ -359,10 +405,40 @@ begin
       Assert(Ar._Type=zctByte,'Wrong array type');
       Assert(Ar.Dimensions=dadOne,'Only 1D array supported');
       Cpu.GenArrayGetElement(Ar);
+    end else if (C is TExpUserFuncCall) then
+    begin
+      Fc := (C as TExpUserFuncCall);
+      Func := (Fc.Ref as TZcOpFunctionUserDefined);
+      S := Func.MangledName;
+      if FuncsToGenerate.IndexOf(S)=-1 then
+      begin
+        FuncsToGenerate.Add(S);
+        //Add args to argmap
+        for J := 0 to Func.Arguments.Count-1 do
+        begin
+          ArgMap.AddObject(S + IntToStr( Func.Arguments[J].Ordinal ), TObject(Cpu.VarSize));
+          Inc(Cpu.VarSize,2);
+        end;
+      end;
+      Cpu.GenFuncCall(Func);
     end else
       Cpu.Gen(C);
 
+    if (C is TExpReturn) then
+      Break;
+
     Inc(I);
+  end;
+
+  //Resolving fixups
+  for I := 0 to High(Fixups) do
+  begin
+    Code.Position := Fixups[I].Offset;
+    if Fixups[I].IsRelative then
+      //+2 here is pointer size
+      WriteCodeAddress( NativeInt(InstructionOffsets[ Fixups[I].Target+1 ]) - (Code.Position+2) )
+    else
+      WriteCodeAddress( Cpu.CodeBase + NativeInt(InstructionOffsets[ Fixups[I].Target+1 ])  );
   end;
 end;
 
@@ -498,6 +574,22 @@ begin
   Builder.WriteCode([$18,$fe]); //infinite loop
   if RedundantLoadsRemoved>0 then
     ZLog.GetLog(Self.ClassName).Write('Redundant loads: ' + IntToStr(RedundantLoadsRemoved) );
+end;
+
+procedure TCpuZ80.GenFuncCall(Func: TZcOpFunctionUserDefined);
+var
+  I,Ad : integer;
+begin
+  //Assign arguments
+  for I := Func.Arguments.Count-1 downto 0 do
+  begin
+    Ad := Self.VarBase + integer(Builder.ArgMap.Objects[ Builder.ArgMap.IndexOf(Func.MangledName + IntToStr(Func.Arguments[I].Ordinal) ) ]);
+    Builder.WriteCodeString('e1 22'); //pop hl, ld (nn),hl
+    Builder.WriteCodeAddress(Ad);
+  end;
+
+  Builder.WriteCode([205]);  //call
+  Builder.AddFuncCallFixup(Func);
 end;
 
 procedure TCpuZ80.GenAddress(const Address: integer; Ms: TMemoryStream);
@@ -715,7 +807,13 @@ var
 begin
   if (C is TExpAccessLocal) then
   begin
-    W := VarBase + TExpAccessLocal(C).Index*2;
+    //if negativt index then use argmap to find global address for this argument
+    if TExpAccessLocal(C).Index<0 then
+    begin
+      I := Builder.ArgMap.IndexOf( Builder.CurrentFunc.MangledName + IntToStr(TExpAccessLocal(C).Index) );
+      W := VarBase + integer(Builder.ArgMap.Objects[I]);
+    end else
+      W := VarBase + TExpAccessLocal(C).Index*2;
     case TExpAccessLocal(C).Kind of
     loLoad :
       begin
@@ -823,11 +921,12 @@ begin
     else
       Builder.Fail('Unsupported misc instruction: ' + C.ClassName);
     end;
-  end else if (C is TExpReturn) or (C is TExpStackFrame) then
+  end else if (C is TExpStackFrame) then
   begin
-    if (C is TExpStackFrame) then
-      Inc(Self.VarSize,TExpStackFrame(C).Size*2);
-    //ignore these
+    Inc(Self.VarSize,TExpStackFrame(C).Size*2);
+  end else if (C is TExpReturn) then
+  begin
+    Builder.WriteCode([201]); //ret
   end else if (C is TExpSwitchTable) then
   begin
     Switch := (C as TExpSwitchTable);
