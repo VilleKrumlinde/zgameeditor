@@ -69,9 +69,9 @@ type
   private
     Builder: TRetroBuilder;
     CodeBase: integer;
-    VarBase: integer;
-    RedundantLoadsRemoved: integer;
+    VarStart,VarBP: integer;
     VarSize: integer;
+    RedundantLoadsRemoved: integer;
     procedure GenBitmap(Bitmap: TZBitmap); virtual; abstract;
     procedure GenInit; virtual; abstract;
     procedure GenFinish; virtual; abstract;
@@ -123,6 +123,7 @@ type
     procedure GenFile(Ms: TMemoryStream; var FileName: string); override;
     procedure GenAddress(const Address : integer; Ms : TMemoryStream); override;
     procedure PeepholeWrite(const Buf: array of byte); override;
+    procedure GenFuncCall(Func : TZcOpFunctionUserDefined); override;
   end;
 
 implementation
@@ -145,6 +146,7 @@ begin
   Code.Free;
   InstructionOffsets.Free;
   FuncsToGenerate.Free;
+  ArgMap.Free;
   inherited;
 end;
 
@@ -269,7 +271,7 @@ begin
         else
         begin
           //Memory array, allocate in var area
-          ResourceNames.Objects[ResourceNames.Count-1] := TObject(NativeInt(Cpu.VarBase + Cpu.VarSize));
+          ResourceNames.Objects[ResourceNames.Count-1] := TObject(NativeInt(Cpu.VarStart + Cpu.VarSize));
           if Ar._Type=zctByte then
             Inc(Cpu.VarSize,Ar.SizeDim1)
           else if Ar._Type=zctInt then
@@ -502,13 +504,13 @@ begin
     rtaSpectrum:
       begin
         CodeBase := 30000;
-        VarBase := 60000;
+        VarStart := 60000;
         Builder.WriteCode([$3e,$02,$cd,$01,$16]); //open print channel
       end;
     rtaMasterSystem:
       begin
         CodeBase := 0;
-        VarBase := $c000;
+        VarStart := $c000;
         Builder.WriteCode([$31,$f0,$df,$f3,$ed,$56]); //ld sp, $dff0, di, im 1
       end;
   end;
@@ -583,7 +585,7 @@ begin
   //Assign arguments
   for I := Func.Arguments.Count-1 downto 0 do
   begin
-    Ad := Self.VarBase + integer(Builder.ArgMap.Objects[ Builder.ArgMap.IndexOf(Func.MangledName + IntToStr(Func.Arguments[I].Ordinal) ) ]);
+    Ad := Self.VarStart + integer(Builder.ArgMap.Objects[ Builder.ArgMap.IndexOf(Func.MangledName + IntToStr(Func.Arguments[I].Ordinal) ) ]);
     Builder.WriteCodeString('e1 22'); //pop hl, ld (nn),hl
     Builder.WriteCodeAddress(Ad);
   end;
@@ -807,13 +809,13 @@ var
 begin
   if (C is TExpAccessLocal) then
   begin
-    //if negativt index then use argmap to find global address for this argument
+    //if negative index then use argmap to find global address for this argument
     if TExpAccessLocal(C).Index<0 then
     begin
       I := Builder.ArgMap.IndexOf( Builder.CurrentFunc.MangledName + IntToStr(TExpAccessLocal(C).Index) );
-      W := VarBase + integer(Builder.ArgMap.Objects[I]);
+      W := VarStart + integer(Builder.ArgMap.Objects[I]);
     end else
-      W := VarBase + TExpAccessLocal(C).Index*2;
+      W := VarStart + VarBP + TExpAccessLocal(C).Index*2;
     case TExpAccessLocal(C).Kind of
     loLoad :
       begin
@@ -923,9 +925,18 @@ begin
     end;
   end else if (C is TExpStackFrame) then
   begin
+    VarBP := Self.VarSize;
     Inc(Self.VarSize,TExpStackFrame(C).Size*2);
   end else if (C is TExpReturn) then
   begin
+    if Assigned(Builder.CurrentFunc) and (Builder.CurrentFunc.ReturnType.Kind<>zctVoid) then
+    begin
+      //pop de, ld hl,result, push hl, push de
+      Builder.WriteCodeString('d1 2a');
+      Builder.WriteCodeAddress(VarStart + VarBP + 0);
+      Builder.WriteCodeString('e5 d5');
+      //Stack will now hold resultvalue, returnaddress
+    end;
     Builder.WriteCode([201]); //ret
   end else if (C is TExpSwitchTable) then
   begin
@@ -962,7 +973,7 @@ begin
   case Self.Target of
     rtaVectrex :
       begin
-        VarBase := $c880;
+        VarStart := $c880;
         //Variable length header
         Builder.WriteCodeString(
           '67 20 47 43 45 20 32 30 30 34 80 FD 0D FC 30 72'+
@@ -983,6 +994,22 @@ begin
 
 end;
 
+procedure TCpu6809.GenFuncCall(Func: TZcOpFunctionUserDefined);
+var
+  I,Ad : integer;
+begin
+  //Assign arguments
+  for I := Func.Arguments.Count-1 downto 0 do
+  begin
+    Ad := Self.VarStart + integer(Builder.ArgMap.Objects[ Builder.ArgMap.IndexOf(Func.MangledName + IntToStr(Func.Arguments[I].Ordinal) ) ]);
+    Builder.WriteCodeString('3506 fd'); //puls d, std (nn)
+    Builder.WriteCodeAddress(Ad);
+  end;
+
+  Builder.WriteCode([$bd]);  //js
+  Builder.AddFuncCallFixup(Func);
+end;
+
 procedure TCpu6809.Gen(C: TZComponent);
 var
   I : integer;
@@ -991,7 +1018,13 @@ var
 begin
   if (C is TExpAccessLocal) then
   begin
-    W := VarBase + TExpAccessLocal(C).Index*2;
+    //if negative index then use argmap to find global address for this argument
+    if TExpAccessLocal(C).Index<0 then
+    begin
+      I := Builder.ArgMap.IndexOf( Builder.CurrentFunc.MangledName + IntToStr(TExpAccessLocal(C).Index) );
+      W := VarStart + integer(Builder.ArgMap.Objects[I]);
+    end else
+      W := VarStart + VarBP + TExpAccessLocal(C).Index*2;
     case TExpAccessLocal(C).Kind of
     loLoad :
       begin
@@ -1099,11 +1132,21 @@ begin
     else
       Builder.Fail('Unsupported misc instruction: ' + C.ClassName);
     end;
-  end else if (C is TExpReturn) or (C is TExpStackFrame) then
+  end else if (C is TExpStackFrame) then
   begin
-    if (C is TExpStackFrame) then
-      Inc(Self.VarSize,TExpStackFrame(C).Size*2);
-    //ignore these
+    VarBP := Self.VarSize;
+    Inc(Self.VarSize,TExpStackFrame(C).Size*2);
+  end else if (C is TExpReturn) then
+  begin
+    if Assigned(Builder.CurrentFunc) and (Builder.CurrentFunc.ReturnType.Kind<>zctVoid) then
+    begin
+      //puls x, ldd result, pshs d, pshs x
+      Builder.WriteCodeString('3510 fc');
+      Builder.WriteCodeAddress(VarStart + VarBP + 0);
+      Builder.WriteCodeString('3406 3410');
+      //Stack will now hold resultvalue, returnaddress
+    end;
+    Builder.WriteCode([$39]); //rts
   end else if (C is TExpSwitchTable) then
   begin
     Assert(False);

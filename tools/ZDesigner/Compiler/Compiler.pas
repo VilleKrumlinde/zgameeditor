@@ -1240,7 +1240,8 @@ begin
         while True do
         begin
           if (Target[I+TExpJump(O).Destination+1] is TExpJump) and
-          (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways)
+          (TExpJump(Target[I+TExpJump(O).Destination+1]).Kind=jsJumpAlways) and
+          (Target[I+TExpJump(O).Destination+1]<>O) //Must allow infinite loop
           then
           begin
             Inc(TExpJump(O).Destination, TExpJump(Target[I+TExpJump(O).Destination+1]).Destination+1);

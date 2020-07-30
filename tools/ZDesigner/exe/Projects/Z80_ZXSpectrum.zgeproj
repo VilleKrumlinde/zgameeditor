@@ -18,8 +18,6 @@ int getResourceAddress(Component c) { }]]>
     <ZLibrary>
       <Source>
 <![CDATA[/*
-  All routines needs to be declared "inline".
-
   To write asm-code to use with "emit"-statement, try this online assembler:
     https://www.asm80.com/
 
@@ -128,7 +126,7 @@ ldir
   emit("c1e1d17d12626b13edb0");
 }
 
-inline void printHex(int value) {
+void printHex(int value) {
   for(int i=12; i>=0; i-=4) {
     int digit=(value>>i)&15;
     if(digit<10)
@@ -138,7 +136,10 @@ inline void printHex(int value) {
   }
 }
 
-//Test non-inline function
+int fortyTwo() {
+  return 42;
+}
+
 void printHexAt(int x, int y, int value) {
   gotoxy(x,y);
   printhex(value);
@@ -159,10 +160,11 @@ void printHexAt(int x, int y, int value) {
   The resulting Z80 file can be opened in ZX Spectrum emulators such as https://github.com/chernandezba/zesarux/releases
 */
 
-//printHexAt(5,0,42);
+//Test calling non-inline functions
+printHexAt(5,0,fortyTwo());
 
 //Test switch statement
-int xx=0;
+/*int xx=0;
 switch(xx) {
   case 0 : print("0"); break;
   case 1 : print("1"); break;
@@ -170,7 +172,7 @@ switch(xx) {
   case 3 : print("3"); break;
   case 4 : print("4"); break;
   default : print("5");
-}
+}*/
 
 for(int i=0; i<32; i++)
   CharArray[i]=48+i;
