@@ -2471,6 +2471,13 @@ begin
 end;
 {$ifend}
 
+{$if defined(cpuaarch64)}  // ARM
+procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
+begin
+  raise Exception.Create('Not implemented on ARM');
+end;
+{$ifend}
+
 { TExpLoadComponent }
 
 procedure TExpLoadComponent.DefineProperties(List: TZPropertyList);

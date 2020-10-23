@@ -183,9 +183,9 @@ begin
   end;
 end;
 
-function TCocoSet.GetBit(Index: Integer): Boolean; assembler; {$ifdef fpc} ms_abi_default; {$endif}
-{$ifdef cpux64}
-
+function TCocoSet.GetBit(Index: Integer): Boolean; {$ifdef fpc} ms_abi_default; {$endif}
+{$if Defined(cpux64)}
+assembler;
 asm
         CMP     Index,Self.FSize
         JAE     @@1
@@ -198,7 +198,8 @@ asm
 @@2:
 end;
 
-{$else}
+{$elseif Defined(cpux86)}
+assembler;
 asm
         CMP     Index,[EAX].FSize
         JAE     @@1
@@ -209,10 +210,14 @@ asm
         RET
 @@1:    MOV     EAX,0
 end;
+{$else}
+begin
+  raise Exception.Create('TCocoSet.GetBit not implemented for ARM');
+end;
 {$endif}
 
 procedure TCocoSet.SetBit(Index: Integer; Value: Boolean); {$ifndef fpc}assembler;{$endif}
-{$ifdef cpux64}
+{$if Defined(cpux64)}
 
 {$ifdef fpc}
 var
@@ -265,7 +270,7 @@ asm
 end;
 {$endif}
 
-{$else}
+{$elseif Defined(cpux86)}
 asm
         CMP     Index,[EAX].FSize
         JAE     @@Size
@@ -290,6 +295,10 @@ asm
         POP     Index
         POP     Self
         JMP     @@1
+end;
+{$else}
+begin
+  raise Exception.Create('TCocoSet.SetBit not implemented for ARM');
 end;
 {$endif}
 

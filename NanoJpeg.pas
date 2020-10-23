@@ -146,6 +146,9 @@ end;
 asm
   asr r0,r0,r1
 end;
+{$elseif defined(CPUAARCH64)}
+begin
+end;
 {$ifend}
 
 { TNjDecoder }
