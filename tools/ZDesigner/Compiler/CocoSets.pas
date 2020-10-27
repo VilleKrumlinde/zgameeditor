@@ -25,11 +25,14 @@ type
 
   TCocoSet = class
   private
+  const
+    BitsPerInt = SizeOf(Integer) * 8;
+  var
     FSize: Integer;
     FBits: Pointer;
     procedure Error;
     procedure SetSize(Value: Integer);
-    procedure SetBit(Index: Integer; Value: Boolean); 
+    procedure SetBit(Index: Integer; Value: Boolean);
     function  GetBit(Index: Integer): Boolean; {$ifdef fpc} ms_abi_default; {$endif}
     procedure SyncSize(other: TCocoSet);
   public
@@ -211,8 +214,18 @@ asm
 @@1:    MOV     EAX,0
 end;
 {$else}
+var
+  LRelInt: PInteger;
+  LMask: Integer;
 begin
-  raise Exception.Create('TCocoSet.GetBit not implemented for ARM');
+  if (Index >= FSize) or (Index < 0) then
+    Error;
+
+  LRelInt := FBits;
+  Inc(LRelInt, Index div BitsPerInt);
+
+  LMask := (1 shl (Index mod BitsPerInt));
+  Result := (LRelInt^ and LMask) <> 0;
 end;
 {$endif}
 
@@ -297,8 +310,25 @@ asm
         JMP     @@1
 end;
 {$else}
+var
+  LRelInt: PInteger;
+  LMask: Integer;
 begin
-  raise Exception.Create('TCocoSet.SetBit not implemented for ARM');
+  if Index < 0 then
+    Error;
+
+  if Index >= FSize then
+    SetSize(Index + 1);
+
+  LRelInt := FBits;
+  Inc(LRelInt, Index div BitsPerInt);
+
+  LMask := (1 shl (Index mod BitsPerInt));
+
+  if Value then
+    LRelInt^ := LRelInt^ or LMask
+  else
+    LRelInt^ := LRelInt^ and not LMask;
 end;
 {$endif}
 

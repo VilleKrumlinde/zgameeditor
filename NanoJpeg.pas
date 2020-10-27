@@ -127,29 +127,9 @@ implementation
 
 //Delphi shr does not work with negative values, use this instead
 function cshr(const i : integer; const j : byte) : integer;
-{$if defined(CPU386)}
-asm
-  mov cl,j
-  sar eax,cl
-end;
-{$elseif defined(CPUX64)}
-asm
-  mov eax,i
-  {$ifdef fpc}
-  mov ecx,j
-  {$else}
-  mov cl,j
-  {$endif}
-  sar eax,cl
-end;
-{$elseif defined(Android)}
-asm
-  asr r0,r0,r1
-end;
-{$elseif defined(CPUAARCH64)}
 begin
+  Result := i div (1 shl j);
 end;
-{$ifend}
 
 { TNjDecoder }
 
