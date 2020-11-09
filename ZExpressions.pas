@@ -390,7 +390,7 @@ type
   TExpExternalFuncCall = class(TExpBase)
   strict private
     Proc : pointer;
-    {$ifdef cpux64}
+    {$if defined(cpux64) or defined(cpuaarch64)}
     Trampoline : pointer;
     {$endif}
   protected
@@ -401,7 +401,7 @@ type
     FuncName : TPropString;
     ArgCount : integer;
     ReturnType : TZcDataType;
-    {$ifdef cpux64}
+    {$if defined(cpux64) or defined(cpuaarch64)}
     ArgTypes : TPropString;
     destructor Destroy; override;
     {$endif}
@@ -2471,11 +2471,230 @@ begin
 end;
 {$ifend}
 
-{$if defined(cpuaarch64)}  // ARM
-procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
+{$if defined(cpuaarch64)}  // ARM64
+
+procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
-  raise Exception.Create('Not implemented on ARM');
 end;
+
+function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc.dylib' name 'mprotect';
+
+procedure pthread_jit_write_protect_np(enabled : integer):longint; cdecl; external 'pthread.dylib' name 'pthread_jit_write_protect_np';
+procedure sys_icache_invalidate(start : pointer; len : nativeuint); cdecl; external 'libc.dylib' name 'sys_icache_invalidate';
+
+function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
+{
+  https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions?view=msvc-160
+  http://shell-storm.org/online/Online-Assembler-and-Disassembler/
+  https://godbolt.org/
+  https://developer.apple.com/documentation/apple_silicon/porting_just-in-time_compilers_to_apple_silicon?language=objc
+}
+const
+  IntRegCount = 8;
+  FloatRegCount = 8;
+
+  PtrRegs : array[0..IntRegCount-1] of array[0..3] of byte =
+( ($00,$01,$40,$f9), //ldr x0,[x8]
+  ($01,$01,$40,$f9), //ldr x1,[x8]
+  ($02,$01,$40,$f9), //ldr x2,[x8]
+  ($03,$01,$40,$f9), //ldr x3,[x8]
+  ($04,$01,$40,$f9), //ldr x4,[x8]
+  ($05,$01,$40,$f9), //ldr x5,[x8]
+  ($06,$01,$40,$f9), //ldr x6,[x8]
+  ($07,$01,$40,$f9)  //ldr x7,[x8]
+);
+
+  Int32Regs : array[0..IntRegCount-1] of array[0..3] of byte =
+( ($00,$01,$40,$b9),  //ldr w0,[x8]
+  ($01,$01,$40,$b9),  //ldr w1,[x8]
+  ($02,$01,$40,$b9),  //ldr w2,[x8]
+  ($03,$01,$40,$b9),  //ldr w3,[x8]
+  ($04,$01,$40,$b9),  //ldr w4,[x8]
+  ($05,$01,$40,$b9),  //ldr w5,[x8]
+  ($06,$01,$40,$b9),  //ldr w6,[x8]
+  ($07,$01,$40,$b9)   //ldr w7,[x8]
+);
+
+  Float32Regs : array[0..FloatRegCount-1] of array[0..3] of byte =
+( ($00,$01,$40,$bd), //ldr s0,[x8]
+  ($01,$01,$40,$bd), //ldr s1,[x8]
+  ($02,$01,$40,$bd), //ldr s2,[x8]
+  ($03,$01,$40,$bd), //ldr s3,[x8]
+  ($04,$01,$40,$bd), //ldr s4,[x8]
+  ($05,$01,$40,$bd), //ldr s5,[x8]
+  ($06,$01,$40,$bd), //ldr s6,[x8]
+  ($07,$01,$40,$bd)  //ldr s7,[x8]
+);
+
+  Int32Stack1 : array[0..3] of byte = ($41,$8B,$42,0);  //mov eax,[r10+$10]
+  Int32Stack2 : array[0..3] of byte = ($89,$44,$24,0);  //mov [rsp+$10],eax
+  Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov rax,[r10+$10]
+  Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],rax
+var
+  P : PByte;
+
+  procedure W(const code : array of byte);
+  var
+    I : integer;
+  begin
+    for I := 0 to High(Code) do
+    begin
+      P^ := Code[I];
+      Inc(P);
+    end;
+  end;
+
+var
+  I,FloatI,IntI,Offs : integer;
+  OldProtect : dword;
+  CodeSize : integer;
+  StackOffs : integer;
+  UseStack : boolean;
+const
+  MAP_JIT	=	$0800;
+begin
+  CodeSize := 512; //Use fixed size so we don't have to save the size for unmap call
+  Result := fpmmap(nil,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC,MAP_PRIVATE or MAP_ANONYMOUS{$IFDEF MACOS}or MAP_JIT{$ENDIF},-1,0);
+  {$IFDEF MACOS}
+  pthread_jit_write_protect_np(0);
+  {$ENDIF}
+
+  P := Result;
+
+  if ArgCount>0 then
+    //Copy Args-ptr to x8
+    W([$e8,$03,$00,$aa]); //mov x8,x0
+
+  Offs := 0; //Offset in Args
+  StackOffs := 8;
+
+  FloatI := 0; IntI := 0;
+  for I := 0 to ArgCount-1 do
+  begin
+    UseStack := False;
+
+    case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
+      zctInt :
+        begin
+          if IntI<IntRegCount then
+          begin
+            W(Int32Regs[IntI]);
+            P[-1] := Offs;
+            Inc(IntI);
+          end
+          else
+            UseStack := True;
+        end;
+      zctString,zctModel,zctXptr,zctMat4,zctVec2,zctVec3,zctVec4,zctArray :
+        begin
+          if IntI<IntRegCount then
+          begin
+            W(PtrRegs[IntI]);
+            P[-1] := Offs;
+            Inc(IntI);
+          end
+          else
+            UseStack := True;
+        end;
+      zctFloat :
+        begin
+          if FloatI<FloatRegCount then
+          begin
+            W(Float32Regs[FloatI]);
+            P[-1] := Offs;
+            Inc(FloatI);
+          end
+          else
+            UseStack := True;
+        end;
+    else
+      Assert(False,'This argument type not yet supported on 64-bit:');
+    end;
+
+    if UseStack then
+    begin
+      //**todo stack
+      Assert(False,'stack on aarch64 not yet implemented');
+      //push on stack
+      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
+        4 :
+          begin
+            W(Int32Stack1);
+            P[-1] := Offs;
+            W(Int32Stack2);
+            P[-1] := StackOffs;
+          end;
+        8 :
+          begin
+            W(Int64Stack1);
+            P[-1] := Offs;
+            W(Int64Stack2);
+            P[-1] := StackOffs;
+          end;
+      else
+        Assert(False,'This argument type not yet supported on 64-bit');
+      end;
+      Inc(StackOffs, 8);
+    end;
+
+    W([$08,$21,$00,$91]); //add x8, x8, #8
+
+    Inc(Offs, SizeOf(TExecutionEnvironment.TStackElement) );
+  end;
+
+  W([$68,$00,$00,$10]); //adr x8,12  (PC relative offset to function pointer)
+  W([$48,$00,$00,$10]); //ldr x8,[x8]
+  W([$00,$01,$1f,$d6]); //br x8
+  //Store function pointer
+  PPointer(P)^ := Proc; Inc(P,8);
+
+  {$IFDEF MACOS}
+  pthread_jit_write_protect_np(1);
+  {$ENDIF}
+  sys_icache_invalidate(Result,CodeSize);
+  mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
+end;
+
+procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
+type
+  TFunc = function(Args : pointer) : NativeUInt;
+  TFloatFunc = function(Args : pointer) : single;
+var
+  RetVal : NativeUInt;
+begin
+  if Self.Proc=nil then
+  begin
+    Self.Proc := Lib.LoadFunction(Self.FuncName);
+    //Make sure there is enough stack space for calling a func with many params
+    DummyProc(1,2,3,4,5,6,7,8,9,10,11,12);
+    FreeMem(Self.Trampoline);
+    Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
+    {$ifndef minimal}
+    Assert(Length(Self.ArgTypes)=ArgCount);
+    {$endif}
+  end;
+
+  if Self.ReturnType.Kind=zctFloat then
+  begin //Float returns in different register than other types
+    PSingle(@RetVal)^ := TFloatFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+  end
+  else
+    Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+
+  if Self.ReturnType.Kind<>zctVoid then
+  begin
+    if GetZcTypeSize(Self.ReturnType.Kind)=SizeOf(Pointer) then
+      Env.StackPushPointer(RetVal)
+    else
+      Env.StackPush(RetVal);
+  end;
+end;
+
+destructor TExpExternalFuncCall.Destroy;
+begin
+  fpmunmap(Trampoline,512);
+end;
+
 {$ifend}
 
 { TExpLoadComponent }
