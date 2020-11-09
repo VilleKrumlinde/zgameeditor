@@ -155,7 +155,7 @@ begin
   case Size of
     4 : Result := TExpAssign4.Create(nil);
     1 : Result := TExpAssign1.Create(nil);
-    100{$ifdef cpux64},SizeOf(Pointer){$endif} : Result := TExpAssignPointer.Create(nil);
+    100 {$if defined(CPUX64) or defined(cpuaarch64)},SizeOf(Pointer){$endif} : Result := TExpAssignPointer.Create(nil);
   else
     raise ECodeGenError.Create('Wrong datatype for assign');
   end;
@@ -1457,7 +1457,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     I : integer;
     F : TExpUserFuncCall;
     FE : TExpExternalFuncCall;
-    {$ifdef CPUX64}
+    {$if defined(CPUX64) or defined(cpuaarch64)}
     S : AnsiString;
     Arg : TZcOpArgumentVar;
     {$endif}
@@ -1482,7 +1482,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       FE.SetString('FuncName',AnsiString(UserFunc.Id));
       FE.ArgCount := UserFunc.Arguments.Count;
       FE.ReturnType := UserFunc.ReturnType;
-      {$ifdef CPUX64}
+      {$if defined(CPUX64) or defined(cpuaarch64)}
       S := '';
       for Arg in UserFunc.Arguments do
       begin

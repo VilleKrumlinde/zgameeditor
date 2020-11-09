@@ -1996,7 +1996,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}(@FuncName), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}(@ArgCount), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ReturnType',{$ENDIF}(@ReturnType), zptByte);
-  {$ifdef CPUX64}
+  {$if defined(CPUX64) or defined(cpuaarch64)}
   List.AddProperty({$IFNDEF MINIMAL}'ArgTypes',{$ENDIF}(@ArgTypes), zptString);
   {$endif}
 end;
@@ -2479,7 +2479,7 @@ end;
 
 function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc.dylib' name 'mprotect';
 
-procedure pthread_jit_write_protect_np(enabled : integer):longint; cdecl; external 'pthread.dylib' name 'pthread_jit_write_protect_np';
+procedure pthread_jit_write_protect_np(enabled : integer); cdecl; external 'pthread.dylib' name 'pthread_jit_write_protect_np';
 procedure sys_icache_invalidate(start : pointer; len : nativeuint); cdecl; external 'libc.dylib' name 'sys_icache_invalidate';
 
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
@@ -2811,7 +2811,7 @@ begin
   for I := 0 to InvokeArgCount-1 do
   begin
     Env.StackPopTo(PropId);
-    {$ifdef cpux64}
+    {$if defined(CPUX64) or defined(cpuaarch64)}
     Env.StackPopToPointer(RawValue);
     {$else}
     Env.StackPopTo(RawValue);
