@@ -2579,7 +2579,6 @@ begin
           if IntI<IntRegCount then
           begin
             W(Int32Regs[IntI]);
-            P[-1] := Offs;
             Inc(IntI);
           end
           else
@@ -2590,7 +2589,6 @@ begin
           if IntI<IntRegCount then
           begin
             W(PtrRegs[IntI]);
-            P[-1] := Offs;
             Inc(IntI);
           end
           else
@@ -2601,7 +2599,6 @@ begin
           if FloatI<FloatRegCount then
           begin
             W(Float32Regs[FloatI]);
-            P[-1] := Offs;
             Inc(FloatI);
           end
           else
@@ -2620,16 +2617,12 @@ begin
         4 :
           begin
             W(Int32Stack1);
-            P[-1] := Offs;
             W(Int32Stack2);
-            P[-1] := StackOffs;
           end;
         8 :
           begin
             W(Int64Stack1);
-            P[-1] := Offs;
             W(Int64Stack2);
-            P[-1] := StackOffs;
           end;
       else
         Assert(False,'This argument type not yet supported on 64-bit');
@@ -2643,7 +2636,7 @@ begin
   end;
 
   W([$68,$00,$00,$10]); //adr x8,12  (PC relative offset to function pointer)
-  W([$48,$00,$00,$10]); //ldr x8,[x8]
+  W([$08,$01,$40,$F9]); //ldr x8,[x8]
   W([$00,$01,$1f,$d6]); //br x8
   //Store function pointer
   PPointer(P)^ := Proc; Inc(P,8);
