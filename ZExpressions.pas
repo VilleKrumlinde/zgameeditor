@@ -2526,10 +2526,20 @@ const
   ($07,$01,$40,$bd)  //ldr s7,[x8]
 );
 
-  Int32Stack1 : array[0..3] of byte = ($41,$8B,$42,0);  //mov eax,[r10+$10]
-  Int32Stack2 : array[0..3] of byte = ($89,$44,$24,0);  //mov [rsp+$10],eax
-  Int64Stack1 : array[0..3] of byte = ($49,$8B,$42,0);  //mov rax,[r10+$10]
-  Int64Stack2 : array[0..4] of byte = ($48,$89,$44,$24,0);  //mov [rsp+$10],rax
+  Int32Stack : array[0..4-1] of array[0..7] of byte =
+( ($09,$01,$40,$b9,$e9,$03,$00,$b9), //ldr w9,[x8]    str w9,[sp]
+  ($09,$01,$40,$b9,$e9,$0b,$00,$b9), //ldr w9,[x8]    str w9,[sp,#8]
+  ($09,$01,$40,$b9,$e9,$13,$00,$b9), //ldr w9,[x8]    str w9,[sp,#16]
+  ($09,$01,$40,$b9,$e9,$1b,$00,$b9)  //ldr w9,[x8]    str w9,[sp,#24]
+);
+
+  PtrStack : array[0..4-1] of array[0..7] of byte =
+( ($09,$01,$40,$f9,$e9,$03,$00,$f9), //ldr x9,[x8]    str x9,[sp]
+  ($09,$01,$40,$f9,$e9,$07,$00,$f9), //ldr x9,[x8]    str x9,[sp,#8]
+  ($09,$01,$40,$f9,$e9,$0b,$00,$f9), //ldr x9,[x8]    str x9,[sp,#16]
+  ($09,$01,$40,$f9,$e9,$0f,$00,$f9)  //ldr x9,[x8]    str x9,[sp,#24]
+);
+
 var
   P : PByte;
 
@@ -2545,10 +2555,9 @@ var
   end;
 
 var
-  I,FloatI,IntI,Offs : integer;
+  I,FloatI,IntI,StackI,Offs : integer;
   OldProtect : dword;
   CodeSize : integer;
-  StackOffs : integer;
   UseStack : boolean;
 const
   MAP_JIT	=	$0800;
@@ -2566,9 +2575,8 @@ begin
     W([$e8,$03,$00,$aa]); //mov x8,x0
 
   Offs := 0; //Offset in Args
-  StackOffs := 8;
 
-  FloatI := 0; IntI := 0;
+  FloatI := 0; IntI := 0; StackI := 0;
   for I := 0 to ArgCount-1 do
   begin
     UseStack := False;
@@ -2610,24 +2618,22 @@ begin
 
     if UseStack then
     begin
-      //**todo stack
-      Assert(False,'stack on aarch64 not yet implemented');
       //push on stack
       case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
         4 :
           begin
-            W(Int32Stack1);
-            W(Int32Stack2);
+            Assert(StackI<High(Int32Stack));
+            W(Int32Stack[StackI]);
           end;
         8 :
           begin
-            W(Int64Stack1);
-            W(Int64Stack2);
+            Assert(StackI<High(PtrStack));
+            W(PtrStack[StackI]);
           end;
       else
         Assert(False,'This argument type not yet supported on 64-bit');
       end;
-      Inc(StackOffs, 8);
+      Inc(StackI);
     end;
 
     W([$08,$21,$00,$91]); //add x8, x8, #8
