@@ -78,7 +78,7 @@ type
     procedure _Literal(var Typ : TZcDataType);
 
   public
-           
+
     ZFunctions : TObjectList;
     SymTab : TSymbolTable;
     AllowInitializer : boolean;
@@ -692,7 +692,7 @@ var
   Func : TZcOpFunctionUserDefined;
 
 begin
-       
+
         if SymTab.Contains(Name) then
           ZError('Name already defined: ' + Name);
 
@@ -993,21 +993,21 @@ procedure TZc._LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
                                                   var Loc : TZcOpLocalVar; InitOp : TZcOp;
 begin
   Expect(identSym);
-        
+
         if SymTab.ScopeContains(LexString) then
           ZError('Name already defined: ' + LexString);
 
         Loc := TZcOpLocalVar.Create(nil);
         Loc.Id := LexString;
         Loc.Typ := Typ;
-     
+
   if (CurrentInputSymbol=assgnSym) then
   begin
     Get;
     _Init(InitOp);
-                           Loc.InitExpression:=InitOp; 
+                           Loc.InitExpression:=InitOp;
   end;
-       
+
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
@@ -1040,13 +1040,30 @@ begin
 end;
 
 procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
- var V : TDefineVariableBase; InitOp : TZcOp; 
+ var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp;
 begin
-       
+
         if SymTab.ScopeContains(Name) then
           ZError('Name already defined: ' + Name);
 
-        if Typ.Kind=zctArray then
+        V := nil;
+        if Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference] then
+        begin  //Simple primitives are stored in global area
+          if IsPrivate then
+            Glob := TZcOpGlobalVar.Create(nil)
+          else
+            Glob := TZcOpGlobalVar.Create(GlobalNames);
+          Glob.Lib := CompilerContext.ThisC as TZLibrary;
+          Glob.Offset := Glob.Lib.GlobalAreaSize;
+          Glob.Id := Name;
+          Glob.Typ := Typ;
+          Inc(Glob.Lib.GlobalAreaSize,SizeOf(Pointer));
+          if IsPrivate then
+            SymTab.Add(Name,Glob)
+          else
+            SymTab.AddPrevious(Name,Glob);
+        end
+        else if Typ.Kind=zctArray then
         begin
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
@@ -1060,18 +1077,21 @@ begin
           V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
-        V.SetString('Name', AnsiString(Name));
-        V.DesignerReset; //Needed to init managed variables
-        if IsPrivate then
-          SymTab.Add(Name,V)
-        else
-          SymTab.AddPrevious(Name,V);
-     
+        if Assigned(V) then
+        begin
+          V.SetString('Name', AnsiString(Name));
+          V.DesignerReset; //Needed to init managed variables
+          if IsPrivate then
+            SymTab.Add(Name,V)
+          else
+            SymTab.AddPrevious(Name,V);
+        end;
+
   if (CurrentInputSymbol=assgnSym) then
   begin
     Get;
     _Init(InitOp);
-                          
+
        GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
        
   end;

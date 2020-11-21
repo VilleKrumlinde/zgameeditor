@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2020 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -78,18 +78,22 @@ type
   strict private
     Lock : pointer;
     HasExecutedInitializer : boolean;
+    procedure InitGlobalArea;
   private
     procedure AquireLock;
     procedure ReleaseLock;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
+    procedure InitAfterPropsAreSet; override;
   public
     UseThreadLock : boolean;
     Source : TZExpressionPropValue;
     HasInitializer : boolean;
+    GlobalArea : pointer; //Storage for non-managed global variables
+    GlobalAreaSize : integer;
     procedure Update; override;
-    {$ifndef minimal}
     destructor Destroy; override;
+    {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
   end;
@@ -343,6 +347,20 @@ type
   public
     Kind : (loLoad,loStore,loGetAddress);
     Index : integer;
+    {$ifndef minimal}
+    function ExpAsText : string; override;
+    {$endif}
+  end;
+
+  //Load/store global (non-managed) value
+  TExpAccessGlobal = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    Kind : (glLoad,glStore,glGetAddress);
+    Offset : integer;
+    Lib : TZLibrary;
     {$ifndef minimal}
     function ExpAsText : string; override;
     {$endif}
@@ -1480,6 +1498,42 @@ begin
 end;
 {$endif}
 
+{ TExpAccessGlobal }
+
+procedure TExpAccessGlobal.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}@Kind, zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Offset',{$ENDIF}@Offset, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}@Lib, zptComponentRef);
+end;
+
+procedure TExpAccessGlobal.Execute(Env : PExecutionEnvironment);
+var
+  P : TExecutionEnvironment.PStackElement;
+begin
+  //Use pointer size to get all bits in 64-bit mode
+  P := TExecutionEnvironment.PStackElement(NativeUInt(Lib.GlobalArea)+Self.Offset);
+  case Kind of
+    glLoad: Env.StackPushPointer(P^);
+    glStore: Env.StackPopToPointer(P^);
+    glGetAddress: Env.StackPushPointer(P);
+  end;
+end;
+
+{$ifndef minimal}
+function TExpAccessGlobal.ExpAsText : string;
+begin
+  if Kind=glLoad then
+    Result := 'Load'
+  else if Kind=glStore then
+    Result := 'Store'
+  else
+    Result := 'GetAddress';
+  Result :=  Result + ' ' + IntToStr(Self.Offset) +  ' (global)';
+end;
+{$endif}
+
 { TExpReturn }
 
 procedure TExpReturn.DefineProperties(List: TZPropertyList);
@@ -1664,11 +1718,14 @@ end;
 procedure TZLibrary.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}(@Source), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}@Source, zptExpression);
     {$ifndef minimal}List.GetLast.ExpressionKind := ekiLibrary;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'UseThreadLock',{$ENDIF}@UseThreadLock, zptBoolean);
   List.AddProperty({$IFNDEF MINIMAL}'HasInitializer',{$ENDIF}@HasInitializer, zptBoolean);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'GlobalAreaSize',{$ENDIF}@GlobalAreaSize, zptInteger);
+   {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 end;
 
 procedure TZLibrary.AquireLock;
@@ -1693,17 +1750,36 @@ begin
   end;
 end;
 
-{$ifndef minimal}
+procedure TZLibrary.InitAfterPropsAreSet;
+begin
+  inherited;
+  InitGlobalArea;
+end;
+
+procedure TZLibrary.InitGlobalArea;
+begin
+  if (Self.GlobalAreaSize>0) then
+  begin
+    ReAllocMem(Self.GlobalArea,Self.GlobalAreaSize);
+    FillChar(Self.GlobalArea^,Self.GlobalAreaSize,0);
+  end;
+end;
+
 destructor TZLibrary.Destroy;
 begin
+  {$ifndef minimal}
   if Lock<>nil then
     Platform_FreeMutex(Lock);
+  {$endif}
+  FreeMem(GlobalArea);
   inherited;
 end;
 
+{$ifndef minimal}
 procedure TZLibrary.DesignerReset;
 begin
   Self.HasExecutedInitializer := False;
+  InitGlobalArea;
   inherited;
 end;
 {$endif}
@@ -3266,6 +3342,8 @@ initialization
   ZClasses.Register(TExpArrayUtil,ExpArrayUtilClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpSwitchTable,ExpSwitchTableClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpAccessGlobal,ExpAccessGlobalClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
   {$ifndef minimal}

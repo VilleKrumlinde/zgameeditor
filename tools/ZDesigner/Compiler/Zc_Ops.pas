@@ -62,6 +62,12 @@ type
     function ToString : string; override;
   end;
 
+  TZcOpGlobalVar = class(TZcOpVariableBase)
+  public
+    Lib : TZLibrary;
+    Offset : integer;
+  end;
+
   TZcOpArgumentVar = class(TZcOpVariableBase)
   end;
 

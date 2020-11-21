@@ -976,7 +976,9 @@ begin
       SymTab.Remove( TZcOpFunctionUserDefined(ZcGlobalNames[I]).MangledName )
     else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
       //Also remove inline constants
-      SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name));
+      SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name))
+    else if (ZcGlobalNames[I] is TZcOpGlobalVar) then
+      SymTab.Remove(TZcOpGlobalVar(ZcGlobalNames[I]).Id);
   end;
   ZcGlobalNames.Clear;
 

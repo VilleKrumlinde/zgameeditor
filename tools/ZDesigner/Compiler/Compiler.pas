@@ -257,6 +257,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
   procedure DoGenIdentifier;
   var
     L : TExpAccessLocal;
+    G : TExpAccessGlobal;
   begin
     if (Op.Ref is TZcOpLocalVar) or (Op.Ref is TZcOpArgumentVar) then
     begin
@@ -268,6 +269,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
       begin //"ref" argument, need to dereference pointer to get value
         TExpMisc.Create(Target, emPtrDerefPointer);
       end;
+    end else if (Op.Ref is TZcOpGlobalVar) then
+    begin
+      //Global non-managed variable
+      G := TExpAccessGlobal.Create(Target);
+      G.Offset := (Op.Ref as TZcOpGlobalVar).Offset;
+      G.Lib := (Op.Ref as TZcOpGlobalVar).Lib;
+      G.Kind := glLoad;
     end else if LowerCase(Op.Id)='currentmodel' then
     begin
       TExpMisc.Create(Target,emLoadCurrentModel)
@@ -554,6 +562,7 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
   procedure DoGenIdent;
   var
     L : TExpAccessLocal;
+    G : TExpAccessGlobal;
   begin
     if Assigned(Op.Ref) and (Op.Ref is TZcOpArgumentVar) and (Op.Ref as TZcOpArgumentVar).Typ.IsPointer then
     begin
@@ -566,6 +575,13 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
       L := TExpAccessLocal.Create(Target);
       L.Index := (Op.Ref as TZcOpVariableBase).Ordinal;
       L.Kind := loGetAddress;
+    end else if Assigned(Op.Ref) and (Op.Ref is TZcOpGlobalVar) then
+    begin
+      //Address of global non-managed variable
+      G := TExpAccessGlobal.Create(Target);
+      G.Offset := (Op.Ref as TZcOpGlobalVar).Offset;
+      G.Lib := (Op.Ref as TZcOpGlobalVar).Lib;
+      G.Kind := glGetAddress;
     end
     else
       raise ECodeGenError.Create('Invalid address expression: ' + Op.Id);
@@ -620,6 +636,7 @@ var
   A : TObject;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
+  G : TExpAccessGlobal;
   Etyp : TZcIdentifierInfo;
   Prop : TZProperty;
 begin
@@ -659,8 +676,18 @@ begin
     L := TExpAccessLocal.Create(Target);
     L.Index := (LeftOp.Ref as TZcOpVariableBase).Ordinal;
     L.Kind := loStore;
-  end
-  else if LeftOp.Kind=zcSelect then
+  end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
+    (LeftOp.Ref is TZcOpGlobalVar)  then
+  begin
+    //Global non-managed variable
+    GenValue(RightOp);
+    if LeaveValue=alvPost then
+      TExpMisc.Create(Target, emDup);
+    G := TExpAccessGlobal.Create(Target);
+    G.Offset := (LeftOp.Ref as TZcOpGlobalVar).Offset;
+    G.Lib := (LeftOp.Ref as TZcOpGlobalVar).Lib;
+    G.Kind := glStore;
+  end else if LeftOp.Kind=zcSelect then
   begin
     Etyp := LeftOp.GetIdentifierInfo;
     case Etyp.Kind of
@@ -1572,6 +1599,9 @@ begin
   S := Ze.Source;
   Target := Ze.Code;
 
+  if ThisC is TZLibrary then
+    (ThisC as TZLibrary).GlobalAreaSize := 0;
+
   CompilerContext.SymTab := SymTab;
   CompilerContext.ThisC := ThisC;
   CompilerContext.FunctionCleanUps := ZApp.FunctionCleanUps;
@@ -1634,7 +1664,10 @@ begin
       raise EParseError.Create('Compilation failed');
 
     if ThisC is TZLibrary then
+    begin
       (ThisC as TZLibrary).HasInitializer := Assigned(Compiler.InitializerFunction);
+      (ThisC as TZLibrary).DesignerReset; //Neccessary to init globalarea
+    end;
 
     Target.Clear;
     CodeGen := TZCodeGen.Create;
