@@ -1047,7 +1047,7 @@ begin
           ZError('Name already defined: ' + Name);
 
         V := nil;
-        if Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference] then
+        if {$ifdef zgeviz}false{$else}Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference]{$endif} then
         begin  //Simple primitives are stored in global area
           if IsPrivate then
             Glob := TZcOpGlobalVar.Create(nil)
