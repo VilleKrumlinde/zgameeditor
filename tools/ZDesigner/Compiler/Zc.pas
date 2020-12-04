@@ -78,7 +78,7 @@ type
     procedure _Literal(var Typ : TZcDataType);
 
   public
-
+           
     ZFunctions : TObjectList;
     SymTab : TSymbolTable;
     AllowInitializer : boolean;
@@ -87,14 +87,13 @@ type
     InitializerFunction : TZcOpFunctionUserDefined;
     destructor Destroy; override;
     procedure CheckHomograph(var sym: Integer); override;
+    procedure ParseEvalExpression;
 
     (* procedure ProcessPragmas; override; *)
     function  ErrorMessage(ErrorType,ErrorCode: Integer; const data: string): String; override;
     function  TokenToString(n: Integer): String; override;
     function  CreateScanner: TBaseScanner; override;
     function Execute: Boolean; override;
-
-    procedure ParseEvalExpression;
 
     constructor Create(AOwner: TComponent); override;
 
@@ -685,6 +684,28 @@ begin
   Result := Self.InitializerFunction;
 end;
 
+procedure TZc.ParseEvalExpression;
+var
+  OutOp : TZcOp;
+  Typ : TZcDataType;
+  Func : TZcOpFunctionUserDefined;
+begin
+  Reinit;
+  OutOp := nil;
+  _Expr(OutOp);
+  Typ := OutOp.GetDataType;
+
+  Func := TZcOpFunctionUserDefined.Create(nil);
+  Func.ReturnType := Typ;
+  Self.CurrentFunction := Func;
+
+  if Typ.Kind<>zctVoid then
+  begin
+    OutOp := MakeOp(zcReturn,[OutOp]);
+  end;
+  Func.Statements.Add(OutOp);
+  Self.ZFunctions.Add(Func);
+end;
 
 procedure TZc._ZcFuncRest(Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean);
 
@@ -692,7 +713,7 @@ var
   Func : TZcOpFunctionUserDefined;
 
 begin
-
+       
         if SymTab.Contains(Name) then
           ZError('Name already defined: ' + Name);
 
@@ -706,13 +727,13 @@ begin
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
-
+     
   if InSet(CurrentInputSymbol,0) then
   begin
     _FormalParams;
   end;
   Expect(rparSym);
-
+        
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
         if SymTab.Contains(Func.MangledName) then
           ZError('Name already defined: ' + Name);
@@ -721,11 +742,11 @@ begin
         else
           SymTab.AddPrevious(Func.MangledName,Func,2);
         ZFunctions.Add(Func);
-
+      
   Expect(lbraceSym);
   _ZcFuncBody;
   Expect(rbraceSym);
-
+          
           finally
             SymTab.PopScope;
           end;
@@ -911,14 +932,14 @@ begin
   Expect(lbraceSym);
          SymTab.PushScope;
          CurrentFunction.PushScope;
-         try
+         try 
   while InSet(CurrentInputSymbol,1) do
   begin
     _Statement(Op);
-                       if Assigned(Op) then OutOp.Children.Add(Op);
+                       if Assigned(Op) then OutOp.Children.Add(Op); 
   end;
   Expect(rbraceSym);
-
+        
          finally
            SymTab.PopScope;
            CurrentFunction.PopScope;
@@ -990,24 +1011,24 @@ begin
 end;
 
 procedure TZc._LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
-                                                  var Loc : TZcOpLocalVar; InitOp : TZcOp;
+                                                  var Loc : TZcOpLocalVar; InitOp : TZcOp; 
 begin
   Expect(identSym);
-
+        
         if SymTab.ScopeContains(LexString) then
           ZError('Name already defined: ' + LexString);
 
         Loc := TZcOpLocalVar.Create(nil);
         Loc.Id := LexString;
         Loc.Typ := Typ;
-
+     
   if (CurrentInputSymbol=assgnSym) then
   begin
     Get;
     _Init(InitOp);
-                           Loc.InitExpression:=InitOp;
+                           Loc.InitExpression:=InitOp; 
   end;
-
+       
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
@@ -1032,6 +1053,7 @@ begin
           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
         end;
 
+     
 end;
 
 procedure TZc._Init(var OutOp : TZcOp);
@@ -1040,9 +1062,9 @@ begin
 end;
 
 procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
- var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp;
+ var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp; 
 begin
-
+       
         if SymTab.ScopeContains(Name) then
           ZError('Name already defined: ' + Name);
 
@@ -1086,12 +1108,12 @@ begin
           else
             SymTab.AddPrevious(Name,V);
         end;
-
+     
   if (CurrentInputSymbol=assgnSym) then
   begin
     Get;
     _Init(InitOp);
-
+                          
        GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
        
   end;
@@ -1405,12 +1427,12 @@ begin
         try
          SymTab.PushScope;
          CurrentFunction.PushScope;
-         WhileCondOp := nil; WhileBodyOp := nil;
+         WhileCondOp := nil; WhileBodyOp := nil; 
        Expect(lparSym);
        _Expr(WhileCondOp);
        Expect(rparSym);
        _EmbeddedStatement(WhileBodyOp);
-
+     
          OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
        finally
          SymTab.PopScope;
@@ -1423,6 +1445,7 @@ begin
        Get;
         try
          SymTab.PushScope;
+         CurrentFunction.PushScope;
          WhileCondOp := nil; WhileBodyOp := nil; 
        _EmbeddedStatement(WhileBodyOp);
        Expect(whileSym);
@@ -1434,6 +1457,7 @@ begin
          OutOp := MakeOp(zcDoWhile,[WhileCondOp,WhileBodyOp]);
        finally
          SymTab.PopScope;
+         CurrentFunction.PopScope;
        end;
    
   end
@@ -1443,7 +1467,7 @@ begin
        try
          SymTab.PushScope;
          CurrentFunction.PushScope;
-         ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil;
+         ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; 
        Expect(lparSym);
        if InSet(CurrentInputSymbol,9) then
        begin
@@ -1461,13 +1485,13 @@ begin
        end;
        Expect(rparSym);
        _EmbeddedStatement(ForBodyOp);
-
+     
          OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
        finally
          SymTab.PopScope;
          CurrentFunction.PopScope;
        end;
-
+   
   end
   else if (CurrentInputSymbol=breakSym) then
   begin
@@ -1505,7 +1529,7 @@ begin
             OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
         end;
         Inc(CurrentFunction.ReturnCount);
-
+    
   end
   else SynError(5);
 end;
@@ -2241,28 +2265,6 @@ begin
   Result := Successful;
 end;
 
-procedure TZc.ParseEvalExpression;
-var
-  OutOp : TZcOp;
-  Typ : TZcDataType;
-  Func : TZcOpFunctionUserDefined;
-begin
-  Reinit;
-  OutOp := nil;
-  _Expr(OutOp);
-  Typ := OutOp.GetDataType;
-
-  Func := TZcOpFunctionUserDefined.Create(nil);
-  Func.ReturnType := Typ;
-  Self.CurrentFunction := Func;
-
-  if Typ.Kind<>zctVoid then
-  begin
-    OutOp := MakeOp(zcReturn,[OutOp]);
-  end;
-  Func.Statements.Add(OutOp);
-  Self.ZFunctions.Add(Func);
-end;
 
 function TZc.CreateScanner: TBaseScanner;
 begin

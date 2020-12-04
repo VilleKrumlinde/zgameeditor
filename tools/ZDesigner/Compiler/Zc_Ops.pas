@@ -1000,7 +1000,9 @@ begin
   end;
 
   ChildType := Children.First.GetDataType;
-  if (ChildType.Kind=Self.ToType.Kind) and (ChildType.TheArray=nil) and
+  if (ChildType.Kind=Self.ToType.Kind) and
+    (ChildType.Kind in [zctFloat,zctInt,zctByte]) and
+    (ChildType.TheArray=nil) and (Self.ToType.TheArray=nil) and
     (ChildType.IsPointer=ToType.IsPointer) then
     //After inlining, conversion might not be needed
     Result := Children.First;
@@ -2000,7 +2002,7 @@ end;
 
 function TZcOpArrayAccess.GetDataType: TZcDataType;
 begin
-  Result.Kind := zctVoid;
+  FillChar(Result,SizeOf(Result),0);
   if Ref<>nil then
   begin
     if (Ref is TZcOpVariableBase) then
