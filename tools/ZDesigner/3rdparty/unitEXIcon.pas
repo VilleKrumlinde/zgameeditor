@@ -1274,7 +1274,7 @@ begin
   for i := 0 to hdr.wCount - 1 do
   begin
 
-    stream.Seek (dirEntry [i].dwImageOffset, soFromBeginning);
+    stream.Seek (dirEntry [i].dwImageOffset, TSeekOrigin.soBeginning);
 
     fImages [i].FMemoryImage.CopyFrom (stream, dirEntry [i].dwBytesInRes);
 
@@ -1952,7 +1952,7 @@ begin
     begin
       hotspot := MAKELONG (dirEntry [i].wPlanes, dirEntry [i].wBitCount);
 
-      stream.Seek (dirEntry [i].dwImageOffset, soFromBeginning);
+      stream.Seek (dirEntry [i].dwImageOffset, TSeekOrigin.soBeginning);
 
       fImages [i].FMemoryImage.Write (hotspot, SizeOf (hotspot));
       fImages [i].FMemoryImage.CopyFrom (stream, dirEntry [i].dwBytesInRes);

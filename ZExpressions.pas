@@ -55,7 +55,9 @@ type
     procedure StackPopTo(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     procedure StackPopToPointer(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     function StackPopFloat : single;
+    {$if defined(cpux64) or defined(cpuaarch64)}
     function StackPopAndGetPtr(const Count : integer) : PStackElement; inline;
+    {$endif}
   public
     function StackGetPtrToItem(const Index : integer) : PStackElement; inline;
     procedure StackPush(const X); {$IFDEF RELEASE}inline;{$ENDIF}
@@ -591,11 +593,13 @@ begin
   gCurrentBP := 0;
 end;
 
+{$if defined(cpux64) or defined(cpuaarch64)}
 function TExecutionEnvironment.StackPopAndGetPtr(const Count: integer): PStackElement;
 begin
   Dec(ZcStackPtr,Count);
   Result := ZcStackPtr;
 end;
+{$endif}
 
 function TExecutionEnvironment.StackGetDepth : integer;
 begin
@@ -1513,7 +1517,7 @@ var
   P : TExecutionEnvironment.PStackElement;
 begin
   //Use pointer size to get all bits in 64-bit mode
-  P := TExecutionEnvironment.PStackElement(NativeUInt(Lib.GlobalArea)+Self.Offset);
+  P := TExecutionEnvironment.PStackElement(NativeUInt(Lib.GlobalArea)+Cardinal(Self.Offset));
   case Kind of
     glLoad: Env.StackPushPointer(P^);
     glStore: Env.StackPopToPointer(P^);

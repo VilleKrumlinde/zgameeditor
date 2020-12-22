@@ -75,7 +75,7 @@ end;
 
 implementation
 
-//uses AnsiStrings;
+uses AnsiStrings;
 
 type
   TPkgName = packed record
@@ -301,7 +301,7 @@ end;
 class function TRCDataFormResourceDetails.SupportsRCData(
   const AName: ansistring; Size: Integer; data: Pointer): Boolean;
 begin
-  Result := (Size > 0) and (strlcomp (PAnsiChar (data), 'TPF0', 4) = 0);
+  Result := (Size > 0) and ( AnsiStrings.strlcomp (PAnsiChar (data), 'TPF0', 4) = 0);
 end;
 
 initialization

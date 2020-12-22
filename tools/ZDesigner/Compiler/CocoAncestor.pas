@@ -493,7 +493,6 @@ end;
 function TCocoRScanner.CharUTF8At(var pos: Integer): CocoChar;
 var ch: Integer;
 begin
-  ch := 0;
   if (pos<0)or(pos>=SourceLen) then
         Result := #0
   else begin

@@ -6925,7 +6925,7 @@ procedure ReadImplementationProperties;
 implementation
 
 uses
-  SysUtils, Classes; 
+  SysUtils, Classes, System.Types;
 
 type                                   
   EOpenGLException = class(Exception);

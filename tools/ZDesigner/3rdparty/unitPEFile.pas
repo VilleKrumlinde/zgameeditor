@@ -865,7 +865,7 @@ begin
 
     if Assigned (ntHeaders) then
     begin
-      s.Seek (ckOffset, soFromBeginning);
+      s.Seek (ckOffset, TSeekOrigin.soBeginning);
       s.Write (newChecksum, sizeof (newChecksum))
     end
   finally
@@ -1224,7 +1224,7 @@ var
       else
         Inc (table.cNameEntries);
 
-    section.fRawData.Seek (tableOffset, soFromBeginning);
+    section.fRawData.Seek (tableOffset, TSeekOrigin.soBeginning);
     section.fRawData.Write (table, sizeof (table));
 
     tableOffset := tableOffset + sizeof (TResourceDirectoryTable) + DWORD (node.Count) * sizeof (TResourceDirectoryEntry);

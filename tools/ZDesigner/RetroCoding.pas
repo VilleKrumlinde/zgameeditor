@@ -1014,7 +1014,7 @@ procedure TCpu6809.Gen(C: TZComponent);
 var
   I : integer;
   W : word;
-  Switch : TExpSwitchTable;
+//  Switch : TExpSwitchTable;
 begin
   if (C is TExpAccessLocal) then
   begin
