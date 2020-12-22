@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2020 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -662,6 +662,9 @@ begin
   KeyMap[DownKey] := VK_DOWN;
   KeyMap[LeftKey] := VK_LEFT;
   KeyMap[RightKey] := VK_RIGHT;
+  {$ifndef minimal}
+  FillChar(Keys,SizeOf(Keys),0);
+  {$endif}
 end;
 
 
