@@ -1264,11 +1264,12 @@ begin
   CurSize2 := FontMinSize1;
   for J := 0 to High(FontSizes) do
   begin
-    Lists := Platform_GenerateFontDisplayLists(CurSize2,FirstCharBuiltIn,LastChar);
     Characters := TZComponentList.Create;
     FontSizes[J] := Characters;
-    {$ifndef Win32}
-    Continue; //Built-in only work on win32
+    {$ifdef MSWINDOWS}
+    Lists := Platform_GenerateFontDisplayLists(CurSize2,FirstCharBuiltIn,LastChar);
+    {$else}
+    Continue; //Built-in only work on Windows
     {$endif}
     for I := 0 to CharCount-1 do
     begin
