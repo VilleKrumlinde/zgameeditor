@@ -23,7 +23,7 @@ program ZzDC;
 
 {$if defined(CPUX64)}
   {$EXCESSPRECISION OFF} //Needed for fast single-precision math
-{$ifend}
+{$endif}
 
 {$if defined(Win32) or defined(Win64)}
   {$ifdef fpc}
@@ -36,7 +36,7 @@ program ZzDC;
     {$R 'OptionsDialog.res' 'OptionsDialog.rc'}
     {$SETPEFLAGS 1} // IMAGE_FILE_RELOCS_STRIPPED
   {$endif}
-{$ifend}
+{$endif}
 
 //Zzap Dynamic Content engine
 
