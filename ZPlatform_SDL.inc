@@ -339,7 +339,7 @@ var
   I : integer;
   Val : integer;
 begin
-  for I := 0 to SampleCount-1 do
+  for I := 0 to FrameCount-1 do
   begin //Convert from float to smallint. Todo: SDL 2.0 supports floats directly.
 
     Val := Round(Source^.Left * High(Smallint));
