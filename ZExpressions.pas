@@ -2176,7 +2176,7 @@ begin
 end;
 
 {$ifndef MSWINDOWS}
-function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc.dylib' name 'mprotect';
+function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc' name 'mprotect';
 {$endif}
 
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
@@ -2557,10 +2557,10 @@ procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
 end;
 
-function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc.dylib' name 'mprotect';
+function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc' name 'mprotect';
 
-procedure pthread_jit_write_protect_np(enabled : integer); cdecl; external 'pthread.dylib' name 'pthread_jit_write_protect_np';
-procedure sys_icache_invalidate(start : pointer; len : nativeuint); cdecl; external 'libc.dylib' name 'sys_icache_invalidate';
+procedure pthread_jit_write_protect_np(enabled : integer); cdecl; external 'pthread' name 'pthread_jit_write_protect_np';
+procedure sys_icache_invalidate(start : pointer; len : nativeuint); cdecl; external 'libc' name 'sys_icache_invalidate';
 
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
 {

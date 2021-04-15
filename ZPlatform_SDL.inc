@@ -11,8 +11,9 @@ implementation
 
 uses SDL, ZLog, AudioPlayer, ZApplication, SyncObjs
   {$ifdef MSWINDOWS},Windows{$endif}
-  {$ifdef linux},libc{$endif}
-  {$ifdef darwin} {$ifdef fpc},dl{$else},Posix.Dlfcn{$endif}  {$endif}
+  {$ifdef fpc}
+    {$if defined(darwin) or defined(linux)},dl{$endif}
+  {$endif}
   ;
 
 var
@@ -479,11 +480,13 @@ begin
       ZStrCat(Str,xcom);
   end;
 
+//TODO: import "System" call from libc
+
   //Get exitvalue by rightshift 8
-  I := libc.system(Str) shr 8;
+//  I := libc.system(Str) shr 8;
   //First button is 101
-  if I>100 then
-    byte(TZApplication(App).ScreenMode) := I-101;
+//  if I>100 then
+//    byte(TZApplication(App).ScreenMode) := I-101;
 
   Result := True;
 end;
