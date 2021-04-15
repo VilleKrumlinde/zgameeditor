@@ -10,6 +10,7 @@ implementation
 {$i-}  //No io-test on files, code tests ioresult
 
 uses SDL, ZLog, AudioPlayer, ZApplication, SyncObjs
+  {$ifdef MSWINDOWS},Windows{$endif}
   {$ifdef linux},libc{$endif}
   {$ifdef darwin} {$ifdef fpc},dl{$else},Posix.Dlfcn{$endif}  {$endif}
   ;
@@ -391,10 +392,7 @@ var
 begin
   FillChar(Desired,SizeOf(Desired),0);
   desired.freq := AudioPlayer.AudioRate;
-  if AudioPlayer.OutputBits=16 then
-    desired.format:=AUDIO_S16LSB
-  else
-    ZHalt('only 16 bit audio supported');
+  desired.format:=AUDIO_S16LSB;
   desired.channels:=AudioPlayer.StereoChannels;
   desired.samples:=AudioPlayer.SoundBufferFramesSize;
   desired.callback:=@SdlAudioCallback;
@@ -531,7 +529,7 @@ begin
   {$if Defined(Linux) or Defined(Darwin)}
   Result := NativeUInt(dlopen( Name, RTLD_NOW));
   {$else}
-  Result := 0;
+  Result := LoadLibraryA(Name);
   {$endif}
 end;
 
@@ -540,7 +538,7 @@ begin
   {$if Defined(Linux) or Defined(Darwin)}
   Result := dlsym({$ifdef fpc}Pointer(Module){$else}Module{$endif}, Name );
   {$else}
-  Result := 0;
+  Result := GetProcAddress(Module,Name);
   {$endif}
 end;
 
@@ -589,22 +587,22 @@ end;
 
 function Platform_CreateEvent : pointer;
 begin
-  Result := TEvent.Create(nil,False,False,'');
+  Result := SDL_CreateSemaphore(0);
 end;
 
 procedure Platform_WaitEvent(E : pointer);
 begin
-  TEvent(E).WaitFor(INFINITE);
+  SDL_SemWait(PSDL_sem(E));
 end;
 
 procedure Platform_SignalEvent(E : pointer);
 begin
-  TEvent(E).SetEvent;
+  SDL_SemPost(PSDL_sem(E));
 end;
 
 procedure Platform_FreeEvent(E : pointer);
 begin
-  TEvent(E).Free;
+  SDL_DestroySemaphore(PSDL_sem(E));
 end;
 
 function Platform_GetCpuCount : integer;
