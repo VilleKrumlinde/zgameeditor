@@ -9,7 +9,7 @@ implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses SDL, ZLog, AudioPlayer, ZApplication, SyncObjs
+uses sdl2, ZLog, AudioPlayer, ZApplication, SyncObjs
   {$ifdef MSWINDOWS},Windows{$endif}
   {$ifdef fpc}
     {$if defined(darwin) or defined(linux)},dl{$endif}
@@ -20,7 +20,7 @@ var
   //Current mouse pos, written to in eventhandling
   SdlMousePos : TZPointi;
   Keys : array[0..511] of boolean;
-  KeyMap : array[AnsiChar] of word;
+  KeyMap : array[AnsiChar] of integer;
   gZApp: TZApplication;
 
 procedure Platform_ShowMouse(Visible : boolean);
@@ -42,11 +42,12 @@ begin
   nsappload();
 end;
 {$endif}
+var
+  SdlScreen : PSDL_Window;
 
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 var
-  Flags : SDL.UINT32;
-  Mode : PSDL_Surface;
+  Flags : SDL2.UINT32;
 begin
   {$ifdef macos}
   OsxInit;
@@ -56,9 +57,9 @@ begin
   gZApp := TZApplication(ZApp);
 
   if UseFullScreen then
-    flags := SDL_OPENGL or SDL_FULLSCREEN
+    flags := SDL_WINDOW_FULLSCREEN or SDL_WINDOW_OPENGL
   else
-    flags := SDL_OPENGL or SDL_RESIZABLE;
+    flags := SDL_WINDOW_OPENGL or SDL_WINDOW_RESIZABLE;
 
   if Width=-1 then
   begin
@@ -67,7 +68,7 @@ begin
     Height := 600;
   end;
 
-  SDL_WM_SetCaption(Title, nil);
+//  SDL_WM_SetCaption(Title, nil);
 
   SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
   SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
@@ -75,20 +76,27 @@ begin
   SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
   SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
-  Mode := SDL_SetVideoMode(Width, Height, 0, flags);
-  if (Mode = nil) then
+
+  SdlScreen := SDL_CreateWindow(Title,
+                          SDL_WINDOWPOS_UNDEFINED,
+                          SDL_WINDOWPOS_UNDEFINED,
+                          Width, Height,
+                          Flags);
+
+  if (SdlScreen = nil) then
     ZHalt(SDL_GetError);
 
+  SDL_GL_CreateContext(SdlScreen);
+
   //Returnera actual res
-  Width := Mode.W;
-  Height := Mode.H;
+  SDL_GetWindowSize(SdlScreen,@Width,@Height);
 
   Result := 0;
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
 begin
-  SDL_WM_SetCaption(Title, nil);
+  SDL_SetWindowTitle(SdlScreen,Title);
 end;
 
 procedure Platform_ShutdownScreen;
@@ -98,7 +106,7 @@ end;
 
 procedure Platform_SwapBuffers;
 begin
-  SDL_GL_SwapBuffers;
+  SDL_GL_SwapWindow(SdlScreen);
 end;
 
 
@@ -195,7 +203,7 @@ end;
 
 procedure Platform_SetMousePos(const X,Y : integer);
 begin
-  SDL_WarpMouse(X,Y);
+  SDL_WarpMouseInWindow(SdlScreen,X,Y);
 end;
 
 function Platform_GetExeFileName : PAnsiChar;
@@ -336,34 +344,9 @@ const
 var
   MixBuffer : array[0..MixBufferSamplesSize-1] of TSoundMixUnit;
 
-procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PSmallInt; FrameCount : integer);
-var
-  I : integer;
-  Val : integer;
+procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PFloat; FrameCount : integer);
 begin
-  for I := 0 to FrameCount-1 do
-  begin //Convert from float to smallint. Todo: SDL 2.0 supports floats directly.
-
-    Val := Round(Source^.Left * High(Smallint));
-    if Val>High(Smallint) then
-      Dest^ := High(Smallint)
-    else if Val<Low(SmallInt) then
-      Dest^ := Low(SmallInt)
-    else
-      Dest^ := Val;
-    Inc(Dest);
-
-    Val := Round(Source^.Right * High(Smallint));
-    if Val>High(Smallint) then
-      Dest^ := High(Smallint)
-    else if Val<Low(SmallInt) then
-      Dest^ := Low(SmallInt)
-    else
-      Dest^ := Val;
-    Inc(Dest);
-
-    Inc(Source);
-  end;
+  Move(Source^,Dest^,FrameCount * SizeOf(TSoundMixUnit));
 end;
 
 procedure SdlAudioCallback(userdata: Pointer; stream: PUInt8; len: Integer ); cdecl;
@@ -372,8 +355,7 @@ var
 begin
   BytesToWrite := Len;
 
-//  SamplesToWrite := BytesToWrite div (SizeOf(TSoundOutputUnit) * StereoChannels);
-  FramesToWrite := BytesToWrite div (SizeOf(SmallInt) * StereoChannels); //todo change to above line when float output
+  FramesToWrite := BytesToWrite  div SizeOf(TSoundOutputUnit);
 
   FillChar(MixBuffer,FramesToWrite * SizeOf(TSoundMixUnit),0);
 
@@ -393,7 +375,7 @@ var
 begin
   FillChar(Desired,SizeOf(Desired),0);
   desired.freq := AudioPlayer.AudioRate;
-  desired.format:=AUDIO_S16LSB;
+  desired.format:=AUDIO_F32LSB;
   desired.channels:=AudioPlayer.StereoChannels;
   desired.samples:=AudioPlayer.SoundBufferFramesSize;
   desired.callback:=@SdlAudioCallback;
@@ -404,7 +386,6 @@ begin
 
   if (Obtained.Freq<>Desired.Freq) or
     (Obtained.Format<>Desired.Format) or
-    (Obtained.Samples<>Desired.Samples) or
     (Obtained.Channels<>Desired.Channels) then
     ZHalt('Could not initialize audio. Start with -s for no sound.');
 
@@ -429,12 +410,12 @@ end;
 
 procedure Platform_EnterMutex(P : pointer);
 begin
-  SDL_mutexP(PSDL_mutex(P));
+  SDL_LockMutex(PSDL_mutex(P));
 end;
 
 procedure Platform_LeaveMutex(P : pointer);
 begin
-  SDL_mutexV(PSDL_mutex(P));
+  SDL_UnlockMutex(PSDL_mutex(P));
 end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;

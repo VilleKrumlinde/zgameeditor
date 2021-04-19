@@ -571,8 +571,9 @@ implementation
 uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
-{$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$ifend}
-{$if (not defined(minimal)) or (defined(cpux64))}, WinApi.Windows{$ifend};
+{$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$endif}
+{$if defined(cpux64) and defined(mswindows)}, WinApi.Windows{$endif}
+  ;
 
 {$POINTERMATH ON}
 
@@ -2559,8 +2560,10 @@ end;
 
 function mprotect(__addr:pointer;__len:cardinal;__prot:longint):longint; cdecl; external 'libc' name 'mprotect';
 
+{$IFDEF MACOS}
 procedure pthread_jit_write_protect_np(enabled : integer); cdecl; external 'pthread' name 'pthread_jit_write_protect_np';
 procedure sys_icache_invalidate(start : pointer; len : nativeuint); cdecl; external 'libc' name 'sys_icache_invalidate';
+{$ENDIF}
 
 function GenerateTrampoline(const ArgCount : integer; ArgTypes : PAnsiChar; Proc : pointer) : pointer;
 {
@@ -2729,8 +2732,8 @@ begin
 
   {$IFDEF MACOS}
   pthread_jit_write_protect_np(1);
-  {$ENDIF}
   sys_icache_invalidate(Result,CodeSize);
+  {$ENDIF}
   mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
 end;
 
