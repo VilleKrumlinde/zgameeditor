@@ -218,7 +218,8 @@ begin
   if I=0 then
   begin
     //Upx-compressed binaries on Linux must read '   '-environ to get the name of executable
-    Result := SDL_GetEnv('   ');
+//todo: SDL_GetEnv missing in pascal headers?
+    Result := ''; //SDL_GetEnv('   ');
   end
   else
   begin
@@ -233,7 +234,7 @@ var
 begin
   GetModuleFileName(0, AppName, Length(AppName));
   Result := PAnsiChar( AnsiString(PChar(@AppName)) );
-{$endif}
+  {$endif}
 end;
 
 procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
@@ -339,10 +340,8 @@ end;
 
 
 //Audio
-const
-  MixBufferSamplesSize = SoundBufferFramesSize * 2; //todo skip *2 when float output
 var
-  MixBuffer : array[0..MixBufferSamplesSize-1] of TSoundMixUnit;
+  MixBuffer : array[0..SoundBufferFramesSize-1] of TSoundMixUnit;
 
 procedure ClipAndCopy(Source : PSoundMixUnit; Dest : PFloat; FrameCount : integer);
 begin
