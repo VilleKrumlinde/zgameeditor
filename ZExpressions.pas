@@ -2057,8 +2057,10 @@ begin
   inherited;
   if Self.ModuleHandle<>0 then
   begin
+    {$ifdef MSWINDOWS}
     WinApi.Windows.FreeLibrary(Self.ModuleHandle);
     Self.ModuleHandle := 0;
+    {$endif}
   end;
 end;
 
