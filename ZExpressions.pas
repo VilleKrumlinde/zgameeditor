@@ -572,7 +572,7 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$endif}
-{$if defined(cpux64) and defined(mswindows)}, WinApi.Windows{$endif}
+{$if defined(cpux64) or (defined(mswindows) and not defined(minimal))}, WinApi.Windows{$endif}
   ;
 
 {$POINTERMATH ON}
