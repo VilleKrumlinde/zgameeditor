@@ -1484,10 +1484,8 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     I : integer;
     F : TExpUserFuncCall;
     FE : TExpExternalFuncCall;
-    {$if defined(CPUX64) or defined(cpuaarch64)}
     S : AnsiString;
     Arg : TZcOpArgumentVar;
-    {$endif}
   begin
     if NeedReturnValue and (UserFunc.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1509,7 +1507,6 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       FE.SetString('FuncName',AnsiString(UserFunc.Id));
       FE.ArgCount := UserFunc.Arguments.Count;
       FE.ReturnType := UserFunc.ReturnType;
-      {$if defined(CPUX64) or defined(cpuaarch64)}
       S := '';
       for Arg in UserFunc.Arguments do
       begin
@@ -1520,7 +1517,6 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
           S := S + AnsiChar( Ord(Arg.Typ.Kind)+1 );
       end;
       FE.SetString('ArgTypes',S);
-      {$endif}
     end
     else
     begin

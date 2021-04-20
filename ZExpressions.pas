@@ -421,8 +421,8 @@ type
     FuncName : TPropString;
     ArgCount : integer;
     ReturnType : TZcDataType;
-    {$if defined(cpux64) or defined(cpuaarch64)}
     ArgTypes : TPropString;
+    {$if defined(cpux64) or defined(cpuaarch64)}
     destructor Destroy; override;
     {$endif}
     {$ifndef minimal}
@@ -2079,9 +2079,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}(@FuncName), zptString);
   List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}(@ArgCount), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ReturnType',{$ENDIF}(@ReturnType), zptByte);
-  {$if defined(CPUX64) or defined(cpuaarch64)}
   List.AddProperty({$IFNDEF MINIMAL}'ArgTypes',{$ENDIF}(@ArgTypes), zptString);
-  {$endif}
 end;
 
 {$ifndef minimal}
