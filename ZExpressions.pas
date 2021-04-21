@@ -2663,7 +2663,7 @@ begin
   begin
     UseStack := False;
 
-    case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
+    case TZcDataTypeKind(Ord(ArgTypes[I])-65) of
       zctInt :
         begin
           if IntI<IntRegCount then
@@ -2701,7 +2701,7 @@ begin
     if UseStack then
     begin
       //push on stack
-      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
+      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-65)) of
         4 :
           begin
             Assert(StackI<High(Int32Stack));
