@@ -1510,11 +1510,11 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       S := '';
       for Arg in UserFunc.Arguments do
       begin
-        //Use +1 to avoid #0 character in string
+        //Use +65 to avoid #0 character in string
         if Arg.Typ.IsPointer then
-          S := S + AnsiChar( Ord(zctXptr)+1 )
+          S := S + AnsiChar( Ord(zctXptr)+65 )
         else
-          S := S + AnsiChar( Ord(Arg.Typ.Kind)+1 );
+          S := S + AnsiChar( Ord(Arg.Typ.Kind)+65 );
       end;
       FE.SetString('ArgTypes',S);
     end

@@ -572,7 +572,7 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$endif}
-{$if defined(cpux64) or (defined(mswindows) and not defined(minimal))}, WinApi.Windows{$endif}
+{$if defined(cpux64) and defined(mswindows)}, WinApi.Windows{$endif}
   ;
 
 {$POINTERMATH ON}
@@ -2307,7 +2307,7 @@ begin
     IntI := I;
     {$endif}
 
-    case TZcDataTypeKind(Ord(ArgTypes[I])-1) of
+    case TZcDataTypeKind(Ord(ArgTypes[I])-65) of
       zctInt :
         begin
           if IntI<IntRegCount then
@@ -2354,7 +2354,7 @@ begin
     if UseStack then
     begin
       //push on stack
-      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-1)) of
+      case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-65)) of
         4 :
           begin
             W(Int32Stack1);
@@ -2383,7 +2383,7 @@ begin
   W([$49,$ff,$e3]); //jmp r11
 
   {$ifdef mswindows}
-  VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+  WinApi.Windows.VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
   {$else}
   mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
   {$endif}
