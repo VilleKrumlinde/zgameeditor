@@ -38,7 +38,7 @@ uses
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
-    bbNormalLinux,bbNormalOsx86,bbNormalAndroid);
+    bbNormalLinux,bbNormalMacos,bbNormalAndroid);
 
   TPropEditKey = record
     Comp : TZComponent;
@@ -2838,7 +2838,7 @@ begin
         PlayerName := 'player_linux.bin';
         UsePiggyback := True;
       end;
-    bbNormalOsx86 :
+    bbNormalMacos :
       begin
         Ext := '';
         PlayerName := 'player_osx86.bin';
@@ -2864,6 +2864,12 @@ begin
 
   C := ZApp.SymTab.Lookup('android') as TDefineConstant;
   C.Value := IfThen(Kind=bbNormalAndroid, 1, 0);
+
+  C := ZApp.SymTab.Lookup('macos') as TDefineConstant;
+  C.Value := IfThen(Kind=bbNormalMacos, 1, 0);
+
+  C := ZApp.SymTab.Lookup('linux') as TDefineConstant;
+  C.Value := IfThen(Kind=bbNormalLinux, 1, 0);
 
   DebugC := ZApp.SymTab.Lookup('debug') as TDefineConstant;
   DebugC.Value := 0;
@@ -2916,7 +2922,7 @@ begin
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
-    bbNormalOsx86:
+    bbNormalMacos:
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
@@ -2939,7 +2945,7 @@ end;
 
 procedure TEditorForm.GenerateReleaseOsx86ActionExecute(Sender: TObject);
 begin
-  BuildRelease(bbNormalOsx86);
+  BuildRelease(bbNormalMacos);
 end;
 
 procedure TEditorForm.GenerateReleaseSSActionExecute(Sender: TObject);

@@ -1824,6 +1824,11 @@ begin
   BuiltInConstants.Add(Con);
 
   Con := TDefineConstant.Create(nil);
+  Con.SetString('Name','LINUX');
+  Con.Value := {$IFDEF LINUX}1{$ELSE}0{$ENDIF};
+  BuiltInConstants.Add(Con);
+
+  Con := TDefineConstant.Create(nil);
   Con.SetString('Name','DEBUG');
   Con.Value := 1; //Default is debug compiles, set to 0 in editor buildbinary
   BuiltInConstants.Add(Con);

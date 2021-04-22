@@ -1160,6 +1160,9 @@ begin
         {$ifdef android}
         AndroidLog(PAnsiChar(P1));
         {$endif}
+        {$ifdef linux}
+        writeln(PAnsiChar(P1));
+        {$endif}
       end;
     fcTouchGetCount :
       begin
