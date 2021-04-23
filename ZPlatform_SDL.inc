@@ -125,7 +125,7 @@ begin
         SDL_QUITEV : Finished := True;
         SDL_KEYDOWN :
           begin
-            Keys[ E.Key.keysym.sym mod 512 ] := True;
+            Keys[ E.Key.keysym.sym and 511 ] := True;
           end;
         SDL_KEYUP :
           begin
@@ -133,7 +133,7 @@ begin
             if (E.Key.keysym.sym=SDLK_ESCAPE) and gZApp.EscapeToQuit then
               Finished := True;
             {$endif}
-            Keys[ E.Key.keysym.sym mod 512 ] := False;
+            Keys[ E.Key.keysym.sym and 511 ] := False;
           end;
         SDL_MOUSEMOTION :
           begin
@@ -327,10 +327,10 @@ begin
   for I := ord('A') to ord('Z') do
     KeyMap[AnsiChar(I)] := I + (ord('a')-ord('A'));;
 
-  KeyMap[UpKey] := SDLK_UP;
-  KeyMap[DownKey] := SDLK_DOWN;
-  KeyMap[LeftKey] := SDLK_LEFT;
-  KeyMap[RightKey] := SDLK_RIGHT;
+  KeyMap[UpKey] := SDL_SCANCODE_UP;
+  KeyMap[DownKey] := SDL_SCANCODE_DOWN;
+  KeyMap[LeftKey] := SDL_SCANCODE_LEFT;
+  KeyMap[RightKey] := SDL_SCANCODE_RIGHT;
 end;
 
 procedure Platform_InitGlobals;
