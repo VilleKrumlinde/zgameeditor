@@ -1079,7 +1079,9 @@ begin
           Glob.Offset := Glob.Lib.GlobalAreaSize;
           Glob.Id := Name;
           Glob.Typ := Typ;
-          Inc(Glob.Lib.GlobalAreaSize,SizeOf(Pointer));
+          //Need to always increase 8 here instead of sizeof(pointer) to
+          //allow generated binary to be compatible with both 32 and 64 bit runtime.
+          Inc(Glob.Lib.GlobalAreaSize,8);
           if IsPrivate then
             SymTab.Add(Name,Glob)
           else
