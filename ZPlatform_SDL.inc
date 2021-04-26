@@ -48,6 +48,7 @@ var
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
 var
   Flags : SDL2.UINT32;
+  display : TSDL_DisplayMode;
 begin
   {$ifdef macos}
   OsxInit;
@@ -63,9 +64,9 @@ begin
 
   if Width=-1 then
   begin
-    //Todo: support "current desktop resolution" on sdl
-    Width := 800;
-    Height := 600;
+    SDL_GetDesktopDisplayMode(0,@display);
+    Width := display.w;
+    Height := display.h;
   end;
 
 //  SDL_WM_SetCaption(Title, nil);
