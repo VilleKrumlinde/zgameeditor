@@ -165,7 +165,7 @@ begin
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
         {$ifdef cpux64}
-        Keys[ PByte(@wParam)[4] ] := True;
+        Keys[ PByte(@wParam)^ ] := True;
         {$else}
         Keys[Lo(wParam)] := True;
         {$endif}
@@ -181,7 +181,7 @@ begin
         end;
         {$endif}
         {$ifdef cpux64}
-        Keys[ PByte(@wParam)[4] ] := False;
+        Keys[ PByte(@wParam)^ ] := False;
         {$else}
         Keys[Lo(wParam)] := False;
         {$endif}

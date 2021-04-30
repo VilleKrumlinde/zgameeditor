@@ -150,17 +150,26 @@ begin
   end;
 end;
 
-function MakeAssignOp(const Size : integer) : TExpBase;
+function MakeAssignOp(const Typ : TZcDataTypeKind) : TExpBase; overload;
 begin
-  case Size of
-    4 : Result := TExpAssign4.Create(nil);
-    1 : Result := TExpAssign1.Create(nil);
-    100 {$if defined(CPUX64) or defined(cpuaarch64)},SizeOf(Pointer){$endif} : Result := TExpAssignPointer.Create(nil);
+  case Typ of
+    zctByte : Result := TExpAssign1.Create(nil);
+    zctInt,zctFloat : Result := TExpAssign4.Create(nil);
+    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctReference : Result := TExpAssignPointer.Create(nil);
   else
     raise ECodeGenError.Create('Wrong datatype for assign');
   end;
 end;
 
+function MakeAssignOp(const Typ : TZPropertyType) : TExpBase; overload;
+begin
+  case Typ of
+    zptByte, zptBoolean: Result := TExpAssign1.Create(nil);
+    zptString, zptComponentRef, zptPointer: Result := TExpAssignPointer.Create(nil);
+  else
+    Result := TExpAssign4.Create(nil);
+  end;
+end;
 
 procedure TZCodeGen.MakeLiteralOp(const Value : double; Typ : TZcDataType);
 begin
@@ -631,8 +640,6 @@ procedure TZCodeGen.GenAssign(Op : TZcOp; LeaveValue : TAssignLeaveValueStyle);
 //  alvPre: Leave the value prior to the assignment (i++)
 //  alvPost: Leave the value after the assignment (++i)
 var
-  AssignSize : integer;
-
   A : TObject;
   LeftOp,RightOp : TZcOp;
   L : TExpAccessLocal;
@@ -653,7 +660,7 @@ begin
     //Local "ref" argument
     GenAddress(LeftOp);
     GenValue(RightOp);
-    Target.AddComponent( MakeAssignOp( GetZcTypeSize(LeftOp.GetDataType.Kind) ) );
+    Target.AddComponent( MakeAssignOp( LeftOp.GetDataType.Kind ) );
     if LeaveValue=alvPost then
       GenValue(LeftOp);
   end else if (LeftOp.Kind=zcIdentifier) and Assigned(LeftOp.Ref) and
@@ -705,12 +712,6 @@ begin
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
     if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
       raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-    case Prop.PropertyType of
-      zptString, zptComponentRef, zptPointer: AssignSize := 100;
-      zptByte, zptBoolean: AssignSize := 1;
-    else
-      AssignSize := 4;
-    end;
 
     if Assigned(Prop.NotifyWhenChanged) then
     begin //This property should notify when assigned, generate notify call
@@ -723,7 +724,7 @@ begin
     begin
       GenAddress(LeftOp);
       GenValue(RightOp);
-      Target.AddComponent( MakeAssignOp(AssignSize) );
+      Target.AddComponent( MakeAssignOp(Prop.PropertyType) );
     end;
 
    if LeaveValue=alvPost then
@@ -741,7 +742,7 @@ begin
     end
     else
     begin
-      Target.AddComponent( MakeAssignOp((A as TDefineArray).GetElementSize) );
+      Target.AddComponent( MakeAssignOp((A as TDefineArray)._Type ) );
       if LeaveValue=alvPost then
         GenValue(LeftOp);
     end;
