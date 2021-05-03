@@ -24,9 +24,11 @@ var
   gZApp: TZApplication;
 
 procedure Platform_ShowMouse(Visible : boolean);
-const vals : array[boolean] of integer = (0,1);
 begin
-  SDL_ShowCursor(vals[Visible]);
+  if Visible then
+    SDL_ShowCursor(1)
+  else
+    SDL_ShowCursor(0);
 end;
 
 {$ifdef macos}
@@ -561,12 +563,13 @@ end;
 
 function Platform_CreateThread(ZThread : TZThread) : pointer;
 begin
+  //TODO: thread support
   Result := nil;
 end;
 
 procedure Platform_FreeThread(T : pointer);
 begin
-
+  //TODO: thread support
 end;
 
 function Platform_CreateEvent : pointer;
@@ -591,6 +594,7 @@ end;
 
 function Platform_GetCpuCount : integer;
 begin
+  //TODO: thread support
   Result := 1;
 end;
 
