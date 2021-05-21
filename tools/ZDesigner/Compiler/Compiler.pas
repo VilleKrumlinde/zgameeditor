@@ -512,7 +512,7 @@ begin
     zcBinaryShiftR : DoGenBinary(vbkBinaryShiftRight);
     zcConstLiteral : DoLiteral;
     zcIdentifier : DoGenIdentifier;
-    zcFuncCall : GenFuncCall(Op,True);
+    zcFuncCall,zcMethodCall : GenFuncCall(Op,True);
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
     zcAnd, zcOr : DoGenBoolean;
@@ -948,6 +948,14 @@ var
       Ret.Lib := Component as TZLibrary;
   end;
 
+  procedure DoGenClass(Cls : TZcOpClass);
+  var
+    Func : TZcOpFunctionUserDefined;
+  begin
+    for Func in Cls.Methods do
+      DoGenFunction(Func);
+  end;
+
   procedure DoGenSwitch(Op : TZcOpSwitch);
   var
     I,J,CaseBlockCount : integer;
@@ -1120,7 +1128,7 @@ begin
       for I := 0 to Op.Children.Count-1 do
         Gen(Op.Child(I));
     zcReturn : DoGenReturn;
-    zcFuncCall : GenFuncCall(Op,False);
+    zcFuncCall,zcMethodCall : GenFuncCall(Op,False);
     zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
     zcWhile : DoWhile(True);
@@ -1140,6 +1148,7 @@ begin
     zcInlineBlock : DoGenInlineBlock(Op);
     zcInlineReturn : DoGenInlineReturn;
     zcInitLocalArray : DoGenInitLocalArray(Op);
+    zcClass : DoGenClass(Op as TZcOpClass);
   else
     //GenValue(Op); //Value expressions (return values) can appear because of inlining
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
@@ -1535,10 +1544,27 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 var
   MangledName : string;
   O : TObject;
+  Func : TZcOpFunctionUserDefined;
+  Cls : TZcOpClass;
 begin
-  Assert(Op.Kind=zcFuncCall);
-  MangledName := MangleFunc(Op.Id,Op.Children.Count);
-  O := SymTab.Lookup(MangledName);
+  Assert(Op.Kind in [zcFuncCall,zcMethodCall]);
+
+  O := nil;
+  if Op.Kind=zcFuncCall then
+  begin
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := SymTab.Lookup(MangledName);
+  end else
+  begin
+    Cls := Op.Ref as TZcOpClass;
+    for Func in Cls.Methods do
+      if Func.Id=Op.Id then
+      begin
+        O := Func;
+        Break;
+      end;
+  end;
+
   if Assigned(O) and (O is TZcOpFunctionUserDefined) then
   begin
     DoGenUserFunc(O as TZcOpFunctionUserDefined);
@@ -1646,6 +1672,7 @@ begin
     Compiler.ZApp := ZApp;
 
     Compiler.SetSource(S);
+    Compiler.LookAroundGap(1,10);
 
     try
       Compiler.Execute;

@@ -16,7 +16,8 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray);
+          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray,
+          zcClass,zcMethodCall);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -172,6 +173,16 @@ type
     function GetDataType : TZcDataType; override;
   end;
 
+  TZcOpClass = class(TZcOp)
+  public
+    Typ : TZcDataType;
+    Methods : TObjectList<TZcOpFunctionUserDefined>;
+    constructor Create(Owner : Contnrs.TObjectList); override;
+    destructor Destroy; override;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
+  end;
+
   TPrototypes = class
   private
     constructor Create;
@@ -190,7 +201,7 @@ function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
-function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined; Cls : TZcOpClass) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
@@ -251,6 +262,8 @@ begin
     else
       Result := ComponentManager.GetInfoFromId(Typ.ReferenceClassId).ZClassName;
   end
+  else if Typ.Kind=zctClass then
+    Result := TZcOp(Typ.TheClass).Id
   else
     Result := ZcTypeNames[Typ.Kind];
 end;
@@ -574,7 +587,7 @@ begin
     zcBinaryShiftR : Result := Child(0).ToString + ' >> ' + Child(1).ToString;
     zcBinaryNot : Result :=  '~' + Child(0).ToString;
     zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
-    zcFuncCall :
+    zcFuncCall,zcMethodCall :
       begin
         Result := Id + '(';
         for I := 0 to Children.Count-1 do
@@ -1547,7 +1560,8 @@ begin
 end;
 {$ENDIF}
 
-function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String;
+  CurrentFunction : TZcOpFunctionUserDefined; Cls : TZcOpClass) : boolean;
 
   {$IFDEF INLINING}
   function CanInline(Func : TZcOpFunctionUserDefined) : boolean;
@@ -1574,14 +1588,31 @@ var
   I : integer;
   MangledName : string;
   O : TObject;
+  IsMethod : boolean;
 begin
   Result := False;
-  MangledName := MangleFunc(Op.Id,Op.Children.Count);
-  O := CompilerContext.SymTab.Lookup(MangledName);
+
+  IsMethod := Assigned(Cls);
+  if IsMethod then
+  begin
+    O := nil;
+    for FOp in Cls.Methods do
+      if FOp.Id=Op.Id then
+      begin
+        O := FOp;
+        Break;
+      end;
+  end else
+  begin
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := CompilerContext.SymTab.Lookup(MangledName);
+  end;
+
   if Assigned(O) and (O is TZcOpFunctionBase) then
   begin  //Function
     FOp := O as TZcOpFunctionBase;
-    Op.Ref := FOp;
+    if not IsMethod then
+      Op.Ref := FOp;
     if FOp=CurrentFunction then
       CurrentFunction.IsRecursive := True;
     if FOp.Arguments.Count<>Op.Children.Count then
@@ -2137,6 +2168,32 @@ begin
   Vec4Array.Dimensions := dadOne;
   Vec4Array.SizeDim1 := 4;
   Vec4Array._Type := zctFloat;
+end;
+
+{ TZcOpClass }
+
+constructor TZcOpClass.Create(Owner: Contnrs.TObjectList);
+begin
+  inherited;
+  Self.Kind := zcClass;
+  Typ.Kind := zctClass;
+  Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
+end;
+
+destructor TZcOpClass.Destroy;
+begin
+  Methods.Free;
+  inherited;
+end;
+
+function TZcOpClass.GetDataType: TZcDataType;
+begin
+  Result := Typ;
+end;
+
+function TZcOpClass.ToString: string;
+begin
+  Result := 'class ' + Id; //todo
 end;
 
 initialization

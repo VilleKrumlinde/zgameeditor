@@ -1387,21 +1387,50 @@ end;
 function BitmapFromGdi(const FileName : string) : Vcl.Graphics.TBitmap;
 var
   Pic: TGPBitmap;
-  I,J : integer;
+  I,W,H,PixelSize : integer;
   P : PInteger;
+  BitmapData : TBitmapData;
+  Buf : array of byte;
+  SrcP : pointer;
+  R : TGPRect;
 begin
   Pic := TGPBitmap.Create(FileName);
+
+  if (Pic.GetPixelFormat and (PixelFormatAlpha or PixelFormatPAlpha))<>0 then
+    PixelSize := 4
+  else
+    PixelSize := 3;
+
   Result := Vcl.Graphics.TBitmap.Create;
-  Result.PixelFormat := pf32bit;
+  if PixelSize=4 then
+    Result.PixelFormat := pf32bit
+  else
+    Result.PixelFormat := pf24bit;
   Result.SetSize(Pic.GetWidth,Pic.GetHeight);
+
+  W := integer(Pic.GetWidth);
+  H := integer(Pic.GetHeight);
+
+  BitmapData.Width := W;
+  BitmapData.Height := H;
+  BitmapData.PixelFormat := PixelFormat32bppARGB;
+  BitmapData.Stride := W*PixelSize;
+  SetLength(Buf,W*H*PixelSize);
+  BitmapData.Scan0 := @Buf[0];
+  BitmapData.Reserved := 0;
+
+  R := MakeRect(0,0,W,H);
+  Pic.LockBits(R,
+    1{ImageLockModeRead} or 4{ImageLockModeUserInputBuf},
+    IfThen(PixelSize=4,PixelFormat32bppARGB,PixelFormat24bppRGB),
+    BitmapData);
+  Pic.UnlockBits(BitmapData);
+
   for I := 0 to Pic.GetHeight-1 do
   begin
     P := Result.ScanLine[I];
-    for J := 0 to Pic.GetWidth-1 do
-    begin
-      Pic.GetPixel(J,I, PGPColor(P)^);
-      Inc(P);
-    end;
+    SrcP := @Buf[ I*W*PixelSize ];
+    Move(SrcP^,P^,W*PixelSize);
   end;
   Pic.Free;
 end;

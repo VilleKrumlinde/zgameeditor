@@ -1,13 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899-12-30 00:00:00.000.708,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmTileSetEdit.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.627,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmShaderPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.912,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmAndroidApk.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.dfm,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmXmlEdit.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.627,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmShaderPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.150,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmExprPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.627,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmShaderPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.708,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmTileSetEdit.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmBitmapEdit.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.pas,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\expr\Zc_Ops.pas</Transaction>
@@ -17,14 +18,15 @@
     <Transaction>1899-12-30 00:00:00.000.150,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmExprPropEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.730,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.848,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.317,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.898,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.094,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmCustomPropEditBase.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.758,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.752,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.094,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmCustomPropEditBase.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.317,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.695,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.898,=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.094,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmCustomPropEditBase.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.005,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmScriptedCompEditBase.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
-    <Transaction>1899-12-30 00:00:00.000.075,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmFloatPropEdit.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.064,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\RetroCoding.pas=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.pas</Transaction>
     <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC\tools\ZDesigner\frmRawAudioImportOptions.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.311,C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmSpriteSheetEdit.dfm=C:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm</Transaction>
     <Transaction>1899-12-30 00:00:00.000.dfm,D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\Unit1.dfm=D:\Data\Delphi32\ZzDC_Public\tools\ZDesigner\frmArrayEdit.dfm</Transaction>
@@ -123,6 +125,7 @@
     <File Path="frmXmlEdit.dfm"/>
     <File Path="GLPanel.pas"/>
     <File Path="OpenGL12.pas"/>
+    <File Path="RetroCoding.pas"/>
     <File Path="u3dsFile.pas"/>
     <File Path="uHelp.pas"/>
     <File Path="uMidiFile.pas"/>
