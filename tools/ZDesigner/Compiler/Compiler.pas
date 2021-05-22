@@ -155,7 +155,7 @@ begin
   case Typ of
     zctByte : Result := TExpAssign1.Create(nil);
     zctInt,zctFloat : Result := TExpAssign4.Create(nil);
-    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctReference : Result := TExpAssignPointer.Create(nil);
+    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctReference,zctClass : Result := TExpAssignPointer.Create(nil);
   else
     raise ECodeGenError.Create('Wrong datatype for assign');
   end;
@@ -244,21 +244,34 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Kind : TExpMiscKind;
   begin
     Etyp := Op.GetIdentifierInfo;
-    if ETyp.Kind=edtPropIndex then
-      Etyp := Op.Children.First.GetIdentifierInfo;
-
-    if Etyp.Kind=edtProperty then
-      PTyp := Etyp.Prop.PropertyType
-    else if Etyp.Kind=edtModelDefined then
-      PTyp := zptComponentRef
+    if ETyp.Kind=edtField then
+    begin
+      //todo: save pointersize in app and fail if not expected
+      case GetZcTypeSize(ETyp.Field.GetDataType.Kind) of
+        1 : Kind := emPtrDeref1;
+        SizeOf(Pointer) : Kind := emPtrDerefPointer;
+      else
+        Kind := emPtrDeref4;
+      end;
+    end
     else
-      raise ECodeGenError.Create('Failed to deref ' + Op.Id);
+    begin
+      if ETyp.Kind=edtPropIndex then
+        Etyp := Op.Children.First.GetIdentifierInfo;
 
-    case PTyp of
-      zptString,zptComponentRef,zptPointer: Kind := emPtrDerefPointer;
-      zptByte,zptBoolean: Kind := emPtrDeref1;
-    else
-      Kind := emPtrDeref4;
+      if Etyp.Kind=edtProperty then
+        PTyp := Etyp.Prop.PropertyType
+      else if Etyp.Kind=edtModelDefined then
+        PTyp := zptComponentRef
+      else
+        raise ECodeGenError.Create('Failed to deref ' + Op.Id);
+
+      case PTyp of
+        zptString,zptComponentRef,zptPointer: Kind := emPtrDerefPointer;
+        zptByte,zptBoolean: Kind := emPtrDeref1;
+      else
+        Kind := emPtrDeref4;
+      end;
     end;
     TExpMisc.Create(Target,Kind);
   end;
@@ -629,6 +642,12 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
           GenAddress(Op.Children.First);
           GenAddToPointer(ETyp.PropIndex * 4);
         end;
+      edtField :
+        begin
+          GenValue(Op.Children.First);
+          TExpMisc.Create(Target,emGetUserClass);
+          GenAddToPointer(ETyp.Field.ByteOffset);
+        end
       else
         raise ECodeGenError.Create('Invalid datatype for select: ' + Op.Id);
     end;
@@ -706,34 +725,42 @@ begin
   end else if LeftOp.Kind=zcSelect then
   begin
     Etyp := LeftOp.GetIdentifierInfo;
-    case Etyp.Kind of
-      edtProperty : Prop := Etyp.Prop;
-      edtPropIndex :
-        begin
-          Etyp := LeftOp.Children.First.GetIdentifierInfo;
-          Assert(Etyp.Kind=edtProperty);
-          Prop := Etyp.Prop;
-        end
-    else
-      raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
-    end;
-    if Prop.IsReadOnly then
-      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-    if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
-      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-
-    if Assigned(Prop.NotifyWhenChanged) then
-    begin //This property should notify when assigned, generate notify call
-      GenValue(RightOp);
-      GenValue(LeftOp.Children.First);
-      with TExpConstantInt.Create(Target) do
-        Constant := Prop.PropId;
-      TExpMisc.Create(Target,emNotifyPropChanged);
-    end else
+    if Etyp.Kind=edtField then
     begin
       GenAddress(LeftOp);
       GenValue(RightOp);
-      Target.AddComponent( MakeAssignOp(Prop.PropertyType) );
+      Target.AddComponent( MakeAssignOp( LeftOp.GetDataType.Kind ) );
+    end else
+    begin
+      case Etyp.Kind of
+        edtProperty : Prop := Etyp.Prop;
+        edtPropIndex :
+          begin
+            Etyp := LeftOp.Children.First.GetIdentifierInfo;
+            Assert(Etyp.Kind=edtProperty);
+            Prop := Etyp.Prop;
+          end
+      else
+        raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
+      end;
+      if Prop.IsReadOnly then
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+      if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+
+      if Assigned(Prop.NotifyWhenChanged) then
+      begin //This property should notify when assigned, generate notify call
+        GenValue(RightOp);
+        GenValue(LeftOp.Children.First);
+        with TExpConstantInt.Create(Target) do
+          Constant := Prop.PropId;
+        TExpMisc.Create(Target,emNotifyPropChanged);
+      end else
+      begin
+        GenAddress(LeftOp);
+        GenValue(RightOp);
+        Target.AddComponent( MakeAssignOp(Prop.PropertyType) );
+      end;
     end;
 
    if LeaveValue=alvPost then

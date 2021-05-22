@@ -19,13 +19,15 @@ type
           zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray,
           zcClass,zcMethodCall,zcNew);
 
+  TZcOpField = class;
   TZcIdentifierInfo = record
-    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
+    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined,edtField);
     DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
     case Integer of
       0 : (Component : TZComponent);
       1 : (Prop : TZProperty);
       2 : (PropIndex : integer);
+      3 : (Field : TZcOpField);
   end;
 
 
@@ -73,6 +75,8 @@ type
   end;
 
   TZcOpField = class(TZcOpVariableBase)
+  public
+    ByteOffset : integer;
   end;
 
   TZcOpLiteral = class(TZcOp)
@@ -385,6 +389,7 @@ begin
       edtProperty: DoProp;
       edtPropIndex: Result.Kind := zctFloat;
       edtModelDefined : DoIdentifier;  //With modeldefined, Ref should already point to the correct identifier
+      edtField : Result := Etyp.Field.Typ;
     else
       raise ECodeGenError.Create('Could not determine type: ' + Self.ToString);
     end;
@@ -474,6 +479,22 @@ var
     end;
   end;
 
+  procedure DoField(Cls : TZcOpClass);
+  var
+    Fld : TZcOpField;
+  begin
+    for Fld in Cls.Fields do
+    begin
+      if SameText(Fld.Id,Self.Id) then
+      begin
+        Result.Kind := edtField;
+        Result.Field := Fld;
+        Exit;
+      end;
+    end;
+    raise ECodeGenError.Create('Unknown field: ' + Self.Id);
+  end;
+
 var
   FirstType : TZcDataType;
 begin
@@ -502,6 +523,10 @@ begin
     begin
       //Local arrays
       DoProp(ComponentManager.GetInfoFromId(DefineArrayClassId).GetProperties);
+      Exit;
+    end else if FirstType.Kind=zctClass then
+    begin
+      DoField(FirstType.TheClass as TZcOpClass);
       Exit;
     end;
 
@@ -1080,7 +1105,7 @@ end;
 
 function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp;
 const
-  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray,zctString];
+  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray,zctString,zctClass];
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;
@@ -1239,7 +1264,7 @@ begin
     case (Op.Ref as TDefineVariableBase)._Type of
       zctInt : PName := 'IntValue';
       zctString : PName := 'StringValue';
-      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference : PName := 'PointerValue';
+      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference,zctClass : PName := 'PointerValue';
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
     else

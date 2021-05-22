@@ -1107,6 +1107,10 @@ begin
      Fld := TZcOpField.Create(nil);
      Fld.Id := LexString;
      Fld.Typ := Typ;
+     Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+
+     //todo: field align
+     Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
      Cls.Fields.Add(Fld);
   
 end;
@@ -2342,7 +2346,7 @@ begin
              Typ := OutOp.Children.First.GetDataType;
              if Typ.Kind=zctClass then
              begin
-               Cls := Typ.TheClass;
+               Cls := Typ.TheClass as TZcOpClass;
                OutOp.Ref := Cls;
              end
              else

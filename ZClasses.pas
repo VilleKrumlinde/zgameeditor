@@ -257,7 +257,7 @@ type
     IsPointer : boolean;  //True for type of argument in f(ref x) function
     case integer of
       0 : (TheArray : pointer);  //When zctArray: pointer to TDefineArray
-      1 : (TheClass : pointer);  //When zctClass: pointer to TZcOpClass
+      1 : (TheClass : TObject);  //When zctClass: pointer to TZcOpClass
     {$endif}
   end;
 
@@ -1092,7 +1092,7 @@ function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
 begin
   case Typ of
     zctByte : Result := 1;
-    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray : Result := SizeOf(Pointer);
+    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctClass : Result := SizeOf(Pointer);
     zctMat4 : Result := SizeOf(single) * 16;
     zctVec2 : Result := SizeOf(single) * 2;
     zctVec3 : Result := SizeOf(single) * 3;

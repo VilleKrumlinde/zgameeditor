@@ -382,7 +382,7 @@ type
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
     emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop, emBinaryNot,
-    emNot);
+    emNot,emGetUserClass);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -558,6 +558,8 @@ type
   end;
 
   TUserClass = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
   public
     SizeInBytes : integer;
   end;
@@ -571,6 +573,7 @@ type
   TExpNewClassInstance = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
   public
     TheClass : TUserClass;
   end;
@@ -1722,6 +1725,12 @@ begin
         else
           V := 0;
         Env.StackPush(V);
+      end;
+    emGetUserClass :
+      begin
+        //Convert TUserClassInstance to the instancedata for field access
+        Env.StackPopToPointer(P);
+        Env.StackPushPointer( TUserClassInstance(P).InstanceData );
       end;
   end;
 end;
@@ -3292,12 +3301,19 @@ end;
 
 { TExpNewClassInstance }
 
+procedure TExpNewClassInstance.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'TheClass',{$ENDIF}@TheClass, zptComponentRef);
+end;
+
 procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
 var
   P : TUserClassInstance;
 begin
   P := TUserClassInstance.Create;
   GetMem(P.InstanceData,Self.TheClass.SizeInBytes);
+  FillChar(P.InstanceData^,Self.TheClass.SizeInBytes,0);
   ManagedHeap_AddValueObject(P);
   Env.StackPushPointer(P);
 end;
@@ -3308,6 +3324,14 @@ destructor TUserClassInstance.Destroy;
 begin
   FreeMem(InstanceData);
   inherited;
+end;
+
+{ TUserClass }
+
+procedure TUserClass.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
 end;
 
 initialization
