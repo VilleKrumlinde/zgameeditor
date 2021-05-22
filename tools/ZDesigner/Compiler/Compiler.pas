@@ -498,6 +498,14 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     DefineLabel(LExit);
   end;
 
+  procedure DoGenNew;
+  var
+    NewC : TExpNewClassInstance;
+  begin
+    NewC := TExpNewClassInstance.Create(Target);
+    NewC.TheClass := (Op.Ref as TZcOpClass).RuntimeClass;
+  end;
+
 begin
   case Op.Kind of
     zcNop : ;
@@ -535,7 +543,8 @@ begin
       begin
         GenValue(Op.Child(0));
         TExpMisc.Create(Target,emNot);
-      end
+      end;
+    zcNew : DoGenNew;
   else
     //Gen(Op); //Any op can occur in a value block because of inlining
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );

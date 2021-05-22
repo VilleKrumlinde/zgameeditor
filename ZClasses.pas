@@ -63,6 +63,7 @@ type
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
  ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,ExpGetRawMemElementClassId,
  ExpArrayUtilClassId,ExpSwitchTableClassId,ExpAccessGlobalClassId,
+ UserClassId,ExpNewClassInstanceId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -246,14 +247,17 @@ type
     zctVoid,  //Private types
     zctReference,
     zctNull,
-    zctArray);
+    zctArray,
+    zctClass); //User defined script class
 
   TZcDataType = record
     Kind : TZcDataTypeKind;
     {$ifndef minimal}
     ReferenceClassId : TZClassIds;
     IsPointer : boolean;  //True for type of argument in f(ref x) function
-    TheArray : pointer;  //When zctArray: pointer to TDefineArray
+    case integer of
+      0 : (TheArray : pointer);  //When zctArray: pointer to TDefineArray
+      1 : (TheClass : pointer);  //When zctClass: pointer to TZcOpClass
     {$endif}
   end;
 
@@ -633,7 +637,7 @@ const
 
   ZcTypeNames : array[TZcDataTypeKind] of string =
 (('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),('xptr'),
- ('void'),('Component'),('null'),('#array'));
+ ('void'),('Component'),('null'),('#array'),('#class'));
 
 
 procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);

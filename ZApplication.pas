@@ -108,7 +108,7 @@ type
     OnRender : TZComponentList;
     OnBeginRenderPass : TZComponentList;
     Lights : TZComponentList;
-    GlobalVars : TZComponentList;
+    GlobalDefinitions : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     Caption : TPropString;
@@ -977,17 +977,21 @@ begin
     else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
       //Also remove inline constants
       SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name))
+    else if (ZcGlobalNames[I] is TZcOpClass) and SymTab.Contains(String((ZcGlobalNames[I] as TZcOpClass).Id)) then
+      //Also remove user defined classes
+      SymTab.Remove(String(TZcOpClass(ZcGlobalNames[I]).Id))
     else if (ZcGlobalNames[I] is TZcOpGlobalVar) then
       SymTab.Remove(TZcOpGlobalVar(ZcGlobalNames[I]).Id);
   end;
   ZcGlobalNames.Clear;
 
   //Remove global variables (declared in zlibraries)
-  for I := 0 to GlobalVars.Count-1 do
+  for I := 0 to GlobalDefinitions.Count-1 do
   begin
-    SymTab.Remove(String(TDefineVariableBase(GlobalVars[I]).Name))
+    if GlobalDefinitions[I] is TDefineVariableBase then
+      SymTab.Remove(String(TDefineVariableBase(GlobalDefinitions[I]).Name))
   end;
-  GlobalVars.Clear;
+  GlobalDefinitions.Clear;
 
   //Remove stringconstants
   ClearConstantPool;
@@ -1250,7 +1254,7 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'GlobalVars',{$ENDIF}(@GlobalVars), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'GlobalDefinitions',{$ENDIF}(@GlobalDefinitions), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 

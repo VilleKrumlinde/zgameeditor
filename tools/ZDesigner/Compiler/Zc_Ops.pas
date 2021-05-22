@@ -17,7 +17,7 @@ type
           zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
           zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray,
-          zcClass,zcMethodCall);
+          zcClass,zcMethodCall,zcNew);
 
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
@@ -70,6 +70,9 @@ type
   end;
 
   TZcOpArgumentVar = class(TZcOpVariableBase)
+  end;
+
+  TZcOpField = class(TZcOpVariableBase)
   end;
 
   TZcOpLiteral = class(TZcOp)
@@ -177,6 +180,8 @@ type
   public
     Typ : TZcDataType;
     Methods : TObjectList<TZcOpFunctionUserDefined>;
+    Fields : TObjectList<TZcOpField>;
+    RuntimeClass : TUserClass;
     constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
@@ -670,6 +675,7 @@ begin
       end;
     zcSelect : Result := Child(0).ToString + '.' + Self.Id;
     zcMod : Result := Child(0).ToString + '%' + Child(1).ToString;
+    zcNew : Result := 'new ' + Id;
   end;
 end;
 
@@ -1038,7 +1044,7 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
-  if (Kind in [zcIdentifier,zcSelect,zcInitLocalArray]) then
+  if (Kind in [zcIdentifier,zcSelect,zcInitLocalArray,zcNew]) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
 
@@ -2178,11 +2184,13 @@ begin
   Self.Kind := zcClass;
   Typ.Kind := zctClass;
   Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
+  Fields := TObjectList<TZcOpField>.Create(False);
 end;
 
 destructor TZcOpClass.Destroy;
 begin
   Methods.Free;
+  Fields.Free;
   inherited;
 end;
 

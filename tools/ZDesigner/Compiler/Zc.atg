@@ -27,6 +27,7 @@ private = (.
     function GetInitializer : TZcOpFunctionUserDefined;
     function IsLocalVarDecl : boolean;
     function IsPointerOrDims(var PeekIndex : integer) : boolean;
+    function IsFieldDecl : boolean;
     .)
 precreate = (.
     ZFunctions := TObjectList.Create(False);
@@ -140,7 +141,11 @@ var
 begin
   PeekIndex := 1;
 
-	if (CurrentInputSymbol in [floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym]) then
+	if (CurrentInputSymbol in [floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,
+    mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,
+  	MaterialSym,SoundSym,ShaderSym,BitmapSym,MeshSym,
+  	CameraSym,FontSym,SampleSym,FileSym,ComponentSym
+    ]) then
     Inc(PeekIndex)
   else if (CurrentInputSymbol=identSym) then
     Inc(PeekIndex)
@@ -164,6 +169,20 @@ begin
 
 end;
 
+function TZc.IsFieldDecl : boolean;
+// ident ("," | "=" | ";")
+begin
+  Result := (CurrentInputSymbol=identSym) and
+    (Symbols[2].Id in [commaSym,assgnSym,scolonSym]);
+
+(*
+bool IsFieldDecl () {
+  int peek = Peek(1).kind;
+  return la.kind == _ident &&
+         (peek == _comma || peek == _assgn || peek == _scolon);
+}
+*)
+end;
 
 function TZc.GetInitializer : TZcOpFunctionUserDefined;
 begin
@@ -334,14 +353,15 @@ var
         SymTab.PushScope;
         try
 
-        if Assigned(Cls) then
-        begin //Add implicit "this" argument to method definition
-          Arg := TZcOpArgumentVar.Create(nil);
-          Arg.Id := 'this';
-          Arg.Typ.Kind := zctClass;
-          Arg.Typ.TheClass := Cls;
-          CurrentFunction.AddArgument(Arg);
-        end;
+          if Assigned(Cls) then
+          begin //Add implicit "this" argument to method definition
+            Arg := TZcOpArgumentVar.Create(nil);
+            Arg.Id := 'this';
+            Arg.Typ.Kind := zctClass;
+            Arg.Typ.TheClass := Cls;
+            CurrentFunction.AddArgument(Arg);
+            SymTab.Add(Arg.Id,Arg);
+          end;
 
      .)
     [ FormalParams ] ")"
@@ -405,6 +425,23 @@ Zc (. var
 .
 
 /*------------------------------------------------------------------------*/
+Field<Typ : TZcDataType; Cls : TZcOpClass>
+(.
+var
+  Fld : TZcOpField;
+.)
+= ident
+  (.
+     //todo: check duplicate name in class
+     Fld := TZcOpField.Create(nil);
+     Fld.Id := LexString;
+     Fld.Typ := Typ;
+     Cls.Fields.Add(Fld);
+  .)
+
+  /* ["=" Init]*/
+.
+/*------------------------------------------------------------------------*/
 StructMember<Cls : TZcOpClass> (.
 var
   Op : TZcOp;
@@ -422,11 +459,10 @@ var
 |
 Type<Typ>
   (
-          /*--- field declaration: */
-/*          IF (IsFieldDecl())
-          Field {"," Field} ";"
-
-        | */
+        /*--- field declaration: */
+        IF (. IsFieldDecl .)
+          Field<Typ,Cls> {"," Field<Typ,Cls>} ";"
+        |
           ident  (. Name := LexString; .)
           ( /*--- "not void" method (function) declaration: */
             "(" ZcFuncRest<Typ,Name,False,False,Cls>
@@ -462,6 +498,9 @@ var
         ZError('Name already defined: ' + LexString);
       Cls := TZcOpClass.Create(GlobalNames);
       Cls.Id := LexString;
+
+      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.GlobalDefinitions);
+
       SymTab.AddPrevious(Cls.Id,Cls);
     .)
     ClassBody<Cls> [";"]
@@ -522,7 +561,7 @@ LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
 
 LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitOp : TZcOp; .)
 = ident
-     (. 
+     (.
         if SymTab.ScopeContains(LexString) then
           ZError('Name already defined: ' + LexString);
 
@@ -592,11 +631,11 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
-          Self.ZApp.GlobalVars.AddComponent(V);
+          Self.ZApp.GlobalDefinitions.AddComponent(V);
         end
         else
         begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalVars);
+          V := TDefineVariable.Create(Self.ZApp.GlobalDefinitions);
           V._Type := Typ.Kind;
           V._ReferenceClassId := Typ.ReferenceClassId;
         end;
@@ -1025,7 +1064,7 @@ SwitchLabel<var OutOp : TZcOp>
 ForInit<var OutOp : TZcOp>     (. var Op : TZcOp; .)
 = (. Op:=nil; OutOp := MakeOp(zcBlock); .)
 (
-LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+IF (. IsLocalVarDecl .) LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
 | (. Op:=nil; .) StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
   { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
 )
@@ -1309,6 +1348,14 @@ Primary<var OutOp : TZcOp>
     | "short"  | "string" | "uint" | "ulong"   | "ushort"
     ) "." ident */
   | ReinterpretCast<OutOp>
+  | "new" Type<Typ>
+    ( /*--- object creation expression */
+      (. if Typ.Kind<>zctClass then
+           ZError('new can only be used with Class-types');
+         OutOp := MakeOp(zcNew,LexString);
+      .)
+      "(" [Argument<Op> {"," Argument<Op> }] ")"
+    )
   )
 
   {

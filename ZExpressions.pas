@@ -557,6 +557,24 @@ type
     False : (SingleValue : single);
   end;
 
+  TUserClass = class(TZComponent)
+  public
+    SizeInBytes : integer;
+  end;
+
+  TUserClassInstance = class
+  public
+    InstanceData : pointer;
+    destructor Destroy; override;
+  end;
+
+  TExpNewClassInstance = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+  public
+    TheClass : TUserClass;
+  end;
+
 //Run a compiled expression
 //Uses global vars for state.
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
@@ -3272,6 +3290,26 @@ begin
   Inc(Env.gCurrentPc,Destination);
 end;
 
+{ TExpNewClassInstance }
+
+procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
+var
+  P : TUserClassInstance;
+begin
+  P := TUserClassInstance.Create;
+  GetMem(P.InstanceData,Self.TheClass.SizeInBytes);
+  ManagedHeap_AddValueObject(P);
+  Env.StackPushPointer(P);
+end;
+
+{ TUserClassInstance }
+
+destructor TUserClassInstance.Destroy;
+begin
+  FreeMem(InstanceData);
+  inherited;
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -3353,6 +3391,11 @@ initialization
   ZClasses.Register(TExpSwitchTable,ExpSwitchTableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAccessGlobal,ExpAccessGlobalClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+
+  ZClasses.Register(TUserClass,UserClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpNewClassInstance,ExpNewClassInstanceId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
   {$ifndef minimal}
