@@ -989,7 +989,7 @@ begin
       Cls := TZcOpClass.Create(GlobalNames);
       Cls.Id := LexString;
 
-      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.GlobalDefinitions);
+      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
 
       SymTab.AddPrevious(Cls.Id,Cls);
     
@@ -1108,6 +1108,12 @@ begin
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+     if Fld.Typ.Kind in [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4] then
+     begin //Managed field
+       Inc(Cls.RuntimeClass.ManagedFields.Size,4);
+       ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
+       PInteger( pointer(IntPtr(Cls.RuntimeClass.ManagedFields.Data)+Cls.RuntimeClass.ManagedFields.Size-4) )^ := Fld.ByteOffset;
+     end;
 
      //todo: field align
      Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
@@ -1127,21 +1133,9 @@ begin
   begin
        Get;
        Expect(identSym);
+                  Name := LexString; 
        Expect(lparSym);
-       if InSet(CurrentInputSymbol,0) then
-       begin
-         _FormalParams;
-       end;
-       Expect(rparSym);
-       if (CurrentInputSymbol=lbraceSym) then
-       begin
-            _Block(Op);
-       end
-       else if (CurrentInputSymbol=scolonSym) then
-       begin
-            Get;
-       end
-       else SynError(3);
+       _ZcFuncRest(Typ,Name,False,False,Cls);
   end
   else if (CurrentInputSymbol=identSym) and ( IdentAndLPar ) then
   begin
@@ -1347,11 +1341,11 @@ begin
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
-          Self.ZApp.GlobalDefinitions.AddComponent(V);
+          Self.ZApp.GlobalVariables.AddComponent(V);
         end
         else
         begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalDefinitions);
+          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
           V._Type := Typ.Kind;
           V._ReferenceClassId := Typ.ReferenceClassId;
         end;

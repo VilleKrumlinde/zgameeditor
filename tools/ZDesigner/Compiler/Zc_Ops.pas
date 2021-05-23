@@ -1628,7 +1628,7 @@ begin
   begin
     O := nil;
     for FOp in Cls.Methods do
-      if FOp.Id=Op.Id then
+      if SameText(FOp.Id,Op.Id) then
       begin
         O := FOp;
         Break;

@@ -437,6 +437,12 @@ var
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+     if Fld.Typ.Kind in [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4] then
+     begin //Managed field
+       Inc(Cls.RuntimeClass.ManagedFields.Size,4);
+       ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
+       PInteger( pointer(IntPtr(Cls.RuntimeClass.ManagedFields.Data)+Cls.RuntimeClass.ManagedFields.Size-4) )^ := Fld.ByteOffset;
+     end;
 
      //todo: field align
      Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
@@ -454,7 +460,10 @@ var
 .)
 =
   /*--- void method (procedure) declaration: */
-  "void" ident "(" [ FormalParams ] ")" ( Block<Op> | ";" )
+  "void" ident (. Name := LexString; .)
+          (
+            "(" ZcFuncRest<Typ,Name,False,False,Cls>
+          )
 /*--- constructor or static constructor declaration: */
 |
   IF (. IdentAndLPar .)
@@ -503,7 +512,7 @@ var
       Cls := TZcOpClass.Create(GlobalNames);
       Cls.Id := LexString;
 
-      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.GlobalDefinitions);
+      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
 
       SymTab.AddPrevious(Cls.Id,Cls);
     .)
@@ -635,11 +644,11 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
-          Self.ZApp.GlobalDefinitions.AddComponent(V);
+          Self.ZApp.GlobalVariables.AddComponent(V);
         end
         else
         begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalDefinitions);
+          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
           V._Type := Typ.Kind;
           V._ReferenceClassId := Typ.ReferenceClassId;
         end;

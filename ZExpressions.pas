@@ -562,11 +562,16 @@ type
     procedure DefineProperties(List: TZPropertyList); override;
   public
     SizeInBytes : integer;
+    ManagedFields : TZBinaryPropValue;
   end;
 
   TUserClassInstance = class
+  strict private
+    ManagedCount : integer;
+    ManagedCleanup : PPointer;
   public
     InstanceData : pointer;
+    constructor Create(TheClass : TUserClass);
     destructor Destroy; override;
   end;
 
@@ -1389,7 +1394,7 @@ begin
   Self.AllocItemCount := Self.Limit;
   Self.AllocType := Self._Type;
 
-  if Self._Type in [zctString] then
+  if Self._Type in [zctString,zctClass] then
   begin
     P := P^;
     for I := 0 to Self.Limit - 1 do
@@ -1404,7 +1409,7 @@ procedure TDefineArray.CleanUpManagedValues(TheType : TZcDataTypeKind; Count : i
 var
   I : integer;
 begin
-  if (not (TheType in [zctString])) or (Count=0) then
+  if (not (TheType in [zctString,zctClass])) or (Count=0) then
     Exit;
   for I := 0 to Count - 1 do
   begin
@@ -3311,17 +3316,60 @@ procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
 var
   P : TUserClassInstance;
 begin
-  P := TUserClassInstance.Create;
-  GetMem(P.InstanceData,Self.TheClass.SizeInBytes);
-  FillChar(P.InstanceData^,Self.TheClass.SizeInBytes,0);
+  P := TUserClassInstance.Create(Self.TheClass);
   ManagedHeap_AddValueObject(P);
   Env.StackPushPointer(P);
 end;
 
 { TUserClassInstance }
 
-destructor TUserClassInstance.Destroy;
+constructor TUserClassInstance.Create(TheClass: TUserClass);
+var
+  I : integer;
+  P : pointer;
+  Offsets : PInteger;
+  Mp : PPointer;
 begin
+  GetMem(Self.InstanceData,TheClass.SizeInBytes);
+  FillChar(Self.InstanceData^,TheClass.SizeInBytes,0);
+
+  ManagedCount := (TheClass.ManagedFields.Size div 4);
+  if ManagedCount>0 then
+  begin
+    //Copy pointers to owned memory to avoid dangling pointer to UserClass
+    GetMem(ManagedCleanup,ManagedCount*SizeOf(Pointer));
+
+    //Add targets for managed fields
+    Offsets := PInteger(TheClass.ManagedFields.Data);
+    Mp := ManagedCleanup;
+    for I := 0 to ManagedCount-1 do
+    begin
+      P := Pointer(IntPtr(Self.InstanceData) + Offsets^);
+      ManagedHeap_AddTarget( P );
+      Mp^ := P;
+      Inc(Mp);
+      Inc(Offsets);
+    end;
+  end;
+end;
+
+destructor TUserClassInstance.Destroy;
+var
+  I : integer;
+  Mp : PPointer;
+begin
+  //Remove targets for managed fields
+  if Self.ManagedCount>0 then
+  begin
+    Mp := ManagedCleanup;
+    for I := 0 to Self.ManagedCount-1 do
+    begin
+      ManagedHeap_RemoveTarget( Mp^ );
+      Inc(Mp);
+    end;
+    FreeMem(ManagedCleanup);
+  end;
+
   FreeMem(InstanceData);
   inherited;
 end;
@@ -3332,6 +3380,7 @@ procedure TUserClass.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ManagedFields',{$ENDIF}@ManagedFields, zptBinary);
 end;
 
 initialization
