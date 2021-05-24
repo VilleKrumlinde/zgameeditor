@@ -1517,6 +1517,7 @@ const
 
 type
   //From mmsystem.pas and slightly modified
+  {$ALIGN 1}
   TZ_JOYCAPS = record
     wMid: Word;
     wPid: Word;
@@ -1538,7 +1539,7 @@ type
     wVmax: UINT;
     wCaps: UINT;
     wMaxAxes: UINT;
-    wNumAxes: integer;
+    wNumAxes: UINT;
     wMaxButtons: UINT;
     szRegKey: array[0..32 - 1] of byte;
     szOEMVxD: array[0..260 - 1] of byte;
@@ -1594,6 +1595,9 @@ var
   MinMax : PMinMax;
   Joy : PJoystick;
 begin
+  {$ifdef zgeviz}
+  Exit; //Try to fix rare crash in ZGE
+  {$endif}
   MaxDevs := joyGetNumDevs();
   if MaxDevs>MAX_JOYSTICKS then
     MaxDevs := MAX_JOYSTICKS;
@@ -1674,7 +1678,7 @@ begin
   if JoyId<JoyCount then
   begin
     Joy := @Joysticks[JoyId];
-    if Axis<Joy.Caps.wNumAxes then
+    if Axis<integer(Joy.Caps.wNumAxes) then
       Result := Joysticks[JoyId].Values[Axis];
   end;
 end;
