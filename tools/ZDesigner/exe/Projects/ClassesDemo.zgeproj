@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Classes" CustomScreenWidth="512" CustomScreenHeight="512" FileVersion="2">
+  <OnLoaded>
+    <ZLibrary>
+      <Source>
+<![CDATA[class TMoon {
+}
+
+class TPlanet {
+  //todo: implement private
+  private float distance, angle, speed, radius;
+  private TMoon[] moons; //todo: initialize member array
+
+  //todo: make this a constructor
+  void init(float dist,float angle) {
+     this.distance=dist;
+     this.angle=angle;
+     this.speed=random(0.001,0.0005);
+     this.radius=random(0,0.1);
+  }
+
+  void render() {
+    //todo: remove need to use "this" for fields
+    RenderWithTransform2.Translate.X=this.distance;
+    RenderWithTransform1.Rotate.Z=this.angle;
+    RenderWithTransform2.Scale=1.0 + this.radius;
+    @CallComponent(Component : RenderWithTransform1);
+  }
+
+  void update() {
+    this.angle+=this.speed;
+  }
+}
+
+TPlanet[] planets;]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[const int nrOfPlanets = 32;
+
+Planets.SizeDim1=nrOfPlanets;
+for(int i=0; i<nrOfPlanets; i++) {
+  TPlanet p = new TPlanet();
+  p.init(random(13.5,4), random(0,0.7));
+  Planets[i]=p;
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
+  TPlanet p = Planets[i];
+  p.update();
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <UseMaterial Material="Material1"/>
+    <ZExpression>
+      <Expression>
+<![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
+  TPlanet p = Planets[i];
+  p.render();
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnRender>
+  <Content>
+    <RenderTransformGroup Name="RenderWithTransform1" Scale="0.2 0.2 0.2" Rotate="0 0 -0.0184">
+      <Children>
+        <RenderTransformGroup Name="RenderWithTransform2" Scale="1.0043 1.0043 1.0043" Translate="12.4079 0 0">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+      </Children>
+    </RenderTransformGroup>
+    <Bitmap Name="Bitmap1" Comment="Anti-Aliased Circle" Width="16" Height="16">
+      <Producers>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[// Local variables
+
+float B, S, X1, Y1;
+
+// Distance from center ( per axis )
+
+X1 = 0.5-X;
+Y1 = 0.5-Y;
+
+B = 64/2; // 64 = BitmapSize | 2 = Anti-Aliasing bias ( in pixels )
+
+Pixel.A = B*0.5-sqrt(X1*X1+Y1*Y1)*B;
+
+// Set RGB to white
+
+Pixel.R = 1;
+Pixel.G = 1;
+Pixel.B = 1;]]>
+          </Expression>
+        </BitmapExpression>
+      </Producers>
+    </Bitmap>
+    <Material Name="Material1" Blend="1" ZBuffer="0">
+      <Textures>
+        <MaterialTexture Texture="Bitmap1" TexCoords="1"/>
+      </Textures>
+    </Material>
+  </Content>
+</ZApplication>

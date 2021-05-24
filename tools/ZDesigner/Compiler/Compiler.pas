@@ -1139,7 +1139,7 @@ var
     RestoreReturn;
   end;
 
-  procedure DoGenInitLocalArray(Op : TZcOp);
+  procedure DoGenInitArray(Op : TZcOp);
   var
     Loc : TZcOpLocalVar;
   begin
@@ -1183,7 +1183,7 @@ begin
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
     zcInlineBlock : DoGenInlineBlock(Op);
     zcInlineReturn : DoGenInlineReturn;
-    zcInitLocalArray : DoGenInitLocalArray(Op);
+    zcInitArray : DoGenInitArray(Op);
     zcClass : DoGenClass(Op as TZcOpClass);
   else
     //GenValue(Op); //Value expressions (return values) can appear because of inlining
@@ -1659,7 +1659,10 @@ begin
   Target := Ze.Code;
 
   if ThisC is TZLibrary then
+  begin //Reset global variables
     (ThisC as TZLibrary).GlobalAreaSize := 0;
+    (ThisC as TZLibrary).ManagedVariables.Size := 0;
+  end;
 
   CompilerContext.SymTab := SymTab;
   CompilerContext.ThisC := ThisC;

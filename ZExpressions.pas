@@ -81,6 +81,7 @@ type
     Lock : pointer;
     HasExecutedInitializer : boolean;
     procedure InitGlobalArea;
+    procedure RemoveManagedTargets;
   private
     procedure AquireLock;
     procedure ReleaseLock;
@@ -93,10 +94,12 @@ type
     HasInitializer : boolean;
     GlobalArea : pointer; //Storage for non-managed global variables
     GlobalAreaSize : integer;
+    ManagedVariables : TZBinaryPropValue;
     procedure Update; override;
     destructor Destroy; override;
     {$ifndef minimal}
     procedure DesignerReset; override;
+    procedure AddGlobalVar(const Typ : TZcDataType);
     {$endif}
   end;
 
@@ -1766,6 +1769,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'GlobalAreaSize',{$ENDIF}@GlobalAreaSize, zptInteger);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ManagedVariables',{$ENDIF}@ManagedVariables, zptBinary);
+   {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 end;
 
 procedure TZLibrary.AquireLock;
@@ -1796,12 +1802,49 @@ begin
   InitGlobalArea;
 end;
 
+procedure TZLibrary.RemoveManagedTargets;
+var
+  Offsets : PInteger;
+  I,ManagedCount : integer;
+  P : pointer;
+begin
+  if (Self.ManagedVariables.Size>0) and (GlobalArea<>nil) then
+  begin
+    //Remove targets for managed variables
+    ManagedCount := Self.ManagedVariables.Size div 4;
+    Offsets := PInteger(ManagedVariables.Data);
+    for I := 0 to ManagedCount-1 do
+    begin
+      P := Pointer(IntPtr(Self.GlobalArea) + Offsets^);
+      ManagedHeap_RemoveTarget( P );
+      Inc(Offsets);
+    end;
+  end;
+end;
+
 procedure TZLibrary.InitGlobalArea;
+var
+  Offsets : PInteger;
+  I,ManagedCount : integer;
+  P : pointer;
 begin
   if (Self.GlobalAreaSize>0) then
   begin
     ReAllocMem(Self.GlobalArea,Self.GlobalAreaSize);
     FillChar(Self.GlobalArea^,Self.GlobalAreaSize,0);
+
+    if Self.ManagedVariables.Size>0 then
+    begin
+      //Add targets for managed fields
+      ManagedCount := Self.ManagedVariables.Size div 4;
+      Offsets := PInteger(ManagedVariables.Data);
+      for I := 0 to ManagedCount-1 do
+      begin
+        P := Pointer(IntPtr(Self.GlobalArea) + Offsets^);
+        ManagedHeap_AddTarget( P );
+        Inc(Offsets);
+      end;
+    end;
   end;
 end;
 
@@ -1811,6 +1854,7 @@ begin
   if Lock<>nil then
     Platform_FreeMutex(Lock);
   {$endif}
+  RemoveManagedTargets;
   FreeMem(GlobalArea);
   inherited;
 end;
@@ -1819,8 +1863,22 @@ end;
 procedure TZLibrary.DesignerReset;
 begin
   Self.HasExecutedInitializer := False;
+  RemoveManagedTargets;
   InitGlobalArea;
   inherited;
+end;
+
+procedure TZLibrary.AddGlobalVar(const Typ: TZcDataType);
+begin
+  //Need to always increase 8 here instead of sizeof(pointer) to
+  //allow generated binary to be compatible with both 32 and 64 bit runtime.
+  if Typ.Kind in ManagedTypes then
+  begin
+    Inc(ManagedVariables.Size,4);
+    ReallocMem(ManagedVariables.Data,ManagedVariables.Size);
+    PInteger( pointer(IntPtr(ManagedVariables.Data)+ManagedVariables.Size-4) )^ := Self.GlobalAreaSize;
+  end;
+  Inc(Self.GlobalAreaSize,8);
 end;
 {$endif}
 

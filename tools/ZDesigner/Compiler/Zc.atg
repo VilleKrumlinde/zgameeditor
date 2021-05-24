@@ -117,6 +117,8 @@ begin
   begin
     repeat
       Inc(PeekIndex);
+      if PeekIndex>=Self.LookAheadCount then
+        Exit(True);
     until Symbols[PeekIndex].Id=rbrackSym;
     Inc(PeekIndex);
   end;
@@ -425,7 +427,7 @@ Zc (. var
 .
 
 /*------------------------------------------------------------------------*/
-Field<Typ : TZcDataType; Cls : TZcOpClass>
+Field<Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean>
 (.
 var
   Fld : TZcOpField;
@@ -437,7 +439,7 @@ var
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
-     if Fld.Typ.Kind in [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4] then
+     if Fld.Typ.Kind in ManagedTypes then
      begin //Managed field
        Inc(Cls.RuntimeClass.ManagedFields.Size,4);
        ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
@@ -447,12 +449,14 @@ var
      //todo: field align
      Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
      Cls.Fields.Add(Fld);
+
+     SymTab.Add(Fld.Id,Fld);
   .)
 
   /* ["=" Init]*/
 .
 /*------------------------------------------------------------------------*/
-StructMember<Cls : TZcOpClass> (.
+StructMember<Cls : TZcOpClass; IsPrivate : boolean> (.
 var
   Op : TZcOp;
   Typ : TZcDataType;
@@ -467,35 +471,54 @@ var
 /*--- constructor or static constructor declaration: */
 |
   IF (. IdentAndLPar .)
-  ident "(" [FormalParams] ")"
+  ident (.
+     Name := LexString;
+     if not SameText(Name,Cls.Id) then
+       ZError('Constructor must have same name as class: ' + Name);
+     Typ.Kind := zctVoid;
+     .)
+     "(" ZcFuncRest<Typ,Name,False,False,Cls>
+     "(" [FormalParams] ")"
         (Block<Op> | ";")
 |
 Type<Typ>
   (
         /*--- field declaration: */
         IF (. IsFieldDecl .)
-          Field<Typ,Cls> {"," Field<Typ,Cls>} ";"
+          Field<Typ,Cls,IsPrivate> {"," Field<Typ,Cls,IsPrivate>} ";"
         |
           ident  (. Name := LexString; .)
           ( /*--- "not void" method (function) declaration: */
-            "(" ZcFuncRest<Typ,Name,False,False,Cls>
+            "(" ZcFuncRest<Typ,Name,IsPrivate,False,Cls>
           )
   )
 .
 
 /*------------------------------------------------------------------------*/
-ClassMember<Cls : TZcOpClass>
-= StructMember<Cls>
+ClassMember<Cls : TZcOpClass; IsPrivate : boolean>
+= StructMember<Cls,IsPrivate>
 /* | "~" ident "(" ")" (Block | ";") */
 .
 
 /*------------------------------------------------------------------------*/
 ClassBody<Cls : TZcOpClass>
-= "{"
+(.
+var
+  IsPrivate : boolean;
+.)
+= "{" (. try
+           SymTab.PushScope;
+      .)
       {
-        ClassMember<Cls>
+        (. IsPrivate := False; .)
+        [ "private" (. IsPrivate:= True; .) ]
+        ClassMember<Cls,IsPrivate>
       }
-  "}"
+  "}" (.
+         finally
+           SymTab.PopScope;
+         end;
+      .)
 .
 
 /*------------------------------------------------------------------------*/
@@ -596,7 +619,7 @@ LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitO
           begin
             if OutOp=nil then
               OutOp := MakeOp(zcBlock);
-            OutOp.Children.Add( MakeOp(zcInitLocalArray,Loc.Id) );
+            OutOp.Children.Add( MakeOp(zcInitArray,Loc.Id) );
           end;
         end;
 
@@ -621,8 +644,8 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           ZError('Name already defined: ' + Name);
 
         V := nil;
-        if Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference] then
-        begin  //Simple primitives are stored in global area
+        if not (Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+        begin  //Stored in global area
           if IsPrivate then
             Glob := TZcOpGlobalVar.Create(nil)
           else
@@ -631,9 +654,9 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           Glob.Offset := Glob.Lib.GlobalAreaSize;
           Glob.Id := Name;
           Glob.Typ := Typ;
-          //Need to always increase 8 here instead of sizeof(pointer) to
-          //allow generated binary to be compatible with both 32 and 64 bit runtime.
-          Inc(Glob.Lib.GlobalAreaSize,8);
+
+          Glob.Lib.AddGlobalVar(Typ);
+
           if IsPrivate then
             SymTab.Add(Name,Glob)
           else
@@ -641,16 +664,11 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
         end
         else if Typ.Kind=zctArray then
         begin
+          //todo: store arrays in global area too, need to generate initialization code
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
           Self.ZApp.GlobalVariables.AddComponent(V);
-        end
-        else
-        begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
-          V._Type := Typ.Kind;
-          V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
         if Assigned(V) then

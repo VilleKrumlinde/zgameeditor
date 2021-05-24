@@ -16,7 +16,7 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray,
+          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitArray,
           zcClass,zcMethodCall,zcNew);
 
   TZcOpField = class;
@@ -644,7 +644,7 @@ begin
           Result := Result + Child(0).ToString;
         Result := Result + ';';
       end;
-    zcInitLocalArray :
+    zcInitArray :
       begin
         Result := Id + '={init};';
       end;
@@ -1069,7 +1069,7 @@ function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
-  if (Kind in [zcIdentifier,zcSelect,zcInitLocalArray,zcNew]) then
+  if (Kind in [zcIdentifier,zcSelect,zcInitArray,zcNew]) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
 
@@ -2132,7 +2132,7 @@ end;
 
 function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
 var
-  Op : TZcOp;
+  Op,ChildOp : TZcOp;
 begin
   Op := TZcOpArrayAccess.Create(ArrayOp.Id, ArrayOp);
 
@@ -2152,10 +2152,13 @@ begin
   end;
 
   if ArrayOp.Kind=zcSelect then
-   if (ArrayOp.Children.First.Ref is TDefineVariable) then
-     //DefineVariable managedvalue
-     Op.Ref := GetArray( (ArrayOp.Children.First.Ref as TDefineVariable)._Type );
-   //else it is a model defined array, so ArrayOp.ref is already correct
+  begin
+    ChildOp := ArrayOp.Children.First;
+    if (ChildOp.Ref is TDefineVariable) then
+      //DefineVariable managedvalue
+      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type );
+  end;
+  //else it is a model defined array, so ArrayOp.ref is already correct
 
   Result := Op;
 end;
