@@ -1,26 +1,39 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="Classes" ClearColor="0.4549 0.5529 0.6157 1" CustomScreenWidth="512" CustomScreenHeight="512" FileVersion="2">
   <OnLoaded>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
+    </ZExternalLibrary>
     <ZLibrary>
       <Source>
 <![CDATA[class TMoon {
   private float distance, angle, speed;
 
   void init() {
-     distance=1.0;
+     distance=random(4.0,1.0);
      angle=rnd();
-     speed=random(0.001,0.0005);
+     speed=random(0.004,0.0005);
   }
 
   void update() {
-    angle+=this.speed;
+    angle+=speed;
   }
 
   void render() {
-    RenderWithTransform2.Translate.X=distance;
-    RenderWithTransform1.Rotate.Z=angle;
-    RenderWithTransform2.Scale=1.0;
-    @CallComponent(Component : RenderWithTransform1);
+    glPushMatrix();
+      float f=0.2;
+      glRotatef(angle*360,0,0,1);
+      glScalef(f,f,f);
+      glTranslatef(distance,0,0);
+      @RenderSprite();
+    glPopMatrix();
   }
 }
 
@@ -36,7 +49,7 @@ class TPlanet {
      this.speed=random(0.001,0.0005);
      this.radius=random(0,0.1);
 
-     int nmoons=rnd() * 3;
+     int nmoons=rnd() * 8;
      moons.SizeDim1=nmoons;
      for(int i=0; i<nmoons; i++) {
         TMoon m=new TMoon();
@@ -46,15 +59,19 @@ class TPlanet {
   }
 
   void render() {
-    RenderWithTransform2.Translate.X=distance;
-    RenderWithTransform1.Rotate.Z=angle;
-    RenderWithTransform2.Scale=1.0 + radius;
-    @CallComponent(Component : RenderWithTransform1);
+    glPushMatrix();
+      float f=0.2;
+      glRotatef(angle*360,0,0,1);
+      glScalef(f,f,f);
+      glTranslatef(distance,0,0);
+      glScalef(1+radius,1+radius,1+radius);
+      @RenderSprite();
 
-    for(int i=0; i<moons.SizeDim1; i++) {
-      TMoon m=moons[i];
-      m.render();
-    }
+      for(int i=0; i<moons.SizeDim1; i++) {
+        TMoon m=moons[i];
+        m.render();
+      }
+    glPopMatrix();
   }
 
   void update() {
@@ -71,12 +88,14 @@ TPlanet[] planets;]]>
     </ZLibrary>
     <ZExpression>
       <Expression>
-<![CDATA[const int nrOfPlanets = 32;
+<![CDATA[const int nrOfPlanets = 10;
 
 Planets.SizeDim1=nrOfPlanets;
+float dist=4;
 for(int i=0; i<nrOfPlanets; i++) {
   TPlanet p = new TPlanet();
-  p.init(random(13.5,4), random(0,0.7));
+  p.init(dist, random(0,0.7));
+  dist+=1.8;
   Planets[i]=p;
 }]]>
       </Expression>
@@ -105,15 +124,6 @@ for(int i=0; i<nrOfPlanets; i++) {
     </ZExpression>
   </OnRender>
   <Content>
-    <RenderTransformGroup Name="RenderWithTransform1" Scale="0.2 0.2 0.2" Rotate="0 0 0.3855">
-      <Children>
-        <RenderTransformGroup Name="RenderWithTransform2" Translate="1 0 0">
-          <Children>
-            <RenderSprite/>
-          </Children>
-        </RenderTransformGroup>
-      </Children>
-    </RenderTransformGroup>
     <Bitmap Name="Bitmap1" Comment="Anti-Aliased Circle" Width="16" Height="16">
       <Producers>
         <BitmapExpression>

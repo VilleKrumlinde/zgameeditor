@@ -28,6 +28,8 @@ model
 const
 private
 inline
+class
+new
 |><|
 
 CHARS

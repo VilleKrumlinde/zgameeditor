@@ -60,8 +60,8 @@ type
     fRange: TRangeState;
     FTokenID: TtkTokenKind;
     FExtTokenID: TxtkTokenKind;
-    //**VK: update to upper limit in KeyIndices
-    fIdentFuncTable: array[0..18] of TIdentFuncTableFunc;
+    //**Ville: update to upper limit in KeyIndices
+    fIdentFuncTable: array[0..22] of TIdentFuncTableFunc;
     fAsmAttri: TSynHighlighterAttributes;
     fCommentAttri: TSynHighlighterAttributes;
     fDirecAttri: TSynHighlighterAttributes;
@@ -186,16 +186,16 @@ uses
 
 const
   // as this language is case-insensitive keywords *must* be in lowercase
-  KeyWords: array[0..16] of UnicodeString = (
-    'break', 'case', 'const', 'continue', 'else', 'float', 'for', 'if',
-    'inline', 'int', 'model', 'private', 'return', 'string', 'switch', 'while',
-    'void'
+  KeyWords: array[0..18] of UnicodeString = (
+    'break', 'case', 'class', 'const', 'continue', 'else', 'float', 'for', 'if',
+    'inline', 'int', 'model', 'new', 'private', 'return', 'string', 'switch',
+    'void', 'while'
   );
 
-  KeyIndices: array[0..18] of Integer = (
-    3, 8, 7, 12, 0, 11, 4, 5, 16, -1, 9, -1, 15, 14, 10, 6, 13, 2, 1
+  KeyIndices: array[0..22] of Integer = (
+    14, 6, 11, 0, 12, 2, -1, -1, -1, 7, 4, 1, 10, 18, 15, 13, -1, 9, 5, 3, 17,
+    16, 8
   );
-
 
 {$Q-}
 function TSynZcSyn.HashKey(Str: PWideChar): Cardinal;
@@ -203,10 +203,10 @@ begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 749 + Ord(Str^) * 223;
+    Result := Result * 627 + Ord(Str^) * 75;
     inc(Str);
   end;
-  Result := Result mod 19;
+  Result := Result mod 23;
   fStringLen := Str - fToIdent;
 end;
 {$Q+}
