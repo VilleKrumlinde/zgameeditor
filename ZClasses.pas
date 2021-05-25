@@ -639,6 +639,8 @@ const
 (('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),('xptr'),
  ('void'),('Component'),('null'),('#array'),('#class'));
 
+const ManagedTypes : set of TZcDataTypeKind =
+ [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4];
 
 procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
@@ -846,6 +848,9 @@ begin
   Platform_LeaveMutex(mh_Lock);
 end;
 
+{$ifdef debug}
+  {$define extra_gc_checks}
+{$endif}
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
   {$ifdef extra_gc_checks} //These checks are very inefficient so dont't enable by default even in debug build

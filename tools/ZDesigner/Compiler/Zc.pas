@@ -47,15 +47,15 @@ type
     procedure _Type(var Typ : TZcDataType);
     procedure _GlobalVarDecl(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
     procedure _Block(var OutOp : TZcOp);
-    procedure _Field(Typ : TZcDataType; Cls : TZcOpClass);
-    procedure _StructMember(Cls : TZcOpClass);
-    procedure _ClassMember(Cls : TZcOpClass);
+    procedure _Field(Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean);
+    procedure _Init(var OutOp : TZcOp);
+    procedure _StructMember(Cls : TZcOpClass; IsPrivate : boolean);
+    procedure _ClassMember(Cls : TZcOpClass; IsPrivate : boolean);
     procedure _ClassBody(Cls : TZcOpClass);
     procedure _Statement(var OutOp : TZcOp);
     procedure _Par;
     procedure _LocalVarDecl(var OutOp : TZcOp);
     procedure _LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
-    procedure _Init(var OutOp : TZcOp);
     procedure _GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
     procedure _GlobalVar(Typ : TZcDataType; IsPrivate : boolean);
     procedure _Expr(var OutOp : TZcOp);
@@ -696,6 +696,8 @@ begin
   begin
     repeat
       Inc(PeekIndex);
+      if PeekIndex>=Self.LookAheadCount then
+        Exit(True);
     until Symbols[PeekIndex].Id=rbrackSym;
     Inc(PeekIndex);
   end;
@@ -1095,10 +1097,11 @@ begin
       
 end;
 
-procedure TZc._Field(Typ : TZcDataType; Cls : TZcOpClass);
+procedure TZc._Field(Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean);
 
 var
   Fld : TZcOpField;
+  Op,InitOp : TZcOp;
 
 begin
   Expect(identSym);
@@ -1108,7 +1111,7 @@ begin
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
-     if Fld.Typ.Kind in [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4] then
+     if Fld.Typ.Kind in ManagedTypes then
      begin //Managed field
        Inc(Cls.RuntimeClass.ManagedFields.Size,4);
        ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
@@ -1118,11 +1121,31 @@ begin
      //todo: field align
      Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
      Cls.Fields.Add(Fld);
+
+     SymTab.AddPrevious(Fld.Id,Fld);
+
+     InitOp := nil;
+  
+  if (CurrentInputSymbol=assgnSym) then
+  begin
+    Get;
+    _Init(InitOp);
+  end;
+    
+     Op := nil;
+     MakeVarInitializer(Fld,InitOp,Op);
+     if Assigned(Op) then
+       Cls.Initializer.Statements.Add(Op);
   
 end;
 
-procedure TZc._StructMember(Cls : TZcOpClass);
-                                 
+procedure TZc._Init(var OutOp : TZcOp);
+begin
+  _Expr(OutOp);
+end;
+
+procedure TZc._StructMember(Cls : TZcOpClass; IsPrivate : boolean);
+                                                      
 var
   Op : TZcOp;
   Typ : TZcDataType;
@@ -1140,6 +1163,14 @@ begin
   else if (CurrentInputSymbol=identSym) and ( IdentAndLPar ) then
   begin
        Expect(identSym);
+          
+     Name := LexString;
+     if not SameText(Name,Cls.Id) then
+       ZError('Constructor must have same name as class: ' + Name);
+     Typ.Kind := zctVoid;
+     
+       Expect(lparSym);
+       _ZcFuncRest(Typ,Name,False,False,Cls);
        Expect(lparSym);
        if InSet(CurrentInputSymbol,0) then
        begin
@@ -1161,39 +1192,68 @@ begin
        _Type(Typ);
        if (CurrentInputSymbol=identSym) and ( IsFieldDecl ) then
        begin
-            _Field(Typ,Cls);
+            
+            SymTab.PushScope;
+            try
+              //Add "this" to scope
+              SymTab.Add(Cls.Initializer.Arguments.First.Id, Cls.Initializer.Arguments.First);
+          
+            _Field(Typ,Cls,IsPrivate);
             while (CurrentInputSymbol=commaSym) do
             begin
               Get;
-              _Field(Typ,Cls);
+              _Field(Typ,Cls,IsPrivate);
             end;
             Expect(scolonSym);
+            
+            finally
+              SymTab.PopScope;
+            end;
+          
        end
        else if (CurrentInputSymbol=identSym) then
        begin
             Get;
                     Name := LexString; 
             Expect(lparSym);
-            _ZcFuncRest(Typ,Name,False,False,Cls);
+            _ZcFuncRest(Typ,Name,IsPrivate,False,Cls);
        end
        else SynError(3);
   end
   else SynError(3);
 end;
 
-procedure TZc._ClassMember(Cls : TZcOpClass);
+procedure TZc._ClassMember(Cls : TZcOpClass; IsPrivate : boolean);
 begin
-  _StructMember(Cls);
+  _StructMember(Cls,IsPrivate);
 end;
 
 procedure TZc._ClassBody(Cls : TZcOpClass);
+
+var
+  IsPrivate : boolean;
+
 begin
   Expect(lbraceSym);
+         try
+           SymTab.PushScope;
+      
   while InSet(CurrentInputSymbol,7) do
   begin
-    _ClassMember(Cls);
+           IsPrivate := False; 
+    if (CurrentInputSymbol=privateSym) then
+    begin
+      Get;
+                       IsPrivate:= True; 
+    end;
+    _ClassMember(Cls,IsPrivate);
   end;
   Expect(rbraceSym);
+        
+         finally
+           SymTab.PopScope;
+         end;
+      
 end;
 
 procedure TZc._Statement(var OutOp : TZcOp);
@@ -1260,7 +1320,11 @@ begin
 end;
 
 procedure TZc._LocalVar(Typ : TZcDataType; var OutOp : TZcOp);
-                                                  var Loc : TZcOpLocalVar; InitOp : TZcOp; 
+
+var
+  Loc : TZcOpLocalVar;
+  InitOp : TZcOp;
+
 begin
   Expect(identSym);
        
@@ -1281,33 +1345,8 @@ begin
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
-        if (Loc.Typ.Kind in [zctArray, zctMat4,zctVec2,zctVec3,zctVec4]) then
-        begin
-          //Alloc new local array.
-          //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy).
-          if (not Assigned(Loc.InitExpression)) or
-            (not (Loc.InitExpression.GetDataType.Kind in [Loc.Typ.Kind, zctNull])) then
-          begin
-            if OutOp=nil then
-              OutOp := MakeOp(zcBlock);
-            OutOp.Children.Add( MakeOp(zcInitLocalArray,Loc.Id) );
-          end;
-        end;
-
-        if Assigned(Loc.InitExpression) then
-        begin
-          //Generate tree for initial assignment
-          if OutOp=nil then
-            OutOp := MakeOp(zcBlock);
-          OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
-        end;
-
+        MakeVarInitializer(Loc,Loc.InitExpression,OutOp);
      
-end;
-
-procedure TZc._Init(var OutOp : TZcOp);
-begin
-  _Expr(OutOp);
 end;
 
 procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
@@ -1318,8 +1357,8 @@ begin
           ZError('Name already defined: ' + Name);
 
         V := nil;
-        if Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference] then
-        begin  //Simple primitives are stored in global area
+        if not (Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+        begin  //Stored in global area
           if IsPrivate then
             Glob := TZcOpGlobalVar.Create(nil)
           else
@@ -1328,9 +1367,9 @@ begin
           Glob.Offset := Glob.Lib.GlobalAreaSize;
           Glob.Id := Name;
           Glob.Typ := Typ;
-          //Need to always increase 8 here instead of sizeof(pointer) to
-          //allow generated binary to be compatible with both 32 and 64 bit runtime.
-          Inc(Glob.Lib.GlobalAreaSize,8);
+
+          Glob.Lib.AddGlobalVar(Typ);
+
           if IsPrivate then
             SymTab.Add(Name,Glob)
           else
@@ -1338,16 +1377,11 @@ begin
         end
         else if Typ.Kind=zctArray then
         begin
+          //todo: store arrays in global area too, need to generate initialization code
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
           Self.ZApp.GlobalVariables.AddComponent(V);
-        end
-        else
-        begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
-          V._Type := Typ.Kind;
-          V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
         if Assigned(V) then
@@ -2625,7 +2659,7 @@ begin
 	{ 4} identSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{ 7} identSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
+	{ 7} identSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 8} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, tildeSym, ifSym, switchSym, whileSym, doSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
 	{ 9} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{10} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, _bar_equalSym, _less_less_equalSym, _greater_greater_equalSym, _and_equalSym, -1,

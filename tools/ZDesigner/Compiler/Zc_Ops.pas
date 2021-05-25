@@ -186,6 +186,7 @@ type
     Methods : TObjectList<TZcOpFunctionUserDefined>;
     Fields : TObjectList<TZcOpField>;
     RuntimeClass : TUserClass;
+    Initializer : TZcOpFunctionUserDefined;
     constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
@@ -215,6 +216,7 @@ function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
 function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
+procedure MakeVarInitializer(V : TZcOpVariableBase; InitOp : TZcOp; var OutOp : TZcOp);
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : double;
@@ -646,7 +648,7 @@ begin
       end;
     zcInitArray :
       begin
-        Result := Id + '={init};';
+        Result := '{init}';
       end;
     zcForLoop :
       begin
@@ -1076,6 +1078,7 @@ end;
 function MakeIdentifier(const Id : string) : TZcOp;
 var
   C : TDefineConstant;
+  Op : TZcOp;
 begin
   Result := MakeOp(zcIdentifier,Id);
   if Result.Ref is TDefineConstant then
@@ -1092,6 +1095,13 @@ begin
     end;
   end else if (Result.Ref is TZcOpVariableBase) then
     Inc(TZcOpVariableBase(Result.Ref).ReadCount);
+
+  if Result.Ref is TZcOpField then
+  begin //Add "this" prefix when missing
+    Result.Kind := zcSelect;
+    Op := MakeOp(zcIdentifier,'this');
+    Result.Children.Add(Op)
+  end;
 end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
@@ -1413,6 +1423,30 @@ begin
     Inc(TZcOpVariableBase(LeftOp.Ref).WriteCount);
 
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
+end;
+
+procedure MakeVarInitializer(V : TZcOpVariableBase; InitOp : TZcOp; var OutOp : TZcOp);
+begin
+  if (V.Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+  begin
+    //Alloc new array.
+    //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy, such as a multiassign).
+    if (not Assigned(InitOp)) or
+      (not (InitOp.GetDataType.Kind in [V.Typ.Kind, zctNull])) then
+    begin
+      if OutOp=nil then
+        OutOp := MakeOp(zcBlock);
+      OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), MakeOp(zcInitArray,V.Id)) );
+    end;
+  end;
+
+  if Assigned(InitOp) then
+  begin
+    //Generate tree for initial assignment
+    if OutOp=nil then
+      OutOp := MakeOp(zcBlock);
+    OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), InitOp) );
+  end;
 end;
 
 {$DEFINE INLINING}
@@ -2207,12 +2241,25 @@ end;
 { TZcOpClass }
 
 constructor TZcOpClass.Create(Owner: Contnrs.TObjectList);
+var
+  Arg : TZcOpArgumentVar;
 begin
   inherited;
   Self.Kind := zcClass;
   Typ.Kind := zctClass;
   Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
   Fields := TObjectList<TZcOpField>.Create(False);
+
+  Initializer := TZcOpFunctionUserDefined.Create(nil);
+  Initializer.ReturnType.Kind := zctVoid;
+  Initializer.Id := '#init#';
+
+  //Add implicit "this" argument to initializer function
+  Arg := TZcOpArgumentVar.Create(nil);
+  Arg.Id := 'this';
+  Arg.Typ.Kind := zctClass;
+  Arg.Typ.TheClass := Self;
+  Initializer.AddArgument(Arg);
 end;
 
 destructor TZcOpClass.Destroy;
@@ -2228,8 +2275,14 @@ begin
 end;
 
 function TZcOpClass.ToString: string;
+var
+  Op : TZcOp;
 begin
-  Result := 'class ' + Id; //todo
+  Result := 'class ' + Id + ' { ';
+  Result := Result + Initializer.ToString;
+  for Op in Methods do
+    Result := Result + Op.ToString;
+  Result := Result + ' } ';
 end;
 
 initialization

@@ -516,12 +516,11 @@ type
     IsValue : boolean;
   end;
 
-  TExpInitLocalArray = class(TExpBase)
+  TExpInitArray = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    StackSlot : integer;
     Dimensions : TArrayDimensions;
     _Type : TZcDataTypeKind;
     Size1,Size2,Size3 : integer;
@@ -566,6 +565,8 @@ type
   public
     SizeInBytes : integer;
     ManagedFields : TZBinaryPropValue;
+    InitializerLib : TZLibrary;
+    InitializerIndex : integer;
   end;
 
   TUserClassInstance = class
@@ -3016,12 +3017,11 @@ begin
   end;
 end;
 
-{ TExpInitLocalArray }
+{ TExpInitArray }
 
-procedure TExpInitLocalArray.DefineProperties(List: TZPropertyList);
+procedure TExpInitArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'StackSlot',{$ENDIF}(@StackSlot), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}(@Dimensions), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Size1',{$ENDIF}(@Size1), zptInteger);
@@ -3029,13 +3029,11 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Size3',{$ENDIF}(@Size3), zptInteger);
 end;
 
-procedure TExpInitLocalArray.Execute(Env : PExecutionEnvironment);
+procedure TExpInitArray.Execute(Env : PExecutionEnvironment);
 var
-  P : TExecutionEnvironment.PStackElement;
   A : TDefineArray;
 begin
   //Use pointer size to get all bits in 64-bit mode
-  P := Env.StackGetPtrToItem( Env.gCurrentBP + Self.StackSlot );
   A := TDefineArray.Create(nil);
   ManagedHeap_AddValueObject(A);
   A.Dimensions := Self.Dimensions;
@@ -3043,7 +3041,7 @@ begin
   A.SizeDim1 := Self.Size1;
   A.SizeDim2 := Self.Size2;
   A.SizeDim3 := Self.Size3;
-  PPointer(P)^ := A;
+  Env.StackPushPointer(A);
 end;
 
 { TExpMat4 }
@@ -3373,10 +3371,21 @@ end;
 procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
 var
   P : TUserClassInstance;
+  Cls : TUserClass;
 begin
-  P := TUserClassInstance.Create(Self.TheClass);
+  Cls := Self.TheClass;
+
+  P := TUserClassInstance.Create(Cls);
   ManagedHeap_AddValueObject(P);
   Env.StackPushPointer(P);
+
+  if Assigned(Cls.InitializerLib) then
+  begin //Call initializer
+    Env.StackPushPointer(P); //push "this" as argument to initializer
+    Env.StackPushPointer(Env.gCurrentPC);
+    Env.gCurrentPC := Cls.InitializerLib.Source.Code.GetPtrToItem(Cls.InitializerIndex);
+    Dec(Env.gCurrentPc);
+  end;
 end;
 
 { TUserClassInstance }
@@ -3439,6 +3448,8 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ManagedFields',{$ENDIF}@ManagedFields, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'InitializerLib',{$ENDIF}@InitializerLib, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'InitializerIndex',{$ENDIF}@InitializerIndex, zptInteger);
 end;
 
 initialization
@@ -3511,7 +3522,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpInvokeComponent,ExpInvokeComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpInitLocalArray,ExpInitLocalArrayClassId);
+  ZClasses.Register(TExpInitArray,ExpInitLocalArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpMat4FuncCall,ExpMat4FuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}

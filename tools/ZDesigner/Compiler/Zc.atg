@@ -431,6 +431,7 @@ Field<Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean>
 (.
 var
   Fld : TZcOpField;
+  Op,InitOp : TZcOp;
 .)
 = ident
   (.
@@ -450,10 +451,19 @@ var
      Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
      Cls.Fields.Add(Fld);
 
-     SymTab.Add(Fld.Id,Fld);
+     SymTab.AddPrevious(Fld.Id,Fld);
+
+     InitOp := nil;
   .)
 
-  /* ["=" Init]*/
+  [ "=" Init<InitOp> ]
+
+  (.
+     Op := nil;
+     MakeVarInitializer(Fld,InitOp,Op);
+     if Assigned(Op) then
+       Cls.Initializer.Statements.Add(Op);
+  .)
 .
 /*------------------------------------------------------------------------*/
 StructMember<Cls : TZcOpClass; IsPrivate : boolean> (.
@@ -485,12 +495,25 @@ Type<Typ>
   (
         /*--- field declaration: */
         IF (. IsFieldDecl .)
+          (.
+            SymTab.PushScope;
+            try
+              //Add "this" to scope
+              SymTab.Add(Cls.Initializer.Arguments.First.Id, Cls.Initializer.Arguments.First);
+          .)
           Field<Typ,Cls,IsPrivate> {"," Field<Typ,Cls,IsPrivate>} ";"
+          (.
+            finally
+              SymTab.PopScope;
+            end;
+          .)
+
         |
           ident  (. Name := LexString; .)
           ( /*--- "not void" method (function) declaration: */
             "(" ZcFuncRest<Typ,Name,IsPrivate,False,Cls>
           )
+
   )
 .
 
@@ -595,7 +618,12 @@ LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
 
 /*------------------------------------------------------------------------*/
 
-LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitOp : TZcOp; .)
+LocalVar<Typ : TZcDataType; var OutOp : TZcOp>
+(.
+var
+  Loc : TZcOpLocalVar;
+  InitOp : TZcOp;
+.)
 = ident
      (.
         if SymTab.ScopeContains(LexString) then
@@ -610,27 +638,7 @@ LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitO
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
-        if (Loc.Typ.Kind in [zctArray, zctMat4,zctVec2,zctVec3,zctVec4]) then
-        begin
-          //Alloc new local array.
-          //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy).
-          if (not Assigned(Loc.InitExpression)) or
-            (not (Loc.InitExpression.GetDataType.Kind in [Loc.Typ.Kind, zctNull])) then
-          begin
-            if OutOp=nil then
-              OutOp := MakeOp(zcBlock);
-            OutOp.Children.Add( MakeOp(zcInitArray,Loc.Id) );
-          end;
-        end;
-
-        if Assigned(Loc.InitExpression) then
-        begin
-          //Generate tree for initial assignment
-          if OutOp=nil then
-            OutOp := MakeOp(zcBlock);
-          OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
-        end;
-
+        MakeVarInitializer(Loc,Loc.InitExpression,OutOp);
      .)
 .
 

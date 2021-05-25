@@ -519,6 +519,21 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     NewC.TheClass := (Op.Ref as TZcOpClass).RuntimeClass;
   end;
 
+  procedure DoGenInitArray(Op : TZcOp);
+  var
+    Loc : TZcOpVariableBase;
+  begin
+    Loc := Op.Ref as TZcOpVariableBase;
+    with TExpInitArray.Create(Target) do
+    begin
+      Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
+      _Type := TDefineArray(Loc.Typ.TheArray)._Type;
+      Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
+      Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
+      Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
+    end;
+  end;
+
 begin
   case Op.Kind of
     zcNop : ;
@@ -558,6 +573,7 @@ begin
         TExpMisc.Create(Target,emNot);
       end;
     zcNew : DoGenNew;
+    zcInitArray : DoGenInitArray(Op);
   else
     //Gen(Op); //Any op can occur in a value block because of inlining
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
@@ -990,6 +1006,12 @@ var
   begin
     for Func in Cls.Methods do
       DoGenFunction(Func);
+    if Cls.Initializer.Statements.Count>0 then
+    begin
+      Cls.RuntimeClass.InitializerLib := Component as TZLibrary;
+      Cls.RuntimeClass.InitializerIndex := Target.Count;
+      DoGenFunction(Cls.Initializer);
+    end;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
@@ -1139,22 +1161,6 @@ var
     RestoreReturn;
   end;
 
-  procedure DoGenInitArray(Op : TZcOp);
-  var
-    Loc : TZcOpLocalVar;
-  begin
-    Loc := Op.Ref as TZcOpLocalVar;
-    with TExpInitLocalArray.Create(Target) do
-    begin
-      StackSlot := Loc.Ordinal;
-      Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
-      _Type := TDefineArray(Loc.Typ.TheArray)._Type;
-      Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
-      Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
-      Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
-    end;
-  end;
-
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -1183,7 +1189,6 @@ begin
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
     zcInlineBlock : DoGenInlineBlock(Op);
     zcInlineReturn : DoGenInlineReturn;
-    zcInitArray : DoGenInitArray(Op);
     zcClass : DoGenClass(Op as TZcOpClass);
   else
     //GenValue(Op); //Value expressions (return values) can appear because of inlining
