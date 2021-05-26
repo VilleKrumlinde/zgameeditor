@@ -142,15 +142,13 @@ var
   i: integer;
   b: byte;
 begin
-  b := $80;
   i := $0;
-  while b > $7F do
-  begin
+  repeat
     i := i shl 7;
     b := PIndex^;
     i := i + b and $7F;
     Inc(PIndex);
-  end;
+  until b <= $7f;
   Result := i;
 end;
 

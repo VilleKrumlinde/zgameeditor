@@ -441,13 +441,6 @@ begin
   fOptionalHeader^.SizeOfInitializedData := iDataSize;
   fOptionalHeader^.SizeOfUninitializedData := uDataSize;
 
-  i := SizeOf (DWORD) +                   // NT signature
-       sizeof (fCoffHeader) +
-       fCOFFHeader.SizeOfOptionalHeader +
-       codeSize;
-
-  i := (i + addrAlign - 1) div addrAlign * addrAlign;
-
   // With explorer.exe, codeSize is $14800, i is 148E8, so aligned 'i' is $15000
   // .. so BaseOfData should be $15000 + BaseOfCode ($1000) = $16000.
   //
@@ -459,6 +452,13 @@ begin
   // else I've tested...
 
   {$ifdef Win32}
+  i := SizeOf (DWORD) +                   // NT signature
+       sizeof (fCoffHeader) +
+       fCOFFHeader.SizeOfOptionalHeader +
+       codeSize;
+
+  i := (i + addrAlign - 1) div addrAlign * addrAlign;
+
   //todo: What should happen here in 64 bit?
   fOptionalHeader^.BaseOfData := fOptionalHeader.BaseOfCode + DWORD (i);
   {$endif}

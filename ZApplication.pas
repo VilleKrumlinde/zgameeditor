@@ -144,6 +144,7 @@ type
     ThreadedProcessingEnabled : boolean;
     UseStencilBuffer : boolean;
     RenderOrder : (aroModelsBeforeApp,aroAppBeforeModels);
+    PointerSize : byte;
     {$ifndef minimal}
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
@@ -576,6 +577,9 @@ end;
 
 procedure TZApplication.Run;
 begin
+  if Self.PointerSize<>SizeOf(Pointer) then
+    ZHalt('Data must be saved in same bitness version of ZGameEditor');
+
   Init;
   //Skip initial tree update for now because it triggers AppState.OnStart etc. which can cause trouble
   //Any component needing init should override InitAfterPropsAreSet instead.
@@ -1266,6 +1270,11 @@ begin
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'PointerSize',{$ENDIF}@PointerSize, zptByte);
+    List.GetLast.DefaultValue.ByteValue := SizeOf(Pointer);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('FileVersion',@FileVersion, zptInteger);

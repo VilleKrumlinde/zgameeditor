@@ -22,7 +22,7 @@
      speed=random(0.0035,0.0005);
   }
 
-  void update() {
+  inline void update() {
     angle+= speed;
   }
 
@@ -41,6 +41,8 @@ class TPlanet {
   //todo: implement private
   private float distance, angle, speed, radius;
   private TMoon[] moons;
+
+  private void test() { }
 
   TPlanet(float dist,float angle) {
      this.distance=dist;
@@ -71,7 +73,7 @@ class TPlanet {
     glPopMatrix();
   }
 
-  void update() {
+  inline void update() {
     angle+=speed;
     for(int i=0; i<moons.SizeDim1; i++) {
       TMoon m=moons[i];

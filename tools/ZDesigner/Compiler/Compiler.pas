@@ -1598,8 +1598,9 @@ begin
   end else
   begin
     Cls := Op.Ref as TZcOpClass;
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
     for Func in Cls.Methods do
-      if Func.Id=Op.Id then
+      if SameText(Func.MangledName,MangledName) then
       begin
         O := Func;
         Break;

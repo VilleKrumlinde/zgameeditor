@@ -354,6 +354,7 @@ var
         Func.Id := Name;
         Func.ReturnType := Typ;
         Func.IsInline := IsInline;
+        Func.IsPrivate := IsPrivate;
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
@@ -364,7 +365,8 @@ var
             Arg.Id := 'this';
             Arg.Typ.Kind := zctClass;
             Arg.Typ.TheClass := Cls;
-            CurrentFunction.AddArgument(Arg);
+            Func.MemberOf := Cls;
+            Func.AddArgument(Arg);
             SymTab.Add(Arg.Id,Arg);
           end;
 
@@ -372,13 +374,15 @@ var
     [ FormalParams ] ")"
       (.
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
+        if SymTab.Contains(Func.MangledName) then
+          ZError('Name already defined: ' + Name);
         if Assigned(Cls) then
-          //TODO: check not duplicate name for methods
-          Cls.Methods.Add(Func)
+        begin
+          Cls.Methods.Add(Func);
+          SymTab.AddPrevious(Func.MangledName,Func);
+        end
         else
         begin
-          if SymTab.Contains(Func.MangledName) then
-            ZError('Name already defined: ' + Name);
           if IsPrivate then
             SymTab.AddPrevious(Func.MangledName,Func)
           else
@@ -443,6 +447,8 @@ var
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+     Fld.IsPrivate := IsPrivate;
+     Fld.MemberOf := Cls;
      if Fld.Typ.Kind in ManagedTypes then
      begin //Managed field
        Inc(Cls.RuntimeClass.ManagedFields.Size,4);
@@ -469,17 +475,20 @@ var
   .)
 .
 /*------------------------------------------------------------------------*/
-StructMember<Cls : TZcOpClass; IsPrivate : boolean> (.
+StructMember<Cls : TZcOpClass; IsPrivate,IsInline : boolean> (.
 var
   Typ : TZcDataType;
   Name : string;
 .)
 =
+(. Typ.Kind := zctVoid; .)
+
   /*--- void method (procedure) declaration: */
   "void" ident (. Name := LexString; .)
           (
-            "(" ZcFuncRest<Typ,Name,False,False,Cls>
+            "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline,Cls>
           )
+
 /*--- constructor or static constructor declaration: */
 |
   IF (. IdentAndLPar .)
@@ -487,15 +496,17 @@ var
      Name := LexString;
      if not SameText(Name,Cls.Id) then
        ZError('Constructor must have same name as class: ' + Name);
-     Typ.Kind := zctVoid;
      .)
-     "(" ZcFuncRest<Typ,Name,False,False,Cls>
+     "(" ZcFuncRest<Typ,Name,False,IsInline,Cls>
 |
+
 Type<Typ>
   (
         /*--- field declaration: */
         IF (. IsFieldDecl .)
           (.
+            if IsInline then
+              ZError('Fields cannot be marked with inline' + LexString);
             SymTab.PushScope;
             try
               //Add "this" to scope
@@ -508,18 +519,17 @@ Type<Typ>
             end;
           .)
 
-        |
-          ident  (. Name := LexString; .)
+        | ident  (. Name := LexString; .)
           ( /*--- "not void" method (function) declaration: */
-            "(" ZcFuncRest<Typ,Name,IsPrivate,False,Cls>
+            "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline,Cls>
           )
 
   )
 .
 
 /*------------------------------------------------------------------------*/
-ClassMember<Cls : TZcOpClass; IsPrivate : boolean>
-= StructMember<Cls,IsPrivate>
+ClassMember<Cls : TZcOpClass; IsPrivate,IsInline : boolean>
+= StructMember<Cls,IsPrivate,IsInline>
 /* | "~" ident "(" ")" (Block | ";") */
 .
 
@@ -527,15 +537,16 @@ ClassMember<Cls : TZcOpClass; IsPrivate : boolean>
 ClassBody<Cls : TZcOpClass>
 (.
 var
-  IsPrivate : boolean;
+  IsPrivate,IsInline : boolean;
 .)
 = "{" (. try
            SymTab.PushScope;
       .)
       {
-        (. IsPrivate := False; .)
+        (. IsPrivate := False; IsInline := False; .)
         [ "private" (. IsPrivate:= True; .) ]
-        ClassMember<Cls,IsPrivate>
+        [ "inline" (. IsInline:= True; .) ]
+        ClassMember<Cls,IsPrivate,IsInline>
       }
   "}" (.
          finally
@@ -559,11 +570,15 @@ var
       Cls.Id := LexString;
 
       Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
+      CompilerContext.CurrentClass := Cls;
 
       SymTab.AddPrevious(Cls.Id,Cls);
     .)
     ClassBody<Cls> [";"]
-    (. ZFunctions.Add(Cls); .)
+    (.
+      ZFunctions.Add(Cls);
+      CompilerContext.CurrentClass := nil;
+    .)
 /*|
   ( "struct" ident [Base] StructBody  [";"]
   )*/
@@ -677,6 +692,12 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
           Self.ZApp.GlobalVariables.AddComponent(V);
+        end
+        else
+        begin //zctMat4,zctVec2,zctVec3,zctVec4
+          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
+          V._Type := Typ.Kind;
+          V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
         if Assigned(V) then
@@ -1308,8 +1329,7 @@ InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
       ZError(LexString + ' is not a property of ' + Ci.ZClassName);
     if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
       ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
-    OutOp := MakeOp(zcIdentifier);
-    OutOp.Id := LexString;
+    OutOp := MakeOp(zcIdentifier,LexString);
   .)
   ":" Expr<Op>
   (. if Op=nil then

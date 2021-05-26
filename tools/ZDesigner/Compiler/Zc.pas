@@ -49,8 +49,8 @@ type
     procedure _Block(var OutOp : TZcOp);
     procedure _Field(Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean);
     procedure _Init(var OutOp : TZcOp);
-    procedure _StructMember(Cls : TZcOpClass; IsPrivate : boolean);
-    procedure _ClassMember(Cls : TZcOpClass; IsPrivate : boolean);
+    procedure _StructMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
+    procedure _ClassMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
     procedure _ClassBody(Cls : TZcOpClass);
     procedure _Statement(var OutOp : TZcOp);
     procedure _Par;
@@ -821,6 +821,7 @@ begin
         Func.Id := Name;
         Func.ReturnType := Typ;
         Func.IsInline := IsInline;
+        Func.IsPrivate := IsPrivate;
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
@@ -831,7 +832,8 @@ begin
             Arg.Id := 'this';
             Arg.Typ.Kind := zctClass;
             Arg.Typ.TheClass := Cls;
-            CurrentFunction.AddArgument(Arg);
+            Func.MemberOf := Cls;
+            Func.AddArgument(Arg);
             SymTab.Add(Arg.Id,Arg);
           end;
 
@@ -843,13 +845,15 @@ begin
   Expect(rparSym);
         
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
+        if SymTab.Contains(Func.MangledName) then
+          ZError('Name already defined: ' + Name);
         if Assigned(Cls) then
-          //TODO: check not duplicate name for methods
-          Cls.Methods.Add(Func)
+        begin
+          Cls.Methods.Add(Func);
+          SymTab.AddPrevious(Func.MangledName,Func);
+        end
         else
         begin
-          if SymTab.Contains(Func.MangledName) then
-            ZError('Name already defined: ' + Name);
           if IsPrivate then
             SymTab.AddPrevious(Func.MangledName,Func)
           else
@@ -995,6 +999,7 @@ begin
       Cls.Id := LexString;
 
       Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
+      CompilerContext.CurrentClass := Cls;
 
       SymTab.AddPrevious(Cls.Id,Cls);
     
@@ -1003,7 +1008,10 @@ begin
   begin
     Get;
   end;
-       ZFunctions.Add(Cls); 
+      
+      ZFunctions.Add(Cls);
+      CompilerContext.CurrentClass := nil;
+    
 end;
 
 procedure TZc._Type(var Typ : TZcDataType);
@@ -1114,6 +1122,8 @@ begin
      Fld.Id := LexString;
      Fld.Typ := Typ;
      Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+     Fld.IsPrivate := IsPrivate;
+     Fld.MemberOf := Cls;
      if Fld.Typ.Kind in ManagedTypes then
      begin //Managed field
        Inc(Cls.RuntimeClass.ManagedFields.Size,4);
@@ -1147,8 +1157,8 @@ begin
   _Expr(OutOp);
 end;
 
-procedure TZc._StructMember(Cls : TZcOpClass; IsPrivate : boolean);
-                                                      
+procedure TZc._StructMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
+                                                               
 var
   Typ : TZcDataType;
   Name : string;
@@ -1156,11 +1166,12 @@ var
 begin
   if (CurrentInputSymbol=voidSym) then
   begin
+ Typ.Kind := zctVoid; 
        Get;
        Expect(identSym);
                   Name := LexString; 
        Expect(lparSym);
-       _ZcFuncRest(Typ,Name,False,False,Cls);
+       _ZcFuncRest(Typ,Name,IsPrivate,IsInline,Cls);
   end
   else if (CurrentInputSymbol=identSym) and ( IdentAndLPar ) then
   begin
@@ -1169,10 +1180,9 @@ begin
      Name := LexString;
      if not SameText(Name,Cls.Id) then
        ZError('Constructor must have same name as class: ' + Name);
-     Typ.Kind := zctVoid;
      
        Expect(lparSym);
-       _ZcFuncRest(Typ,Name,False,False,Cls);
+       _ZcFuncRest(Typ,Name,False,IsInline,Cls);
   end
   else if InSet(CurrentInputSymbol,4) then
   begin
@@ -1180,6 +1190,8 @@ begin
        if (CurrentInputSymbol=identSym) and ( IsFieldDecl ) then
        begin
             
+            if IsInline then
+              ZError('Fields cannot be marked with inline' + LexString);
             SymTab.PushScope;
             try
               //Add "this" to scope
@@ -1203,37 +1215,42 @@ begin
             Get;
                     Name := LexString; 
             Expect(lparSym);
-            _ZcFuncRest(Typ,Name,IsPrivate,False,Cls);
+            _ZcFuncRest(Typ,Name,IsPrivate,IsInline,Cls);
        end
        else SynError(3);
   end
   else SynError(3);
 end;
 
-procedure TZc._ClassMember(Cls : TZcOpClass; IsPrivate : boolean);
+procedure TZc._ClassMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
 begin
-  _StructMember(Cls,IsPrivate);
+  _StructMember(Cls,IsPrivate,IsInline);
 end;
 
 procedure TZc._ClassBody(Cls : TZcOpClass);
 
 var
-  IsPrivate : boolean;
+  IsPrivate,IsInline : boolean;
 
 begin
   Expect(lbraceSym);
          try
            SymTab.PushScope;
       
-  while InSet(CurrentInputSymbol,7) do
+  while InSet(CurrentInputSymbol,3) do
   begin
-           IsPrivate := False; 
+           IsPrivate := False; IsInline := False; 
     if (CurrentInputSymbol=privateSym) then
     begin
       Get;
                        IsPrivate:= True; 
     end;
-    _ClassMember(Cls,IsPrivate);
+    if (CurrentInputSymbol=inlineSym) then
+    begin
+      Get;
+                      IsInline:= True; 
+    end;
+    _ClassMember(Cls,IsPrivate,IsInline);
   end;
   Expect(rbraceSym);
         
@@ -1255,7 +1272,7 @@ begin
        _LocalVarDecl(OutOp);
        Expect(scolonSym);
   end
-  else if InSet(CurrentInputSymbol,8) then
+  else if InSet(CurrentInputSymbol,7) then
   begin
        _EmbeddedStatement(OutOp);
   end
@@ -1369,6 +1386,12 @@ begin
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
           Self.ZApp.GlobalVariables.AddComponent(V);
+        end
+        else
+        begin //zctMat4,zctVec2,zctVec3,zctVec4
+          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
+          V._Type := Typ.Kind;
+          V._ReferenceClassId := Typ.ReferenceClassId;
         end;
 
         if Assigned(V) then
@@ -1402,7 +1425,7 @@ procedure TZc._Expr(var OutOp : TZcOp);
 begin
      Op1 :=nil; Op2 := nil; 
   _Unary(Op1);
-  if InSet(CurrentInputSymbol,9) then
+  if InSet(CurrentInputSymbol,8) then
   begin
        _OrExpr(Op1,OutOp);
        if (CurrentInputSymbol=_querySym) then
@@ -1418,7 +1441,7 @@ begin
          
        end;
   end
-  else if InSet(CurrentInputSymbol,10) then
+  else if InSet(CurrentInputSymbol,9) then
   begin
        _AssignOp(Kind);
        _Expr(Op2);
@@ -1757,7 +1780,7 @@ begin
          CurrentFunction.PushScope;
          ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; 
        Expect(lparSym);
-       if InSet(CurrentInputSymbol,11) then
+       if InSet(CurrentInputSymbol,10) then
        begin
          _ForInit(ForInitOp);
        end;
@@ -1827,7 +1850,7 @@ procedure TZc._StatementExpr(var OutOp : TZcOp);
 begin
      Op1 :=nil; Op2 := nil; 
   _Unary(Op1);
-  if InSet(CurrentInputSymbol,10) then
+  if InSet(CurrentInputSymbol,9) then
   begin
        _AssignOp(Kind);
        _Expr(Op2);
@@ -1909,7 +1932,7 @@ procedure TZc._Unary(var OutOp : TZcOp);
                                     var LastOp,Tmp : TZcOp; Kind : TZcOpKind; 
 begin
            LastOp := nil; Kind := zcNop; 
-  while InSet(CurrentInputSymbol,12) do
+  while InSet(CurrentInputSymbol,11) do
   begin
     if (CurrentInputSymbol=minusSym) then
     begin
@@ -2139,7 +2162,7 @@ procedure TZc._RelExpr(InOp : TZcOp; var OutOp : TZcOp);
 begin
   _ShiftExpr(InOp,OutOp);
                            L := OutOp; Kind := zcNop; 
-  while InSet(CurrentInputSymbol,13) do
+  while InSet(CurrentInputSymbol,12) do
   begin
     if (CurrentInputSymbol=ltSym) then
     begin
@@ -2271,7 +2294,7 @@ begin
   begin
        _InlineComponent(OutOp);
   end
-  else if InSet(CurrentInputSymbol,14) then
+  else if InSet(CurrentInputSymbol,13) then
   begin
        _Literal(Typ);
                     
@@ -2353,7 +2376,7 @@ begin
       
   end
   else SynError(12);
-  while InSet(CurrentInputSymbol,15) do
+  while InSet(CurrentInputSymbol,14) do
   begin
     if (CurrentInputSymbol=incSym) then
     begin
@@ -2462,8 +2485,7 @@ begin
       ZError(LexString + ' is not a property of ' + Ci.ZClassName);
     if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
       ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
-    OutOp := MakeOp(zcIdentifier);
-    OutOp.Id := LexString;
+    OutOp := MakeOp(zcIdentifier,LexString);
   
   Expect(colonSym);
   _Expr(Op);
@@ -2681,15 +2703,14 @@ begin
 	{ 4} identSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{ 7} identSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, privateSym, voidSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
-	{ 8} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, tildeSym, ifSym, switchSym, whileSym, doSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{ 9} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
-	{10} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, _bar_equalSym, _less_less_equalSym, _greater_greater_equalSym, _and_equalSym, -1,
-	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{12} decSym, incSym, minusSym, notSym, tildeSym, -1,
-	{13} gtSym, gteSym, ltSym, lteSym, -1,
-	{14} intConSym, realConSym, stringConSym, nullSym, -1,
-	{15} decSym, dotSym, incSym, lbrackSym, lparSym
+	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, tildeSym, ifSym, switchSym, whileSym, doSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
+	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
+	{ 9} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, _bar_equalSym, _less_less_equalSym, _greater_greater_equalSym, _and_equalSym, -1,
+	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
+	{11} decSym, incSym, minusSym, notSym, tildeSym, -1,
+	{12} gtSym, gteSym, ltSym, lteSym, -1,
+	{13} intConSym, realConSym, stringConSym, nullSym, -1,
+	{14} decSym, dotSym, incSym, lbrackSym, lparSym
   ]); 
   SymSets := ZcSymSets;
   

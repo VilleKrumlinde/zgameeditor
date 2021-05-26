@@ -20,6 +20,7 @@ type
           zcClass,zcMethodCall,zcNew);
 
   TZcOpField = class;
+  TZcOpClass = class;
   TZcIdentifierInfo = record
     Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined,edtField);
     DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
@@ -77,6 +78,8 @@ type
   TZcOpField = class(TZcOpVariableBase)
   public
     ByteOffset : integer;
+    IsPrivate : boolean;
+    MemberOf : TZcOpClass;
   end;
 
   TZcOpLiteral = class(TZcOp)
@@ -144,8 +147,10 @@ type
     ExtLib : TZExternalLibrary;
     //For inlining
     IsInline : boolean;
+    IsPrivate : boolean;
     ReturnCount : integer;
     IsRecursive: boolean;
+    MemberOf : TZcOpClass;
     function NeedFrame : boolean;
   end;
 
@@ -201,7 +206,7 @@ type
   end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
-function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind; const Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 function MakeIdentifier(const Id : string) : TZcOp;
 function MakeTemp(Kind : TZcDataTypeKind) : TZcOpLocalVar;
@@ -236,6 +241,7 @@ var
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
+    CurrentClass : TZcOpClass;
     //Nodes owned by the current compiled function/expression
     //Used for memory management
     //Update: This now holds all created ASTs and is cleared in App.Compile.
@@ -494,7 +500,6 @@ var
         Exit;
       end;
     end;
-    raise ECodeGenError.Create('Unknown field: ' + Self.Id);
   end;
 
 var
@@ -1067,7 +1072,7 @@ begin
   Result.Kind := Kind;
 end;
 
-function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind; const Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
@@ -1211,6 +1216,7 @@ var
   PropValue : TZPropertyValue;
   Owner : TZComponent;
   I : integer;
+  Etyp : TZcIdentifierInfo;
 begin
   Result := Op;
 
@@ -1290,6 +1296,13 @@ begin
       Result := MakeOp(zcSelect,[ MakeIdentifier('this') ]);
       Result.Id := Op.Id;
     end;
+  end;
+
+  if (Op.Kind=zcSelect) and (Op.Ref=nil) then
+  begin
+    Etyp := Op.GetIdentifierInfo;
+    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and (Etyp.Field.MemberOf<>CompilerContext.CurrentClass) then
+      raise ECodeGenError.Create('Cannot access private field: ' + Op.Id);
   end;
 end;
 
@@ -1464,7 +1477,7 @@ var
       Op : TZcOp;
     begin
       for Op in L1 do
-       L2.Add(DoClone(Op))
+        L2.Add(DoClone(Op))
     end;
 
   begin
@@ -1529,6 +1542,7 @@ var
       zcInvokeComponent :
         begin
           Result := TZcOpInvokeComponent.Create(nil);
+          Result.Id := Op.Id;
           DoCloneList(Op.Children,Result.Children);
         end;
       zcReinterpretCast :
@@ -1608,6 +1622,7 @@ begin
   LocMap.Free;
 
   if (Func.ReturnType.Kind<>zctVoid) and
+    (OutOp.Children.Count>0) and
     //No need for convert if InlineBlock is single statement
     (OutOp.Children.First.Kind<>zcInlineReturn) then
   begin
@@ -1660,17 +1675,39 @@ begin
   IsMethod := Assigned(Cls);
   if IsMethod then
   begin
-    O := nil;
-    for FOp in Cls.Methods do
-      if SameText(FOp.Id,Op.Id) then
-      begin
-        O := FOp;
-        Break;
-      end;
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := CompilerContext.SymTab.Lookup(MangledName);
+    if O=nil then
+    begin
+      O := nil;
+      for FOp in Cls.Methods do
+        if SameText(FOp.Id,Op.Id) then
+        begin
+          O := FOp;
+          Break;
+        end;
+    end;
+    if Assigned(O) and TZcOpFunctionUserDefined(O).IsPrivate and
+      (TZcOpFunctionUserDefined(O).MemberOf<>CompilerContext.CurrentClass) then
+    begin
+      Error := 'Cannot call private method: ' + Op.Id;
+      Exit;
+    end;
   end else
   begin
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
     O := CompilerContext.SymTab.Lookup(MangledName);
+    if (O=nil) and Assigned(CompilerContext.CurrentClass) then
+    begin
+      O := CompilerContext.SymTab.Lookup( MangleFunc(Op.Id,Op.Children.Count+1) );
+      if Assigned(O) then
+      begin //function call is actually method call without "this", convert
+        IsMethod := True;
+        Op.Kind := zcMethodCall;
+        Op.Ref := CompilerContext.CurrentClass;
+        Op.Children.Insert(0, MakeIdentifier('this') );
+      end;
+    end;
   end;
 
   if Assigned(O) and (O is TZcOpFunctionBase) then
