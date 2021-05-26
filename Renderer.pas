@@ -1187,8 +1187,8 @@ begin
 
   if IsBuiltIn then
   begin
-    //Use builtin truetype font (win32 only)
-    {$ifndef Win32}
+    //Use builtin truetype font (windows only)
+    {$ifndef MSWINDOWS}
     Exit;
     {$endif}
     Dec(Char,33);

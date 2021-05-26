@@ -16,14 +16,14 @@
 <![CDATA[class TMoon {
   private float distance, angle, speed;
 
-  void init() {
-     distance=random(4.0,1.0);
+  TMoon() {
+     distance=random(3.5,0.25);
      angle=rnd();
-     speed=random(0.004,0.0005);
+     speed=random(0.0035,0.0005);
   }
 
   void update() {
-    angle+=speed;
+    angle+= speed;
   }
 
   void render() {
@@ -31,7 +31,7 @@
       float f=0.2;
       glRotatef(angle*360,0,0,1);
       glScalef(f,f,f);
-      glTranslatef(distance,0,0);
+      glTranslatef(distance + noise2(App.time,App.time*1.2) ,0,0);
       @RenderSprite();
     glPopMatrix();
   }
@@ -42,25 +42,22 @@ class TPlanet {
   private float distance, angle, speed, radius;
   private TMoon[] moons;
 
-  //todo: make this a constructor
-  void init(float dist,float angle) {
+  TPlanet(float dist,float angle) {
      this.distance=dist;
      this.angle=angle;
-     this.speed=random(0.001,0.0005);
+     this.speed=random(0.0015,0.0007);
      this.radius=random(0,0.1);
 
-     int nmoons=rnd() * 8;
+     int nmoons=random(4,3);
      moons.SizeDim1=nmoons;
      for(int i=0; i<nmoons; i++) {
-        TMoon m=new TMoon();
-        m.init();
-        moons[i]=m;
+        moons[i]=new TMoon();
      }
   }
 
   void render() {
     glPushMatrix();
-      float f=0.2;
+      float f=1.0;
       glRotatef(angle*360,0,0,1);
       glScalef(f,f,f);
       glTranslatef(distance,0,0);
@@ -88,14 +85,13 @@ TPlanet[] planets;]]>
     </ZLibrary>
     <ZExpression>
       <Expression>
-<![CDATA[const int nrOfPlanets = 10;
+<![CDATA[const int nrOfPlanets = 4;
 
 Planets.SizeDim1=nrOfPlanets;
-float dist=4;
+float dist=0.0;
 for(int i=0; i<nrOfPlanets; i++) {
-  TPlanet p = new TPlanet();
-  p.init(dist, random(0,0.7));
-  dist+=1.8;
+  TPlanet p = new TPlanet(dist, random(0,0.7));
+  dist+=1.25;
   Planets[i]=p;
 }]]>
       </Expression>
@@ -105,6 +101,7 @@ for(int i=0; i<nrOfPlanets; i++) {
     <ZExpression>
       <Expression>
 <![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
+//  Planets[i].update();
   TPlanet p = Planets[i];
   p.update();
 }]]>
@@ -124,7 +121,7 @@ for(int i=0; i<nrOfPlanets; i++) {
     </ZExpression>
   </OnRender>
   <Content>
-    <Bitmap Name="Bitmap1" Comment="Anti-Aliased Circle" Width="16" Height="16">
+    <Bitmap Name="Bitmap1" Comment="Anti-Aliased Circle" Width="256" Height="256" Filter="2">
       <Producers>
         <BitmapExpression>
           <Expression>

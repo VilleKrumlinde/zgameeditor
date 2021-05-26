@@ -602,7 +602,7 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$endif}
-{$if defined(cpux64) and defined(mswindows)}, WinApi.Windows{$endif}
+{$if defined(cpux64) and defined(mswindows)}, Windows{$endif}
   ;
 
 {$POINTERMATH ON}
@@ -2476,7 +2476,7 @@ begin
   W([$49,$ff,$e3]); //jmp r11
 
   {$ifdef mswindows}
-  WinApi.Windows.VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+  Windows.VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
   {$else}
   mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
   {$endif}

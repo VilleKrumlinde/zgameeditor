@@ -808,8 +808,11 @@ var
 
 begin
        
-        if SymTab.Contains(Name) then
-          ZError('Name already defined: ' + Name);
+        if (not Assigned(Cls)) or (not SameText(Name,Cls.Id)) then
+        begin //Check for dup except if name of class constructor
+          if SymTab.Contains(Name) then
+            ZError('Name already defined: ' + Name);
+        end;
 
         if IsPrivate then
           Func := TZcOpFunctionUserDefined.Create(nil)
@@ -1147,7 +1150,6 @@ end;
 procedure TZc._StructMember(Cls : TZcOpClass; IsPrivate : boolean);
                                                       
 var
-  Op : TZcOp;
   Typ : TZcDataType;
   Name : string;
 
@@ -1171,21 +1173,6 @@ begin
      
        Expect(lparSym);
        _ZcFuncRest(Typ,Name,False,False,Cls);
-       Expect(lparSym);
-       if InSet(CurrentInputSymbol,0) then
-       begin
-         _FormalParams;
-       end;
-       Expect(rparSym);
-       if (CurrentInputSymbol=lbraceSym) then
-       begin
-            _Block(Op);
-       end
-       else if (CurrentInputSymbol=scolonSym) then
-       begin
-            Get;
-       end
-       else SynError(3);
   end
   else if InSet(CurrentInputSymbol,4) then
   begin
@@ -2267,9 +2254,11 @@ begin
 end;
 
 procedure TZc._Primary(var OutOp : TZcOp);
- var Op : TZcOp; S : string; V : double;
-     Typ : TZcDataType;
+
+var Op,ConsCall : TZcOp; S : string; V : double;
+  Typ : TZcDataType;
   Cls : TZcOpClass;
+  Loc : TZcOpLocalVar;
 
 begin
                 OutOp := nil; 
@@ -2322,13 +2311,46 @@ begin
        if InSet(CurrentInputSymbol,6) then
        begin
          _Argument(Op);
+                           OutOp.Children.Add(Op); 
          while (CurrentInputSymbol=commaSym) do
          begin
            Get;
            _Argument(Op);
+                              OutOp.Children.Add(Op); 
          end;
        end;
        Expect(rparSym);
+        
+         //Look for constructor
+         Cls := Typ.TheClass as TZcOpClass;
+         S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
+         for Op in Cls.Methods do
+         begin
+           if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
+           begin
+             //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+             Loc := MakeTemp(zctClass);
+             Loc.Typ.TheClass := Cls;
+             SymTab.Add(Loc.Id,Loc);
+             CurrentFunction.AddLocal(Loc);
+
+             ConsCall := MakeOp(zcMethodCall);
+             ConsCall.Id := Cls.Id;
+             ConsCall.Ref := Cls;
+             ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+             ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+
+             OutOp := MakeOp(zcInlineBlock);
+             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+             OutOp.Children.Add( ConsCall );
+             OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+
+             if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+               ZError(S);
+             Break;
+           end;
+         end;
+      
   end
   else SynError(12);
   while InSet(CurrentInputSymbol,15) do

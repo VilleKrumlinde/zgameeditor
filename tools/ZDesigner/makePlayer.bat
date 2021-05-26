@@ -55,7 +55,8 @@ if %zgeproduct%==NORMAL (
   rem %dcc% -DZDEBUG -U.\tools\ZDesigner\3rdparty;.\3rdparty;.\tools\ZDesigner\Compiler;.\components;.\tools\ZDesigner -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner -NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Xml;Data;Datasnap;Web;Soap ZzDC.dpr -GD
 
   rem Using Freepascal
-  C:\fpc\bin\i386-win32\fpc -Xm -XXis -O2 -dMINIMAL -FUt:\temp -B -Mdelphi -FE.\tools\zdesigner zzdc.dpr
+  rem C:\fpc\bin\i386-win32\fpc -Xm -XXis -O2 -dMINIMAL -FUt:\temp -B -Mdelphi -FE.\tools\zdesigner zzdc.dpr
+  C:\fpc\bin\i386-win32\ppcrossx64 -Xm -XXis -O2 -dMINIMAL -FUt:\temp -B -Mdelphi -FE.\tools\zdesigner zzdc.dpr
 
   set playername=Player.bin
 ) else if %zgeproduct%==SS (

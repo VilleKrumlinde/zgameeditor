@@ -341,8 +341,11 @@ var
 .)
 =
      (.
-        if SymTab.Contains(Name) then
-          ZError('Name already defined: ' + Name);
+        if (not Assigned(Cls)) or (not SameText(Name,Cls.Id)) then
+        begin //Check for dup except if name of class constructor
+          if SymTab.Contains(Name) then
+            ZError('Name already defined: ' + Name);
+        end;
 
         if IsPrivate then
           Func := TZcOpFunctionUserDefined.Create(nil)
@@ -468,7 +471,6 @@ var
 /*------------------------------------------------------------------------*/
 StructMember<Cls : TZcOpClass; IsPrivate : boolean> (.
 var
-  Op : TZcOp;
   Typ : TZcDataType;
   Name : string;
 .)
@@ -488,8 +490,6 @@ var
      Typ.Kind := zctVoid;
      .)
      "(" ZcFuncRest<Typ,Name,False,False,Cls>
-     "(" [FormalParams] ")"
-        (Block<Op> | ";")
 |
 Type<Typ>
   (
@@ -1359,9 +1359,11 @@ InlineComponent<var OutOp : TZcOp>
 
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>
-(. var Op : TZcOp; S : string; V : double;
-     Typ : TZcDataType;
+(.
+var Op,ConsCall : TZcOp; S : string; V : double;
+  Typ : TZcDataType;
   Cls : TZcOpClass;
+  Loc : TZcOpLocalVar;
 .)
 =            (. OutOp := nil; .)
   (
@@ -1393,7 +1395,40 @@ Primary<var OutOp : TZcOp>
            ZError('new can only be used with Class-types');
          OutOp := MakeOp(zcNew,LexString);
       .)
-      "(" [Argument<Op> {"," Argument<Op> }] ")"
+      "(" [Argument<Op> (. OutOp.Children.Add(Op); .)
+         {"," Argument<Op> (. OutOp.Children.Add(Op); .) }] ")"
+
+      (.
+         //Look for constructor
+         Cls := Typ.TheClass as TZcOpClass;
+         S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
+         for Op in Cls.Methods do
+         begin
+           if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
+           begin
+             //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+             Loc := MakeTemp(zctClass);
+             Loc.Typ.TheClass := Cls;
+             SymTab.Add(Loc.Id,Loc);
+             CurrentFunction.AddLocal(Loc);
+
+             ConsCall := MakeOp(zcMethodCall);
+             ConsCall.Id := Cls.Id;
+             ConsCall.Ref := Cls;
+             ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+             ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+
+             OutOp := MakeOp(zcInlineBlock);
+             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+             OutOp.Children.Add( ConsCall );
+             OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+
+             if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+               ZError(S);
+             Break;
+           end;
+         end;
+      .)
     )
   )
 
