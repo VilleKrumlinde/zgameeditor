@@ -155,9 +155,8 @@ begin
   case Typ of
     zctByte : Result := TExpAssign1.Create(nil);
     zctInt,zctFloat : Result := TExpAssign4.Create(nil);
-    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctReference,zctClass : Result := TExpAssignPointer.Create(nil);
   else
-    raise ECodeGenError.Create('Wrong datatype for assign');
+    Result := TExpAssignPointer.Create(nil);
   end;
 end;
 
@@ -1576,6 +1575,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F.Index := UserFunc.LibIndex;
       F.Ref := UserFunc;
     end;
+    TExpBase(Target.Last).TraceInfo := UserFunc.Id;
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then
       //discard return value from stack

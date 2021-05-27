@@ -131,6 +131,7 @@ type
     _Type : TZcDataTypeKind;
     {$ifndef minimal}
     _ReferenceClassId : TZClassIds;  //This is used to verify type of global declared reference variables
+    _TheClass : pointer;
     function GetDisplayName: ansistring; override;
     {$endif}
   end;
@@ -209,6 +210,10 @@ type
   protected
     procedure Execute(Env : PExecutionEnvironment); virtual; abstract;
     {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
+  {$ifndef minimal}
+  public
+    TraceInfo : string;
+  {$endif}
   end;
 
   TExpConstantFloat = class(TExpBase)
@@ -607,6 +612,17 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
 
 {$POINTERMATH ON}
 
+{$ifndef minimal}
+var
+  //debug info that will be appended to next script error message
+  GlobalTraceInfo : string;
+
+procedure ScriptError(const S : string);
+begin
+  ZHalt(GlobalTraceInfo + ' ' + S);
+end;
+{$endif}
+
 function ExpGetValue(Code : TZComponentList) : single;
 begin
   Result := RunCode(Code).SingleValue;
@@ -643,7 +659,7 @@ procedure TExecutionEnvironment.StackPush(const X);
 begin
   {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
-    ZHalt('Zc Stack Overflow (infinite recursion?)');
+    ScriptError('Zc Stack Overflow (infinite recursion?)');
   {$endif}
   PInteger(ZcStackPtr)^ := PInteger(@X)^;
   Inc(ZcStackPtr);
@@ -654,7 +670,7 @@ procedure TExecutionEnvironment.StackPushPointer(const X);
 begin
   {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
-    ZHalt('Zc Stack Overflow (infinite recursion?)');
+    ScriptError('Zc Stack Overflow (infinite recursion?)');
   {$endif}
   ZcStackPtr^ := TStackElement( PPointer(@X)^ );
   Inc(ZcStackPtr);
@@ -665,7 +681,7 @@ procedure TExecutionEnvironment.StackPopTo(var X);
 begin
   {$ifdef debug}
   if StackGetDepth=0 then
-    ZHalt('Zc Stack Underflow');
+    ScriptError('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
   PInteger(@X)^ := PInteger(ZcStackPtr)^;
@@ -676,7 +692,7 @@ procedure TExecutionEnvironment.StackPopToPointer(var X);
 begin
   {$ifdef debug}
   if StackGetDepth=0 then
-    ZHalt('Zc Stack Underflow');
+    ScriptError('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
   PPointer(@X)^ := pointer(ZcStackPtr^);
@@ -696,7 +712,7 @@ end;
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
 {$IFNDEF MINIMAL}
   {$IFNDEF ZGEVIZ}
-    {$DEFINE GUARD_LIMIT}
+    {.$DEFINE GUARD_LIMIT}
   {$ENDIF}
 {$ENDIF}
 const
@@ -727,16 +743,20 @@ begin
   {$endif}
   while True do
   begin
+    {$ifdef debug}
+    if TExpBase(Env.gCurrentPc^).TraceInfo<>'' then
+      GlobalTraceInfo := TExpBase(Env.gCurrentPc^).TraceInfo;
+    {$endif}
     TExpBase(Env.gCurrentPc^).Execute(Env);
     if Env.gCurrentPc=nil then
-       break;
+      Break;
     Inc(Env.gCurrentPc);
     {$ifdef GUARD_LIMIT}
     Dec(GuardLimit);
     if GuardLimit=0 then
-      ZHalt('Infinite loop?');
+      ScriptError('Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
-      ZHalt('Ten million strings allocated. Infinite loop?');
+      ScriptError('Ten million strings allocated. Infinite loop?');
     {$endif}
   end;
   if Env.StackGetDepth=1 then
@@ -750,7 +770,8 @@ end;
 {$ifdef debug}
 procedure CheckNilDeref(P : pointer);
 begin
-  ZAssert( NativeUInt(P)>1024,'Null pointer referenced in expression');
+  if NativeUInt(P)<=1024 then
+    ScriptError('Null pointer referenced in expression');
 end;
 {$endif}
 
@@ -869,7 +890,7 @@ begin
     vbkMinus : V := A2 - A1;
     vbkMul : V := A2 * A1;
     vbkDiv : V := A2 / A1;
-    {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
+    {$ifndef minimal}else ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -897,7 +918,7 @@ begin
         V := A2 mod A1
       else
         V := 0; //avoid runtime div by zero error
-    {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
+    {$ifndef minimal}else ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -937,7 +958,7 @@ begin
               jsJumpGE : Jump := L>=R;
               jsJumpNE : Jump := L<>R;
               jsJumpEQ : Jump := L=R;
-            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            {$ifndef minimal}else ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutInt:
@@ -951,7 +972,7 @@ begin
               jsJumpGE : Jump := Li>=Ri;
               jsJumpNE : Jump := Li<>Ri;
               jsJumpEQ : Jump := Li=Ri;
-            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            {$ifndef minimal}else ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutString:
@@ -1129,7 +1150,7 @@ begin
     fcQuit :
       begin
         {$ifndef minimal}
-        raise EZHalted.Create('Quit called');
+        ScriptError('Quit called');
         {$else}
         HasReturnValue := False;
         ZApp.Terminating := True;
@@ -1265,7 +1286,7 @@ begin
         TZThreadComponent(P1).Start(I1);
         HasReturnValue := False;
       end;
-  {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
+  {$ifndef minimal}else ScriptError('Invalid func op'); {$endif}
   end;
   if HasReturnValue then
     Env.StackPush(V);
@@ -1454,7 +1475,7 @@ begin
     ((Dimensions=dadThree) and ((I1>=SizeDim1) or (I2>=SizeDim2) or (I3>=SizeDim3)))
     then
   begin
-    ZHalt('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
+    ScriptError('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     Result := nil;
     Exit;
   end;
@@ -1739,6 +1760,9 @@ begin
       begin
         //Convert TUserClassInstance to the instancedata for field access
         Env.StackPopToPointer(P);
+        {$ifdef debug}
+        CheckNilDeref(P);
+        {$endif}
         Env.StackPushPointer( TUserClassInstance(P).InstanceData );
       end;
   end;
@@ -2126,7 +2150,7 @@ begin
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}
-      ZHalt(Self.ModuleName + ' not found');
+      ScriptError(Self.ModuleName + ' not found');
       {$else}
       ZHalt(Self.ModuleName);
       {$endif}
@@ -2139,7 +2163,7 @@ begin
 
   if Result=nil then
     {$ifndef minimal}
-    ZHalt(P + ' not found');
+    ScriptError(P + ' not found');
     {$else}
     ZHalt(P);
     {$endif}
@@ -3001,7 +3025,7 @@ begin
       zptString : V.StringValue := PAnsiChar(RawValue);
     {$ifndef minimal}
     else
-      ZHalt(ClassName + ' invalid datatype for argument');
+      ScriptError(ClassName + ' invalid datatype for argument');
     {$endif}
     end;
 
@@ -3157,7 +3181,7 @@ begin
         begin
           Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
           if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
-            ZHalt('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
+            ScriptError('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
           C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
           C.ZApp.HasScriptCreatedComponents := True;
         end;
@@ -3174,7 +3198,7 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          ScriptError('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop); //Must read prop first, when modifying rects
         case Prop.PropertyType of
           zptFloat,zptScalar: Value.FloatValue := V;
@@ -3185,7 +3209,7 @@ begin
           zptByte: Value.ByteValue := Round(V);
           zptBoolean: Value.BooleanValue := ByteBool(Round(V));
         else
-          ZHalt('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          ScriptError('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3197,17 +3221,17 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          ScriptError('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptString : Value.StringValue := AnsiString(PAnsiChar(P3));
           zptExpression : Value.ExpressionValue.Source := String(PAnsiChar(P3));
         else
-          ZHalt('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          ScriptError('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         if (Prop.Name='Name') then
         begin
           if Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
-            ZHalt('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+            ScriptError('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
           ZApp.SymTab.Add(String(PAnsiChar(P3)),TZComponent(P1));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
@@ -3222,11 +3246,11 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          ScriptError('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptComponentRef : Value.ComponentValue := P3;
         else
-          ZHalt('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          ScriptError('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3244,13 +3268,13 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          ScriptError('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop);
         case Prop.PropertyType of
           zptString : TmpS := Value.StringValue;
           zptExpression : TmpS := AnsiString(Value.ExpressionValue.Source);
         else
-          ZHalt('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          ScriptError('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
 
         Dest := ManagedHeap_Alloc(Length(TmpS)+1);
