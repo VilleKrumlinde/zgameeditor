@@ -24,6 +24,11 @@ gltex gltex_egg;
 gltex gltex_grain;
 gltex gltex_lift;
 
+gltex[4] gltex_player_r;
+gltex[4] gltex_player_l;
+gltex[4] gltex_player_up;
+
+
 const int TEX_SIZE = 128;
 byte[TEX_SIZE * TEX_SIZE * 4] tex_buffer;
 int tex_handle;
@@ -87,20 +92,25 @@ gltex LoadTexture(byte[] ar,byte[] color) {
 
 void LoadTextures() {
   byte[] data;
-  byte[] colorGreen = {255,0,0};
-  byte[] colorPurple = {255,0,0};
-  byte[] colorYellow = {255,0,0};
+  byte[] colorGreen = {0,255,0};
+  byte[] colorPurple = {160,32,240};
+  byte[] colorYellow = {255,255,0};
 
   getBinaryProp(SpriteWallArray.Values,data);	gltex_wall = LoadTexture(data,colorGreen);
-
   getBinaryProp(SpriteLadderArray.Values,data);	gltex_ladder = LoadTexture(data,colorPurple);
-
   getBinaryProp(SpriteEggArray.Values,data); gltex_egg = LoadTexture(data,colorYellow);
-
   getBinaryProp(SpriteGrainArray.Values,data); gltex_grain = LoadTexture(data,colorPurple);
-
   getBinaryProp(SpriteLiftArray.Values,data); gltex_lift = LoadTexture(data,colorPurple);
 
+  getBinaryProp(SpritePLAYER_RArray.Values,data); gltex_player_r[0] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_R2Array.Values,data); gltex_player_r[1] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_RArray.Values,data); gltex_player_r[2] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_R3Array.Values,data); gltex_player_r[3] = LoadTexture(data,colorYellow);
+
+  getBinaryProp(SpritePLAYER_LArray.Values,data); gltex_player_l[0] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_L2Array.Values,data); gltex_player_l[1] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_LArray.Values,data); gltex_player_l[2] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpritePLAYER_L3Array.Values,data); gltex_player_l[3] = LoadTexture(data,colorYellow);
 
 	glGenTextures(1, tex_handle);
 	glBindTexture(GL_TEXTURE_2D, tex_handle);
@@ -428,7 +438,8 @@ void RenderFrame() {
 	}*/
 
 	/* Player.  */
-/*	if (player_face == 0) {
+  gltex[4] ps=null;
+	if (player_face == 0) {
 		ps = gltex_player_up;
 		n = (player_y >> 1) & 3;
 	}
@@ -439,7 +450,7 @@ void RenderFrame() {
 			ps = gltex_player_r;
 		n = (player_x >> 1) & 3;
 	}
-	if (player_mode != PLAYER_CLIMB) {
+	if (player_mode != cPLAYER_CLIMB) {
 		if (move_x == 0)
 			n = 0;
 	}
@@ -447,7 +458,8 @@ void RenderFrame() {
 		if (move_y == 0)
 			n = 0;
 	}
-	RenderSprite(ps[n], player_x, player_y); */
+//  if(ps!=null)
+  	RenderSprite(ps[n], player_x, player_y);
 
 	/* Lift.  */
 /*	if (have_lift) {
@@ -1637,6 +1649,36 @@ run_game_one_frame();]]>
         <Array Name="SpriteLiftArray" Type="4" SizeDim1="10" Persistent="255">
           <Values>
 <![CDATA[789C136091FF21FF43FA8660070011BE03CF]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_RArray" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F96F620324F380C046424002002A740474]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_R2Array" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F96F620324F3F2CACA6C2CBC54002BAC04EA]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_R3Array" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F96F620324F3F2E2E26C2CBC54002AA404BA]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_LArray" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F9AF63C3216153060436121C12002A74047C]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_L2Array" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F9AF63C3216153569697672313A402002AC804C6]]>
+          </Values>
+        </Array>
+        <Array Name="SpritePLAYER_L3Array" Type="4" SizeDim1="18" Persistent="255">
+          <Values>
+<![CDATA[789CE31090B0F9AF63C3216153565655652313A402002B4C04DE]]>
           </Values>
         </Array>
       </Children>
