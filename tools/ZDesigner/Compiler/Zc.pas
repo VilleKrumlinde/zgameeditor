@@ -35,6 +35,7 @@ type
     function IsLocalVarDecl : boolean;
     function IsPointerOrDims(var PeekIndex : integer) : boolean;
     function IsFieldDecl : boolean;
+    function NotFinalComma : boolean;
     
   protected
 
@@ -59,6 +60,7 @@ type
     procedure _GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
     procedure _GlobalVar(Typ : TZcDataType; IsPrivate : boolean);
     procedure _Expr(var OutOp : TZcOp);
+    procedure _ArrayInit(var OutOp : TZcOp);
     procedure _Argument(var OutOp : TZcOp);
     procedure _ClassType(var Typ : TZcDataType);
     procedure _SimpleType(var Typ : TZcDataType);
@@ -765,6 +767,20 @@ bool IsFieldDecl () {
 *)
 end;
 
+function TZc.NotFinalComma : boolean;
+begin
+  Result := (CurrentInputSymbol=commaSym) and
+    (not (Symbols[2].Id in [rbraceSym,rbrackSym]));
+
+(*
+/* True, if the comma is not a trailing one, *
+ * like the last one in: a, b, c,            */
+bool NotFinalComma () {
+  int peek = Peek(1).kind;
+  return la.kind == _comma && peek != _rbrace && peek != _rbrack;
+*)
+end;
+
 function TZc.GetInitializer : TZcOpFunctionUserDefined;
 begin
   if not Self.AllowInitializer then
@@ -1156,7 +1172,15 @@ end;
 
 procedure TZc._Init(var OutOp : TZcOp);
 begin
-  _Expr(OutOp);
+  if InSet(CurrentInputSymbol,6) then
+  begin
+       _Expr(OutOp);
+  end
+  else if (CurrentInputSymbol=lbraceSym) then
+  begin
+       _ArrayInit(OutOp);
+  end
+  else SynError(3);
 end;
 
 procedure TZc._StructMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
@@ -1219,9 +1243,9 @@ begin
             Expect(lparSym);
             _ZcFuncRest(Typ,Name,IsPrivate,IsInline,Cls);
        end
-       else SynError(3);
+       else SynError(4);
   end
-  else SynError(3);
+  else SynError(4);
 end;
 
 procedure TZc._ClassMember(Cls : TZcOpClass; IsPrivate,IsInline : boolean);
@@ -1278,7 +1302,7 @@ begin
   begin
        _EmbeddedStatement(OutOp);
   end
-  else SynError(4);
+  else SynError(5);
 end;
 
 procedure TZc._Par;
@@ -1356,7 +1380,12 @@ begin
 end;
 
 procedure TZc._GlobalVarRest(Typ : TZcDataType; const Name : string; IsPrivate : boolean);
- var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp; 
+
+var
+  V : TDefineVariableBase;
+  Glob : TZcOpGlobalVar;
+  InitOp : TZcOp;
+
 begin
        
         if SymTab.ScopeContains(Name) then
@@ -1387,6 +1416,7 @@ begin
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
           V._ReferenceClassId := Typ.ReferenceClassId;
+          V._TheClass := Typ.TheClass;
           Self.ZApp.GlobalVariables.AddComponent(V);
         end
         else
@@ -1411,6 +1441,7 @@ begin
     Get;
     _Init(InitOp);
                           
+       //todo: array initializer of global arrays
        GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
        
   end;
@@ -1449,7 +1480,33 @@ begin
        _Expr(Op2);
                                    OutOp := MakeAssign(Kind,Op1, Op2); 
   end
-  else SynError(5);
+  else SynError(6);
+end;
+
+procedure TZc._ArrayInit(var OutOp : TZcOp);
+
+var
+  Op : TZcOp;
+
+begin
+  Expect(lbraceSym);
+         OutOp := MakeOp(zcBlock); 
+  if InSet(CurrentInputSymbol,10) then
+  begin
+    _Init(Op);
+               OutOp.Children.Add(Op); 
+    while (CurrentInputSymbol=commaSym) and ( NotFinalComma ) do
+    begin
+      Expect(commaSym);
+      _Init(Op);
+                                            OutOp.Children.Add(Op); 
+    end;
+    if (CurrentInputSymbol=commaSym) then
+    begin
+      Get;
+    end;
+  end;
+  Expect(rbraceSym);
 end;
 
 procedure TZc._Argument(var OutOp : TZcOp);
@@ -1597,7 +1654,7 @@ begin
        Get;
                    Typ.Kind := zctReference; Typ.ReferenceClassId := AnyComponentClassId; 
   end
-  else SynError(6);
+  else SynError(7);
 end;
 
 procedure TZc._ConstantDeclaration(var Typ : TZcDataType; IsPrivate : boolean);
@@ -1782,7 +1839,7 @@ begin
          CurrentFunction.PushScope;
          ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; 
        Expect(lparSym);
-       if InSet(CurrentInputSymbol,10) then
+       if InSet(CurrentInputSymbol,11) then
        begin
          _ForInit(ForInitOp);
        end;
@@ -1844,7 +1901,7 @@ begin
         Inc(CurrentFunction.ReturnCount);
     
   end
-  else SynError(7);
+  else SynError(8);
 end;
 
 procedure TZc._StatementExpr(var OutOp : TZcOp);
@@ -1865,7 +1922,7 @@ begin
   begin
                                    OutOp := Op1; 
   end
-  else SynError(8);
+  else SynError(9);
 end;
 
 procedure TZc._SwitchSection(SwitchOp : TZcOpSwitch);
@@ -1910,7 +1967,7 @@ begin
                                             if Assigned(Op) then OutOp.Children.Add(Op); 
        end;
   end
-  else SynError(9);
+  else SynError(10);
 end;
 
 procedure TZc._ForInc(var OutOp : TZcOp);
@@ -1934,7 +1991,7 @@ procedure TZc._Unary(var OutOp : TZcOp);
                                     var LastOp,Tmp : TZcOp; Kind : TZcOpKind; 
 begin
            LastOp := nil; Kind := zcNop; 
-  while InSet(CurrentInputSymbol,11) do
+  while InSet(CurrentInputSymbol,12) do
   begin
     if (CurrentInputSymbol=minusSym) then
     begin
@@ -2039,7 +2096,7 @@ begin
        Get;
              Kind := atAndAssign; 
   end
-  else SynError(10);
+  else SynError(11);
 end;
 
 procedure TZc._SwitchLabel(var OutOp : TZcOp);
@@ -2055,7 +2112,7 @@ begin
        Get;
        Expect(colonSym);
   end
-  else SynError(11);
+  else SynError(12);
 end;
 
 procedure TZc._OrExpr(InOp : TZcOp; var OutOp : TZcOp);
@@ -2164,7 +2221,7 @@ procedure TZc._RelExpr(InOp : TZcOp; var OutOp : TZcOp);
 begin
   _ShiftExpr(InOp,OutOp);
                            L := OutOp; Kind := zcNop; 
-  while InSet(CurrentInputSymbol,12) do
+  while InSet(CurrentInputSymbol,13) do
   begin
     if (CurrentInputSymbol=ltSym) then
     begin
@@ -2296,7 +2353,7 @@ begin
   begin
        _InlineComponent(OutOp);
   end
-  else if InSet(CurrentInputSymbol,13) then
+  else if InSet(CurrentInputSymbol,14) then
   begin
        _Literal(Typ);
                     
@@ -2377,8 +2434,8 @@ begin
          end;
       
   end
-  else SynError(12);
-  while InSet(CurrentInputSymbol,14) do
+  else SynError(13);
+  while InSet(CurrentInputSymbol,15) do
   begin
     if (CurrentInputSymbol=incSym) then
     begin
@@ -2572,7 +2629,7 @@ begin
        Get;
               Typ.Kind := zctNull; 
   end
-  else SynError(13);
+  else SynError(14);
 end;
 
 
@@ -2608,17 +2665,18 @@ begin
   case ErrorCode of
 	1 : Result := 'invalid Zc';
 	2 : Result := 'invalid Type';
-	3 : Result := 'invalid StructMember';
-	4 : Result := 'invalid Statement';
-	5 : Result := 'invalid Expr';
-	6 : Result := 'invalid SimpleType';
-	7 : Result := 'invalid EmbeddedStatement';
-	8 : Result := 'invalid StatementExpr';
-	9 : Result := 'invalid ForInit';
-	10 : Result := 'invalid AssignOp';
-	11 : Result := 'invalid SwitchLabel';
-	12 : Result := 'invalid Primary';
-	13 : Result := 'invalid Literal';
+	3 : Result := 'invalid Init';
+	4 : Result := 'invalid StructMember';
+	5 : Result := 'invalid Statement';
+	6 : Result := 'invalid Expr';
+	7 : Result := 'invalid SimpleType';
+	8 : Result := 'invalid EmbeddedStatement';
+	9 : Result := 'invalid StatementExpr';
+	10 : Result := 'invalid ForInit';
+	11 : Result := 'invalid AssignOp';
+	12 : Result := 'invalid SwitchLabel';
+	13 : Result := 'invalid Primary';
+	14 : Result := 'invalid Literal';
 
               
     200 : Result := 'Not a floating point value';
@@ -2706,13 +2764,14 @@ begin
 	{ 5} MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, -1,
 	{ 6} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
 	{ 7} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, scolonSym, tildeSym, ifSym, switchSym, whileSym, doSym, forSym, breakSym, continueSym, returnSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
+	{ 8} andSym, colonSym, commaSym, divSym, eqSym, gtSym, gteSym, lshiftSym, ltSym, lteSym, minusSym, modSym, neqSym, orSym, plusSym, rbraceSym, rbrackSym, rparSym, rshiftSym, scolonSym, timesSym, xorSym, _querySym, _bar_barSym, _and_andSym, -1,
 	{ 9} assgnSym, _plus_equalSym, _minus_equalSym, _star_equalSym, _slash_equalSym, _bar_equalSym, _less_less_equalSym, _greater_greater_equalSym, _and_equalSym, -1,
-	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
-	{11} decSym, incSym, minusSym, notSym, tildeSym, -1,
-	{12} gtSym, gteSym, ltSym, lteSym, -1,
-	{13} intConSym, realConSym, stringConSym, nullSym, -1,
-	{14} decSym, dotSym, incSym, lbrackSym, lparSym
+	{10} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lbraceSym, lparSym, minusSym, notSym, tildeSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
+	{11} intConSym, realConSym, stringConSym, identSym, decSym, incSym, lparSym, minusSym, notSym, tildeSym, MaterialSym, SoundSym, ShaderSym, BitmapSym, MeshSym, CameraSym, FontSym, SampleSym, FileSym, ComponentSym, floatSym, intSym, byteSym, stringSym, modelSym, xptrSym, mat_fourSym, vec_twoSym, vec_threeSym, vec_fourSym, reinterpret_underscorecastSym, _atSym, newSym, nullSym, -1,
+	{12} decSym, incSym, minusSym, notSym, tildeSym, -1,
+	{13} gtSym, gteSym, ltSym, lteSym, -1,
+	{14} intConSym, realConSym, stringConSym, nullSym, -1,
+	{15} decSym, dotSym, incSym, lbrackSym, lparSym
   ]); 
   SymSets := ZcSymSets;
   

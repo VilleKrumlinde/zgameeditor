@@ -28,6 +28,7 @@ private = (.
     function IsLocalVarDecl : boolean;
     function IsPointerOrDims(var PeekIndex : integer) : boolean;
     function IsFieldDecl : boolean;
+    function NotFinalComma : boolean;
     .)
 precreate = (.
     ZFunctions := TObjectList.Create(False);
@@ -183,6 +184,20 @@ bool IsFieldDecl () {
   return la.kind == _ident &&
          (peek == _comma || peek == _assgn || peek == _scolon);
 }
+*)
+end;
+
+function TZc.NotFinalComma : boolean;
+begin
+  Result := (CurrentInputSymbol=commaSym) and
+    (not (Symbols[2].Id in [rbraceSym,rbrackSym]));
+
+(*
+/* True, if the comma is not a trailing one, *
+ * like the last one in: a, b, c,            */
+bool NotFinalComma () {
+  int peek = Peek(1).kind;
+  return la.kind == _comma && peek != _rbrace && peek != _rbrack;
 *)
 end;
 
@@ -662,7 +677,12 @@ var
 /*------------------------------------------------------------------------*/
 
 GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
-(. var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp; .)
+(.
+var
+  V : TDefineVariableBase;
+  Glob : TZcOpGlobalVar;
+  InitOp : TZcOp;
+.)
 =
      (.
         if SymTab.ScopeContains(Name) then
@@ -713,6 +733,7 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
         end;
      .)
      [ "=" Init<InitOp> (.
+       //todo: array initializer of global arrays
        GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
        .)
      ]
@@ -731,8 +752,21 @@ GlobalVarDecl<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
 /*------------------------------------------------------------------------*/
 
 Init<var OutOp : TZcOp>
-= Expr<OutOp>
+= Expr<OutOp> | ArrayInit<OutOp>
 .
+
+/*------------------------------------------------------------------------*/
+ArrayInit<var OutOp : TZcOp>
+(.
+var
+  Op : TZcOp;
+.)
+= "{" (. OutOp := MakeOp(zcBlock); .)
+  [Init<Op> (. OutOp.Children.Add(Op); .)
+    {IF (. NotFinalComma .) "," Init<Op> (. OutOp.Children.Add(Op); .)
+    } [","] ] "}"
+.
+
 
 /*------------------------------------------------------------------------*/
 Argument<var OutOp : TZcOp>

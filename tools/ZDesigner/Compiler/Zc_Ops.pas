@@ -196,6 +196,7 @@ type
     destructor Destroy; override;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
+    function Optimize: TZcOp; override;
   end;
 
   TPrototypes = class
@@ -1439,6 +1440,10 @@ begin
 end;
 
 procedure MakeVarInitializer(V : TZcOpVariableBase; InitOp : TZcOp; var OutOp : TZcOp);
+var
+  Op : TZcOp;
+  I : integer;
+  A : TDefineArray;
 begin
   if (V.Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
   begin
@@ -1458,7 +1463,28 @@ begin
     //Generate tree for initial assignment
     if OutOp=nil then
       OutOp := MakeOp(zcBlock);
-    OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), InitOp) );
+    if (V.Typ.Kind=zctArray) and (InitOp.Kind=zcBlock) then
+    begin
+      //Array initializer
+      A := V.Typ.TheArray;
+      if Assigned(A) then
+      begin
+        if (A.Dimensions<>dadOne) then
+          raise ECodeGenError.Create('Only one-dimensional arrays can have initializer: ' + V.Id);
+        if A.SizeDim1=0 then
+          A.SizeDim1 := InitOp.Children.Count
+        else if A.SizeDim1<>InitOp.Children.Count then
+          raise ECodeGenError.Create('Wrong nr of items in initializer list: ' + V.Id);
+      end;
+
+      for I := 0 to InitOp.Children.Count-1 do
+      begin
+        Op := MakeArrayAccess( MakeIdentifier(V.Id) );
+        Op.Children.Add( TZcOpLiteral.Create(zctInt,I) );
+        OutOp.Children.Add( MakeAssign(atAssign,Op,InitOp.Children[I]) );
+      end;
+    end else
+      OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), InitOp) );
   end;
 end;
 
@@ -2158,7 +2184,10 @@ begin
     else if (Ref is TDefineArray) then
     begin
       Result.Kind := (Ref as TDefineArray)._Type;
-      Result.ReferenceClassId := (Ref as TDefineArray)._ReferenceClassId;
+      if Result.Kind=zctReference then
+        Result.ReferenceClassId := (Ref as TDefineArray)._ReferenceClassId
+      else if Result.Kind=zctClass then
+        Result.TheClass := (Ref as TDefineArray)._TheClass;
     end;
   end;
 
@@ -2328,6 +2357,16 @@ end;
 function TZcOpClass.GetDataType: TZcDataType;
 begin
   Result := Typ;
+end;
+
+function TZcOpClass.Optimize: TZcOp;
+var
+  I : integer;
+begin
+  for I := 0 to Methods.Count-1 do
+    Methods[I] := Methods[I].Optimize as TZcOpFunctionUserDefined;
+  Initializer := Initializer.Optimize as TZcOpFunctionUserDefined;
+  Result := inherited;
 end;
 
 function TZcOpClass.ToString: string;
