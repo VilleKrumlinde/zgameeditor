@@ -121,6 +121,18 @@ string globStringInit;
 
 {
   globStringInit = "hello";
+}
+
+
+//Classes
+class TFirst {
+  int i;
+  int[5] ar;
+}
+
+class TSecond {
+  TFirst first = new TFirst();
+  string s;
 }]]>
       </Source>
     </ZLibrary>
@@ -941,6 +953,23 @@ if(globIntInit != 42)
   Error=2201;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="classes">
+      <Expression>
+<![CDATA[TSecond o = new TSecond();
+
+o.s="hello";
+if(o.s != "hello")
+  Error=2300;
+
+o.first.i=42;
+if(o.first.i!=42)
+  Error=2301;
+
+o.first.ar[0]=1;
+if(o.first.ar[0]!=1)
+  Error=2301;]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
@@ -963,7 +992,7 @@ else
         <Variable Name="Defined3" Type="2"/>
         <Array Name="DefinedArray" Type="1" SizeDim1="10" Persistent="255">
           <Values>
-<![CDATA[78DA6360200E000000280001]]>
+<![CDATA[789C6360200E000000280001]]>
           </Values>
         </Array>
         <Array Name="DefinedVecArray" Type="6" SizeDim1="1"/>
@@ -1014,14 +1043,14 @@ V.X*=0.5;]]>
     <AudioMixer Ch0Active="1" Ch0Volume="0.14" Ch0DelayLength="0.1" Ch1Active="1" Ch1Volume="0.5" Ch1DelayLength="0.1"/>
     <Array Name="ByteArray" Type="4" SizeDim1="4">
       <Values>
-<![CDATA[78DA636064620600000E0007]]>
+<![CDATA[789C636064620600000E0007]]>
       </Values>
     </Array>
     <Variable Name="ByteVar" Type="4"/>
     <Variable Name="VarMat4" Type="5"/>
     <Array Name="Mat4Ar" Type="5" SizeDim1="4">
       <Values>
-<![CDATA[78DA636064620600000E0007]]>
+<![CDATA[789C636064620600000E0007]]>
       </Values>
     </Array>
     <Variable Name="VarV3" Type="7"/>

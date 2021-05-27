@@ -463,6 +463,7 @@ var
      SymTab.AddPrevious(Fld.Id,Fld);
 
      InitOp := nil;
+     CurrentFunction := Cls.Initializer; //Needed so that any temporary locals in init are added to the correct function
   .)
 
   [ "=" Init<InitOp> ]
@@ -472,6 +473,7 @@ var
      MakeVarInitializer(Fld,InitOp,Op);
      if Assigned(Op) then
        Cls.Initializer.Statements.Add(Op);
+     CurrentFunction := nil;
   .)
 .
 /*------------------------------------------------------------------------*/

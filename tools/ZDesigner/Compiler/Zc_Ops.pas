@@ -2204,6 +2204,9 @@ end;
 function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
 var
   Op,ChildOp : TZcOp;
+  Typ : TZcDataType;
+  Cls : TZcOpClass;
+  Fld : TZcOpField;
 begin
   Op := TZcOpArrayAccess.Create(ArrayOp.Id, ArrayOp);
 
@@ -2227,7 +2230,23 @@ begin
     ChildOp := ArrayOp.Children.First;
     if (ChildOp.Ref is TDefineVariable) then
       //DefineVariable managedvalue
-      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type );
+      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type )
+    else
+    begin
+      Typ := ChildOp.GetDataType;
+      if Typ.Kind=zctClass then
+      begin
+        Cls := Typ.TheClass as TZcOpClass;
+        for Fld in Cls.Fields do
+        begin
+          if SameText(Fld.Id,Op.Id) then
+          begin
+            Op.Ref := Fld.Typ.TheArray;
+            Break;
+          end;
+        end;
+      end;
+    end;
   end;
   //else it is a model defined array, so ArrayOp.ref is already correct
 

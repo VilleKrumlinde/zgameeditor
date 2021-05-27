@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="Classes" ClearColor="0.4549 0.5529 0.6157 1" CustomScreenWidth="512" CustomScreenHeight="512" FileVersion="2">
+<ZApplication Name="App" Caption="Classes" ClearColor="0.4549 0.5529 0.6157 1" ScreenMode="1" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
       <BeforeInitExp>
@@ -38,7 +38,6 @@
 }
 
 class TPlanet {
-  //todo: implement private
   private float distance, angle, speed, radius;
   private TMoon[] moons;
 
@@ -103,7 +102,6 @@ for(int i=0; i<nrOfPlanets; i++) {
     <ZExpression>
       <Expression>
 <![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
-//  Planets[i].update();
   TPlanet p = Planets[i];
   p.update();
 }]]>

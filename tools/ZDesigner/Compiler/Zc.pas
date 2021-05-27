@@ -1138,6 +1138,7 @@ begin
      SymTab.AddPrevious(Fld.Id,Fld);
 
      InitOp := nil;
+     CurrentFunction := Cls.Initializer; //Needed so that any temporary locals in init are added to the correct function
   
   if (CurrentInputSymbol=assgnSym) then
   begin
@@ -1149,6 +1150,7 @@ begin
      MakeVarInitializer(Fld,InitOp,Op);
      if Assigned(Op) then
        Cls.Initializer.Statements.Add(Op);
+     CurrentFunction := nil;
   
 end;
 

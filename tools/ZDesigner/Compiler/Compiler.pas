@@ -1235,7 +1235,7 @@ begin
   case T of
     zctFloat: Op._Type := jutFloat;
     zctInt,zctByte: Op._Type := jutInt;
-    zctXptr,zctNull,zctModel,zctReference : Op._Type := jutPointer;
+    zctXptr,zctNull,zctModel,zctReference,zctClass : Op._Type := jutPointer;
     zctString:
       begin
         Op._Type := jutString;
