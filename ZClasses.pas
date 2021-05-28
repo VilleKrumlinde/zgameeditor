@@ -255,9 +255,9 @@ type
     {$ifndef minimal}
     ReferenceClassId : TZClassIds;
     IsPointer : boolean;  //True for type of argument in f(ref x) function
-    case integer of
-      0 : (TheArray : pointer);  //When zctArray: pointer to TDefineArray
-      1 : (TheClass : TObject);  //When zctClass: pointer to TZcOpClass
+    TheArray : pointer;  //When zctArray: pointer to TDefineArray
+    TheClass : TObject;  //When zctClass: pointer to TZcOpClass
+    function Matches(const Other:TZcDataType) : boolean;
     {$endif}
   end;
 
@@ -4273,6 +4273,24 @@ begin
   {$endif}
   Free;
 end;
+
+{$ifndef minimal}
+function TZcDataType.Matches(const Other:TZcDataType) : boolean;
+begin
+  Result := Self.Kind=Other.Kind;
+  if Result then
+  begin
+    case Kind of
+      zctClass : Result := Self.TheClass=Other.TheClass;
+      zctArray : Result := (TDefineArray(Self.TheArray).Dimensions=TDefineArray(Other.TheArray).Dimensions) and
+        (TDefineArray(Self.TheArray)._Type.Matches(TDefineArray(Other.TheArray)._Type));
+      zctReference : Result := (Self.ReferenceClassId=Other.ReferenceClassId)
+        or
+        ((Self.ReferenceClassId=AnyComponentClassId) or (Other.ReferenceClassId=AnyComponentClassId));
+    end;
+  end;
+end;
+{$endif}
 
 initialization
 

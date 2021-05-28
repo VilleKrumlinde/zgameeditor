@@ -1869,7 +1869,7 @@ var
     Count := Sv.ValueArrayRef.CalcLimit;
     P := Sv.ValueArrayRef.GetData;
     GlDataType := GL_FLOAT;
-    if Sv.ValueArrayRef._Type=zctInt then
+    if Sv.ValueArrayRef._Type.Kind=zctInt then
       GlDataType := GL_INT;
     case Sv.ArrayKind of
       sakTexture2D :
@@ -1913,7 +1913,7 @@ var
     V : TDefineVariable;
   begin
     V := Sv.VariableRef;
-    case V._Type of
+    case V._Type.Kind of
       zctFloat : glUniform1f(Sv.Location,V.Value);
       zctVec2 : glUniform2fv(Sv.Location, 1, PGLFloat(TDefineArray(V.PointerValue).GetData));
       zctVec3 : glUniform3fv(Sv.Location, 1, PGLFloat(TDefineArray(V.PointerValue).GetData));

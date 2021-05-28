@@ -4281,9 +4281,9 @@ var
       if Arg.Typ.Kind=zctArray then
       begin
         if Arg.Id = '' then
-          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[]'
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type.Kind] + '[]'
         else
-          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[] ' + Arg.Id;
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type.Kind] + '[] ' + Arg.Id;
       end else
       if Arg.Id = '' then
         Result := Result + GetZcTypeName(Arg.Typ)
@@ -4405,8 +4405,8 @@ begin
         if C is TDefineVariable then
         begin //If var of ref-type, show props of referenced type instead (i.e. Bitmap bmp)
           Cv := C as TDefineVariable;
-          if Cv._Type=zctReference then
-            PropList := ComponentManager.GetInfoFromId(Cv._ReferenceClassId).GetProperties;
+          if Cv._Type.Kind=zctReference then
+            PropList := ComponentManager.GetInfoFromId(Cv._Type.ReferenceClassId).GetProperties;
         end;
         for I := 0 to PropList.Count - 1 do
         begin
@@ -4702,7 +4702,7 @@ begin
           NeedJpeg := True
         else if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName)
-        else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
+        else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type.Kind in [zctVec2,zctVec3,zctVec4,zctMat4])  then
           NeedArray := True
         else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
           NeedArray := True

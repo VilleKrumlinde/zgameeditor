@@ -128,10 +128,8 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    _Type : TZcDataTypeKind;
+    _Type : TZcDataType;
     {$ifndef minimal}
-    _ReferenceClassId : TZClassIds;  //This is used to verify type of global declared reference variables
-    _TheClass : pointer;
     function GetDisplayName: ansistring; override;
     {$endif}
   end;
@@ -787,7 +785,7 @@ begin
         A.Dimensions := dadTwo;
         A.SizeDim1 := 4;
         A.SizeDim2 := 4;
-        A._Type := zctFloat;
+        A._Type.Kind := zctFloat;
         Result := A;
       end;
     zctVec2, zctVec3, zctVec4 :
@@ -795,7 +793,7 @@ begin
         A := TDefineArray.Create(nil);
         A.Dimensions := dadOne;
         A.SizeDim1 := 2 + Ord(Typ)-Ord(zctVec2);
-        A._Type := zctFloat;
+        A._Type.Kind := zctFloat;
         Result := A;
       end;
   end;
@@ -1042,9 +1040,9 @@ end;
 
 procedure TDefineVariable.InitManaged;
 begin
-  if (Self._Type in [zctMat4,zctVec2,zctVec3,zctVec4]) and (Self.PointerValue=nil) then
+  if (Self._Type.Kind in [zctMat4,zctVec2,zctVec3,zctVec4]) and (Self.PointerValue=nil) then
     //Create default empty value
-    Self.PointerValue := CreateManagedValue(Self._Type);
+    Self.PointerValue := CreateManagedValue(Self._Type.Kind);
 end;
 
 procedure TDefineVariable.InitAfterPropsAreSet;
@@ -1321,7 +1319,7 @@ end;
 function TDefineConstant.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName + ' ';
-  case _Type of
+  case _Type.Kind of
     zctFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
     zctInt: Result := Result + AnsiString(IntToStr(IntValue));
     zctString: Result := Result + '"' + StringValue + '"';
@@ -1346,7 +1344,7 @@ end;
 
 destructor TDefineArray.Destroy;
 begin
-  CleanUpManagedValues(_Type,Limit,AllocPtr);
+  CleanUpManagedValues(_Type.Kind,Limit,AllocPtr);
   if (Data<>nil) and (not IsExternal) then
     FreeMem(Data);
   inherited;
@@ -1358,7 +1356,7 @@ begin
   if (Limit<>CalcLimit) then
     AllocData;
   {$ifndef minimal}
-  ZAssert(not (Persistent and (_Type in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
+  ZAssert(not (Persistent and (_Type.Kind in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
   {$endif}
   if Persistent then
   begin
@@ -1376,7 +1374,7 @@ end;
 
 function TDefineArray.GetElementSize: integer;
 begin
-  Result := GetZcTypeSize(Self._Type);
+  Result := GetZcTypeSize(Self._Type.Kind);
 end;
 
 function TDefineArray.CalcLimit: integer;
@@ -1417,9 +1415,9 @@ begin
 
   Self.AllocPtr := P^;
   Self.AllocItemCount := Self.Limit;
-  Self.AllocType := Self._Type;
+  Self.AllocType := Self._Type.Kind;
 
-  if Self._Type in [zctString,zctClass] then
+  if Self._Type.Kind in [zctString,zctClass] then
   begin
     P := P^;
     for I := 0 to Self.Limit - 1 do
@@ -2018,7 +2016,7 @@ end;
 procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}@_Type.Kind, zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4','xptr']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
@@ -2029,7 +2027,7 @@ var
   I : integer;
   P : TZProperty;
 begin
-  I := Ord(Self._Type);
+  I := Ord(Self._Type.Kind);
   P := Self.GetProperties.GetByName('Type');
   if I<Length(P.Options) then
     Result := inherited GetDisplayName + ' <' + AnsiString(P.Options[ I ]) + '>'
@@ -3061,7 +3059,7 @@ begin
   A := TDefineArray.Create(nil);
   ManagedHeap_AddValueObject(A);
   A.Dimensions := Self.Dimensions;
-  A._Type := Self._Type;
+  A._Type.Kind := Self._Type;
   A.SizeDim1 := Self.Size1;
   A.SizeDim2 := Self.Size2;
   A.SizeDim3 := Self.Size3;

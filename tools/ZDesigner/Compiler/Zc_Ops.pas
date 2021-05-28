@@ -366,9 +366,7 @@ var
       end;
     end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='PointerValue') then
     begin //Allow DefineVariable.ManagedType=mat4/vec3 even though proptype is zptPointer
-      Result.Kind := TDefineVariableBase(Self.Child(0).Ref)._Type;
-      //Allow global variables of Bitmap type
-      Result.ReferenceClassId := TDefineVariableBase(Self.Child(0).Ref)._ReferenceClassId;
+      Result := TDefineVariableBase(Self.Child(0).Ref)._Type;
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
   end;
@@ -1091,7 +1089,7 @@ begin
   begin
     //If identifier is a constant then replace with the constant value
     C := Result.Ref as TDefineConstant;
-    case C._Type of
+    case C._Type.Kind of
       zctFloat : Result := TZcOpLiteral.Create(zctFloat,C.Value);
       zctInt : Result := TZcOpLiteral.Create(zctInt,C.IntValue);
       zctByte : Result := TZcOpLiteral.Create(zctByte,C.ByteValue);
@@ -1125,10 +1123,9 @@ const
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;
-
   procedure CheckArray(A1,A2 : TDefineArray);
   begin
-    if (A1.Dimensions<>A2.Dimensions) or (A1._Type<>A2._Type) then
+    if (A1.Dimensions<>A2.Dimensions) or (A1._Type.Kind<>A2._Type.Kind) then
       raise ECodeGenError.Create('Arrays not compatible');
   end;
 
@@ -1139,7 +1136,8 @@ begin
 
   if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctArray) then
   begin
-    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(ExistingType.TheArray));
+    if not WantedType.Matches(ExistingType) then
+      raise ECodeGenError.Create('Arrays not compatible');
     Exit(Op);
   end;
 
@@ -1173,6 +1171,9 @@ begin
       Exit( TZcOpConvert.Create(WantedType,Op) );
     end;
   end;
+
+  if (WantedType.Kind=zctClass) and (ExistingType.Kind=zctClass) and (WantedType.TheClass<>ExistingType.TheClass) then
+    raise ECodeGenError.Create('Cannot convert between different classes: ' + Op.ToString);
 
   if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
     Exit(Op);
@@ -1278,7 +1279,7 @@ begin
   then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
-    case (Op.Ref as TDefineVariableBase)._Type of
+    case (Op.Ref as TDefineVariableBase)._Type.Kind of
       zctInt : PName := 'IntValue';
       zctString : PName := 'StringValue';
       zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference,zctClass : PName := 'PointerValue';
@@ -1860,7 +1861,7 @@ var
       A := TDefineArray.Create(nil);
       BuiltInCleanUps.Add(A);
       Result.TheArray := A;
-      A._Type := CharToType( Input[I+2] ).Kind;
+      A._Type.Kind := CharToType( Input[I+2] ).Kind;
       I := J+1;
     end else
       Inc(I);
@@ -2175,7 +2176,7 @@ begin
         raise ECodeGenError.Create(Self.Id + ' is not an array')
       else
       begin
-        Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type;
+        Result := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type;
         if Result.Kind=zctReference then
           //Allow "Bitmap[3] b;" declarations
           Result.ReferenceClassId := ArrayOp.GetDataType.ReferenceClassId;
@@ -2183,11 +2184,7 @@ begin
     end
     else if (Ref is TDefineArray) then
     begin
-      Result.Kind := (Ref as TDefineArray)._Type;
-      if Result.Kind=zctReference then
-        Result.ReferenceClassId := (Ref as TDefineArray)._ReferenceClassId
-      else if Result.Kind=zctClass then
-        Result.TheClass := (Ref as TDefineArray)._TheClass;
+      Result := (Ref as TDefineArray)._Type;
     end;
   end;
 
@@ -2244,7 +2241,7 @@ begin
   if ArrayOp.Kind=zcArrayAccess then
   begin
     //Array of arrays
-    Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type);
+    Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type.Kind);
     TZcOpArrayAccess(Op).IsRawMem := True;
   end;
 
@@ -2259,7 +2256,7 @@ begin
     ChildOp := ArrayOp.Children.First;
     if (ChildOp.Ref is TDefineVariable) then
       //DefineVariable managedvalue
-      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type )
+      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type.Kind )
     else
     begin
       Typ := ChildOp.GetDataType;
@@ -2305,22 +2302,22 @@ begin
   Mat4Array.Dimensions := dadTwo;
   Mat4Array.SizeDim1 := 4;
   Mat4Array.SizeDim2 := 4;
-  Mat4Array._Type := zctFloat;
+  Mat4Array._Type.Kind := zctFloat;
 
   Vec2Array := TDefineArray.Create(nil);
   Vec2Array.Dimensions := dadOne;
   Vec2Array.SizeDim1 := 2;
-  Vec2Array._Type := zctFloat;
+  Vec2Array._Type.Kind := zctFloat;
 
   Vec3Array := TDefineArray.Create(nil);
   Vec3Array.Dimensions := dadOne;
   Vec3Array.SizeDim1 := 3;
-  Vec3Array._Type := zctFloat;
+  Vec3Array._Type.Kind := zctFloat;
 
   Vec4Array := TDefineArray.Create(nil);
   Vec4Array.Dimensions := dadOne;
   Vec4Array.SizeDim1 := 4;
-  Vec4Array._Type := zctFloat;
+  Vec4Array._Type.Kind := zctFloat;
 end;
 
 { TZcOpClass }
@@ -2332,6 +2329,7 @@ begin
   inherited;
   Self.Kind := zcClass;
   Typ.Kind := zctClass;
+  Typ.TheClass := Self;
   Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
   Fields := TObjectList<TZcOpField>.Create(False);
 

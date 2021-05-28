@@ -144,7 +144,7 @@ end;
 
 function TArrayEditForm.ValueAsText(P: pointer): string;
 begin
-  case TheArray._Type of
+  case TheArray._Type.Kind of
     zctFloat: Result := DesignerFormatFloat(PFloat(P)^);
     zctInt: Result := IntToStr(PInteger(P)^);
     zctByte: Result := IntToStr(PByte(P)^);
@@ -153,7 +153,7 @@ end;
 
 procedure TArrayEditForm.SetValueFromText(const S : String; P: pointer);
 begin
-  case TheArray._Type of
+  case TheArray._Type.Kind of
     zctFloat: PFloat(P)^ := StrToFloatDef(S,0);
     zctInt: PInteger(P)^ := StrToIntDef(S,0);
     zctByte: PByte(P)^ := StrToIntDef(S,0);

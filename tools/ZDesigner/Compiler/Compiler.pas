@@ -362,13 +362,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     A : TObject;
   begin
     A := GenArrayAddress(Op);
-    case TDefineArray(A)._Type of
+    case TDefineArray(A)._Type.Kind of
       zctByte :
         TExpMisc.Create(Target, emPtrDeref1);
       zctString,zctModel,zctXptr :
         TExpMisc.Create(Target, emPtrDerefPointer);
       else
-        if TDefineArray(A)._Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
+        if TDefineArray(A)._Type.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
         begin
           //Do not deref, pointer points to list of values
         end else
@@ -526,7 +526,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     with TExpInitArray.Create(Target) do
     begin
       Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
-      _Type := TDefineArray(Loc.Typ.TheArray)._Type;
+      _Type := TDefineArray(Loc.Typ.TheArray)._Type.Kind;
       Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
       Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
       Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
@@ -793,7 +793,7 @@ begin
     end
     else
     begin
-      Target.AddComponent( MakeAssignOp((A as TDefineArray)._Type ) );
+      Target.AddComponent( MakeAssignOp((A as TDefineArray)._Type.Kind ) );
       if LeaveValue=alvPost then
         GenValue(LeftOp);
     end;

@@ -1688,7 +1688,7 @@ var
       ShowMessage('Set "Persistent" before editing arrays');
       Exit;
     end;
-    if not (A._Type in [zctInt,zctFloat,zctByte]) then
+    if not (A._Type.Kind in [zctInt,zctFloat,zctByte]) then
     begin
       ShowMessage('Persistent arrays only supported for numeric data types');
       Exit;

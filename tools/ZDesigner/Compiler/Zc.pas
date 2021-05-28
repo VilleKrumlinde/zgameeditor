@@ -866,7 +866,6 @@ begin
         if Assigned(Cls) then
         begin
           Cls.Methods.Add(Func);
-          SymTab.AddPrevious(Func.MangledName,Func);
         end
         else
         begin
@@ -1054,7 +1053,7 @@ begin
                   
                    A := TDefineArray.Create(nil);
                    GlobalNames.Add(A);
-                   A._Type := Typ.Kind;
+                   A._Type := Typ;
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 
@@ -1415,15 +1414,13 @@ begin
           //todo: store arrays in global area too, need to generate initialization code
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
-          V._ReferenceClassId := Typ.ReferenceClassId;
-          V._TheClass := Typ.TheClass;
+          V._Type := TDefineArray(Typ.TheArray)._Type;
           Self.ZApp.GlobalVariables.AddComponent(V);
         end
         else
         begin //zctMat4,zctVec2,zctVec3,zctVec4
           V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
-          V._Type := Typ.Kind;
-          V._ReferenceClassId := Typ.ReferenceClassId;
+          V._Type := Typ;
         end;
 
         if Assigned(V) then
@@ -1693,22 +1690,22 @@ begin
    case Typ.Kind of
      zctByte:
        begin
-         Cns._Type := zctByte;
+         Cns._Type.Kind := zctByte;
          Cns.ByteValue := Round(Lit.Value);
        end;
      zctInt:
        begin
-         Cns._Type := zctInt;
+         Cns._Type.Kind := zctInt;
          Cns.IntValue := Round(Lit.Value);
        end;
      zctFloat:
        begin
-         Cns._Type := zctFloat;
+         Cns._Type.Kind := zctFloat;
          Cns.Value := Lit.Value;
        end;
      zctString:
        begin
-         Cns._Type := zctString;
+         Cns._Type.Kind := zctString;
          Cns.SetString('StringValue',AnsiString(Lit.StringValue));
        end;
      else

@@ -145,13 +145,13 @@ procedure TFileAction.Execute;
     Buf : array[0..2047] of ansichar;
   begin
     {$ifndef minimal}
-    if not (A._Type in [zctInt,zctFloat,zctByte,zctString]) then
+    if not (A._Type.Kind in [zctInt,zctFloat,zctByte,zctString]) then
     begin
       ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type string, int, float or byte.');
       Exit;
     end;
     {$endif}
-    if A._Type=zctString then
+    if A._Type.Kind=zctString then
     begin
       BufPos := 0;
       A.SizeDim1 := 0;
@@ -177,7 +177,7 @@ procedure TFileAction.Execute;
         end;
       end;
     end
-    else if (CurFile.Encoding=feBinary) or (A._Type in [zctByte,zctFloat]) then
+    else if (CurFile.Encoding=feBinary) or (A._Type.Kind in [zctByte,zctFloat]) then
     begin
       A.SizeDim1 := CurInStream.Size div A.GetElementSize;
       CurInStream.Read(A.GetData^,CurInStream.Size);
