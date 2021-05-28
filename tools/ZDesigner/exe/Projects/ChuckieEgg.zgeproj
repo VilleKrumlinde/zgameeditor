@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" CustomScreenWidth="1280" CustomScreenHeight="960" Camera="OrthoCamera" FileVersion="2">
+<ZApplication Name="App" Caption="ZGameEditor application" Camera="OrthoCamera" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
       <BeforeInitExp>
@@ -27,6 +27,8 @@ gltex gltex_lift;
 gltex[4] gltex_player_r;
 gltex[4] gltex_player_l;
 gltex[4] gltex_player_up;
+
+gltex[10] gltex_duck;
 
 
 const int TEX_SIZE = 128;
@@ -111,6 +113,11 @@ void LoadTextures() {
   getBinaryProp(SpritePLAYER_L2Array.Values,data); gltex_player_l[1] = LoadTexture(data,colorYellow);
   getBinaryProp(SpritePLAYER_LArray.Values,data); gltex_player_l[2] = LoadTexture(data,colorYellow);
   getBinaryProp(SpritePLAYER_L3Array.Values,data); gltex_player_l[3] = LoadTexture(data,colorYellow);
+
+  getBinaryProp(SpriteDUCK_RArray.Values,data); gltex_duck[0] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpriteDUCK_R2Array.Values,data); gltex_duck[1] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpriteDUCK_LArray.Values,data); gltex_duck[2] = LoadTexture(data,colorYellow);
+  getBinaryProp(SpriteDUCK_L2Array.Values,data); gltex_duck[3] = LoadTexture(data,colorYellow);
 
 	glGenTextures(1, tex_handle);
 	glBindTexture(GL_TEXTURE_2D, tex_handle);
@@ -290,6 +297,85 @@ class TRaster {
 
 TRaster raster = new TRaster();
 
+int last_mode;
+int current_keypress;
+void PollKeys() {
+  int c;
+
+  if (player_mode != last_mode) {
+  	if (player_mode == cPLAYER_WALK) {
+	    button_ack |= 0xc;
+	} else if (player_mode == cPLAYER_CLIMB) {
+	    button_ack |= 3;
+	} else if (player_mode == cPLAYER_LIFT) {
+	    button_ack |= 0xf;
+	}
+  	last_mode = player_mode;
+  }
+
+  buttons &= ~button_ack;
+  button_ack = 0;
+  c = current_keypress;
+  switch (c) {
+    case ord("P"):
+	buttons |= BUTTON_RIGHT;
+	buttons &= ~BUTTON_LEFT;
+	break;
+    case ord("O"):
+	buttons |= BUTTON_LEFT;
+	buttons &= ~BUTTON_RIGHT;
+	break;
+    case ord("A"):
+	buttons |= BUTTON_DOWN;
+	buttons &= ~BUTTON_UP;
+	break;
+    case ord("Q"):
+	buttons |= BUTTON_UP;
+	buttons &= ~BUTTON_DOWN;
+	break;
+    case ord(" "):
+	buttons |= BUTTON_JUMP;
+  }
+  current_keypress=0;
+}
+
+int DuckSprite(int n)
+{
+	int dir;
+	int sprite;
+
+  TDuckInfo d=duck[n];
+	dir = d.dir;
+	switch (d.mode) {
+	case DUCK_BORED:
+		if (dir & DIR_HORIZ) {
+			sprite = (dir == DIR_R) ? 0 : 2;
+		}
+		else {
+			sprite = 4;
+		}
+		break;
+	case DUCK_STEP:
+		if (dir & DIR_HORIZ) {
+			sprite = (dir == DIR_R) ? 1 : 3;
+		}
+		else {
+			sprite = 5;
+		}
+		break;
+	case DUCK_EAT2:
+	case DUCK_EAT4:
+		sprite = (dir == DIR_R) ? 6 : 8;
+		break;
+	case DUCK_EAT3:
+		sprite = (dir == DIR_R) ? 7 : 9;
+		break;
+	default:
+    trace("wrong value in switch");
+	};
+	return sprite;
+}
+
 /* Movement code generates out of bounds reads.  */
 int Do_ReadMap(byte x, byte y)
 {
@@ -312,12 +398,41 @@ void Do_InitTile(int x, int y, int type)
 		raster.draw_tile(x, y, type);
 }
 
+vec2[] scene_array_xy;
+vec2[] scene_array_uv;
+int scene_verts;
+
+
+void RenderScene()
+{
+	glVertexPointer(2, GL_FLOAT, 0, scene_array_xy);
+	glTexCoordPointer(2, GL_FLOAT, 0, scene_array_uv);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDrawArrays(GL_QUADS, 0, scene_verts);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void AddSceneVert(float x, float y, float u, float v)
+{
+  int i=scene_verts;
+
+  scene_verts++;
+
+  scene_array_xy.SizeDim1=scene_verts;
+  scene_array_xy[i]=vector2(x,y);
+
+  scene_array_uv.SizeDim1=scene_verts;
+  scene_array_uv[i]=vector2(u,v);
+}
+
 void AddSceneSprite(gltex t, float x, float y)
 {
-/*	AddSceneVert(x, y, t->x1, t->y1);
-	AddSceneVert(x, y - t->h, t->x1, t->y2);
-	AddSceneVert(x + t->w, y - t->h, t->x2, t->y2);
-	AddSceneVert(x + t->w, y, t->x2, t->y1);*/
+	AddSceneVert(x, y, t.x1, t.y1);
+	AddSceneVert(x, y - t.h, t.x1, t.y2);
+	AddSceneVert(x + t.w, y - t.h, t.x2, t.y2);
+	AddSceneVert(x + t.w, y, t.x2, t.y1);
 }
 
 int[32] item_pos;
@@ -393,7 +508,7 @@ void RenderFrame() {
 	int type;
 	gltex tex;
 
-//	RenderScene();
+	RenderScene();
 
 	/* HUD  */
 /*	for (n = 0; n < num_players; n++) {
@@ -428,14 +543,15 @@ void RenderFrame() {
 	}
 
 	/* Ducks.  */
-/*	for (n = 0; n < num_ducks; n++) {
+	for (n = 0; n < num_ducks; n++) {
 		x = duck[n].x;
 		sprite = DuckSprite(n);
 		if (sprite >= 8)
 			x -= 8;
 
-		RenderSprite(gltex_duck[sprite], x, duck[n].y);
-	}*/
+    if(gltex_duck[sprite]!=null)
+   		RenderSprite(gltex_duck[sprite], x, duck[n].y);
+	}
 
 	/* Player.  */
   gltex[4] ps=null;
@@ -1179,43 +1295,6 @@ void ReduceBonus()
 		zero_bonus = 1;
 }
 
-int DuckSprite(int n)
-{
-	int dir;
-	int sprite;
-
-  TDuckInfo d=duck[n];
-	dir = d.dir;
-	switch (d.mode) {
-	case DUCK_BORED:
-		if (dir & DIR_HORIZ) {
-			sprite = (dir == DIR_R) ? 0 : 2;
-		}
-		else {
-			sprite = 4;
-		}
-		break;
-	case DUCK_STEP:
-		if (dir & DIR_HORIZ) {
-			sprite = (dir == DIR_R) ? 1 : 3;
-		}
-		else {
-			sprite = 5;
-		}
-		break;
-	case DUCK_EAT2:
-	case DUCK_EAT4:
-		sprite = (dir == DIR_R) ? 6 : 8;
-		break;
-	case DUCK_EAT3:
-		sprite = (dir == DIR_R) ? 7 : 9;
-		break;
-	default:
-    trace("wrong value in switch");
-	};
-	return sprite;
-}
-
 void MoveDucks()
 {
 	int tmp;
@@ -1544,7 +1623,7 @@ void run_game_one_frame()
 	/* "Get Ready" */
 //next_level:
 //next_frame:
-//	PollKeys();
+	PollKeys();
 	MovePlayer();
 	MakeSound();
 	MoveLift();
@@ -1612,11 +1691,19 @@ initNewGame();]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
+  <OnUpdate>
+    <KeyPress Name="Kp1" Keys="POAQ ">
+      <OnPressed>
+        <ZExpression Expression="current_keypress= ord(subStr(Kp1.Keys,Kp1.Keyindex,1));"/>
+      </OnPressed>
+    </KeyPress>
+  </OnUpdate>
   <OnRender>
     <ZExpression>
       <Expression>
 <![CDATA[//adjust the camera a bit to center the game
-glTranslatef(-160,-120,0);
+glScalef(2.0,2.0,1.0);
+glTranslatef(-80,-100,0);
 
 run_game_one_frame();]]>
       </Expression>
@@ -1679,6 +1766,26 @@ run_game_one_frame();]]>
         <Array Name="SpritePLAYER_L3Array" Type="4" SizeDim1="18" Persistent="255">
           <Values>
 <![CDATA[789CE31090B0F9AF63C3216153565655652313A402002B4C04DE]]>
+          </Values>
+        </Array>
+        <Array Name="SpriteDUCK_RArray" Type="4" SizeDim1="22" Persistent="255">
+          <Values>
+<![CDATA[789CE310E19196E1E060616132AAAEAFAFB793100002090021290352]]>
+          </Values>
+        </Array>
+        <Array Name="SpriteDUCK_R2Array" Type="4" SizeDim1="22" Persistent="255">
+          <Values>
+<![CDATA[789CE310E19592E5E060616132AAAEAFAFB793D0D07071550200232403F6]]>
+          </Values>
+        </Array>
+        <Array Name="SpriteDUCK_LArray" Type="4" SizeDim1="22" Persistent="255">
+          <Values>
+<![CDATA[789CE31031B8612120A0A0E0E073EFDFBF7F35121C402001004F7206ED]]>
+          </Values>
+        </Array>
+        <Array Name="SpriteDUCK_L2Array" Type="4" SizeDim1="22" Persistent="255">
+          <Values>
+<![CDATA[789CE310D910B143404041C1C1E7DEBF7FFF6A2444449416B900005B0C0865]]>
           </Values>
         </Array>
       </Children>
