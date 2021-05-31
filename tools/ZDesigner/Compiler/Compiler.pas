@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2021 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,8 @@ THE SOFTWARE.}
 //This unit is the glue between ZExpressions and Zc
 //VM code generation
 unit Compiler;
+
+{$include zzdc_globalopt.inc}
 
 interface
 
@@ -1575,7 +1577,9 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F.Index := UserFunc.LibIndex;
       F.Ref := UserFunc;
     end;
+    {$ifdef TRACEINFO}
     TExpBase(Target.Last).TraceInfo := UserFunc.Id;
+    {$endif}
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then
       //discard return value from stack

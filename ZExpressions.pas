@@ -208,7 +208,7 @@ type
   protected
     procedure Execute(Env : PExecutionEnvironment); virtual; abstract;
     {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
-  {$ifndef minimal}
+  {$ifdef TRACEINFO}
   public
     TraceInfo : string;
   {$endif}
@@ -611,13 +611,20 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
 {$POINTERMATH ON}
 
 {$ifndef minimal}
+
+{$ifdef TRACEINFO}
 var
   //debug info that will be appended to next script error message
   GlobalTraceInfo : string;
+{$endif}
 
 procedure ScriptError(const S : string);
 begin
-  ZHalt(GlobalTraceInfo + ' ' + S);
+  {$ifdef TRACEINFO}
+  ZHalt(GlobalTraceInfo + ': ' + S);
+  {$else}
+  ZHalt(S);
+  {$endif}
 end;
 {$endif}
 
@@ -708,10 +715,8 @@ begin
 end;
 
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
-{$IFNDEF MINIMAL}
-  {$IFNDEF ZGEVIZ}
-    {.$DEFINE GUARD_LIMIT}
-  {$ENDIF}
+{$IFDEF ZDESIGNER}
+  {$DEFINE GUARD_LIMIT}
 {$ENDIF}
 const
   NilP : pointer = nil;
@@ -741,7 +746,7 @@ begin
   {$endif}
   while True do
   begin
-    {$ifdef debug}
+    {$ifdef TRACEINFO}
     if TExpBase(Env.gCurrentPc^).TraceInfo<>'' then
       GlobalTraceInfo := TExpBase(Env.gCurrentPc^).TraceInfo;
     {$endif}
@@ -759,7 +764,7 @@ begin
   end;
   if Env.StackGetDepth=1 then
     Env.StackPopToPointer(Result.PointerValue);
-  {$ifndef minimal}
+  {$ifdef ZDESIGNER}
   if (Env=@LocalEnv) and (Env.StackGetDepth>0) then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}

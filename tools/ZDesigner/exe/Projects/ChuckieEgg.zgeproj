@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" Camera="OrthoCamera" FileVersion="2">
+<ZApplication Name="App" Caption="ZGameEditor application" ScreenMode="1" Camera="OrthoCamera" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
       <BeforeInitExp>
@@ -29,7 +29,12 @@ gltex[4] gltex_player_l;
 gltex[4] gltex_player_up;
 
 gltex[10] gltex_duck;
-
+gltex gltex_big_duck_l1;
+gltex gltex_big_duck_l2;
+gltex gltex_big_duck_r1;
+gltex gltex_big_duck_r2;
+gltex gltex_cage_open;
+gltex gltex_cage_closed;
 
 const int TEX_SIZE = 128;
 byte[TEX_SIZE * TEX_SIZE * 4] tex_buffer;
@@ -98,26 +103,139 @@ void LoadTextures() {
   byte[] colorPurple = {160,32,240};
   byte[] colorYellow = {255,255,0};
 
-  getBinaryProp(SpriteWallArray.Values,data);	gltex_wall = LoadTexture(data,colorGreen);
-  getBinaryProp(SpriteLadderArray.Values,data);	gltex_ladder = LoadTexture(data,colorPurple);
-  getBinaryProp(SpriteEggArray.Values,data); gltex_egg = LoadTexture(data,colorYellow);
-  getBinaryProp(SpriteGrainArray.Values,data); gltex_grain = LoadTexture(data,colorPurple);
-  getBinaryProp(SpriteLiftArray.Values,data); gltex_lift = LoadTexture(data,colorPurple);
+  {
+    byte[] data = {0x18, 0x30, 0x00,0x38,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x38,0x00,0x00,0x10,0x00,0x00,0xfe,0x00,0x03,0x7d,0x80,0x0c,0xd6,0x60,0x11,0x55,0x10,0x22,0x54,0x88,0x24,0x92,0x48,0x44,0x92,0x44,0x48,0x92,0x24,0x88,0x92,0x22,0x89,0x11,0x22,0xd1,0x11,0x16,0xb1,0x11,0x1a,0x99,0x11,0x32,0x97,0x11,0xd2,0x91,0xff,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x16,0xb1,0x11,0x1a,0x99,0x11,0x32,0x97,0x11,0xd2,0x91,0xff,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x12,0x51,0x11,0x14,0x31,0x11,0x18,0x19,0x11,0x30,0x07,0x11,0xc0,0x00,0xfe,0x00};
+    gltex_cage_open = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x18, 0x30, 0x00,0x38,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x38,0x00,0x00,0x10,0x00,0x00,0xfe,0x00,0x03,0x7d,0x80,0x0c,0xd6,0x60,0x11,0x55,0x10,0x22,0x54,0x88,0x24,0x92,0x48,0x44,0x92,0x44,0x48,0x92,0x24,0x88,0x92,0x22,0x89,0x11,0x22,0xd1,0x10,0x16,0xb1,0x10,0x0a,0x99,0x00,0x02,0x97,0x00,0x02,0x91,0xe0,0x02,0x91,0x00,0x02,0x91,0x10,0x02,0x91,0x10,0x12,0x91,0x10,0x12,0x91,0x10,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0xd0,0x00,0x16,0xb0,0x00,0x1a,0x90,0x00,0x32,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x91,0x00,0x12,0x91,0x01,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x12,0x51,0x11,0x14,0x31,0x11,0x18,0x19,0x11,0x30,0x07,0x11,0xc0,0x00,0xfe,0x00};
+    gltex_cage_closed = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x0e,0x00,0x1f,0x00,0x17,0x80,0xf7,0x80,0xff,0x80,0x1f,0x80,0x0f,0x00,0x07,0x00,0x06,0x00,0x0e,0x70,0x0e,0xf8,0x1f,0xfc,0x1f,0xfe,0x1e,0xff,0x1d,0xff,0x3d,0xfd,0x3d,0xfd,0x3d,0xfb,0x3e,0xf6,0x3f,0x6e,0x1f,0x9c,0x1f,0xf8,0x0f,0xf0,0x07,0xc0};
+    gltex_big_duck_l1 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x0e,0x00,0x9f,0x00,0x57,0x80,0x37,0x80,0x3f,0x80,0x5f,0x80,0x8f,0x00,0x07,0x00,0x06,0x00,0x0e,0x70,0x0e,0xf8,0x1f,0xfc,0x1f,0x8e,0x1e,0x77,0x1d,0xfb,0x3f,0xfd,0x3f,0xff,0x3f,0xff,0x3f,0xfe,0x3f,0xfe,0x1f,0xfc,0x1f,0xf8,0x0f,0xf0,0x07,0xc0};
+    gltex_big_duck_l2 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18,0x00,0x70,0x00,0xf8,0x01,0xe8,0x01,0xef,0x01,0xff,0x01,0xf8,0x00,0xf0,0x00,0xe0,0x00,0x60,0x0e,0x70,0x1f,0x70,0x3f,0xf8,0x7f,0xf8,0xff,0x78,0xff,0xb8,0xbf,0xbc,0xbf,0xbc,0xdf,0xbc,0x6f,0x7c,0x76,0xfc,0x39,0xf8,0x1f,0xf8,0x0f,0xf0,0x03,0xe0};
+    gltex_big_duck_r1 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x00,0x70,0x00,0xf9,0x01,0xea,0x01,0xec,0x01,0xfc,0x01,0xfa,0x00,0xf1,0x00,0xe0,0x00,0x60,0x0e,0x70,0x1f,0x70,0x3f,0xf8,0x71,0xf8,0xee,0x78,0xdf,0xb8,0xbf,0xfc,0xff,0xfc,0xff,0xfc,0x7f,0xfc,0x7f,0xfc,0x3f,0xf8,0x1f,0xf8,0x0f,0xf0,0x03,0xe0};
+    gltex_big_duck_r2 = LoadTexture(data,colorYellow);
+  }
 
-  getBinaryProp(SpritePLAYER_RArray.Values,data); gltex_player_r[0] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_R2Array.Values,data); gltex_player_r[1] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_RArray.Values,data); gltex_player_r[2] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_R3Array.Values,data); gltex_player_r[3] = LoadTexture(data,colorYellow);
 
-  getBinaryProp(SpritePLAYER_LArray.Values,data); gltex_player_l[0] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_L2Array.Values,data); gltex_player_l[1] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_LArray.Values,data); gltex_player_l[2] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpritePLAYER_L3Array.Values,data); gltex_player_l[3] = LoadTexture(data,colorYellow);
+  {
+    byte[] data = {8,8,251,0,191,0,239,0,0,0};
+    gltex_wall = LoadTexture(data,colorGreen);
+  }
 
-  getBinaryProp(SpriteDUCK_RArray.Values,data); gltex_duck[0] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpriteDUCK_R2Array.Values,data); gltex_duck[1] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpriteDUCK_LArray.Values,data); gltex_duck[2] = LoadTexture(data,colorYellow);
-  getBinaryProp(SpriteDUCK_L2Array.Values,data); gltex_duck[3] = LoadTexture(data,colorYellow);
+  {
+    byte[] data = {8,8,66,66,66,66,126,66,66,66};
+    gltex_ladder = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {8,8,0,56,108,94,126,124,56,0};
+    gltex_egg = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,8,0,0,0,8,20,42,85,0};
+    gltex_grain = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {16,4,31,248,31,248,27,216,17,136};
+    gltex_lift = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {8, 0x10,0x18,0x3c,0xff,0x3c,0x3c,0x18,0x18,0xbd, 0xff,0x7e,0x7e,0x7e,0x3c,0x24,0x24,0x66 };
+    gltex_player_up[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8, 0x10,0x18,0x3c,0xff,0x3c,0x3d,0x19,0x19,0x3d,0xff,0xfe,0xfe,0xfe,0xbc,0x3e,0x20,0x20};
+    gltex_player_up[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_up[2] = gltex_player_up[0];
+  {
+    byte[] data = {8, 0x10,0x20,0x60,0x18,0x3c,0xff,0x3c,0xbc,0x98,0x98,0xbc,0xff,0x7f,0x7f,0x7f,0x3d,0x7c};
+    gltex_player_up[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,110,110,60,24,16,24};
+    gltex_player_r[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,118,118,60,56,74,36};
+    gltex_player_r[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_r[2] = gltex_player_r[0];
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,94,94,60,56,74,36};
+    gltex_player_r[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,118,118,60,24,8,24};
+    gltex_player_l[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,110,110,60,28,82,36};
+    gltex_player_l[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_l[2] = gltex_player_l[0];
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,122,122,60,28,82,36};
+    gltex_player_l[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,20,12,27,28,8,8,4,4,2,50,123,127,127,127,62,24,16,16,16,16,24};
+    gltex_duck[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,13,26,29,8,8,4,4,2,50,123,127,127,127,62,24,40,40,68,69,34};
+    gltex_duck[1] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,48,216,56,16,16,32,32,64,76,222,254,254,254,124,24,8,8,8,8,24};
+    gltex_duck[2] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,176,88,184,16,16,32,32,64,76,222,254,254,254,124,24,20,20,34,162,68};
+    gltex_duck[3] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x08, 0x14, 0x18,0x3c,0x3c,0x3c,0x18,0x18,0x18,0x3c,0x7e,0x7e,0x7e,0x7e,0x7e,0x3c,0x3c,0x24,0x24,0x26,0x20,0x60};
+    gltex_duck[4] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x08, 0x16, 0x18,0x3c,0x3c,0x3c,0x18,0x18,0x18,0x3c,0x7e,0x7e,0x7e,0x7e,0x7e,0x3c,0x3c,0x24,0x24,0x64,0x04,0x04,0x04,0x06};
+    gltex_duck[5] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x38,0x30,0x28,0x78,0x78,0x7c,0xc4,0x7f,0xc2,0x7f,0x80,0x3f,0x00,0x3f,0x00,0x1f,0x00,0x16,0x00,0x10,0x00,0x10,0x00,0x10,0x00,0x18,0x00};
+    gltex_duck[6] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x30,0x00,0x78,0x00,0x7c,0x00,0x7e,0x00,0x7f,0xf8,0x3f,0xf4,0x3f,0x14,0x1f,0x08,0x16,0x08,0x10,0x08,0x10,0x00,0x10,0x00,0x18,0x00};
+    gltex_duck[7] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1c,0x00,0x14,0x0c,0x1e,0x1e,0x23,0x3e,0x43,0xfe,0x01,0xfe,0x00,0xfc,0x00,0xfc,0x00,0xf8,0x00,0x68,0x00,0x08,0x00,0x08,0x00,0x08,0x00,0x18};
+    gltex_duck[8] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0c,0x00,0x1e,0x00,0x3e,0x00,0x7e,0x1f,0xfe,0x2f,0xfc,0x28,0xfc,0x10,0xf8,0x10,0x68,0x10,0x08,0x00,0x08,0x00,0x08,0x00,0x18};
+    gltex_duck[9] = LoadTexture(data,colorYellow);
+  }
 
 	glGenTextures(1, tex_handle);
 	glBindTexture(GL_TEXTURE_2D, tex_handle);
@@ -281,64 +399,6 @@ class TDuckInfo {
 
 TDuckInfo[5] duck;
 
-class TRaster {
-    void erase_player() { }
-    void draw_player() { }
-    void draw_timer(int n) { }
-    void draw_bonus(int n) { }
-    void draw_score(int n, int oldval, int newval) { }
-    void draw_tile(int x, int y, int type) { }
-    void draw_big_duck() { }
-    void draw_duck(int n) { }
-    void draw_life(int n) { }
-    void draw_lift(int x, int y) { }
-    void clear_screen() { }
-}
-
-TRaster raster = new TRaster();
-
-int last_mode;
-int current_keypress;
-void PollKeys() {
-  int c;
-
-  if (player_mode != last_mode) {
-  	if (player_mode == cPLAYER_WALK) {
-	    button_ack |= 0xc;
-	} else if (player_mode == cPLAYER_CLIMB) {
-	    button_ack |= 3;
-	} else if (player_mode == cPLAYER_LIFT) {
-	    button_ack |= 0xf;
-	}
-  	last_mode = player_mode;
-  }
-
-  buttons &= ~button_ack;
-  button_ack = 0;
-  c = current_keypress;
-  switch (c) {
-    case ord("P"):
-	buttons |= BUTTON_RIGHT;
-	buttons &= ~BUTTON_LEFT;
-	break;
-    case ord("O"):
-	buttons |= BUTTON_LEFT;
-	buttons &= ~BUTTON_RIGHT;
-	break;
-    case ord("A"):
-	buttons |= BUTTON_DOWN;
-	buttons &= ~BUTTON_UP;
-	break;
-    case ord("Q"):
-	buttons |= BUTTON_UP;
-	buttons &= ~BUTTON_DOWN;
-	break;
-    case ord(" "):
-	buttons |= BUTTON_JUMP;
-  }
-  current_keypress=0;
-}
-
 int DuckSprite(int n)
 {
 	int dir;
@@ -392,10 +452,6 @@ void Do_InitTile(int x, int y, int type)
 
 	old_type = levelmap[y * 20 + x];
 	levelmap[y * 20 + x] = type;
-	if (old_type)
-		raster.draw_tile(x, y, old_type);
-	if (type)
-		raster.draw_tile(x, y, type);
 }
 
 vec2[] scene_array_xy;
@@ -491,13 +547,13 @@ void RenderBackground()
 		}
 	}
 
-/*	if (have_big_duck) {
+	if (have_big_duck) {
 		tex = gltex_cage_open;
 	}
 	else {
 		tex = gltex_cage_closed;
 	}
-	AddSceneSprite(tex, 0, 0xdc);*/
+	AddSceneSprite(tex, 0, 0xdc);
 }
 
 void RenderFrame() {
@@ -681,7 +737,7 @@ void LoadLevel()
 
 void DrawLastLife()
 {
-  raster.draw_life(player_data.lives);
+//  raster.draw_life(player_data.lives);
 }
 
 void StartLevel()
@@ -691,15 +747,12 @@ void StartLevel()
 		lift_y[0] = 8;
 		lift_y[1] = 0x5a;
 		current_lift = 0;
-		raster.draw_lift(lift_x, lift_y[0]);
-		raster.draw_lift(lift_x, lift_y[1]);
 	}
 	big_duck_x = 4;
 	big_duck_y = 0xcc;
 	big_duck_dx = big_duck_dy = 0;
 	big_duck_frame = 0;
 	big_duck_dir = 0;
-	raster.draw_big_duck();
 	if ((current_level >> 3) == 1) {
 		num_ducks = 0;
 	}
@@ -712,12 +765,10 @@ void StartLevel()
 		d.y = (d.tile_y << 3) + 0x14;
 		d.mode = DUCK_BORED;
 		d.dir = 2;
-		raster.draw_duck(i);
 	}
 	/* Delay(3) */
 	player_x = 0x3c;
 	player_y = 0x20;
-  raster.draw_player();
 	player_tilex = 7;
 	player_tiley = 2;
 	player_partial_x = 7;
@@ -789,7 +840,6 @@ void RemoveGrain(int x, int y)
 void ScoreChange(int n, int oldval, int newval)
 {
 	player_data.score[n] = newval;
-	raster.draw_score(n, oldval, newval);
 }
 
 void AddScore(int n, int val)
@@ -832,7 +882,6 @@ void AnimatePlayer()
 	int tmp;
 	int x, y;
 
-	raster.erase_player();
 	player_x += move_x;
 	tmp = player_partial_x + move_x;
 	if (tmp < 0)
@@ -847,7 +896,6 @@ void AnimatePlayer()
 	if (tmp >= 8)
 		player_tiley++;
 	player_partial_y = tmp & 7;
-	raster.draw_player();
 	x = player_tilex;
 	y = player_tiley;
 	if (player_partial_y >= 4)
@@ -1200,6 +1248,7 @@ void MovePlayer()
     trace("wrong value in switch");
 	}
 	AnimatePlayer();
+  buttons=0; //todo
 }
 
 void MakeSound()
@@ -1247,12 +1296,10 @@ void MoveLift()
 	if (!have_lift)
 		return;
 	y = lift_y[current_lift];
-	raster.draw_lift(lift_x, y);
 	y += 2;
 	if (y == 0xe0)
 		y = 6;
 	lift_y[current_lift] = y;
-	raster.draw_lift(lift_x, y);
 	current_lift = 1 - current_lift;
 }
 
@@ -1282,13 +1329,11 @@ void ReduceBonus()
 
 	n = 2;
 	do {
-		raster.draw_bonus(n);
 		bonus[n]--;
 		flag = ((bonus[n] & 0x80) != 0);
 		if (flag) {
 			bonus[n] = 9;
 		}
-		raster.draw_bonus(n);
 		n--;
 	} while (flag);
 	if (bonus[0] + bonus[1] + bonus[2] == 0)
@@ -1308,7 +1353,6 @@ void MoveDucks()
 	if (duck_timer == 8) {
 		/* Big Duck.  */
 		duck_timer = 0;
-		raster.draw_big_duck();
 		if (have_big_duck) {
 			tmp = big_duck_x + 4;
 			if (tmp < player_x) {
@@ -1340,7 +1384,6 @@ void MoveDucks()
 		big_duck_x += big_duck_dx;
 		big_duck_y += big_duck_dy;
 		big_duck_frame = big_duck_frame^1;
-		raster.draw_big_duck();
 		return;
 	}
 	if (duck_timer == 4) {
@@ -1351,12 +1394,10 @@ void MoveDucks()
 		}
 		x = 2;
 		do {
-			raster.draw_timer(x);
 			timer_ticks[x]--;
 			flag = (timer_ticks[x] & 0x80) != 0;
 			if (flag)
 				timer_ticks[x] = 9;
-			raster.draw_timer(x);
 			x--;
 		} while (flag);
 		tmp = timer_ticks[0] + timer_ticks[1] + timer_ticks[2];
@@ -1379,7 +1420,6 @@ void MoveDucks()
 		current_duck--;
 	if (current_duck >= num_ducks)
 		return;
-	raster.draw_duck(current_duck);
 	/* Move little duck.  */
 	TDuckInfo this_duck = duck[current_duck];
 	if (this_duck.mode >= DUCK_EAT1) {
@@ -1450,7 +1490,6 @@ void MoveDucks()
 			this_duck.mode = DUCK_BORED;
 		else
 			this_duck.mode++;
-		raster.draw_duck(current_duck);
 		return;
 	}
 	/* Walking.  */
@@ -1482,7 +1521,6 @@ void MoveDucks()
 	default:
 		trace("error 1");
 	}
-	raster.draw_duck(current_duck);
 	return;
 }
 
@@ -1599,7 +1637,6 @@ void SetupLevel()
 
 void initNewLevel() {
 	SetupLevel();
-	raster.clear_screen();
 	LoadLevel();
 	StartLevel();
 }
@@ -1623,7 +1660,6 @@ void run_game_one_frame()
 	/* "Get Ready" */
 //next_level:
 //next_frame:
-	PollKeys();
 	MovePlayer();
 	MakeSound();
 	MoveLift();
@@ -1694,7 +1730,19 @@ initNewGame();]]>
   <OnUpdate>
     <KeyPress Name="Kp1" Keys="POAQ ">
       <OnPressed>
-        <ZExpression Expression="current_keypress= ord(subStr(Kp1.Keys,Kp1.Keyindex,1));"/>
+        <ZExpression>
+          <Expression>
+<![CDATA[int c=ord(subStr(Kp1.Keys,Kp1.Keyindex,1));
+
+switch(c) {
+  case ord("O") : buttons |= BUTTON_LEFT; break;
+  case ord("P") : buttons |= BUTTON_RIGHT; break;
+  case ord("Q") : buttons |= BUTTON_UP; break;
+  case ord("A") : buttons |= BUTTON_DOWN; break;
+  case ord(" ") : buttons |= BUTTON_JUMP; break;
+}]]>
+          </Expression>
+        </ZExpression>
       </OnPressed>
     </KeyPress>
   </OnUpdate>
@@ -1702,7 +1750,7 @@ initNewGame();]]>
     <ZExpression>
       <Expression>
 <![CDATA[//adjust the camera a bit to center the game
-glScalef(2.0,2.0,1.0);
+glScalef(1.5,1.5,1.0);
 glTranslatef(-80,-100,0);
 
 run_game_one_frame();]]>
@@ -1711,84 +1759,5 @@ run_game_one_frame();]]>
   </OnRender>
   <Content>
     <Camera Name="OrthoCamera" Kind="1" ClipNear="1" ClipFar="-1" OrthoZoom="200"/>
-    <Group Comment="Sprite data">
-      <Children>
-        <Array Name="SpriteWallArray" Type="4" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[789CE3E0F8CDB09FE13D0303030010B002BA]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteLadderArray" Type="4" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[789CE3E07002823A2006000ADA025D]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteEggArray" Type="4" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[789CE3E060B0C889ABABB16000000A640245]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteGrainArray" Type="4" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[789CE3E0606060E010D10A650000024200AC]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteLiftArray" Type="4" SizeDim1="10" Persistent="255">
-          <Values>
-<![CDATA[789C136091FF21FF43FA8660070011BE03CF]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_RArray" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F96F620324F380C046424002002A740474]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_R2Array" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F96F620324F3F2CACA6C2CBC54002BAC04EA]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_R3Array" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F96F620324F3F2E2E26C2CBC54002AA404BA]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_LArray" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F9AF63C3216153060436121C12002A74047C]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_L2Array" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F9AF63C3216153569697672313A402002AC804C6]]>
-          </Values>
-        </Array>
-        <Array Name="SpritePLAYER_L3Array" Type="4" SizeDim1="18" Persistent="255">
-          <Values>
-<![CDATA[789CE31090B0F9AF63C3216153565655652313A402002B4C04DE]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteDUCK_RArray" Type="4" SizeDim1="22" Persistent="255">
-          <Values>
-<![CDATA[789CE310E19196E1E060616132AAAEAFAFB793100002090021290352]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteDUCK_R2Array" Type="4" SizeDim1="22" Persistent="255">
-          <Values>
-<![CDATA[789CE310E19592E5E060616132AAAEAFAFB793D0D07071550200232403F6]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteDUCK_LArray" Type="4" SizeDim1="22" Persistent="255">
-          <Values>
-<![CDATA[789CE31031B8612120A0A0E0E073EFDFBF7F35121C402001004F7206ED]]>
-          </Values>
-        </Array>
-        <Array Name="SpriteDUCK_L2Array" Type="4" SizeDim1="22" Persistent="255">
-          <Values>
-<![CDATA[789CE310D910B143404041C1C1E7DEBF7FFF6A2444449416B900005B0C0865]]>
-          </Values>
-        </Array>
-      </Children>
-    </Group>
   </Content>
 </ZApplication>

@@ -6,3 +6,7 @@
 {$ENDIF}
 
 {$endif}
+
+{$ifdef zdesigner}
+  {$define TRACEINFO}
+{$endif}

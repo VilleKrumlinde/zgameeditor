@@ -438,6 +438,7 @@ type
     procedure ParseEvalExpression(const Expr : string);
     procedure FilterQuickCompList;
     procedure BuildZ80(OutFile : string);
+    procedure CMDialogChar(var Message: TCMDialogChar); message CM_DIALOGCHAR;
   protected
     procedure CreateWnd; override;
   public
@@ -3922,6 +3923,14 @@ begin
   end;
 
   ClearRoot;
+end;
+
+procedure TEditorForm.CMDialogChar(var Message: TCMDialogChar);
+begin
+  //Avoid ZGE to switch focus from preview if shortcut is pressed without ALT-key
+  //https://stackoverflow.com/questions/53418294/why-shortcut-without-pressing-the-alt-key
+  if Boolean(Message.KeyData shr 29 and 1) then
+    inherited;
 end;
 
 procedure TEditorForm.ClearRoot;
