@@ -655,11 +655,13 @@ var
 implementation
 
 uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
-  {$ifndef minimal},LibXmlParserU,{$ifndef fpc}AnsiStrings,{$endif}SysUtils,Math,zlib
-  ,Zc_Ops
-  {$endif}
-  {$ifdef fpc}
-  ,zstream,strutils
+  {$ifndef minimal}
+    ,LibXmlParserU
+    ,SysUtils,Math,zlib,Zc_Ops
+    {$ifndef fpc},AnsiStrings{$endif}
+    {$ifdef fpc}
+    ,zstream,strutils
+    {$endif}
   {$endif}
   ;
 
