@@ -265,7 +265,6 @@ begin
       Self.KeyIndex := Index;
       OnPressed.ExecuteCommands;
       LastPressedAt := ZApp.Time;
-      Break;
     end;
     Inc(Index);
   end;

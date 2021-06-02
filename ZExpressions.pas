@@ -741,7 +741,7 @@ begin
   Env.StackPushPointer(NilP); //Push return adress nil
 
   {$ifdef GUARD_LIMIT}
-  GuardLimit := High(Integer);
+  GuardLimit := Round(1E8);
   GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000*10;
   {$endif}
   while True do
