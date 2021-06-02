@@ -8,5 +8,5 @@
 {$endif}
 
 {$ifdef zdesigner}
-  {$define TRACEINFO}
+  {$define CALLSTACK}  //Show callstack if error in zexpression runtime
 {$endif}

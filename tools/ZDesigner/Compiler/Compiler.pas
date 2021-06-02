@@ -997,6 +997,12 @@ var
     Ret.HasFrame := Func.NeedFrame;
     Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
     Ret.Arguments := Func.Arguments.Count;
+    {$ifdef CALLSTACK}
+    if IsLibrary then
+      Ret.FunctionName := Func.Id
+    else
+      Ret.FunctionName := string(Component.GetDisplayName);
+    {$endif}
     if IsLibrary then
       Ret.Lib := Component as TZLibrary;
   end;
@@ -1577,9 +1583,6 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
       F.Index := UserFunc.LibIndex;
       F.Ref := UserFunc;
     end;
-    {$ifdef TRACEINFO}
-    TExpBase(Target.Last).TraceInfo := UserFunc.Id;
-    {$endif}
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then
       //discard return value from stack

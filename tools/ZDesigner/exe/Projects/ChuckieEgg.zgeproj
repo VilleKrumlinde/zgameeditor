@@ -1895,26 +1895,27 @@ switch(c) {
         </ZExpression>
       </OnPressed>
     </KeyPress>
-    <ZExpression Comment="Joystick" DesignDisable="1">
+    <ZExpression Comment="Joystick">
       <Expression>
-<![CDATA[/*
-buttons=0;
-const float threshold = 0.25;
+<![CDATA[//Works with POV control (such as a Nintendo Switch Joy-Con)
 
-float axis=joyGetAxis(0,0);
-if( (axis<-threshold)  )
-  buttons |= BUTTON_LEFT;
-if( (axis>threshold) )
-  buttons |= BUTTON_RIGHT;
+float pov=joyGetPOV(0);
+if(pov != -1 ) {
+  const int range=45;
 
-axis=joyGetAxis(0,1);
-if( (axis<-threshold) )
-  buttons |= BUTTON_UP;
-if( (axis>threshold) )
-  buttons |= BUTTON_DOWN;
+  if( (pov>= 90-range) && (pov<=90+range) )
+    buttons |= BUTTON_RIGHT;
+  else if( (pov>=270-range) && (pov<=270+range) )
+    buttons |= BUTTON_LEFT;
+
+  if( (pov>= 0-range) && (pov<=0+range) )
+    buttons |= BUTTON_UP;
+  else if( (pov>=180-range) && (pov<=180+range) )
+    buttons |= BUTTON_DOWN;
+}
 
 if(joyGetButton(0,0) )
-  buttons |= BUTTON_JUMP;*/]]>
+  buttons |= BUTTON_JUMP;]]>
       </Expression>
     </ZExpression>
   </OnUpdate>

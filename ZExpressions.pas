@@ -41,20 +41,31 @@ type
   TExecutionEnvironment = record
   const
     ZcStackSize=16384;
-  private
-    gCurrentPc : ^TExpBase;
-    gCurrentBP : integer;
   type
     TStackElement = NativeUInt;
     PStackElement = ^TStackElement;
+    PExpBase = ^TExpBase;
+  private
+    gCurrentPc : PExpBase;
+    gCurrentBP : integer;
   var
     ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
     ZcStackPtr : PStackElement;
+  strict private
+    {$ifdef CALLSTACK}
+    procedure LogCallstack;
+    {$endif}
   private
     function StackGetDepth : integer; inline;
     procedure StackPopTo(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     procedure StackPopToPointer(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     function StackPopFloat : single;
+    {$ifndef minimal}
+    procedure ScriptError(const S : string);
+    {$endif}
+    {$ifdef CALLSTACK}
+    procedure CheckNilDeref(P : pointer);
+    {$endif}
     {$if defined(cpux64) or defined(cpuaarch64)}
     function StackPopAndGetPtr(const Count : integer) : PStackElement; inline;
     {$endif}
@@ -208,10 +219,6 @@ type
   protected
     procedure Execute(Env : PExecutionEnvironment); virtual; abstract;
     {$ifndef minimal}public function ExpAsText : string; virtual;{$endif}
-  {$ifdef TRACEINFO}
-  public
-    TraceInfo : string;
-  {$endif}
   end;
 
   TExpConstantFloat = class(TExpBase)
@@ -384,6 +391,9 @@ type
     HasFrame : boolean;
     HasReturnValue : boolean;
     Arguments : integer;
+    {$ifdef CALLSTACK}
+    FunctionName : string;
+    {$endif}
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
@@ -610,24 +620,6 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
 
 {$POINTERMATH ON}
 
-{$ifndef minimal}
-
-{$ifdef TRACEINFO}
-var
-  //debug info that will be appended to next script error message
-  GlobalTraceInfo : string;
-{$endif}
-
-procedure ScriptError(const S : string);
-begin
-  {$ifdef TRACEINFO}
-  ZHalt(GlobalTraceInfo + ': ' + S);
-  {$else}
-  ZHalt(S);
-  {$endif}
-end;
-{$endif}
-
 function ExpGetValue(Code : TZComponentList) : single;
 begin
   Result := RunCode(Code).SingleValue;
@@ -714,6 +706,49 @@ begin
   Inc(Result,Index);
 end;
 
+{$ifdef CALLSTACK}
+procedure TExecutionEnvironment.LogCallstack;
+var
+  Log : TLog;
+
+  procedure DoOne(P : PExpBase);
+  begin
+    while P<>nil do
+    begin
+      if (P^ is TExpReturn) then
+      begin
+        Log.Write(TExpReturn(P^).FunctionName);
+        TExpReturn(P^).Execute(@Self);
+        P := Self.gCurrentPc;
+        Continue;
+      end;
+      Inc(P);
+    end;
+  end;
+
+begin
+  Log := ZLog.GetLog('Zc');
+  Log.Write('Callstack:');
+  DoOne(Self.gCurrentPc);
+end;
+
+procedure TExecutionEnvironment.CheckNilDeref(P : pointer);
+begin
+  if NativeUInt(P)<=1024 then
+    Self.ScriptError('Null pointer referenced in expression');
+end;
+{$endif}
+
+{$ifndef minimal}
+procedure TExecutionEnvironment.ScriptError(const S : string);
+begin
+  {$ifdef CALLSTACK}
+  LogCallstack;
+  {$endif}
+  ZHalt(S);
+end;
+{$endif}
+
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
 {$IFDEF ZDESIGNER}
   {$DEFINE GUARD_LIMIT}
@@ -746,10 +781,6 @@ begin
   {$endif}
   while True do
   begin
-    {$ifdef TRACEINFO}
-    if TExpBase(Env.gCurrentPc^).TraceInfo<>'' then
-      GlobalTraceInfo := TExpBase(Env.gCurrentPc^).TraceInfo;
-    {$endif}
     TExpBase(Env.gCurrentPc^).Execute(Env);
     if Env.gCurrentPc=nil then
       Break;
@@ -757,9 +788,9 @@ begin
     {$ifdef GUARD_LIMIT}
     Dec(GuardLimit);
     if GuardLimit=0 then
-      ScriptError('Infinite loop?');
+      Env.ScriptError('Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
-      ScriptError('Ten million strings allocated. Infinite loop?');
+      Env.ScriptError('Ten million strings allocated. Infinite loop?');
     {$endif}
   end;
   if Env.StackGetDepth=1 then
@@ -769,14 +800,6 @@ begin
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
-
-{$ifdef debug}
-procedure CheckNilDeref(P : pointer);
-begin
-  if NativeUInt(P)<=1024 then
-    ScriptError('Null pointer referenced in expression');
-end;
-{$endif}
 
 function CreateManagedValue(const Typ : TZcDataTypeKind) : pointer;
 var
@@ -893,7 +916,7 @@ begin
     vbkMinus : V := A2 - A1;
     vbkMul : V := A2 * A1;
     vbkDiv : V := A2 / A1;
-    {$ifndef minimal}else ScriptError('Invalid binary op'); {$endif}
+    {$ifndef minimal}else Env.ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -921,7 +944,7 @@ begin
         V := A2 mod A1
       else
         V := 0; //avoid runtime div by zero error
-    {$ifndef minimal}else ScriptError('Invalid binary op'); {$endif}
+    {$ifndef minimal}else Env.ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -961,7 +984,7 @@ begin
               jsJumpGE : Jump := L>=R;
               jsJumpNE : Jump := L<>R;
               jsJumpEQ : Jump := L=R;
-            {$ifndef minimal}else ScriptError('Invalid jump op');{$endif}
+            {$ifndef minimal}else Env.ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutInt:
@@ -975,7 +998,7 @@ begin
               jsJumpGE : Jump := Li>=Ri;
               jsJumpNE : Jump := Li<>Ri;
               jsJumpEQ : Jump := Li=Ri;
-            {$ifndef minimal}else ScriptError('Invalid jump op');{$endif}
+            {$ifndef minimal}else Env.ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutString:
@@ -1153,7 +1176,7 @@ begin
     fcQuit :
       begin
         {$ifndef minimal}
-        ScriptError('Quit called');
+        Env.ScriptError('Quit called');
         {$else}
         HasReturnValue := False;
         ZApp.Terminating := True;
@@ -1289,7 +1312,7 @@ begin
         TZThreadComponent(P1).Start(I1);
         HasReturnValue := False;
       end;
-  {$ifndef minimal}else ScriptError('Invalid func op'); {$endif}
+  {$ifndef minimal}else Env.ScriptError('Invalid func op'); {$endif}
   end;
   if HasReturnValue then
     Env.StackPush(V);
@@ -1478,7 +1501,7 @@ begin
     ((Dimensions=dadThree) and ((I1>=SizeDim1) or (I2>=SizeDim2) or (I3>=SizeDim3)))
     then
   begin
-    ScriptError('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
+    Env.ScriptError('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     Result := nil;
     Exit;
   end;
@@ -1708,8 +1731,8 @@ begin
     emPtrDeref4 :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         V := PInteger(P)^;
         Env.StackPush(V);
@@ -1717,8 +1740,8 @@ begin
     emPtrDeref1 :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         V := PByte(P)^;
         Env.StackPush(V);
@@ -1726,8 +1749,8 @@ begin
     emPtrDerefPointer :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer(P^);
       end;
@@ -1763,8 +1786,8 @@ begin
       begin
         //Convert TUserClassInstance to the instancedata for field access
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer( TUserClassInstance(P).InstanceData );
       end;
@@ -2153,7 +2176,7 @@ begin
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}
-      ScriptError(Self.ModuleName + ' not found');
+      ZHalt(Self.ModuleName + ' not found');
       {$else}
       ZHalt(Self.ModuleName);
       {$endif}
@@ -2166,7 +2189,7 @@ begin
 
   if Result=nil then
     {$ifndef minimal}
-    ScriptError(P + ' not found');
+    ZHalt(P + ' not found');
     {$else}
     ZHalt(P);
     {$endif}
@@ -2927,8 +2950,8 @@ begin
   if not IsInit then
   begin
     Env.StackPopToPointer(C);
-    {$ifdef debug}
-    CheckNilDeref(C);
+    {$ifdef CALLSTACK}
+    Env.CheckNilDeref(C);
     {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
     Env.StackPushPointer(C);
@@ -3028,7 +3051,7 @@ begin
       zptString : V.StringValue := PAnsiChar(RawValue);
     {$ifndef minimal}
     else
-      ScriptError(ClassName + ' invalid datatype for argument');
+      Env.ScriptError(ClassName + ' invalid datatype for argument');
     {$endif}
     end;
 
@@ -3184,7 +3207,7 @@ begin
         begin
           Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
           if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
-            ScriptError('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
+            Env.ScriptError('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
           C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
           C.ZApp.HasScriptCreatedComponents := True;
         end;
@@ -3201,7 +3224,7 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ScriptError('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop); //Must read prop first, when modifying rects
         case Prop.PropertyType of
           zptFloat,zptScalar: Value.FloatValue := V;
@@ -3212,7 +3235,7 @@ begin
           zptByte: Value.ByteValue := Round(V);
           zptBoolean: Value.BooleanValue := ByteBool(Round(V));
         else
-          ScriptError('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3224,17 +3247,17 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ScriptError('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptString : Value.StringValue := AnsiString(PAnsiChar(P3));
           zptExpression : Value.ExpressionValue.Source := String(PAnsiChar(P3));
         else
-          ScriptError('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         if (Prop.Name='Name') then
         begin
           if Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
-            ScriptError('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+            Env.ScriptError('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
           ZApp.SymTab.Add(String(PAnsiChar(P3)),TZComponent(P1));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
@@ -3249,11 +3272,11 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ScriptError('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptComponentRef : Value.ComponentValue := P3;
         else
-          ScriptError('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3271,13 +3294,13 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ScriptError('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop);
         case Prop.PropertyType of
           zptString : TmpS := Value.StringValue;
           zptExpression : TmpS := AnsiString(Value.ExpressionValue.Source);
         else
-          ScriptError('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
 
         Dest := ManagedHeap_Alloc(Length(TmpS)+1);
