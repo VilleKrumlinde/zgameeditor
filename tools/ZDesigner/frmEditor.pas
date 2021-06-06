@@ -334,6 +334,7 @@ type
     procedure QuickCompListViewCustomDrawItem(Sender: TCustomListView;
       Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure BuildZ80MenuItemClick(Sender: TObject);
+    procedure OnAppInfoClose(Sender : TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -854,6 +855,11 @@ begin
   end;
 end;
 
+procedure TEditorForm.OnAppInfoClose(Sender : TObject);
+begin
+  (Sender as TForm).Close;
+end;
+
 procedure TEditorForm.OpenProject(const FileName : string; const IsTemplate : boolean = False);
 var
   C : TZComponent;
@@ -865,6 +871,27 @@ var
     Result.FileVersion := AppFileVersion;
     Result.RefreshSymbolTable;
     Result.Caption:=AppName + ' application';
+  end;
+
+  procedure InShowAppInfo;
+  var
+    F: TForm;
+    M: TMemo;
+  begin
+    F := TForm.CreateNew(Self);
+    F.Position := poOwnerFormCenter;
+    F.BorderStyle := bsNone;
+    M := TMemo.Create(F);
+    M.Align := alClient;
+    M.Text := string(ZApp.Comment);
+    M.Parent := F;
+    M.TabStop := False;
+    M.OnClick := Self.OnAppInfoClose;
+    F.PopupMode := pmAuto;
+    F.PopupParent := Self;
+    F.Show;
+    F.SetFocus;
+    F.OnDeactivate := Self.OnAppInfoClose;
   end;
 
 begin
@@ -906,6 +933,12 @@ begin
   Tree.Items[0].Selected := True;  //Select "App" component as default
   //After scaling, hscroll position is sometimes not left 0
   Tree.Perform(WM_HSCROLL, MakeWParam(SB_PAGELEFT, 0), 0);
+
+  if ZApp.Comment<>'' then
+  begin
+    //todo: showappinfo
+//    InShowAppInfo;
+  end;
 end;
 
 function TEditorForm.OnGetLibraryPath : string;
