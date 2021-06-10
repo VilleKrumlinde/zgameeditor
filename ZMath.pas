@@ -24,6 +24,11 @@ unit ZMath;
 
 interface
 
+{$if defined(fpc) and (not defined(zgeviz)))
+  //Use Delphi-compatible Random functions to get same output from BitmapCells
+  {$define use_custom_rnd}
+{$endif}
+
 uses ZClasses;
 
 function Vector2f(const x, y : Single): TZVector2f;
@@ -83,8 +88,8 @@ function SmoothStep(const A,B,X : single) : single;
 function Clamp(const X,Min,Max : single) : single;
 
 function Random(const Base,Diff : single) : single; overload;
-function Random: single; overload;
-function Random(const ARange: Integer): Integer; overload;
+function Random: single; overload; {$ifndef use_custom_rnd}inline;{$endif}
+function Random(const ARange: Integer): Integer; overload; {$ifndef use_custom_rnd}inline;{$endif}
 
 function Min(const A,B : single) : single; overload;
 function Max(const A, B: Single): Single; overload;
@@ -958,8 +963,7 @@ begin
   F2 := Temp;
 end;
 
-{$ifdef fpc}
-//Use Delphi-compatible Random functions to get same output from BitmapCells
+{$ifdef use_custom_rnd}
 function NextRnd : integer;
 begin
   RandSeed := RandSeed * $08088405 + 1;

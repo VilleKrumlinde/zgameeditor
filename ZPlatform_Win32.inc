@@ -1406,7 +1406,14 @@ begin
 
   InitKeyMap;
 
-  InitJoysticks;
+  {$ifdef zgeviz} //Rare crash in ZgeViz using gamepads so protect with try except
+  try
+  {$endif}
+    InitJoysticks;
+  {$ifdef zgeviz}
+  except
+  end;
+  {$endif}
 end;
 
 
@@ -1595,9 +1602,6 @@ var
   MinMax : PMinMax;
   Joy : PJoystick;
 begin
-  {$ifdef zgeviz}
-  Exit; //Try to fix rare crash in ZGE
-  {$endif}
   MaxDevs := joyGetNumDevs();
   if MaxDevs>MAX_JOYSTICKS then
     MaxDevs := MAX_JOYSTICKS;
