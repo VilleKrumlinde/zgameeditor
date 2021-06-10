@@ -174,6 +174,58 @@ end;
 
 { TBitmapRect }
 
+{$define RECT_CPU}
+{$ifdef RECT_CPU}
+procedure TBitmapRect.ProduceOutput(Content : TContent; Stack : TZArrayList);
+var
+  B : TZBitmap;
+  HasArg : boolean;
+  OriginalP,P : PIntegerArray;
+  Color,W,H,Rw,Rh,X,Y,I : integer;
+  R : TZRectf;
+begin
+  //one optional argument
+  B := GetOptionalArgument(Stack);
+  HasArg := B<>nil;
+  if not HasArg then
+    B := TZBitmap.CreateFromBitmap( TZBitmap(Content) );
+
+  for I := 0 to High(Self.Size.Area) do
+    R.Area[I] := clamp((Self.Size.Area[I] + 1) * 0.5,0,1);
+
+  if R.Left>R.Right then
+    SwapF(R.Left,R.Right);
+  if R.Top>R.Bottom then
+    SwapF(R.Top,R.Bottom);
+
+  B.UseTextureBegin;
+  W := B.PixelWidth;
+  H := B.PixelHeight;
+  GetMem(P,H * W * 4);
+  OriginalP := P;
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,P);
+
+  B.SetMemory(P,GL_RGBA,GL_UNSIGNED_BYTE);
+
+  Rw := Trunc((R.Right-R.Left)*W);
+  Rh := Trunc((R.Bottom-R.Top)*H);
+
+  Color := ColorFtoB(Self.Color);
+  Inc(PInteger(P), Trunc(R.Top * H)*W );
+  Inc(PInteger(P), Trunc(R.Left * W) );
+  for Y := 0 to Rh-1 do
+  begin
+    for X := 0 to Rw-1 do
+      P^[X] := Color;
+    Inc(PInteger(P),W);
+  end;
+
+  B.UseTextureBegin;
+  FreeMem(OriginalP);
+
+  Stack.Push(B);
+end;
+{$else} //GPU version
 procedure TBitmapRect.ProduceOutput(Content : TContent; Stack : TZArrayList);
 var
   B : TZBitmap;
@@ -225,6 +277,7 @@ begin
 
   Stack.Push(B);
 end;
+{$endif}
 
 procedure TBitmapRect.DefineProperties(List: TZPropertyList);
 const DefSize = 0.2;
@@ -896,8 +949,8 @@ begin
     case PlacementStyle of
       pstRandom :
         begin
-          CP[I].Y := System.Random(H);
-          CP[I].X := System.Random(W);
+          CP[I].Y := ZMath.Random(H);
+          CP[I].X := ZMath.Random(W);
         end;
       pstSquares :
         begin
@@ -908,7 +961,7 @@ begin
       pstUnregularSquares :
         begin
           K := Round(sqrt(NOfPointsCopy+1));
-          CP[I].X := System.Random(W);
+          CP[I].X := ZMath.Random(W);
           CP[I].Y := (I mod K)*(H div K);
         end;
       pstHoneyComb :
@@ -919,9 +972,9 @@ begin
         end;
     end;
 
-    CP[I].R := System.Random;
-    CP[I].G := System.Random;
-    CP[I].B := System.Random;
+    CP[I].R := ZMath.Random;
+    CP[I].G := ZMath.Random;
+    CP[I].B := ZMath.Random;
     CP[I].MaxDist := 0;
   end;
 

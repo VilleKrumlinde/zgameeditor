@@ -303,7 +303,7 @@ begin
       //Must be set to something, otherwise copy from framebuffer won't work
       Size := H*W*4;
       GetMem(P, Size);
-      FillChar(P^,Size,$ff);
+      FillChar(P^,Size,0);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, W, H, 0, GL_RGBA, GL_UNSIGNED_BYTE, P);
       FreeMem(P);
     end;
@@ -377,9 +377,7 @@ end;
 //Set this bitmap as current opengl texture
 procedure TZBitmap.UseTextureBegin;
 begin
-  if (not IsInitialized)
-   {$ifndef minimal}or Producers.IsChanged or IsChanged{$endif} then
-    ReInit;
+  Update; //Make sure it is initialized
 
   glBindTexture(GL_TEXTURE_2D, Handle);
 end;
@@ -396,6 +394,7 @@ begin
   Self.Memory := P;
   Self.MemFormat := MemFormat;
   Self.MemType := MemType;
+  IsChanged := True;
 end;
 
 function TZBitmap.PixelHeight: integer;

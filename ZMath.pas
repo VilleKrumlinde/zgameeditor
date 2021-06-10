@@ -24,6 +24,11 @@ unit ZMath;
 
 interface
 
+{$if defined(fpc) and (not defined(zgeviz)))
+  //Use Delphi-compatible Random functions to get same output from BitmapCells
+  {$define use_custom_rnd}
+{$endif}
+
 uses ZClasses;
 
 function Vector2f(const x, y : Single): TZVector2f;
@@ -83,6 +88,8 @@ function SmoothStep(const A,B,X : single) : single;
 function Clamp(const X,Min,Max : single) : single;
 
 function Random(const Base,Diff : single) : single; overload;
+function Random: single; overload; {$ifndef use_custom_rnd}inline;{$endif}
+function Random(const ARange: Integer): Integer; overload; {$ifndef use_custom_rnd}inline;{$endif}
 
 function Min(const A,B : single) : single; overload;
 function Max(const A, B: Single): Single; overload;
@@ -93,6 +100,7 @@ function Max(const A, B: Integer): Integer; overload;
 function Ceil(const X: single): single;
 function Floor(const X: single): integer;
 
+procedure SwapF(var F1,F2 : single);
 
 function ColorFtoB(const C : TZColorf) : integer;
 function ColorBtoF(const C : integer) : TZColorf;
@@ -945,5 +953,47 @@ begin
   CreateScaleAndTranslationMatrix(UNIT_XYZ3 ,Position,Tmp);
   Result := MatrixMultiply(Result,Tmp);
 end;
+
+procedure SwapF(var F1,F2 : single);
+var
+  Temp : single;
+begin
+  Temp := F1;
+  F1 := F2;
+  F2 := Temp;
+end;
+
+{$ifdef use_custom_rnd}
+function NextRnd : integer;
+begin
+  RandSeed := RandSeed * $08088405 + 1;
+  Result := RandSeed;
+end;
+
+function Random: single;
+const
+  two2neg32: single = ((1.0/$10000) / $10000);  // 2^-32
+var
+  F: single;
+begin
+  F  := Int64(Cardinal(NextRnd));
+  Result := F * two2neg32;
+end;
+
+function Random(const ARange: Integer): Integer;
+begin
+  Result := (UInt64(Cardinal(ARange)) * UInt64(Cardinal(NextRnd))) shr 32;
+end;
+{$else}
+function Random: single;
+begin
+  Result := System.Random;
+end;
+
+function Random(const ARange: Integer): Integer;
+begin
+  Result := System.Random(ARange);
+end;
+{$endif}
 
 end.

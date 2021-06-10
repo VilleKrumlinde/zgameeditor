@@ -1406,7 +1406,14 @@ begin
 
   InitKeyMap;
 
-  InitJoysticks;
+  {$ifdef zgeviz} //Rare crash in ZgeViz using gamepads so protect with try except
+  try
+  {$endif}
+    InitJoysticks;
+  {$ifdef zgeviz}
+  except
+  end;
+  {$endif}
 end;
 
 
@@ -1517,6 +1524,7 @@ const
 
 type
   //From mmsystem.pas and slightly modified
+  {$ALIGN 1}
   TZ_JOYCAPS = record
     wMid: Word;
     wPid: Word;
@@ -1538,7 +1546,7 @@ type
     wVmax: UINT;
     wCaps: UINT;
     wMaxAxes: UINT;
-    wNumAxes: integer;
+    wNumAxes: UINT;
     wMaxButtons: UINT;
     szRegKey: array[0..32 - 1] of byte;
     szOEMVxD: array[0..260 - 1] of byte;
@@ -1674,7 +1682,7 @@ begin
   if JoyId<JoyCount then
   begin
     Joy := @Joysticks[JoyId];
-    if Axis<Joy.Caps.wNumAxes then
+    if Axis<integer(Joy.Caps.wNumAxes) then
       Result := Joysticks[JoyId].Values[Axis];
   end;
 end;

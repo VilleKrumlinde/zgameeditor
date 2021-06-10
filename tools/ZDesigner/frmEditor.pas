@@ -2850,7 +2850,7 @@ var
   end;
 
 var
-  C,DebugC : TDefineConstant;
+  DebugC : TDefineConstant;
 begin
   UsePiggyback := False;
   UseCodeRemoval := False;
@@ -2896,14 +2896,9 @@ begin
   if FileExists(OutFile) then
     DeleteFile(OutFile);
 
-  C := ZApp.SymTab.Lookup('android') as TDefineConstant;
-  C.Value := IfThen(Kind=bbNormalAndroid, 1, 0);
-
-  C := ZApp.SymTab.Lookup('macos') as TDefineConstant;
-  C.Value := IfThen(Kind=bbNormalMacos, 1, 0);
-
-  C := ZApp.SymTab.Lookup('linux') as TDefineConstant;
-  C.Value := IfThen(Kind=bbNormalLinux, 1, 0);
+  (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := IfThen(Kind=bbNormalAndroid, 1, 0);
+  (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := IfThen(Kind=bbNormalMacos, 1, 0);
+  (ZApp.SymTab.Lookup('linux') as TDefineConstant).Value := IfThen(Kind=bbNormalLinux, 1, 0);
 
   DebugC := ZApp.SymTab.Lookup('debug') as TDefineConstant;
   DebugC.Value := 0;
@@ -2927,7 +2922,10 @@ begin
     DeleteFile(TempFile);
   end;
 
-  C.Value := 0;
+  (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;
+  (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := 0;
+  (ZApp.SymTab.Lookup('linux') as TDefineConstant).Value := 0;
+
   DebugC.Value := 1;
 
   //Need to recompile afterwards to reset constants in designer
