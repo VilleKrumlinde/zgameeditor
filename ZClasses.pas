@@ -63,7 +63,7 @@ type
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
  ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,ExpGetRawMemElementClassId,
  ExpArrayUtilClassId,ExpSwitchTableClassId,ExpAccessGlobalClassId,
- UserClassId,ExpNewClassInstanceId,
+ UserClassId,ExpNewClassInstanceId,ExpVirtualFuncCallClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,

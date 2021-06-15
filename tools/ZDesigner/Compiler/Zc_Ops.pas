@@ -136,6 +136,8 @@ type
     procedure PopScope;
   end;
 
+  TModifiers = set of (mdPrivate,mdInline,mdVirtual,mdOverride);
+
   TZcOpFunctionUserDefined = class(TZcOpFunctionBase)
   public
     //Assigned during codegen
@@ -145,12 +147,11 @@ type
     //For external functions
     IsExternal : boolean;
     ExtLib : TZExternalLibrary;
-    //For inlining
-    IsInline : boolean;
-    IsPrivate : boolean;
+    Modifiers : TModifiers;
     ReturnCount : integer;
     IsRecursive: boolean;
     MemberOf : TZcOpClass;
+    VmtIndex : integer; //index slot used for virtual functions
     function NeedFrame : boolean;
   end;
 
@@ -192,11 +193,15 @@ type
     Fields : TObjectList<TZcOpField>;
     RuntimeClass : TUserClass;
     Initializer : TZcOpFunctionUserDefined;
+    BaseClass : TZcOpClass;
     constructor Create(Owner : Contnrs.TObjectList); override;
     destructor Destroy; override;
     function ToString : string; override;
     function GetDataType : TZcDataType; override;
     function Optimize: TZcOp; override;
+    function FindMethod(const MangledName : string) : TZcOpFunctionUserDefined;
+    function FindField(const Name : string) : TZcOpField;
+    function InheritsFrom(const OtherClass : TZcOpClass) : boolean;
   end;
 
   TPrototypes = class
@@ -236,6 +241,8 @@ procedure CleanUp;
 function Prototypes : TPrototypes;
 
 function MangleFunc(const Func : string; const ArgCount : integer) : string;
+
+function AlignX(const Value,X : integer) : integer;
 
 var
   //State shared between this unit and Zc-compiler
@@ -499,6 +506,8 @@ var
         Exit;
       end;
     end;
+    if Assigned(Cls.BaseClass) then
+      DoField(Cls.BaseClass);
   end;
 
 var
@@ -1303,7 +1312,7 @@ begin
   if (Op.Kind=zcSelect) and (Op.Ref=nil) then
   begin
     Etyp := Op.GetIdentifierInfo;
-    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and (Etyp.Field.MemberOf<>CompilerContext.CurrentClass) then
+    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and (not CompilerContext.CurrentClass.InheritsFrom(Etyp.Field.MemberOf)) then
       raise ECodeGenError.Create('Cannot access private field: ' + Op.Id);
   end;
 end;
@@ -1714,8 +1723,8 @@ begin
           Break;
         end;
     end;
-    if Assigned(O) and TZcOpFunctionUserDefined(O).IsPrivate and
-      (TZcOpFunctionUserDefined(O).MemberOf<>CompilerContext.CurrentClass) then
+    if Assigned(O) and (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
+      (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf)) then
     begin
       Error := 'Cannot call private method: ' + Op.Id;
       Exit;
@@ -1752,7 +1761,7 @@ begin
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
     {$IFDEF INLINING}
-    if CompilerOptions.InliningEnabled and (FOp is TZcOpFunctionUserDefined) and TZcOpFunctionUserDefined(FOp).IsInline then
+    if CompilerOptions.InliningEnabled and (FOp is TZcOpFunctionUserDefined) and (mdInline in TZcOpFunctionUserDefined(FOp).Modifiers) then
     begin
       if CanInline(FOp as TZcOpFunctionUserDefined) then
         Op := DoInline(FOp as TZcOpFunctionUserDefined, CurrentFunction, Op);
@@ -2263,14 +2272,9 @@ begin
       if Typ.Kind=zctClass then
       begin
         Cls := Typ.TheClass as TZcOpClass;
-        for Fld in Cls.Fields do
-        begin
-          if SameText(Fld.Id,Op.Id) then
-          begin
-            Op.Ref := Fld.Typ.TheArray;
-            Break;
-          end;
-        end;
+        Fld := Cls.FindField(Op.Id);
+        if Assigned(Fld) then
+          Op.Ref := Fld.Typ.TheArray;
       end;
     end;
   end;
@@ -2333,7 +2337,7 @@ begin
   Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
   Fields := TObjectList<TZcOpField>.Create(False);
 
-  Initializer := TZcOpFunctionUserDefined.Create(nil);
+  Initializer := TZcOpFunctionUserDefined.Create( nil );
   Initializer.ReturnType.Kind := zctVoid;
   Initializer.Id := '#init#';
 
@@ -2352,9 +2356,42 @@ begin
   inherited;
 end;
 
+function TZcOpClass.FindField(const Name: string): TZcOpField;
+var
+  F : TZcOpField;
+begin
+  for F in Fields do
+    if SameText(F.Id,Name) then
+      Exit(F);
+  if Assigned(Self.BaseClass) then
+    Exit( Self.BaseClass.FindField(Name) );
+  Result := nil;
+end;
+
+function TZcOpClass.FindMethod(const MangledName: string): TZcOpFunctionUserDefined;
+var
+  M : TZcOpFunctionUserDefined;
+begin
+  for M in Methods do
+    if SameText(M.MangledName,MangledName) then
+      Exit(M);
+  if Assigned(Self.BaseClass) then
+    Exit( Self.BaseClass.FindMethod(MangledName) );
+  Result := nil;
+end;
+
 function TZcOpClass.GetDataType: TZcDataType;
 begin
   Result := Typ;
+end;
+
+function TZcOpClass.InheritsFrom(const OtherClass: TZcOpClass): boolean;
+begin
+  if Self=OtherClass then
+    Exit(True);
+  if Self.BaseClass=nil then
+    Exit(False);
+  Result := Self.BaseClass.InheritsFrom(OtherClass);
 end;
 
 function TZcOpClass.Optimize: TZcOp;
@@ -2376,6 +2413,11 @@ begin
   for Op in Methods do
     Result := Result + Op.ToString;
   Result := Result + ' } ';
+end;
+
+function AlignX(const Value,X : integer) : integer;
+begin
+  Result := (Value + (X-1)) and (not (X-1));
 end;
 
 initialization

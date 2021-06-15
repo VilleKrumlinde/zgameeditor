@@ -970,6 +970,12 @@ var
       Func.Lib := Component as TZLibrary;
       Func.LibIndex := Target.Count;
     end;
+
+    if (mdVirtual in Func.Modifiers) or (mdOverride in Func.Modifiers) then
+    begin
+      PIntegerArray(Func.MemberOf.RuntimeClass.Vmt.Data)^[ Func.VmtIndex ] := Target.Count;
+    end;
+
     if IsExternalLibrary and (Func.Id<>'') and (Func.Id<>'__f') then
     begin
       Func.IsExternal := True;
@@ -1013,12 +1019,13 @@ var
   begin
     for Func in Cls.Methods do
       DoGenFunction(Func);
+    Cls.RuntimeClass.DefinedInLib := Component as TZLibrary;
     if Cls.Initializer.Statements.Count>0 then
     begin
-      Cls.RuntimeClass.InitializerLib := Component as TZLibrary;
       Cls.RuntimeClass.InitializerIndex := Target.Count;
       DoGenFunction(Cls.Initializer);
-    end;
+    end else
+      Cls.RuntimeClass.InitializerIndex := -1;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
@@ -1544,6 +1551,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     FE : TExpExternalFuncCall;
     S : AnsiString;
     Arg : TZcOpArgumentVar;
+    VF : TExpVirtualFuncCall;
   begin
     if NeedReturnValue and (UserFunc.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1578,10 +1586,18 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     end
     else
     begin
-      F := TExpUserFuncCall.Create(Target);
-      F.Lib := UserFunc.Lib;
-      F.Index := UserFunc.LibIndex;
-      F.Ref := UserFunc;
+      if (mdVirtual in UserFunc.Modifiers) or (mdOverride in UserFunc.Modifiers) then
+      begin
+        GenValue(Op.Child(0)); //load "this" as parameter for TExpVirtualFuncCall
+        VF := TExpVirtualFuncCall.Create(Target);
+        VF.VmtIndex := UserFunc.VmtIndex;
+      end else
+      begin
+        F := TExpUserFuncCall.Create(Target);
+        F.Lib := UserFunc.Lib;
+        F.Index := UserFunc.LibIndex;
+        F.Ref := UserFunc;
+      end;
     end;
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then

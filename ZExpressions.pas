@@ -578,7 +578,9 @@ type
   public
     SizeInBytes : integer;
     ManagedFields : TZBinaryPropValue;
-    InitializerLib : TZLibrary;
+    BaseClass : TUserClass;
+    Vmt : TZBinaryPropValue;
+    DefinedInLib : TZLibrary;
     InitializerIndex : integer;
   end;
 
@@ -588,6 +590,7 @@ type
     ManagedCleanup : PPointer;
   public
     InstanceData : pointer;
+    TheClass : TUserClass;
     constructor Create(TheClass : TUserClass);
     destructor Destroy; override;
   end;
@@ -599,6 +602,15 @@ type
   public
     TheClass : TUserClass;
   end;
+
+  TExpVirtualFuncCall = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    VmtIndex : integer;
+  end;
+
 
 //Run a compiled expression
 //Uses global vars for state.
@@ -3429,11 +3441,12 @@ begin
   ManagedHeap_AddValueObject(P);
   Env.StackPushPointer(P);
 
-  if Assigned(Cls.InitializerLib) then
+  //todo: call initializer not here but generate code in constructor instead
+  if Cls.InitializerIndex<>-1 then
   begin //Call initializer
     Env.StackPushPointer(P); //push "this" as argument to initializer
     Env.StackPushPointer(Env.gCurrentPC);
-    Env.gCurrentPC := Cls.InitializerLib.Source.Code.GetPtrToItem(Cls.InitializerIndex);
+    Env.gCurrentPC := Cls.DefinedInLib.Source.Code.GetPtrToItem(Cls.InitializerIndex);
     Dec(Env.gCurrentPc);
   end;
 end;
@@ -3447,6 +3460,8 @@ var
   Offsets : PInteger;
   Mp : PPointer;
 begin
+  Self.TheClass := TheClass;
+
   GetMem(Self.InstanceData,TheClass.SizeInBytes);
   FillChar(Self.InstanceData^,TheClass.SizeInBytes,0);
 
@@ -3498,8 +3513,45 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'ManagedFields',{$ENDIF}@ManagedFields, zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'InitializerLib',{$ENDIF}@InitializerLib, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'BaseClass',{$ENDIF}@BaseClass, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Vmt',{$ENDIF}@Vmt, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'DefinedInLib',{$ENDIF}@DefinedInLib, zptComponentRef);
   List.AddProperty({$IFNDEF MINIMAL}'InitializerIndex',{$ENDIF}@InitializerIndex, zptInteger);
+end;
+
+{ TExpVirtualFuncCall }
+
+procedure TExpVirtualFuncCall.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'VmtIndex',{$ENDIF}@VmtIndex, zptInteger);
+end;
+
+procedure TExpVirtualFuncCall.Execute(Env: PExecutionEnvironment);
+
+  procedure InCheck(C : TUserClass);
+  var
+    Pc : integer;
+  begin
+    Pc := PIntegerArray(C.Vmt.Data)^[ Self.VmtIndex ];
+    if Pc<>-1 then
+    begin
+      Env.StackPushPointer(Env.gCurrentPC);
+      Env.gCurrentPC := C.DefinedInLib.Source.Code.GetPtrToItem(Pc);
+      Dec(Env.gCurrentPc);
+      Exit;
+    end;
+    {$ifdef debug}
+    Assert(Assigned(C.BaseClass),'virtual method error');
+    {$endif}
+    InCheck(C.BaseClass);
+  end;
+
+var
+  P : TUserClassInstance;
+begin
+  Env.StackPopToPointer(P);
+  InCheck(P.TheClass);
 end;
 
 initialization
@@ -3588,6 +3640,8 @@ initialization
   ZClasses.Register(TUserClass,UserClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpNewClassInstance,ExpNewClassInstanceId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpVirtualFuncCall,ExpVirtualFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
   {$ifndef minimal}
