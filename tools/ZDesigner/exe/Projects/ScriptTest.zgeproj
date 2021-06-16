@@ -133,6 +133,23 @@ class TFirst {
 class TSecond {
   TFirst first = new TFirst();
   string s;
+}
+
+class TBase {
+  int one=1, two=2;
+  virtual int method1() { }
+  virtual int method2() { }
+}
+
+class TChild1 : TBase {
+  int three=3,four=4;
+  override int method1() { return 11; }
+  override int method2() { return 12; }
+}
+
+class TChild2 : TBase {
+  override int method1() { return 21; }
+  override int method2() { return 22; }
 }]]>
       </Source>
     </ZLibrary>
@@ -967,7 +984,28 @@ if(o.first.i!=42)
 
 o.first.ar[0]=1;
 if(o.first.ar[0]!=1)
-  Error=2301;]]>
+  Error=2301;
+
+TChild1 c1 = new TChild1();
+if((c1.one!=1) || (c1.two!=2) || (c1.three!=3) || (c1.four!=4))
+  Error=2302;
+
+TChild2 c2 = new TChild2();
+
+TBase b;
+
+b=c1;
+
+if(b.method1() != 11)
+  Error=2303;
+if(b.method2()!=12)
+  Error=2304;
+
+b=c2;
+if(b.method1()!=21)
+  Error=2305;
+if(b.method2()!=22)
+  Error=2306;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>

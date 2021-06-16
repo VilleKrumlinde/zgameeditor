@@ -30,6 +30,8 @@ private
 inline
 class
 new
+virtual
+override
 |><|
 
 CHARS

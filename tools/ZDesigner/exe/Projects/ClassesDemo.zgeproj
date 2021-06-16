@@ -14,15 +14,16 @@
     <ZLibrary>
       <Source>
 <![CDATA[class TSphere {
-  private float distance, angle, speed;
+  private float angle=rnd();
+  private float distance, speed;
   virtual void update() { }
+  virtual void render() { }
 }
 
 class TMoon : TSphere {
 
   TMoon() {
      distance=random(3.5,0.25);
-     angle=rnd();
      speed=random(0.0035,0.0005);
   }
 
@@ -30,7 +31,7 @@ class TMoon : TSphere {
     angle+= speed;
   }
 
-  void render() {
+  override void render() {
     glPushMatrix();
       float f=0.2;
       glRotatef(angle*360,0,0,1);
@@ -47,20 +48,18 @@ class TPlanet : TSphere {
 
   private void test() { }
 
-  TPlanet(float dist,float angle) {
+  TPlanet(float dist) {
      this.distance=dist;
-     this.angle=angle;
      this.speed=random(0.0015,0.0007);
      this.radius=random(0,0.1);
 
      int nmoons=random(4,3);
      moons.SizeDim1=nmoons;
-     for(int i=0; i<nmoons; i++) {
-        moons[i]=new TMoon();
-     }
+     for(int i=0; i<nmoons; i++)
+       moons[i]=new TMoon();
   }
 
-  void render() {
+  override void render() {
     glPushMatrix();
       float f=1.0;
       glRotatef(angle*360,0,0,1);
@@ -69,23 +68,19 @@ class TPlanet : TSphere {
       glScalef(1+radius,1+radius,1+radius);
       @RenderSprite();
 
-      for(int i=0; i<moons.SizeDim1; i++) {
-        TMoon m=moons[i];
-        m.render();
-      }
+      for(int i=0; i<moons.SizeDim1; i++)
+        moons[i].render();
     glPopMatrix();
   }
 
   override void update() {
     angle+=speed;
-    for(int i=0; i<moons.SizeDim1; i++) {
-      TMoon m=moons[i];
-      m.update();
-    }
+    for(int i=0; i<moons.SizeDim1; i++)
+      moons[i].update();
   }
 }
 
-TPlanet[] planets;]]>
+TSphere[] planets;]]>
       </Source>
     </ZLibrary>
     <ZExpression>
@@ -95,7 +90,7 @@ TPlanet[] planets;]]>
 Planets.SizeDim1=nrOfPlanets;
 float dist=0.0;
 for(int i=0; i<nrOfPlanets; i++) {
-  TPlanet p = new TPlanet(dist, random(0,0.7));
+  TPlanet p = new TPlanet(dist);
   dist+=1.25;
   Planets[i]=p;
 }]]>
@@ -106,7 +101,7 @@ for(int i=0; i<nrOfPlanets; i++) {
     <ZExpression>
       <Expression>
 <![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
-  TPlanet p = Planets[i];
+  TSphere p = Planets[i];
   p.update();
 }]]>
       </Expression>
@@ -118,7 +113,7 @@ for(int i=0; i<nrOfPlanets; i++) {
     <ZExpression>
       <Expression>
 <![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
-  TPlanet p = Planets[i];
+  TSphere p = Planets[i];
   p.render();
 }]]>
       </Expression>

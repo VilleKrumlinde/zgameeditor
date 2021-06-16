@@ -35,1538 +35,1641 @@ Listing
    29      function IsPointerOrDims(var PeekIndex : integer) : boolean;
    30      function IsFieldDecl : boolean;
    31      function NotFinalComma : boolean;
-   32      .)
-   33  precreate = (.
-   34      ZFunctions := TObjectList.Create(False);
-   35      Self.OnError := OnParserError;
-   36  
-   37  .)
-   38  
-   39  semErrors = (.
-   40      200 : Result := 'Not a floating point value';
-   41      201 : Result := 'Name already defined in this scope';
-   42      202 : Result := 'Return value expected';
-   43      203 : Result := 'Function should not return a value';
-   44      204 : Result := 'Only function definitions are allowed here';
-   45      205 : Result := 'Syntax not supported';
-   46  .)
-   47  
-   48  implementation = (.
-   49  
-   50  procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
-   51  begin
-   52    ZError(Msg + ' ' + Data);
-   53  end;
-   54  
-   55  procedure TZc.CheckHomograph(var sym: Integer);
-   56  begin
-   57    //Only Homographs are name of component datatypes
-   58    //If inside identifier "x.y.z" then let it refer to identifier instead
-   59    if IsInIdent or IsInInvokeArg then
-   60      sym := identSym;
-   61  end;
-   62  
-   63  destructor TZc.Destroy;
-   64  begin
-   65    inherited;
-   66    CleanUp;
-   67  end;
-   68  
-   69  procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
-   70  begin
-   71    if Op=nil then
-   72    begin
-   73      if SwitchOp.HasDefault then
-   74        ZError('Only one default statement is allowed.');
-   75      SwitchOp.HasDefault := True;
-   76    end else
-   77      Op := MakeCompatible(Op,SwitchOp.ValueOp.GetDataType);
-   78    SwitchOp.CaseOps.Last.Children.Add( Op );
-   79    Op := nil;
-   80  end;
-   81  
-   82  procedure TZc.CleanUp;
-   83  begin
-   84    ZFunctions.Free;
-   85  end;
-   86  
-   87  procedure TZc.ZError(const S : string);
-   88  var
-   89    E : EParseError;
-   90    P : TSymbolRec;
-   91  begin
-   92    E := EParseError.Create(S);
-   93    E.Message := S;
-   94    Scanner.GetPosition(P);
-   95    E.Line := P.Line;
-   96    E.Col := P.Col;
-   97    if (E.Line<>0) or (E.Col<>0) then
-   98      E.Message := E.Message + ' (line: ' + IntToStr(E.Line) + ', col: ' + IntToStr(E.Col) + ')';
-   99    raise E;
-  100  end;
-  101  
-  102  function TZc.IsConst : boolean;
-  103  begin
-  104    Result := (CurrentInputSymbol=constSym) or
-  105      ((CurrentInputSymbol=privateSym) and (Symbols[2].Id=constSym));
-  106  end;
-  107  
-  108  function TZc.IdentAndLPar : boolean;
-  109  begin
-  110    Result := (CurrentInputSymbol=identSym) and (Symbols[2].Id=lparSym);
-  111  end;
-  112  
-  113  // skip: { "[" { "," } "]" | "*" }
-  114  // !!! Proceeds from current peek position !!!
-  115  function TZc.IsPointerOrDims(var PeekIndex : integer) : boolean;
-  116  begin
-  117    if Symbols[PeekIndex].Id=lbracksym then
-  118    begin
-  119      repeat
-  120        Inc(PeekIndex);
-  121        if PeekIndex>=Self.LookAheadCount then
-  122          Exit(True);
-  123      until Symbols[PeekIndex].Id=rbrackSym;
-  124      Inc(PeekIndex);
-  125    end;
-  126    Result := True;
-  127  
-  128  (*
-  129    for (;;) {
-  130      if (pt.kind == _lbrack) {
-  131        do pt = scanner.Peek();
-  132        while (pt.kind == _comma);
-  133        if (pt.kind != _rbrack) return false;
-  134      } else if (pt.kind != _times) break;
-  135      pt = scanner.Peek();
-  136    }
-  137    return true;
-  138  *)
-  139  end;
-  140  
-  141  function TZc.IsLocalVarDecl : boolean;
-  142  var
-  143    PeekIndex : integer;
-  144  begin
-  145    PeekIndex := 1;
-  146  
-  147  	if (CurrentInputSymbol in [floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,
-  148      mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,
-  149    	MaterialSym,SoundSym,ShaderSym,BitmapSym,MeshSym,
-  150    	CameraSym,FontSym,SampleSym,FileSym,ComponentSym
-  151      ]) then
-  152      Inc(PeekIndex)
-  153    else if (CurrentInputSymbol=identSym) then
-  154      Inc(PeekIndex)
-  155    else
-  156      Exit(False);
-  157  
-  158    Result := IsPointerOrDims(PeekIndex) and (Symbols[PeekIndex].Id=identSym);
-  159  
-  160  (*  string ignore;
-  161    Token pt = la;
-  162    scanner.ResetPeek();
-  163  
-  164    if (typeKW[la.kind] || la.kind == _void) {
-  165      pt = scanner.Peek();
-  166      if (la.kind == _void && pt.kind != _times) { return false; }
-  167    } else if (la.kind == _ident && !IsQualident(ref pt, out ignore)) {
-  168      return false;
-  169    }
-  170  
-  171    return IsPointerOrDims(ref pt) && pt.kind == _ident;*)
-  172  
-  173  end;
-  174  
-  175  function TZc.IsFieldDecl : boolean;
-  176  // ident ("," | "=" | ";")
-  177  begin
-  178    Result := (CurrentInputSymbol=identSym) and
-  179      (Symbols[2].Id in [commaSym,assgnSym,scolonSym]);
-  180  
-  181  (*
-  182  bool IsFieldDecl () {
-  183    int peek = Peek(1).kind;
-  184    return la.kind == _ident &&
-  185           (peek == _comma || peek == _assgn || peek == _scolon);
-  186  }
-  187  *)
-  188  end;
-  189  
-  190  function TZc.NotFinalComma : boolean;
-  191  begin
-  192    Result := (CurrentInputSymbol=commaSym) and
-  193      (not (Symbols[2].Id in [rbraceSym,rbrackSym]));
-  194  
-  195  (*
-  196  /* True, if the comma is not a trailing one, *
-  197   * like the last one in: a, b, c,            */
-  198  bool NotFinalComma () {
-  199    int peek = Peek(1).kind;
-  200    return la.kind == _comma && peek != _rbrace && peek != _rbrack;
-  201  *)
-  202  end;
-  203  
-  204  function TZc.GetInitializer : TZcOpFunctionUserDefined;
-  205  begin
-  206    if not Self.AllowInitializer then
-  207      ZError('Initializers only allowed in ZLibrary components located in App.OnLoaded');
-  208    if not Assigned(InitializerFunction) then
-  209    begin
-  210      Self.InitializerFunction := TZcOpFunctionUserDefined.Create(nil);
-  211      Self.ZFunctions.Insert(0,Self.InitializerFunction);
-  212    end;
-  213    Result := Self.InitializerFunction;
-  214  end;
-  215  
-  216  procedure TZc.ParseEvalExpression;
-  217  var
-  218    OutOp : TZcOp;
-  219    Typ : TZcDataType;
-  220    Func : TZcOpFunctionUserDefined;
-  221  begin
-  222    Reinit;
-  223    OutOp := nil;
-  224    _Expr(OutOp);
-  225    Typ := OutOp.GetDataType;
-  226  
-  227    Func := TZcOpFunctionUserDefined.Create(nil);
-  228    Func.ReturnType := Typ;
-  229    Self.CurrentFunction := Func;
-  230  
-  231    if Typ.Kind<>zctVoid then
-  232    begin
-  233      OutOp := MakeOp(zcReturn,[OutOp]);
-  234    end;
-  235    Func.Statements.Add(OutOp);
-  236    Self.ZFunctions.Add(Func);
-  237  end;
-  238  .)
+   32      procedure AddBaseClassToSymTab(TheClass : TZcOpClass);
+   33      .)
+   34  precreate = (.
+   35      ZFunctions := TObjectList.Create(False);
+   36      Self.OnError := OnParserError;
+   37  
+   38  .)
+   39  
+   40  semErrors = (.
+   41      200 : Result := 'Not a floating point value';
+   42      201 : Result := 'Name already defined in this scope';
+   43      202 : Result := 'Return value expected';
+   44      203 : Result := 'Function should not return a value';
+   45      204 : Result := 'Only function definitions are allowed here';
+   46      205 : Result := 'Syntax not supported';
+   47  .)
+   48  
+   49  implementation = (.
+   50  
+   51  procedure TZc.OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
+   52  begin
+   53    ZError(Msg + ' ' + Data);
+   54  end;
+   55  
+   56  procedure TZc.CheckHomograph(var sym: Integer);
+   57  begin
+   58    //Only Homographs are name of component datatypes
+   59    //If inside identifier "x.y.z" then let it refer to identifier instead
+   60    if IsInIdent or IsInInvokeArg then
+   61      sym := identSym;
+   62  end;
+   63  
+   64  destructor TZc.Destroy;
+   65  begin
+   66    inherited;
+   67    CleanUp;
+   68  end;
+   69  
+   70  procedure TZc.AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
+   71  begin
+   72    if Op=nil then
+   73    begin
+   74      if SwitchOp.HasDefault then
+   75        ZError('Only one default statement is allowed.');
+   76      SwitchOp.HasDefault := True;
+   77    end else
+   78      Op := MakeCompatible(Op,SwitchOp.ValueOp.GetDataType);
+   79    SwitchOp.CaseOps.Last.Children.Add( Op );
+   80    Op := nil;
+   81  end;
+   82  
+   83  procedure TZc.CleanUp;
+   84  begin
+   85    ZFunctions.Free;
+   86  end;
+   87  
+   88  procedure TZc.ZError(const S : string);
+   89  var
+   90    E : EParseError;
+   91    P : TSymbolRec;
+   92  begin
+   93    E := EParseError.Create(S);
+   94    E.Message := S;
+   95    Scanner.GetPosition(P);
+   96    E.Line := P.Line;
+   97    E.Col := P.Col;
+   98    if (E.Line<>0) or (E.Col<>0) then
+   99      E.Message := E.Message + ' (line: ' + IntToStr(E.Line) + ', col: ' + IntToStr(E.Col) + ')';
+  100    raise E;
+  101  end;
+  102  
+  103  function TZc.IsConst : boolean;
+  104  begin
+  105    Result := (CurrentInputSymbol=constSym) or
+  106      ((CurrentInputSymbol=privateSym) and (Symbols[2].Id=constSym));
+  107  end;
+  108  
+  109  function TZc.IdentAndLPar : boolean;
+  110  begin
+  111    Result := (CurrentInputSymbol=identSym) and (Symbols[2].Id=lparSym);
+  112  end;
+  113  
+  114  // skip: { "[" { "," } "]" | "*" }
+  115  // !!! Proceeds from current peek position !!!
+  116  function TZc.IsPointerOrDims(var PeekIndex : integer) : boolean;
+  117  begin
+  118    if Symbols[PeekIndex].Id=lbracksym then
+  119    begin
+  120      repeat
+  121        Inc(PeekIndex);
+  122        if PeekIndex>=Self.LookAheadCount then
+  123          Exit(True);
+  124      until Symbols[PeekIndex].Id=rbrackSym;
+  125      Inc(PeekIndex);
+  126    end;
+  127    Result := True;
+  128  
+  129  (*
+  130    for (;;) {
+  131      if (pt.kind == _lbrack) {
+  132        do pt = scanner.Peek();
+  133        while (pt.kind == _comma);
+  134        if (pt.kind != _rbrack) return false;
+  135      } else if (pt.kind != _times) break;
+  136      pt = scanner.Peek();
+  137    }
+  138    return true;
+  139  *)
+  140  end;
+  141  
+  142  function TZc.IsLocalVarDecl : boolean;
+  143  var
+  144    PeekIndex : integer;
+  145  begin
+  146    PeekIndex := 1;
+  147  
+  148  	if (CurrentInputSymbol in [floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,
+  149      mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,
+  150    	MaterialSym,SoundSym,ShaderSym,BitmapSym,MeshSym,
+  151    	CameraSym,FontSym,SampleSym,FileSym,ComponentSym
+  152      ]) then
+  153      Inc(PeekIndex)
+  154    else if (CurrentInputSymbol=identSym) then
+  155      Inc(PeekIndex)
+  156    else
+  157      Exit(False);
+  158  
+  159    Result := IsPointerOrDims(PeekIndex) and (Symbols[PeekIndex].Id=identSym);
+  160  
+  161  (*  string ignore;
+  162    Token pt = la;
+  163    scanner.ResetPeek();
+  164  
+  165    if (typeKW[la.kind] || la.kind == _void) {
+  166      pt = scanner.Peek();
+  167      if (la.kind == _void && pt.kind != _times) { return false; }
+  168    } else if (la.kind == _ident && !IsQualident(ref pt, out ignore)) {
+  169      return false;
+  170    }
+  171  
+  172    return IsPointerOrDims(ref pt) && pt.kind == _ident;*)
+  173  
+  174  end;
+  175  
+  176  function TZc.IsFieldDecl : boolean;
+  177  // ident ("," | "=" | ";")
+  178  begin
+  179    Result := (CurrentInputSymbol=identSym) and
+  180      (Symbols[2].Id in [commaSym,assgnSym,scolonSym]);
+  181  
+  182  (*
+  183  bool IsFieldDecl () {
+  184    int peek = Peek(1).kind;
+  185    return la.kind == _ident &&
+  186           (peek == _comma || peek == _assgn || peek == _scolon);
+  187  }
+  188  *)
+  189  end;
+  190  
+  191  function TZc.NotFinalComma : boolean;
+  192  begin
+  193    Result := (CurrentInputSymbol=commaSym) and
+  194      (not (Symbols[2].Id in [rbraceSym,rbrackSym]));
+  195  
+  196  (*
+  197  /* True, if the comma is not a trailing one, *
+  198   * like the last one in: a, b, c,            */
+  199  bool NotFinalComma () {
+  200    int peek = Peek(1).kind;
+  201    return la.kind == _comma && peek != _rbrace && peek != _rbrack;
+  202  *)
+  203  end;
+  204  
+  205  function TZc.GetInitializer : TZcOpFunctionUserDefined;
+  206  begin
+  207    if not Self.AllowInitializer then
+  208      ZError('Initializers only allowed in ZLibrary components located in App.OnLoaded');
+  209    if not Assigned(InitializerFunction) then
+  210    begin
+  211      Self.InitializerFunction := TZcOpFunctionUserDefined.Create(nil);
+  212      Self.ZFunctions.Insert(0,Self.InitializerFunction);
+  213    end;
+  214    Result := Self.InitializerFunction;
+  215  end;
+  216  
+  217  procedure TZc.ParseEvalExpression;
+  218  var
+  219    OutOp : TZcOp;
+  220    Typ : TZcDataType;
+  221    Func : TZcOpFunctionUserDefined;
+  222  begin
+  223    Reinit;
+  224    OutOp := nil;
+  225    _Expr(OutOp);
+  226    Typ := OutOp.GetDataType;
+  227  
+  228    Func := TZcOpFunctionUserDefined.Create(nil);
+  229    Func.ReturnType := Typ;
+  230    Self.CurrentFunction := Func;
+  231  
+  232    if Typ.Kind<>zctVoid then
+  233    begin
+  234      OutOp := MakeOp(zcReturn,[OutOp]);
+  235    end;
+  236    Func.Statements.Add(OutOp);
+  237    Self.ZFunctions.Add(Func);
+  238  end;
   239  
-  240  END
-  241  
-  242  
-  243  CHARACTERS
-  244  
-  245          tab                = CHR(9). /*  9 = tabulator */
-  246          eol                = CHR(10). /* 10 = line feed */
-  247          cr                 = CHR(13). /* 13 = carriage return */
-  248          newLine            = cr + eol. /* Line separator character (U+2028) + Paragraph separator character (U+2029) */
+  240  procedure TZc.AddBaseClassToSymTab(TheClass : TZcOpClass);
+  241  var
+  242    F: TZcOpField;
+  243  begin
+  244    for F in TheClass.Fields do
+  245      SymTab.Add(F.Id,F);
+  246    if Assigned(TheClass.BaseClass) then
+  247      AddBaseClassToSymTab(TheClass.BaseClass);
+  248  end;
   249  
-  250          letter             = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_".
-  251          digit              = "0123456789".
-  252          hexDigit           = digit + "ABCDEFabcdef".
-  253          notDigit           = ANY - digit.
+  250  .)
+  251  
+  252  END
+  253  
   254  
-  255          char               = ANY - "'" - '\' - newLine.
-  256          verbatimStringChar = ANY - '"'.
-  257          regularStringChar  = ANY - '"' - '\' - newLine.
-  258          notNewLine         = ANY - newLine .
-  259  
-  260  
-  261  TOKENS
-  262  
-  263    /*--------------------------------------------------------------------------------*/
-  264          intCon =
-  265                  ( digit {digit}
-  266                  | ("0x" | "0X") hexDigit {hexDigit}
-  267                  )
-  268                  /* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] */
-  269                  .
-  270    /*--------------------------------------------------------------------------------*/
-  271          realCon =
-  272                  "." digit {digit}
-  273                  [("e" | "E") ["+" | "-"] digit {digit}]
-  274                  ["F" | "f" | "D" | "d" | "M" | "m"]
-  275          | digit {digit}
-  276                  ( "." digit {digit}
-  277                          [("e" | "E" ) ["+" | "-"] digit {digit} ]
-  278                          ["F" | "f" | "D" | "d" | "M" | "m"]
-  279                  | ("e" | "E") ["+" | "-"] digit {digit}
-  280                          ["F" | "f" | "D" | "d" | "M" | "m"]
-  281                  | "F" | "f" | "D" | "d" | "M" | "m"
-  282                  ).
-  283    /*--------------------------------------------------------------------------------*/
-  284          stringCon =
-  285                  '"'    { regularStringChar
-  286            | "\'" | '\"' | "\\" | "\n"
-  287            }
-  288                  '"'.
-  289  
-  290          ident = letter { letter | digit }.
-  291  
-  292  
-  293          /*----- operators and special characters needed in LL(1) resolvers --------------*/
-  294          and    = "&".
-  295          assgn  = "=".
-  296          colon  = ":".
-  297          comma  = ",".
-  298          dec    = "--".
-  299          div    = "/".
-  300          dot    = ".".
-  301          eq     = "==".
-  302          gt     = ">".
-  303          gte    = ">=".
-  304          inc    = "++".
-  305          lbrace = "{".
-  306          lbrack = "[".
-  307          lpar   = "(".
-  308          lshift = "<<".
-  309          lt     = "<".
-  310          lte    = "<=".
-  311          minus  = "-".
-  312          mod    = "%".
-  313          neq    = "!=".
-  314          not    = "!".
-  315          or     = "|".
-  316          plus   = "+".
-  317          rbrace = "}".
-  318          rbrack = "]".
-  319          rpar   = ")".
-  320          rshift = ">>".
-  321          scolon = ";".
-  322          tilde  = "~".
-  323          times  = "*".
-  324          xor    = "^".
-  325  
-  326  
-  327  
-  328  COMMENTS FROM "/*" TO "*/"
-  329  COMMENTS FROM "//" TO eol
-  330  
-  331  IGNORE eol + cr + tab
-  332  
-  333  HOMOGRAPHS
-  334    "Material"
-  335    "Sound"
-  336    "Shader" 
-  337    "Bitmap" 
-  338    "Mesh"
-  339    "Camera"
-  340    "Font"
-  341    "Sample"
-  342    "File"
-  343    "Component"
+  255  CHARACTERS
+  256  
+  257          tab                = CHR(9). /*  9 = tabulator */
+  258          eol                = CHR(10). /* 10 = line feed */
+  259          cr                 = CHR(13). /* 13 = carriage return */
+  260          newLine            = cr + eol. /* Line separator character (U+2028) + Paragraph separator character (U+2029) */
+  261  
+  262          letter             = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_".
+  263          digit              = "0123456789".
+  264          hexDigit           = digit + "ABCDEFabcdef".
+  265          notDigit           = ANY - digit.
+  266  
+  267          char               = ANY - "'" - '\' - newLine.
+  268          verbatimStringChar = ANY - '"'.
+  269          regularStringChar  = ANY - '"' - '\' - newLine.
+  270          notNewLine         = ANY - newLine .
+  271  
+  272  
+  273  TOKENS
+  274  
+  275    /*--------------------------------------------------------------------------------*/
+  276          intCon =
+  277                  ( digit {digit}
+  278                  | ("0x" | "0X") hexDigit {hexDigit}
+  279                  )
+  280                  /* ["U" | "u" | "L" | "l" | "UL" | "Ul" | "uL" | "ul" | "LU" | "Lu" | "lU" | "lu"] */
+  281                  .
+  282    /*--------------------------------------------------------------------------------*/
+  283          realCon =
+  284                  "." digit {digit}
+  285                  [("e" | "E") ["+" | "-"] digit {digit}]
+  286                  ["F" | "f" | "D" | "d" | "M" | "m"]
+  287          | digit {digit}
+  288                  ( "." digit {digit}
+  289                          [("e" | "E" ) ["+" | "-"] digit {digit} ]
+  290                          ["F" | "f" | "D" | "d" | "M" | "m"]
+  291                  | ("e" | "E") ["+" | "-"] digit {digit}
+  292                          ["F" | "f" | "D" | "d" | "M" | "m"]
+  293                  | "F" | "f" | "D" | "d" | "M" | "m"
+  294                  ).
+  295    /*--------------------------------------------------------------------------------*/
+  296          stringCon =
+  297                  '"'    { regularStringChar
+  298            | "\'" | '\"' | "\\" | "\n"
+  299            }
+  300                  '"'.
+  301  
+  302          ident = letter { letter | digit }.
+  303  
+  304  
+  305          /*----- operators and special characters needed in LL(1) resolvers --------------*/
+  306          and    = "&".
+  307          assgn  = "=".
+  308          colon  = ":".
+  309          comma  = ",".
+  310          dec    = "--".
+  311          div    = "/".
+  312          dot    = ".".
+  313          eq     = "==".
+  314          gt     = ">".
+  315          gte    = ">=".
+  316          inc    = "++".
+  317          lbrace = "{".
+  318          lbrack = "[".
+  319          lpar   = "(".
+  320          lshift = "<<".
+  321          lt     = "<".
+  322          lte    = "<=".
+  323          minus  = "-".
+  324          mod    = "%".
+  325          neq    = "!=".
+  326          not    = "!".
+  327          or     = "|".
+  328          plus   = "+".
+  329          rbrace = "}".
+  330          rbrack = "]".
+  331          rpar   = ")".
+  332          rshift = ">>".
+  333          scolon = ";".
+  334          tilde  = "~".
+  335          times  = "*".
+  336          xor    = "^".
+  337  
+  338  
+  339  
+  340  COMMENTS FROM "/*" TO "*/"
+  341  COMMENTS FROM "//" TO eol
+  342  
+  343  IGNORE eol + cr + tab
   344  
-  345  PRODUCTIONS
-  346  
-  347  /*------------------------------------------------------------------------*
-  348   *--------------------------- Declarations -------------------------------*
-  349   *------------------------------------------------------------------------*/
-  350  
-  351  ZcFuncRest<Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean; Cls : TZcOpClass>
-  352  (.
-  353  var
-  354    Func : TZcOpFunctionUserDefined;
-  355    Arg : TZcOpArgumentVar;
-  356  .)
-  357  =
-  358       (.
-  359          if (not Assigned(Cls)) or (not SameText(Name,Cls.Id)) then
-  360          begin //Check for dup except if name of class constructor
-  361            if SymTab.Contains(Name) then
-  362              ZError('Name already defined: ' + Name);
-  363          end;
-  364  
-  365          if IsPrivate then
-  366            Func := TZcOpFunctionUserDefined.Create(nil)
-  367          else
-  368            Func := TZcOpFunctionUserDefined.Create(GlobalNames);
-  369          Func.Id := Name;
-  370          Func.ReturnType := Typ;
-  371          Func.IsInline := IsInline;
-  372          Func.IsPrivate := IsPrivate;
-  373          Self.CurrentFunction := Func;
-  374          SymTab.PushScope;
-  375          try
+  345  HOMOGRAPHS
+  346    "Material"
+  347    "Sound"
+  348    "Shader" 
+  349    "Bitmap" 
+  350    "Mesh"
+  351    "Camera"
+  352    "Font"
+  353    "Sample"
+  354    "File"
+  355    "Component"
+  356  
+  357  PRODUCTIONS
+  358  
+  359  /*------------------------------------------------------------------------*
+  360   *--------------------------- Declarations -------------------------------*
+  361   *------------------------------------------------------------------------*/
+  362  
+  363  ZcFuncRest<Typ : TZcDataType; const Name : string; M : TModifiers; Cls : TZcOpClass>
+  364  (.
+  365  var
+  366    Func,OtherFunc : TZcOpFunctionUserDefined;
+  367    Arg : TZcOpArgumentVar;
+  368  .)
+  369  =
+  370       (.
+  371          if (not Assigned(Cls)) or (not SameText(Name,Cls.Id)) then
+  372          begin //Check for dup except if name of class constructor
+  373            if SymTab.Contains(Name) then
+  374              ZError('Name already defined: ' + Name);
+  375          end;
   376  
-  377            if Assigned(Cls) then
-  378            begin //Add implicit "this" argument to method definition
-  379              Arg := TZcOpArgumentVar.Create(nil);
-  380              Arg.Id := 'this';
-  381              Arg.Typ.Kind := zctClass;
-  382              Arg.Typ.TheClass := Cls;
-  383              Func.MemberOf := Cls;
-  384              Func.AddArgument(Arg);
-  385              SymTab.Add(Arg.Id,Arg);
-  386            end;
+  377          if mdPrivate in M then
+  378            Func := TZcOpFunctionUserDefined.Create(nil)
+  379          else
+  380            Func := TZcOpFunctionUserDefined.Create(GlobalNames);
+  381          Func.Id := Name;
+  382          Func.ReturnType := Typ;
+  383          Func.Modifiers := M;
+  384          Self.CurrentFunction := Func;
+  385          SymTab.PushScope;
+  386          try
   387  
-  388       .)
-  389      [ FormalParams ] ")"
-  390        (.
-  391          Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
-  392          if SymTab.Contains(Func.MangledName) then
-  393            ZError('Name already defined: ' + Name);
-  394          if Assigned(Cls) then
-  395          begin
-  396            Cls.Methods.Add(Func);
-  397            SymTab.AddPrevious(Func.MangledName,Func);
-  398          end
-  399          else
-  400          begin
-  401            if IsPrivate then
-  402              SymTab.AddPrevious(Func.MangledName,Func)
-  403            else
-  404              SymTab.AddPrevious(Func.MangledName,Func,2);
-  405            ZFunctions.Add(Func);
-  406          end;
-  407        .)
-  408      "{" ZcFuncBody "}"
-  409          (.
-  410            finally
-  411              SymTab.PopScope;
+  388            if Assigned(Cls) then
+  389            begin
+  390              //Add implicit "this" argument to method definition
+  391              Arg := TZcOpArgumentVar.Create(nil);
+  392              Arg.Id := 'this';
+  393              Arg.Typ.Kind := zctClass;
+  394              Arg.Typ.TheClass := Cls;
+  395              Func.MemberOf := Cls;
+  396              Func.AddArgument(Arg);
+  397              SymTab.Add(Arg.Id,Arg);
+  398  
+  399              if [mdVirtual,mdOverride]<=M then
+  400                ZError('A function cannot be both virtual and override ' + Name);
+  401  
+  402              if mdVirtual in M then
+  403              begin
+  404                Func.VmtIndex := Cls.RuntimeClass.Vmt.Size div 4;
+  405                Inc(Cls.RuntimeClass.Vmt.Size,4);
+  406                ReallocMem(Cls.RuntimeClass.Vmt.Data,Cls.RuntimeClass.Vmt.Size);
+  407              end;
+  408            end else
+  409            begin
+  410              if (M-[mdPrivate,mdInline])<>[] then
+  411                ZError('Invalid modifiers for function ' + Name);
   412            end;
-  413          .)
-  414  .
-  415  
-  416  
-  417  Zc (. var
-  418          Typ : TZcDataType;
-  419          Name : string;
-  420          IsPrivate,IsInline : boolean;
-  421          Op : TZcOp;
-  422      .)
-  423  =
-  424    {
-  425      IF(. IsConst .)
-  426        (. IsPrivate := False; .)
-  427        [ "private" (. IsPrivate:= True; .) ]
-  428        ConstantDeclarationList<IsPrivate>
-  429      |
-  430        (. IsPrivate := False; .)
-  431      /*  [ "private" (. IsPrivate:= True; .) ] */
-  432        TypeDecl<IsPrivate>
-  433      |
-  434        (. IsPrivate := False; IsInline := False; .)
-  435        [ "private" (. IsPrivate:= True; .) ]
-  436        [ "inline" (. IsInline:= True; .) ]
-  437        ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (. Name := LexString; .)
-  438         /* Need to separate between global variable and method declarations */
-  439         (
-  440           "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline,nil>
-  441           | GlobalVarDecl<Typ,Name,IsPrivate> ";"
-  442         )
-  443      | /* Library initialization block */
-  444        (. CurrentFunction := GetInitializer; .)
-  445        Block<Op>
-  446        (. GetInitializer.Statements.Add(Op); CurrentFunction := nil; .)
-  447    }
-  448  
-  449  .
-  450  
-  451  /*------------------------------------------------------------------------*/
-  452  Field<Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean>
-  453  (.
-  454  var
-  455    Fld : TZcOpField;
-  456    Op,InitOp : TZcOp;
-  457  .)
-  458  = ident
-  459    (.
-  460       //todo: check duplicate name in class
-  461       Fld := TZcOpField.Create(nil);
-  462       Fld.Id := LexString;
-  463       Fld.Typ := Typ;
-  464       Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
-  465       Fld.IsPrivate := IsPrivate;
-  466       Fld.MemberOf := Cls;
-  467       if Fld.Typ.Kind in ManagedTypes then
-  468       begin //Managed field
-  469         Inc(Cls.RuntimeClass.ManagedFields.Size,4);
-  470         ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
-  471         PInteger( pointer(IntPtr(Cls.RuntimeClass.ManagedFields.Data)+Cls.RuntimeClass.ManagedFields.Size-4) )^ := Fld.ByteOffset;
-  472       end;
-  473  
-  474       //todo: field align
-  475       Inc(Cls.RuntimeClass.SizeInBytes, GetZcTypeSize(Fld.Typ.Kind) );
-  476       Cls.Fields.Add(Fld);
-  477  
-  478       SymTab.AddPrevious(Fld.Id,Fld);
-  479  
-  480       InitOp := nil;
-  481       CurrentFunction := Cls.Initializer; //Needed so that any temporary locals in init are added to the correct function
-  482    .)
-  483  
-  484    [ "=" Init<InitOp> ]
-  485  
-  486    (.
-  487       Op := nil;
-  488       MakeVarInitializer(Fld,InitOp,Op);
-  489       if Assigned(Op) then
-  490         Cls.Initializer.Statements.Add(Op);
-  491       CurrentFunction := nil;
-  492    .)
-  493  .
-  494  /*------------------------------------------------------------------------*/
-  495  StructMember<Cls : TZcOpClass; IsPrivate,IsInline : boolean> (.
-  496  var
-  497    Typ : TZcDataType;
-  498    Name : string;
+  413  
+  414       .)
+  415      [ FormalParams ] ")"
+  416        (.
+  417          Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
+  418          if SymTab.Contains(Func.MangledName) then
+  419            ZError('Name already defined: ' + Name);
+  420          if Assigned(Cls) then
+  421          begin
+  422            OtherFunc := Cls.FindMethod(Func.MangledName);
+  423  
+  424            Cls.Methods.Add(Func);
+  425            //TODO: cannot add to symtab here because that could bind other method calls wrong (m.update in ClassesDemo)
+  426            //SymTab.AddPrevious(Func.MangledName,Func);
+  427  
+  428            if mdOverride in M then
+  429            begin
+  430              if not Assigned(Cls.BaseClass) then
+  431                ZError('Cannot override without baseclass ' + Name);
+  432              if not Assigned(OtherFunc) then
+  433                ZError('No method with this name in base class ' + Name);
+  434              if not (mdVirtual in OtherFunc.Modifiers) then
+  435                ZError('Method is not marked as virtual in base class ' + Name);
+  436              Func.VmtIndex := OtherFunc.VmtIndex;
+  437            end else if Assigned(OtherFunc) then
+  438              ZError('Name already defined: ' + Name);
+  439          end
+  440          else
+  441          begin
+  442            if mdPrivate in M then
+  443              SymTab.AddPrevious(Func.MangledName,Func)
+  444            else
+  445              SymTab.AddPrevious(Func.MangledName,Func,2);
+  446            ZFunctions.Add(Func);
+  447          end;
+  448        .)
+  449      "{" ZcFuncBody "}"
+  450          (.
+  451            finally
+  452              SymTab.PopScope;
+  453            end;
+  454          .)
+  455  .
+  456  
+  457  
+  458  Zc (. var
+  459          Typ : TZcDataType;
+  460          Name : string;
+  461          M : TModifiers;
+  462          Op : TZcOp;
+  463          IsPrivate : boolean;
+  464      .)
+  465  =
+  466    {
+  467      IF(. IsConst .)
+  468        (. IsPrivate := False; .)
+  469        [ "private" (. IsPrivate:= True; .) ]
+  470        ConstantDeclarationList<IsPrivate>
+  471      |
+  472        (. IsPrivate := False; .)
+  473      /*  [ "private" (. IsPrivate:= True; .) ] */
+  474        TypeDecl<IsPrivate>
+  475      |
+  476        (. M := [];  .)
+  477        {GlobalModifier<m>}
+  478        ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (. Name := LexString; .)
+  479         /* Need to separate between global variable and method declarations */
+  480         (
+  481           "(" ZcFuncRest<Typ,Name,M,nil>
+  482           | GlobalVarDecl<Typ,Name, mdPrivate in M > ";"
+  483         )
+  484      | /* Library initialization block */
+  485        (. CurrentFunction := GetInitializer; .)
+  486        Block<Op>
+  487        (. GetInitializer.Statements.Add(Op); CurrentFunction := nil; .)
+  488    }
+  489  
+  490  .
+  491  
+  492  /*------------------------------------------------------------------------*/
+  493  Field<Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean>
+  494  (.
+  495  var
+  496    Fld : TZcOpField;
+  497    Op,InitOp : TZcOp;
+  498    FldSize : integer;
   499  .)
-  500  =
-  501  (. Typ.Kind := zctVoid; .)
-  502  
-  503    /*--- void method (procedure) declaration: */
-  504    "void" ident (. Name := LexString; .)
-  505            (
-  506              "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline,Cls>
-  507            )
-  508  
-  509  /*--- constructor or static constructor declaration: */
-  510  |
-  511    IF (. IdentAndLPar .)
-  512    ident (.
-  513       Name := LexString;
-  514       if not SameText(Name,Cls.Id) then
-  515         ZError('Constructor must have same name as class: ' + Name);
-  516       .)
-  517       "(" ZcFuncRest<Typ,Name,False,IsInline,Cls>
-  518  |
-  519  
-  520  Type<Typ>
-  521    (
-  522          /*--- field declaration: */
-  523          IF (. IsFieldDecl .)
-  524            (.
-  525              if IsInline then
-  526                ZError('Fields cannot be marked with inline' + LexString);
-  527              SymTab.PushScope;
-  528              try
-  529                //Add "this" to scope
-  530                SymTab.Add(Cls.Initializer.Arguments.First.Id, Cls.Initializer.Arguments.First);
-  531            .)
-  532            Field<Typ,Cls,IsPrivate> {"," Field<Typ,Cls,IsPrivate>} ";"
-  533            (.
-  534              finally
-  535                SymTab.PopScope;
-  536              end;
-  537            .)
-  538  
-  539          | ident  (. Name := LexString; .)
-  540            ( /*--- "not void" method (function) declaration: */
-  541              "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline,Cls>
-  542            )
-  543  
-  544    )
-  545  .
-  546  
-  547  /*------------------------------------------------------------------------*/
-  548  ClassMember<Cls : TZcOpClass; IsPrivate,IsInline : boolean>
-  549  = StructMember<Cls,IsPrivate,IsInline>
-  550  /* | "~" ident "(" ")" (Block | ";") */
-  551  .
-  552  
-  553  /*------------------------------------------------------------------------*/
-  554  ClassBody<Cls : TZcOpClass>
-  555  (.
-  556  var
-  557    IsPrivate,IsInline : boolean;
-  558  .)
-  559  = "{" (. try
-  560             SymTab.PushScope;
-  561        .)
-  562        {
-  563          (. IsPrivate := False; IsInline := False; .)
-  564          [ "private" (. IsPrivate:= True; .) ]
-  565          [ "inline" (. IsInline:= True; .) ]
-  566          ClassMember<Cls,IsPrivate,IsInline>
-  567        }
-  568    "}" (.
-  569           finally
-  570             SymTab.PopScope;
-  571           end;
-  572        .)
-  573  .
-  574  
-  575  /*------------------------------------------------------------------------*/
-  576  TypeDecl<IsPrivate : boolean>
-  577  (.
-  578  var
-  579    Cls : TZcOpClass;
-  580  .)
-  581  =
-  582    "class" ident
-  583      (.
-  584        if SymTab.Contains(LexString) then
-  585          ZError('Name already defined: ' + LexString);
-  586        Cls := TZcOpClass.Create(GlobalNames);
-  587        Cls.Id := LexString;
-  588  
-  589        Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
-  590        CompilerContext.CurrentClass := Cls;
+  500  = ident
+  501    (.
+  502       Fld := TZcOpField.Create(nil);
+  503       Fld.Id := LexString;
+  504       Fld.Typ := Typ;
+  505       Fld.IsPrivate := IsPrivate;
+  506       Fld.MemberOf := Cls;
+  507  
+  508       if Assigned(Cls.FindField(Fld.Id)) then
+  509         ZError('Field already defined ' + Fld.Id);
+  510  
+  511       //field align
+  512       FldSize := GetZcTypeSize(Fld.Typ.Kind);
+  513       Cls.RuntimeClass.SizeInBytes := AlignX(Cls.RuntimeClass.SizeInBytes, FldSize);
+  514       Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+  515       Inc(Cls.RuntimeClass.SizeInBytes, FldSize );
+  516  
+  517       if Fld.Typ.Kind in ManagedTypes then
+  518       begin //Managed field
+  519         Inc(Cls.RuntimeClass.ManagedFields.Size,4);
+  520         ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
+  521         PInteger( pointer(IntPtr(Cls.RuntimeClass.ManagedFields.Data)+Cls.RuntimeClass.ManagedFields.Size-4) )^ := Fld.ByteOffset;
+  522       end;
+  523  
+  524       Cls.Fields.Add(Fld);
+  525  
+  526       SymTab.AddPrevious(Fld.Id,Fld);
+  527  
+  528       InitOp := nil;
+  529       CurrentFunction := Cls.Initializer; //Needed so that any temporary locals in init are added to the correct function
+  530    .)
+  531  
+  532    [ "=" Init<InitOp> ]
+  533  
+  534    (.
+  535       Op := nil;
+  536       MakeVarInitializer(Fld,InitOp,Op);
+  537       if Assigned(Op) then
+  538         Cls.Initializer.Statements.Add(Op);
+  539       CurrentFunction := nil;
+  540    .)
+  541  .
+  542  /*------------------------------------------------------------------------*/
+  543  StructMember<Cls : TZcOpClass; M : TModifiers> (.
+  544  var
+  545    Typ : TZcDataType;
+  546    Name : string;
+  547  .)
+  548  =
+  549  (. Typ.Kind := zctVoid; .)
+  550  
+  551    /*--- void method (procedure) declaration: */
+  552    "void" ident (. Name := LexString; .)
+  553            (
+  554              "(" ZcFuncRest<Typ,Name,M,Cls>
+  555            )
+  556  
+  557  /*--- constructor or static constructor declaration: */
+  558  |
+  559    IF (. IdentAndLPar .)
+  560    ident (.
+  561       Name := LexString;
+  562       if not SameText(Name,Cls.Id) then
+  563         ZError('Constructor must have same name as class: ' + Name);
+  564       .)
+  565       "(" ZcFuncRest<Typ,Name,M,Cls>
+  566  |
+  567  
+  568  Type<Typ>
+  569    (
+  570          /*--- field declaration: */
+  571          IF (. IsFieldDecl .)
+  572            (.
+  573              if (M-[mdPrivate])<>[] then
+  574                ZError('Field cannot have these modifiers ' + LexString);
+  575              SymTab.PushScope;
+  576              try
+  577                //Add "this" to scope
+  578                SymTab.Add(Cls.Initializer.Arguments.First.Id, Cls.Initializer.Arguments.First);
+  579            .)
+  580            Field<Typ,Cls,mdPrivate in M> {"," Field<Typ,Cls,mdPrivate in M>} ";"
+  581            (.
+  582              finally
+  583                SymTab.PopScope;
+  584              end;
+  585            .)
+  586  
+  587          | ident  (. Name := LexString; .)
+  588            ( /*--- "not void" method (function) declaration: */
+  589              "(" ZcFuncRest<Typ,Name,M,Cls>
+  590            )
   591  
-  592        SymTab.AddPrevious(Cls.Id,Cls);
-  593      .)
-  594      ClassBody<Cls> [";"]
-  595      (.
-  596        ZFunctions.Add(Cls);
-  597        CompilerContext.CurrentClass := nil;
-  598      .)
-  599  /*|
-  600    ( "struct" ident [Base] StructBody  [";"]
-  601    )*/
-  602  .
-  603  
-  604  /*------------------------------------------------------------------------*/
-  605  
-  606  ZcFuncBody (. var Op : TZcOp; .)
-  607  =  {  (. Op:=nil; .)
-  608        Statement<Op>
-  609        (. if Op<>nil then
-  610             CurrentFunction.Statements.Add(Op);
-  611           Op := nil;
-  612        .)
-  613     }
-  614  .
-  615  
-  616  /*------------------------------------------------------------------------*/
-  617  FormalParams
-  618  = ( Par ["," FormalParams] )
-  619  .
-  620  /*------------------------------------------------------------------------*/
-  621  Par (.
-  622  var
-  623    Typ : TZcDataType;
-  624    Arg : TZcOpArgumentVar;
-  625    IsPtr : boolean;
-  626  .)
-  627  =  (. IsPtr := False; .)
-  628    ["ref" (. IsPtr := True; .) ]
-  629    Type<Typ> ident
-  630       (.
-  631          Typ.IsPointer := IsPtr;
-  632          if SymTab.ScopeContains(LexString) then
-  633            SynError(201)
-  634          else
-  635          begin
-  636            Arg := TZcOpArgumentVar.Create(nil);
-  637            Arg.Id := LexString;
-  638            Arg.Typ := Typ;
-  639            CurrentFunction.AddArgument(Arg);
-  640            SymTab.Add(Arg.Id,Arg);
-  641          end;
-  642       .)
-  643  .
-  644  /*------------------------------------------------------------------------*/
-  645  
-  646  LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
-  647  = (. OutOp := nil; .)
-  648    Type<Typ> LocalVar<Typ,OutOp> {"," LocalVar<Typ,OutOp>}
-  649  .
-  650  
-  651  /*------------------------------------------------------------------------*/
-  652  
-  653  LocalVar<Typ : TZcDataType; var OutOp : TZcOp>
-  654  (.
-  655  var
-  656    Loc : TZcOpLocalVar;
-  657    InitOp : TZcOp;
-  658  .)
-  659  = ident
-  660       (.
-  661          if SymTab.ScopeContains(LexString) then
-  662            ZError('Name already defined: ' + LexString);
-  663  
-  664          Loc := TZcOpLocalVar.Create(nil);
-  665          Loc.Id := LexString;
-  666          Loc.Typ := Typ;
-  667       .)
-  668       [ "=" Init<InitOp> (. Loc.InitExpression:=InitOp; .) ]
-  669       (.
-  670          SymTab.Add(Loc.Id,Loc);
-  671          CurrentFunction.AddLocal(Loc);
-  672  
-  673          MakeVarInitializer(Loc,Loc.InitExpression,OutOp);
-  674       .)
-  675  .
-  676  
-  677  /*------------------------------------------------------------------------*/
-  678  
-  679  GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
-  680  (.
-  681  var
-  682    V : TDefineVariableBase;
-  683    Glob : TZcOpGlobalVar;
-  684    InitOp : TZcOp;
-  685  .)
-  686  =
-  687       (.
-  688          if SymTab.ScopeContains(Name) then
-  689            ZError('Name already defined: ' + Name);
-  690  
-  691          V := nil;
-  692          if not (Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
-  693          begin  //Stored in global area
-  694            if IsPrivate then
-  695              Glob := TZcOpGlobalVar.Create(nil)
-  696            else
-  697              Glob := TZcOpGlobalVar.Create(GlobalNames);
-  698            Glob.Lib := CompilerContext.ThisC as TZLibrary;
-  699            Glob.Offset := Glob.Lib.GlobalAreaSize;
-  700            Glob.Id := Name;
-  701            Glob.Typ := Typ;
-  702  
-  703            Glob.Lib.AddGlobalVar(Typ);
-  704  
-  705            if IsPrivate then
-  706              SymTab.Add(Name,Glob)
-  707            else
-  708              SymTab.AddPrevious(Name,Glob);
-  709          end
-  710          else if Typ.Kind=zctArray then
-  711          begin
-  712            //todo: store arrays in global area too, need to generate initialization code
-  713            TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
-  714            V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
-  715            V._ReferenceClassId := Typ.ReferenceClassId;
-  716            V._TheClass := Typ.TheClass;
-  717            Self.ZApp.GlobalVariables.AddComponent(V);
-  718          end
-  719          else
-  720          begin //zctMat4,zctVec2,zctVec3,zctVec4
-  721            V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
-  722            V._Type := Typ.Kind;
-  723            V._ReferenceClassId := Typ.ReferenceClassId;
-  724          end;
-  725  
-  726          if Assigned(V) then
-  727          begin
-  728            V.SetString('Name', AnsiString(Name));
-  729            V.DesignerReset; //Needed to init managed variables
-  730            if IsPrivate then
-  731              SymTab.Add(Name,V)
-  732            else
-  733              SymTab.AddPrevious(Name,V);
-  734          end;
-  735       .)
-  736       [ "=" Init<InitOp> (.
-  737         //todo: array initializer of global arrays
-  738         GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
-  739         .)
-  740       ]
-  741  .
-  742  
-  743  
-  744  GlobalVar<Typ : TZcDataType; IsPrivate : boolean>
-  745  =
-  746    ident GlobalVarRest<Typ,LexString,IsPrivate>
-  747  .
-  748  
-  749  GlobalVarDecl<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
-  750  = GlobalVarRest<Typ,Name,IsPrivate> {"," GlobalVar<Typ,IsPrivate>}
-  751  .
-  752  
-  753  /*------------------------------------------------------------------------*/
-  754  
-  755  Init<var OutOp : TZcOp>
-  756  = Expr<OutOp> | ArrayInit<OutOp>
-  757  .
-  758  
-  759  /*------------------------------------------------------------------------*/
-  760  ArrayInit<var OutOp : TZcOp>
-  761  (.
-  762  var
-  763    Op : TZcOp;
-  764  .)
-  765  = "{" (. OutOp := MakeOp(zcBlock); .)
-  766    [Init<Op> (. OutOp.Children.Add(Op); .)
-  767      {IF (. NotFinalComma .) "," Init<Op> (. OutOp.Children.Add(Op); .)
-  768      } [","] ] "}"
-  769  .
-  770  
-  771  
-  772  /*------------------------------------------------------------------------*/
-  773  Argument<var OutOp : TZcOp>
-  774  = /* ["ref" | "out"] */
-  775    (. OutOp := nil; .)
-  776    Expr<OutOp>
-  777    (. if OutOp=nil then ZError('Missing argument'); .)
-  778  .
-  779  
-  780  /*------------------------------------------------------------------------*
-  781   *-------------------------------- Types ---------------------------------*
-  782   *------------------------------------------------------------------------*/
+  592    )
+  593  .
+  594  
+  595  /*------------------------------------------------------------------------*/
+  596  GlobalModifier<var M : TModifiers>
+  597  = "private"      (. if mdPrivate in m then ZError('private already specified'); Include(m,mdPrivate); .)
+  598  | "inline"       (. if mdInline in m then ZError('inline already specified'); Include(m,mdInline); .)
+  599  .
+  600  
+  601  /*------------------------------------------------------------------------*/
+  602  MemberModifier<var M : TModifiers>
+  603  = "private"      (. if mdPrivate in m then ZError('private already specified'); Include(m,mdPrivate); .)
+  604  | "inline"       (. if mdInline in m then ZError('inline already specified'); Include(m,mdInline); .)
+  605  | "virtual"       (. if mdVirtual in m then ZError('virtual already specified'); Include(m,mdVirtual); .)
+  606  | "override"       (. if mdOverride in m then ZError('override already specified'); Include(m,mdOverride); .)
+  607  .
+  608  
+  609  /*------------------------------------------------------------------------*/
+  610  ClassMember<Cls : TZcOpClass; M : TModifiers>
+  611  = StructMember<Cls,M>
+  612  /* | "~" ident "(" ")" (Block | ";") */
+  613  .
+  614  
+  615  /*------------------------------------------------------------------------*/
+  616  ClassBody<Cls : TZcOpClass>
+  617  (.
+  618  var
+  619    M : TModifiers;
+  620  .)
+  621  = "{" (. try
+  622             SymTab.PushScope;
+  623  
+  624             if Assigned(Cls.BaseClass) then
+  625               //Make sure any inherited fields also can be accessed without the "this" prefix
+  626               AddBaseClassToSymTab(Cls.BaseClass);
+  627        .)
+  628        {
+  629          (. M := []; .)
+  630          {MemberModifier<m>}
+  631          ClassMember<Cls,M>
+  632        }
+  633    "}" (.
+  634           finally
+  635             SymTab.PopScope;
+  636           end;
+  637        .)
+  638  .
+  639  
+  640  /*------------------------------------------------------------------------*/
+  641  TypeDecl<IsPrivate : boolean>
+  642  (.
+  643  var
+  644    Cls : TZcOpClass;
+  645    BaseTyp : TZcDataType;
+  646    Name : string;
+  647    Op : TZcOp;
+  648    Size : integer;
+  649  .)
+  650  =
+  651    "class" ident (. Name := LexString; .)
+  652      (. BaseTyp.Kind := zctVoid; .)
+  653      [":" ClassType<BaseTyp> ]
+  654      (.
+  655        if SymTab.Contains(Name) then
+  656          ZError('Name already defined: ' + Name);
+  657        Cls := TZcOpClass.Create(GlobalNames);
+  658        Cls.Id := Name;
+  659  
+  660        Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
+  661        if BaseTyp.Kind<>zctVoid then
+  662        begin //base class specified
+  663          Cls.BaseClass := BaseTyp.TheClass as TZcOpClass;
+  664          Cls.RuntimeClass.SizeInBytes := Cls.BaseClass.RuntimeClass.SizeInBytes;
+  665          Cls.RuntimeClass.BaseClass := Cls.BaseClass.RuntimeClass;
+  666  
+  667          //Copy VMT from base
+  668          Cls.RuntimeClass.Vmt.Size := Cls.BaseClass.RuntimeClass.Vmt.Size;
+  669          if Cls.RuntimeClass.Vmt.Size>0 then
+  670          begin
+  671            GetMem(Cls.RuntimeClass.Vmt.Data,Cls.RuntimeClass.Vmt.Size);
+  672            //fill with -1 to indicate method is not overridden
+  673            FillChar(Cls.RuntimeClass.Vmt.Data^,Cls.RuntimeClass.Vmt.Size,$ff);
+  674          end;
+  675  
+  676          //Copy managed list from base
+  677          Size := Cls.BaseClass.RuntimeClass.ManagedFields.Size;
+  678          if Size<>0 then
+  679          begin
+  680            Cls.RuntimeClass.ManagedFields.Size := Size;
+  681            GetMem(Cls.RuntimeClass.ManagedFields.Data,Size);
+  682            Move(Cls.BaseClass.RuntimeClass.ManagedFields.Data^,Cls.RuntimeClass.ManagedFields.Data^,Size);
+  683          end;
+  684  
+  685          //if baseclass has initializer, then inject call to "$baseclass.init" in childclass initializer.
+  686          if Cls.BaseClass.Initializer.Statements.Count>0 then
+  687          begin
+  688            Op := MakeOp(zcMethodCall,'$init');
+  689            Op.Ref := Cls.BaseClass;
+  690            Op.Children.Add( MakeOp(zcIdentifier,'this') );
+  691            Op.Children.Last.Ref := Cls.Initializer.Arguments.First;
+  692            Cls.Initializer.Statements.Add(Op);
+  693          end;
+  694        end;
+  695        CompilerContext.CurrentClass := Cls;
+  696  
+  697        SymTab.AddPrevious(Cls.Id,Cls);
+  698      .)
+  699      ClassBody<Cls> [";"]
+  700      (.
+  701        ZFunctions.Add(Cls);
+  702        CompilerContext.CurrentClass := nil;
+  703      .)
+  704  /*|
+  705    ( "struct" ident [Base] StructBody  [";"]
+  706    )*/
+  707  .
+  708  
+  709  /*------------------------------------------------------------------------*/
+  710  
+  711  ZcFuncBody (. var Op : TZcOp; .)
+  712  =  {  (. Op:=nil; .)
+  713        Statement<Op>
+  714        (. if Op<>nil then
+  715             CurrentFunction.Statements.Add(Op);
+  716           Op := nil;
+  717        .)
+  718     }
+  719  .
+  720  
+  721  /*------------------------------------------------------------------------*/
+  722  FormalParams
+  723  = ( Par ["," FormalParams] )
+  724  .
+  725  /*------------------------------------------------------------------------*/
+  726  Par (.
+  727  var
+  728    Typ : TZcDataType;
+  729    Arg : TZcOpArgumentVar;
+  730    IsPtr : boolean;
+  731  .)
+  732  =  (. IsPtr := False; .)
+  733    ["ref" (. IsPtr := True; .) ]
+  734    Type<Typ> ident
+  735       (.
+  736          Typ.IsPointer := IsPtr;
+  737          if SymTab.ScopeContains(LexString) then
+  738            SynError(201)
+  739          else
+  740          begin
+  741            Arg := TZcOpArgumentVar.Create(nil);
+  742            Arg.Id := LexString;
+  743            Arg.Typ := Typ;
+  744            CurrentFunction.AddArgument(Arg);
+  745            SymTab.Add(Arg.Id,Arg);
+  746          end;
+  747       .)
+  748  .
+  749  /*------------------------------------------------------------------------*/
+  750  
+  751  LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
+  752  = (. OutOp := nil; .)
+  753    Type<Typ> LocalVar<Typ,OutOp> {"," LocalVar<Typ,OutOp>}
+  754  .
+  755  
+  756  /*------------------------------------------------------------------------*/
+  757  
+  758  LocalVar<Typ : TZcDataType; var OutOp : TZcOp>
+  759  (.
+  760  var
+  761    Loc : TZcOpLocalVar;
+  762    InitOp : TZcOp;
+  763  .)
+  764  = ident
+  765       (.
+  766          if SymTab.ScopeContains(LexString) then
+  767            ZError('Name already defined: ' + LexString);
+  768  
+  769          Loc := TZcOpLocalVar.Create(nil);
+  770          Loc.Id := LexString;
+  771          Loc.Typ := Typ;
+  772       .)
+  773       [ "=" Init<InitOp> (. Loc.InitExpression:=InitOp; .) ]
+  774       (.
+  775          SymTab.Add(Loc.Id,Loc);
+  776          CurrentFunction.AddLocal(Loc);
+  777  
+  778          MakeVarInitializer(Loc,Loc.InitExpression,OutOp);
+  779       .)
+  780  .
+  781  
+  782  /*------------------------------------------------------------------------*/
   783  
-  784  ClassType<var Typ : TZcDataType>
+  784  GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
   785  (.
   786  var
-  787    O : TObject;
-  788  .)
-  789  = ident
-  790      (.
-  791         O := SymTab.Lookup(LexString);
-  792         if (O=nil) or (not (O is TZcOpClass)) then
-  793           ZError('Unknown type: ' + LexString);
-  794         Typ.Kind := zctClass;
-  795         Typ.TheClass := O;
-  796      .)
-  797  .
-  798  
-  799  Type<var Typ : TZcDataType>
-  800  (.
-  801    var
-  802      A : TDefineArray;
-  803      SizeOp : TZcOp;
-  804      I : integer;
-  805  .)
-  806  =  (. FillChar(Typ,SizeOf(Typ),0); .)
-  807    (
-  808      SimpleType<Typ>
-  809      | ClassType<Typ>
-  810    )
-  811    {
-  812      (
-  813        "["       (.
-  814                     A := TDefineArray.Create(nil);
-  815                     GlobalNames.Add(A);
-  816                     A._Type := Typ.Kind;
-  817                     Typ.Kind := zctArray;
-  818                     Typ.TheArray := A;
-  819                  .)
-  820  
-  821           [ Expr<SizeOp> (.
-  822              SizeOp := SizeOp.Optimize;
-  823              if SizeOp.Kind<>zcConstLiteral then
-  824                ZError('Array size must be a constant expression');
-  825              A.SizeDim1 := Trunc( (SizeOp as TZcOpLiteral).Value );
-  826                           .)
-  827           ]
+  787    V : TDefineVariableBase;
+  788    Glob : TZcOpGlobalVar;
+  789    InitOp : TZcOp;
+  790  .)
+  791  =
+  792       (.
+  793          if SymTab.ScopeContains(Name) then
+  794            ZError('Name already defined: ' + Name);
+  795  
+  796          V := nil;
+  797          if not (Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+  798          begin  //Stored in global area
+  799            if IsPrivate then
+  800              Glob := TZcOpGlobalVar.Create(nil)
+  801            else
+  802              Glob := TZcOpGlobalVar.Create(GlobalNames);
+  803            Glob.Lib := CompilerContext.ThisC as TZLibrary;
+  804            Glob.Offset := Glob.Lib.GlobalAreaSize;
+  805            Glob.Id := Name;
+  806            Glob.Typ := Typ;
+  807  
+  808            Glob.Lib.AddGlobalVar(Typ);
+  809  
+  810            if IsPrivate then
+  811              SymTab.Add(Name,Glob)
+  812            else
+  813              SymTab.AddPrevious(Name,Glob);
+  814          end
+  815          else if Typ.Kind=zctArray then
+  816          begin
+  817            //todo: store arrays in global area too, need to generate initialization code
+  818            TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
+  819            V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
+  820            V._Type := TDefineArray(Typ.TheArray)._Type;
+  821            Self.ZApp.GlobalVariables.AddComponent(V);
+  822          end
+  823          else
+  824          begin //zctMat4,zctVec2,zctVec3,zctVec4
+  825            V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
+  826            V._Type := Typ;
+  827          end;
   828  
-  829           { ","  (. if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); .)
-  830             [ Expr<SizeOp> (.
-  831                  SizeOp := SizeOp.Optimize;
-  832                  if SizeOp.Kind<>zcConstLiteral then
-  833                    ZError('Array size must be a constant expression');
-  834                 I := Trunc( (SizeOp as TZcOpLiteral).Value );
-  835                 if (A.Dimensions=dadTwo) then A.SizeDim2 := I else A.SizeDim3 := I;
-  836             .) ]
-  837           }
-  838         "]"
-  839      )
-  840    }
-  841  .
-  842  
-  843  /*------------------------------------------------------------------------*/
-  844  
-  845  SimpleType<var Typ : TZcDataType>
-  846  (.
-  847    var
-  848      A : TDefineArray;
-  849  .)
-  850  /* = IntType | "float" | "double" | "decimal" | "bool" */
-  851  = "float" (. Typ.Kind := zctFloat; .)
-  852    | "int" (. Typ.Kind := zctInt; .)
-  853    | "byte" (. Typ.Kind := zctByte; .)
-  854    | "string" (. Typ.Kind := zctString; .)
-  855    | "model" (. Typ.Kind := zctModel; .)
-  856    | "xptr" (. Typ.Kind := zctXptr; .)
+  829          if Assigned(V) then
+  830          begin
+  831            V.SetString('Name', AnsiString(Name));
+  832            V.DesignerReset; //Needed to init managed variables
+  833            if IsPrivate then
+  834              SymTab.Add(Name,V)
+  835            else
+  836              SymTab.AddPrevious(Name,V);
+  837          end;
+  838       .)
+  839       [ "=" Init<InitOp> (.
+  840         //todo: array initializer of global arrays
+  841         GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
+  842         .)
+  843       ]
+  844  .
+  845  
+  846  
+  847  GlobalVar<Typ : TZcDataType; IsPrivate : boolean>
+  848  =
+  849    ident GlobalVarRest<Typ,LexString,IsPrivate>
+  850  .
+  851  
+  852  GlobalVarDecl<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
+  853  = GlobalVarRest<Typ,Name,IsPrivate> {"," GlobalVar<Typ,IsPrivate>}
+  854  .
+  855  
+  856  /*------------------------------------------------------------------------*/
   857  
-  858    | "mat4" (.
-  859       A := Prototypes.Mat4Array;
-  860       Typ.Kind := zctMat4;
-  861       Typ.TheArray := A;
-  862      .)
-  863    | "vec2" (.
-  864       A := Prototypes.Vec2Array;
-  865       Typ.Kind := zctVec2;
-  866       Typ.TheArray := A;
-  867    .)
-  868    | "vec3" (.
-  869       A := Prototypes.Vec3Array;
-  870       Typ.Kind := zctVec3;
-  871       Typ.TheArray := A;
-  872    .)
-  873    | "vec4" (.
-  874       A := Prototypes.Vec4Array;
-  875       Typ.Kind := zctVec4;
-  876       Typ.TheArray := A;
-  877    .)
-  878  
-  879    /* Changes below also must be made in homographs-section */
-  880    | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
-  881    | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .)
-  882    | "Shader" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ShaderClassId; .)
-  883    | "Bitmap" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZBitmapClassId; .)
-  884    | "Mesh" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MeshClassId; .)
-  885    | "Camera" (. Typ.Kind := zctReference; Typ.ReferenceClassId := CameraClassId; .)
-  886    | "Font" (. Typ.Kind := zctReference; Typ.ReferenceClassId := FontClassId; .)
-  887    | "Sample" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; .)
-  888    | "File" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZFileClassId; .)
-  889  
-  890    | "Component" (. Typ.Kind := zctReference; Typ.ReferenceClassId := AnyComponentClassId; .)
-  891  .
-  892  
-  893  /*------------------------------------------------------------------------*/
-  894  
-  895  /* IntType
-  896  = "sbyte" | "byte" | "short" | "ushort" | "int" | "uint" | "long" | "ulong" | "char"
-  897  . */
-  898  
-  899  
-  900  ConstantDeclarationList<IsPrivate : boolean>
-  901  (.
-  902  var
-  903    Typ : TZcDataType;
-  904  .)
-  905  = "const" Type<Typ> ConstantDeclaration<Typ,IsPrivate> {"," ConstantDeclaration<Typ,IsPrivate> }
-  906    ";"
-  907  .
-  908  
-  909  ConstantDeclaration<var Typ : TZcDataType; IsPrivate : boolean>
-  910  (.
-  911  var
-  912    Cns : TDefineConstant;
-  913    Op : TZcOp;
-  914    Lit : TZcOpLiteral;
-  915    CnsName : string;
-  916  .)
-  917  =
-  918  ident (. CnsName := LexString; .) "=" Expr<Op>
-  919    (.
-  920     if not (Typ.Kind in [zctByte,zctInt,zctFloat,zctString]) then
-  921       ZError('Only byte, int, float and string constants are allowed');
-  922  
-  923     Op := Op.Optimize;
-  924     if not (Op is TZcOpLiteral) then
-  925       ZError('Constant expression expected: ' + Op.ToString);
-  926  
-  927     Lit := Op as TZcOpLiteral;
-  928  
-  929     if (Lit.Typ.Kind<>Typ.Kind)
-  930       and not ((Typ.Kind=zctByte) and (Lit.Typ.Kind=zctInt))
-  931       and not ((Typ.Kind=zctInt) and (Lit.Typ.Kind=zctFloat))
-  932       then
-  933       ZError('Constant expression is not of the expected type: ' + Op.ToString);
-  934  
-  935     Cns := TDefineConstant.Create(nil);
-  936     Cns.SetString('Name',AnsiString(CnsName));
-  937     GlobalNames.Add(Cns);
-  938  
-  939     case Typ.Kind of
-  940       zctByte:
-  941         begin
-  942           Cns._Type := zctByte;
-  943           Cns.ByteValue := Round(Lit.Value);
-  944         end;
-  945       zctInt:
-  946         begin
-  947           Cns._Type := zctInt;
-  948           Cns.IntValue := Round(Lit.Value);
-  949         end;
-  950       zctFloat:
-  951         begin
-  952           Cns._Type := zctFloat;
-  953           Cns.Value := Lit.Value;
-  954         end;
-  955       zctString:
-  956         begin
-  957           Cns._Type := zctString;
-  958           Cns.SetString('StringValue',AnsiString(Lit.StringValue));
-  959         end;
-  960       else
-  961         ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
-  962     end;
-  963     if IsPrivate then
-  964       SymTab.Add(CnsName,Cns)
-  965     else
-  966       SymTab.AddPrevious(CnsName,Cns)
-  967    .)
-  968  /* {"," ident "=" Expr<Op>} */
-  969  .
-  970  
-  971  /*------------------------------------------------------------------------*
-  972   *------------------------------ Statements ------------------------------*
-  973   *------------------------------------------------------------------------*/
-  974  
-  975  Statement<var OutOp : TZcOp>
-  976  = (. OutOp := nil; .)
-  977  
-  978  ConstantDeclarationList<false>
-  979  
-  980  | IF (. IsLocalVarDecl .)
-  981      LocalVarDecl<OutOp> ";"
-  982  
-  983  | EmbeddedStatement<OutOp>
-  984    /* LL(1) confict between LocalVarDecl and StatementExpr: *
-  985     * ident {"." ident} { "[" ...                           */
-  986  .
-  987  
-  988  /*------------------------------------------------------------------------*/
-  989  EmbeddedStatement<var OutOp : TZcOp>
-  990    (. var
-  991         SwitchValueOp,Op,IfOp,IfBody,ElseOp : TZcOp;
-  992         ForInitOp,ForCondOp,ForIncOp,ForBodyOp : TZcOp;
-  993         WhileCondOp,WhileBodyOp : TZcOp;
-  994         SwitchOp : TZcOpSwitch;
-  995         Loc : TZcOpLocalVar;
-  996    .)
-  997  = Block<OutOp>
-  998  | ";"   (. OutOp := MakeOp(zcNop); .)
-  999  | StatementExpr<OutOp> ";"
- 1000  | "if" (. ElseOp := nil; .)
- 1001    "(" Expr<IfOp> ")" EmbeddedStatement<IfBody> ["else" EmbeddedStatement<ElseOp>]
- 1002          (. OutOp := MakeOp(zcIf,[IfOp,IfBody,ElseOp]); .)
- 1003   | "switch" "(" Expr<SwitchValueOp> ")"
- 1004        (.
- 1005           OutOp := MakeOp(zcBlock);
- 1006  
- 1007           SwitchOp := TZcOpSwitch.Create(nil);
- 1008  
- 1009           if (SwitchValueOp.Ref is TZcOpVariableBase) or (SwitchValueOp.Kind=zcConstLiteral) then
- 1010             SwitchOp.ValueOp := SwitchValueOp
- 1011           else
- 1012           begin
- 1013             Loc := MakeTemp(SwitchValueOp.GetDataType.Kind);
- 1014             SymTab.Add(Loc.Id,Loc);
- 1015             CurrentFunction.AddLocal(Loc);
- 1016             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),SwitchValueOp) );
- 1017             SwitchOp.ValueOp := MakeIdentifier(Loc.Id);
- 1018           end;
- 1019  
- 1020           OutOp.Children.Add(SwitchOp);
- 1021        .)
- 1022     "{" {
- 1023       (. SwitchOp.CaseOps.Add( MakeOp(zcNop) ); SwitchOp.StatementsOps.Add( MakeOp(zcNop) ); .)
- 1024       SwitchSection<SwitchOp>
- 1025     } "}"
- 1026   | "while"
- 1027       (. try
- 1028           SymTab.PushScope;
- 1029           CurrentFunction.PushScope;
- 1030           WhileCondOp := nil; WhileBodyOp := nil; .)
- 1031     "(" Expr<WhileCondOp> ")" EmbeddedStatement<WhileBodyOp>
- 1032     (.
- 1033           OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
- 1034         finally
- 1035           SymTab.PopScope;
- 1036           CurrentFunction.PopScope;
- 1037         end;
- 1038     .)
- 1039  
- 1040   /* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
- 1041   | "do"
- 1042       (. try
- 1043           SymTab.PushScope;
- 1044           CurrentFunction.PushScope;
- 1045           WhileCondOp := nil; WhileBodyOp := nil; .)
- 1046     EmbeddedStatement<WhileBodyOp>
- 1047     "while" "(" Expr<WhileCondOp> ")" ";"
- 1048     (.
- 1049           OutOp := MakeOp(zcDoWhile,[WhileCondOp,WhileBodyOp]);
- 1050         finally
- 1051           SymTab.PopScope;
- 1052           CurrentFunction.PopScope;
- 1053         end;
- 1054     .)
- 1055  
- 1056   | "for"
- 1057      (. try
- 1058           SymTab.PushScope;
- 1059           CurrentFunction.PushScope;
- 1060           ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
- 1061     "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp>
- 1062     (.
- 1063           OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
- 1064         finally
- 1065           SymTab.PopScope;
- 1066           CurrentFunction.PopScope;
- 1067         end;
- 1068     .)
- 1069  /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
- 1070   | "break" ";"    (. OutOp := MakeOp(zcBreak); .)
- 1071   | "continue" ";" (. OutOp := MakeOp(zcContinue); .)
- 1072   | (. Op := nil; .) "return" [ Expr<Op> ] ";"
- 1073      (.
- 1074          if (Op=nil) then
- 1075          begin
- 1076            if CurrentFunction.ReturnType.Kind<>zctVoid then
- 1077              SynError(202)
- 1078            else
- 1079              OutOp := MakeOp(zcReturn);
- 1080          end else
- 1081          begin
- 1082            if CurrentFunction.ReturnType.Kind=zctVoid then
- 1083              SynError(203)
- 1084            else
- 1085              OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
- 1086          end;
- 1087          Inc(CurrentFunction.ReturnCount);
- 1088      .)
+  858  Init<var OutOp : TZcOp>
+  859  = Expr<OutOp> | ArrayInit<OutOp>
+  860  .
+  861  
+  862  /*------------------------------------------------------------------------*/
+  863  ArrayInit<var OutOp : TZcOp>
+  864  (.
+  865  var
+  866    Op : TZcOp;
+  867  .)
+  868  = "{" (. OutOp := MakeOp(zcBlock); .)
+  869    [Init<Op> (. OutOp.Children.Add(Op); .)
+  870      {IF (. NotFinalComma .) "," Init<Op> (. OutOp.Children.Add(Op); .)
+  871      } [","] ] "}"
+  872  .
+  873  
+  874  
+  875  /*------------------------------------------------------------------------*/
+  876  Argument<var OutOp : TZcOp>
+  877  = /* ["ref" | "out"] */
+  878    (. OutOp := nil; .)
+  879    Expr<OutOp>
+  880    (. if OutOp=nil then ZError('Missing argument'); .)
+  881  .
+  882  
+  883  /*------------------------------------------------------------------------*
+  884   *-------------------------------- Types ---------------------------------*
+  885   *------------------------------------------------------------------------*/
+  886  
+  887  ClassType<var Typ : TZcDataType>
+  888  (.
+  889  var
+  890    O : TObject;
+  891  .)
+  892  = ident
+  893      (.
+  894         O := SymTab.Lookup(LexString);
+  895         if (O=nil) or (not (O is TZcOpClass)) then
+  896           ZError('Unknown type: ' + LexString);
+  897         Typ.Kind := zctClass;
+  898         Typ.TheClass := O;
+  899      .)
+  900  .
+  901  
+  902  Type<var Typ : TZcDataType>
+  903  (.
+  904    var
+  905      A : TDefineArray;
+  906      SizeOp : TZcOp;
+  907      I : integer;
+  908  .)
+  909  =  (. FillChar(Typ,SizeOf(Typ),0); .)
+  910    (
+  911      SimpleType<Typ>
+  912      | ClassType<Typ>
+  913    )
+  914    {
+  915      (
+  916        "["       (.
+  917                     A := TDefineArray.Create(nil);
+  918                     GlobalNames.Add(A);
+  919                     A._Type := Typ;
+  920                     Typ.Kind := zctArray;
+  921                     Typ.TheArray := A;
+  922                  .)
+  923  
+  924           [ Expr<SizeOp> (.
+  925              SizeOp := SizeOp.Optimize;
+  926              if SizeOp.Kind<>zcConstLiteral then
+  927                ZError('Array size must be a constant expression');
+  928              A.SizeDim1 := Trunc( (SizeOp as TZcOpLiteral).Value );
+  929                           .)
+  930           ]
+  931  
+  932           { ","  (. if A.Dimensions=High(TArrayDimensions) then ZError('Too many array dimensions'); Inc(A.Dimensions); .)
+  933             [ Expr<SizeOp> (.
+  934                  SizeOp := SizeOp.Optimize;
+  935                  if SizeOp.Kind<>zcConstLiteral then
+  936                    ZError('Array size must be a constant expression');
+  937                 I := Trunc( (SizeOp as TZcOpLiteral).Value );
+  938                 if (A.Dimensions=dadTwo) then A.SizeDim2 := I else A.SizeDim3 := I;
+  939             .) ]
+  940           }
+  941         "]"
+  942      )
+  943    }
+  944  .
+  945  
+  946  /*------------------------------------------------------------------------*/
+  947  
+  948  SimpleType<var Typ : TZcDataType>
+  949  (.
+  950    var
+  951      A : TDefineArray;
+  952  .)
+  953  /* = IntType | "float" | "double" | "decimal" | "bool" */
+  954  = "float" (. Typ.Kind := zctFloat; .)
+  955    | "int" (. Typ.Kind := zctInt; .)
+  956    | "byte" (. Typ.Kind := zctByte; .)
+  957    | "string" (. Typ.Kind := zctString; .)
+  958    | "model" (. Typ.Kind := zctModel; .)
+  959    | "xptr" (. Typ.Kind := zctXptr; .)
+  960  
+  961    | "mat4" (.
+  962       A := Prototypes.Mat4Array;
+  963       Typ.Kind := zctMat4;
+  964       Typ.TheArray := A;
+  965      .)
+  966    | "vec2" (.
+  967       A := Prototypes.Vec2Array;
+  968       Typ.Kind := zctVec2;
+  969       Typ.TheArray := A;
+  970    .)
+  971    | "vec3" (.
+  972       A := Prototypes.Vec3Array;
+  973       Typ.Kind := zctVec3;
+  974       Typ.TheArray := A;
+  975    .)
+  976    | "vec4" (.
+  977       A := Prototypes.Vec4Array;
+  978       Typ.Kind := zctVec4;
+  979       Typ.TheArray := A;
+  980    .)
+  981  
+  982    /* Changes below also must be made in homographs-section */
+  983    | "Material" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MaterialClassId; .)
+  984    | "Sound" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SoundClassId; .)
+  985    | "Shader" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ShaderClassId; .)
+  986    | "Bitmap" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZBitmapClassId; .)
+  987    | "Mesh" (. Typ.Kind := zctReference; Typ.ReferenceClassId := MeshClassId; .)
+  988    | "Camera" (. Typ.Kind := zctReference; Typ.ReferenceClassId := CameraClassId; .)
+  989    | "Font" (. Typ.Kind := zctReference; Typ.ReferenceClassId := FontClassId; .)
+  990    | "Sample" (. Typ.Kind := zctReference; Typ.ReferenceClassId := SampleClassId; .)
+  991    | "File" (. Typ.Kind := zctReference; Typ.ReferenceClassId := ZFileClassId; .)
+  992  
+  993    | "Component" (. Typ.Kind := zctReference; Typ.ReferenceClassId := AnyComponentClassId; .)
+  994  .
+  995  
+  996  /*------------------------------------------------------------------------*/
+  997  
+  998  /* IntType
+  999  = "sbyte" | "byte" | "short" | "ushort" | "int" | "uint" | "long" | "ulong" | "char"
+ 1000  . */
+ 1001  
+ 1002  
+ 1003  ConstantDeclarationList<IsPrivate : boolean>
+ 1004  (.
+ 1005  var
+ 1006    Typ : TZcDataType;
+ 1007  .)
+ 1008  = "const" Type<Typ> ConstantDeclaration<Typ,IsPrivate> {"," ConstantDeclaration<Typ,IsPrivate> }
+ 1009    ";"
+ 1010  .
+ 1011  
+ 1012  ConstantDeclaration<var Typ : TZcDataType; IsPrivate : boolean>
+ 1013  (.
+ 1014  var
+ 1015    Cns : TDefineConstant;
+ 1016    Op : TZcOp;
+ 1017    Lit : TZcOpLiteral;
+ 1018    CnsName : string;
+ 1019  .)
+ 1020  =
+ 1021  ident (. CnsName := LexString; .) "=" Expr<Op>
+ 1022    (.
+ 1023     if not (Typ.Kind in [zctByte,zctInt,zctFloat,zctString]) then
+ 1024       ZError('Only byte, int, float and string constants are allowed');
+ 1025  
+ 1026     Op := Op.Optimize;
+ 1027     if not (Op is TZcOpLiteral) then
+ 1028       ZError('Constant expression expected: ' + Op.ToString);
+ 1029  
+ 1030     Lit := Op as TZcOpLiteral;
+ 1031  
+ 1032     if (Lit.Typ.Kind<>Typ.Kind)
+ 1033       and not ((Typ.Kind=zctByte) and (Lit.Typ.Kind=zctInt))
+ 1034       and not ((Typ.Kind=zctInt) and (Lit.Typ.Kind=zctFloat))
+ 1035       then
+ 1036       ZError('Constant expression is not of the expected type: ' + Op.ToString);
+ 1037  
+ 1038     Cns := TDefineConstant.Create(nil);
+ 1039     Cns.SetString('Name',AnsiString(CnsName));
+ 1040     GlobalNames.Add(Cns);
+ 1041  
+ 1042     case Typ.Kind of
+ 1043       zctByte:
+ 1044         begin
+ 1045           Cns._Type.Kind := zctByte;
+ 1046           Cns.ByteValue := Round(Lit.Value);
+ 1047         end;
+ 1048       zctInt:
+ 1049         begin
+ 1050           Cns._Type.Kind := zctInt;
+ 1051           Cns.IntValue := Round(Lit.Value);
+ 1052         end;
+ 1053       zctFloat:
+ 1054         begin
+ 1055           Cns._Type.Kind := zctFloat;
+ 1056           Cns.Value := Lit.Value;
+ 1057         end;
+ 1058       zctString:
+ 1059         begin
+ 1060           Cns._Type.Kind := zctString;
+ 1061           Cns.SetString('StringValue',AnsiString(Lit.StringValue));
+ 1062         end;
+ 1063       else
+ 1064         ZError('Wrong type of constant expression: ' + GetZcTypeName(Typ));
+ 1065     end;
+ 1066     if IsPrivate then
+ 1067       SymTab.Add(CnsName,Cns)
+ 1068     else
+ 1069       SymTab.AddPrevious(CnsName,Cns)
+ 1070    .)
+ 1071  /* {"," ident "=" Expr<Op>} */
+ 1072  .
+ 1073  
+ 1074  /*------------------------------------------------------------------------*
+ 1075   *------------------------------ Statements ------------------------------*
+ 1076   *------------------------------------------------------------------------*/
+ 1077  
+ 1078  Statement<var OutOp : TZcOp>
+ 1079  = (. OutOp := nil; .)
+ 1080  
+ 1081  ConstantDeclarationList<false>
+ 1082  
+ 1083  | IF (. IsLocalVarDecl .)
+ 1084      LocalVarDecl<OutOp> ";"
+ 1085  
+ 1086  | EmbeddedStatement<OutOp>
+ 1087    /* LL(1) confict between LocalVarDecl and StatementExpr: *
+ 1088     * ident {"." ident} { "[" ...                           */
  1089  .
- 1090  /*------------------------------------------------------------------------*/
- 1091  
- 1092  Block<var OutOp : TZcOp>
+ 1090  
+ 1091  /*------------------------------------------------------------------------*/
+ 1092  EmbeddedStatement<var OutOp : TZcOp>
  1093    (. var
- 1094         Op : TZcOp;
- 1095    .)
- 1096  = (. Op := nil;
- 1097       OutOp := MakeOp(zcBlock);
- 1098    .)
- 1099    "{" (. SymTab.PushScope;
- 1100           CurrentFunction.PushScope;
- 1101           try .)
- 1102       {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
- 1103    "}" (.
- 1104           finally
- 1105             SymTab.PopScope;
- 1106             CurrentFunction.PopScope;
- 1107           end;
- 1108        .)
- 1109    .
- 1110  
- 1111  /*------------------------------------------------------------------------*/
- 1112  StatementExpr<var OutOp : TZcOp>           (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
- 1113  = (. Op1 :=nil; Op2 := nil; .)
- 1114    Unary<Op1>
- 1115    ( AssignOp<Kind> Expr<Op2>
- 1116      (.
- 1117        if Op2<>nil then
- 1118          OutOp := MakeAssign(Kind,Op1,Op2);
- 1119      .)
- 1120    |                             (. OutOp := Op1; .)
- 1121    )
- 1122  .
- 1123  
- 1124  /*------------------------------------------------------------------------*/
- 1125  AssignOp<var Kind : TZcAssignType>
- 1126  = "="     (. Kind := atAssign; .)
- 1127    | "+="  (. Kind := atPlusAssign; .)
- 1128    | "-="  (. Kind := atMinusAssign; .)
- 1129    | "*="  (. Kind := atMulAssign; .)
- 1130    | "/="  (. Kind := atDivAssign; .)
- 1131    | "|="  (. Kind := atOrAssign; .)
- 1132    | "<<="  (. Kind := atShiftLeftAssign; .)
- 1133    | ">>="  (. Kind := atShiftRightAssign; .)
- 1134    | "&="  (. Kind := atAndAssign; .)
- 1135  /*  | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" */
- 1136  .
- 1137  
- 1138  /*------------------------------------------------------------------------*/
- 1139  
- 1140  SwitchSection<SwitchOp : TZcOpSwitch> (. var Op : TZcOp; .)
- 1141  = (. Op := nil; .)
- 1142    SwitchLabel<Op>   (. AddSwitchLabel(SwitchOp,Op); .)
- 1143    {
- 1144      SwitchLabel<Op> (. AddSwitchLabel(SwitchOp,Op); .)
- 1145    }
- 1146    Statement<Op>    (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
- 1147    {
- 1148       Statement<Op> (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
- 1149    }
- 1150  .
- 1151  
- 1152  /*------------------------------------------------------------------------*/
- 1153  
- 1154  SwitchLabel<var OutOp : TZcOp>
- 1155  = "case" Expr<OutOp> ":"
- 1156  | "default" ":"
- 1157  .
+ 1094         SwitchValueOp,Op,IfOp,IfBody,ElseOp : TZcOp;
+ 1095         ForInitOp,ForCondOp,ForIncOp,ForBodyOp : TZcOp;
+ 1096         WhileCondOp,WhileBodyOp : TZcOp;
+ 1097         SwitchOp : TZcOpSwitch;
+ 1098         Loc : TZcOpLocalVar;
+ 1099    .)
+ 1100  = Block<OutOp>
+ 1101  | ";"   (. OutOp := MakeOp(zcNop); .)
+ 1102  | StatementExpr<OutOp> ";"
+ 1103  | "if" (. ElseOp := nil; .)
+ 1104    "(" Expr<IfOp> ")" EmbeddedStatement<IfBody> ["else" EmbeddedStatement<ElseOp>]
+ 1105          (. OutOp := MakeOp(zcIf,[IfOp,IfBody,ElseOp]); .)
+ 1106   | "switch" "(" Expr<SwitchValueOp> ")"
+ 1107        (.
+ 1108           OutOp := MakeOp(zcBlock);
+ 1109  
+ 1110           SwitchOp := TZcOpSwitch.Create(nil);
+ 1111  
+ 1112           if (SwitchValueOp.Ref is TZcOpVariableBase) or (SwitchValueOp.Kind=zcConstLiteral) then
+ 1113             SwitchOp.ValueOp := SwitchValueOp
+ 1114           else
+ 1115           begin
+ 1116             Loc := MakeTemp(SwitchValueOp.GetDataType.Kind);
+ 1117             SymTab.Add(Loc.Id,Loc);
+ 1118             CurrentFunction.AddLocal(Loc);
+ 1119             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),SwitchValueOp) );
+ 1120             SwitchOp.ValueOp := MakeIdentifier(Loc.Id);
+ 1121           end;
+ 1122  
+ 1123           OutOp.Children.Add(SwitchOp);
+ 1124        .)
+ 1125     "{" {
+ 1126       (. SwitchOp.CaseOps.Add( MakeOp(zcNop) ); SwitchOp.StatementsOps.Add( MakeOp(zcNop) ); .)
+ 1127       SwitchSection<SwitchOp>
+ 1128     } "}"
+ 1129   | "while"
+ 1130       (. try
+ 1131           SymTab.PushScope;
+ 1132           CurrentFunction.PushScope;
+ 1133           WhileCondOp := nil; WhileBodyOp := nil; .)
+ 1134     "(" Expr<WhileCondOp> ")" EmbeddedStatement<WhileBodyOp>
+ 1135     (.
+ 1136           OutOp := MakeOp(zcWhile,[WhileCondOp,WhileBodyOp]);
+ 1137         finally
+ 1138           SymTab.PopScope;
+ 1139           CurrentFunction.PopScope;
+ 1140         end;
+ 1141     .)
+ 1142  
+ 1143   /* | "do" EmbeddedStatement<Op> "while" "(" Expr<Op> ")" ";" */
+ 1144   | "do"
+ 1145       (. try
+ 1146           SymTab.PushScope;
+ 1147           CurrentFunction.PushScope;
+ 1148           WhileCondOp := nil; WhileBodyOp := nil; .)
+ 1149     EmbeddedStatement<WhileBodyOp>
+ 1150     "while" "(" Expr<WhileCondOp> ")" ";"
+ 1151     (.
+ 1152           OutOp := MakeOp(zcDoWhile,[WhileCondOp,WhileBodyOp]);
+ 1153         finally
+ 1154           SymTab.PopScope;
+ 1155           CurrentFunction.PopScope;
+ 1156         end;
+ 1157     .)
  1158  
- 1159  /*------------------------------------------------------------------------*/
- 1160  
- 1161  ForInit<var OutOp : TZcOp>     (. var Op : TZcOp; .)
- 1162  = (. Op:=nil; OutOp := MakeOp(zcBlock); .)
- 1163  (
- 1164  IF (. IsLocalVarDecl .) LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
- 1165  | (. Op:=nil; .) StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
- 1166    { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
- 1167  )
- 1168  .  
- 1169  
- 1170  /*------------------------------------------------------------------------*/
- 1171  
- 1172  ForInc<var OutOp : TZcOp>      (. var Op : TZcOp; .)
- 1173  = (. Op:=nil;
- 1174       OutOp := MakeOp(zcBlock);
- 1175    .) 
- 1176  (
- 1177  StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) 
- 1178  { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
- 1179  )
- 1180  . 
- 1181  
- 1182  
- 1183  /*------------------------------------------------------------------------*
- 1184   *----------------------------- Expressions ------------------------------*
- 1185   *------------------------------------------------------------------------*/
- 1186  
- 1187  
- 1188  Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
- 1189  = (. Op1 :=nil; Op2 := nil; .)
- 1190    Unary<Op1>
- 1191    ( OrExpr<Op1,OutOp>
- 1192        ["?" Expr<Op1> ":" Expr<Op2>
- 1193           (. if (OutOp=nil) or (Op1=nil) or (Op2=nil) then
- 1194                SynError(205)
- 1195              else
- 1196                OutOp := MakeOp(zcConditional,[OutOp,Op1, MakeCompatible(Op2,Op1.GetDataType) ]);
- 1197           .)
- 1198        ]
- 1199    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
- 1200    )
- 1201  .
- 1202  /*------------------------------------------------------------------------*/
- 1203  OrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
- 1204  = AndExpr<InOp,OutOp>   (. L := OutOp; .)
- 1205      {"||" Unary<Op> AndExpr<Op,R>
- 1206        (. OutOp := MakeOp(zcOr,[L,R]);
- 1207           L := OutOp; .)
- 1208      }
- 1209  .
- 1210  
- 1211  
- 1212  /*------------------------------------------------------------------------*/
- 1213  AndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
- 1214  = BitOrExpr<InOp,OutOp>  (. L := OutOp; .)
- 1215      {"&&" Unary<Op> BitOrExpr<Op,R>
- 1216        (. OutOp := MakeOp(zcAnd,[L,R]);
- 1217           L := OutOp; .)
- 1218      }
- 1219  .
- 1220  /*------------------------------------------------------------------------*/
- 1221  BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
- 1222  = BitXorExpr<InOp,OutOp> (. L := OutOp; .)
- 1223    {"|" Unary<Op> BitXorExpr<Op,R>
- 1224      (. OutOp := MakeOp(zcBinaryOr,[L,R]);
- 1225         L := OutOp; .)
- 1226    }
- 1227  .
- 1228  
- 1229  /*------------------------------------------------------------------------*/
- 1230  BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
- 1231  = BitAndExpr<InOp,OutOp> (. L := OutOp; .)
- 1232    {"^" Unary<Op> BitAndExpr<Op,R>
- 1233      (. OutOp := MakeOp(zcBinaryXor,[L,R]);
- 1234         L := OutOp; .)
- 1235    }
- 1236  .
- 1237  
- 1238  /*------------------------------------------------------------------------*/
- 1239  BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
- 1240  = EqlExpr<InOp,OutOp> (. L := OutOp; .)
- 1241    {"&" Unary<Op> EqlExpr<Op,R>
- 1242      (. OutOp := MakeOp(zcBinaryAnd,[L,R]);
- 1243         L := OutOp; .)
- 1244    }
- 1245  .
- 1246  
- 1247  /*------------------------------------------------------------------------*/
- 1248  EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
- 1249  = RelExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
- 1250    {( "!="   (. Kind := zcCompNE; .)
- 1251     | "=="   (. Kind := zcCompEQ; .)
- 1252     )
- 1253     Unary<Op> RelExpr<Op,R>
- 1254           (. OutOp := MakeBinary(Kind, L,R);
- 1255              L := OutOp;
- 1256           .)
- 1257    }
- 1258  .
- 1259  /*------------------------------------------------------------------------*/
- 1260  RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind; .)
- 1261  = ShiftExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
- 1262    { ( "<"       (. Kind := zcCompLT; .)
- 1263      | ">"       (. Kind := zcCompGT; .)
- 1264      | "<="      (. Kind := zcCompLE; .)
- 1265      | ">="      (. Kind := zcCompGE; .)
- 1266       )
- 1267      Unary<Op> ShiftExpr<Op,R>
- 1268           (. OutOp := MakeBinary(Kind, L,R );
- 1269              L := OutOp;
- 1270           .)
- 1271    }
- 1272  .
+ 1159   | "for"
+ 1160      (. try
+ 1161           SymTab.PushScope;
+ 1162           CurrentFunction.PushScope;
+ 1163           ForInitOp :=nil; ForCondOp := nil; ForIncOp := nil; .)
+ 1164     "(" [ForInit<ForInitOp>] ";" [Expr<ForCondOp>] ";" [ForInc<ForIncOp>] ")" EmbeddedStatement<ForBodyOp>
+ 1165     (.
+ 1166           OutOp := MakeOp(zcForLoop,[ForInitOp,ForCondOp,ForIncOp,ForBodyOp]);
+ 1167         finally
+ 1168           SymTab.PopScope;
+ 1169           CurrentFunction.PopScope;
+ 1170         end;
+ 1171     .)
+ 1172  /* | "foreach" "(" Type ident "in" Expr<Op> ")" EmbeddedStatement<Op> */
+ 1173   | "break" ";"    (. OutOp := MakeOp(zcBreak); .)
+ 1174   | "continue" ";" (. OutOp := MakeOp(zcContinue); .)
+ 1175   | (. Op := nil; .) "return" [ Expr<Op> ] ";"
+ 1176      (.
+ 1177          if (Op=nil) then
+ 1178          begin
+ 1179            if CurrentFunction.ReturnType.Kind<>zctVoid then
+ 1180              SynError(202)
+ 1181            else
+ 1182              OutOp := MakeOp(zcReturn);
+ 1183          end else
+ 1184          begin
+ 1185            if CurrentFunction.ReturnType.Kind=zctVoid then
+ 1186              SynError(203)
+ 1187            else
+ 1188              OutOp := MakeOp(zcReturn,[ MakeCompatible(Op,CurrentFunction.ReturnType) ]);
+ 1189          end;
+ 1190          Inc(CurrentFunction.ReturnCount);
+ 1191      .)
+ 1192  .
+ 1193  /*------------------------------------------------------------------------*/
+ 1194  
+ 1195  Block<var OutOp : TZcOp>
+ 1196    (. var
+ 1197         Op : TZcOp;
+ 1198    .)
+ 1199  = (. Op := nil;
+ 1200       OutOp := MakeOp(zcBlock);
+ 1201    .)
+ 1202    "{" (. SymTab.PushScope;
+ 1203           CurrentFunction.PushScope;
+ 1204           try .)
+ 1205       {Statement<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+ 1206    "}" (.
+ 1207           finally
+ 1208             SymTab.PopScope;
+ 1209             CurrentFunction.PopScope;
+ 1210           end;
+ 1211        .)
+ 1212    .
+ 1213  
+ 1214  /*------------------------------------------------------------------------*/
+ 1215  StatementExpr<var OutOp : TZcOp>           (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
+ 1216  = (. Op1 :=nil; Op2 := nil; .)
+ 1217    Unary<Op1>
+ 1218    ( AssignOp<Kind> Expr<Op2>
+ 1219      (.
+ 1220        if Op2<>nil then
+ 1221          OutOp := MakeAssign(Kind,Op1,Op2);
+ 1222      .)
+ 1223    |                             (. OutOp := Op1; .)
+ 1224    )
+ 1225  .
+ 1226  
+ 1227  /*------------------------------------------------------------------------*/
+ 1228  AssignOp<var Kind : TZcAssignType>
+ 1229  = "="     (. Kind := atAssign; .)
+ 1230    | "+="  (. Kind := atPlusAssign; .)
+ 1231    | "-="  (. Kind := atMinusAssign; .)
+ 1232    | "*="  (. Kind := atMulAssign; .)
+ 1233    | "/="  (. Kind := atDivAssign; .)
+ 1234    | "|="  (. Kind := atOrAssign; .)
+ 1235    | "<<="  (. Kind := atShiftLeftAssign; .)
+ 1236    | ">>="  (. Kind := atShiftRightAssign; .)
+ 1237    | "&="  (. Kind := atAndAssign; .)
+ 1238  /*  | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" */
+ 1239  .
+ 1240  
+ 1241  /*------------------------------------------------------------------------*/
+ 1242  
+ 1243  SwitchSection<SwitchOp : TZcOpSwitch> (. var Op : TZcOp; .)
+ 1244  = (. Op := nil; .)
+ 1245    SwitchLabel<Op>   (. AddSwitchLabel(SwitchOp,Op); .)
+ 1246    {
+ 1247      SwitchLabel<Op> (. AddSwitchLabel(SwitchOp,Op); .)
+ 1248    }
+ 1249    Statement<Op>    (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+ 1250    {
+ 1251       Statement<Op> (. if Assigned(Op) then SwitchOp.StatementsOps.Last.Children.Add(Op); .)
+ 1252    }
+ 1253  .
+ 1254  
+ 1255  /*------------------------------------------------------------------------*/
+ 1256  
+ 1257  SwitchLabel<var OutOp : TZcOp>
+ 1258  = "case" Expr<OutOp> ":"
+ 1259  | "default" ":"
+ 1260  .
+ 1261  
+ 1262  /*------------------------------------------------------------------------*/
+ 1263  
+ 1264  ForInit<var OutOp : TZcOp>     (. var Op : TZcOp; .)
+ 1265  = (. Op:=nil; OutOp := MakeOp(zcBlock); .)
+ 1266  (
+ 1267  IF (. IsLocalVarDecl .) LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+ 1268  | (. Op:=nil; .) StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+ 1269    { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+ 1270  )
+ 1271  .  
+ 1272  
  1273  /*------------------------------------------------------------------------*/
- 1274  ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
- 1275  = AddExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
- 1276    { ("<<"  (. Kind := zcBinaryShiftL; .)
- 1277      | ">>" (. Kind := zcBinaryShiftR; .)
- 1278      )
- 1279      Unary<Op> AddExpr<Op,R>
- 1280      (. OutOp := MakeOp(Kind,[L,R]);
- 1281         L := OutOp; .)
- 1282    }
- 1283  .
- 1284  /*------------------------------------------------------------------------*/
- 1285  AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
- 1286  = MulExpr<InOp,OutOp>   (. L := OutOp; Kind := zcNop; .)
- 1287      {( "+"    (. Kind := zcPlus; .)
- 1288       | "-"    (. Kind := zcMinus; .)
- 1289       ) Unary<Op> MulExpr<Op,R>
- 1290           (. 
- 1291              if (L=nil) or (R=nil) then
- 1292                ZError('Invalid syntax');
- 1293              OutOp := MakeBinary(Kind,L,R);
- 1294              L := OutOp;
- 1295           .)
- 1296      }
- 1297  .
- 1298  /*------------------------------------------------------------------------*/
- 1299  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
- 1300  = (. OutOp := InOp; Kind := zcNop; .)
- 1301    { ("*"      (. Kind := zcMul; .)
- 1302      | "/"     (. Kind := zcDiv; .)
- 1303      | "%"     (. Kind := zcMod; .)
- 1304      ) Unary<Tmp>
- 1305           (. OutOp := MakeBinary(Kind,InOp,Tmp);
- 1306              InOp := OutOp;
- 1307           .)
- 1308      }
- 1309  .
- 1310  /*------------------------------------------------------------------------*/
- 1311  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
- 1312  =       (. LastOp := nil; Kind := zcNop; .)
- 1313    {
- 1314      (
- 1315        /* "+" | */
- 1316        "-"   (. Kind := zcNegate; .) |
- 1317        "++"  (. Kind := zcPreInc; .) |
- 1318        "--"  (. Kind := zcPreDec; .) |
- 1319        "!"   (. Kind := zcNot; .)    |
- 1320        "~"   (. Kind := zcBinaryNot; .)
- 1321        /* | "~" | "*" */
- 1322      )
- 1323      (.
- 1324         if Kind in [zcNot,zcBinaryNot] then
- 1325         begin
- 1326           Tmp := MakeOp(Kind);
- 1327           if LastOp<>nil then
- 1328             LastOp.Children.Add(Tmp);
- 1329           LastOp := Tmp;
- 1330         end else if Assigned(LastOp) then
- 1331           ZError('- ,-- and ++ cannot be combined with other unary ops');
- 1332      .)
- 1333    }
- 1334    Primary<Tmp>
- 1335      (.
- 1336         if Kind=zcNegate then
- 1337           OutOp := MakeBinary(zcMinus, TZcOpLiteral.Create(Tmp.GetDataType.Kind,0), Tmp)
- 1338         else if Kind in [zcNop,zcNot,zcBinaryNot] then
- 1339         begin
- 1340           if LastOp<>nil then
- 1341           begin
- 1342             LastOp.Children.Add(Tmp);
- 1343             OutOp := LastOp;
- 1344           end else
- 1345             OutOp := Tmp;
- 1346         end else
- 1347         begin
- 1348           OutOp := MakePrePostIncDec(Kind,Tmp);
- 1349         end;
- 1350      .)
- 1351  .
- 1352  
- 1353  
- 1354  
- 1355  /*------------------------------------------------------------------------*/
- 1356  InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
- 1357  (.
- 1358    var
- 1359      Op : TZcOp;
- 1360      Prop : TZProperty;
- 1361  .)
- 1362  = (. OutOp := nil; Op := nil; .)
- 1363    ident (.
- 1364      Prop := Ci.GetProperties.GetByName(LexString);
- 1365      if Prop=nil then
- 1366        ZError(LexString + ' is not a property of ' + Ci.ZClassName);
- 1367      if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
- 1368        ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
- 1369      OutOp := MakeOp(zcIdentifier,LexString);
- 1370    .)
- 1371    ":" Expr<Op>
- 1372    (. if Op=nil then
- 1373         ZError('Missing argument');
- 1374       Op := MakeCompatible(Op, PropTypeToZType(Prop.PropertyType));
- 1375       OutOp.Children.Add(Op);
- 1376    .)
- 1377  .
- 1378  
- 1379  
- 1380  /*------------------------------------------------------------------------*/
- 1381  ReinterpretCast<var OutOp : TZcOp>
- 1382  (.
- 1383  var
- 1384    Op : TZcOp;
- 1385    Typ : TZcDataType;
- 1386  .)
- 1387  = "reinterpret_cast" "<" SimpleType<Typ> ">"
- 1388    "(" Expr<Op> ")"
- 1389    (.
- 1390       OutOp := TZcOpReinterpretCast.Create(nil);
- 1391       OutOp.Children.Add(Op);
- 1392       (OutOp as TZcOpReinterpretCast).Typ := Typ;
- 1393    .)
- 1394  .
- 1395  
- 1396  /*------------------------------------------------------------------------*/
- 1397  InlineComponent<var OutOp : TZcOp>
- 1398  (. var Op : TZcOp;
- 1399       Ci : TZComponentInfo;
- 1400  .)
- 1401  =  (. OutOp := nil;
- 1402        IsInInvokeArg := True;
- 1403     .)
- 1404     "@" ident (.
- 1405         Ci := ComponentManager.GetInfoFromName(LexString);
- 1406         OutOp := TZcOpInvokeComponent.Create(nil);
- 1407         OutOp.Id := LexString;
- 1408      .)
- 1409      "("
- 1410          [InvokeArgument<Op,Ci>       (. OutOp.Children.Add(Op); .)
- 1411            {"," InvokeArgument<Op,Ci> (. OutOp.Children.Add(Op); .)
- 1412            }
- 1413          ]
- 1414      ")" (. IsInInvokeArg := False; .)
- 1415  .
- 1416  
- 1417  /*------------------------------------------------------------------------*/
- 1418  Primary<var OutOp : TZcOp>
- 1419  (.
- 1420  var Op,ConsCall : TZcOp; S : string; V : double;
- 1421    Typ : TZcDataType;
- 1422    Cls : TZcOpClass;
- 1423    Loc : TZcOpLocalVar;
- 1424  .)
- 1425  =            (. OutOp := nil; .)
- 1426    (
- 1427      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
- 1428    | InlineComponent<OutOp>
- 1429    | Literal<Typ>  (.
- 1430          if Typ.Kind in [zctString,zctNull] then
- 1431            OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
- 1432          else
- 1433          begin
- 1434            try
- 1435              S := LexString;
- 1436              V := ZcStrToFloat(S);
- 1437              OutOp := TZcOpLiteral.Create(Typ.Kind,V)
- 1438            except on EConvertError do
- 1439              SynError(200);
- 1440            end;
- 1441          end;
- 1442       .)
- 1443    | "(" Expr<OutOp> ")"
- 1444  /*  | ( "bool"   | "byte"   | "char" | "decimal" | "double"
- 1445      | "float"  | "int"    | "long" | "object"  | "sbyte"
- 1446      | "short"  | "string" | "uint" | "ulong"   | "ushort"
- 1447      ) "." ident */
- 1448    | ReinterpretCast<OutOp>
- 1449    | "new" Type<Typ>
- 1450      ( /*--- object creation expression */
- 1451        (. if Typ.Kind<>zctClass then
- 1452             ZError('new can only be used with Class-types');
- 1453           OutOp := MakeOp(zcNew,LexString);
- 1454        .)
- 1455        "(" [Argument<Op> (. OutOp.Children.Add(Op); .)
- 1456           {"," Argument<Op> (. OutOp.Children.Add(Op); .) }] ")"
+ 1274  
+ 1275  ForInc<var OutOp : TZcOp>      (. var Op : TZcOp; .)
+ 1276  = (. Op:=nil;
+ 1277       OutOp := MakeOp(zcBlock);
+ 1278    .) 
+ 1279  (
+ 1280  StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) 
+ 1281  { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
+ 1282  )
+ 1283  . 
+ 1284  
+ 1285  
+ 1286  /*------------------------------------------------------------------------*
+ 1287   *----------------------------- Expressions ------------------------------*
+ 1288   *------------------------------------------------------------------------*/
+ 1289  
+ 1290  
+ 1291  Expr<var OutOp : TZcOp>   (. var Op1,Op2 : TZcOp; Kind : TZcAssignType; .)
+ 1292  = (. Op1 :=nil; Op2 := nil; .)
+ 1293    Unary<Op1>
+ 1294    ( OrExpr<Op1,OutOp>
+ 1295        ["?" Expr<Op1> ":" Expr<Op2>
+ 1296           (. if (OutOp=nil) or (Op1=nil) or (Op2=nil) then
+ 1297                SynError(205)
+ 1298              else
+ 1299                OutOp := MakeOp(zcConditional,[OutOp,Op1, MakeCompatible(Op2,Op1.GetDataType) ]);
+ 1300           .)
+ 1301        ]
+ 1302    | AssignOp<Kind> Expr<Op2>    (. OutOp := MakeAssign(Kind,Op1, Op2); .)
+ 1303    )
+ 1304  .
+ 1305  /*------------------------------------------------------------------------*/
+ 1306  OrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+ 1307  = AndExpr<InOp,OutOp>   (. L := OutOp; .)
+ 1308      {"||" Unary<Op> AndExpr<Op,R>
+ 1309        (. OutOp := MakeOp(zcOr,[L,R]);
+ 1310           L := OutOp; .)
+ 1311      }
+ 1312  .
+ 1313  
+ 1314  
+ 1315  /*------------------------------------------------------------------------*/
+ 1316  AndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+ 1317  = BitOrExpr<InOp,OutOp>  (. L := OutOp; .)
+ 1318      {"&&" Unary<Op> BitOrExpr<Op,R>
+ 1319        (. OutOp := MakeOp(zcAnd,[L,R]);
+ 1320           L := OutOp; .)
+ 1321      }
+ 1322  .
+ 1323  /*------------------------------------------------------------------------*/
+ 1324  BitOrExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+ 1325  = BitXorExpr<InOp,OutOp> (. L := OutOp; .)
+ 1326    {"|" Unary<Op> BitXorExpr<Op,R>
+ 1327      (. OutOp := MakeOp(zcBinaryOr,[L,R]);
+ 1328         L := OutOp; .)
+ 1329    }
+ 1330  .
+ 1331  
+ 1332  /*------------------------------------------------------------------------*/
+ 1333  BitXorExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+ 1334  = BitAndExpr<InOp,OutOp> (. L := OutOp; .)
+ 1335    {"^" Unary<Op> BitAndExpr<Op,R>
+ 1336      (. OutOp := MakeOp(zcBinaryXor,[L,R]);
+ 1337         L := OutOp; .)
+ 1338    }
+ 1339  .
+ 1340  
+ 1341  /*------------------------------------------------------------------------*/
+ 1342  BitAndExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; .)
+ 1343  = EqlExpr<InOp,OutOp> (. L := OutOp; .)
+ 1344    {"&" Unary<Op> EqlExpr<Op,R>
+ 1345      (. OutOp := MakeOp(zcBinaryAnd,[L,R]);
+ 1346         L := OutOp; .)
+ 1347    }
+ 1348  .
+ 1349  
+ 1350  /*------------------------------------------------------------------------*/
+ 1351  EqlExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
+ 1352  = RelExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
+ 1353    {( "!="   (. Kind := zcCompNE; .)
+ 1354     | "=="   (. Kind := zcCompEQ; .)
+ 1355     )
+ 1356     Unary<Op> RelExpr<Op,R>
+ 1357           (. OutOp := MakeBinary(Kind, L,R);
+ 1358              L := OutOp;
+ 1359           .)
+ 1360    }
+ 1361  .
+ 1362  /*------------------------------------------------------------------------*/
+ 1363  RelExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind; .)
+ 1364  = ShiftExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
+ 1365    { ( "<"       (. Kind := zcCompLT; .)
+ 1366      | ">"       (. Kind := zcCompGT; .)
+ 1367      | "<="      (. Kind := zcCompLE; .)
+ 1368      | ">="      (. Kind := zcCompGE; .)
+ 1369       )
+ 1370      Unary<Op> ShiftExpr<Op,R>
+ 1371           (. OutOp := MakeBinary(Kind, L,R );
+ 1372              L := OutOp;
+ 1373           .)
+ 1374    }
+ 1375  .
+ 1376  /*------------------------------------------------------------------------*/
+ 1377  ShiftExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp; Kind : TZcOpKind; .)
+ 1378  = AddExpr<InOp,OutOp> (. L := OutOp; Kind := zcNop; .)
+ 1379    { ("<<"  (. Kind := zcBinaryShiftL; .)
+ 1380      | ">>" (. Kind := zcBinaryShiftR; .)
+ 1381      )
+ 1382      Unary<Op> AddExpr<Op,R>
+ 1383      (. OutOp := MakeOp(Kind,[L,R]);
+ 1384         L := OutOp; .)
+ 1385    }
+ 1386  .
+ 1387  /*------------------------------------------------------------------------*/
+ 1388  AddExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Op,L,R : TZcOp;  Kind : TZcOpKind;.)
+ 1389  = MulExpr<InOp,OutOp>   (. L := OutOp; Kind := zcNop; .)
+ 1390      {( "+"    (. Kind := zcPlus; .)
+ 1391       | "-"    (. Kind := zcMinus; .)
+ 1392       ) Unary<Op> MulExpr<Op,R>
+ 1393           (. 
+ 1394              if (L=nil) or (R=nil) then
+ 1395                ZError('Invalid syntax');
+ 1396              OutOp := MakeBinary(Kind,L,R);
+ 1397              L := OutOp;
+ 1398           .)
+ 1399      }
+ 1400  .
+ 1401  /*------------------------------------------------------------------------*/
+ 1402  MulExpr<InOp : TZcOp; var OutOp : TZcOp>         (. var Tmp : TZcOp; Kind : TZcOpKind; .)
+ 1403  = (. OutOp := InOp; Kind := zcNop; .)
+ 1404    { ("*"      (. Kind := zcMul; .)
+ 1405      | "/"     (. Kind := zcDiv; .)
+ 1406      | "%"     (. Kind := zcMod; .)
+ 1407      ) Unary<Tmp>
+ 1408           (. OutOp := MakeBinary(Kind,InOp,Tmp);
+ 1409              InOp := OutOp;
+ 1410           .)
+ 1411      }
+ 1412  .
+ 1413  /*------------------------------------------------------------------------*/
+ 1414  Unary<var OutOp : TZcOp>         (. var LastOp,Tmp : TZcOp; Kind : TZcOpKind; .)
+ 1415  =       (. LastOp := nil; Kind := zcNop; .)
+ 1416    {
+ 1417      (
+ 1418        /* "+" | */
+ 1419        "-"   (. Kind := zcNegate; .) |
+ 1420        "++"  (. Kind := zcPreInc; .) |
+ 1421        "--"  (. Kind := zcPreDec; .) |
+ 1422        "!"   (. Kind := zcNot; .)    |
+ 1423        "~"   (. Kind := zcBinaryNot; .)
+ 1424        /* | "~" | "*" */
+ 1425      )
+ 1426      (.
+ 1427         if Kind in [zcNot,zcBinaryNot] then
+ 1428         begin
+ 1429           Tmp := MakeOp(Kind);
+ 1430           if LastOp<>nil then
+ 1431             LastOp.Children.Add(Tmp);
+ 1432           LastOp := Tmp;
+ 1433         end else if Assigned(LastOp) then
+ 1434           ZError('- ,-- and ++ cannot be combined with other unary ops');
+ 1435      .)
+ 1436    }
+ 1437    Primary<Tmp>
+ 1438      (.
+ 1439         if Kind=zcNegate then
+ 1440           OutOp := MakeBinary(zcMinus, TZcOpLiteral.Create(Tmp.GetDataType.Kind,0), Tmp)
+ 1441         else if Kind in [zcNop,zcNot,zcBinaryNot] then
+ 1442         begin
+ 1443           if LastOp<>nil then
+ 1444           begin
+ 1445             LastOp.Children.Add(Tmp);
+ 1446             OutOp := LastOp;
+ 1447           end else
+ 1448             OutOp := Tmp;
+ 1449         end else
+ 1450         begin
+ 1451           OutOp := MakePrePostIncDec(Kind,Tmp);
+ 1452         end;
+ 1453      .)
+ 1454  .
+ 1455  
+ 1456  
  1457  
- 1458        (.
- 1459           //Look for constructor
- 1460           Cls := Typ.TheClass as TZcOpClass;
- 1461           S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
- 1462           for Op in Cls.Methods do
- 1463           begin
- 1464             if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
- 1465             begin
- 1466               //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
- 1467               Loc := MakeTemp(zctClass);
- 1468               Loc.Typ.TheClass := Cls;
- 1469               SymTab.Add(Loc.Id,Loc);
- 1470               CurrentFunction.AddLocal(Loc);
- 1471  
- 1472               ConsCall := MakeOp(zcMethodCall);
- 1473               ConsCall.Id := Cls.Id;
- 1474               ConsCall.Ref := Cls;
- 1475               ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
- 1476               ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
- 1477  
- 1478               OutOp := MakeOp(zcInlineBlock);
- 1479               OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
- 1480               OutOp.Children.Add( ConsCall );
- 1481               OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+ 1458  /*------------------------------------------------------------------------*/
+ 1459  InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
+ 1460  (.
+ 1461    var
+ 1462      Op : TZcOp;
+ 1463      Prop : TZProperty;
+ 1464  .)
+ 1465  = (. OutOp := nil; Op := nil; .)
+ 1466    ident (.
+ 1467      Prop := Ci.GetProperties.GetByName(LexString);
+ 1468      if Prop=nil then
+ 1469        ZError(LexString + ' is not a property of ' + Ci.ZClassName);
+ 1470      if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
+ 1471        ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
+ 1472      OutOp := MakeOp(zcIdentifier,LexString);
+ 1473    .)
+ 1474    ":" Expr<Op>
+ 1475    (. if Op=nil then
+ 1476         ZError('Missing argument');
+ 1477       Op := MakeCompatible(Op, PropTypeToZType(Prop.PropertyType));
+ 1478       OutOp.Children.Add(Op);
+ 1479    .)
+ 1480  .
+ 1481  
  1482  
- 1483               if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
- 1484                 ZError(S);
- 1485               Break;
- 1486             end;
- 1487           end;
- 1488        .)
- 1489      )
- 1490    )
- 1491  
- 1492    {
- 1493    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
- 1494    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
- 1495  
- 1496  /*  | "->" ident */
- 1497  
- 1498    | "." (. IsInIdent := True; .) ident (.
- 1499  
- 1500        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
- 1501          ZError('Invalid use of "."');
- 1502  
- 1503        Op := MakeOp(zcSelect,LexString);
- 1504        Op.Children.Add(OutOp);
- 1505  
- 1506        OutOp := CheckPrimary(Op);
- 1507  
- 1508        IsInIdent := False;
- 1509  
- 1510      .)
- 1511  
- 1512    | "(" (.
- 1513             if (OutOp=nil) then
- 1514               ZError('Unexpected "("');
- 1515             Cls := nil;
- 1516             if (OutOp.Kind<>zcIdentifier) then
- 1517             begin
- 1518               Typ := OutOp.Children.First.GetDataType;
- 1519               if Typ.Kind=zctClass then
- 1520               begin
- 1521                 Cls := Typ.TheClass as TZcOpClass;
- 1522                 OutOp.Ref := Cls;
- 1523               end
- 1524               else
- 1525                 ZError('Unexpected "("');
- 1526             end;
- 1527             if Assigned(Cls) then
- 1528               OutOp.Kind := zcMethodCall
- 1529             else
- 1530               OutOp.Kind := zcFuncCall;
- 1531           .)
- 1532          [Argument<Op> (. OutOp.Children.Add(Op); .)
- 1533            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
- 1534            }
- 1535          ]
- 1536          (.
- 1537             if not VerifyFunctionCall(OutOp,S,CurrentFunction,Cls) then
- 1538               ZError(S);
- 1539          .)
- 1540      ")"
- 1541  
- 1542    | "[" (.
- 1543             if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
- 1544               ZError('Unexpected "["');
- 1545             Op := MakeArrayAccess(OutOp);
- 1546             OutOp := Op;
- 1547           .)
- 1548  
- 1549          Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
- 1550            {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
- 1551          "]"
- 1552    }
- 1553  .
- 1554  /*------------------------------------------------------------------------*/
- 1555  Literal<var Typ : TZcDataType>
- 1556  = intCon (. Typ.Kind :=zctInt; .) |
- 1557    realCon (. Typ.Kind := zctFloat; .) |
- 1558    stringCon (. Typ.Kind := zctString; .)
- 1559    | "null" (. Typ.Kind := zctNull; .)
- 1560    /* | "true" | "false"  */
- 1561  .
- 1562  
- 1563  END Zc.
+ 1483  /*------------------------------------------------------------------------*/
+ 1484  ReinterpretCast<var OutOp : TZcOp>
+ 1485  (.
+ 1486  var
+ 1487    Op : TZcOp;
+ 1488    Typ : TZcDataType;
+ 1489  .)
+ 1490  = "reinterpret_cast" "<" SimpleType<Typ> ">"
+ 1491    "(" Expr<Op> ")"
+ 1492    (.
+ 1493       OutOp := TZcOpReinterpretCast.Create(nil);
+ 1494       OutOp.Children.Add(Op);
+ 1495       (OutOp as TZcOpReinterpretCast).Typ := Typ;
+ 1496    .)
+ 1497  .
+ 1498  
+ 1499  /*------------------------------------------------------------------------*/
+ 1500  InlineComponent<var OutOp : TZcOp>
+ 1501  (. var Op : TZcOp;
+ 1502       Ci : TZComponentInfo;
+ 1503  .)
+ 1504  =  (. OutOp := nil;
+ 1505        IsInInvokeArg := True;
+ 1506     .)
+ 1507     "@" ident (.
+ 1508         Ci := ComponentManager.GetInfoFromName(LexString);
+ 1509         OutOp := TZcOpInvokeComponent.Create(nil);
+ 1510         OutOp.Id := LexString;
+ 1511      .)
+ 1512      "("
+ 1513          [InvokeArgument<Op,Ci>       (. OutOp.Children.Add(Op); .)
+ 1514            {"," InvokeArgument<Op,Ci> (. OutOp.Children.Add(Op); .)
+ 1515            }
+ 1516          ]
+ 1517      ")" (. IsInInvokeArg := False; .)
+ 1518  .
+ 1519  
+ 1520  /*------------------------------------------------------------------------*/
+ 1521  Primary<var OutOp : TZcOp>
+ 1522  (.
+ 1523  var Op,ConsCall : TZcOp; S : string; V : double;
+ 1524    Typ : TZcDataType;
+ 1525    Cls : TZcOpClass;
+ 1526    Loc : TZcOpLocalVar;
+ 1527  .)
+ 1528  =            (. OutOp := nil; .)
+ 1529    (
+ 1530      ident    (. OutOp := CheckPrimary( MakeIdentifier(LexString) );  .)
+ 1531    | InlineComponent<OutOp>
+ 1532    | Literal<Typ>  (.
+ 1533          if Typ.Kind in [zctString,zctNull] then
+ 1534            OutOp := TZcOpLiteral.Create(Typ.Kind,LexString)
+ 1535          else
+ 1536          begin
+ 1537            try
+ 1538              S := LexString;
+ 1539              V := ZcStrToFloat(S);
+ 1540              OutOp := TZcOpLiteral.Create(Typ.Kind,V)
+ 1541            except on EConvertError do
+ 1542              SynError(200);
+ 1543            end;
+ 1544          end;
+ 1545       .)
+ 1546    | "(" Expr<OutOp> ")"
+ 1547  /*  | ( "bool"   | "byte"   | "char" | "decimal" | "double"
+ 1548      | "float"  | "int"    | "long" | "object"  | "sbyte"
+ 1549      | "short"  | "string" | "uint" | "ulong"   | "ushort"
+ 1550      ) "." ident */
+ 1551    | ReinterpretCast<OutOp>
+ 1552    | "new" Type<Typ>
+ 1553      ( /*--- object creation expression */
+ 1554        (. if Typ.Kind<>zctClass then
+ 1555             ZError('new can only be used with Class-types');
+ 1556           OutOp := MakeOp(zcNew,LexString);
+ 1557        .)
+ 1558        "(" [Argument<Op> (. OutOp.Children.Add(Op); .)
+ 1559           {"," Argument<Op> (. OutOp.Children.Add(Op); .) }] ")"
+ 1560  
+ 1561        (.
+ 1562           //Look for constructor
+ 1563           Cls := Typ.TheClass as TZcOpClass;
+ 1564           S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
+ 1565           for Op in Cls.Methods do
+ 1566           begin
+ 1567             if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
+ 1568             begin
+ 1569               //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+ 1570               Loc := MakeTemp(zctClass);
+ 1571               Loc.Typ.TheClass := Cls;
+ 1572               SymTab.Add(Loc.Id,Loc);
+ 1573               CurrentFunction.AddLocal(Loc);
+ 1574  
+ 1575               ConsCall := MakeOp(zcMethodCall);
+ 1576               ConsCall.Id := Cls.Id;
+ 1577               ConsCall.Ref := Cls;
+ 1578               ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+ 1579               ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+ 1580  
+ 1581               OutOp := MakeOp(zcInlineBlock);
+ 1582               OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+ 1583               OutOp.Children.Add( ConsCall );
+ 1584               OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+ 1585  
+ 1586               if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+ 1587                 ZError(S);
+ 1588               Break;
+ 1589             end;
+ 1590           end;
+ 1591        .)
+ 1592      )
+ 1593    )
+ 1594  
+ 1595    {
+ 1596    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
+ 1597    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+ 1598  
+ 1599  /*  | "->" ident */
+ 1600  
+ 1601    | "." (. IsInIdent := True; .) ident (.
+ 1602  
+ 1603        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
+ 1604          ZError('Invalid use of "."');
+ 1605  
+ 1606        Op := MakeOp(zcSelect,LexString);
+ 1607        Op.Children.Add(OutOp);
+ 1608  
+ 1609        OutOp := CheckPrimary(Op);
+ 1610  
+ 1611        IsInIdent := False;
+ 1612  
+ 1613      .)
+ 1614  
+ 1615    | "(" (.
+ 1616             if (OutOp=nil) then
+ 1617               ZError('Unexpected "("');
+ 1618             Cls := nil;
+ 1619             if (OutOp.Kind<>zcIdentifier) then
+ 1620             begin
+ 1621               Typ := OutOp.Children.First.GetDataType;
+ 1622               if Typ.Kind=zctClass then
+ 1623               begin
+ 1624                 Cls := Typ.TheClass as TZcOpClass;
+ 1625                 OutOp.Ref := Cls;
+ 1626               end
+ 1627               else
+ 1628                 ZError('Unexpected "("');
+ 1629             end;
+ 1630             if Assigned(Cls) then
+ 1631               OutOp.Kind := zcMethodCall
+ 1632             else
+ 1633               OutOp.Kind := zcFuncCall;
+ 1634           .)
+ 1635          [Argument<Op> (. OutOp.Children.Add(Op); .)
+ 1636            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+ 1637            }
+ 1638          ]
+ 1639          (.
+ 1640             if not VerifyFunctionCall(OutOp,S,CurrentFunction,Cls) then
+ 1641               ZError(S);
+ 1642          .)
+ 1643      ")"
+ 1644  
+ 1645    | "[" (.
+ 1646             if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
+ 1647               ZError('Unexpected "["');
+ 1648             Op := MakeArrayAccess(OutOp);
+ 1649             OutOp := Op;
+ 1650           .)
+ 1651  
+ 1652          Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
+ 1653            {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
+ 1654          "]"
+ 1655    }
+ 1656  .
+ 1657  /*------------------------------------------------------------------------*/
+ 1658  Literal<var Typ : TZcDataType>
+ 1659  = intCon (. Typ.Kind :=zctInt; .) |
+ 1660    realCon (. Typ.Kind := zctFloat; .) |
+ 1661    stringCon (. Typ.Kind := zctString; .)
+ 1662    | "null" (. Typ.Kind := zctNull; .)
+ 1663    /* | "true" | "false"  */
+ 1664  .
+ 1665  
+ 1666  END Zc.
 
 
 

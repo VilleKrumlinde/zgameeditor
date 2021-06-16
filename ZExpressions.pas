@@ -604,6 +604,8 @@ type
   end;
 
   TExpVirtualFuncCall = class(TExpBase)
+  strict private
+    CachedTarget : pointer;
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -3536,9 +3538,7 @@ procedure TExpVirtualFuncCall.Execute(Env: PExecutionEnvironment);
     Pc := PIntegerArray(C.Vmt.Data)^[ Self.VmtIndex ];
     if Pc<>-1 then
     begin
-      Env.StackPushPointer(Env.gCurrentPC);
-      Env.gCurrentPC := C.DefinedInLib.Source.Code.GetPtrToItem(Pc);
-      Dec(Env.gCurrentPc);
+      Self.CachedTarget := C.DefinedInLib.Source.Code.GetPtrToItem(Pc-1);
       Exit;
     end;
     {$ifdef debug}
@@ -3551,7 +3551,10 @@ var
   P : TUserClassInstance;
 begin
   Env.StackPopToPointer(P);
-  InCheck(P.TheClass);
+  Env.StackPushPointer(Env.gCurrentPC);
+  if Self.CachedTarget=nil then
+    InCheck(P.TheClass);
+  Env.gCurrentPC := Self.CachedTarget;
 end;
 
 initialization

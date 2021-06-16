@@ -622,6 +622,7 @@ var
            SymTab.PushScope;
 
            if Assigned(Cls.BaseClass) then
+             //Make sure any inherited fields also can be accessed without the "this" prefix
              AddBaseClassToSymTab(Cls.BaseClass);
       .)
       {
@@ -644,6 +645,7 @@ var
   BaseTyp : TZcDataType;
   Name : string;
   Op : TZcOp;
+  Size : integer;
 .)
 =
   "class" ident (. Name := LexString; .)
@@ -661,17 +663,32 @@ var
         Cls.BaseClass := BaseTyp.TheClass as TZcOpClass;
         Cls.RuntimeClass.SizeInBytes := Cls.BaseClass.RuntimeClass.SizeInBytes;
         Cls.RuntimeClass.BaseClass := Cls.BaseClass.RuntimeClass;
+
+        //Copy VMT from base
         Cls.RuntimeClass.Vmt.Size := Cls.BaseClass.RuntimeClass.Vmt.Size;
         if Cls.RuntimeClass.Vmt.Size>0 then
         begin
           GetMem(Cls.RuntimeClass.Vmt.Data,Cls.RuntimeClass.Vmt.Size);
+          //fill with -1 to indicate method is not overridden
           FillChar(Cls.RuntimeClass.Vmt.Data^,Cls.RuntimeClass.Vmt.Size,$ff);
         end;
+
+        //Copy managed list from base
+        Size := Cls.BaseClass.RuntimeClass.ManagedFields.Size;
+        if Size<>0 then
+        begin
+          Cls.RuntimeClass.ManagedFields.Size := Size;
+          GetMem(Cls.RuntimeClass.ManagedFields.Data,Size);
+          Move(Cls.BaseClass.RuntimeClass.ManagedFields.Data^,Cls.RuntimeClass.ManagedFields.Data^,Size);
+        end;
+
         //if baseclass has initializer, then inject call to "$baseclass.init" in childclass initializer.
         if Cls.BaseClass.Initializer.Statements.Count>0 then
         begin
-          Op := MakeOp(zcFuncCall,Cls.BaseClass.Initializer.Id);
+          Op := MakeOp(zcMethodCall,'$init');
+          Op.Ref := Cls.BaseClass;
           Op.Children.Add( MakeOp(zcIdentifier,'this') );
+          Op.Children.Last.Ref := Cls.Initializer.Arguments.First;
           Cls.Initializer.Statements.Add(Op);
         end;
       end;
@@ -683,14 +700,6 @@ var
     (.
       ZFunctions.Add(Cls);
       CompilerContext.CurrentClass := nil;
-
-      if Cls.Initializer.Statements.Count>0 then
-      begin
-        Cls.Initializer.MangledName := '$' + Cls.Id + '.init';
-        SymTab.AddPrevious(Cls.Initializer.MangledName,Cls.Initializer);
-        CompilerContext.FunctionCleanUps.Extract(Cls.Initializer);
-        GlobalNames.Add(Cls.Initializer);
-      end;
     .)
 /*|
   ( "struct" ident [Base] StructBody  [";"]

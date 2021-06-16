@@ -378,10 +378,17 @@ var
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
   end;
 
+  procedure DoMethod;
+  begin
+    Result := ((Ref as TZcOpClass).FindMethod( MangleFunc(Self.Id,Self.Children.Count) )).ReturnType;
+  end;
+
 begin
   FillChar(Result,SizeOf(Result),0);
   Result.Kind := zctVoid;
-  if (Ref is TZcOp) and (Kind<>zcSelect) then
+  if Kind=zcMethodCall then
+    DoMethod
+  else if (Ref is TZcOp) and (Kind<>zcSelect) then
   begin
     //Local vars, func calls
     Result := (Ref as TZcOp).GetDataType;
@@ -1181,7 +1188,7 @@ begin
     end;
   end;
 
-  if (WantedType.Kind=zctClass) and (ExistingType.Kind=zctClass) and (WantedType.TheClass<>ExistingType.TheClass) then
+  if (WantedType.Kind=zctClass) and (ExistingType.Kind=zctClass) and (not TZcOpClass(ExistingType.TheClass).InheritsFrom(TZcOpClass(WantedType.TheClass))) then
     raise ECodeGenError.Create('Cannot convert between different classes: ' + Op.ToString);
 
   if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
@@ -1714,15 +1721,7 @@ begin
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
     O := CompilerContext.SymTab.Lookup(MangledName);
     if O=nil then
-    begin
-      O := nil;
-      for FOp in Cls.Methods do
-        if SameText(FOp.Id,Op.Id) then
-        begin
-          O := FOp;
-          Break;
-        end;
-    end;
+      O := Cls.FindMethod(MangledName);
     if Assigned(O) and (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
       (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf)) then
     begin
@@ -2339,7 +2338,8 @@ begin
 
   Initializer := TZcOpFunctionUserDefined.Create( nil );
   Initializer.ReturnType.Kind := zctVoid;
-  Initializer.Id := '#init#';
+  Initializer.Id := '$init';
+  Initializer.MangledName := MangleFunc(Initializer.Id,1);
 
   //Add implicit "this" argument to initializer function
   Arg := TZcOpArgumentVar.Create(nil);

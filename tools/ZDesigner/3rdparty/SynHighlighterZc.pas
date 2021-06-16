@@ -186,15 +186,15 @@ uses
 
 const
   // as this language is case-insensitive keywords *must* be in lowercase
-  KeyWords: array[0..18] of UnicodeString = (
+  KeyWords: array[0..20] of UnicodeString = (
     'break', 'case', 'class', 'const', 'continue', 'else', 'float', 'for', 'if',
-    'inline', 'int', 'model', 'new', 'private', 'return', 'string', 'switch',
-    'void', 'while'
+    'inline', 'int', 'model', 'new', 'override', 'private', 'return', 'string',
+    'switch', 'virtual', 'void', 'while'
   );
 
   KeyIndices: array[0..22] of Integer = (
-    14, 6, 11, 0, 12, 2, -1, -1, -1, 7, 4, 1, 10, 18, 15, 13, -1, 9, 5, 3, 17,
-    16, 8
+    4, -1, 17, 3, 15, 16, 13, 12, -1, 8, 19, 2, 9, 6, 11, 14, 10, 0, 18, 1, 7,
+    20, 5
   );
 
 {$Q-}
@@ -203,7 +203,7 @@ begin
   Result := 0;
   while IsIdentChar(Str^) do
   begin
-    Result := Result * 627 + Ord(Str^) * 75;
+    Result := Result * 932 + Ord(Str^) * 885;
     inc(Str);
   end;
   Result := Result mod 23;

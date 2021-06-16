@@ -1628,6 +1628,8 @@ begin
         O := Func;
         Break;
       end;
+    if (O=nil) and SameText(MangledName,Cls.Initializer.MangledName) then
+      O := Cls.Initializer;
   end;
 
   if Assigned(O) and (O is TZcOpFunctionUserDefined) then
