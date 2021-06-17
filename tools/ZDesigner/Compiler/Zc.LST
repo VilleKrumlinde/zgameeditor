@@ -1567,109 +1567,107 @@ Listing
  1561        (.
  1562           //Look for constructor
  1563           Cls := Typ.TheClass as TZcOpClass;
- 1564           S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
- 1565           for Op in Cls.Methods do
- 1566           begin
- 1567             if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
- 1568             begin
- 1569               //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
- 1570               Loc := MakeTemp(zctClass);
- 1571               Loc.Typ.TheClass := Cls;
- 1572               SymTab.Add(Loc.Id,Loc);
- 1573               CurrentFunction.AddLocal(Loc);
- 1574  
- 1575               ConsCall := MakeOp(zcMethodCall);
- 1576               ConsCall.Id := Cls.Id;
- 1577               ConsCall.Ref := Cls;
- 1578               ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
- 1579               ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
- 1580  
- 1581               OutOp := MakeOp(zcInlineBlock);
- 1582               OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
- 1583               OutOp.Children.Add( ConsCall );
- 1584               OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
- 1585  
- 1586               if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
- 1587                 ZError(S);
- 1588               Break;
- 1589             end;
- 1590           end;
- 1591        .)
- 1592      )
- 1593    )
- 1594  
- 1595    {
- 1596    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
- 1597    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+ 1564           Op := Cls.Methods.FindMethod( MangleFunc(OutOp.Id,OutOp.Children.Count+1) );
+ 1565  
+ 1566           if Assigned(Op) then
+ 1567           begin
+ 1568             //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+ 1569             Loc := MakeTemp(zctClass);
+ 1570             Loc.Typ.TheClass := Cls;
+ 1571             SymTab.Add(Loc.Id,Loc);
+ 1572             CurrentFunction.AddLocal(Loc);
+ 1573  
+ 1574             ConsCall := MakeOp(zcMethodCall);
+ 1575             ConsCall.Id := Cls.Id;
+ 1576             ConsCall.Ref := Cls;
+ 1577             ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+ 1578             ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+ 1579  
+ 1580             OutOp := MakeOp(zcInlineBlock);
+ 1581             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+ 1582             OutOp.Children.Add( ConsCall );
+ 1583             OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+ 1584  
+ 1585             if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+ 1586               ZError(S);
+ 1587           end else if OutOp.Children.Count>0 then
+ 1588             ZError('no matching constructor found: ' + OutOp.Id);
+ 1589        .)
+ 1590      )
+ 1591    )
+ 1592  
+ 1593    {
+ 1594    "++" (. OutOp := MakePrePostIncDec(zcPostInc,OutOp); .)
+ 1595    | "--" (. OutOp := MakePrePostIncDec(zcPostDec,OutOp); .)
+ 1596  
+ 1597  /*  | "->" ident */
  1598  
- 1599  /*  | "->" ident */
+ 1599    | "." (. IsInIdent := True; .) ident (.
  1600  
- 1601    | "." (. IsInIdent := True; .) ident (.
- 1602  
- 1603        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
- 1604          ZError('Invalid use of "."');
- 1605  
- 1606        Op := MakeOp(zcSelect,LexString);
- 1607        Op.Children.Add(OutOp);
+ 1601        if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
+ 1602          ZError('Invalid use of "."');
+ 1603  
+ 1604        Op := MakeOp(zcSelect,LexString);
+ 1605        Op.Children.Add(OutOp);
+ 1606  
+ 1607        OutOp := CheckPrimary(Op);
  1608  
- 1609        OutOp := CheckPrimary(Op);
+ 1609        IsInIdent := False;
  1610  
- 1611        IsInIdent := False;
+ 1611      .)
  1612  
- 1613      .)
- 1614  
- 1615    | "(" (.
- 1616             if (OutOp=nil) then
- 1617               ZError('Unexpected "("');
- 1618             Cls := nil;
- 1619             if (OutOp.Kind<>zcIdentifier) then
- 1620             begin
- 1621               Typ := OutOp.Children.First.GetDataType;
- 1622               if Typ.Kind=zctClass then
- 1623               begin
- 1624                 Cls := Typ.TheClass as TZcOpClass;
- 1625                 OutOp.Ref := Cls;
- 1626               end
- 1627               else
- 1628                 ZError('Unexpected "("');
- 1629             end;
- 1630             if Assigned(Cls) then
- 1631               OutOp.Kind := zcMethodCall
- 1632             else
- 1633               OutOp.Kind := zcFuncCall;
- 1634           .)
- 1635          [Argument<Op> (. OutOp.Children.Add(Op); .)
- 1636            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
- 1637            }
- 1638          ]
- 1639          (.
- 1640             if not VerifyFunctionCall(OutOp,S,CurrentFunction,Cls) then
- 1641               ZError(S);
- 1642          .)
- 1643      ")"
- 1644  
- 1645    | "[" (.
- 1646             if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
- 1647               ZError('Unexpected "["');
- 1648             Op := MakeArrayAccess(OutOp);
- 1649             OutOp := Op;
- 1650           .)
- 1651  
- 1652          Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
- 1653            {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
- 1654          "]"
- 1655    }
- 1656  .
- 1657  /*------------------------------------------------------------------------*/
- 1658  Literal<var Typ : TZcDataType>
- 1659  = intCon (. Typ.Kind :=zctInt; .) |
- 1660    realCon (. Typ.Kind := zctFloat; .) |
- 1661    stringCon (. Typ.Kind := zctString; .)
- 1662    | "null" (. Typ.Kind := zctNull; .)
- 1663    /* | "true" | "false"  */
- 1664  .
- 1665  
- 1666  END Zc.
+ 1613    | "(" (.
+ 1614             if (OutOp=nil) then
+ 1615               ZError('Unexpected "("');
+ 1616             Cls := nil;
+ 1617             if (OutOp.Kind<>zcIdentifier) then
+ 1618             begin
+ 1619               Typ := OutOp.Children.First.GetDataType;
+ 1620               if Typ.Kind=zctClass then
+ 1621               begin
+ 1622                 Cls := Typ.TheClass as TZcOpClass;
+ 1623                 OutOp.Ref := Cls;
+ 1624               end
+ 1625               else
+ 1626                 ZError('Unexpected "("');
+ 1627             end;
+ 1628             if Assigned(Cls) then
+ 1629               OutOp.Kind := zcMethodCall
+ 1630             else
+ 1631               OutOp.Kind := zcFuncCall;
+ 1632           .)
+ 1633          [Argument<Op> (. OutOp.Children.Add(Op); .)
+ 1634            {"," Argument<Op> (. OutOp.Children.Add(Op); .)
+ 1635            }
+ 1636          ]
+ 1637          (.
+ 1638             if not VerifyFunctionCall(OutOp,S,CurrentFunction,Cls) then
+ 1639               ZError(S);
+ 1640          .)
+ 1641      ")"
+ 1642  
+ 1643    | "[" (.
+ 1644             if (OutOp=nil) or (not (OutOp.Kind in [zcIdentifier,zcSelect,zcArrayAccess,zcFuncCall])) then
+ 1645               ZError('Unexpected "["');
+ 1646             Op := MakeArrayAccess(OutOp);
+ 1647             OutOp := Op;
+ 1648           .)
+ 1649  
+ 1650          Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .)
+ 1651            {"," Expr<Op> (. OutOp.Children.Add( MakeCompatible(Op,zctInt) ); .) }
+ 1652          "]"
+ 1653    }
+ 1654  .
+ 1655  /*------------------------------------------------------------------------*/
+ 1656  Literal<var Typ : TZcDataType>
+ 1657  = intCon (. Typ.Kind :=zctInt; .) |
+ 1658    realCon (. Typ.Kind := zctFloat; .) |
+ 1659    stringCon (. Typ.Kind := zctString; .)
+ 1660    | "null" (. Typ.Kind := zctNull; .)
+ 1661    /* | "true" | "false"  */
+ 1662  .
+ 1663  
+ 1664  END Zc.
 
 
 

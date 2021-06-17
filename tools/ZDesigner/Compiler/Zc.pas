@@ -2531,33 +2531,31 @@ begin
         
          //Look for constructor
          Cls := Typ.TheClass as TZcOpClass;
-         S := MangleFunc(OutOp.Id,OutOp.Children.Count+1);
-         for Op in Cls.Methods do
+         Op := Cls.FindMethod( MangleFunc(OutOp.Id,OutOp.Children.Count+1) );
+
+         if Assigned(Op) then
          begin
-           if SameText((Op as TZcOpFunctionUserDefined).MangledName,S) then
-           begin
-             //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
-             Loc := MakeTemp(zctClass);
-             Loc.Typ.TheClass := Cls;
-             SymTab.Add(Loc.Id,Loc);
-             CurrentFunction.AddLocal(Loc);
+           //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+           Loc := MakeTemp(zctClass);
+           Loc.Typ.TheClass := Cls;
+           SymTab.Add(Loc.Id,Loc);
+           CurrentFunction.AddLocal(Loc);
 
-             ConsCall := MakeOp(zcMethodCall);
-             ConsCall.Id := Cls.Id;
-             ConsCall.Ref := Cls;
-             ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
-             ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+           ConsCall := MakeOp(zcMethodCall);
+           ConsCall.Id := Cls.Id;
+           ConsCall.Ref := Cls;
+           ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+           ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
 
-             OutOp := MakeOp(zcInlineBlock);
-             OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
-             OutOp.Children.Add( ConsCall );
-             OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+           OutOp := MakeOp(zcInlineBlock);
+           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+           OutOp.Children.Add( ConsCall );
+           OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
 
-             if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
-               ZError(S);
-             Break;
-           end;
-         end;
+           if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+             ZError(S);
+         end else if OutOp.Children.Count>0 then
+           ZError('no matching constructor found: ' + OutOp.Id);
       
   end
   else SynError(15);
