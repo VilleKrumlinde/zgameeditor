@@ -1,0 +1,1388 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+  <OnLoaded>
+    <ZLibrary Comment="Shared">
+      <Source>
+<![CDATA[const int false = 0;
+const int true = 1;]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="CPU" HasInitializer="1">
+      <Source>
+<![CDATA[//https://github.com/ykmr1224/NesEmulator
+
+class TMemory {
+  int read(int addr) { }
+  void write(int addr, byte data) { }
+}
+
+const int CLOCK_SPEED = 1790000; //1.79MHz
+
+int a;
+int x, y;
+int pc; // program counter
+int s = 0xff; // stack pointer
+int clock = 0;
+int CarryFlag = false;
+int ZeroFlag = false;
+int InterruptFlag = false;
+int DecimalMode = false;
+int BreakCommand = false;
+int OverFlowFlag = false;
+int NegativeFlag = false;
+
+int nmiOccuring = false;
+
+TMemory mem;
+
+// CPU won't count up PC if the jumpFlg is true
+int jumpFlg = false;
+
+private void jump(int addr){
+  pc = addr;
+  jumpFlg = true;
+}
+
+// increments PC
+private void incPC(int i){
+  if(jumpFlg){
+    jumpFlg = false;
+  }else{
+    pc += i;
+  }
+}
+
+// push i to the stack
+private void push(byte i){
+  mem.write(0x0100 + s, i);
+  s -= 1;
+  s &= 0xff;
+}
+
+// pull byte from the stack
+private int pull(){
+  s += 1;
+  int res = mem.read(0x0100 + s);
+  s &= 0xff;
+  return res;
+}
+
+// push 16bit address to the stack(significant byte first)
+private void pushAddress(int addr){
+  push(((addr>>8)&0xff));
+  push((addr&0xff));
+}
+
+// pull 16bit address from the stack
+private int pullAddress(){
+  int a = pull()&0xff;
+  int b = pull()&0xff;
+  return (b<<8)|a;
+}
+
+// get current status byte(NO11DIZC)
+private byte saveStatus(){
+  return (
+    ((CarryFlag?1:0)) |
+    ((ZeroFlag?1:0)<<1) |
+    ((InterruptFlag?1:0)<<2) |
+    ((DecimalMode?1:0)<<3) |
+    (1<<4) |
+    (1<<5) |
+    ((OverFlowFlag?1:0)<<6) |
+    ((NegativeFlag?1:0)<<7)
+    );
+}
+
+// restore status from i(NO11DIZC)
+private void storeStatus(int i){
+  CarryFlag = ((i)&1)==1;
+  ZeroFlag = ((i>>1)&1)==1;
+  InterruptFlag = ((i>>2)&1)==1;
+  DecimalMode = ((i>>3)&1)==1;
+  OverFlowFlag = ((i>>6)&1) == 1;
+  NegativeFlag = ((i>>7)&1) == 1;
+}
+
+// read 16bit data from memory at addr and addr+1(little endian)
+private int read16bit(int addr){
+  return mem.read(addr)+(mem.read((addr+1)&0xffff)<<8);
+}
+
+// read 16bit data from memory at addr and addr+1(wrapped by 256byte memory block)
+private int readWrapped16bit(int addr){
+  return mem.read(addr)+(mem.read((addr&0xff00)+((addr+1)&0xff))<<8);
+}
+
+// return bth bit in data (0 or 1)
+private int bit(int data, int b){
+  return (data>>b)&1;
+}
+
+
+class TInstruction {
+  virtual void ope(int i) { }
+  virtual void opeAccumulator() { trace("Not Implemented."); }
+}
+
+class TAddressing {
+  // execute the instruction using this addressing
+  virtual void ope(TInstruction i) { }
+  virtual string getName() { }
+}
+
+class TOperand {
+  TInstruction inst;
+  TAddressing addr;
+  int clock;
+
+  TOperand(TInstruction inst,TAddressing addr, int clock){
+    this.inst = inst;
+    this.addr = addr;
+    this.clock = clock;
+  }
+}
+
+class TImplicitAddressing : TAddressing {
+  override void ope(TInstruction i){
+    i.ope(0);
+    incPC(1);
+  }
+  override string getName() { return "Implicit"; }
+}
+
+class TAccumulatorAddressing : TAddressing {
+  override void ope(TInstruction i){
+    i.opeAccumulator();
+    incPC(1);
+  }
+  override string getName() { return "Accumulator"; }
+}
+
+class TImmediateAddressing : TAddressing {
+  override void ope(TInstruction i){
+    i.ope(pc+1);
+    incPC(2);
+  }
+  override string getName() { return "Immediate"; }
+}
+
+class TZeroPageAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = mem.read(pc+1);
+    i.ope(data);
+    incPC(2);
+  }
+  override string getName() { return "ZeroPage"; }
+}
+
+class TZeroPageXAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = mem.read(pc+1);
+    i.ope((data+x)&0xff);
+    incPC(2);
+  }
+  override string getName() { return "ZeroPageX"; }
+}
+
+class TZeroPageYAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = mem.read(pc+1);
+    i.ope((data+y)&0xff);
+    incPC(2);
+  }
+  override string getName() { return "ZeroPageY"; }
+}
+
+class TRelativeAddressing : TAddressing {
+  override void ope(TInstruction i){
+    //todo: signed read
+    int data = mem.read(pc+1);//-128 .. 127
+    i.ope(pc+data);
+    incPC(2);
+  }
+  override string getName() { return "Relative"; }
+}
+
+class TAbsoluteAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = read16bit(pc+1);
+    i.ope(data);
+    incPC(3);
+  }
+  override string getName() { return "Absolute"; }
+}
+
+class TAbsoluteXAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = read16bit(pc+1);
+    i.ope((data+x)&0xffff);
+    incPC(3);
+  }
+  override string getName() { return "AbsoluteX"; }
+}
+
+class TAbsoluteYAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = read16bit(pc+1);
+    i.ope((data+y)&0xffff);
+    incPC(3);
+  }
+  override string getName() { return "AbsoluteY"; }
+}
+
+class TIndirectAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = read16bit(pc+1);
+    // second byte should be wrapped by 256byte memory block(0x33ff + 0x1 -> 0x3300)
+    int addr = readWrapped16bit(data);
+    i.ope(addr);
+    incPC(3);
+  }
+  override string getName() { return "Indirect"; }
+}
+
+class TIndirectXAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = mem.read(pc+1);
+    int addr = readWrapped16bit((data+x)&0xff);
+    i.ope(addr) ;
+    incPC(2);
+  }
+  override string getName() { return "IndirectX"; }
+}
+
+class TIndirectYAddressing : TAddressing {
+  override void ope(TInstruction i){
+    int data = mem.read(pc+1);
+    int addr = readWrapped16bit(data&0xff);
+    i.ope((addr+y)&0xffff);
+    incPC(2);
+  }
+  override string getName() { return "IndirectY"; }
+}
+
+
+
+class TADCInstruction : TInstruction {
+  override void ope(int i) {
+    int data = mem.read(i);
+    int temp = a + data + (CarryFlag?1:0);
+    int temps = a + data + (CarryFlag?1:0);
+    a = temp & 0xff;
+    CarryFlag = bit(temp,8) == 1;
+    ZeroFlag = (a==0);
+    OverFlowFlag = temps<-128||127<temps;
+    NegativeFlag = bit(temp,7) == 1;
+  }
+}
+
+// and
+class TANDInstruction : TInstruction {
+  override void ope(int i) {
+    a = a&mem.read(i);
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+
+// shift left
+class TASLInstruction : TInstruction {
+  override void ope(int i) {
+    int temp = mem.read(i)*2;
+    mem.write(i, temp);
+    CarryFlag = bit(temp,8) == 1;
+    ZeroFlag = (temp&0xff) == 0;
+    NegativeFlag = bit(temp,7) == 1;
+  }
+  override void opeAccumulator(){
+    int temp = a*2;
+    a = temp&0xff;
+    CarryFlag = bit(temp,8) == 1;
+    ZeroFlag = a == 0;
+    NegativeFlag = bit(a, 7) == 1;
+  }
+}
+
+// branch if Carry is clear
+class TBCCInstruction : TInstruction {
+  override void ope(int i) {
+    if(!CarryFlag)
+      pc=i;
+  }
+}
+
+// branch if Carry is set
+class TBCSInstruction : TInstruction {
+  override void ope(int i) {
+    if(CarryFlag)
+      pc=i;
+  }
+}
+
+// branch if Zero is set (equal)
+class TBEQInstruction : TInstruction {
+  override void ope(int i) {
+    if(ZeroFlag)
+      pc=i;
+  }
+}
+
+// bit and
+class TBITInstruction : TInstruction {
+  override void ope(int i) {
+    int data = mem.read(i);
+    int temp = a & data;
+    ZeroFlag = (temp==0);
+    OverFlowFlag = bit(data,6) == 1;
+    NegativeFlag = bit(data,7) == 1;
+  }
+}
+
+// branch if Negative is clear (minus)
+class TBMIInstruction : TInstruction {
+  override void ope(int i) {
+    if(NegativeFlag)
+      pc=i;
+  }
+}
+
+// branch if Zero is clear (not equal)
+class TBNEInstruction : TInstruction {
+  override void ope(int i) {
+    if(!ZeroFlag)
+      pc=i;
+  }
+}
+
+// branch if Negative is clear (plus)
+class TBPLInstruction : TInstruction {
+  override void ope(int i) {
+    if(!NegativeFlag)
+      pc=i;
+  }
+}
+
+// break
+class TBRKInstruction : TInstruction {
+  override void ope(int i) {
+    push(saveStatus());
+    pushAddress(pc);
+    BreakCommand = true;
+    jump(read16bit(0xfffe));
+  }
+}
+
+// branch if OverFlow is clear
+class TBVCInstruction : TInstruction {
+  override void ope(int i) {
+    if(!OverFlowFlag)
+      pc=i;
+  }
+}
+
+// branch if OverFLow is set
+class TBVSInstruction : TInstruction {
+  override void ope(int i) {
+    if(OverFlowFlag)
+      pc=i;
+  }
+}
+
+// clear Carry
+class TCLCInstruction : TInstruction {
+  override void ope(int i) {
+    CarryFlag = false;
+  }
+}
+
+// clear Decimal
+class TCLDInstruction : TInstruction {
+  override void ope(int i) {
+    DecimalMode = false;
+  }
+}
+
+// clear Interrupt
+class TCLIInstruction : TInstruction {
+  override void ope(int i) {
+    InterruptFlag = false;
+  }
+}
+
+// clear OverFlow
+class TCLVInstruction : TInstruction {
+  override void ope(int i) {
+    OverFlowFlag = false;
+  }
+}
+
+// compare with A
+class TCMPInstruction : TInstruction {
+  override void ope(int i) {
+    int temp0 = mem.read(i);
+    int temp1 = a;
+    CarryFlag = (temp1 >= temp0);
+    ZeroFlag = (temp1 == temp0);
+    NegativeFlag = bit(temp1-temp0,7)==1;
+  }
+}
+
+// compare with X
+class TCPXInstruction : TInstruction {
+  override void ope(int i) {
+    int temp0 = mem.read(i);
+    int temp1 = x;
+    CarryFlag = (temp1 >= temp0);
+    ZeroFlag = (temp1 == temp0);
+    NegativeFlag = bit(temp1-temp0,7)==1;
+  }
+}
+
+// compare with Y
+class TCPYInstruction : TInstruction {
+  override void ope(int i) {
+    int temp0 = mem.read(i);
+    int temp1 = y;
+    CarryFlag = (temp1 >= temp0);
+    ZeroFlag = (temp1 == temp0);
+    NegativeFlag = bit(temp1-temp0,7)==1;
+  }
+}
+
+// decrement
+class TDECInstruction : TInstruction {
+  override void ope(int i) {
+    int temp = (mem.read(i)-1)&0xFF;
+    mem.write(i, temp);
+    ZeroFlag = (temp == 0);
+    NegativeFlag = bit(temp,7) == 1;
+  }
+}
+
+// decrement X
+class TDEXInstruction : TInstruction {
+  override void ope(int i) {
+    x = (x-1)&0xff;
+    ZeroFlag = (x == 0);
+    NegativeFlag = bit(x,7) == 1;
+  }
+}
+//decrement Y
+class TDEYInstruction : TInstruction {
+  override void ope(int i) {
+    y = (y-1)&0xff;
+    ZeroFlag = (y == 0);
+    NegativeFlag = bit(y,7) == 1;
+  }
+}
+// or
+class TEORInstruction : TInstruction {
+  override void ope(int i) {
+    a = 0xff&(a^(0xff&(mem.read(i))));
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// increment
+class TINCInstruction : TInstruction {
+  override void ope(int i) {
+    int temp = ((mem.read(i))+1)&0xff;
+    mem.write(i, temp);
+    ZeroFlag = (temp == 0);
+    NegativeFlag = bit(temp,7) == 1;
+  }
+}
+// increment X
+class TINXInstruction : TInstruction {
+  override void ope(int i) {
+    x = (x+1)&0xff;
+    ZeroFlag = (x == 0);
+    NegativeFlag = bit(x,7) == 1;
+  }
+}
+// increment Y
+class TINYInstruction : TInstruction {
+  override void ope(int i) {
+    y = (y+1)&0xff;
+    ZeroFlag = (y == 0);
+    NegativeFlag = bit(y,7) == 1;
+  }
+}
+// jump
+class TJMPInstruction : TInstruction {
+  override void ope(int i) {
+    jump(i);
+  }
+}
+// jump to subroutine
+class TJSRInstruction : TInstruction {
+  override void ope(int i) {
+    pushAddress(pc+2);//push return address-1
+    jump(i);
+  }
+}
+// load to A
+class TLDAInstruction : TInstruction {
+  override void ope(int i) {
+    a = mem.read(i);
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// load to X
+class TLDXInstruction : TInstruction {
+  override void ope(int i) {
+    x = mem.read(i);
+    ZeroFlag = (x==0);
+    NegativeFlag = bit(x,7) == 1;
+  }
+}
+// load to Y
+class TLDYInstruction : TInstruction {
+  override void ope(int i) {
+    y = mem.read(i);
+    ZeroFlag = (y==0);
+    NegativeFlag = bit(y,7) == 1;
+  }
+}
+// logical bit shift right
+class TLSRInstruction : TInstruction {
+  override void ope(int i) {
+    int data = (0xff&mem.read(i));
+    CarryFlag = (data&1) == 1;
+    int temp = data/2;
+    mem.write(i, temp);
+    ZeroFlag = (temp&0xff) == 0;
+    NegativeFlag = false;
+  }
+  override void opeAccumulator(){
+    int temp = a/2;
+    CarryFlag = (a&1) == 1;
+    a = temp&0xff;
+    ZeroFlag = a == 0;
+    NegativeFlag = false;
+  }
+}
+// no operation
+class TNOPInstruction : TInstruction {
+  override void ope(int i) {
+    //do nothing
+  }
+}
+// or A
+class TORAInstruction : TInstruction {
+  override void ope(int i) {
+    a = a|mem.read(i);
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// push A
+class TPHAInstruction : TInstruction {
+  override void ope(int i) {
+    push(a);
+  }
+}
+// push Status to stack
+class TPHPInstruction : TInstruction {
+  override void ope(int i) {
+    push(saveStatus());
+  }
+}
+// pull from stack to A
+class TPLAInstruction : TInstruction {
+  override void ope(int i) {
+    a = pull();
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// store Status from stack
+class TPLPInstruction : TInstruction {
+  override void ope(int i) {
+    storeStatus(pull());
+  }
+}
+// rotate one bit left
+class TROLInstruction : TInstruction {
+  override void ope(int i) {
+    int temp = mem.read(i)*2;
+    byte res = (temp | (CarryFlag?1:0));
+    mem.write(i, res);
+    CarryFlag = bit(temp,8) == 1;
+    ZeroFlag = res == 0;
+    NegativeFlag = bit(res,7) == 1;
+  }
+  override void opeAccumulator(){
+    int temp = a*2;
+    a = (temp&0xff) | (CarryFlag?1:0);
+    CarryFlag = bit(temp,8) == 1;
+    ZeroFlag = a == 0;
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// rotate one bit right
+class TRORInstruction : TInstruction {
+  override void ope(int i) {
+    int data = mem.read(i);
+    int temp = (data/2) | (CarryFlag?0x80:0);
+    NegativeFlag = CarryFlag;
+    CarryFlag = (data&1) == 1;
+    mem.write(i, temp);
+    ZeroFlag = (temp&0xff) == 0;
+  }
+  override void opeAccumulator(){
+    int temp = (a/2) | (CarryFlag?0x80:0);
+    NegativeFlag = CarryFlag;
+    CarryFlag = (a&1) == 1;
+    a = temp&0xff;
+    ZeroFlag = a == 0;
+  }
+}
+// return from interrupt
+class TRTIInstruction : TInstruction {
+  override void ope(int i) {
+    nmiOccuring = false;
+    storeStatus(pull());
+    int r = pullAddress();
+    jump(r);
+  }
+}
+// return from subroutine
+class TRTSInstruction : TInstruction {
+  override void ope(int i) {
+    int r = pullAddress();
+    jump(r+1);
+  }
+}
+// subtract with carry
+class TSBCInstruction : TInstruction {
+  override void ope(int i) {
+    int data = mem.read(i);
+    int temp0 = (0xff&(0xff^data)) + (CarryFlag?1:0);
+    int temp = a + temp0;
+    int temps = a + temp0;
+    a = temp & 0xff;
+    CarryFlag = (bit(temp,8) == 1);
+    ZeroFlag = (a==0);
+    OverFlowFlag = temps<-128||127<temps;
+    NegativeFlag = bit(temp,7) == 1;
+  }
+}
+// set Carry
+class TSECInstruction : TInstruction {
+  override void ope(int i) {
+    CarryFlag = true;
+  }
+}
+// set Decimal
+class TSEDInstruction : TInstruction {
+  override void ope(int i) {
+    DecimalMode = true;
+  }
+}
+// set Interrupt
+class TSEIInstruction : TInstruction {
+  override void ope(int i) {
+    InterruptFlag = true;
+  }
+}
+// store A
+class TSTAInstruction : TInstruction {
+  override void ope(int i) {
+    mem.write(i, a);
+  }
+}
+// store X
+class TSTXInstruction : TInstruction {
+  override void ope(int i) {
+    mem.write(i, x);
+  }
+}
+// store Y
+class TSTYInstruction : TInstruction {
+  override void ope(int i) {
+    mem.write(i, y);
+  }
+}
+// transfer A to X
+class TTAXInstruction : TInstruction {
+  override void ope(int i) {
+    x = a;
+    ZeroFlag = (x==0);
+    NegativeFlag = bit(x,7) == 1;
+  }
+}
+// transfer A to Y
+class TTAYInstruction : TInstruction {
+  override void ope(int i) {
+    y = a;
+    ZeroFlag = (y==0);
+    NegativeFlag = bit(y,7) == 1;
+  }
+}
+// transfer X to A
+class TTXAInstruction : TInstruction {
+  override void ope(int i) {
+    a = x;
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// transfer Y to A
+class TTYAInstruction : TInstruction {
+  override void ope(int i) {
+    a = y;
+    ZeroFlag = (a==0);
+    NegativeFlag = bit(a,7) == 1;
+  }
+}
+// transfer S to X
+class TTSXInstruction : TInstruction {
+  override void ope(int i) {
+    x = s;
+    ZeroFlag = (x==0);
+    NegativeFlag = bit(x,7) == 1;
+  }
+}
+// transfer X to S
+class TTXSInstruction : TInstruction {
+  override void ope(int i) {
+    s = x;
+  }
+}
+
+TOperand[256] operands;
+
+{
+  operands[0xA9] = new TOperand(new TLDAInstruction(),new TImmediateAddressing(), 2);
+  operands[0xA5] = new TOperand(new TLDAInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xB5] = new TOperand(new TLDAInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0xAD] = new TOperand(new TLDAInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xBD] = new TOperand(new TLDAInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0xB9] = new TOperand(new TLDAInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0xA1] = new TOperand(new TLDAInstruction(),new TIndirectXAddressing(), 6);
+  operands[0xB1] = new TOperand(new TLDAInstruction(),new TIndirectYAddressing(), 5);
+  operands[0xA2] = new TOperand(new TLDXInstruction(),new TImmediateAddressing(), 2);
+  operands[0xA6] = new TOperand(new TLDXInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xB6] = new TOperand(new TLDXInstruction(),new TZeroPageYAddressing(), 4);
+  operands[0xAE] = new TOperand(new TLDXInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xBE] = new TOperand(new TLDXInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0xA0] = new TOperand(new TLDYInstruction(),new TImmediateAddressing(), 2);
+  operands[0xA4] = new TOperand(new TLDYInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xB4] = new TOperand(new TLDYInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0xAC] = new TOperand(new TLDYInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xBC] = new TOperand(new TLDYInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0x85] = new TOperand(new TSTAInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x95] = new TOperand(new TSTAInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x8D] = new TOperand(new TSTAInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x9D] = new TOperand(new TSTAInstruction(),new TAbsoluteXAddressing(), 5);
+  operands[0x99] = new TOperand(new TSTAInstruction(),new TAbsoluteYAddressing(), 5);
+  operands[0x81] = new TOperand(new TSTAInstruction(),new TIndirectXAddressing(), 6);
+  operands[0x91] = new TOperand(new TSTAInstruction(),new TIndirectYAddressing(), 6);
+  operands[0x86] = new TOperand(new TSTXInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x96] = new TOperand(new TSTXInstruction(),new TZeroPageYAddressing(), 4);
+  operands[0x8E] = new TOperand(new TSTXInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x84] = new TOperand(new TSTYInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x94] = new TOperand(new TSTYInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x8C] = new TOperand(new TSTYInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xAA] = new TOperand(new TTAXInstruction(),new TImplicitAddressing(), 2);
+  operands[0xA8] = new TOperand(new TTAYInstruction(),new TImplicitAddressing(), 2);
+  operands[0x8A] = new TOperand(new TTXAInstruction(),new TImplicitAddressing(), 2);
+  operands[0x98] = new TOperand(new TTYAInstruction(),new TImplicitAddressing(), 2);
+  operands[0xBA] = new TOperand(new TTSXInstruction(),new TImplicitAddressing(), 2);
+  operands[0x9A] = new TOperand(new TTXSInstruction(),new TImplicitAddressing(), 2);
+  operands[0x48] = new TOperand(new TPHAInstruction(),new TImplicitAddressing(), 3);
+  operands[0x08] = new TOperand(new TPHPInstruction(),new TImplicitAddressing(), 3);
+  operands[0x68] = new TOperand(new TPLAInstruction(),new TImplicitAddressing(), 4);
+  operands[0x28] = new TOperand(new TPLPInstruction(),new TImplicitAddressing(), 4);
+  operands[0x29] = new TOperand(new TANDInstruction(),new TImmediateAddressing(), 2);
+  operands[0x25] = new TOperand(new TANDInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x35] = new TOperand(new TANDInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x2D] = new TOperand(new TANDInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x3D] = new TOperand(new TANDInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0x39] = new TOperand(new TANDInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0x21] = new TOperand(new TANDInstruction(),new TIndirectXAddressing(), 6);
+  operands[0x31] = new TOperand(new TANDInstruction(),new TIndirectYAddressing(), 5);
+  operands[0x49] = new TOperand(new TEORInstruction(),new TImmediateAddressing(), 2);
+  operands[0x45] = new TOperand(new TEORInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x55] = new TOperand(new TEORInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x4D] = new TOperand(new TEORInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x5D] = new TOperand(new TEORInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0x59] = new TOperand(new TEORInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0x41] = new TOperand(new TEORInstruction(),new TIndirectXAddressing(), 6);
+  operands[0x51] = new TOperand(new TEORInstruction(),new TIndirectYAddressing(), 5);
+  operands[0x09] = new TOperand(new TORAInstruction(),new TImmediateAddressing(), 2);
+  operands[0x05] = new TOperand(new TORAInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x15] = new TOperand(new TORAInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x0D] = new TOperand(new TORAInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x1D] = new TOperand(new TORAInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0x19] = new TOperand(new TORAInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0x01] = new TOperand(new TORAInstruction(),new TIndirectXAddressing(), 6);
+  operands[0x11] = new TOperand(new TORAInstruction(),new TIndirectYAddressing(), 5);
+  operands[0x24] = new TOperand(new TBITInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x2C] = new TOperand(new TBITInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x69] = new TOperand(new TADCInstruction(),new TImmediateAddressing(), 2);
+  operands[0x65] = new TOperand(new TADCInstruction(),new TZeroPageAddressing(), 3);
+  operands[0x75] = new TOperand(new TADCInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0x6D] = new TOperand(new TADCInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0x7D] = new TOperand(new TADCInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0x79] = new TOperand(new TADCInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0x61] = new TOperand(new TADCInstruction(),new TIndirectXAddressing(), 6);
+  operands[0x71] = new TOperand(new TADCInstruction(),new TIndirectYAddressing(), 5);
+  operands[0xE9] = new TOperand(new TSBCInstruction(),new TImmediateAddressing(), 2);
+  operands[0xE5] = new TOperand(new TSBCInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xF5] = new TOperand(new TSBCInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0xED] = new TOperand(new TSBCInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xFD] = new TOperand(new TSBCInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0xF9] = new TOperand(new TSBCInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0xE1] = new TOperand(new TSBCInstruction(),new TIndirectXAddressing(), 6);
+  operands[0xF1] = new TOperand(new TSBCInstruction(),new TIndirectYAddressing(), 5);
+  operands[0xC9] = new TOperand(new TCMPInstruction(),new TImmediateAddressing(), 2);
+  operands[0xC5] = new TOperand(new TCMPInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xD5] = new TOperand(new TCMPInstruction(),new TZeroPageXAddressing(), 4);
+  operands[0xCD] = new TOperand(new TCMPInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xDD] = new TOperand(new TCMPInstruction(),new TAbsoluteXAddressing(), 4);
+  operands[0xD9] = new TOperand(new TCMPInstruction(),new TAbsoluteYAddressing(), 4);
+  operands[0xC1] = new TOperand(new TCMPInstruction(),new TIndirectXAddressing(), 6);
+  operands[0xD1] = new TOperand(new TCMPInstruction(),new TIndirectYAddressing(), 5);
+  operands[0xE0] = new TOperand(new TCPXInstruction(),new TImmediateAddressing(), 2);
+  operands[0xE4] = new TOperand(new TCPXInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xEC] = new TOperand(new TCPXInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xC0] = new TOperand(new TCPYInstruction(),new TImmediateAddressing(), 2);
+  operands[0xC4] = new TOperand(new TCPYInstruction(),new TZeroPageAddressing(), 3);
+  operands[0xCC] = new TOperand(new TCPYInstruction(),new TAbsoluteAddressing(), 4);
+  operands[0xE6] = new TOperand(new TINCInstruction(),new TZeroPageAddressing(), 5);
+  operands[0xF6] = new TOperand(new TINCInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0xEE] = new TOperand(new TINCInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0xFE] = new TOperand(new TINCInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0xE8] = new TOperand(new TINXInstruction(),new TImplicitAddressing(), 2);
+  operands[0xC8] = new TOperand(new TINYInstruction(),new TImplicitAddressing(), 2);
+  operands[0xC6] = new TOperand(new TDECInstruction(),new TZeroPageAddressing(), 5);
+  operands[0xD6] = new TOperand(new TDECInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0xCE] = new TOperand(new TDECInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0xDE] = new TOperand(new TDECInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0xCA] = new TOperand(new TDEXInstruction(),new TImplicitAddressing(), 2);
+  operands[0x88] = new TOperand(new TDEYInstruction(),new TImplicitAddressing(), 2);
+  operands[0x0A] = new TOperand(new TASLInstruction(),new TAccumulatorAddressing(), 2);
+  operands[0x06] = new TOperand(new TASLInstruction(),new TZeroPageAddressing(), 5);
+  operands[0x16] = new TOperand(new TASLInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0x0E] = new TOperand(new TASLInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0x1E] = new TOperand(new TASLInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0x4A] = new TOperand(new TLSRInstruction(),new TAccumulatorAddressing(), 2);
+  operands[0x46] = new TOperand(new TLSRInstruction(),new TZeroPageAddressing(), 5);
+  operands[0x56] = new TOperand(new TLSRInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0x4E] = new TOperand(new TLSRInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0x5E] = new TOperand(new TLSRInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0x2A] = new TOperand(new TROLInstruction(),new TAccumulatorAddressing(), 2);
+  operands[0x26] = new TOperand(new TROLInstruction(),new TZeroPageAddressing(), 5);
+  operands[0x36] = new TOperand(new TROLInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0x2E] = new TOperand(new TROLInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0x3E] = new TOperand(new TROLInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0x6A] = new TOperand(new TRORInstruction(),new TAccumulatorAddressing(), 2);
+  operands[0x66] = new TOperand(new TRORInstruction(),new TZeroPageAddressing(), 5);
+  operands[0x76] = new TOperand(new TRORInstruction(),new TZeroPageXAddressing(), 6);
+  operands[0x6E] = new TOperand(new TRORInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0x7E] = new TOperand(new TRORInstruction(),new TAbsoluteXAddressing(), 7);
+  operands[0x4C] = new TOperand(new TJMPInstruction(),new TAbsoluteAddressing(), 3);
+  operands[0x6C] = new TOperand(new TJMPInstruction(),new TIndirectAddressing(), 5);
+  operands[0x20] = new TOperand(new TJSRInstruction(),new TAbsoluteAddressing(), 6);
+  operands[0x60] = new TOperand(new TRTSInstruction(),new TImplicitAddressing(), 6);
+  operands[0x90] = new TOperand(new TBCCInstruction(),new TRelativeAddressing(), 2);
+  operands[0xB0] = new TOperand(new TBCSInstruction(),new TRelativeAddressing(), 2);
+  operands[0xF0] = new TOperand(new TBEQInstruction(),new TRelativeAddressing(), 2);
+  operands[0x30] = new TOperand(new TBMIInstruction(),new TRelativeAddressing(), 2);
+  operands[0xD0] = new TOperand(new TBNEInstruction(),new TRelativeAddressing(), 2);
+  operands[0x10] = new TOperand(new TBPLInstruction(),new TRelativeAddressing(), 2);
+  operands[0x50] = new TOperand(new TBVCInstruction(),new TRelativeAddressing(), 2);
+  operands[0x70] = new TOperand(new TBVSInstruction(),new TRelativeAddressing(), 2);
+  operands[0x18] = new TOperand(new TCLCInstruction(),new TImplicitAddressing(), 2);
+  operands[0xD8] = new TOperand(new TCLDInstruction(),new TImplicitAddressing(), 2);
+  operands[0x58] = new TOperand(new TCLIInstruction(),new TImplicitAddressing(), 2);
+  operands[0xB8] = new TOperand(new TCLVInstruction(),new TImplicitAddressing(), 2);
+  operands[0x38] = new TOperand(new TSECInstruction(),new TImplicitAddressing(), 2);
+  operands[0xF8] = new TOperand(new TSEDInstruction(),new TImplicitAddressing(), 2);
+  operands[0x78] = new TOperand(new TSEIInstruction(),new TImplicitAddressing(), 2);
+  operands[0x00] = new TOperand(new TBRKInstruction(),new TImplicitAddressing(), 7);
+  operands[0xEA] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0x1A] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0x3A] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0x5A] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0x7A] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0xDA] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0xFA] = new TOperand(new TNOPInstruction(),new TImplicitAddressing(), 2);
+  operands[0x04] = new TOperand(new TNOPInstruction(),new TImmediateAddressing(), 2);
+  operands[0x44] = new TOperand(new TNOPInstruction(),new TImmediateAddressing(), 2);
+  operands[0x64] = new TOperand(new TNOPInstruction(),new TImmediateAddressing(), 2);
+  operands[0x14] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0x34] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0x54] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0x74] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0xD4] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0xF4] = new TOperand(new TNOPInstruction(),new TIndirectXAddressing(), 2);
+  operands[0x80] = new TOperand(new TNOPInstruction(),new TZeroPageAddressing(), 2);// TODO
+  operands[0x0C] = new TOperand(new TNOPInstruction(),new TAbsoluteAddressing(), 2);
+  operands[0x1C] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0x3C] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0x5C] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0x7C] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0xDC] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0xFC] = new TOperand(new TNOPInstruction(),new TAbsoluteXAddressing(), 2);
+  operands[0x40] = new TOperand(new TRTIInstruction(),new TImplicitAddressing(), 6);
+}
+
+int nmi = false;
+
+int exec(){
+  if(nmi && !nmiOccuring){
+    nmiOccuring = true;
+    nmi = false;
+    pushAddress(pc);
+    push(saveStatus());
+    BreakCommand = true;
+    pc = (0xff&mem.read(0xfffa)) | ((mem.read(0xfffb)&0xff)<<8);
+  }
+
+  int op = mem.read(pc);
+  TOperand ope = operands[op];
+  ope.addr.ope(ope.inst);
+
+  clock = (clock + clock)%CLOCK_SPEED;
+
+  return clock;
+}
+
+void reset(){
+  pc = (0xff&mem.read(0xfffc)) | ((mem.read(0xfffd)&0xff)<<8);
+  a = x = y = 0;
+  s = 0xff;
+}
+
+void setNMI(){
+  nmi = true;
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="PPU" HasInitializer="1">
+      <Source>
+<![CDATA[private byte[0x2000] ptnTbl;
+private byte[0x0800] nameTbl;
+private byte[0x20] palettes;
+int horizontal = true;//t:pan, f:scroll;
+
+class TPpuMemRegion{
+  virtual int read(int addr) { }
+  virtual void write(int addr, int data)  { }
+}
+
+//$0000-$1fff
+class TPatternTable : TPpuMemRegion {
+  override int read(int addr) {
+    return ptnTbl[addr];
+  }
+
+  override void write(int addr, int data) {
+    ptnTbl[addr] = (data&0xff);
+  }
+}
+private TPpuMemRegion PatternTable = new TPatternTable();
+
+//$2000-$3eff
+class TNameTablesH : TPpuMemRegion {
+  override int read(int addr) {
+    addr = (addr&0x3ff)|((addr&0x800)>>1);
+    return nameTbl[addr];
+  }
+  override void write(int addr, int data) {
+    addr = (addr&0x3ff)|((addr&0x800)>>1);
+    nameTbl[addr] = (data&0xff);
+  }
+}
+private TPpuMemRegion NameTablesH = new TNameTablesH();
+
+class TNameTablesV : TPpuMemRegion {
+  override int read(int addr) {
+    return nameTbl[addr&0x7ff];
+  }
+  override void write(int addr, int data) {
+    nameTbl[addr&0x7ff] = (data&0xff);
+  }
+}
+private TPpuMemRegion NameTablesV = new TNameTablesV();
+
+private TPpuMemRegion NameTables = NameTablesH;
+
+//$3f00-$3fff
+class TPalettes : TPpuMemRegion {
+  override int read(int addr) {
+    return palettes[addr&0x1f];
+  }
+  override void write(int addr, int data) {
+    palettes[addr&0x1f] = (data&0xff);
+    if((addr&0x3) == 0){
+      palettes[(addr&0x1f)^0x10] = (data&0xff);
+    }
+  }
+}
+private TPpuMemRegion PalettesRegion = new TPalettes();
+
+TPpuMemRegion map(int addr){
+  if(addr >= 0x4000)
+    addr -= 0x4000;
+
+  if(addr < 0x2000){
+    return PatternTable;
+  }else if(addr < 0x3f00){
+    return NameTables;
+  }else{
+    return PalettesRegion;
+  }
+}
+
+int bit(byte data, int b){return (data>>b)&1;}
+int bitTest(byte data, int b){return ((data>>b)&1)==1;}
+
+int execNMI = false;
+int ppuSlave = false;
+
+const int SPRITE_SIZE8 = 0;
+const int SPRITE_SIZE16 = 1;
+int spriteSize = SPRITE_SIZE8;
+
+int bgPatternTable = 0;
+int spPatternTable = 0;
+int ppuAddressIncrement = 1;
+int nameTableAddress = 0;
+
+void writeControlRegister1(byte data){
+  execNMI = bitTest(data, 7);
+  ppuSlave = bitTest(data, 6);
+  spriteSize = (bitTest(data, 5)?SPRITE_SIZE16:SPRITE_SIZE8);
+  bgPatternTable = bit(data, 4);
+  spPatternTable = bit(data, 3);
+  ppuAddressIncrement = bitTest(data,2)?32:1;
+  nameTableAddress = data&3;
+}
+
+const int BGCOLOR_NONE = 0;
+const int BGCOLOR_GREEN = 1;
+const int BGCOLOR_BLUE = 2;
+const int BGCOLOR_RED = 4;
+int fullBackgroundColor = BGCOLOR_NONE;
+
+int spriteVisible = true;//t:visible, f:not visible
+int bgVisible = true;//t:visible, f:not visible
+int spriteClip = true;//t:no clipping, f:clipping
+int bgClip = true;//t:no clipping, f:clipping
+int displayType = false;//t:Monochrome, f:colour
+
+void writeControlRegister2(byte data){
+  fullBackgroundColor = (data>>5)&7;
+  spriteVisible = bitTest(data,4);
+  bgVisible = bitTest(data,3);
+  spriteClip = bitTest(data,2);
+  bgClip = bitTest(data,1);
+  displayType = bitTest(data,0);
+}
+
+int vblankOccurance = 1;
+int sp0Occurance = 0;
+int scanlineSpriteCount = 0;
+int vramWriteFlag = 0;
+
+byte readStatusRegister(){
+  int res = 0;
+  res |= vblankOccurance<<7;
+  res |= sp0Occurance<<6;
+  res |= scanlineSpriteCount<<5;
+  res |= vramWriteFlag<<4;
+  vblankOccurance = 0;
+  horizontal = true;
+  return res;
+}
+
+const int HORIZONTAL_MIRROR = 0;
+const int VERTICAL_MIRROR = 1;
+const int FOUR_SCREEN = 2;
+private int mirroring = HORIZONTAL_MIRROR;
+
+void setMirroring(int value){
+  mirroring = value;
+  if(mirroring == HORIZONTAL_MIRROR){
+    NameTables = NameTablesH;
+  }else if(mirroring == VERTICAL_MIRROR){
+    NameTables = NameTablesV;
+  }else{
+    NameTables = NameTablesH;
+  }
+}
+
+int read(int addr){
+  addr &= 0x3fff;
+  return map(addr).read(addr);
+}
+
+void write(int addr, int data){
+  addr &= 0x3fff;
+  map(addr).write(addr, data);
+}
+
+class TSPRRAM{
+  byte[256] data;
+  private int addr;
+  void setAddress(int addr){
+    this.addr = addr;
+  }
+  int getAddress(){
+    return addr;
+  }
+  void write(byte data){
+     this.data[addr++] = data;
+  }
+  byte read(){
+    return this.data[addr];
+  }
+  void dma(byte[] src, int addr){
+    for(int i=0; i<256; i++){
+      data[(this.addr+i)&0xff] = src[addr+i];
+    }
+  }
+}
+
+TSPRRAM sprram = new TSPRRAM();
+
+TSPRRAM getSPRRAM(){
+  return sprram;
+}
+
+//$2005
+int hscroll = 0;
+int vscroll = 0;
+
+void setScroll(byte val){
+  if(horizontal){
+    hscroll = val&0xff;
+  }else{
+    vscroll = val&0xff;
+  }
+  horizontal = !horizontal;
+}
+
+int vramaddr = 0;
+
+void setVramAddr(byte addr){
+  vramaddr = ((vramaddr<<8)&0xff00)|(addr&0xff);
+}
+int vramBuffer = 0;
+int readVram(){
+  int res = vramBuffer;
+  vramBuffer = read(vramaddr);
+  if(vramaddr >= 0x3f00){
+    res = vramBuffer;
+    vramBuffer = read(0x2f00+(vramaddr&0xff));
+  }
+  vramaddr = vramaddr + ppuAddressIncrement;
+  return res;
+}
+void writeVram(int data){
+  write(vramaddr, data);
+  vramaddr = vramaddr + ppuAddressIncrement;
+}
+
+private byte[,] makePattern(byte upper, int i){
+  byte[8,8] pattern;
+  for(int j=0; j<8; j++){
+    byte data0 = ptnTbl[i*16+j];
+    byte data1 = ptnTbl[i*16+8+j];
+    for(int k=0; k<8; k++){
+      pattern[j,k] = (upper|((data0>>(7-k))&1)|(((data1>>(7-k))&1)<<1));
+    }
+  }
+  return pattern;
+}
+private byte getUpperBit(int scr, int x, int y){
+  int i = (y/4)*8 + (x/4);
+  int bit = ((y%4)/2)*2 + ((x%4)/2);
+  return (((nameTbl[0x3C0+0x400*scr+i]>>(bit*2))&3)<<2);
+}
+
+private int getColor(int palette, byte color){
+  return palettes[0x10*palette+color];
+}
+
+const int IMAGE_PALETTE = 0;
+const int SPRITE_PALETTE = 1;
+
+private void renderPattern(byte[,] pattern, int x, int y, int palettes, int vflip, int hflip){
+  for(int i=0; i<8; i++){
+    for(int j=0; j<8; j++){
+      byte c = pattern[vflip?7-i:i,hflip?7-j:j];
+      //if((c&0x3)!=0)
+        //todo: monitor
+        //monitor.setPixel(x+j, y+i, getColor(palettes, c));
+    }
+  }
+}
+
+private void drawBG(int scr, int voffset, int hoffset){
+  for(int i=0; i<30; i++){
+    for(int j=0; j<32; j++){
+      int pattern = 0xff&nameTbl[i*32+j+scr*0x400];
+      byte upper = getUpperBit(scr, j, i);
+      byte[,] p = makePattern(upper, bgPatternTable*256+pattern);
+      renderPattern(p, hoffset+j*8, voffset+i*8, IMAGE_PALETTE, false, false);
+    }
+  }
+}
+
+private void drawBG(){
+  if(mirroring == HORIZONTAL_MIRROR){
+    drawBG(nameTableAddress/2, -vscroll, -hscroll);
+    drawBG((nameTableAddress/2+1)%2, 30*8-vscroll, 0);
+  }else if(mirroring == VERTICAL_MIRROR){
+    drawBG(nameTableAddress%2, -vscroll, 0);
+    drawBG((nameTableAddress%2+1)%2, 30*8-vscroll, 0);
+  }
+}
+
+private void drawSprites(int bg){
+  for(int i=0; i<64; i++){
+    byte attr = sprram.data[i*4+2];
+    if(((attr>>5)&1)==bg){
+      int y = 0xff&sprram.data[i*4];
+      int x = 0xff&sprram.data[i*4+3];
+      int tile = 0xff&sprram.data[i*4+1];
+      byte upper = ((attr&3)<<2);
+      if(spriteSize == SPRITE_SIZE8){
+        byte[,] pat = makePattern(upper, spPatternTable*256+tile);
+        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+      }else if(spriteSize == SPRITE_SIZE16){
+        int table = tile%2;
+        byte[,] pat = makePattern(upper, table*256+(tile/2*2));
+        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+        pat = makePattern(upper, table*256+(tile/2*2+1));
+        renderPattern(pat, x, y+8, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+      }
+    }
+  }
+}
+
+int dbgCount = 0;
+void render(int draw){
+  if(draw){
+    //todo: monitor
+    //monitor.clear();
+    sp0Occurance = 1;
+    drawSprites(1);
+    drawBG();
+    drawSprites(0);
+    //monitor.refresh();
+  }
+  vblankOccurance = 1;
+  sp0Occurance = 0;
+  if(execNMI){
+    //todo: set nmi
+    //cpu.setNMI();
+  }
+}
+
+void loadCHRROM(byte[] data, int offset){
+  for(int j=0; j<0x2000; j++){
+    ptnTbl[j] = data[offset+j];
+  }
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Memory" HasInitializer="1">
+      <Source>
+<![CDATA[private byte[0x10000] data;
+
+class TMemRegion{
+  virtual int read(int addr) { }
+  virtual void write(int addr, byte data)  { }
+}
+
+//0x0000 - 0x1fff
+class TRAM : TMemRegion {
+  override int read(int addr){
+    return data[addr%0x800];
+  }
+  override  void write(int addr, byte value){
+    data[addr%0x800] = value;
+  }
+};
+TMemRegion RAM = new TRAM();
+
+//0x2000 - 0x3fff
+class TRegisters : TMemRegion {
+  override int read(int addr) {
+    int a = addr%0x8;
+    switch(a){
+    case 0x0:case 0x1:
+    case 0x3:
+    case 0x4:
+      return getSPRRAM().read();
+    case 0x5:case 0x6:
+      trace("Unexpected read");
+      break;
+    case 0x2:
+      trace("context.ppu.readStatusRegister : ");
+      return readStatusRegister()&0xff;
+    case 0x7:
+      trace("context.ppu.readVram : ");
+      return readVram();
+    }
+    return 0;
+  }
+  override void write(int addr, byte value) {
+    int a = addr&0x7;
+    switch(a){
+    case 0x0:
+      trace("context.ppu.writeControlRegister1 : ");
+      writeControlRegister1(value);
+      break;
+    case 0x1:
+      trace("context.ppu.writeControlRegister2 : ");
+      writeControlRegister2(value);
+      break;
+    case 0x2:
+      trace("Unexpected write to ");
+      break;
+    case 0x3:
+      trace("context.ppu.getSPRRAM().setAddress : ");
+      getSPRRAM().setAddress(value);
+      break;
+    case 0x4:
+      trace("context.ppu.getSPRRAM().write : ");
+      getSPRRAM().write(value);
+      break;
+    case 0x5:
+      trace("context.ppu.setScroll : ");
+      setScroll(value);
+      break;
+    case 0x6:
+      trace("context.ppu.setVramAddr : ");
+      setVramAddr(value);
+      break;
+    case 0x7:
+      trace("context.ppu.writeVram : ");
+      writeVram(value);
+      break;
+    }
+  }
+}
+TMemRegion Registers = new TRegisters();
+
+
+//TODO: not finished converting]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[//TSPRRAM xx;
+//xx.read();]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+</ZApplication>
