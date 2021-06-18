@@ -421,30 +421,30 @@ Listing
   415      [ FormalParams ] ")"
   416        (.
   417          Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
-  418          if SymTab.Contains(Func.MangledName) then
-  419            ZError('Name already defined: ' + Name);
-  420          if Assigned(Cls) then
-  421          begin
-  422            OtherFunc := Cls.FindMethod(Func.MangledName);
-  423  
-  424            Cls.Methods.Add(Func);
-  425            //TODO: cannot add to symtab here because that could bind other method calls wrong (m.update in ClassesDemo)
-  426            //SymTab.AddPrevious(Func.MangledName,Func);
-  427  
-  428            if mdOverride in M then
-  429            begin
-  430              if not Assigned(Cls.BaseClass) then
-  431                ZError('Cannot override without baseclass ' + Name);
-  432              if not Assigned(OtherFunc) then
-  433                ZError('No method with this name in base class ' + Name);
-  434              if not (mdVirtual in OtherFunc.Modifiers) then
-  435                ZError('Method is not marked as virtual in base class ' + Name);
-  436              Func.VmtIndex := OtherFunc.VmtIndex;
-  437            end else if Assigned(OtherFunc) then
-  438              ZError('Name already defined: ' + Name);
-  439          end
-  440          else
-  441          begin
+  418          if Assigned(Cls) then
+  419          begin
+  420            OtherFunc := Cls.FindMethod(Func.MangledName);
+  421  
+  422            Cls.Methods.Add(Func);
+  423            //TODO: cannot add to symtab here because that could bind other method calls wrong (m.update in ClassesDemo)
+  424            //SymTab.AddPrevious(Func.MangledName,Func);
+  425  
+  426            if mdOverride in M then
+  427            begin
+  428              if not Assigned(Cls.BaseClass) then
+  429                ZError('Cannot override without baseclass ' + Name);
+  430              if not Assigned(OtherFunc) then
+  431                ZError('No method with this name in base class ' + Name);
+  432              if not (mdVirtual in OtherFunc.Modifiers) then
+  433                ZError('Method is not marked as virtual in base class ' + Name);
+  434              Func.VmtIndex := OtherFunc.VmtIndex;
+  435            end else if Assigned(OtherFunc) then
+  436              ZError('Name already defined: ' + Name);
+  437          end
+  438          else
+  439          begin
+  440            if SymTab.Contains(Func.MangledName) then
+  441              ZError('Name already defined: ' + Name);
   442            if mdPrivate in M then
   443              SymTab.AddPrevious(Func.MangledName,Func)
   444            else
@@ -1567,7 +1567,7 @@ Listing
  1561        (.
  1562           //Look for constructor
  1563           Cls := Typ.TheClass as TZcOpClass;
- 1564           Op := Cls.Methods.FindMethod( MangleFunc(OutOp.Id,OutOp.Children.Count+1) );
+ 1564           Op := Cls.FindMethod( MangleFunc(OutOp.Id,OutOp.Children.Count+1) );
  1565  
  1566           if Assigned(Op) then
  1567           begin

@@ -889,8 +889,6 @@ begin
   Expect(rparSym);
         
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
-        if SymTab.Contains(Func.MangledName) then
-          ZError('Name already defined: ' + Name);
         if Assigned(Cls) then
         begin
           OtherFunc := Cls.FindMethod(Func.MangledName);
@@ -913,6 +911,8 @@ begin
         end
         else
         begin
+          if SymTab.Contains(Func.MangledName) then
+            ZError('Name already defined: ' + Name);
           if mdPrivate in M then
             SymTab.AddPrevious(Func.MangledName,Func)
           else

@@ -1319,8 +1319,8 @@ begin
   if (Op.Kind=zcSelect) and (Op.Ref=nil) then
   begin
     Etyp := Op.GetIdentifierInfo;
-    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and (not CompilerContext.CurrentClass.InheritsFrom(Etyp.Field.MemberOf)) then
-      raise ECodeGenError.Create('Cannot access private field: ' + Op.Id);
+    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and ((CompilerContext.CurrentClass=nil) or (not CompilerContext.CurrentClass.InheritsFrom(Etyp.Field.MemberOf))) then
+      raise ECodeGenError.Create('Cannot access private field: ' + Op.ToString);
   end;
 end;
 
@@ -1719,9 +1719,7 @@ begin
   if IsMethod then
   begin
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
-    O := CompilerContext.SymTab.Lookup(MangledName);
-    if O=nil then
-      O := Cls.FindMethod(MangledName);
+    O := Cls.FindMethod(MangledName);
     if Assigned(O) and (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
       (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf)) then
     begin
