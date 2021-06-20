@@ -1,20 +1,632 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
   <OnLoaded>
-    <ZLibrary Comment="Shared">
+    <ZLibrary Comment="Shared" HasInitializer="1">
       <Source>
 <![CDATA[const int false = 0;
-const int true = 1;]]>
+const int true = 1;
+int nmi = false;
+
+int bit(byte data, int b){return (data>>b)&1;}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Monitor" HasInitializer="1">
+      <Source>
+<![CDATA[private const int width = 256;
+private const int height = 240;
+private int painting = false;
+private int[width*height] image;
+
+private int[64] colors;
+
+private int makeColor(byte r, byte g, byte b) {
+  return 0xff<<24 | r<<16 | g<<8 | b;
+}
+
+void initColors() {
+  colors[0]=makeColor(109,109,109);
+  colors[1]=makeColor(0,39,159);
+  colors[2]=makeColor(12,0,172);
+  colors[3]=makeColor(60,0,140);
+  colors[4]=makeColor(171,0,75);
+  colors[5]=makeColor(221,0,5);
+  colors[6]=makeColor(203,0,0);
+  colors[7]=makeColor(143,0,0);
+  colors[8]=makeColor(83,30,0);
+  colors[9]=makeColor(0,53,0);
+  colors[10]=makeColor(0,57,0);
+  colors[11]=makeColor(0,55,29);
+  colors[12]=makeColor(0,47,86);
+  colors[13]=makeColor(0,0,0);
+  colors[14]=makeColor(0,0,0);
+  colors[15]=makeColor(0,0,0);
+  colors[16]=makeColor(188,188,188);
+  colors[17]=makeColor(0,95,255);
+  colors[18]=makeColor(0,56,255);
+  colors[19]=makeColor(131,4,255);
+  colors[20]=makeColor(255,0,173);
+  colors[21]=makeColor(255,0,50);
+  colors[22]=makeColor(255,0,0);
+  colors[23]=makeColor(250,12,0);
+  colors[24]=makeColor(210,73,0);
+  colors[25]=makeColor(0,112,0);
+  colors[26]=makeColor(0,129,0);
+  colors[27]=makeColor(0,122,61);
+  colors[28]=makeColor(0,137,202);
+  colors[29]=makeColor(20,20,20);
+  colors[30]=makeColor(4,4,4);
+  colors[31]=makeColor(4,4,4);
+  colors[32]=makeColor(255,255,255);
+  colors[33]=makeColor(0,210,255);
+  colors[34]=makeColor(57,144,255);
+  colors[35]=makeColor(229,98,255);
+  colors[36]=makeColor(255,0,251);
+  colors[37]=makeColor(255,63,119);
+  colors[38]=makeColor(255,111,0);
+  colors[39]=makeColor(255,136,0);
+  colors[40]=makeColor(255,175,0);
+  colors[41]=makeColor(103,227,0);
+  colors[42]=makeColor(0,245,0);
+  colors[43]=makeColor(0,244,140);
+  colors[44]=makeColor(0,255,255);
+  colors[45]=makeColor(74,74,74);
+  colors[46]=makeColor(5,5,5);
+  colors[47]=makeColor(5,5,5);
+  colors[48]=makeColor(255,255,255);
+  colors[49]=makeColor(100,254,255);
+  colors[50]=makeColor(137,233,255);
+  colors[51]=makeColor(227,151,237);
+  colors[52]=makeColor(255,144,255);
+  colors[53]=makeColor(255,141,162);
+  colors[54]=makeColor(255,200,153);
+  colors[55]=makeColor(255,236,136);
+  colors[56]=makeColor(255,247,121);
+  colors[57]=makeColor(199,230,116);
+  colors[58]=makeColor(110,237,152);
+  colors[59]=makeColor(100,242,209);
+  colors[60]=makeColor(68,255,253);
+  colors[61]=makeColor(214,214,214);
+  colors[62]=makeColor(9,9,9);
+  colors[63]=makeColor(9,9,9);
+}
+
+
+void clear(){
+  for(int i=0; i<image.SizeDim1; i++)
+    image[i]=0;
+}
+
+void setPixel(int x, int y, int color){
+  image[ (y*width) + x ] = colors[color];
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="PPU" HasInitializer="1">
+      <Source>
+<![CDATA[private byte[0x2000] ptnTbl;
+private byte[0x0800] nameTbl;
+private byte[0x20] palettes;
+int horizontal = true;//t:pan, f:scroll;
+
+class TPpuMemRegion{
+  virtual int read(int addr) { }
+  virtual void write(int addr, int data)  { }
+}
+
+//$0000-$1fff
+class TPatternTable : TPpuMemRegion {
+  override int read(int addr) {
+    return ptnTbl[addr];
+  }
+
+  override void write(int addr, int data) {
+    ptnTbl[addr] = (data&0xff);
+  }
+}
+private TPpuMemRegion PatternTable = new TPatternTable();
+
+//$2000-$3eff
+class TNameTablesH : TPpuMemRegion {
+  override int read(int addr) {
+    addr = (addr&0x3ff)|((addr&0x800)>>1);
+    return nameTbl[addr];
+  }
+  override void write(int addr, int data) {
+    addr = (addr&0x3ff)|((addr&0x800)>>1);
+    nameTbl[addr] = (data&0xff);
+  }
+}
+private TPpuMemRegion NameTablesH = new TNameTablesH();
+
+class TNameTablesV : TPpuMemRegion {
+  override int read(int addr) {
+    return nameTbl[addr&0x7ff];
+  }
+  override void write(int addr, int data) {
+    nameTbl[addr&0x7ff] = (data&0xff);
+  }
+}
+private TPpuMemRegion NameTablesV = new TNameTablesV();
+
+private TPpuMemRegion NameTables = NameTablesH;
+
+//$3f00-$3fff
+class TPalettes : TPpuMemRegion {
+  override int read(int addr) {
+    return palettes[addr&0x1f];
+  }
+  override void write(int addr, int data) {
+    palettes[addr&0x1f] = (data&0xff);
+    if((addr&0x3) == 0){
+      palettes[(addr&0x1f)^0x10] = (data&0xff);
+    }
+  }
+}
+private TPpuMemRegion PalettesRegion = new TPalettes();
+
+private TPpuMemRegion map(int addr){
+  if(addr >= 0x4000)
+    addr -= 0x4000;
+
+  if(addr < 0x2000){
+    return PatternTable;
+  }else if(addr < 0x3f00){
+    return NameTables;
+  }else{
+    return PalettesRegion;
+  }
+}
+
+private int bitTest(byte data, int b){return ((data>>b)&1)==1;}
+
+int execNMI = false;
+int ppuSlave = false;
+
+const int SPRITE_SIZE8 = 0;
+const int SPRITE_SIZE16 = 1;
+int spriteSize = SPRITE_SIZE8;
+
+int bgPatternTable = 0;
+int spPatternTable = 0;
+int ppuAddressIncrement = 1;
+int nameTableAddress = 0;
+
+void writeControlRegister1(byte data){
+  execNMI = bitTest(data, 7);
+  ppuSlave = bitTest(data, 6);
+  spriteSize = (bitTest(data, 5)?SPRITE_SIZE16:SPRITE_SIZE8);
+  bgPatternTable = bit(data, 4);
+  spPatternTable = bit(data, 3);
+  ppuAddressIncrement = bitTest(data,2)?32:1;
+  nameTableAddress = data&3;
+}
+
+const int BGCOLOR_NONE = 0;
+const int BGCOLOR_GREEN = 1;
+const int BGCOLOR_BLUE = 2;
+const int BGCOLOR_RED = 4;
+int fullBackgroundColor = BGCOLOR_NONE;
+
+int spriteVisible = true;//t:visible, f:not visible
+int bgVisible = true;//t:visible, f:not visible
+int spriteClip = true;//t:no clipping, f:clipping
+int bgClip = true;//t:no clipping, f:clipping
+int displayType = false;//t:Monochrome, f:colour
+
+void writeControlRegister2(byte data){
+  fullBackgroundColor = (data>>5)&7;
+  spriteVisible = bitTest(data,4);
+  bgVisible = bitTest(data,3);
+  spriteClip = bitTest(data,2);
+  bgClip = bitTest(data,1);
+  displayType = bitTest(data,0);
+}
+
+int vblankOccurance = 1;
+int sp0Occurance = 0;
+int scanlineSpriteCount = 0;
+int vramWriteFlag = 0;
+
+byte readStatusRegister(){
+  int res = 0;
+  res |= vblankOccurance<<7;
+  res |= sp0Occurance<<6;
+  res |= scanlineSpriteCount<<5;
+  res |= vramWriteFlag<<4;
+  vblankOccurance = 0;
+  horizontal = true;
+  return res;
+}
+
+const int HORIZONTAL_MIRROR = 0;
+const int VERTICAL_MIRROR = 1;
+const int FOUR_SCREEN = 2;
+private int mirroring = HORIZONTAL_MIRROR;
+
+void setMirroring(int value){
+  mirroring = value;
+  if(mirroring == HORIZONTAL_MIRROR){
+    NameTables = NameTablesH;
+  }else if(mirroring == VERTICAL_MIRROR){
+    NameTables = NameTablesV;
+  }else{
+    NameTables = NameTablesH;
+  }
+}
+
+int ppu_read(int addr){
+  addr &= 0x3fff;
+  return map(addr).read(addr);
+}
+
+void ppu_write(int addr, int data){
+  addr &= 0x3fff;
+  map(addr).write(addr, data);
+}
+
+class TSPRRAM{
+  byte[256] data;
+  private int addr;
+  void setAddress(int addr){
+    this.addr = addr;
+  }
+  int getAddress(){
+    return addr;
+  }
+  void write(byte data){
+     this.data[addr++] = data;
+  }
+  byte read(){
+    return this.data[addr];
+  }
+  void dma(byte[] src, int addr){
+    for(int i=0; i<256; i++){
+      data[(this.addr+i)&0xff] = src[addr+i];
+    }
+  }
+}
+
+TSPRRAM sprram = new TSPRRAM();
+
+TSPRRAM getSPRRAM(){
+  return sprram;
+}
+
+//$2005
+int hscroll = 0;
+int vscroll = 0;
+
+void setScroll(byte val){
+  if(horizontal){
+    hscroll = val&0xff;
+  }else{
+    vscroll = val&0xff;
+  }
+  horizontal = !horizontal;
+}
+
+int vramaddr = 0;
+
+void setVramAddr(byte addr){
+  vramaddr = ((vramaddr<<8)&0xff00)|(addr&0xff);
+}
+int vramBuffer = 0;
+int readVram(){
+  int res = vramBuffer;
+  vramBuffer = ppu_read(vramaddr);
+  if(vramaddr >= 0x3f00){
+    res = vramBuffer;
+    vramBuffer = ppu_read(0x2f00+(vramaddr&0xff));
+  }
+  vramaddr = vramaddr + ppuAddressIncrement;
+  return res;
+}
+void writeVram(int data){
+  ppu_write(vramaddr, data);
+  vramaddr = vramaddr + ppuAddressIncrement;
+}
+
+private byte[,] makePattern(byte upper, int i){
+  byte[8,8] pattern;
+  for(int j=0; j<8; j++){
+    byte data0 = ptnTbl[i*16+j];
+    byte data1 = ptnTbl[i*16+8+j];
+    for(int k=0; k<8; k++){
+      pattern[j,k] = (upper|((data0>>(7-k))&1)|(((data1>>(7-k))&1)<<1));
+    }
+  }
+  return pattern;
+}
+private byte getUpperBit(int scr, int x, int y){
+  int i = (y/4)*8 + (x/4);
+  int bit = ((y%4)/2)*2 + ((x%4)/2);
+  return (((nameTbl[0x3C0+0x400*scr+i]>>(bit*2))&3)<<2);
+}
+
+private int getColor(int palette, byte color){
+  return palettes[0x10*palette+color];
+}
+
+const int IMAGE_PALETTE = 0;
+const int SPRITE_PALETTE = 1;
+
+private void renderPattern(byte[,] pattern, int x, int y, int palettes, int vflip, int hflip){
+  for(int i=0; i<8; i++){
+    for(int j=0; j<8; j++){
+      byte c = pattern[vflip?7-i:i,hflip?7-j:j];
+      if((c&0x3)!=0)
+        setPixel(x+j, y+i, getColor(palettes, c));
+    }
+  }
+}
+
+private void drawBG(int scr, int voffset, int hoffset){
+  for(int i=0; i<30; i++){
+    for(int j=0; j<32; j++){
+      int pattern = 0xff&nameTbl[i*32+j+scr*0x400];
+      byte upper = getUpperBit(scr, j, i);
+      byte[,] p = makePattern(upper, bgPatternTable*256+pattern);
+      renderPattern(p, hoffset+j*8, voffset+i*8, IMAGE_PALETTE, false, false);
+    }
+  }
+}
+
+private void drawBG(){
+  if(mirroring == HORIZONTAL_MIRROR){
+    drawBG(nameTableAddress/2, -vscroll, -hscroll);
+    drawBG((nameTableAddress/2+1)%2, 30*8-vscroll, 0);
+  }else if(mirroring == VERTICAL_MIRROR){
+    drawBG(nameTableAddress%2, -vscroll, 0);
+    drawBG((nameTableAddress%2+1)%2, 30*8-vscroll, 0);
+  }
+}
+
+private void drawSprites(int bg){
+  for(int i=0; i<64; i++){
+    byte attr = sprram.data[i*4+2];
+    if(((attr>>5)&1)==bg){
+      int y = 0xff&sprram.data[i*4];
+      int x = 0xff&sprram.data[i*4+3];
+      int tile = 0xff&sprram.data[i*4+1];
+      byte upper = ((attr&3)<<2);
+      if(spriteSize == SPRITE_SIZE8){
+        byte[,] pat = makePattern(upper, spPatternTable*256+tile);
+        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+      }else if(spriteSize == SPRITE_SIZE16){
+        int table = tile%2;
+        byte[,] pat = makePattern(upper, table*256+(tile/2*2));
+        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+        pat = makePattern(upper, table*256+(tile/2*2+1));
+        renderPattern(pat, x, y+8, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
+      }
+    }
+  }
+}
+
+int dbgCount = 0;
+void render(int draw){
+  if(draw){
+    clear();
+    sp0Occurance = 1;
+    drawSprites(1);
+    drawBG();
+    drawSprites(0);
+    //todo send image to screen
+    //monitor.refresh();
+  }
+  vblankOccurance = 1;
+  sp0Occurance = 0;
+  if(execNMI){
+    nmi=true;
+  }
+}
+
+void loadCHRROM(byte[,] data, int offset){
+  for(int j=0; j<0x2000; j++){
+    ptnTbl[j] = data[0,offset+j];
+  }
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Memory" HasInitializer="1">
+      <Source>
+<![CDATA[private byte[0x10000] data;
+
+class TMemRegion{
+  virtual int read(int addr) { }
+  virtual void write(int addr, byte data)  { }
+}
+
+//0x0000 - 0x1fff
+class TRAM : TMemRegion {
+  override int read(int addr){
+    return data[addr%0x800];
+  }
+  override  void write(int addr, byte value){
+    data[addr%0x800] = value;
+  }
+};
+private TMemRegion RAM = new TRAM();
+
+//0x2000 - 0x3fff
+class TRegisters : TMemRegion {
+  override int read(int addr) {
+    int a = addr%0x8;
+    switch(a){
+    case 0x0:case 0x1:
+    case 0x3:
+    case 0x4:
+      return getSPRRAM().read();
+    case 0x5:case 0x6:
+      trace("Unexpected read");
+      break;
+    case 0x2:
+      trace("context.ppu.readStatusRegister : ");
+      return readStatusRegister()&0xff;
+    case 0x7:
+      trace("context.ppu.readVram : ");
+      return readVram();
+    }
+    return 0;
+  }
+  override void write(int addr, byte value) {
+    int a = addr&0x7;
+    switch(a){
+    case 0x0:
+      trace("context.ppu.writeControlRegister1 : ");
+      writeControlRegister1(value);
+      break;
+    case 0x1:
+      trace("context.ppu.writeControlRegister2 : ");
+      writeControlRegister2(value);
+      break;
+    case 0x2:
+      trace("Unexpected write to ");
+      break;
+    case 0x3:
+      trace("context.ppu.getSPRRAM().setAddress : ");
+      getSPRRAM().setAddress(value);
+      break;
+    case 0x4:
+      trace("context.ppu.getSPRRAM().write : ");
+      getSPRRAM().write(value);
+      break;
+    case 0x5:
+      trace("context.ppu.setScroll : ");
+      setScroll(value);
+      break;
+    case 0x6:
+      trace("context.ppu.setVramAddr : ");
+      setVramAddr(value);
+      break;
+    case 0x7:
+      trace("context.ppu.writeVram : ");
+      writeVram(value);
+      break;
+    }
+  }
+}
+private TMemRegion Registers = new TRegisters();
+
+//0x4000 - 0x401f
+class TRegisters2 : TMemRegion {
+  override int read(int addr) {
+    if(addr == 0x4016){
+      //TODO Zapper not implemented
+      //todo: joypad
+      //return joypad.read();
+      return 0;
+    }else if(addr == 0x4017){
+      //TODO JoyPad2/Zapper, SOFTCLC not implemented
+      return 0;//context.joypad.read();
+    }else{
+      trace("Not Implemented : read ");
+      return 0;
+    }
+  }
+  override void write(int addr, byte value) {
+    if(addr == 0x4014){//sprite DMA
+      getSPRRAM().dma(data, (0xff&value)<<8);
+    }else if(addr == 0x4016){
+        //todo: context.joypad.readReset();
+    }else if(addr == 0x4017){
+      //TODO JOYPAD2/SOFTCLC not implemented
+    }else{
+      trace("Not Implemented : write ");
+    }
+  }
+}
+private TMemRegion Registers2 = new TRegisters2();
+
+//0x4020 - 0x5fff
+class TExpansionROM : TMemRegion {
+  override int read(int addr) {
+    trace("Not Implemented : read ");
+    return 0;
+  }
+  override void write(int addr, byte data) {
+    trace("Not Implemented : write ");
+  }
+}
+private TMemRegion ExpansionROM = new TExpansionROM();
+
+//0x6000 - 0x7fff
+class TSRAM : TMemRegion {
+  override int read(int addr) {
+    trace("Not Implemented : read ");
+    return 0;
+  }
+  override  void write(int addr, byte data) {
+    trace("Not Implemented : write ");
+  }
+}
+private TMemRegion SRAM = new TSRAM();
+
+//0x8000 - 0xbfff
+class TPRGRAM1 : TMemRegion {
+  override int read(int addr) {
+    return data[addr]&0xff;
+  }
+  override void write(int addr, byte data) {
+    trace("Unexpected Write to PRGRAM1 : ");
+  }
+}
+private TMemRegion PRGRAM1 = new TPRGRAM1();
+
+//0xC000 - 0xffff
+class TPRGRAM2 : TMemRegion {
+  override int read(int addr) {
+    return data[addr]&0xff;
+  }
+  override void write(int addr, byte data) {
+    trace("Unexpected Write to PRGRAM2 : ");
+  }
+}
+private TMemRegion PRGRAM2 = new TPRGRAM2();
+
+
+private TMemRegion map(int addr){
+  if(addr < 0x6000){
+    if(addr < 0x2000){
+      return RAM;
+    }else if(addr < 0x4000){
+      return Registers;
+    }else if(addr < 0x4020){
+      return Registers2;
+    }else{
+      return ExpansionROM;
+    }
+  }else{
+    if(addr < 0x8000){
+      return SRAM;
+    }else if(addr < 0xC000){
+      return PRGRAM1;
+    }else{
+      return PRGRAM2;
+    }
+  }
+}
+
+//return read value 0-255
+int mem_read(int addr){
+  int res = map(addr).read(addr)&0xff;
+  return res;
+}
+
+void mem_write(int addr, byte data){
+  map(addr).write(addr, data);
+}
+
+void loadPRGRAM(int i, byte[,] indata, int indataIndex){
+  for(int j=0; j<0x4000; j++){
+	  data[0x8000+i*0x4000+j] = indata[indataIndex,j];
+	}
+}]]>
       </Source>
     </ZLibrary>
     <ZLibrary Comment="CPU" HasInitializer="1">
       <Source>
 <![CDATA[//https://github.com/ykmr1224/NesEmulator
-
-class TMemory {
-  int read(int addr) { }
-  void write(int addr, byte data) { }
-}
 
 const int CLOCK_SPEED = 1790000; //1.79MHz
 
@@ -32,8 +644,6 @@ int OverFlowFlag = false;
 int NegativeFlag = false;
 
 int nmiOccuring = false;
-
-TMemory mem;
 
 // CPU won't count up PC if the jumpFlg is true
 int jumpFlg = false;
@@ -54,7 +664,7 @@ private void incPC(int i){
 
 // push i to the stack
 private void push(byte i){
-  mem.write(0x0100 + s, i);
+  mem_write(0x0100 + s, i);
   s -= 1;
   s &= 0xff;
 }
@@ -62,7 +672,7 @@ private void push(byte i){
 // pull byte from the stack
 private int pull(){
   s += 1;
-  int res = mem.read(0x0100 + s);
+  int res = mem_read(0x0100 + s);
   s &= 0xff;
   return res;
 }
@@ -106,17 +716,12 @@ private void storeStatus(int i){
 
 // read 16bit data from memory at addr and addr+1(little endian)
 private int read16bit(int addr){
-  return mem.read(addr)+(mem.read((addr+1)&0xffff)<<8);
+  return mem_read(addr)+(mem_read((addr+1)&0xffff)<<8);
 }
 
 // read 16bit data from memory at addr and addr+1(wrapped by 256byte memory block)
 private int readWrapped16bit(int addr){
-  return mem.read(addr)+(mem.read((addr&0xff00)+((addr+1)&0xff))<<8);
-}
-
-// return bth bit in data (0 or 1)
-private int bit(int data, int b){
-  return (data>>b)&1;
+  return mem_read(addr)+(mem_read((addr&0xff00)+((addr+1)&0xff))<<8);
 }
 
 
@@ -169,7 +774,7 @@ class TImmediateAddressing : TAddressing {
 
 class TZeroPageAddressing : TAddressing {
   override void ope(TInstruction i){
-    int data = mem.read(pc+1);
+    int data = mem_read(pc+1);
     i.ope(data);
     incPC(2);
   }
@@ -178,7 +783,7 @@ class TZeroPageAddressing : TAddressing {
 
 class TZeroPageXAddressing : TAddressing {
   override void ope(TInstruction i){
-    int data = mem.read(pc+1);
+    int data = mem_read(pc+1);
     i.ope((data+x)&0xff);
     incPC(2);
   }
@@ -187,7 +792,7 @@ class TZeroPageXAddressing : TAddressing {
 
 class TZeroPageYAddressing : TAddressing {
   override void ope(TInstruction i){
-    int data = mem.read(pc+1);
+    int data = mem_read(pc+1);
     i.ope((data+y)&0xff);
     incPC(2);
   }
@@ -197,7 +802,7 @@ class TZeroPageYAddressing : TAddressing {
 class TRelativeAddressing : TAddressing {
   override void ope(TInstruction i){
     //todo: signed read
-    int data = mem.read(pc+1);//-128 .. 127
+    int data = mem_read(pc+1);//-128 .. 127
     i.ope(pc+data);
     incPC(2);
   }
@@ -244,7 +849,7 @@ class TIndirectAddressing : TAddressing {
 
 class TIndirectXAddressing : TAddressing {
   override void ope(TInstruction i){
-    int data = mem.read(pc+1);
+    int data = mem_read(pc+1);
     int addr = readWrapped16bit((data+x)&0xff);
     i.ope(addr) ;
     incPC(2);
@@ -254,7 +859,7 @@ class TIndirectXAddressing : TAddressing {
 
 class TIndirectYAddressing : TAddressing {
   override void ope(TInstruction i){
-    int data = mem.read(pc+1);
+    int data = mem_read(pc+1);
     int addr = readWrapped16bit(data&0xff);
     i.ope((addr+y)&0xffff);
     incPC(2);
@@ -266,7 +871,7 @@ class TIndirectYAddressing : TAddressing {
 
 class TADCInstruction : TInstruction {
   override void ope(int i) {
-    int data = mem.read(i);
+    int data = mem_read(i);
     int temp = a + data + (CarryFlag?1:0);
     int temps = a + data + (CarryFlag?1:0);
     a = temp & 0xff;
@@ -280,7 +885,7 @@ class TADCInstruction : TInstruction {
 // and
 class TANDInstruction : TInstruction {
   override void ope(int i) {
-    a = a&mem.read(i);
+    a = a&mem_read(i);
     ZeroFlag = (a==0);
     NegativeFlag = bit(a,7) == 1;
   }
@@ -289,8 +894,8 @@ class TANDInstruction : TInstruction {
 // shift left
 class TASLInstruction : TInstruction {
   override void ope(int i) {
-    int temp = mem.read(i)*2;
-    mem.write(i, temp);
+    int temp = mem_read(i)*2;
+    mem_write(i, temp);
     CarryFlag = bit(temp,8) == 1;
     ZeroFlag = (temp&0xff) == 0;
     NegativeFlag = bit(temp,7) == 1;
@@ -331,7 +936,7 @@ class TBEQInstruction : TInstruction {
 // bit and
 class TBITInstruction : TInstruction {
   override void ope(int i) {
-    int data = mem.read(i);
+    int data = mem_read(i);
     int temp = a & data;
     ZeroFlag = (temp==0);
     OverFlowFlag = bit(data,6) == 1;
@@ -420,7 +1025,7 @@ class TCLVInstruction : TInstruction {
 // compare with A
 class TCMPInstruction : TInstruction {
   override void ope(int i) {
-    int temp0 = mem.read(i);
+    int temp0 = mem_read(i);
     int temp1 = a;
     CarryFlag = (temp1 >= temp0);
     ZeroFlag = (temp1 == temp0);
@@ -431,7 +1036,7 @@ class TCMPInstruction : TInstruction {
 // compare with X
 class TCPXInstruction : TInstruction {
   override void ope(int i) {
-    int temp0 = mem.read(i);
+    int temp0 = mem_read(i);
     int temp1 = x;
     CarryFlag = (temp1 >= temp0);
     ZeroFlag = (temp1 == temp0);
@@ -442,7 +1047,7 @@ class TCPXInstruction : TInstruction {
 // compare with Y
 class TCPYInstruction : TInstruction {
   override void ope(int i) {
-    int temp0 = mem.read(i);
+    int temp0 = mem_read(i);
     int temp1 = y;
     CarryFlag = (temp1 >= temp0);
     ZeroFlag = (temp1 == temp0);
@@ -453,8 +1058,8 @@ class TCPYInstruction : TInstruction {
 // decrement
 class TDECInstruction : TInstruction {
   override void ope(int i) {
-    int temp = (mem.read(i)-1)&0xFF;
-    mem.write(i, temp);
+    int temp = (mem_read(i)-1)&0xFF;
+    mem_write(i, temp);
     ZeroFlag = (temp == 0);
     NegativeFlag = bit(temp,7) == 1;
   }
@@ -479,7 +1084,7 @@ class TDEYInstruction : TInstruction {
 // or
 class TEORInstruction : TInstruction {
   override void ope(int i) {
-    a = 0xff&(a^(0xff&(mem.read(i))));
+    a = 0xff&(a^(0xff&(mem_read(i))));
     ZeroFlag = (a==0);
     NegativeFlag = bit(a,7) == 1;
   }
@@ -487,8 +1092,8 @@ class TEORInstruction : TInstruction {
 // increment
 class TINCInstruction : TInstruction {
   override void ope(int i) {
-    int temp = ((mem.read(i))+1)&0xff;
-    mem.write(i, temp);
+    int temp = ((mem_read(i))+1)&0xff;
+    mem_write(i, temp);
     ZeroFlag = (temp == 0);
     NegativeFlag = bit(temp,7) == 1;
   }
@@ -525,7 +1130,7 @@ class TJSRInstruction : TInstruction {
 // load to A
 class TLDAInstruction : TInstruction {
   override void ope(int i) {
-    a = mem.read(i);
+    a = mem_read(i);
     ZeroFlag = (a==0);
     NegativeFlag = bit(a,7) == 1;
   }
@@ -533,7 +1138,7 @@ class TLDAInstruction : TInstruction {
 // load to X
 class TLDXInstruction : TInstruction {
   override void ope(int i) {
-    x = mem.read(i);
+    x = mem_read(i);
     ZeroFlag = (x==0);
     NegativeFlag = bit(x,7) == 1;
   }
@@ -541,7 +1146,7 @@ class TLDXInstruction : TInstruction {
 // load to Y
 class TLDYInstruction : TInstruction {
   override void ope(int i) {
-    y = mem.read(i);
+    y = mem_read(i);
     ZeroFlag = (y==0);
     NegativeFlag = bit(y,7) == 1;
   }
@@ -549,10 +1154,10 @@ class TLDYInstruction : TInstruction {
 // logical bit shift right
 class TLSRInstruction : TInstruction {
   override void ope(int i) {
-    int data = (0xff&mem.read(i));
+    int data = (0xff&mem_read(i));
     CarryFlag = (data&1) == 1;
     int temp = data/2;
-    mem.write(i, temp);
+    mem_write(i, temp);
     ZeroFlag = (temp&0xff) == 0;
     NegativeFlag = false;
   }
@@ -573,7 +1178,7 @@ class TNOPInstruction : TInstruction {
 // or A
 class TORAInstruction : TInstruction {
   override void ope(int i) {
-    a = a|mem.read(i);
+    a = a|mem_read(i);
     ZeroFlag = (a==0);
     NegativeFlag = bit(a,7) == 1;
   }
@@ -607,9 +1212,9 @@ class TPLPInstruction : TInstruction {
 // rotate one bit left
 class TROLInstruction : TInstruction {
   override void ope(int i) {
-    int temp = mem.read(i)*2;
+    int temp = mem_read(i)*2;
     byte res = (temp | (CarryFlag?1:0));
-    mem.write(i, res);
+    mem_write(i, res);
     CarryFlag = bit(temp,8) == 1;
     ZeroFlag = res == 0;
     NegativeFlag = bit(res,7) == 1;
@@ -625,11 +1230,11 @@ class TROLInstruction : TInstruction {
 // rotate one bit right
 class TRORInstruction : TInstruction {
   override void ope(int i) {
-    int data = mem.read(i);
+    int data = mem_read(i);
     int temp = (data/2) | (CarryFlag?0x80:0);
     NegativeFlag = CarryFlag;
     CarryFlag = (data&1) == 1;
-    mem.write(i, temp);
+    mem_write(i, temp);
     ZeroFlag = (temp&0xff) == 0;
   }
   override void opeAccumulator(){
@@ -659,7 +1264,7 @@ class TRTSInstruction : TInstruction {
 // subtract with carry
 class TSBCInstruction : TInstruction {
   override void ope(int i) {
-    int data = mem.read(i);
+    int data = mem_read(i);
     int temp0 = (0xff&(0xff^data)) + (CarryFlag?1:0);
     int temp = a + temp0;
     int temps = a + temp0;
@@ -691,19 +1296,19 @@ class TSEIInstruction : TInstruction {
 // store A
 class TSTAInstruction : TInstruction {
   override void ope(int i) {
-    mem.write(i, a);
+    mem_write(i, a);
   }
 }
 // store X
 class TSTXInstruction : TInstruction {
   override void ope(int i) {
-    mem.write(i, x);
+    mem_write(i, x);
   }
 }
 // store Y
 class TSTYInstruction : TInstruction {
   override void ope(int i) {
-    mem.write(i, y);
+    mem_write(i, y);
   }
 }
 // transfer A to X
@@ -755,7 +1360,7 @@ class TTXSInstruction : TInstruction {
 
 TOperand[256] operands;
 
-{
+void initOperands() {
   operands[0xA9] = new TOperand(new TLDAInstruction(),new TImmediateAddressing(), 2);
   operands[0xA5] = new TOperand(new TLDAInstruction(),new TZeroPageAddressing(), 3);
   operands[0xB5] = new TOperand(new TLDAInstruction(),new TZeroPageXAddressing(), 4);
@@ -932,8 +1537,6 @@ TOperand[256] operands;
   operands[0x40] = new TOperand(new TRTIInstruction(),new TImplicitAddressing(), 6);
 }
 
-int nmi = false;
-
 int exec(){
   if(nmi && !nmiOccuring){
     nmiOccuring = true;
@@ -941,10 +1544,10 @@ int exec(){
     pushAddress(pc);
     push(saveStatus());
     BreakCommand = true;
-    pc = (0xff&mem.read(0xfffa)) | ((mem.read(0xfffb)&0xff)<<8);
+    pc = (0xff&mem_read(0xfffa)) | ((mem_read(0xfffb)&0xff)<<8);
   }
 
-  int op = mem.read(pc);
+  int op = mem_read(pc);
   TOperand ope = operands[op];
   ope.addr.ope(ope.inst);
 
@@ -954,435 +1557,114 @@ int exec(){
 }
 
 void reset(){
-  pc = (0xff&mem.read(0xfffc)) | ((mem.read(0xfffd)&0xff)<<8);
+  pc = (0xff&mem_read(0xfffc)) | ((mem_read(0xfffd)&0xff)<<8);
   a = x = y = 0;
   s = 0xff;
-}
-
-void setNMI(){
-  nmi = true;
 }]]>
       </Source>
     </ZLibrary>
-    <ZLibrary Comment="PPU" HasInitializer="1">
+    <ZLibrary Comment="NESFile">
       <Source>
-<![CDATA[private byte[0x2000] ptnTbl;
-private byte[0x0800] nameTbl;
-private byte[0x20] palettes;
-int horizontal = true;//t:pan, f:scroll;
+<![CDATA[class TNESFile {
+  private byte[] file;
+  private int filePos;
 
-class TPpuMemRegion{
-  virtual int read(int addr) { }
-  virtual void write(int addr, int data)  { }
-}
+  int PRGROMCount;
+  private int CHRROMCount;
+  private byte ROMCtr1;
+  private byte ROMCtr2;
+  int mirror;
+  private int sram;
+  private int trainer;
+  private int fourscreen;
+  private int mapper;
 
-//$0000-$1fff
-class TPatternTable : TPpuMemRegion {
-  override int read(int addr) {
-    return ptnTbl[addr];
+  byte[,] PRGROM;
+  byte[,] CHRROM;
+
+  TNESFile(byte[] afile){
+    file = afile;
   }
 
-  override void write(int addr, int data) {
-    ptnTbl[addr] = (data&0xff);
+  private void readFile(byte[] target) {
+    for(int i=0; i<target.SizeDim1; i++)
+      target[i]=file[filePos++];
   }
-}
-private TPpuMemRegion PatternTable = new TPatternTable();
 
-//$2000-$3eff
-class TNameTablesH : TPpuMemRegion {
-  override int read(int addr) {
-    addr = (addr&0x3ff)|((addr&0x800)>>1);
-    return nameTbl[addr];
-  }
-  override void write(int addr, int data) {
-    addr = (addr&0x3ff)|((addr&0x800)>>1);
-    nameTbl[addr] = (data&0xff);
-  }
-}
-private TPpuMemRegion NameTablesH = new TNameTablesH();
+  int load() {
+    byte[16] buff;
+    this.readFile(buff);
 
-class TNameTablesV : TPpuMemRegion {
-  override int read(int addr) {
-    return nameTbl[addr&0x7ff];
-  }
-  override void write(int addr, int data) {
-    nameTbl[addr&0x7ff] = (data&0xff);
-  }
-}
-private TPpuMemRegion NameTablesV = new TNameTablesV();
-
-private TPpuMemRegion NameTables = NameTablesH;
-
-//$3f00-$3fff
-class TPalettes : TPpuMemRegion {
-  override int read(int addr) {
-    return palettes[addr&0x1f];
-  }
-  override void write(int addr, int data) {
-    palettes[addr&0x1f] = (data&0xff);
-    if((addr&0x3) == 0){
-      palettes[(addr&0x1f)^0x10] = (data&0xff);
+     if( (buff[0]!=ord("N")) || (buff[1]!=ord("E")) || (buff[2]!=ord("S")) ) {
+      trace("fail 1");
+      return false;
     }
+
+    PRGROMCount = buff[4]; trace("PRG-ROM Count : " + intToStr(PRGROMCount));
+    CHRROMCount = buff[5]; trace("CHR-ROM Count : " + intToStr(CHRROMCount));
+    ROMCtr1 = buff[6]; trace("ROM Control Byte #1 : " + intToStr(ROMCtr1));
+    ROMCtr2 = buff[7]; trace("ROM Control Byte #2 : " + intToStr(ROMCtr2));
+
+    mirror = ROMCtr1&1; trace("Mirroring : " + intToStr(mirror));
+    sram = (ROMCtr1>>1)&1; trace("SRAM enabled : " + intToStr(sram));
+    trainer = (ROMCtr1>>2)&1; trace("512-byte trainer present : " + intToStr(trainer));
+    fourscreen = (ROMCtr1>>3)&1; trace("Four-screen mirroring : " + intToStr(fourscreen));
+    mapper = ((ROMCtr1>>4)&0xf)|(ROMCtr2&0xf0); trace("Mapper : " + intToStr(mapper));
+
+    //PRGROM = new byte[PRGROMCount,0x4000];
+    //CHRROM = new byte[CHRROMCount,0x2000];
+    PRGROM.SizeDim1=PRGROMCount;
+    PRGROM.SizeDim2=0x4000;
+    CHRROM.SizeDim1=CHRROMCount;
+    CHRROM.SizeDim2=0x2000;
+
+    for(int i=0; i<PRGROMCount; i++)
+      for(int j=0; j<PRGROM.SizeDim2; j++)
+        PRGROM[i,j] = file[filePos++];
+    for(int i=0; i<CHRROMCount; i++)
+      for(int j=0; j<CHRROM.SizeDim2; j++)
+        CHRROM[i,j] = file[filePos++];
+
+    return true;
   }
-}
-private TPpuMemRegion PalettesRegion = new TPalettes();
 
-TPpuMemRegion map(int addr){
-  if(addr >= 0x4000)
-    addr -= 0x4000;
 
-  if(addr < 0x2000){
-    return PatternTable;
-  }else if(addr < 0x3f00){
-    return NameTables;
-  }else{
-    return PalettesRegion;
-  }
-}
-
-int bit(byte data, int b){return (data>>b)&1;}
-int bitTest(byte data, int b){return ((data>>b)&1)==1;}
-
-int execNMI = false;
-int ppuSlave = false;
-
-const int SPRITE_SIZE8 = 0;
-const int SPRITE_SIZE16 = 1;
-int spriteSize = SPRITE_SIZE8;
-
-int bgPatternTable = 0;
-int spPatternTable = 0;
-int ppuAddressIncrement = 1;
-int nameTableAddress = 0;
-
-void writeControlRegister1(byte data){
-  execNMI = bitTest(data, 7);
-  ppuSlave = bitTest(data, 6);
-  spriteSize = (bitTest(data, 5)?SPRITE_SIZE16:SPRITE_SIZE8);
-  bgPatternTable = bit(data, 4);
-  spPatternTable = bit(data, 3);
-  ppuAddressIncrement = bitTest(data,2)?32:1;
-  nameTableAddress = data&3;
-}
-
-const int BGCOLOR_NONE = 0;
-const int BGCOLOR_GREEN = 1;
-const int BGCOLOR_BLUE = 2;
-const int BGCOLOR_RED = 4;
-int fullBackgroundColor = BGCOLOR_NONE;
-
-int spriteVisible = true;//t:visible, f:not visible
-int bgVisible = true;//t:visible, f:not visible
-int spriteClip = true;//t:no clipping, f:clipping
-int bgClip = true;//t:no clipping, f:clipping
-int displayType = false;//t:Monochrome, f:colour
-
-void writeControlRegister2(byte data){
-  fullBackgroundColor = (data>>5)&7;
-  spriteVisible = bitTest(data,4);
-  bgVisible = bitTest(data,3);
-  spriteClip = bitTest(data,2);
-  bgClip = bitTest(data,1);
-  displayType = bitTest(data,0);
-}
-
-int vblankOccurance = 1;
-int sp0Occurance = 0;
-int scanlineSpriteCount = 0;
-int vramWriteFlag = 0;
-
-byte readStatusRegister(){
-  int res = 0;
-  res |= vblankOccurance<<7;
-  res |= sp0Occurance<<6;
-  res |= scanlineSpriteCount<<5;
-  res |= vramWriteFlag<<4;
-  vblankOccurance = 0;
-  horizontal = true;
-  return res;
-}
-
-const int HORIZONTAL_MIRROR = 0;
-const int VERTICAL_MIRROR = 1;
-const int FOUR_SCREEN = 2;
-private int mirroring = HORIZONTAL_MIRROR;
-
-void setMirroring(int value){
-  mirroring = value;
-  if(mirroring == HORIZONTAL_MIRROR){
-    NameTables = NameTablesH;
-  }else if(mirroring == VERTICAL_MIRROR){
-    NameTables = NameTablesV;
-  }else{
-    NameTables = NameTablesH;
-  }
-}
-
-int read(int addr){
-  addr &= 0x3fff;
-  return map(addr).read(addr);
-}
-
-void write(int addr, int data){
-  addr &= 0x3fff;
-  map(addr).write(addr, data);
-}
-
-class TSPRRAM{
-  byte[256] data;
-  private int addr;
-  void setAddress(int addr){
-    this.addr = addr;
-  }
-  int getAddress(){
-    return addr;
-  }
-  void write(byte data){
-     this.data[addr++] = data;
-  }
-  byte read(){
-    return this.data[addr];
-  }
-  void dma(byte[] src, int addr){
-    for(int i=0; i<256; i++){
-      data[(this.addr+i)&0xff] = src[addr+i];
-    }
-  }
-}
-
-TSPRRAM sprram = new TSPRRAM();
-
-TSPRRAM getSPRRAM(){
-  return sprram;
-}
-
-//$2005
-int hscroll = 0;
-int vscroll = 0;
-
-void setScroll(byte val){
-  if(horizontal){
-    hscroll = val&0xff;
-  }else{
-    vscroll = val&0xff;
-  }
-  horizontal = !horizontal;
-}
-
-int vramaddr = 0;
-
-void setVramAddr(byte addr){
-  vramaddr = ((vramaddr<<8)&0xff00)|(addr&0xff);
-}
-int vramBuffer = 0;
-int readVram(){
-  int res = vramBuffer;
-  vramBuffer = read(vramaddr);
-  if(vramaddr >= 0x3f00){
-    res = vramBuffer;
-    vramBuffer = read(0x2f00+(vramaddr&0xff));
-  }
-  vramaddr = vramaddr + ppuAddressIncrement;
-  return res;
-}
-void writeVram(int data){
-  write(vramaddr, data);
-  vramaddr = vramaddr + ppuAddressIncrement;
-}
-
-private byte[,] makePattern(byte upper, int i){
-  byte[8,8] pattern;
-  for(int j=0; j<8; j++){
-    byte data0 = ptnTbl[i*16+j];
-    byte data1 = ptnTbl[i*16+8+j];
-    for(int k=0; k<8; k++){
-      pattern[j,k] = (upper|((data0>>(7-k))&1)|(((data1>>(7-k))&1)<<1));
-    }
-  }
-  return pattern;
-}
-private byte getUpperBit(int scr, int x, int y){
-  int i = (y/4)*8 + (x/4);
-  int bit = ((y%4)/2)*2 + ((x%4)/2);
-  return (((nameTbl[0x3C0+0x400*scr+i]>>(bit*2))&3)<<2);
-}
-
-private int getColor(int palette, byte color){
-  return palettes[0x10*palette+color];
-}
-
-const int IMAGE_PALETTE = 0;
-const int SPRITE_PALETTE = 1;
-
-private void renderPattern(byte[,] pattern, int x, int y, int palettes, int vflip, int hflip){
-  for(int i=0; i<8; i++){
-    for(int j=0; j<8; j++){
-      byte c = pattern[vflip?7-i:i,hflip?7-j:j];
-      //if((c&0x3)!=0)
-        //todo: monitor
-        //monitor.setPixel(x+j, y+i, getColor(palettes, c));
-    }
-  }
-}
-
-private void drawBG(int scr, int voffset, int hoffset){
-  for(int i=0; i<30; i++){
-    for(int j=0; j<32; j++){
-      int pattern = 0xff&nameTbl[i*32+j+scr*0x400];
-      byte upper = getUpperBit(scr, j, i);
-      byte[,] p = makePattern(upper, bgPatternTable*256+pattern);
-      renderPattern(p, hoffset+j*8, voffset+i*8, IMAGE_PALETTE, false, false);
-    }
-  }
-}
-
-private void drawBG(){
-  if(mirroring == HORIZONTAL_MIRROR){
-    drawBG(nameTableAddress/2, -vscroll, -hscroll);
-    drawBG((nameTableAddress/2+1)%2, 30*8-vscroll, 0);
-  }else if(mirroring == VERTICAL_MIRROR){
-    drawBG(nameTableAddress%2, -vscroll, 0);
-    drawBG((nameTableAddress%2+1)%2, 30*8-vscroll, 0);
-  }
-}
-
-private void drawSprites(int bg){
-  for(int i=0; i<64; i++){
-    byte attr = sprram.data[i*4+2];
-    if(((attr>>5)&1)==bg){
-      int y = 0xff&sprram.data[i*4];
-      int x = 0xff&sprram.data[i*4+3];
-      int tile = 0xff&sprram.data[i*4+1];
-      byte upper = ((attr&3)<<2);
-      if(spriteSize == SPRITE_SIZE8){
-        byte[,] pat = makePattern(upper, spPatternTable*256+tile);
-        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
-      }else if(spriteSize == SPRITE_SIZE16){
-        int table = tile%2;
-        byte[,] pat = makePattern(upper, table*256+(tile/2*2));
-        renderPattern(pat, x, y, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
-        pat = makePattern(upper, table*256+(tile/2*2+1));
-        renderPattern(pat, x, y+8, SPRITE_PALETTE, ((attr>>7)&1)==1, ((attr>>6)&1)==1);
-      }
-    }
-  }
-}
-
-int dbgCount = 0;
-void render(int draw){
-  if(draw){
-    //todo: monitor
-    //monitor.clear();
-    sp0Occurance = 1;
-    drawSprites(1);
-    drawBG();
-    drawSprites(0);
-    //monitor.refresh();
-  }
-  vblankOccurance = 1;
-  sp0Occurance = 0;
-  if(execNMI){
-    //todo: set nmi
-    //cpu.setNMI();
-  }
-}
-
-void loadCHRROM(byte[] data, int offset){
-  for(int j=0; j<0x2000; j++){
-    ptnTbl[j] = data[offset+j];
-  }
 }]]>
-      </Source>
-    </ZLibrary>
-    <ZLibrary Comment="Memory" HasInitializer="1">
-      <Source>
-<![CDATA[private byte[0x10000] data;
-
-class TMemRegion{
-  virtual int read(int addr) { }
-  virtual void write(int addr, byte data)  { }
-}
-
-//0x0000 - 0x1fff
-class TRAM : TMemRegion {
-  override int read(int addr){
-    return data[addr%0x800];
-  }
-  override  void write(int addr, byte value){
-    data[addr%0x800] = value;
-  }
-};
-TMemRegion RAM = new TRAM();
-
-//0x2000 - 0x3fff
-class TRegisters : TMemRegion {
-  override int read(int addr) {
-    int a = addr%0x8;
-    switch(a){
-    case 0x0:case 0x1:
-    case 0x3:
-    case 0x4:
-      return getSPRRAM().read();
-    case 0x5:case 0x6:
-      trace("Unexpected read");
-      break;
-    case 0x2:
-      trace("context.ppu.readStatusRegister : ");
-      return readStatusRegister()&0xff;
-    case 0x7:
-      trace("context.ppu.readVram : ");
-      return readVram();
-    }
-    return 0;
-  }
-  override void write(int addr, byte value) {
-    int a = addr&0x7;
-    switch(a){
-    case 0x0:
-      trace("context.ppu.writeControlRegister1 : ");
-      writeControlRegister1(value);
-      break;
-    case 0x1:
-      trace("context.ppu.writeControlRegister2 : ");
-      writeControlRegister2(value);
-      break;
-    case 0x2:
-      trace("Unexpected write to ");
-      break;
-    case 0x3:
-      trace("context.ppu.getSPRRAM().setAddress : ");
-      getSPRRAM().setAddress(value);
-      break;
-    case 0x4:
-      trace("context.ppu.getSPRRAM().write : ");
-      getSPRRAM().write(value);
-      break;
-    case 0x5:
-      trace("context.ppu.setScroll : ");
-      setScroll(value);
-      break;
-    case 0x6:
-      trace("context.ppu.setVramAddr : ");
-      setVramAddr(value);
-      break;
-    case 0x7:
-      trace("context.ppu.writeVram : ");
-      writeVram(value);
-      break;
-    }
-  }
-}
-TMemRegion Registers = new TRegisters();
-
-
-//TODO: not finished converting]]>
       </Source>
     </ZLibrary>
     <ZExpression>
       <Expression>
-<![CDATA[//TSPRRAM xx;
-//xx.read();]]>
+<![CDATA[initColors();
+initOperands();
+reset();
+
+byte[] data;
+getBinaryProp(NesRomFile.FileEmbedded,data);
+TNesFile f = new TNesFile(data);
+f.load();
+
+if(f.CHRROM.SizeDim1 > 0)
+  loadCHRROM(f.CHRROM, 0);
+for(int i=0; i<2; i++)
+  loadPRGRAM(i, f.PRGROM, i%f.PRGROMCount);
+
+setMirroring(f.mirror);]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[int target=round(App.DeltaTime*CLOCK_SPEED);
+
+while(target>0) {
+  int clock=exec();
+  target-=clock;
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <Content>
+    <File Name="NesRomFile"/>
+  </Content>
 </ZApplication>

@@ -379,8 +379,15 @@ var
   end;
 
   procedure DoMethod;
+  var
+    M : TZcOpFunctionUserDefined;
   begin
-    Result := ((Ref as TZcOpClass).FindMethod( MangleFunc(Self.Id,Self.Children.Count) )).ReturnType;
+    Assert(Assigned(Ref) and (Ref is TZcOpClass));
+    M := ((Ref as TZcOpClass).FindMethod( MangleFunc(Self.Id,Self.Children.Count) ));
+    if not Assigned(M) then
+      //Should never happen
+      raise ECodeGenError.Create('Method not found: ' + Id);
+    Result := M.ReturnType;
   end;
 
 begin
@@ -1732,7 +1739,7 @@ begin
     O := CompilerContext.SymTab.Lookup(MangledName);
     if (O=nil) and Assigned(CompilerContext.CurrentClass) then
     begin
-      O := CompilerContext.SymTab.Lookup( MangleFunc(Op.Id,Op.Children.Count+1) );
+      O := CompilerContext.CurrentClass.FindMethod( MangleFunc(Op.Id,Op.Children.Count+1) );
       if Assigned(O) then
       begin //function call is actually method call without "this", convert
         IsMethod := True;

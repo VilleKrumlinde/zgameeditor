@@ -1608,7 +1608,6 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 var
   MangledName : string;
   O : TObject;
-  Func : TZcOpFunctionUserDefined;
   Cls : TZcOpClass;
 begin
   Assert(Op.Kind in [zcFuncCall,zcMethodCall]);
@@ -1622,12 +1621,7 @@ begin
   begin
     Cls := Op.Ref as TZcOpClass;
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
-    for Func in Cls.Methods do
-      if SameText(Func.MangledName,MangledName) then
-      begin
-        O := Func;
-        Break;
-      end;
+    O := Cls.FindMethod(MangledName);
     if (O=nil) and SameText(MangledName,Cls.Initializer.MangledName) then
       O := Cls.Initializer;
   end;
