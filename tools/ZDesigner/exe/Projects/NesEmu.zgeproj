@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 <ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
   <OnLoaded>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
+    </ZExternalLibrary>
     <ZLibrary Comment="Shared" HasInitializer="1">
       <Source>
 <![CDATA[const int false = 0;
@@ -97,7 +107,23 @@ void clear(){
 }
 
 void setPixel(int x, int y, int color){
+if(((y*width) + x)>=image.SizeDim1) {
+//  trace("y : " + intToStr(y));
+//  trace("x : " + intToStr(x));
+  return;
+}
+//  image[ (y*width) + x ] = round(rnd()*0xffffffff);;
   image[ (y*width) + x ] = colors[color];
+}
+
+void updateTexture() {
+  //for(int i=0; i<image.SizeDim1; i++)
+  //  image[i]=round(rnd() * 0xffffffff);
+  int texid=ScreenBitmap.Handle;
+ 	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+		width, height, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, image);
 }]]>
       </Source>
     </ZLibrary>
@@ -411,8 +437,6 @@ void render(int draw){
     drawSprites(1);
     drawBG();
     drawSprites(0);
-    //todo send image to screen
-    //monitor.refresh();
   }
   vblankOccurance = 1;
   sp0Occurance = 0;
@@ -617,6 +641,14 @@ void mem_write(int addr, byte data){
   map(addr).write(addr, data);
 }
 
+int mem_readSigned(int addr){
+  byte b=mem_read(addr);
+  if(b&0x80)
+    return 0-((b^255) +1);
+  else
+    return b;
+}
+
 void loadPRGRAM(int i, byte[,] indata, int indataIndex){
   for(int j=0; j<0x4000; j++){
 	  data[0x8000+i*0x4000+j] = indata[indataIndex,j];
@@ -801,8 +833,8 @@ class TZeroPageYAddressing : TAddressing {
 
 class TRelativeAddressing : TAddressing {
   override void ope(TInstruction i){
-    //todo: signed read
-    int data = mem_read(pc+1);//-128 .. 127
+    //signed read
+    int data = mem_readSigned(pc+1);//-128 .. 127
     i.ope(pc+data);
     incPC(2);
   }
@@ -1138,6 +1170,7 @@ class TLDAInstruction : TInstruction {
 // load to X
 class TLDXInstruction : TInstruction {
   override void ope(int i) {
+trace("LDX");
     x = mem_read(i);
     ZeroFlag = (x==0);
     NegativeFlag = bit(x,7) == 1;
@@ -1548,16 +1581,18 @@ int exec(){
   }
 
   int op = mem_read(pc);
+trace("op : " + intToStr(op));
+trace("pc : " + intToStr(pc));
   TOperand ope = operands[op];
   ope.addr.ope(ope.inst);
+trace("addr : " + ope.addr.getName());
 
-  clock = (clock + clock)%CLOCK_SPEED;
-
-  return clock;
+  return ope.clock;
 }
 
 void reset(){
   pc = (0xff&mem_read(0xfffc)) | ((mem_read(0xfffd)&0xff)<<8);
+  trace("initial pc : " + intToStr(pc));
   a = x = y = 0;
   s = 0xff;
 }]]>
@@ -1636,7 +1671,6 @@ void reset(){
       <Expression>
 <![CDATA[initColors();
 initOperands();
-reset();
 
 byte[] data;
 getBinaryProp(NesRomFile.FileEmbedded,data);
@@ -1648,6 +1682,8 @@ if(f.CHRROM.SizeDim1 > 0)
 for(int i=0; i<2; i++)
   loadPRGRAM(i, f.PRGROM, i%f.PRGROMCount);
 
+reset();
+
 setMirroring(f.mirror);]]>
       </Expression>
     </ZExpression>
@@ -1657,14 +1693,37 @@ setMirroring(f.mirror);]]>
       <Expression>
 <![CDATA[int target=round(App.DeltaTime*CLOCK_SPEED);
 
-while(target>0) {
+trace(intToStr(target));
+
+//while(target>0) {
   int clock=exec();
   target-=clock;
-}]]>
+//}]]>
       </Expression>
     </ZExpression>
   </OnUpdate>
+  <OnRender>
+    <ZExpression>
+      <Expression>
+<![CDATA[render(1);
+updateTexture();]]>
+      </Expression>
+    </ZExpression>
+    <UseMaterial Material="ScreenMaterial"/>
+    <RenderTransform Scale="6 4 1"/>
+    <RenderSprite/>
+  </OnRender>
   <Content>
-    <File Name="NesRomFile"/>
+    <File Name="NesRomFile" Comment="Imported from PALTEST.NES">
+      <FileEmbedded>
+<![CDATA[789CED98416B1B471CC5774DE3B4C5149F8209A508840F6229F1D1074105260757497DE817E8A1180AF9003E1893B2A874BB483A154A4FC68B0EC3A02EFD065B4C45E238581FC1601C6A5C750FB998D495FB97ACDDCCFF059F7A08A1EF275993BFDEECECBC7DA361C817F7BFBC3BE72D7A377135E3A6EF911B077A47587D30180CBE5E2DDBA5D52561A76CB7071FD5B78EC765BBB3B0549F1F6C97EDC7F54787E38585B2BDCC2EE727DF176DFDABEC72E0B4E3C1C2D2CACA4AD96ECB9793EF9D76677E61AB6C571F0D06E3C1A06C6590C9BB6CEB9B59966DD6CBF6E2507C1C5E94ED38CB2EB36C0C6D56B6458E85FFA22EFC1775E1BFA80BFF455DF82FEAC27F5117FE8BBAF0FF7AFC6BFF4E3DF55FCE6FE6BF1C7FE6BF1C7FE6BFA80BFFE5FD66FE752DFEBF9DF27A41EFEF5C2F8CFA75D3F0744B08218410420821EF2AE36BBCDC5A9BFBFE55519FF67ABD53A7CE93D4E4BA4EDCFADCA6C989AB1BAD4B6DF5F589EE6F41C7F1443F77EA91EDDB911ADFA8F98DC48FD661FE529F39F546B3D9DC70EAFB135C7D6D637D43D76B6E2D57AFADB9FABAD6A56EEAEBD774FF26E8389EE84DA77ED894971A7F5DCDEFA1F8D13ACC5FEA75F77904E7B1CA7FF9B4A5F2AFE651AEEB50E51FE4A1CAABA675A9637DFD89EE1F808EE389AEF20F46B1CAB776A6E637123F5A87F94B7DA6FD07E07F19FCD7C07F15FC57C17F15EE1780FF2AF80BC0FF1B3AF80FC07F0DFC830EF397DAF52FBFAEE09E53CBAF7F79D9D593BC764FD755B796DDA35A7575A375A9037DFD89EE6F41C7F1440F9C5A7EFDC1A76AFC3335BFBEF8D13ACC5FEA9AFB3C62C8BF05F987F0FC42C83F86BC22C83F827C43C83F061DC78B21FF18F28F20FF18F28F60FE91CE5FFC5BF0DF03FF06FC27E03F01FF09DCCF82FF04FC59F0FF860EFE2DF837E01F7498BFD4FAF71FA8F527AB5FAD7F59CD6AFD48ADD6B7FC7AD47A95D5A674A9037D7D55F70F40C7F14477D7BFAC7EB5BE6535ABF98DC48FD661FE52ABF56F21FF1EE49FC0F34B207F0B7919C8DF40BE09E46F41C7F12CE46F217F03F95BC8DFC0FC0DE40FFBDF29EC7F39EC7F39EC7FE7B05FE5B0FFE5B0FFE5B0FFE5B0FFE5381EEC7F23D8FF72D8FF46B0FFE5B0FFE5B8FFC9F34A21FF1EE49F42FE29E49F40FE29E49F42FE09E49B42FEA85BC8BF0FF9A7907F1FF286F918E3D447F6993D72EADF7BF272F5E4C81CE93A716BB93AD97775A375A9ADBE7E5FF7B7A0E378A23F73EAE7565E6AFCA76A7ECFC58FD661FE523F55FB6BACCF7FAD963EFF855D7D7E0ABBFAFC1777F5792DD2BAD4FA7C1786BA7F0C3A8E27BADEFFDBFA7C1745FAFC277EB40EF397FA4C3D5F0BF9F720FF14F24F21FF14F24F21FF14F24F205FD0713CD175FE7DC8D740FE167498BFD43A7F38FFB7E0FC1FC2F93984F37F0CE7F508CEFF119CEF4338FFC7A0E378319CFF6338FF4770FE8FE1FC1FC1FC2338FF4BFF2EF86F81FF2EF8EF82FF10FC77C17F17FC87E0AF0BFE518FC17F1BFC77C17F1BFCC27CA248EAB7FDFF0F84104208218410420821841042082184104208F9EF6CED791DAFD2F12B073F1B6FCFFFEB9FABB6F7B853BCDB93F7B1FBEECF5516FF9E7E18AFE5B5E72BF2368F5BFE5E65D7FBD56BDFAE3C195EBCF00F862FCD5499F4309FEC79BBEF776E57BE1FBEFAE3F8BDE1CBD5337FF8A7DCAD21DD0F86AF8CDC63D2F35645DED3A1F7FCCE9DC681FC7DE7F7EF343EDF9C7DFE72A771FD8F1F6AFE2DBF35F7C187725F6FD7338D96F7C21B5E4EFE7A736DBF623E9B4EAD335FF9496EF1CDA2FA78D2992A3D5F3A3E38CC1A6F3B014208218410420821841042082184104208218410420821841042082184104208218410420821FF6F7ECCBCCCFFED5F5D910A46]]>
+      </FileEmbedded>
+    </File>
+    <Bitmap Name="ScreenBitmap" Width="256" Height="240" Filter="2"/>
+    <Material Name="ScreenMaterial">
+      <Textures>
+        <MaterialTexture Texture="ScreenBitmap" TexCoords="1"/>
+      </Textures>
+    </Material>
   </Content>
 </ZApplication>
