@@ -853,6 +853,7 @@ begin
   if (Kind=zcInlineBlock) and
    (Children.Count>0) and
    (Children.First.Kind=zcInlineReturn) and
+   (Children.First.Children.Count>0) and
    (Children.First.Children.First.Kind=zcConstLiteral) then
   begin
     Exit( Children.First.Children.First );
