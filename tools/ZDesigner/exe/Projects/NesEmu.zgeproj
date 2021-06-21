@@ -13,10 +13,13 @@
     </ZExternalLibrary>
     <ZLibrary Comment="Shared" HasInitializer="1">
       <Source>
-<![CDATA[const int false = 0;
+<![CDATA[const int LOG=0;  //log messages
+
+const int false = 0;
 const int true = 1;
 int nmi = false;
 
+int isRunning = 0;
 int bit(byte data, int b){return (data>>b)&1;}]]>
       </Source>
     </ZLibrary>
@@ -112,13 +115,10 @@ if(((y*width) + x)>=image.SizeDim1) {
 //  trace("x : " + intToStr(x));
   return;
 }
-//  image[ (y*width) + x ] = round(rnd()*0xffffffff);;
   image[ (y*width) + x ] = colors[color];
 }
 
 void updateTexture() {
-  //for(int i=0; i<image.SizeDim1; i++)
-  //  image[i]=round(rnd() * 0xffffffff);
   int texid=ScreenBitmap.Handle;
  	glBindTexture(GL_TEXTURE_2D, texid);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
@@ -482,13 +482,13 @@ class TRegisters : TMemRegion {
     case 0x4:
       return getSPRRAM().read();
     case 0x5:case 0x6:
-      trace("Unexpected read");
+      if(LOG) trace("Unexpected read");
       break;
     case 0x2:
-      trace("context.ppu.readStatusRegister : ");
+      if(LOG) trace("context.ppu.readStatusRegister : ");
       return readStatusRegister()&0xff;
     case 0x7:
-      trace("context.ppu.readVram : ");
+      if(LOG) trace("context.ppu.readVram : ");
       return readVram();
     }
     return 0;
@@ -497,34 +497,34 @@ class TRegisters : TMemRegion {
     int a = addr&0x7;
     switch(a){
     case 0x0:
-      trace("context.ppu.writeControlRegister1 : ");
+      if(LOG) trace("context.ppu.writeControlRegister1 : ");
       writeControlRegister1(value);
       break;
     case 0x1:
-      trace("context.ppu.writeControlRegister2 : ");
+      if(LOG) trace("context.ppu.writeControlRegister2 : ");
       writeControlRegister2(value);
       break;
     case 0x2:
-      trace("Unexpected write to ");
+      if(LOG) trace("Unexpected write to ");
       break;
     case 0x3:
-      trace("context.ppu.getSPRRAM().setAddress : ");
+      if(LOG) trace("context.ppu.getSPRRAM().setAddress : ");
       getSPRRAM().setAddress(value);
       break;
     case 0x4:
-      trace("context.ppu.getSPRRAM().write : ");
+      if(LOG) trace("context.ppu.getSPRRAM().write : ");
       getSPRRAM().write(value);
       break;
     case 0x5:
-      trace("context.ppu.setScroll : ");
+      if(LOG) trace("context.ppu.setScroll : ");
       setScroll(value);
       break;
     case 0x6:
-      trace("context.ppu.setVramAddr : ");
+      if(LOG) trace("context.ppu.setVramAddr : ");
       setVramAddr(value);
       break;
     case 0x7:
-      trace("context.ppu.writeVram : ");
+      if(LOG) trace("context.ppu.writeVram : ");
       writeVram(value);
       break;
     }
@@ -556,7 +556,7 @@ class TRegisters2 : TMemRegion {
     }else if(addr == 0x4017){
       //TODO JOYPAD2/SOFTCLC not implemented
     }else{
-      trace("Not Implemented : write ");
+      if(LOG) trace("Not Implemented : write ");
     }
   }
 }
@@ -565,11 +565,11 @@ private TMemRegion Registers2 = new TRegisters2();
 //0x4020 - 0x5fff
 class TExpansionROM : TMemRegion {
   override int read(int addr) {
-    trace("Not Implemented : read ");
+    if(LOG) trace("Not Implemented : read ");
     return 0;
   }
   override void write(int addr, byte data) {
-    trace("Not Implemented : write ");
+    if(LOG) trace("Not Implemented : write ");
   }
 }
 private TMemRegion ExpansionROM = new TExpansionROM();
@@ -577,11 +577,11 @@ private TMemRegion ExpansionROM = new TExpansionROM();
 //0x6000 - 0x7fff
 class TSRAM : TMemRegion {
   override int read(int addr) {
-    trace("Not Implemented : read ");
+    if(LOG) trace("Not Implemented : read ");
     return 0;
   }
   override  void write(int addr, byte data) {
-    trace("Not Implemented : write ");
+    if(LOG) trace("Not Implemented : write ");
   }
 }
 private TMemRegion SRAM = new TSRAM();
@@ -592,7 +592,7 @@ class TPRGRAM1 : TMemRegion {
     return data[addr]&0xff;
   }
   override void write(int addr, byte data) {
-    trace("Unexpected Write to PRGRAM1 : ");
+    if(LOG) trace("Unexpected Write to PRGRAM1 : ");
   }
 }
 private TMemRegion PRGRAM1 = new TPRGRAM1();
@@ -603,7 +603,7 @@ class TPRGRAM2 : TMemRegion {
     return data[addr]&0xff;
   }
   override void write(int addr, byte data) {
-    trace("Unexpected Write to PRGRAM2 : ");
+    if(LOG) trace("Unexpected Write to PRGRAM2 : ");
   }
 }
 private TMemRegion PRGRAM2 = new TPRGRAM2();
@@ -780,20 +780,20 @@ class TOperand {
   }
 }
 
-class TImplicitAddressing : TAddressing {
-  override void ope(TInstruction i){
-    i.ope(0);
-    incPC(1);
-  }
-  override string getName() { return "Implicit"; }
-}
-
 class TAccumulatorAddressing : TAddressing {
   override void ope(TInstruction i){
     i.opeAccumulator();
     incPC(1);
   }
   override string getName() { return "Accumulator"; }
+}
+
+class TImplicitAddressing : TAddressing {
+  override void ope(TInstruction i){
+    i.ope(0);
+    incPC(1);
+  }
+  override string getName() { return "Implicit"; }
 }
 
 class TImmediateAddressing : TAddressing {
@@ -1170,7 +1170,6 @@ class TLDAInstruction : TInstruction {
 // load to X
 class TLDXInstruction : TInstruction {
   override void ope(int i) {
-trace("LDX");
     x = mem_read(i);
     ZeroFlag = (x==0);
     NegativeFlag = bit(x,7) == 1;
@@ -1581,11 +1580,10 @@ int exec(){
   }
 
   int op = mem_read(pc);
-trace("op : " + intToStr(op));
-trace("pc : " + intToStr(pc));
+//trace("op : " + intToStr(op));
+//trace("pc : " + intToStr(pc));
   TOperand ope = operands[op];
   ope.addr.ope(ope.inst);
-trace("addr : " + ope.addr.getName());
 
   return ope.clock;
 }
@@ -1684,39 +1682,52 @@ for(int i=0; i<2; i++)
 
 reset();
 
-setMirroring(f.mirror);]]>
+setMirroring(f.mirror);
+
+isRunning=1;]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
       <Expression>
-<![CDATA[int target=round(App.DeltaTime*CLOCK_SPEED);
+<![CDATA[/*byte b=0xa2;
+TOperand op = operands[b];
+trace(op.addr.getName());
+trace(intToStr(op.clock));
+quit();*/
 
-trace(intToStr(target));
+int target=round(App.DeltaTime*CLOCK_SPEED);
 
-//while(target>0) {
+//trace(intToStr(target));
+
+while(target>0) {
   int clock=exec();
   target-=clock;
-//}]]>
+}]]>
       </Expression>
     </ZExpression>
   </OnUpdate>
   <OnRender>
     <ZExpression>
       <Expression>
-<![CDATA[render(1);
-updateTexture();]]>
+<![CDATA[if(isRunning) {
+  render(1);
+  updateTexture();
+}]]>
       </Expression>
     </ZExpression>
     <UseMaterial Material="ScreenMaterial"/>
     <RenderTransform Scale="6 4 1"/>
     <RenderSprite/>
   </OnRender>
+  <OnClose>
+    <ZExpression Expression="isRunning=0;"/>
+  </OnClose>
   <Content>
-    <File Name="NesRomFile" Comment="Imported from PALTEST.NES">
+    <File Name="NesRomFile" Comment="Imported from PONG.NES (by Paul Talbot)">
       <FileEmbedded>
-<![CDATA[789CED98416B1B471CC5774DE3B4C5149F8209A508840F6229F1D1074105260757497DE817E8A1180AF9003E1893B2A874BB483A154A4FC68B0EC3A02EFD065B4C45E238581FC1601C6A5C750FB998D495FB97ACDDCCFF059F7A08A1EF275993BFDEECECBC7DA361C817F7BFBC3BE72D7A377135E3A6EF911B077A47587D30180CBE5E2DDBA5D52561A76CB7071FD5B78EC765BBB3B0549F1F6C97EDC7F54787E38585B2BDCC2EE727DF176DFDABEC72E0B4E3C1C2D2CACA4AD96ECB9793EF9D76677E61AB6C571F0D06E3C1A06C6590C9BB6CEB9B59966DD6CBF6E2507C1C5E94ED38CB2EB36C0C6D56B6458E85FFA22EFC1775E1BFA80BFF455DF82FEAC27F5117FE8BBAF0FF7AFC6BFF4E3DF55FCE6FE6BF1C7FE6BF1C7FE6BFA80BFFE5FD66FE752DFEBF9DF27A41EFEF5C2F8CFA75D3F0744B08218410420821EF2AE36BBCDC5A9BFBFE55519FF67ABD53A7CE93D4E4BA4EDCFADCA6C989AB1BAD4B6DF5F589EE6F41C7F1443F77EA91EDDB911ADFA8F98DC48FD661FE529F39F546B3D9DC70EAFB135C7D6D637D43D76B6E2D57AFADB9FABAD6A56EEAEBD774FF26E8389EE84DA77ED894971A7F5DCDEFA1F8D13ACC5FEA75F77904E7B1CA7FF9B4A5F2AFE651AEEB50E51FE4A1CAABA675A9637DFD89EE1F808EE389AEF20F46B1CAB776A6E637123F5A87F94B7DA6FD07E07F19FCD7C07F15FC57C17F15EE1780FF2AF80BC0FF1B3AF80FC07F0DFC830EF397DAF52FBFAEE09E53CBAF7F79D9D593BC764FD755B796DDA35A7575A375A9037DFD89EE6F41C7F1440F9C5A7EFDC1A76AFC3335BFBEF8D13ACC5FEA9AFB3C62C8BF05F987F0FC42C83F86BC22C83F827C43C83F061DC78B21FF18F28F20FF18F28F60FE91CE5FFC5BF0DF03FF06FC27E03F01FF09DCCF82FF04FC59F0FF860EFE2DF837E01F7498BFD4FAF71FA8F527AB5FAD7F59CD6AFD48ADD6B7FC7AD47A95D5A674A9037D7D55F70F40C7F14477D7BFAC7EB5BE6535ABF98DC48FD661FE52ABF56F21FF1EE49FC0F34B207F0B7919C8DF40BE09E46F41C7F12CE46F217F03F95BC8DFC0FC0DE40FFBDF29EC7F39EC7F39EC7FE7B05FE5B0FFE5B0FFE5B0FFE5B0FFE5381EEC7F23D8FF72D8FF46B0FFE5B0FFE5B8FFC9F34A21FF1EE49F42FE29E49F40FE29E49F42FE09E49B42FEA85BC8BF0FF9A7907F1FF286F918E3D447F6993D72EADF7BF272F5E4C81CE93A716BB93AD97775A375A9ADBE7E5FF7B7A0E378A23F73EAE7565E6AFCA76A7ECFC58FD661FE523F55FB6BACCF7FAD963EFF855D7D7E0ABBFAFC1777F5792DD2BAD4FA7C1786BA7F0C3A8E27BADEFFDBFA7C1745FAFC277EB40EF397FA4C3D5F0BF9F720FF14F24F21FF14F24F21FF14F24F205FD0713CD175FE7DC8D740FE167498BFD43A7F38FFB7E0FC1FC2F93984F37F0CE7F508CEFF119CEF4338FFC7A0E378319CFF6338FF4770FE8FE1FC1FC1FC2338FF4BFF2EF86F81FF2EF8EF82FF10FC77C17F17FC87E0AF0BFE518FC17F1BFC77C17F1BFCC27CA248EAB7FDFF0F84104208218410420821841042082184104208F9EF6CED791DAFD2F12B073F1B6FCFFFEB9FABB6F7B853BCDB93F7B1FBEECF5516FF9E7E18AFE5B5E72BF2368F5BFE5E65D7FBD56BDFAE3C195EBCF00F862FCD5499F4309FEC79BBEF776E57BE1FBEFAE3F8BDE1CBD5337FF8A7DCAD21DD0F86AF8CDC63D2F35645DED3A1F7FCCE9DC681FC7DE7F7EF343EDF9C7DFE72A771FD8F1F6AFE2DBF35F7C187725F6FD7338D96F7C21B5E4EFE7A736DBF623E9B4EAD335FF9496EF1CDA2FA78D2992A3D5F3A3E38CC1A6F3B014208218410420821841042082184104208218410420821841042082184104208218410420821FF6F7ECCBCCCFFED5F5D910A46]]>
+<![CDATA[789CED9B5F685B5518C0CF4DD29BB4D636FD1FE7D0434DBBEEC112428811437B1B5A56E12AA5C65A7D59D85A8A0F62099545A8D5CA6E1D83740A82B0174B20CA01F7E2930885A49A7B1B441B1D9B7BEC83C6EE41C883A3B255E2776EB2E5A6F9D3085A197CBF9C73BE7FE77EDF974BB88704F2E2C44B2704A18BDCE7562496BF7ACD44EDF762649DD075816E8817850D72913049B1B349A59351857E442E65EEA9827D3F36BA2E52D809CBA90DBA6EA59732770D3EB279662B6AA57BBFD0CC9DD853DC9328B8170A6E3BB8498C96F66F90CDCFF5D02EC9DC0163FF9B5AC699946E24780646A266BA994F462D90B353F77C1825943D111528CB2B5ED6A42CB21DC5CDE6150FD314A73204D6A0E26282E263779529E652E61851A695A032A3CC2AE794B0B2C48468AF14ED9320B72EAF551BA785DCCF7441A537B669DB36FD49A3398D9E2F2AF20BC9F84C9AE4BA580F74C7AC8EF919E80F5CCDB993F1593DF0583130CB03B31030CBEEE40681F60F17EF2D0DA8D92CB3A44C12300E356396BF48B20E9E95404A36001ADCEC7D7E631C7B975B5A5E1F484FE444F0CAD7936C82EFEB8390FC7EB2A3B3AB9BF4F476FB04A2C1DCD936110DE6CEB299ECF458C914CC2D9BCD3E656BA65B17087905E659980B30DF847901E6BB303F807905E627C3AEA7C5E17E4BF770539F73B8E754EF619B1C0FAD8FB6950CB1CCD2B1B7B77740A0CCAA8B58262A0347FA8ACE63CC534D3B8ACA6B1ABEB6ECD246DE5F95CC2239F4FEEA95A9EF333A1BBB8F8DDFA56A196A5512EB9A4745C40AFDDFFA9C34D2D23FCB532B5FD90743FE4A85876F30EE4D0BB9115FDCFBEBA2E295BF54F9A3DC1777DE161D6BA1F950CA9D7B7B6FD791F95DBE5E8C0C952289FB11FAB1269FD39827E5C9BDC19E83F56BF62DAC3FB0EF607D0B3630927267CCF43D2D3E97F2649AB3B350394C152D3EE5BB2DEAA1CB1ABBA98766F4D0150D5A81F3A0D0DEA7A5F678CBC5907C56AB6876B766B3DF1B9AE5871CEB82676FDCCD9FD176AE79F493CB9BF92DC48F21BE0443506C9A2FA091D4744E6402ACADA007739DA007732774FD715DB766DD598FFCA3A6BA552EB245E151DD21BD9E995771F27A56AE0DF27ABB14EAE9D147B86F8847DBB9E67A10AD770E190F245B4C58EB579DEA60AD53B225665AEB8F117548753596B490B785E78D91AC335B3D7359F2EC501692B7477B24585A25F647B44D627FC1128A87D342A68326B6B34BF1A5B42D23C20D5E52C2A13C822008822008822008822008822008822008822008822008822008822008822008822008822008F2B01023EB4D1486F47F3772EC903C49C0AB0EB0A752FA03ABABAB013F282B2B2BFE06FE175A039F1C0CCEF94AB6C367B3D9460CF171CB49BA62883B5B2D4E47C99E9C8CC005257B598A582C9192EDA7D4EF34F43762B294ED87A0D318F78DCB1E8B854B491E37F6E50CAC0402257BECFCCBCF8F8D95EC15292249863EFD01C090979BC6BE23E3E3304A363199CAE5E868B94410044110044110044190FF044BDB936D16834D17FF5CA435ACCADD76DFB2CF6E4C27552961331A962A1B0AA9CA2CE9902CE278E7C6E9B0AAAB37A3CFEA32FCEABC2EA39F5DE5E299B877C0C595D7D2B708C9EB833CF8556354920A5FB48BDFB70F4CA683827250AB2F0441100441100441100479D8F81BA05C1088]]>
       </FileEmbedded>
     </File>
     <Bitmap Name="ScreenBitmap" Width="256" Height="240" Filter="2"/>

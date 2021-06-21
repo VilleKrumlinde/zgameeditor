@@ -367,7 +367,7 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     case TDefineArray(A)._Type.Kind of
       zctByte :
         TExpMisc.Create(Target, emPtrDeref1);
-      zctString,zctModel,zctXptr :
+      zctString,zctModel,zctXptr,zctClass :
         TExpMisc.Create(Target, emPtrDerefPointer);
       else
         if TDefineArray(A)._Type.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
@@ -1005,7 +1005,11 @@ var
     Ret.Arguments := Func.Arguments.Count;
     {$ifdef CALLSTACK}
     if IsLibrary then
-      Ret.FunctionName := Func.Id
+    begin
+      Ret.FunctionName := Func.Id;
+      if Assigned(Func.MemberOf) then
+        Ret.FunctionName := Func.MemberOf.Id + '.' + Ret.FunctionName;
+    end
     else
       Ret.FunctionName := string(Component.GetDisplayName);
     {$endif}
@@ -1612,7 +1616,6 @@ var
 begin
   Assert(Op.Kind in [zcFuncCall,zcMethodCall]);
 
-  O := nil;
   if Op.Kind=zcFuncCall then
   begin
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
