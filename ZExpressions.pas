@@ -799,7 +799,7 @@ begin
     Inc(Env.gCurrentPc);
     {$ifdef GUARD_LIMIT}
     Dec(GuardLimit);
-    if GuardLimit=0 then
+    if (GuardLimit=0) and (TThread.CurrentThread.ThreadID=MainThreadID) then
       Env.ScriptError('Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
       Env.ScriptError('Ten million strings allocated. Infinite loop?');

@@ -146,6 +146,7 @@ type
     RenderOrder : (aroModelsBeforeApp,aroAppBeforeModels);
     PointerSize : byte;
     {$ifndef minimal}
+    LiveThreadCount : integer;
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
@@ -1339,6 +1340,9 @@ begin
   AudioPlayer.DesignerStopAllAudio;
   Self.CurrentState := nil;
   Self.DeltaTime := 0;
+
+  while Self.LiveThreadCount>0 do
+    Platform_Sleep(0);
 end;
 {$endif}
 

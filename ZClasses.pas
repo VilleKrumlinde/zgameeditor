@@ -4262,6 +4262,7 @@ var
   Env : TExecutionEnvironment;
 begin
   {$ifndef minimal}
+  Inc(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Starting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}
 
@@ -4270,9 +4271,12 @@ begin
 
   ZExpressions.RunCode(Owner.Expression.Code,@Env);
 
+
   {$ifndef minimal}
+  Dec(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Exiting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}
+
   Free;
 end;
 

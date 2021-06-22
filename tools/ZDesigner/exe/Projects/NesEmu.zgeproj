@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="1" FileVersion="2">
+<ZApplication Name="App" Caption="4" ScreenMode="1" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
       <BeforeInitExp>
@@ -20,7 +20,9 @@ const int true = 1;
 int nmi = false;
 
 int isRunning = 0;
-inline int bit(byte data, int b){return (data>>b)&1;}]]>
+inline int bit(byte data, int b){return (data>>b)&1;}
+
+int screenIsReady;]]>
       </Source>
     </ZLibrary>
     <ZLibrary Comment="Monitor" HasInitializer="1">
@@ -455,11 +457,12 @@ void render(int draw){
     drawSprites(1);
     drawBG();
     drawSprites(0);
-  }
-  vblankOccurance = 1;
-  sp0Occurance = 0;
-  if(execNMI){
-    nmi=true;
+  } else {
+    vblankOccurance = 1;
+    sp0Occurance = 0;
+    if(execNMI){
+      nmi=true;
+    }
   }
 }
 
@@ -1721,7 +1724,9 @@ reset();
 
 setMirroring(f.mirror);
 
-isRunning=1;]]>
+isRunning=1;
+
+startThread(RenderThread,0);]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
@@ -1754,13 +1759,16 @@ App.Caption = intToStr(App.FpsCounter);]]>
     <ZExpression>
       <Expression>
 <![CDATA[if(isRunning) {
-  render(1);
-  updateTexture();
+  render(0);
+  if(screenIsReady) {
+    updateTexture();
+    screenIsReady=0;
+  }
 }]]>
       </Expression>
     </ZExpression>
     <UseMaterial Material="ScreenMaterial"/>
-    <RenderTransform Scale="6 4 1" Rotate="0 0.5 0.5"/>
+    <RenderTransform Scale="8 6 1" Rotate="0 0.5 0.5"/>
     <RenderSprite/>
   </OnRender>
   <OnClose>
@@ -1778,5 +1786,20 @@ App.Caption = intToStr(App.FpsCounter);]]>
         <MaterialTexture Texture="ScreenBitmap" TexCoords="1"/>
       </Textures>
     </Material>
+    <Thread Name="RenderThread">
+      <Expression>
+<![CDATA[//int param : parameter passed in the createThread call
+
+while(isRunning) {
+
+  render(1);
+  screenIsReady=true;
+
+  while(screenIsReady && isRunning)
+    sleep(1);
+
+}]]>
+      </Expression>
+    </Thread>
   </Content>
 </ZApplication>
