@@ -285,14 +285,12 @@ void setMirroring(int value){
 
 inline int ppu_read(int addr){
   addr &= 0x3fff;
-  TPpuMemRegion reg=ppu_map(addr);
-  return reg.read(addr);
+  return ppu_map(addr).read(addr);
 }
 
 inline void ppu_write(int addr, int data){
   addr &= 0x3fff;
-  TPpuMemRegion reg=ppu_map(addr);
-  reg.write(addr, data);
+  ppu_map(addr).write(addr, data);
 }
 
 class TSPRRAM{
@@ -684,14 +682,12 @@ inline TMemRegion mem_map(int addr){
 
 //return read value 0-255
 inline int mem_read(int addr){
-  TMemRegion reg=mem_map(addr);
-  int res = reg.read(addr);
+  int res = mem_map(addr).read(addr);
   return res;
 }
 
 inline void mem_write(int addr, byte data){
-  TMemRegion reg=mem_map(addr);
-  reg.write(addr, data);
+  mem_map(addr).write(addr, data);
 }
 
 inline int mem_readSigned(int addr){
@@ -711,7 +707,12 @@ void loadPRGRAM(int i, byte[,] indata, int indataIndex){
     </ZLibrary>
     <ZLibrary Comment="CPU" HasInitializer="1">
       <Source>
-<![CDATA[//https://github.com/ykmr1224/NesEmulator
+<![CDATA[/*
+Based on https://github.com/ykmr1224/NesEmulator
+Original Java code by Tomoyuki Morita (ykmr1224).
+
+Converted to ZGE script by Ville 2021.
+*/
 
 const int CLOCK_SPEED = 1790000; //1.79MHz
 
@@ -1747,7 +1748,7 @@ App.Caption = intToStr(App.FpsCounter);]]>
   joypad.setState(i,0);]]>
           </Expression>
         </ZExpression>
-        <KeyPress Name="Kp1" Keys="ZX12QAOP">
+        <KeyPress Name="Kp1" Keys="ZX12^_&lt;&gt;">
           <OnPressed>
             <ZExpression Expression="joypad.setState(Kp1.KeyIndex,1);"/>
           </OnPressed>
@@ -1788,13 +1789,18 @@ App.Caption = intToStr(App.FpsCounter);]]>
     </Material>
     <Thread Name="RenderThread">
       <Expression>
-<![CDATA[//int param : parameter passed in the createThread call
+<![CDATA[/*
+Screen update is happening in a separate thread
+because it is CPU demanding and can be executed in parallel with
+emulation.
+*/
 
 while(isRunning) {
 
   render(1);
-  screenIsReady=true;
+  screenIsReady=true; //signal for main thread that a screen is ready to be displayed
 
+  //wait until the screen has been displayed
   while(screenIsReady && isRunning)
     sleep(1);
 
