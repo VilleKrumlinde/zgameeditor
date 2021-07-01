@@ -24,7 +24,7 @@ unit ZMath;
 
 interface
 
-{$if defined(fpc) and (not defined(zgeviz)))
+{$if defined(fpc) and (not defined(zgeviz))}
   //Use Delphi-compatible Random functions to get same output from BitmapCells
   {$define use_custom_rnd}
 {$endif}
