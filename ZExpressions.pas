@@ -2705,7 +2705,7 @@ begin
   if Self.ReturnType.Kind<>zctVoid then
     Env.StackPush(RetVal);
 end;
-{$ifend}
+{$endif}
 
 {$if defined(cpuaarch64)}  // ARM64
 
@@ -2932,7 +2932,7 @@ begin
   fpmunmap(Trampoline,512);
 end;
 
-{$ifend}
+{$endif}
 
 { TExpLoadComponent }
 

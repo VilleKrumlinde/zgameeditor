@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="4" ScreenMode="1" FileVersion="2">
+<ZApplication Name="App" Caption="3" ScreenMode="1" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
       <BeforeInitExp>
@@ -1769,7 +1769,7 @@ App.Caption = intToStr(App.FpsCounter);]]>
       </Expression>
     </ZExpression>
     <UseMaterial Material="ScreenMaterial"/>
-    <RenderTransform Scale="8 6 1" Rotate="0 0.5 0.5"/>
+    <RenderTransform Scale="10 7.5 1" Rotate="0 0.5 0.5"/>
     <RenderSprite/>
   </OnRender>
   <OnClose>

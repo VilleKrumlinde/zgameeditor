@@ -230,7 +230,7 @@ interface
 
 {$if defined(Win64)}
   {$define Win32}
-{$ifend}
+{$endif}
 
 uses
   {$ifdef Win32}

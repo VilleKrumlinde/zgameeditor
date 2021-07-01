@@ -452,7 +452,7 @@ type
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
-    {$ifend}
+    {$endif}
     function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
@@ -1899,7 +1899,7 @@ begin
   {$ENDIF}
   {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
   LastAdded := Ci;
-  {$ifend}
+  {$endif}
   ComponentInfos[Ci.ClassId] := Ci;
 end;
 
@@ -2102,7 +2102,7 @@ begin
     Result.NextId := 0;
     Component.DefineProperties(Result);
   end
-  {$ifend};
+  {$endif};
 end;
 
 
@@ -3874,7 +3874,7 @@ begin
   {$if (not defined(minimal)) and (not defined(zgeviz))}
   if (Producers.Count>0) and Self.HasZApp and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
-  {$ifend}
+  {$endif}
 end;
 
 ///////////////////

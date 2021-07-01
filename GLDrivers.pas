@@ -49,10 +49,10 @@ uses ZMath, zplatform
 const
   {$if SizeOf(TMeshVertexIndex)=2}
   TMeshVertexIndex_GL = GL_UNSIGNED_SHORT;
-  {$ifend}
+  {$endif}
   {$if SizeOf(TMeshVertexIndex)=4}
   TMeshVertexIndex_GL = GL_UNSIGNED_INT;
-  {$ifend}
+  {$endif}
 
 type
   TGLDriverFixed = class(TGLDriverBase)

@@ -20,15 +20,17 @@ type
           zcClass,zcMethodCall,zcNew);
 
   TZcOpField = class;
+  TZcOpFunctionUserDefined = class;
   TZcOpClass = class;
   TZcIdentifierInfo = record
-    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined,edtField);
+    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined,edtField,edtMethod);
     DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
     case Integer of
       0 : (Component : TZComponent);
       1 : (Prop : TZProperty);
       2 : (PropIndex : integer);
       3 : (Field : TZcOpField);
+      4 : (Method : TZcOpFunctionUserDefined);
   end;
 
 
@@ -507,21 +509,22 @@ var
     end;
   end;
 
-  procedure DoField(Cls : TZcOpClass);
+  procedure DoMember(Cls : TZcOpClass);
   var
     Fld : TZcOpField;
   begin
-    for Fld in Cls.Fields do
+    Fld := Cls.FindField(Self.Id);
+    if Assigned(Fld) then
     begin
-      if SameText(Fld.Id,Self.Id) then
-      begin
-        Result.Kind := edtField;
-        Result.Field := Fld;
-        Exit;
-      end;
+      Result.Kind := edtField;
+      Result.Field := Fld;
+      Exit;
     end;
-    if Assigned(Cls.BaseClass) then
-      DoField(Cls.BaseClass);
+    //It is possibly the name of a method instead, but we cannot know which
+    //one because we can't mangle the name yet (as the arguments have not been parsed
+    //when this function is called from CheckPrimary).
+    Result.Kind := edtMethod;
+    Result.Method := nil;
   end;
 
 var
@@ -555,7 +558,7 @@ begin
       Exit;
     end else if FirstType.Kind=zctClass then
     begin
-      DoField(FirstType.TheClass as TZcOpClass);
+      DoMember(FirstType.TheClass as TZcOpClass);
       Exit;
     end;
 
@@ -1701,6 +1704,9 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String;
   begin
     Result := False;
 
+    if (mdVirtual in Func.Modifiers) or (mdOverride in Func.Modifiers) then
+      Exit(False);
+
     for Arg in Func.Arguments do
       if Arg.Typ.IsPointer then
         Exit(False);
@@ -1728,8 +1734,9 @@ begin
   begin
     MangledName := MangleFunc(Op.Id,Op.Children.Count);
     O := Cls.FindMethod(MangledName);
-    if Assigned(O) and (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
-      (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf)) then
+    if Assigned(O) and
+      (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
+      ((CompilerContext.CurrentClass=nil) or (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf))) then
     begin
       Error := 'Cannot call private method: ' + Op.Id;
       Exit;

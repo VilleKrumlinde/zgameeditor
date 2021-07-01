@@ -2578,7 +2578,7 @@ begin
          Expect(identSym);
                                          
 
-      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess,zcInlineBlock,zcReinterpretCast]) then
+      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess,zcInlineBlock,zcReinterpretCast,zcNew]) then
         ZError('Invalid use of "."');
 
       Op := MakeOp(zcSelect,LexString);

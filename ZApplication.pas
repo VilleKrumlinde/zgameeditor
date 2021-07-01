@@ -89,7 +89,7 @@ type
     {$endif}
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
-    {$if (not defined(minimal)) or defined(android)}public{$ifend}
+    {$if (not defined(minimal)) or defined(android)}public{$endif}
     function Main : boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -468,7 +468,7 @@ var
       Inc(J,Models.Get(I).Count);
     ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', managed: ' + ManagedHeap_GetStatus );
   end;
-  {$ifend}
+  {$endif}
 
 begin
   Now := Platform_GetTime;
@@ -512,7 +512,7 @@ begin
       FpsTime := Time;
       {$if not (defined(minimal) or defined(ZgeViz))}
       InDumpDebugInfo;
-      {$ifend}
+      {$endif}
     end;
 
     {$ifndef zgeviz}
@@ -783,7 +783,7 @@ begin
       Self.OnBeginRenderPass.ExecuteCommands;
 
     {$ifndef zgeviz}
-    if {$if defined(minimal) and (not defined(android))}(ViewportRatio=vprCustom) and {$ifend}
+    if {$if defined(minimal) and (not defined(android))}(ViewportRatio=vprCustom) and {$endif}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
     {$endif}

@@ -466,7 +466,7 @@ begin
     else if (not ZApp.DesignerIsRunning) then
       ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
   end;
-  {$ifend}
+  {$endif}
 end;
 
 {$ifndef minimal}
@@ -1842,7 +1842,7 @@ begin
     IndP^:=Sm;
     Inc(IndP);
   end;
-  {$ifend}
+  {$endif}
   for I := 0 to ((TriCount-1)*3)-1 do
   begin
     Stream.Read(Sm,2);
