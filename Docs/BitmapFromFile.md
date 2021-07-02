@@ -15,7 +15,7 @@ See also: @ref Bitmap
 
 The size of the Bitmap is set to the size of imported bitmap after importing.
 
-_Note: Importing bitmaps will increase your exe-file size very quickly, so be careful if you want to keep your program small. Upx compression works similar to what is used in the GIF file format, so if your image is small when saved as a GIF-file then it will also have good compression ratio in ZGE as well. Bitmaps from JPG files have very poor compression in Upx so try first to preprocess the image in an art-package like Photoshop for reducing the number of colors used._
+@note Importing bitmaps will increase your exe-file size very quickly, so be careful if you want to keep your program small. Upx compression works similar to what is used in the GIF file format, so if your image is small when saved as a GIF-file then it will also have good compression ratio in ZGE as well. Bitmaps from JPG files have very poor compression in Upx so try first to preprocess the image in an art-package like Photoshop for reducing the number of colors used.
 
 @dt Transparency
 @dd Controls bitmap is transparency.

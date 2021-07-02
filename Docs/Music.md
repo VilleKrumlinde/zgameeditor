@@ -2,7 +2,7 @@
 
 Represents a imported MIDI music file (*.mid) that can be played in your application using the @ref MusicControl component.
 
-Note: The midi-functionality in ZGE is very limited. A better approach is to play music using external libraries, such as, BASS, SunVox or MikMod.
+@note The midi-functionality in ZGE is very limited. A better approach is to play music using external libraries, such as, BASS, SunVox or MikMod.
 
 Example usage: see the included project @ref ModPlay for an example.
 

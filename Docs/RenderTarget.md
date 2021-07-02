@@ -2,7 +2,7 @@
 
 Defines a render target for rendering to texture. To make the render target active for rendering, use the @ref SetRenderTarget component.
 
-_Note: This feature needs a graphic card that supports FBOs (GL_EXT_framebuffer_object OpenGL extension). If your card does not support this then ZGE designer will display a message in the log on start up. Also note that each RenderTarget takes up a fair amount of video memory so don't use too many instances._
+@note This feature needs a graphic card that supports FBOs (GL_EXT_framebuffer_object OpenGL extension). If your card does not support this then ZGE designer will display a message in the log on start up. Also note that each RenderTarget takes up a fair amount of video memory so don't use too many instances.
 
 Example usage: "RenderTarget1" in @ref RenderTexture sample project.
 

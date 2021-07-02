@@ -171,13 +171,11 @@
 
 @dtn @anchor touchGetX float @bf{touchGetX} (int id)
 @dd Android only. Returns position X of touch identified by _id_.
-
-_Remark: ZApplication.MousePosition.X is on Android identical with touchGetX(0)._
+@note ZApplication.MousePosition.X is on Android identical with touchGetX(0).
 
 @dtn @anchor touchGetY float @bf{touchGetY} (int id)
 @dd Android only. Returns position Y of touch identified by _id_.
-
-_Remark: ZApplication.MousePosition.Y is on Android identical with touchGetY(0)._
+@note ZApplication.MousePosition.Y is on Android identical with touchGetY(0).
 
 @dtn void @bf{centerMouse} ()
 @dd Centers the mouse cursor to middle of viewport.
@@ -186,7 +184,7 @@ _Remark: ZApplication.MousePosition.Y is on Android identical with touchGetY(0).
 
 # Component Management {#ComponentManagement}
 
-_Note: These functions can only be used from the ZGE IDE and Visualizer. Error message appears if you try to save exe-file using these functions._
+@note These functions can only be used from the ZGE IDE and Visualizer. Error message appears if you try to save exe-file using these functions.
 
 Some suggestions on how these functions can be used:
 * Debug/support routines in the IDE when creating projects.

@@ -4,7 +4,7 @@ A mixer for the real-time audio synthesizer. When a 2ref Sound component is sele
 
 The mixer is used for changing settings to different audio channels.
 
-_Note: To save the mixer settings you must add a audiomixer component to your project. You can only have a single AudioMixer in one project._
+@note To save the mixer settings you must add a audiomixer component to your project. You can only have a single AudioMixer in one project.
 
 See also: @ref Sound
 

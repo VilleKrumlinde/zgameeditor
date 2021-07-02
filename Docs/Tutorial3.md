@@ -8,7 +8,7 @@ Here is a picture illustrating the gameplay:
 
 ![Gameplay illustration](tut3-gameplay.png)
 
-First we will create the main active components in our game: Player and Walls. In ZGameEditor a moving graphical entity and its behaviour is called a @ref Model. So we need a @ref CreatingPlayerModel "PlayerModel" and a @ref CreatingWallModel "WallModel".
+First we will create the main active components in our game: Player and Walls. In ZGameEditor a moving graphical entity and its behavior is called a @ref Model. So we need a @ref CreatingPlayerModel "PlayerModel" and a @ref CreatingWallModel "WallModel".
 
 # Creating the Player Model {#CreatingPlayerModel}
 
@@ -304,7 +304,7 @@ We have created our player and wall objects so far. Let's move on to define the 
 
 # Application States {#ApplicationStates}
 
-An application state is a part of your application that has a distinct behaviour, such as waiting for a keypress or displaying a message. Only one state can be active at once. This is called the __current application state__.
+An application state is a part of your application that has a distinct behavior, such as waiting for a keypress or displaying a message. Only one state can be active at once. This is called the __current application state__.
 
 Some examples of typical states for a game application:
 
@@ -321,7 +321,7 @@ In our game we will have two different application states:
 
 The ZGameEditor component that defines a application state is called @ref AppState.
 
-_Note: It is not required to use AppState components. Simple applications may not need them at all, and different application behaviour can be achieved with using Condition components in OnUpdate and OnRender. But using AppStates can make your project cleaner and require less effort when you want to make changes._
+@note Note: It is not required to use AppState components. Simple applications may not need them at all, and different application behavior can be achieved with using Condition components in OnUpdate and OnRender. But using AppStates can make your project cleaner and require less effort when you want to make changes.
 
 First we create the PlayingState.
 
@@ -417,7 +417,7 @@ The PlayerState is now finished. Let's move on and define TitleState.
 
   * __Name__ = `TitleState`
 
-Now for the "update behaviour". When the user press space on the keyboard, the game will begin.
+Now for the "update behavior". When the user press space on the keyboard, the game will begin.
 
 1. Expand TitleState to display the list properties.
 
@@ -500,7 +500,7 @@ Then the score display. We render the text from App.OnRender instead of PlayingS
 
   The __TextFloatRef__ property allows the value of a property on another component to be displayed as text.
 
-Now for the definition of behaviour when the player collides with a wall. Clear screen of all models and return to the title screen:
+Now for the definition of behavior when the player collides with a wall. Clear screen of all models and return to the title screen:
 
 1. Add a @ref RemoveAllModels component to __OnCollision__ on PlayerModel.
 

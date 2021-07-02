@@ -2,7 +2,7 @@
 
 Defines an array with values that can be used in expressions. The Name property must be defined in order to refer to the array in expressions.
 
-Note: Range checking of arrays are only performed inside the designer tool, so be sure to test your game that use arrays in preview mode before generating a exe-file.
+@note Range checking of arrays are only performed inside the designer tool, so be sure to test your game that use arrays in preview mode before generating a exe-file.
 
 See also: @ref Arrays "Arrays in expressions"
 
