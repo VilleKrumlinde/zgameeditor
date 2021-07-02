@@ -1,0 +1,1936 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="ZGameEditor application" ScreenMode="1" Camera="OrthoCamera" FileVersion="2">
+  <OnLoaded>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
+    </ZExternalLibrary>
+    <ZLibrary Comment="Sprites">
+      <Source>
+<![CDATA[class gltex {
+  //Information about where in the texture atlas the sprite is located
+	float w,h,x1,x2,y1,y2;
+}
+
+gltex gltex_wall;
+gltex gltex_ladder;
+gltex gltex_egg;
+gltex gltex_grain;
+gltex gltex_lift;
+
+gltex[4] gltex_player_r;
+gltex[4] gltex_player_l;
+gltex[4] gltex_player_up;
+
+gltex[10] gltex_duck;
+gltex gltex_big_duck_l1;
+gltex gltex_big_duck_l2;
+gltex gltex_big_duck_r1;
+gltex gltex_big_duck_r2;
+gltex gltex_cage_open;
+gltex gltex_cage_closed;
+
+gltex gltex_score;
+gltex gltex_blank;
+gltex gltex_player;
+gltex gltex_level;
+gltex gltex_bonus;
+gltex gltex_time;
+gltex gltex_hat;
+gltex[10] gltex_digit;
+
+
+const int TEX_SIZE = 128;
+byte[TEX_SIZE * TEX_SIZE * 4] tex_buffer;
+int tex_handle;
+int tex_x;
+int tex_y;
+int tex_h;
+
+
+gltex LoadTexture(byte[] ar,byte[] color) {
+  //Copy bytes into texture atlas
+  gltex tex = new gltex();
+
+	int mask = 0;
+	int i;
+	int j;
+	int stride;
+
+  int sprite_x=ar[0];
+  int sprite_y=ar[1];
+
+	if (tex_x + sprite_x > TEX_SIZE) {
+		tex_y += tex_h;
+		tex_h = 0;
+		tex_x = 0;
+	}
+	if (sprite_y > tex_h)
+		tex_h = sprite_y;
+	if (tex_y + tex_h > TEX_SIZE)
+		trace("error");
+	stride = (TEX_SIZE - sprite_x) * 4;
+	int dest = (tex_x + tex_y * TEX_SIZE) * 4;
+	int src = 2;
+	for (j = 0; j < sprite_y; j++) {
+		for (i = 0; i < sprite_x; i++) {
+			if ((i & 7) == 0)
+				mask = ar[src++];
+      tex_buffer[dest++]=color[0];
+      tex_buffer[dest++]=color[1];
+      tex_buffer[dest++]=color[2];
+			if (mask & 0x80) {
+				tex_buffer[dest++] = 255;
+			}
+			else {
+				tex_buffer[dest++] = 0;
+			}
+			mask <<= 1;
+		}
+		dest += stride;
+	}
+  float texSize=TEX_SIZE;
+	tex.x1 = tex_x / texSize;
+	tex.x2 = tex.x1 + sprite_x / texSize;
+	tex.y1 = tex_y / texSize;
+	tex.y2 = tex.y1 + sprite_y / texSize;
+	tex.w = sprite_x;
+	tex.h = sprite_y;
+	tex_x += sprite_x;
+
+  return tex;
+}
+
+void LoadTextures() {
+  byte[] data;
+  byte[] colorGreen = {0,255,0};
+  byte[] colorPurple = {160,32,240};
+  byte[] colorYellow = {255,255,0};
+  byte[] colorBlack = {0,0,0};
+
+  {
+    byte[] data = {0x18, 0x30, 0x00,0x38,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x38,0x00,0x00,0x10,0x00,0x00,0xfe,0x00,0x03,0x7d,0x80,0x0c,0xd6,0x60,0x11,0x55,0x10,0x22,0x54,0x88,0x24,0x92,0x48,0x44,0x92,0x44,0x48,0x92,0x24,0x88,0x92,0x22,0x89,0x11,0x22,0xd1,0x11,0x16,0xb1,0x11,0x1a,0x99,0x11,0x32,0x97,0x11,0xd2,0x91,0xff,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x16,0xb1,0x11,0x1a,0x99,0x11,0x32,0x97,0x11,0xd2,0x91,0xff,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x12,0x51,0x11,0x14,0x31,0x11,0x18,0x19,0x11,0x30,0x07,0x11,0xc0,0x00,0xfe,0x00};
+    gltex_cage_open = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x18, 0x30, 0x00,0x38,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x44,0x00,0x00,0x38,0x00,0x00,0x10,0x00,0x00,0xfe,0x00,0x03,0x7d,0x80,0x0c,0xd6,0x60,0x11,0x55,0x10,0x22,0x54,0x88,0x24,0x92,0x48,0x44,0x92,0x44,0x48,0x92,0x24,0x88,0x92,0x22,0x89,0x11,0x22,0xd1,0x10,0x16,0xb1,0x10,0x0a,0x99,0x00,0x02,0x97,0x00,0x02,0x91,0xe0,0x02,0x91,0x00,0x02,0x91,0x10,0x02,0x91,0x10,0x12,0x91,0x10,0x12,0x91,0x10,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0xd0,0x00,0x16,0xb0,0x00,0x1a,0x90,0x00,0x32,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x90,0x00,0x12,0x91,0x00,0x12,0x91,0x01,0x12,0x91,0x11,0x12,0x91,0x11,0x12,0xd1,0x11,0x12,0x51,0x11,0x14,0x31,0x11,0x18,0x19,0x11,0x30,0x07,0x11,0xc0,0x00,0xfe,0x00};
+    gltex_cage_closed = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x0e,0x00,0x1f,0x00,0x17,0x80,0xf7,0x80,0xff,0x80,0x1f,0x80,0x0f,0x00,0x07,0x00,0x06,0x00,0x0e,0x70,0x0e,0xf8,0x1f,0xfc,0x1f,0xfe,0x1e,0xff,0x1d,0xff,0x3d,0xfd,0x3d,0xfd,0x3d,0xfb,0x3e,0xf6,0x3f,0x6e,0x1f,0x9c,0x1f,0xf8,0x0f,0xf0,0x07,0xc0};
+    gltex_big_duck_l1 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x0e,0x00,0x9f,0x00,0x57,0x80,0x37,0x80,0x3f,0x80,0x5f,0x80,0x8f,0x00,0x07,0x00,0x06,0x00,0x0e,0x70,0x0e,0xf8,0x1f,0xfc,0x1f,0x8e,0x1e,0x77,0x1d,0xfb,0x3f,0xfd,0x3f,0xff,0x3f,0xff,0x3f,0xfe,0x3f,0xfe,0x1f,0xfc,0x1f,0xf8,0x0f,0xf0,0x07,0xc0};
+    gltex_big_duck_l2 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18,0x00,0x70,0x00,0xf8,0x01,0xe8,0x01,0xef,0x01,0xff,0x01,0xf8,0x00,0xf0,0x00,0xe0,0x00,0x60,0x0e,0x70,0x1f,0x70,0x3f,0xf8,0x7f,0xf8,0xff,0x78,0xff,0xb8,0xbf,0xbc,0xbf,0xbc,0xdf,0xbc,0x6f,0x7c,0x76,0xfc,0x39,0xf8,0x1f,0xf8,0x0f,0xf0,0x03,0xe0};
+    gltex_big_duck_r1 = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {0x10, 0x18, 0x00,0x70,0x00,0xf9,0x01,0xea,0x01,0xec,0x01,0xfc,0x01,0xfa,0x00,0xf1,0x00,0xe0,0x00,0x60,0x0e,0x70,0x1f,0x70,0x3f,0xf8,0x71,0xf8,0xee,0x78,0xdf,0xb8,0xbf,0xfc,0xff,0xfc,0xff,0xfc,0x7f,0xfc,0x7f,0xfc,0x3f,0xf8,0x1f,0xf8,0x0f,0xf0,0x03,0xe0};
+    gltex_big_duck_r2 = LoadTexture(data,colorYellow);
+  }
+
+
+  {
+    byte[] data = {8,8,251,0,191,0,239,0,0,0};
+    gltex_wall = LoadTexture(data,colorGreen);
+  }
+
+  {
+    byte[] data = {8,8,66,66,66,66,126,66,66,66};
+    gltex_ladder = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {8,8,0,56,108,94,126,124,56,0};
+    gltex_egg = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,8,0,0,0,8,20,42,85,0};
+    gltex_grain = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {16,4,31,248,31,248,27,216,17,136};
+    gltex_lift = LoadTexture(data,colorPurple);
+  }
+
+  {
+    byte[] data = {8, 0x10,0x18,0x3c,0xff,0x3c,0x3c,0x18,0x18,0xbd, 0xff,0x7e,0x7e,0x7e,0x3c,0x24,0x24,0x66 };
+    gltex_player_up[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8, 0x10,0x18,0x3c,0xff,0x3c,0x3d,0x19,0x19,0x3d,0xff,0xfe,0xfe,0xfe,0xbc,0x3e,0x20,0x20};
+    gltex_player_up[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_up[2] = gltex_player_up[0];
+  {
+    byte[] data = {8, 0x10,0x20,0x60,0x18,0x3c,0xff,0x3c,0xbc,0x98,0x98,0xbc,0xff,0x7f,0x7f,0x7f,0x3d,0x7c};
+    gltex_player_up[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,110,110,60,24,16,24};
+    gltex_player_r[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,118,118,60,56,74,36};
+    gltex_player_r[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_r[2] = gltex_player_r[0];
+  {
+    byte[] data = {8,16,24,60,255,52,60,16,24,60,110,110,94,94,60,56,74,36};
+    gltex_player_r[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,118,118,60,24,8,24};
+    gltex_player_l[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,110,110,60,28,82,36};
+    gltex_player_l[1] = LoadTexture(data,colorYellow);
+  }
+  gltex_player_l[2] = gltex_player_l[0];
+  {
+    byte[] data = {8,16,24,60,255,44,60,8,24,60,118,118,122,122,60,28,82,36};
+    gltex_player_l[3] = LoadTexture(data,colorYellow);
+  }
+
+  {
+    byte[] data = {8,20,12,27,28,8,8,4,4,2,50,123,127,127,127,62,24,16,16,16,16,24};
+    gltex_duck[0] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,13,26,29,8,8,4,4,2,50,123,127,127,127,62,24,40,40,68,69,34};
+    gltex_duck[1] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,48,216,56,16,16,32,32,64,76,222,254,254,254,124,24,8,8,8,8,24};
+    gltex_duck[2] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = {8,20,176,88,184,16,16,32,32,64,76,222,254,254,254,124,24,20,20,34,162,68};
+    gltex_duck[3] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x08, 0x14, 0x18,0x3c,0x3c,0x3c,0x18,0x18,0x18,0x3c,0x7e,0x7e,0x7e,0x7e,0x7e,0x3c,0x3c,0x24,0x24,0x26,0x20,0x60};
+    gltex_duck[4] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x08, 0x16, 0x18,0x3c,0x3c,0x3c,0x18,0x18,0x18,0x3c,0x7e,0x7e,0x7e,0x7e,0x7e,0x3c,0x3c,0x24,0x24,0x64,0x04,0x04,0x04,0x06};
+    gltex_duck[5] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x38,0x30,0x28,0x78,0x78,0x7c,0xc4,0x7f,0xc2,0x7f,0x80,0x3f,0x00,0x3f,0x00,0x1f,0x00,0x16,0x00,0x10,0x00,0x10,0x00,0x10,0x00,0x18,0x00};
+    gltex_duck[6] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x30,0x00,0x78,0x00,0x7c,0x00,0x7e,0x00,0x7f,0xf8,0x3f,0xf4,0x3f,0x14,0x1f,0x08,0x16,0x08,0x10,0x08,0x10,0x00,0x10,0x00,0x18,0x00};
+    gltex_duck[7] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1c,0x00,0x14,0x0c,0x1e,0x1e,0x23,0x3e,0x43,0xfe,0x01,0xfe,0x00,0xfc,0x00,0xfc,0x00,0xf8,0x00,0x68,0x00,0x08,0x00,0x08,0x00,0x08,0x00,0x18};
+    gltex_duck[8] = LoadTexture(data,colorYellow);
+  }
+  {
+    byte[] data = { 0x10, 0x14, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0c,0x00,0x1e,0x00,0x3e,0x00,0x7e,0x1f,0xfe,0x2f,0xfc,0x28,0xfc,0x10,0xf8,0x10,0x68,0x10,0x08,0x00,0x08,0x00,0x08,0x00,0x18};
+    gltex_duck[9] = LoadTexture(data,colorYellow);
+  }
+
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x90,0x90,0x90,0x90,0x60 }; gltex_digit[0]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x20,0x60,0x20,0x20,0x20,0x20,0x70 }; gltex_digit[1]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x10,0x20,0x40,0x80,0xf0 }; gltex_digit[2]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x10,0x20,0x10,0x90,0x60 }; gltex_digit[3]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x80,0x80,0xa0,0xa0,0xf0,0x20,0x20 }; gltex_digit[4]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0xf0,0x80,0xe0,0x10,0x10,0x90,0x60 }; gltex_digit[5]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x80,0xe0,0x90,0x90,0x60 }; gltex_digit[6]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0xf0,0x10,0x10,0x20,0x20,0x40,0x40 }; gltex_digit[7]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x90,0x60,0x90,0x90,0x60 }; gltex_digit[8]=LoadTexture(data,colorBlack); }
+  { byte[] data = { 0x08, 0x07, 0x60,0x90,0x90,0x70,0x10,0x90,0x60 }; gltex_digit[9]=LoadTexture(data,colorBlack); }
+
+
+  {
+    byte[] data = { 0x18, 0x09,0xff,0xff,0xf8,0x88,0x89,0x88,0xbb,0xaa,0xb8,0xbb,0xaa,0xb8,0x8b,0xa9,0x98,0xeb,0xaa,0xb8,0xeb,0xaa,0xb8,0x88,0x8a,0x88,0xff,0xff,0xf8 };
+    gltex_score = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x20, 0x09, 0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,0xfe };
+    gltex_blank = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x20, 0x09, 0xff,0xff,0xff,0xff,0x9b,0xda,0x89,0xff,0xab,0xaa,0xba,0xff,0xab,0xaa,0xba,0xff,0x9b,0x8d,0x99,0xff,0xbb,0xad,0xba,0xff,0xbb,0xad,0xba,0xff,0xb8,0xad,0x8a,0xff,0xff,0xff,0xff,0xff };
+    gltex_player = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x28, 0x09, 0xff,0xff,0xff,0xff,0xfc,0xb8,0xa8,0xbf,0xff,0xfc,0xbb,0xab,0xbf,0xff,0xfc,0xbb,0xab,0xbf,0xff,0xfc,0xb9,0xa9,0xbf,0xff,0xfc,0xbb,0xab,0xbf,0xff,0xfc,0xbb,0xdb,0xbf,0xff,0xfc,0x88,0xd8,0x8f,0xff,0xfc,0xff,0xff,0xff,0xff,0xfc };
+    gltex_level = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x30, 0x09, 0xff,0xff,0xff,0xff,0xff,0xf0,0x98,0xb5,0x47,0xff,0xff,0xf0,0xaa,0x95,0x5f,0xff,0xff,0xf0,0xaa,0x95,0x5f,0xff,0xff,0xf0,0x9a,0xa5,0x47,0xff,0xff,0xf0,0xaa,0xa5,0x77,0xff,0xff,0xf0,0xaa,0xb5,0x77,0xff,0xff,0xf0,0x98,0xb4,0x47,0xff,0xff,0xf0,0xff,0xff,0xff,0xff,0xff,0xf0 };
+    gltex_bonus = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x28, 0x09, 0xff,0xff,0xff,0xff,0xc0,0x8a,0x48,0xff,0xff,0xc0,0xda,0x4b,0xff,0xff,0xc0,0xda,0xab,0xff,0xff,0xc0,0xda,0xa9,0xff,0xff,0xc0,0xda,0xab,0xff,0xff,0xc0,0xda,0xeb,0xff,0xff,0xc0,0xda,0xe8,0xff,0xff,0xc0,0xff,0xff,0xff,0xff,0xc0};
+    gltex_time = LoadTexture(data,colorPurple);
+  }
+  {
+    byte[] data = { 0x08, 0x03, 0x40,0xe0,0x00};
+    gltex_hat = LoadTexture(data,colorYellow);
+  }
+
+	glGenTextures(1, tex_handle);
+	glBindTexture(GL_TEXTURE_2D, tex_handle);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+		TEX_SIZE, TEX_SIZE, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, tex_buffer);
+}
+
+void RenderSprite(gltex t, float x, float y)
+{
+	float w = t.w;
+	float h = t.h;
+	//glBindTexture(GL_TEXTURE_2D, t->handle);
+	glBegin(GL_QUADS);
+	glTexCoord2f(t.x1, t.y1);
+	glVertex2f(x, y);
+	glTexCoord2f(t.x1, t.y2);
+	glVertex2f(x, y - h);
+	glTexCoord2f(t.x2, t.y2);
+	glVertex2f(x + w, y - h);
+	glTexCoord2f(t.x2, t.y1);
+	glVertex2f(x + w, y);
+	glEnd();
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Levels" HasInitializer="1">
+      <Source>
+<![CDATA[class TLevels {
+  private byte[] level1 = { /* 0cd0 */
+/*0x0cd0*/0x0d,0x04,0x00,0x0a,0x02,0x01,0x00,0x13,0x06,0x01,0x12,0x0b,0x02,0x08,0x0b,0x0e,
+/*0x0ce0*/0x12,0x0c,0x09,0x0a,0x0d,0x0b,0x0c,0x0e,0x0d,0x0e,0x0f,0x0f,0x10,0x10,0x03,0x07,
+/*0x0cf0*/0x11,0x09,0x0b,0x15,0x05,0x09,0x15,0x0b,0x10,0x15,0x12,0x13,0x03,0x07,0x0d,0x07,
+/*0x0d00*/0x02,0x17,0x0b,0x02,0x08,0x10,0x02,0x08,0x04,0x02,0x01,0x07,0x0d,0x07,0x12,0x07,
+/*0x0d10*/0x02,0x0c,0x0a,0x0d,0x11,0x0c,0x04,0x11,0x0a,0x12,0x06,0x16,0x0d,0x16,0x13,0x16,
+/*0x0d20*/0x02,0x02,0x0d,0x02,0x05,0x07,0x0e,0x07,0x05,0x0c,0x0f,0x0c,0x10,0x10,0x0b,0x12,
+/*0x0d30*/0x09,0x16,0x0e,0x16,0x05,0x11,0x08,0x16,0x04,0x0c,0x06,0x07,0x0c,0x02
+  };
+
+  private byte[] level2 = { /* 0d3e */
+0x0d,0x08,
+/*0x0d40*/0x00,0x07,0x03,0x01,0x00,0x03,0x01,0x05,0x13,0x06,0x00,0x06,0x06,0x08,0x0a,0x06,
+/*0x0d50*/0x0c,0x0e,0x06,0x10,0x13,0x0b,0x00,0x03,0x0b,0x05,0x0e,0x0b,0x10,0x13,0x10,0x00,
+/*0x0d60*/0x0a,0x10,0x0c,0x13,0x15,0x04,0x0a,0x15,0x0c,0x13,0x02,0x02,0x12,0x04,0x11,0x17,
+/*0x0d70*/0x06,0x07,0x12,0x09,0x02,0x08,0x09,0x0c,0x17,0x0d,0x0c,0x12,0x11,0x02,0x0d,0x11,
+/*0x0d80*/0x11,0x17,0x05,0x02,0x0c,0x02,0x00,0x07,0x04,0x07,0x0d,0x07,0x00,0x0c,0x07,0x0c,
+/*0x0d90*/0x13,0x0c,0x07,0x11,0x07,0x16,0x0f,0x16,0x13,0x16,0x00,0x02,0x03,0x02,0x0f,0x02,
+/*0x0da0*/0x10,0x07,0x00,0x11,0x0a,0x11,0x0c,0x16,0x06,0x16,0x01,0x02,0x12,0x0c,0x0b,0x0c,
+/*0x0db0*/0x0d,0x16
+  };
+
+  private byte[] level3 =  { /* 0db2 */
+0x18,0x07,0x01,0x0a,0x03,0x01,0x00,0x02,0x02,0x03,0x04,0x01,0x07,0x09,
+/*0x0dc0*/0x01,0x0b,0x13,0x05,0x0f,0x12,0x0a,0x00,0x04,0x0f,0x00,0x03,0x13,0x03,0x04,0x06,
+/*0x0dd0*/0x07,0x0a,0x06,0x0c,0x0c,0x07,0x0e,0x0e,0x08,0x0f,0x0f,0x09,0x11,0x11,0x0a,0x12,
+/*0x0de0*/0x13,0x0c,0x0c,0x0d,0x0c,0x0f,0x0f,0x0f,0x12,0x13,0x10,0x11,0x11,0x11,0x0f,0x0f,
+/*0x0df0*/0x12,0x0c,0x0d,0x13,0x07,0x0b,0x15,0x0d,0x0f,0x14,0x10,0x10,0x14,0x12,0x13,0x01,
+/*0x0e00*/0x02,0x0c,0x03,0x0b,0x15,0x08,0x07,0x15,0x0a,0x07,0x15,0x0d,0x13,0x17,0x12,0x02,
+/*0x0e10*/0x07,0x13,0x0b,0x11,0x05,0x04,0x03,0x0f,0x02,0x10,0x06,0x04,0x0b,0x04,0x14,0x09,
+/*0x0e20*/0x07,0x0f,0x09,0x0f,0x0d,0x01,0x10,0x11,0x11,0x13,0x12,0x13,0x15,0x02,0x02,0x02,
+/*0x0e30*/0x0b,0x07,0x07,0x07,0x14,0x00,0x10,0x0d,0x02,0x0c,0x13,0x0f,0x12,0x0d,0x0d,0x12,
+/*0x0e40*/0x15,0x02,0x10,0x09,0x14,0x11,0x06,0x00,0x02,0x08,0x07
+};
+
+  private byte[] level4 =  { /* 0e4b */
+0x1a,0x05,0x01,0x06,0x04,
+/*0x0e50*/0x01,0x00,0x04,0x01,0x06,0x0a,0x01,0x0d,0x13,0x06,0x00,0x04,0x06,0x07,0x0a,0x06,
+/*0x0e60*/0x0d,0x11,0x05,0x13,0x13,0x0c,0x00,0x01,0x0d,0x03,0x03,0x0e,0x05,0x05,0x0f,0x07,
+/*0x0e70*/0x08,0x0b,0x07,0x08,0x0b,0x0d,0x10,0x0a,0x12,0x13,0x10,0x08,0x0a,0x11,0x00,0x00,
+/*0x0e80*/0x12,0x02,0x02,0x13,0x03,0x03,0x14,0x04,0x04,0x15,0x05,0x05,0x15,0x07,0x0a,0x10,
+/*0x0e90*/0x0d,0x0e,0x10,0x10,0x10,0x10,0x12,0x13,0x15,0x0d,0x0f,0x15,0x11,0x13,0x03,0x02,
+/*0x0ea0*/0x08,0x08,0x02,0x17,0x0e,0x0c,0x17,0x0f,0x02,0x08,0x13,0x10,0x17,0x0b,0x00,0x02,
+/*0x0eb0*/0x00,0x0d,0x00,0x12,0x07,0x07,0x09,0x11,0x0d,0x02,0x10,0x07,0x0d,0x0c,0x13,0x0b,
+/*0x0ec0*/0x11,0x10,0x10,0x15,0x10,0x18,0x00,0x07,0x0a,0x02,0x12,0x02,0x05,0x0f,0x09,0x16,
+/*0x0ed0*/0x0d,0x16,0x0a,0x16,0x11,0x16,0x11,0x02,0x04,0x02,0x0a,0x07
+};
+
+  private byte[] level5 = { /* 0edc */
+0x11,0x09,0x01,0x0d,
+/*0x0ee0*/0x04,0x01,0x00,0x01,0x01,0x03,0x0b,0x01,0x0d,0x0f,0x01,0x12,0x13,0x06,0x00,0x05,
+/*0x0ef0*/0x06,0x09,0x0c,0x06,0x0e,0x0f,0x0b,0x00,0x05,0x0b,0x0a,0x0f,0x0b,0x13,0x13,0x10,
+/*0x0f00*/0x00,0x05,0x15,0x03,0x07,0x14,0x09,0x09,0x13,0x0b,0x0d,0x12,0x0e,0x0e,0x16,0x0c,
+/*0x0f10*/0x0f,0x15,0x12,0x13,0x03,0x02,0x08,0x02,0x0c,0x12,0x04,0x0c,0x17,0x07,0x02,0x07,
+/*0x0f20*/0x07,0x0a,0x11,0x0a,0x02,0x08,0x0c,0x07,0x0d,0x0c,0x14,0x18,0x0e,0x02,0x08,0x10,
+/*0x0f30*/0x00,0x02,0x00,0x07,0x00,0x0c,0x00,0x11,0x05,0x07,0x05,0x16,0x09,0x0b,0x0d,0x06,
+/*0x0f40*/0x0b,0x14,0x0d,0x17,0x13,0x0c,0x13,0x16,0x04,0x02,0x05,0x02,0x06,0x02,0x0d,0x02,
+/*0x0f50*/0x0f,0x02,0x12,0x02,0x0a,0x0c,0x0f,0x0c,0x03,0x16,0x06,0x16,0x07,0x16,0x0f,0x17,
+/*0x0f60*/0x12,0x16,0x01,0x07,0x03,0x0c,0x01,0x11,0x0e,0x0c,0x0f,0x07
+};
+
+  private byte[] level6 = { /* 0f6c */
+0x10,0x06,0x01,0x09,
+/*0x0f70*/0x04,0x01,0x00,0x02,0x01,0x06,0x08,0x01,0x0b,0x0e,0x06,0x00,0x01,0x06,0x03,0x05,
+/*0x0f80*/0x06,0x0c,0x0e,0x0b,0x02,0x07,0x0b,0x0c,0x11,0x0a,0x11,0x13,0x10,0x00,0x05,0x10,
+/*0x0f90*/0x10,0x13,0x15,0x06,0x06,0x15,0x08,0x08,0x14,0x0c,0x11,0x16,0x11,0x13,0x02,0x11,
+/*0x0fa0*/0x11,0x00,0x02,0x08,0x04,0x04,0x12,0x0e,0x07,0x0d,0x0e,0x13,0x17,0x11,0x02,0x0d,
+/*0x0fb0*/0x11,0x10,0x18,0x09,0x02,0x02,0x10,0x02,0x05,0x07,0x0c,0x07,0x0c,0x0c,0x10,0x0c,
+/*0x0fc0*/0x07,0x11,0x03,0x15,0x06,0x16,0x0c,0x15,0x13,0x11,0x13,0x17,0x0b,0x02,0x0c,0x02,
+/*0x0fd0*/0x0d,0x02,0x0e,0x02,0x00,0x11,0x02,0x11,0x03,0x11,0x07,0x0c,0x13,0x0b,0x01,0x11,
+/*0x0fe0*/0x01,0x02,0x12,0x11,0x0d,0x07,0x12,0x0b,
+};
+
+  private byte[] level7 = { /* 0fe8 */
+0x17,0x07,0x01,0x04,0x03,0x15,0x0b,0x10,
+/*0x0ff0*/0x10,0x00,0x04,0x10,0x06,0x07,0x0b,0x00,0x02,0x06,0x01,0x03,0x04,0x00,0x01,0x01,
+/*0x1000*/0x03,0x04,0x02,0x05,0x06,0x01,0x07,0x08,0x02,0x09,0x09,0x03,0x09,0x09,0x03,0x0c,
+/*0x1010*/0x0c,0x08,0x05,0x08,0x09,0x05,0x05,0x0a,0x05,0x05,0x0b,0x05,0x05,0x0c,0x05,0x05,
+/*0x1020*/0x0b,0x08,0x08,0x0c,0x08,0x08,0x0f,0x0c,0x0f,0x0b,0x0a,0x0b,0x09,0x0e,0x10,0x02,
+/*0x1030*/0x0f,0x10,0x01,0x02,0x12,0x03,0x02,0x08,0x05,0x14,0x18,0x07,0x14,0x18,0x09,0x14,
+/*0x1040*/0x18,0x0d,0x10,0x17,0x0f,0x0a,0x11,0x12,0x06,0x17,0x08,0x17,0x0a,0x17,0x0f,0x16,
+/*0x1050*/0x07,0x11,0x02,0x03,0x07,0x09,0x0b,0x0c,0x10,0x0f,0x10,0x0a,0x0c,0x04,0x11,0x02,
+/*0x1060*/0x02,0x07,0x03,0x11,0x08,0x09,0x0c,0x16,0x0d,0x16,0x01,0x11,0x0e,0x0a,0x00,0x05,
+/*0x1070*/0x02,0x0c,
+};
+
+  private byte[] level8 = { /* 1072 */
+0x0f,0x06,0x00,0x10,0x03,0x01,0x00,0x13,0x06,0x02,0x04,0x06,0x07,0x0d,
+/*0x1080*/0x06,0x10,0x12,0x0b,0x02,0x05,0x0b,0x08,0x0c,0x0b,0x0f,0x12,0x10,0x03,0x06,0x10,
+/*0x1090*/0x09,0x0b,0x10,0x0e,0x11,0x15,0x03,0x03,0x15,0x06,0x06,0x15,0x08,0x0c,0x15,0x0e,
+/*0x10a0*/0x0e,0x15,0x11,0x11,0x03,0x02,0x08,0x11,0x02,0x08,0x0a,0x07,0x0d,0x04,0x0c,0x12,
+/*0x10b0*/0x10,0x0c,0x12,0x0a,0x11,0x17,0x05,0x06,0x0f,0x06,0x06,0x0b,0x0e,0x0b,0x08,0x10,
+/*0x10c0*/0x0c,0x10,0x05,0x15,0x0f,0x15,0x07,0x15,0x0d,0x15,0x03,0x18,0x11,0x18,0x01,0x02,
+/*0x10d0*/0x02,0x02,0x04,0x02,0x05,0x02,0x06,0x02,0x08,0x02,0x09,0x02,0x0a,0x02,0x0b,0x02,
+/*0x10e0*/0x0c,0x02,0x0d,0x02,0x0e,0x02,0x0f,0x02,0x10,0x02,0x12,0x02,0x13,0x02,0x11,0x02,
+/*0x10f0*/0x0a,0x0c,0x0a,0x16,0x03,0x11,0x11,0x11,0x55,0x42,0x28,0x34,0x29,0x3a,0x20,0x45,
+};
+
+  void getLevel(int i,ref byte[] data) {
+    switch(i) {
+      case 0 : data=level1; break;
+      case 1 : data=level2; break;
+      case 2 : data=level3; break;
+      case 3 : data=level4; break;
+      case 4 : data=level5; break;
+      case 5 : data=level6; break;
+      case 6 : data=level7; break;
+      case 7 : data=level8; break;
+    }
+  }
+}
+
+TLevels levels = new TLevels();]]>
+      </Source>
+    </ZLibrary>
+    <ZLibrary Comment="Main" HasInitializer="1">
+      <Source>
+<![CDATA[/* Chuckie Egg.  Based on the original by A & F Software
+   Written by Paul Brook
+   Released under the GNU GPL v3.
+   https://github.com/pbrook/Chuckie-Egg
+
+   Adapted for ZGE script by Ville 2021.
+*/
+
+const int cNUM_PLAYERS=1;
+
+const int cPLAYER_WALK = 0;
+const int cPLAYER_CLIMB = 1;
+const int cPLAYER_JUMP = 2;
+const int cPLAYER_FALL = 3;
+const int cPLAYER_LIFT = 4;
+
+const int TILE_WALL     = 1;
+const int TILE_LADDER   = 2;
+const int TILE_EGG      = 4;
+const int TILE_GRAIN    = 8;
+
+const int DUCK_BORED = 0;
+const int DUCK_STEP = 1;
+const int DUCK_EAT1 = 2;
+const int DUCK_EAT2 = 3;
+const int DUCK_EAT3 = 4;
+const int DUCK_EAT4 = 5;
+
+const int BUTTON_RIGHT  = 1;
+const int BUTTON_LEFT   = 2;
+const int BUTTON_DOWN   = 4;
+const int BUTTON_UP     = 8;
+const int BUTTON_JUMP   = 0x10;
+
+const int DIR_L		= 1;
+const int DIR_R		= 2;
+const int DIR_UP	= 4;
+const int DIR_DOWN	= 8;
+const int DIR_HORIZ	= (DIR_R | DIR_L);
+
+int skip_frame;
+int cheat;
+int is_dead;
+int zero_bonus;
+int extra_life;
+int num_players;
+int active_players;
+int current_player;
+int current_level;
+int eggs_left;
+int bonus_hold;
+int have_lift;
+int lift_x;
+int[2] lift_y;
+int current_lift;
+int have_big_duck;
+int duck_timer;
+int big_duck_frame;
+int big_duck_x;
+int big_duck_dx;
+int big_duck_y;
+int big_duck_dy;
+int big_duck_dir;
+int num_ducks;
+int current_duck;
+int duck_speed;
+byte[4] bonus;
+byte[3] timer_ticks;
+byte[4] level;
+byte[20*25] levelmap;
+int player_mode = cPLAYER_WALK;
+int player_fall;
+int player_slide;
+int player_face;
+int player_x;
+int player_y;
+int player_tilex;
+int player_tiley;
+int player_partial_x;
+int player_partial_y;
+int move_x;
+int move_y;
+byte buttons;
+byte button_ack;
+int rand_high;
+byte rand_low;
+
+class TPlayerData {
+    byte[8] score;
+    byte[4] bonus;
+    byte[16] egg;
+    byte[16] grain;
+    int lives;
+}
+
+
+TPlayerData player_data;
+
+class TDuckInfo {
+    byte x;
+    byte y;
+    byte tile_x;
+    byte tile_y;
+    int mode;
+    int dir;
+}
+
+TDuckInfo[5] duck;
+
+int DuckSprite(int n)
+{
+	int dir;
+	int sprite;
+
+  TDuckInfo d=duck[n];
+	dir = d.dir;
+	switch (d.mode) {
+	case DUCK_BORED:
+		if (dir & DIR_HORIZ) {
+			sprite = (dir == DIR_R) ? 0 : 2;
+		}
+		else {
+			sprite = 4;
+		}
+		break;
+	case DUCK_STEP:
+		if (dir & DIR_HORIZ) {
+			sprite = (dir == DIR_R) ? 1 : 3;
+		}
+		else {
+			sprite = 5;
+		}
+		break;
+	case DUCK_EAT2:
+	case DUCK_EAT4:
+		sprite = (dir == DIR_R) ? 6 : 8;
+		break;
+	case DUCK_EAT3:
+		sprite = (dir == DIR_R) ? 7 : 9;
+		break;
+	default:
+    trace("wrong value in switch");
+	};
+	return sprite;
+}
+
+/* Movement code generates out of bounds reads.  */
+int Do_ReadMap(byte x, byte y)
+{
+	if (y >= 0x19 || x >= 0x14)
+		return 0;
+	if (y < 0 || x < 0)
+		return 0;
+	return levelmap[x + y * 20];
+}
+
+void Do_InitTile(int x, int y, int type)
+{
+	int old_type;
+
+	old_type = levelmap[y * 20 + x];
+	levelmap[y * 20 + x] = type;
+}
+
+vec2[] scene_array_xy;
+vec2[] scene_array_uv;
+int scene_verts;
+
+
+void RenderScene()
+{
+	glVertexPointer(2, GL_FLOAT, 0, scene_array_xy);
+	glTexCoordPointer(2, GL_FLOAT, 0, scene_array_uv);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDrawArrays(GL_QUADS, 0, scene_verts);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void AddSceneVert(float x, float y, float u, float v)
+{
+  int i=scene_verts;
+
+  scene_verts++;
+
+  scene_array_xy.SizeDim1=scene_verts;
+  scene_array_xy[i]=vector2(x,y);
+
+  scene_array_uv.SizeDim1=scene_verts;
+  scene_array_uv[i]=vector2(u,v);
+}
+
+void AddSceneSprite(gltex t, float x, float y)
+{
+	AddSceneVert(x, y, t.x1, t.y1);
+	AddSceneVert(x, y - t.h, t.x1, t.y2);
+	AddSceneVert(x + t.w, y - t.h, t.x2, t.y2);
+	AddSceneVert(x + t.w, y, t.x2, t.y1);
+}
+
+int[32] item_pos;
+int item_count;
+
+void RenderBackground()
+{
+	int player;
+	int x;
+	int y;
+	int n;
+	int type;
+	gltex tex;
+
+	scene_verts = 0;
+	AddSceneSprite(gltex_score, 0, 0xf0);
+	for (player = 0; player < num_players; player++) {
+		x = player * 0x22 + 0x1b;
+		AddSceneSprite(gltex_blank, x, 0xf0);
+	}
+
+	y = 0xe3;
+	AddSceneSprite(gltex_player, 0, y + 1);
+	AddSceneSprite(gltex_digit[current_player + 1], 0x1b, y);
+
+	AddSceneSprite(gltex_level, 0x24, y + 1);
+	n = current_level + 1;
+	AddSceneSprite(gltex_digit[n % 10], 0x45, y);
+	n /= 10;
+	AddSceneSprite(gltex_digit[n % 10], 0x40, y);
+	if (n > 10)
+		AddSceneSprite(gltex_digit[n / 10], 0x3b, y);
+
+	AddSceneSprite(gltex_bonus, 0x4e, y + 1);
+	AddSceneSprite(gltex_digit[0], 0x75, y);
+	AddSceneSprite(gltex_time, 0x7e, y + 1);
+
+	item_count = 0;
+	for (x = 0; x < 20; x++) {
+		for (y = 0; y < 25; y++) {
+			type = levelmap[y * 20 + x];
+			if (type & TILE_LADDER) {
+				tex = gltex_ladder;
+			}
+			else if (type & TILE_WALL) {
+				tex = gltex_wall;
+			}
+			else if (type & (TILE_EGG | TILE_GRAIN)) {
+				item_pos[item_count++] = y * 20 + x;
+				continue;
+			}
+			else {
+				continue;
+			}
+			AddSceneSprite(tex, x << 3, (y << 3) | 7);
+		}
+	}
+
+	if (have_big_duck) {
+		tex = gltex_cage_open;
+	}
+	else {
+		tex = gltex_cage_closed;
+	}
+	AddSceneSprite(tex, 0, 0xdc);
+}
+
+void RenderDigit(int x, int y, int n)
+{
+	RenderSprite(gltex_digit[n], x, y);
+}
+
+void RenderPlayerHUD(int player)
+{
+	int x = player * 0x22 + 0x1b;
+	int n;
+
+	for (n = 0; n < 6; n++) {
+		RenderDigit(x + 1 + n * 5, 0xef,
+			player_data.score[n + 2]);
+	}
+
+	n = player_data.lives;
+	if ((n > 8) || (n < 0))
+		n = 8;
+	while (n--) {
+		RenderSprite(gltex_hat, x, 0xe7);
+		x += 4;
+	}
+}
+
+void RenderFrame() {
+	int x;
+	int y;
+	int n;
+	int sprite;
+	int type;
+	gltex tex;
+
+	RenderScene();
+
+	/* HUD  */
+  RenderPlayerHUD(0);
+
+	y = 0xe3;
+
+	RenderDigit(0x66, y, bonus[0]);
+	RenderDigit(0x6b, y, bonus[1]);
+	RenderDigit(0x70, y, bonus[2]);
+
+	RenderDigit(0x91, y, timer_ticks[0]);
+	RenderDigit(0x96, y, timer_ticks[1]);
+	RenderDigit(0x9b, y, timer_ticks[2]);
+
+	/* Egg/Grain.  */
+	for (n = 0; n < item_count; n++) {
+		type = levelmap[item_pos[n]];
+		if (type & TILE_EGG) {
+			tex = gltex_egg;
+		}
+		else if (type & TILE_GRAIN) {
+			tex = gltex_grain;
+		}
+		else {
+			continue;
+		}
+		x = item_pos[n] % 20;
+		y = item_pos[n] / 20;
+		RenderSprite(tex, x << 3, (y << 3) | 7);
+	}
+
+	/* Ducks.  */
+	for (n = 0; n < num_ducks; n++) {
+		x = duck[n].x;
+		sprite = DuckSprite(n);
+		if (sprite >= 8)
+			x -= 8;
+
+    if(gltex_duck[sprite]!=null)
+   		RenderSprite(gltex_duck[sprite], x, duck[n].y);
+	}
+
+	/* Player.  */
+  gltex[4] ps=null;
+	if (player_face == 0) {
+		ps = gltex_player_up;
+		n = (player_y >> 1) & 3;
+	}
+	else {
+		if (player_face < 0)
+			ps = gltex_player_l;
+		else
+			ps = gltex_player_r;
+		n = (player_x >> 1) & 3;
+	}
+	if (player_mode != cPLAYER_CLIMB) {
+		if (move_x == 0)
+			n = 0;
+	}
+	else {
+		if (move_y == 0)
+			n = 0;
+	}
+ 	RenderSprite(ps[n], player_x, player_y);
+
+	/* Lift.  */
+	if (have_lift) {
+		for (n = 0; n < 2; n++) {
+			RenderSprite(gltex_lift, lift_x, lift_y[n]);
+		}
+	}
+
+	/* Big duck.  */
+	if (big_duck_dir) {
+		tex = big_duck_frame ? gltex_big_duck_l2 : gltex_big_duck_l1;
+	}
+	else {
+		tex = big_duck_frame ? gltex_big_duck_r2 : gltex_big_duck_r1;
+	}
+	RenderSprite(tex, big_duck_x, big_duck_y);
+}
+
+int readFromArray(byte[] ar, ref int pos) {
+  return ar[pos++];
+}
+
+void LoadLevel()
+{
+	int i;
+	int tmp;
+	int x;
+	int y;
+	int num_walls;
+	int num_ladders;
+	int num_grain;
+
+	i = current_level >> 4;
+	if (i > 8)
+		i = 8;
+	timer_ticks[0] = 9 - i;
+	timer_ticks[1] = 0;
+	timer_ticks[2] = 0;
+
+  byte[] levelData;
+  levels.getLevel(current_level & 7,levelData);
+
+  int pos=0;
+	num_walls = readFromArray(levelData,pos);
+	num_ladders = readFromArray(levelData,pos);
+	have_lift = readFromArray(levelData,pos);
+	num_grain = readFromArray(levelData,pos);
+	num_ducks = readFromArray(levelData,pos);;
+	for (i = 0; i < 20 * 25; i++)
+		levelmap[i] = 0;
+
+	while (num_walls--) {
+		y = readFromArray(levelData,pos);;
+		 x = readFromArray(levelData,pos);;
+		i = readFromArray(levelData,pos);;
+		while (x <= i) {
+			Do_InitTile(x, y, TILE_WALL);
+			x++;
+		}
+	}
+
+	while (num_ladders--) {
+		x = readFromArray(levelData,pos);;
+		y = readFromArray(levelData,pos);;
+		i = readFromArray(levelData,pos);;
+		while (y <= i) {
+			tmp = levelmap[x + y * 20];
+			Do_InitTile(x, y, TILE_LADDER | tmp);
+			y++;
+		}
+	}
+
+	if (have_lift) {
+		lift_x = readFromArray(levelData,pos) << 3;
+	}
+
+	eggs_left = 0;
+	for (i = 0; i < 0xc; i++) {
+		x = readFromArray(levelData,pos);;
+		y = readFromArray(levelData,pos);;
+		if (player_data.egg[i] == 0) {
+			Do_InitTile(x, y, (i << 4) | TILE_EGG);
+			eggs_left++;
+		}
+	}
+
+	for (i = 0; i < num_grain; i++) {
+ 		x = readFromArray(levelData,pos);;
+		y = readFromArray(levelData,pos);;
+		if (player_data.grain[i] == 0) {
+			Do_InitTile(x, y, (i << 4) | TILE_GRAIN);
+		}
+	}
+
+	for (i = 0; i < 5; i++) {
+    TDuckInfo d=duck[i];
+		d.tile_x = readFromArray(levelData,pos);;
+		d.tile_y = readFromArray(levelData,pos);;
+	}
+
+	RenderBackground();
+}
+
+void StartLevel()
+{
+	int i;
+	if (have_lift) {
+		lift_y[0] = 8;
+		lift_y[1] = 0x5a;
+		current_lift = 0;
+	}
+	big_duck_x = 4;
+	big_duck_y = 0xcc;
+	big_duck_dx = big_duck_dy = 0;
+	big_duck_frame = 0;
+	big_duck_dir = 0;
+	if ((current_level >> 3) == 1) {
+		num_ducks = 0;
+	}
+	if (current_level >= 24) {
+		num_ducks = 5;
+	}
+	for (i = 0; i < num_ducks; i++) {
+    TDuckInfo d=duck[i];
+		d.x = d.tile_x << 3;
+		d.y = (d.tile_y << 3) + 0x14;
+		d.mode = DUCK_BORED;
+		d.dir = 2;
+	}
+	/* Delay(3) */
+	player_x = 0x3c;
+	player_y = 0x20;
+	player_tilex = 7;
+	player_tiley = 2;
+	player_partial_x = 7;
+	player_partial_y = 0;
+	player_mode = cPLAYER_WALK;
+	player_face = 1;
+	button_ack = 0x1f;
+}
+
+/* Returns nonzero if blocked.  */
+int MoveSideways()
+{
+	int tmp, x, y;
+	tmp = move_x;
+	if (tmp == 0)
+		return 0;
+	if (tmp < 0) {
+		if (player_x == 0)
+			return 1;
+		if (player_partial_x >= 2)
+			return 0;
+		if (move_y == 2)
+			return 0;
+
+		x = player_tilex - 1;
+		y = player_tiley;
+		tmp = player_partial_y + move_y;
+		if (tmp < 0)
+			y--;
+		else if (tmp >= 8)
+			y++;
+		if (Do_ReadMap(x, y) == 1)
+			return 1;
+		if (move_y >= 0)
+			return 0;
+		x = player_tilex - 1;
+		y++;
+		return (Do_ReadMap(x, y) == 1);
+	}
+	tmp = player_x;
+	if (tmp >= 0x98)
+		return 1;
+	if (player_partial_x < 5)
+		return 0;
+	if (move_y == 2)
+		return 0;
+	x = player_tilex + 1;
+	y = player_tiley;
+	tmp = player_partial_y + move_y;
+	if (tmp < 0)
+		y--;
+	else if (tmp >= 8)
+		y++;
+	if (Do_ReadMap(x, y) == 1)
+		return 1;
+	if (move_y >= 0)
+		return 0;
+	x = player_tilex + 1;
+	y++;
+	return (Do_ReadMap(x, y) == 1);
+}
+
+void RemoveGrain(int x, int y)
+{
+	Do_InitTile(x, y, 0);
+}
+
+void ScoreChange(int n, int oldval, int newval)
+{
+	player_data.score[n] = newval;
+}
+
+void AddScore(int n, int val)
+{
+	int oldval;
+
+	while (n >= 0) {
+		oldval = player_data.score[n];
+		val += oldval;
+		if (n == 3)
+			extra_life++;
+		if (val < 10) {
+			ScoreChange(n, oldval, val);
+			return;
+		}
+		ScoreChange(n, oldval, val - 10);
+		val = 1;
+		n--;
+	}
+}
+/*        N    T  PI1  PI2  PI3  PN1  PN2  PN3   AA   AD   AS   AR  ALA  ALD */
+/* E1: 0x01 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x7e 0xce 0x00 0x00 0x64 0x00
+ * E2: 0x02 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x7e 0xfe 0x00 0xfb 0x7e 0x64
+ * E3: 0x03 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x32 0x00 0x00 0xe7 0x64 0x00
+ */
+void beep(int tmp) /* 0x0c98 */
+{
+	/* channel = 13 (Flush), note = 1, pitch = tmp, duration = 0x0001 */
+//	sound_start(tmp, 1);
+}
+
+void squidge(int tmp) /* 0x0ca8 */
+{
+	/* 0001 0003 0000 0004 */
+//	sound_start(tmp, 0);
+}
+
+void AnimatePlayer()
+{
+	int tmp;
+	int x, y;
+
+	player_x += move_x;
+	tmp = player_partial_x + move_x;
+	if (tmp < 0)
+		player_tilex--;
+	if (tmp >= 8)
+		player_tilex++;
+	player_partial_x = tmp & 7;
+	player_y += move_y;
+	tmp = player_partial_y + move_y;
+	if (tmp < 0)
+		player_tiley--;
+	if (tmp >= 8)
+		player_tiley++;
+	player_partial_y = tmp & 7;
+	x = player_tilex;
+	y = player_tiley;
+	if (player_partial_y >= 4)
+		y++;
+	tmp = Do_ReadMap(x, y);
+	if ((tmp & 0x0c) == 0)
+		return;
+	if ((tmp & 0x08) == 0) {
+		/* Got egg */
+		eggs_left--;
+		/* SQUIDGE(6) */
+		squidge(6);
+		tmp >>= 4;
+		player_data.egg[tmp]--;
+		Do_InitTile(x, y, 0);
+		tmp = (current_level >> 2) + 1;
+		if (tmp >= 10)
+			tmp = 10;
+		AddScore(5, tmp);
+	}
+	else {
+		/* Got grain */
+		/* SQUIDGE(5) */
+		squidge(5);
+		tmp >>= 4;
+		player_data.grain[tmp]--;
+		RemoveGrain(x, y);
+		AddScore(6, 5);
+		bonus_hold = 14;
+	}
+}
+
+void PlayerGrabLadder(int want_move)
+{
+	int tmp;
+	int x;
+	int y;
+
+	tmp = player_partial_x + move_x;
+	if (tmp != 3)
+		return;
+	if (want_move == 0)
+		return;
+	if (want_move > 0) {
+		x = player_tilex;
+		y = player_tiley + 1;
+		tmp = Do_ReadMap(x, y);
+		if ((tmp & 2) == 0) {
+			if (player_partial_y >= 4)
+				y++;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 2) == 0)
+				return;
+		}
+		player_mode = cPLAYER_CLIMB;
+		tmp = player_partial_y + move_y;
+		if (tmp & 1)
+			move_y++;
+		return;
+	}
+	x = player_tilex;
+	y = player_tiley;
+	tmp = Do_ReadMap(x, y);
+	if ((tmp & 2) == 0)
+		return;
+	x = player_tilex;
+	y = player_tiley + 1;
+	tmp = Do_ReadMap(x, y);
+	if ((tmp & 2) == 0)
+		return;
+	player_mode = cPLAYER_CLIMB;
+	tmp = player_partial_y + move_y;
+	if (tmp & 1)
+		move_y--;
+	return;
+}
+
+void PlayerHitLift()
+{
+	int tmp;
+	int y1;
+	int y2;
+
+	if (!have_lift)
+		return;
+	if ((lift_x > player_x) || (lift_x + 10 < player_x))
+		return;
+	y1 = player_y - 0x11;
+	y2 = player_y - 0x13 + move_y;
+	tmp = lift_y[0];
+	if (tmp > y1 || tmp < y2) {
+		tmp = lift_y[1];
+		if (tmp != y1)
+		{
+			if (tmp >= y1)
+				return;
+			if (tmp < y2)
+				return;
+		}
+		if (current_lift == 0)
+			tmp++;
+	}
+	else {
+		if (current_lift != 0)
+			tmp++;
+	}
+	tmp -= y1;
+	move_y = tmp + 1;
+	player_fall = 0;
+	player_mode = cPLAYER_LIFT;
+}
+
+void PlayerJump()
+{
+	int tmp;
+	int tmp2;
+	int x;
+	int y;
+
+	move_x = player_slide;
+	tmp2 = move_y;
+	tmp = player_fall >> 2;
+	if (tmp >= 6)
+		tmp = 6;
+	move_y = 2 - tmp;
+	player_fall++;
+	if (player_y == 0xdc) {
+		move_y = -1;
+		player_fall = 0x0c;
+	}
+	else {
+		PlayerGrabLadder(tmp2);
+		if (player_mode == cPLAYER_CLIMB)
+			return;
+	}
+
+	tmp = move_y + player_partial_y;
+	if (tmp == 0) {
+		x = player_tilex;
+		y = player_tiley - 1;
+		tmp = Do_ReadMap(x, y);
+		if ((tmp & 1) != 0)
+			player_mode = cPLAYER_WALK;
+	}
+	else if (tmp > 0) {
+		if (tmp == 8) {
+			x = player_tilex;
+			y = player_tiley;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 1) != 0)
+				player_mode = cPLAYER_WALK;
+		}
+	}
+	else {
+		x = player_tilex;
+		y = player_tiley - 1;
+		tmp = Do_ReadMap(x, y);
+		if ((tmp & 1) != 0) {
+			player_mode = cPLAYER_WALK;
+			move_y = -player_partial_y;
+		}
+	}
+
+	PlayerHitLift();
+	if (player_mode == cPLAYER_LIFT)
+		return;
+
+	if (MoveSideways()) {
+		move_x = -move_x;
+		player_slide = move_x;
+	}
+}
+
+void StartPlayerJump()
+{
+	int tmp;
+
+	button_ack |= 0x10;
+	player_fall = 0;
+	player_mode = cPLAYER_JUMP;
+	tmp = move_x;
+	player_slide = tmp;
+	if (tmp != 0)
+		player_face = tmp;
+	PlayerJump();
+}
+
+void MovePlayer()
+{
+	int x, y, tmp;
+
+	move_x = 0;
+	move_y = 0;
+	if (buttons & BUTTON_RIGHT) {
+		move_x++;
+	}
+	if (buttons & BUTTON_LEFT) {
+		move_x--;
+	}
+	if (buttons & BUTTON_DOWN) {
+		move_y--;
+	}
+	if (buttons & BUTTON_UP) {
+		move_y++;
+	}
+	move_y <<= 1;
+	switch (player_mode) {
+	case cPLAYER_JUMP:
+		PlayerJump();
+		break;
+	case cPLAYER_FALL:
+		player_fall++;
+		tmp = player_fall;
+		if (tmp < 4) {
+			move_x = player_slide;
+			move_y = -1;
+		}
+		else {
+			move_x = 0;
+			tmp = player_fall >> 2;
+			if (tmp > 3)
+				tmp = 3;
+			move_y = -(tmp + 1);
+		}
+		tmp = move_y + player_partial_y;
+		if (tmp == 0) {
+			x = player_tilex;
+			y = player_tiley - 1;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 1) != 0)
+				player_mode = cPLAYER_WALK;
+		}
+		else if (tmp < 0) {
+			x = player_tilex;
+			y = player_tiley - 1;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 1) != 0) {
+				player_mode = cPLAYER_WALK;
+				move_y = -player_partial_y;
+			}
+		}
+		break;
+	case cPLAYER_CLIMB:
+		if ((buttons & BUTTON_JUMP) != 0) {
+			StartPlayerJump();
+			break;
+		}
+		if (move_x != 0 && player_partial_y == 0) {
+			x = player_tilex;
+			y = player_tiley - 1;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 1) != 0) {
+				move_y = 0;
+				player_mode = cPLAYER_WALK;
+			}
+		}
+		if (player_mode != cPLAYER_WALK) {
+			move_x = 0;
+			if (move_y != 0 && player_partial_y == 0) {
+				if (move_y >= 0) {
+					x = player_tilex;
+					y = player_tiley + 2;
+					tmp = Do_ReadMap(x, y);
+					if ((tmp & 2) == 0)
+						move_y = 0;
+				}
+				else {
+					x = player_tilex;
+					y = player_tiley - 1;
+					tmp = Do_ReadMap(x, y);
+					if ((tmp & 2) == 0)
+						move_y = 0;
+				}
+			}
+		}
+		player_face = 0;
+		break;
+	case 4: /* On lift */
+		if ((buttons & BUTTON_JUMP) != 0) {
+			StartPlayerJump();
+			break;
+		}
+		if (lift_x > player_x || lift_x + 9 < player_x) {
+			player_fall = 0;
+			player_slide = 0;
+			player_mode = cPLAYER_FALL;
+		}
+		move_y = 1;
+		if (move_x != 0)
+			player_face = move_x;
+		if (MoveSideways()) {
+			move_x = 0;
+		}
+		if (player_y >= 0xdc)
+			is_dead++;
+		break;
+	case cPLAYER_WALK:
+		if (buttons & BUTTON_JUMP) {
+			StartPlayerJump();
+			break;
+		}
+		if (move_y) {
+			if (player_partial_x == 3) {
+				x = player_tilex;
+				if (move_y >= 0)
+					y = player_tiley + 2;
+				else
+					y = player_tiley - 1;
+				tmp = Do_ReadMap(x, y);
+				if ((tmp & 2) != 0) {
+					move_x = 0;
+					player_mode = cPLAYER_CLIMB;
+					break;
+				}
+			}
+			move_y = 0;
+		}
+		tmp = player_partial_x + move_x;
+		x = player_tilex;
+		if (tmp < 0)
+			x--;
+		else if (tmp >= 8)
+			x++;
+		y = player_tiley - 1;
+		tmp = Do_ReadMap(x, y);
+		if ((tmp & 1) == 0) {
+			/* Walk off edge */
+			int n;
+			n = (move_x + player_partial_x) & 7;
+			if (n < 4) {
+				x = 1;
+				y = 1;
+			}
+			else {
+				y = 0;
+				x = -1;
+			}
+			player_slide = x;
+			player_fall = y;
+			player_mode = cPLAYER_FALL;
+		}
+		if (MoveSideways()) {
+			move_x = 0;
+		}
+		if (move_x) {
+			player_face = move_x;
+		}
+		break;
+	default:
+    trace("wrong value in switch");
+	}
+	AnimatePlayer();
+}
+
+void MakeSound()
+{
+	int tmp;
+	if (!(move_x || move_y))
+		return;
+	if ((duck_timer & 1) != 0)
+		return;
+	switch (player_mode) {
+	case 0:
+		tmp = 64;
+		break;
+	case 1:
+		tmp = 96;
+		break;
+	case 2:
+		tmp = player_fall;
+		if (tmp >= 0x0b) {
+			tmp = 0xbe - (player_fall * 2);
+		}
+		else {
+			tmp = 0x96 + (player_fall * 2);
+		}
+		break;
+	case 3:
+		tmp = 0x6e - (player_fall * 2);
+		break;
+	case 4:
+		if (move_x == 0)
+			return;
+		tmp = 0x64;
+		break;
+	default:
+    trace("wrong value in switch");
+	}
+	beep(tmp);
+}
+
+/* MoveLift */
+void MoveLift()
+{
+	int y;
+
+	if (!have_lift)
+		return;
+	y = lift_y[current_lift];
+	y += 2;
+	if (y == 0xe0)
+		y = 6;
+	lift_y[current_lift] = y;
+	current_lift = 1 - current_lift;
+}
+
+int popcount(int val)
+{
+  int count=0;
+  for(int i=0; i<32; i++) {
+    count += (val&1);
+    val>>=1;
+  }
+  return count;
+}
+
+void FrobRandom()
+{
+	int carry;
+
+	carry = (((rand_low & 0x48) + 0x38) & 0x40) != 0;
+	rand_high = (rand_high << 1) | carry;
+	rand_low = (rand_low << 1) | ((rand_high >> 24) & 1);
+}
+
+void ReduceBonus()
+{
+	int n;
+	int flag;
+
+	n = 2;
+	do {
+		bonus[n]--;
+		flag = ((bonus[n] & 0x80) != 0);
+		if (flag) {
+			bonus[n] = 9;
+		}
+		n--;
+	} while (flag);
+	if (bonus[0] + bonus[1] + bonus[2] == 0)
+		zero_bonus = 1;
+}
+
+void MoveDucks()
+{
+	int tmp;
+	int y;
+	int x;
+	int flag;
+	int tmp2;
+	int newdir;
+
+	duck_timer++;
+	if (duck_timer == 8) {
+		/* Big Duck.  */
+		duck_timer = 0;
+		if (have_big_duck) {
+			tmp = big_duck_x + 4;
+			if (tmp < player_x) {
+				if (big_duck_dx < 5)
+					big_duck_dx++;
+				big_duck_dir = 0;
+			}
+			else {
+				if (big_duck_dx > -5)
+					big_duck_dx--;
+				big_duck_dir = 1;
+			}
+			tmp = player_y + 4;
+			if (tmp >= big_duck_y) {
+				if (big_duck_dy < 5)
+					big_duck_dy++;
+			}
+			else {
+				if (big_duck_dy > -5)
+					big_duck_dy--;
+			}
+			tmp = big_duck_y + big_duck_dy;
+			if (tmp < 0x28)
+				big_duck_dy = -big_duck_dy;
+			tmp = big_duck_x + big_duck_dx;
+			if (tmp < 0 || tmp >= 0x90)
+				big_duck_dx = -big_duck_dx;
+		}
+		big_duck_x += big_duck_dx;
+		big_duck_y += big_duck_dy;
+		big_duck_frame = big_duck_frame^1;
+		return;
+	}
+	if (duck_timer == 4) {
+		/* Update bonus/timer.  */
+		if (bonus_hold) {
+			bonus_hold--;
+			return;
+		}
+		x = 2;
+		do {
+			timer_ticks[x]--;
+			flag = (timer_ticks[x] & 0x80) != 0;
+			if (flag)
+				timer_ticks[x] = 9;
+			x--;
+		} while (flag);
+		tmp = timer_ticks[0] + timer_ticks[1] + timer_ticks[2];
+		if (tmp == 0) {
+			trace("tmp==0");
+			is_dead++;
+			return;
+		}
+		tmp = timer_ticks[2];
+		if (tmp != 0 && tmp != 5)
+			return;
+		if (zero_bonus)
+			return;
+		ReduceBonus();
+		return;
+	}
+	if (current_duck == 0)
+		current_duck = duck_speed;
+	else
+		current_duck--;
+	if (current_duck >= num_ducks)
+		return;
+	/* Move little duck.  */
+	TDuckInfo this_duck = duck[current_duck];
+	if (this_duck.mode >= DUCK_EAT1) {
+		/* Eat grain.  */
+		if (this_duck.mode == DUCK_EAT2) {
+			x = this_duck.tile_x - 1;
+			y = this_duck.tile_y;
+			if ((this_duck.dir & DIR_L) == 0)
+				x += 2;
+			tmp = Do_ReadMap(x, y);
+			if ((tmp & 8) != 0) {
+				player_data.grain[tmp >> 4]--;
+				RemoveGrain(x, y);
+			}
+		}
+	}
+	else if (this_duck.mode == DUCK_BORED) {
+		/* Figure out which way to go next.  */
+		x = this_duck.tile_x;
+		y = this_duck.tile_y;
+		newdir = 0;
+		tmp = Do_ReadMap(x - 1, y - 1);
+		if ((tmp & 1) != 0)
+			newdir = DIR_L;
+		tmp = Do_ReadMap(x + 1, y - 1);
+		if ((tmp & 1) != 0)
+			newdir |= DIR_R;
+		tmp = Do_ReadMap(x, y - 1);
+		if ((tmp & 2) != 0)
+			newdir |= DIR_DOWN;
+		tmp = Do_ReadMap(x, y + 2);
+		if ((tmp & 2) != 0)
+			newdir |= DIR_UP;
+		if (popcount(newdir) != 1) {
+			tmp = this_duck.dir;
+			if (tmp & DIR_HORIZ) {
+				tmp = tmp^0xfc;
+			}
+			else {
+				tmp = tmp^0xf3;
+			}
+			newdir &= tmp;
+		}
+		if (popcount(newdir) != 1) {
+			tmp2 = newdir;
+			do {
+				FrobRandom();
+				newdir = rand_low & tmp2;
+			} while (popcount(newdir) != 1);
+		}
+		this_duck.dir = newdir;
+		/* Check for grain to eat.  */
+		tmp = this_duck.dir;
+		if (tmp & DIR_HORIZ) {
+			if (tmp == DIR_L)
+				tmp = Do_ReadMap(x - 1, y);
+			else
+				tmp = Do_ReadMap(x + 1, y);
+			tmp &= 8;
+			if (tmp != 0) {
+				this_duck.mode = DUCK_EAT1;
+			}
+		}
+	}
+	if (this_duck.mode >= DUCK_EAT1) {
+		/* Eating.  */
+		if (this_duck.mode == DUCK_EAT4)
+			this_duck.mode = DUCK_BORED;
+		else
+			this_duck.mode++;
+		return;
+	}
+	/* Walking.  */
+	if (this_duck.mode == DUCK_STEP) {
+		this_duck.mode = DUCK_BORED;
+		flag = 1;
+	}
+	else {
+		this_duck.mode = DUCK_STEP;
+		flag = 0;
+	}
+	switch (this_duck.dir) {
+	case DIR_L:
+		this_duck.x -= 4;
+		this_duck.tile_x -= flag;
+		break;
+	case DIR_R:
+		this_duck.x += 4;
+		this_duck.tile_x += flag;
+		break;
+	case DIR_UP:
+		this_duck.y += 4;
+		this_duck.tile_y += flag;
+		break;
+	case DIR_DOWN:
+		this_duck.y -= 4;
+		this_duck.tile_y -= flag;;
+		break;
+	default:
+		trace("error 1");
+	}
+	return;
+}
+
+void MaybeAddExtraLife()
+{
+	if (extra_life == 0)
+		return;
+	extra_life = 0;
+	player_data.lives++;
+}
+
+void CollisionDetect()
+{
+	int n;
+
+	/* Little ducks */
+	for (n = 0; n < num_ducks; n++) {
+    TDuckInfo d=duck[n];
+    int dx=(d.x - player_x) + 5;
+    int dy=(d.y - 1) - player_y + 0xe;
+		if (dx < 0x0b && dx>0 && dy>0 && dy < 0x1d)
+			is_dead++;
+	}
+	/* Big duck */
+	if (!have_big_duck)
+		return;
+	if ((big_duck_x + 4 - player_x + 5) >= 0x0b)
+		return;
+	if ((big_duck_y - 5 - player_y + 0x0e) >= 0x1d)
+		return;
+	is_dead++;
+}
+
+void SavePlayerState()
+{
+	int i;
+	level[current_player] = current_level;
+	for (i = 0; i < 4; i++)
+		player_data.bonus[i] = bonus[i];
+}
+
+void ResetPlayer()
+{
+	int a;
+	int i;
+	a = current_level + 1;
+	if (a >= 10)
+		a = 9;
+	player_data.bonus[0] = a;
+	player_data.bonus[1] = 0;
+	player_data.bonus[2] = 0;
+	player_data.bonus[3] = 0;
+	for (i = 0; i < 16; i++) {
+		player_data.egg[i] = 0;
+		player_data.grain[i] = 0;
+	}
+}
+
+void RestorePlayerState()
+{
+	int y;
+	current_level = level[current_player];
+	for (y = 0; y < 4; y++) {
+		bonus[y] = player_data.bonus[y];
+	}
+}
+
+void PlayTune(int addr)
+{
+	/* Play tune 0x2f7c */
+}
+
+void start_game()
+{
+  player_data = new TPlayerData();
+
+  for(int i=0; i<duck.SizeDim1; i++) {
+    duck[i]=new TDuckInfo();
+  }
+
+	int i, j;
+	num_players = active_players = cNUM_PLAYERS;
+	for (i = 3; i >= 0; i--) {
+		current_player = i;
+		player_data.lives = 5;
+		level[i] = 0;
+		for (j = 0; j < 8; j++) {
+			player_data.score[j] = 0;
+		}
+		ResetPlayer();
+	}
+	RestorePlayerState();
+}
+
+void SetupLevel()
+{
+	int arg;
+
+	arg = current_level;
+	have_big_duck = (arg > 7);
+	duck_timer = 0;
+	current_duck = 0;
+	duck_speed = (arg < 32) ? 8 : 5;
+	extra_life = 0;
+	is_dead = 0;
+	bonus_hold = 0;
+	rand_high = 0x767676;
+	rand_low = 0x76;
+}
+
+
+
+
+
+void initNewLevel() {
+	SetupLevel();
+	LoadLevel();
+	StartLevel();
+}
+
+void initNewGame() {
+  start_Game();
+  initNewLevel();
+}
+
+
+void run_game_one_frame()
+{
+  if(player_data==null)
+    return;
+
+	int tmp;
+	MovePlayer();
+	MakeSound();
+	MoveLift();
+	MoveDucks();
+	MaybeAddExtraLife();
+	CollisionDetect();
+	RenderFrame();
+
+//	if ((buttons & 0x80) != 0)
+//		goto new_game;
+	if (is_dead != 0 || player_y < 0x11) {
+		/* Died */
+		SavePlayerState();
+		PlayTune(0x2fa6);
+		if (--player_data.lives == 0) {
+			/* Clear Screen */
+			/* "Game Over" */
+			/* Highscores.  */
+			initNewGame();
+      return;
+		}
+		RestorePlayerState();
+    initNewLevel();
+    return;
+	}
+	if (eggs_left == 0 || cheat) {
+		/* Level complete */
+		while (!zero_bonus) {
+			AddScore(6, 1);
+			ReduceBonus();
+			MaybeAddExtraLife();
+		}
+		/* Advance to next level */
+		cheat = 0;
+		zero_bonus = 0;
+		current_level++;
+		SavePlayerState();
+		ResetPlayer();
+		RestorePlayerState();
+    initNewLevel();
+	}
+//	goto next_frame;
+}]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[glDisable(GL_DEPTH_TEST);
+glEnable(GL_TEXTURE_2D);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+glEnable(GL_BLEND);
+glClearColor(0, 0, 0, 0);
+
+LoadTextures();
+
+initNewGame();]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression Expression="buttons=0;"/>
+    <KeyPress Name="Kp1" Keys="POAQ ">
+      <OnPressed>
+        <ZExpression>
+          <Expression>
+<![CDATA[int c=ord(subStr(Kp1.Keys,Kp1.Keyindex,1));
+
+switch(c) {
+  case ord("Q") : buttons |= BUTTON_UP; break;
+  case ord("A") : buttons |= BUTTON_DOWN; break;
+  case ord(" ") : buttons |= BUTTON_JUMP; break;
+  case ord("O") : buttons |= BUTTON_LEFT; break;
+  case ord("P") : buttons |= BUTTON_RIGHT;break;
+}]]>
+          </Expression>
+        </ZExpression>
+      </OnPressed>
+    </KeyPress>
+    <ZExpression Comment="Joystick">
+      <Expression>
+<![CDATA[//Works with POV control (such as a Nintendo Switch Joy-Con)
+
+float pov=joyGetPOV(0);
+if(pov != -1 ) {
+  const int range=45;
+
+  if( (pov>= 90-range) && (pov<=90+range) )
+    buttons |= BUTTON_RIGHT;
+  else if( (pov>=270-range) && (pov<=270+range) )
+    buttons |= BUTTON_LEFT;
+
+  if( (pov>= 0-range) && (pov<=0+range) )
+    buttons |= BUTTON_UP;
+  else if( (pov>=180-range) && (pov<=180+range) )
+    buttons |= BUTTON_DOWN;
+}
+
+if(joyGetButton(0,0) )
+  buttons |= BUTTON_JUMP;]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <ZExpression>
+      <Expression>
+<![CDATA[//adjust the camera a bit to center the game
+glScalef(1.5,1.5,1.0);
+glTranslatef(-80,-120,0);
+
+run_game_one_frame();]]>
+      </Expression>
+    </ZExpression>
+  </OnRender>
+  <Content>
+    <Camera Name="OrthoCamera" Kind="1" ClipNear="1" ClipFar="-1" OrthoZoom="200"/>
+  </Content>
+</ZApplication>

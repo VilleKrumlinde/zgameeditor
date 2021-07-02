@@ -272,9 +272,9 @@ begin
         begin
           //Memory array, allocate in var area
           ResourceNames.Objects[ResourceNames.Count-1] := TObject(NativeInt(Cpu.VarStart + Cpu.VarSize));
-          if Ar._Type=zctByte then
+          if Ar._Type.Kind=zctByte then
             Inc(Cpu.VarSize,Ar.SizeDim1)
-          else if Ar._Type=zctInt then
+          else if Ar._Type.Kind=zctInt then
             Inc(Cpu.VarSize,Ar.SizeDim1*2)
           else
             Fail('wrong array type');
@@ -404,7 +404,7 @@ begin
     end else if (C is TExpArrayGetElement) then
     begin
       Ar := (Exp[I-1] as TExpLoadComponent).Component as TDefineArray;
-      Assert(Ar._Type=zctByte,'Wrong array type');
+      Assert(Ar._Type.Kind=zctByte,'Wrong array type');
       Assert(Ar.Dimensions=dadOne,'Only 1D array supported');
       Cpu.GenArrayGetElement(Ar);
     end else if (C is TExpUserFuncCall) then

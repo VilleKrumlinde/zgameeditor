@@ -884,7 +884,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Mix audio. Only one in each project.';{$endif}
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     ComponentManager.LastAdded.HasGlobalData := True;
-    {$ifend}
+    {$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=17;{$endif}
 
   ZClasses.Register(TSample,SampleClassId);

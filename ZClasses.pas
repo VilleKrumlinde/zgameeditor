@@ -63,6 +63,7 @@ type
  ExpPointerFuncCallClassId,ExpLoadComponentClassId,ExpLoadPropOffsetClassId,ExpLoadModelDefinedClassId,ExpAddToPointerClassId,
  ExpInvokeComponentClassId,ExpInitLocalArrayClassId,ExpMat4FuncCallClassId,ExpGetRawMemElementClassId,
  ExpArrayUtilClassId,ExpSwitchTableClassId,ExpAccessGlobalClassId,
+ UserClassId,ExpNewClassInstanceId,ExpVirtualFuncCallClassId,
  DefineConstantClassId,DefineArrayClassId,ZLibraryClassId,ExternalLibraryClassId,
  DefineCollisionClassId,
  SoundClassId,PlaySoundClassId,AudioMixerClassId,
@@ -246,7 +247,8 @@ type
     zctVoid,  //Private types
     zctReference,
     zctNull,
-    zctArray);
+    zctArray,
+    zctClass); //User defined script class
 
   TZcDataType = record
     Kind : TZcDataTypeKind;
@@ -254,6 +256,8 @@ type
     ReferenceClassId : TZClassIds;
     IsPointer : boolean;  //True for type of argument in f(ref x) function
     TheArray : pointer;  //When zctArray: pointer to TDefineArray
+    TheClass : TObject;  //When zctClass: pointer to TZcOpClass
+    function Matches(const Other:TZcDataType) : boolean;
     {$endif}
   end;
 
@@ -448,7 +452,7 @@ type
   public
     {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
     LastAdded : TZComponentInfo;
-    {$ifend}
+    {$endif}
     function GetInfoFromId(ClassId : TZClassIds) : TZComponentInfo;
   {$IFNDEF MINIMAL}
     function GetInfoFromClass(const C: TZComponentClass): TZComponentInfo;
@@ -633,8 +637,10 @@ const
 
   ZcTypeNames : array[TZcDataTypeKind] of string =
 (('float'),('int'),('string'),('model'),('byte'),('mat4'),('vec2'),('vec3'),('vec4'),('xptr'),
- ('void'),('Component'),('null'),('#array'));
+ ('void'),('Component'),('null'),('#array'),('#class'));
 
+const ManagedTypes : set of TZcDataTypeKind =
+ [zctClass,zctString,zctArray,zctMat4,zctVec2,zctVec3,zctVec4];
 
 procedure GetAllObjects(C : TZComponent; List : contnrs.TObjectList);
 procedure GetObjectNames(C : TZComponent; List : TStringList);
@@ -649,11 +655,13 @@ var
 implementation
 
 uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
-  {$ifndef minimal},LibXmlParserU,{$ifndef fpc}AnsiStrings,{$endif}SysUtils,Math,zlib
-  ,Zc_Ops
-  {$endif}
-  {$ifdef fpc}
-  ,zstream,strutils
+  {$ifndef minimal}
+    ,LibXmlParserU
+    ,SysUtils,Math,zlib,Zc_Ops
+    {$ifndef fpc},AnsiStrings{$endif}
+    {$ifdef fpc}
+    ,zstream,strutils
+    {$endif}
   {$endif}
   ;
 
@@ -842,6 +850,9 @@ begin
   Platform_LeaveMutex(mh_Lock);
 end;
 
+{$ifdef debug}
+  {$define extra_gc_checks}
+{$endif}
 procedure ManagedHeap_AddTarget(const P : pointer);
 begin
   {$ifdef extra_gc_checks} //These checks are very inefficient so dont't enable by default even in debug build
@@ -1088,7 +1099,7 @@ function GetZcTypeSize(const Typ : TZcDataTypeKind) : integer;
 begin
   case Typ of
     zctByte : Result := 1;
-    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray : Result := SizeOf(Pointer);
+    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctClass : Result := SizeOf(Pointer);
     zctMat4 : Result := SizeOf(single) * 16;
     zctVec2 : Result := SizeOf(single) * 2;
     zctVec3 : Result := SizeOf(single) * 3;
@@ -1888,7 +1899,7 @@ begin
   {$ENDIF}
   {$if (not defined(MINIMAL)) or defined(zzdc_activex)}
   LastAdded := Ci;
-  {$ifend}
+  {$endif}
   ComponentInfos[Ci.ClassId] := Ci;
 end;
 
@@ -2091,7 +2102,7 @@ begin
     Result.NextId := 0;
     Component.DefineProperties(Result);
   end
-  {$ifend};
+  {$endif};
 end;
 
 
@@ -3863,7 +3874,7 @@ begin
   {$if (not defined(minimal)) and (not defined(zgeviz))}
   if (Producers.Count>0) and Self.HasZApp and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
-  {$ifend}
+  {$endif}
 end;
 
 ///////////////////
@@ -4251,6 +4262,7 @@ var
   Env : TExecutionEnvironment;
 begin
   {$ifndef minimal}
+  Inc(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Starting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}
 
@@ -4259,11 +4271,32 @@ begin
 
   ZExpressions.RunCode(Owner.Expression.Code,@Env);
 
+
   {$ifndef minimal}
+  Dec(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Exiting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}
+
   Free;
 end;
+
+{$ifndef minimal}
+function TZcDataType.Matches(const Other:TZcDataType) : boolean;
+begin
+  Result := Self.Kind=Other.Kind;
+  if Result then
+  begin
+    case Kind of
+      zctClass : Result := Self.TheClass=Other.TheClass;
+      zctArray : Result := (TDefineArray(Self.TheArray).Dimensions=TDefineArray(Other.TheArray).Dimensions) and
+        (TDefineArray(Self.TheArray)._Type.Matches(TDefineArray(Other.TheArray)._Type));
+      zctReference : Result := (Self.ReferenceClassId=Other.ReferenceClassId)
+        or
+        ((Self.ReferenceClassId=AnyComponentClassId) or (Other.ReferenceClassId=AnyComponentClassId));
+    end;
+  end;
+end;
+{$endif}
 
 initialization
 

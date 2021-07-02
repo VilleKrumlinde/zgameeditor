@@ -31,9 +31,12 @@ Size: 32 bits
 
 Range: from 3.4e +/- 38 (23 bits for significand, i.e., up to 7 valid digits)
 
-To ensure that integral values are treated as floats, you can add suffix ".0" or "f".
+To ensure that integral values are treated as floats, you can add suffix ".0" or
+"f".
 
-Floats support also scientific notation for large or small numbers in form _significand_ x 10<SUP>exponent</SUP>. Instead of 10<SUP>exponent</SUP>, "e" or "E" is used to delimit exponent from significand.
+Floats support also scientific notation for large or small numbers in form
+_significand_ x 10<SUP>exponent</SUP>. Instead of 10<SUP>exponent</SUP>, "e" or
+"E" is used to delimit exponent from significand.
 
 Examples:
 
@@ -52,13 +55,14 @@ Range: from -128 to 127
 
 # string {#stringType}
 
-Sequence of characters. String literals are enclosed in double quotes. In expression, a string literal must start and finish at the same line.
+Sequence of characters. String literals are enclosed in double quotes. In
+expression, a string literal must start and finish at the same line.
 
 Special characters in string literals:
 
-* `\"` : double quote character
-* `\n` : newline character
-* `\\` : backslash character
+- `\"` : double quote character
+- `\n` : newline character
+- `\\` : backslash character
 
 Examples:
 
@@ -72,20 +76,23 @@ Examples:
     "bbb";                              // correct
 
 # Vectors {#Vectors}
+
 @anchor vec2Type @anchor vec3Type @anchor vec4Type
 
 The following vector types are supported in scripting language:
 
-* vec2 - two-component float vector
-* vec3 - three-component float vector
-* vec4 - four-component float vector
+- vec2 - two-component float vector
+- vec3 - three-component float vector
+- vec4 - four-component float vector
 
-Components of vectors are floats and can be accessed from vector variables or vector component properties by __index properties__:
+Components of vectors are floats and can be accessed from vector variables or
+vector component properties by **index properties**:
 
-* X, Y, Z, W (or x, y, z, w) - for position, or
-* R, G, B, A (or r, g, b, a) - for colors.
+- X, Y, Z, W (or x, y, z, w) - for position, or
+- R, G, B, A (or r, g, b, a) - for colors.
 
-Arithmetic operations must be performed on particular index properties, it is not allowed to add or multiply vectors directly.
+Arithmetic operations must be performed on particular index properties, it is
+not allowed to add or multiply vectors directly.
 
 Examples:
 
@@ -97,14 +104,16 @@ Examples:
     v2.Y *= v2.X;
     App.LightPosition = v3;
     v4.A = 0.5;
-    
+
 # mat4 {#mat4Type}
 
-Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric transformations, see [here](https://open.gl/transformations) for details.
+Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric
+transformations, see [here](https://open.gl/transformations) for details.
 
-Entries of a matrix can be accessed as array of 16 floats. So you can use 1D (matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
+Entries of a matrix can be accessed as array of 16 floats. So you can use 1D
+(matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
 
-Matrix multiplication is supported by * operator. Example:
+Matrix multiplication is supported by \* operator. Example:
 
     mat4 m1, m2;
     // ...
@@ -117,40 +126,52 @@ Example of changing model-view matrix in OnRender property of @ref Model :
     vec3 tran = vector3(1, 2, 3);
 
     mat4 modelViewMatrix;
-    
+
     getMatrix(0, modelViewMatrix);
-    
+
     // translate model
     modelViewMatrix[3,0] += tran.X;
     modelViewMatrix[3,1] += tran.Y;
     modelViewMatrix[3,2] += tran.Z;
-    
+
     // scale model
     modelViewMatrix[0,0] *= scale;
     modelViewMatrix[1,1] *= scale;
     modelViewMatrix[2,2] *= scale;
-    
+
     setMatrix(0, modelViewMatrix);
 
 # xptr {#xptrType}
 
-The type `xptr` is a pointer (a memory address) similar to pointer in C/C++ language. Its primary purpose is to transfer pointers to C/C++ objects, structures and arrays to/from @ref ExternalFunctions "external functions".
+The type `xptr` is a pointer (a memory address) similar to pointer in C/C++
+language. Its primary purpose is to transfer pointers to C/C++ objects,
+structures and arrays to/from @ref ExternalFunctions "external functions".
 
-The keyword `null` is used for null pointer - an "empty" pointer or pointer to "nowhere". It is used to determine that the pointer is not set.
+The keyword `null` is used for null pointer - an "empty" pointer or pointer to
+"nowhere". It is used to determine that the pointer is not set.
 
 Example:
 
-OpenGL external library contains function `glTexImage2D` used to define 2D or 1D texture array. Its last parameter is a pointer to an array with texture image data:
+OpenGL external library contains function `glTexImage2D` used to define 2D or 1D
+texture array. Its last parameter is a pointer to an array with texture image
+data:
 
     void glTexImage2D(int target, int level, int internal format, int width, int height, int border, int format, int atype, xptr pixels) {}
 
-This function can be called with specified name of @ref Array containing the data:
+This function can be called with specified name of @ref Array containing the
+data:
 
     byte[] imageData;
     ...
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
 
-`xptr` can also be used as an identifier of the C++ objects returned from calls of external functions that are used in consequent calls of external functions. ZGameeditor scripts do not change these pointers, just remember them in variables and pass them to function calls. This usage can be seen, for instance, in ZgeBullet 3D physic library in function `xptr zbtCreateWorld ()`, which creates a physics simulation world and returns a pointer to it. This pointer is then used in other functions as parameter:
+`xptr` can also be used as an identifier of the C++ objects returned from calls
+of external functions that are used in consequent calls of external functions.
+ZGameeditor scripts do not change these pointers, just remember them in
+variables and pass them to function calls. This usage can be seen, for instance,
+in ZgeBullet 3D physic library in function `xptr zbtCreateWorld ()`, which
+creates a physics simulation world and returns a pointer to it. This pointer is
+then used in other functions as parameter:
 
     xptr World; // global variable
     ...
@@ -158,31 +179,36 @@ This function can be called with specified name of @ref Array containing the dat
     // initialization of physical world
     World = zbtCreateWorld();
     zbtSetCurrentWorld(World);
-    zbtSetWorldGravity(0, -10, 0);  
+    zbtSetWorldGravity(0, -10, 0);
 
     // continue simulation
     ...
-    
+
     // destroy physical world
     zbtDestroyWorld(World);
 
 # Component-based Types {#ComponentTypes}
-@anchor modelType @anchor MaterialType @anchor SoundType @anchor ShaderType @anchor BitmapType @anchor MeshType @anchor CameraType @anchor FontType @anchor SampleType
 
-There are several types corresponding to (instances of) some components. You can create variables of that types, assign components to them and set their properties in scripts. Except of the `model` type, variables of component-based types must be defined either as local expression variables or global variables defined in @ref ZLibrary component.
+@anchor modelType
 
-Type | Corresponding component
------|------------------------
-model | An instance of the @ref Model component
-Material | @ref Material
-Sound | @ref Sound
-Shader | @ref Shader
-Bitmap | @ref Bitmap
-Mesh | @ref Mesh
-Camera | @ref Camera
-Font | @ref Font
-Sample | @ref Sample
-Component | any component
+There are several types corresponding to (instances of) some components. You can
+create variables of that types, assign components to them and set their
+properties in scripts. Except of the `model` type, variables of component-based
+types must be defined either as local expression variables or global variables
+defined in @ref ZLibrary component.
+
+| Type      | Corresponding component                 |
+| --------- | --------------------------------------- |
+| model     | An instance of the @ref Model component |
+| Material  | @ref Material                           |
+| Sound     | @ref Sound                              |
+| Shader    | @ref Shader                             |
+| Bitmap    | @ref Bitmap                             |
+| Mesh      | @ref Mesh                               |
+| Camera    | @ref Camera                             |
+| Font      | @ref Font                               |
+| Sample    | @ref Sample                             |
+| Component | any component                           |
 
 Example: Multiple instantiation of models and setting their properties:
 
@@ -236,31 +262,39 @@ Additional various examples:
     for(int i=0; i<buf.SizeDim1; i++)
       if(i!=buf[i])
         trace("error when reading");
-    
+
 # Arrays {#Arrays}
 
-In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also in scripts with the following syntax:
+In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also
+in scripts with the following syntax:
 
-@syn{<type> [ <size1> ] <name>;}
+@syn{<type> [ <size1> ] <name> = { <value>, <value>, ... };}
 
 @syn{<type> [ <size1>, <size2> ] <name>;}
 
 @syn{<type> [ <size1>, <size2>, <size3> ] <name>;}
 
-Size can be unspecified an therefore is 0 by default.
+Size can be unspecified an therefore is 0 by default. It is also possible to
+optionally initialize one-dimensional array variables at the place of their
+declaration.
 
 Examples:
 
-    int[10] arr1;     // 1D array of integers
-    const int SIZE = 100;
-    string[10 * SIZE] arr2; // computed array size
-    float[5,10] arr3; // 2D array of floats
-    vec3[,] arr4;    // 2D array of vec3   
-    model[,,] arr5;    // 3D array of models
+    int[10] arr1;             // 1D array of integers
+    const int SIZE = 100;     // value used for array definition later
+    string[10 * SIZE] arr2;   // computed array size
+    float[5,10] arr3;         // 2D array of floats
+    vec3[,] arr4;             // 2D array of vec3
+    model[,,] arr5;           // 3D array of models
+    byte[] data = {1,2,3,4};  // initialization of 1D array of bytes
 
-Size of array (defined as scripting variable or @ref Array component) can be changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3 respectively, for each dimension of an array. The SizeDim* properties can also be used to check actual size of array.
+Size of array (defined as scripting variable or @ref Array component) can be
+changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3
+respectively, for each dimension of an array. The SizeDim\* properties can also
+be used to check actual size of array.
 
-Accessing of array items (defined as scripting variable or @ref Array component) is done with syntax:
+Accessing of array items (defined as scripting variable or @ref Array component)
+is done with syntax:
 
 @syn{<name> [ <index1> ]}
 
@@ -281,8 +315,9 @@ Example: Copy of an array.
     destination.SizeDim1 = source.SizeDim1;
     for(int i = source.SizeDim1 - 1; i >= 0; i--)
       destination[i] = source[i];
-      
-Example: Passing an array as parameter to function and dynamic changing the size of the array.
+
+Example: Passing an array as parameter to function and dynamic changing the size
+of the array.
 
     const int BUFFER_DELTA = 100;
 
@@ -296,7 +331,7 @@ Example: Passing an array as parameter to function and dynamic changing the size
     // variables
     int[] MyBuffer;
     int index = 0;
-    
+
     // calling the function
     for(; index < 1000;)
       addItem(MyBuffer, index, index);

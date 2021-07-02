@@ -16,15 +16,21 @@ type
           zcPreInc,zcPreDec,zcPostInc,zcPostDec,
           zcWhile,zcDoWhile,zcNot,zcBinaryOr,zcBinaryAnd,zcBinaryXor,zcBinaryShiftL,zcBinaryShiftR,zcBinaryNot,
           zcBreak,zcContinue,zcConditional,zcSwitch,zcSelect,zcInvokeComponent,
-          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitLocalArray);
+          zcReinterpretCast,zcMod,zcInlineBlock,zcInlineReturn,zcInitArray,
+          zcClass,zcMethodCall,zcNew);
 
+  TZcOpField = class;
+  TZcOpFunctionUserDefined = class;
+  TZcOpClass = class;
   TZcIdentifierInfo = record
-    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined);
+    Kind : (edtComponent,edtProperty,edtPropIndex,edtModelDefined,edtField,edtMethod);
     DefinedIndex : integer; //modeldefined: the index of the component in model.definitions
     case Integer of
       0 : (Component : TZComponent);
       1 : (Prop : TZProperty);
       2 : (PropIndex : integer);
+      3 : (Field : TZcOpField);
+      4 : (Method : TZcOpFunctionUserDefined);
   end;
 
 
@@ -69,6 +75,13 @@ type
   end;
 
   TZcOpArgumentVar = class(TZcOpVariableBase)
+  end;
+
+  TZcOpField = class(TZcOpVariableBase)
+  public
+    ByteOffset : integer;
+    IsPrivate : boolean;
+    MemberOf : TZcOpClass;
   end;
 
   TZcOpLiteral = class(TZcOp)
@@ -125,6 +138,8 @@ type
     procedure PopScope;
   end;
 
+  TModifiers = set of (mdPrivate,mdInline,mdVirtual,mdOverride);
+
   TZcOpFunctionUserDefined = class(TZcOpFunctionBase)
   public
     //Assigned during codegen
@@ -134,10 +149,11 @@ type
     //For external functions
     IsExternal : boolean;
     ExtLib : TZExternalLibrary;
-    //For inlining
-    IsInline : boolean;
+    Modifiers : TModifiers;
     ReturnCount : integer;
     IsRecursive: boolean;
+    MemberOf : TZcOpClass;
+    VmtIndex : integer; //index slot used for virtual functions
     function NeedFrame : boolean;
   end;
 
@@ -172,6 +188,24 @@ type
     function GetDataType : TZcDataType; override;
   end;
 
+  TZcOpClass = class(TZcOp)
+  public
+    Typ : TZcDataType;
+    Methods : TObjectList<TZcOpFunctionUserDefined>;
+    Fields : TObjectList<TZcOpField>;
+    RuntimeClass : TUserClass;
+    Initializer : TZcOpFunctionUserDefined;
+    BaseClass : TZcOpClass;
+    constructor Create(Owner : Contnrs.TObjectList); override;
+    destructor Destroy; override;
+    function ToString : string; override;
+    function GetDataType : TZcDataType; override;
+    function Optimize: TZcOp; override;
+    function FindMethod(const MangledName : string) : TZcOpFunctionUserDefined;
+    function FindField(const Name : string) : TZcOpField;
+    function InheritsFrom(const OtherClass : TZcOpClass) : boolean;
+  end;
+
   TPrototypes = class
   private
     constructor Create;
@@ -180,7 +214,7 @@ type
   end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
-function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind; const Id :string) : TZcOp; overload;
 function MakeOp(Kind : TZcOpKind) : TZcOp; overload;
 function MakeIdentifier(const Id : string) : TZcOp;
 function MakeTemp(Kind : TZcDataTypeKind) : TZcOpLocalVar;
@@ -190,11 +224,12 @@ function MakeCompatible(Op : TZcOp; const WantedKind : TZcDataTypeKind) : TZcOp;
 
 function MakeBinary(Kind : TZcOpKind; Op1,Op2 : TZcOp) : TZcOp;
 function MakeAssign(Kind : TZcAssignType; LeftOp,RightOp : TZcOp) : TZcOp;
-function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined; Cls : TZcOpClass) : boolean;
 function MakePrePostIncDec(Kind : TZcOpKind; LeftOp : TZcOp) : TZcOp;
 function CheckPrimary(Op : TZcOp) : TZcOp;
 
 function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
+procedure MakeVarInitializer(V : TZcOpVariableBase; InitOp : TZcOp; var OutOp : TZcOp);
 
 function GetZcTypeName(const Typ : TZcDataType) : string;
 function ZcStrToFloat(const S : string) : double;
@@ -209,11 +244,14 @@ function Prototypes : TPrototypes;
 
 function MangleFunc(const Func : string; const ArgCount : integer) : string;
 
+function AlignX(const Value,X : integer) : integer;
+
 var
   //State shared between this unit and Zc-compiler
   CompilerContext : record
     SymTab : TSymbolTable;
     ThisC : TZComponent;
+    CurrentClass : TZcOpClass;
     //Nodes owned by the current compiled function/expression
     //Used for memory management
     //Update: This now holds all created ASTs and is cleared in App.Compile.
@@ -251,6 +289,8 @@ begin
     else
       Result := ComponentManager.GetInfoFromId(Typ.ReferenceClassId).ZClassName;
   end
+  else if Typ.Kind=zctClass then
+    Result := TZcOp(Typ.TheClass).Id
   else
     Result := ZcTypeNames[Typ.Kind];
 end;
@@ -335,17 +375,29 @@ var
       end;
     end else if (Self.Children.Count>0) and (Self.Child(0).Ref is TDefineVariableBase) and (Self.Id='PointerValue') then
     begin //Allow DefineVariable.ManagedType=mat4/vec3 even though proptype is zptPointer
-      Result.Kind := TDefineVariableBase(Self.Child(0).Ref)._Type;
-      //Allow global variables of Bitmap type
-      Result.ReferenceClassId := TDefineVariableBase(Self.Child(0).Ref)._ReferenceClassId;
+      Result := TDefineVariableBase(Self.Child(0).Ref)._Type;
     end else
       Result := PropTypeToZType(Etyp.Prop.PropertyType);
+  end;
+
+  procedure DoMethod;
+  var
+    M : TZcOpFunctionUserDefined;
+  begin
+    Assert(Assigned(Ref) and (Ref is TZcOpClass));
+    M := ((Ref as TZcOpClass).FindMethod( MangleFunc(Self.Id,Self.Children.Count) ));
+    if not Assigned(M) then
+      //Should never happen
+      raise ECodeGenError.Create('Method not found: ' + Id);
+    Result := M.ReturnType;
   end;
 
 begin
   FillChar(Result,SizeOf(Result),0);
   Result.Kind := zctVoid;
-  if (Ref is TZcOp) and (Kind<>zcSelect) then
+  if Kind=zcMethodCall then
+    DoMethod
+  else if (Ref is TZcOp) and (Kind<>zcSelect) then
   begin
     //Local vars, func calls
     Result := (Ref as TZcOp).GetDataType;
@@ -367,6 +419,7 @@ begin
       edtProperty: DoProp;
       edtPropIndex: Result.Kind := zctFloat;
       edtModelDefined : DoIdentifier;  //With modeldefined, Ref should already point to the correct identifier
+      edtField : Result := Etyp.Field.Typ;
     else
       raise ECodeGenError.Create('Could not determine type: ' + Self.ToString);
     end;
@@ -456,6 +509,24 @@ var
     end;
   end;
 
+  procedure DoMember(Cls : TZcOpClass);
+  var
+    Fld : TZcOpField;
+  begin
+    Fld := Cls.FindField(Self.Id);
+    if Assigned(Fld) then
+    begin
+      Result.Kind := edtField;
+      Result.Field := Fld;
+      Exit;
+    end;
+    //It is possibly the name of a method instead, but we cannot know which
+    //one because we can't mangle the name yet (as the arguments have not been parsed
+    //when this function is called from CheckPrimary).
+    Result.Kind := edtMethod;
+    Result.Method := nil;
+  end;
+
 var
   FirstType : TZcDataType;
 begin
@@ -484,6 +555,10 @@ begin
     begin
       //Local arrays
       DoProp(ComponentManager.GetInfoFromId(DefineArrayClassId).GetProperties);
+      Exit;
+    end else if FirstType.Kind=zctClass then
+    begin
+      DoMember(FirstType.TheClass as TZcOpClass);
       Exit;
     end;
 
@@ -574,7 +649,7 @@ begin
     zcBinaryShiftR : Result := Child(0).ToString + ' >> ' + Child(1).ToString;
     zcBinaryNot : Result :=  '~' + Child(0).ToString;
     zcAnd : Result := Child(0).ToString + ' && ' + Child(1).ToString;
-    zcFuncCall :
+    zcFuncCall,zcMethodCall :
       begin
         Result := Id + '(';
         for I := 0 to Children.Count-1 do
@@ -601,9 +676,9 @@ begin
           Result := Result + Child(0).ToString;
         Result := Result + ';';
       end;
-    zcInitLocalArray :
+    zcInitArray :
       begin
-        Result := Id + '={init};';
+        Result := '{init}';
       end;
     zcForLoop :
       begin
@@ -657,6 +732,7 @@ begin
       end;
     zcSelect : Result := Child(0).ToString + '.' + Self.Id;
     zcMod : Result := Child(0).ToString + '%' + Child(1).ToString;
+    zcNew : Result := 'new ' + Id;
   end;
 end;
 
@@ -780,6 +856,7 @@ begin
   if (Kind=zcInlineBlock) and
    (Children.Count>0) and
    (Children.First.Kind=zcInlineReturn) and
+   (Children.First.Children.Count>0) and
    (Children.First.Children.First.Kind=zcConstLiteral) then
   begin
     Exit( Children.First.Children.First );
@@ -1021,24 +1098,25 @@ begin
   Result.Kind := Kind;
 end;
 
-function MakeOp(Kind : TZcOpKind; Id :string) : TZcOp; overload;
+function MakeOp(Kind : TZcOpKind; const Id :string) : TZcOp; overload;
 begin
   Result := MakeOp(Kind);
   Result.Id := Id;
-  if (Kind in [zcIdentifier,zcSelect,zcInitLocalArray]) then
+  if (Kind in [zcIdentifier,zcSelect,zcInitArray,zcNew]) then
     Result.Ref := CompilerContext.SymTab.Lookup(Id);
 end;
 
 function MakeIdentifier(const Id : string) : TZcOp;
 var
   C : TDefineConstant;
+  Op : TZcOp;
 begin
   Result := MakeOp(zcIdentifier,Id);
   if Result.Ref is TDefineConstant then
   begin
     //If identifier is a constant then replace with the constant value
     C := Result.Ref as TDefineConstant;
-    case C._Type of
+    case C._Type.Kind of
       zctFloat : Result := TZcOpLiteral.Create(zctFloat,C.Value);
       zctInt : Result := TZcOpLiteral.Create(zctInt,C.IntValue);
       zctByte : Result := TZcOpLiteral.Create(zctByte,C.ByteValue);
@@ -1048,6 +1126,13 @@ begin
     end;
   end else if (Result.Ref is TZcOpVariableBase) then
     Inc(TZcOpVariableBase(Result.Ref).ReadCount);
+
+  if Result.Ref is TZcOpField then
+  begin //Add "this" prefix when missing
+    Result.Kind := zcSelect;
+    Op := MakeOp(zcIdentifier,'this');
+    Result.Children.Add(Op)
+  end;
 end;
 
 function MakeOp(Kind : TZcOpKind; const Children : array of TZcOp) : TZcOp; overload;
@@ -1061,14 +1146,13 @@ end;
 
 function MakeCompatible(Op : TZcOp; const WantedType : TZcDataType) : TZcOp;
 const
-  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray,zctString];
+  NullCompatible : set of TZcDataTypeKind = [zctModel,zctReference,zctXptr,zctArray,zctString,zctClass];
 var
   ExistingType : TZcDataType;
   IdInfo : TZcIdentifierInfo;
-
   procedure CheckArray(A1,A2 : TDefineArray);
   begin
-    if (A1.Dimensions<>A2.Dimensions) or (A1._Type<>A2._Type) then
+    if (A1.Dimensions<>A2.Dimensions) or (A1._Type.Kind<>A2._Type.Kind) then
       raise ECodeGenError.Create('Arrays not compatible');
   end;
 
@@ -1079,7 +1163,8 @@ begin
 
   if (WantedType.Kind=zctArray) and (ExistingType.Kind=zctArray) then
   begin
-    CheckArray(TDefineArray(WantedType.TheArray), TDefineArray(ExistingType.TheArray));
+    if not WantedType.Matches(ExistingType) then
+      raise ECodeGenError.Create('Arrays not compatible');
     Exit(Op);
   end;
 
@@ -1113,6 +1198,9 @@ begin
       Exit( TZcOpConvert.Create(WantedType,Op) );
     end;
   end;
+
+  if (WantedType.Kind=zctClass) and (ExistingType.Kind=zctClass) and (not TZcOpClass(ExistingType.TheClass).InheritsFrom(TZcOpClass(WantedType.TheClass))) then
+    raise ECodeGenError.Create('Cannot convert between different classes: ' + Op.ToString);
 
   if (ExistingType.Kind=WantedType.Kind) or (WantedType.Kind=zctVoid) or (ExistingType.Kind=zctVoid) then
     Exit(Op);
@@ -1157,6 +1245,7 @@ var
   PropValue : TZPropertyValue;
   Owner : TZComponent;
   I : integer;
+  Etyp : TZcIdentifierInfo;
 begin
   Result := Op;
 
@@ -1217,10 +1306,10 @@ begin
   then
   begin
     //Qualifies identifier referencing Variable-component with appropriate value-property
-    case (Op.Ref as TDefineVariableBase)._Type of
+    case (Op.Ref as TDefineVariableBase)._Type.Kind of
       zctInt : PName := 'IntValue';
       zctString : PName := 'StringValue';
-      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference : PName := 'PointerValue';
+      zctMat4,zctVec2,zctVec3,zctVec4,zctXptr,zctReference,zctClass : PName := 'PointerValue';
       zctModel : PName := 'ModelValue';
       zctByte : PName := 'ByteValue';
     else
@@ -1236,6 +1325,13 @@ begin
       Result := MakeOp(zcSelect,[ MakeIdentifier('this') ]);
       Result.Id := Op.Id;
     end;
+  end;
+
+  if (Op.Kind=zcSelect) and (Op.Ref=nil) then
+  begin
+    Etyp := Op.GetIdentifierInfo;
+    if (Etyp.Kind=edtField) and Etyp.Field.IsPrivate and ((CompilerContext.CurrentClass=nil) or (not CompilerContext.CurrentClass.InheritsFrom(Etyp.Field.MemberOf))) then
+      raise ECodeGenError.Create('Cannot access private field: ' + Op.ToString);
   end;
 end;
 
@@ -1371,6 +1467,55 @@ begin
   Result := MakeOp(zcAssign,[LeftOp,RightOp]);
 end;
 
+procedure MakeVarInitializer(V : TZcOpVariableBase; InitOp : TZcOp; var OutOp : TZcOp);
+var
+  Op : TZcOp;
+  I : integer;
+  A : TDefineArray;
+begin
+  if (V.Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+  begin
+    //Alloc new array.
+    //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy, such as a multiassign).
+    if (not Assigned(InitOp)) or
+      (not (InitOp.GetDataType.Kind in [V.Typ.Kind, zctNull])) then
+    begin
+      if OutOp=nil then
+        OutOp := MakeOp(zcBlock);
+      OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), MakeOp(zcInitArray,V.Id)) );
+    end;
+  end;
+
+  if Assigned(InitOp) then
+  begin
+    //Generate tree for initial assignment
+    if OutOp=nil then
+      OutOp := MakeOp(zcBlock);
+    if (V.Typ.Kind=zctArray) and (InitOp.Kind=zcBlock) then
+    begin
+      //Array initializer
+      A := V.Typ.TheArray;
+      if Assigned(A) then
+      begin
+        if (A.Dimensions<>dadOne) then
+          raise ECodeGenError.Create('Only one-dimensional arrays can have initializer: ' + V.Id);
+        if A.SizeDim1=0 then
+          A.SizeDim1 := InitOp.Children.Count
+        else if A.SizeDim1<>InitOp.Children.Count then
+          raise ECodeGenError.Create('Wrong nr of items in initializer list: ' + V.Id);
+      end;
+
+      for I := 0 to InitOp.Children.Count-1 do
+      begin
+        Op := MakeArrayAccess( MakeIdentifier(V.Id) );
+        Op.Children.Add( TZcOpLiteral.Create(zctInt,I) );
+        OutOp.Children.Add( MakeAssign(atAssign,Op,InitOp.Children[I]) );
+      end;
+    end else
+      OutOp.Children.Add( MakeAssign(atAssign, MakeIdentifier(V.Id), InitOp) );
+  end;
+end;
+
 {$DEFINE INLINING}
 
 {$IFDEF INLINING}
@@ -1386,7 +1531,7 @@ var
       Op : TZcOp;
     begin
       for Op in L1 do
-       L2.Add(DoClone(Op))
+        L2.Add(DoClone(Op))
     end;
 
   begin
@@ -1451,6 +1596,7 @@ var
       zcInvokeComponent :
         begin
           Result := TZcOpInvokeComponent.Create(nil);
+          Result.Id := Op.Id;
           DoCloneList(Op.Children,Result.Children);
         end;
       zcReinterpretCast :
@@ -1530,6 +1676,7 @@ begin
   LocMap.Free;
 
   if (Func.ReturnType.Kind<>zctVoid) and
+    (OutOp.Children.Count>0) and
     //No need for convert if InlineBlock is single statement
     (OutOp.Children.First.Kind<>zcInlineReturn) then
   begin
@@ -1547,7 +1694,8 @@ begin
 end;
 {$ENDIF}
 
-function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction : TZcOpFunctionUserDefined) : boolean;
+function VerifyFunctionCall(var Op : TZcOp; var Error : String;
+  CurrentFunction : TZcOpFunctionUserDefined; Cls : TZcOpClass) : boolean;
 
   {$IFDEF INLINING}
   function CanInline(Func : TZcOpFunctionUserDefined) : boolean;
@@ -1555,6 +1703,9 @@ function VerifyFunctionCall(var Op : TZcOp; var Error : String; CurrentFunction 
     Arg : TZcOpArgumentVar;
   begin
     Result := False;
+
+    if (mdVirtual in Func.Modifiers) or (mdOverride in Func.Modifiers) then
+      Exit(False);
 
     for Arg in Func.Arguments do
       if Arg.Typ.IsPointer then
@@ -1574,14 +1725,44 @@ var
   I : integer;
   MangledName : string;
   O : TObject;
+  IsMethod : boolean;
 begin
   Result := False;
-  MangledName := MangleFunc(Op.Id,Op.Children.Count);
-  O := CompilerContext.SymTab.Lookup(MangledName);
+
+  IsMethod := Assigned(Cls);
+  if IsMethod then
+  begin
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := Cls.FindMethod(MangledName);
+    if Assigned(O) and
+      (mdPrivate in TZcOpFunctionUserDefined(O).Modifiers) and
+      ((CompilerContext.CurrentClass=nil) or (not CompilerContext.CurrentClass.InheritsFrom(TZcOpFunctionUserDefined(O).MemberOf))) then
+    begin
+      Error := 'Cannot call private method: ' + Op.Id;
+      Exit;
+    end;
+  end else
+  begin
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := CompilerContext.SymTab.Lookup(MangledName);
+    if (O=nil) and Assigned(CompilerContext.CurrentClass) then
+    begin
+      O := CompilerContext.CurrentClass.FindMethod( MangleFunc(Op.Id,Op.Children.Count+1) );
+      if Assigned(O) then
+      begin //function call is actually method call without "this", convert
+        IsMethod := True;
+        Op.Kind := zcMethodCall;
+        Op.Ref := CompilerContext.CurrentClass;
+        Op.Children.Insert(0, MakeIdentifier('this') );
+      end;
+    end;
+  end;
+
   if Assigned(O) and (O is TZcOpFunctionBase) then
   begin  //Function
     FOp := O as TZcOpFunctionBase;
-    Op.Ref := FOp;
+    if not IsMethod then
+      Op.Ref := FOp;
     if FOp=CurrentFunction then
       CurrentFunction.IsRecursive := True;
     if FOp.Arguments.Count<>Op.Children.Count then
@@ -1592,7 +1773,7 @@ begin
     for I := 0 to FOp.Arguments.Count - 1 do
       Op.Children[I] := MakeCompatible(Op.Child(I),(FOp.Arguments[I] as TZcOp).GetDataType);
     {$IFDEF INLINING}
-    if CompilerOptions.InliningEnabled and (FOp is TZcOpFunctionUserDefined) and TZcOpFunctionUserDefined(FOp).IsInline then
+    if CompilerOptions.InliningEnabled and (FOp is TZcOpFunctionUserDefined) and (mdInline in TZcOpFunctionUserDefined(FOp).Modifiers) then
     begin
       if CanInline(FOp as TZcOpFunctionUserDefined) then
         Op := DoInline(FOp as TZcOpFunctionUserDefined, CurrentFunction, Op);
@@ -1701,7 +1882,7 @@ var
       A := TDefineArray.Create(nil);
       BuiltInCleanUps.Add(A);
       Result.TheArray := A;
-      A._Type := CharToType( Input[I+2] ).Kind;
+      A._Type.Kind := CharToType( Input[I+2] ).Kind;
       I := J+1;
     end else
       Inc(I);
@@ -2016,7 +2197,7 @@ begin
         raise ECodeGenError.Create(Self.Id + ' is not an array')
       else
       begin
-        Result.Kind := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type;
+        Result := TDefineArray((Ref as TZcOpVariableBase).Typ.TheArray)._Type;
         if Result.Kind=zctReference then
           //Allow "Bitmap[3] b;" declarations
           Result.ReferenceClassId := ArrayOp.GetDataType.ReferenceClassId;
@@ -2024,8 +2205,7 @@ begin
     end
     else if (Ref is TDefineArray) then
     begin
-      Result.Kind := (Ref as TDefineArray)._Type;
-      Result.ReferenceClassId := (Ref as TDefineArray)._ReferenceClassId;
+      Result := (Ref as TDefineArray)._Type;
     end;
   end;
 
@@ -2070,7 +2250,10 @@ end;
 
 function MakeArrayAccess(ArrayOp : TZcOp) : TZcOp;
 var
-  Op : TZcOp;
+  Op,ChildOp : TZcOp;
+  Typ : TZcDataType;
+  Cls : TZcOpClass;
+  Fld : TZcOpField;
 begin
   Op := TZcOpArrayAccess.Create(ArrayOp.Id, ArrayOp);
 
@@ -2079,7 +2262,7 @@ begin
   if ArrayOp.Kind=zcArrayAccess then
   begin
     //Array of arrays
-    Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type);
+    Op.Ref := GetArray(TDefineArray(TZcOpArrayAccess(ArrayOp).Arrayop.GetDataType.TheArray)._Type.Kind);
     TZcOpArrayAccess(Op).IsRawMem := True;
   end;
 
@@ -2090,10 +2273,24 @@ begin
   end;
 
   if ArrayOp.Kind=zcSelect then
-   if (ArrayOp.Children.First.Ref is TDefineVariable) then
-     //DefineVariable managedvalue
-     Op.Ref := GetArray( (ArrayOp.Children.First.Ref as TDefineVariable)._Type );
-   //else it is a model defined array, so ArrayOp.ref is already correct
+  begin
+    ChildOp := ArrayOp.Children.First;
+    if (ChildOp.Ref is TDefineVariable) then
+      //DefineVariable managedvalue
+      Op.Ref := GetArray( (ChildOp.Ref as TDefineVariable)._Type.Kind )
+    else
+    begin
+      Typ := ChildOp.GetDataType;
+      if Typ.Kind=zctClass then
+      begin
+        Cls := Typ.TheClass as TZcOpClass;
+        Fld := Cls.FindField(Op.Id);
+        if Assigned(Fld) then
+          Op.Ref := Fld.Typ.TheArray;
+      end;
+    end;
+  end;
+  //else it is a model defined array, so ArrayOp.ref is already correct
 
   Result := Op;
 end;
@@ -2121,22 +2318,119 @@ begin
   Mat4Array.Dimensions := dadTwo;
   Mat4Array.SizeDim1 := 4;
   Mat4Array.SizeDim2 := 4;
-  Mat4Array._Type := zctFloat;
+  Mat4Array._Type.Kind := zctFloat;
 
   Vec2Array := TDefineArray.Create(nil);
   Vec2Array.Dimensions := dadOne;
   Vec2Array.SizeDim1 := 2;
-  Vec2Array._Type := zctFloat;
+  Vec2Array._Type.Kind := zctFloat;
 
   Vec3Array := TDefineArray.Create(nil);
   Vec3Array.Dimensions := dadOne;
   Vec3Array.SizeDim1 := 3;
-  Vec3Array._Type := zctFloat;
+  Vec3Array._Type.Kind := zctFloat;
 
   Vec4Array := TDefineArray.Create(nil);
   Vec4Array.Dimensions := dadOne;
   Vec4Array.SizeDim1 := 4;
-  Vec4Array._Type := zctFloat;
+  Vec4Array._Type.Kind := zctFloat;
+end;
+
+{ TZcOpClass }
+
+constructor TZcOpClass.Create(Owner: Contnrs.TObjectList);
+var
+  Arg : TZcOpArgumentVar;
+begin
+  inherited;
+  Self.Kind := zcClass;
+  Typ.Kind := zctClass;
+  Typ.TheClass := Self;
+  Methods := TObjectList<TZcOpFunctionUserDefined>.Create(False);
+  Fields := TObjectList<TZcOpField>.Create(False);
+
+  Initializer := TZcOpFunctionUserDefined.Create( nil );
+  Initializer.ReturnType.Kind := zctVoid;
+  Initializer.Id := '$init';
+  Initializer.MangledName := MangleFunc(Initializer.Id,1);
+
+  //Add implicit "this" argument to initializer function
+  Arg := TZcOpArgumentVar.Create(nil);
+  Arg.Id := 'this';
+  Arg.Typ.Kind := zctClass;
+  Arg.Typ.TheClass := Self;
+  Initializer.AddArgument(Arg);
+end;
+
+destructor TZcOpClass.Destroy;
+begin
+  Methods.Free;
+  Fields.Free;
+  inherited;
+end;
+
+function TZcOpClass.FindField(const Name: string): TZcOpField;
+var
+  F : TZcOpField;
+begin
+  for F in Fields do
+    if SameText(F.Id,Name) then
+      Exit(F);
+  if Assigned(Self.BaseClass) then
+    Exit( Self.BaseClass.FindField(Name) );
+  Result := nil;
+end;
+
+function TZcOpClass.FindMethod(const MangledName: string): TZcOpFunctionUserDefined;
+var
+  M : TZcOpFunctionUserDefined;
+begin
+  for M in Methods do
+    if SameText(M.MangledName,MangledName) then
+      Exit(M);
+  if Assigned(Self.BaseClass) then
+    Exit( Self.BaseClass.FindMethod(MangledName) );
+  Result := nil;
+end;
+
+function TZcOpClass.GetDataType: TZcDataType;
+begin
+  Result := Typ;
+end;
+
+function TZcOpClass.InheritsFrom(const OtherClass: TZcOpClass): boolean;
+begin
+  if Self=OtherClass then
+    Exit(True);
+  if Self.BaseClass=nil then
+    Exit(False);
+  Result := Self.BaseClass.InheritsFrom(OtherClass);
+end;
+
+function TZcOpClass.Optimize: TZcOp;
+var
+  I : integer;
+begin
+  for I := 0 to Methods.Count-1 do
+    Methods[I] := Methods[I].Optimize as TZcOpFunctionUserDefined;
+  Initializer := Initializer.Optimize as TZcOpFunctionUserDefined;
+  Result := inherited;
+end;
+
+function TZcOpClass.ToString: string;
+var
+  Op : TZcOp;
+begin
+  Result := 'class ' + Id + ' { ';
+  Result := Result + Initializer.ToString;
+  for Op in Methods do
+    Result := Result + Op.ToString;
+  Result := Result + ' } ';
+end;
+
+function AlignX(const Value,X : integer) : integer;
+begin
+  Result := (Value + (X-1)) and (not (X-1));
 end;
 
 initialization

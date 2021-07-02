@@ -2,7 +2,7 @@
 
 A mesh producer that generates a mesh based on implicit functions.
 
-_Note: The implicit meshes components are highly experimental. Setting invalid property values may lock up the editor. Make sure you save your data often!_
+@note The implicit meshes components are highly experimental. Setting invalid property values may lock up the editor. Make sure you save your data often!
 
 This component can only be used in the @ref MeshProducers "Mesh.Producers" property.
 

@@ -28,6 +28,10 @@ model
 const
 private
 inline
+class
+new
+virtual
+override
 |><|
 
 CHARS

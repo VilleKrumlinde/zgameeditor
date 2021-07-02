@@ -89,7 +89,7 @@ type
     {$endif}
     {$ifndef minimal}public{$endif}
     procedure UpdateTime;
-    {$if (not defined(minimal)) or defined(android)}public{$ifend}
+    {$if (not defined(minimal)) or defined(android)}public{$endif}
     function Main : boolean;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -108,7 +108,8 @@ type
     OnRender : TZComponentList;
     OnBeginRenderPass : TZComponentList;
     Lights : TZComponentList;
-    GlobalVars : TZComponentList;
+    GlobalVariables : TZComponentList;
+    UserClasses : TZComponentList;
     Terminating : boolean;
     Time,DeltaTime : single;
     Caption : TPropString;
@@ -143,7 +144,9 @@ type
     ThreadedProcessingEnabled : boolean;
     UseStencilBuffer : boolean;
     RenderOrder : (aroModelsBeforeApp,aroAppBeforeModels);
+    PointerSize : byte;
     {$ifndef minimal}
+    LiveThreadCount : integer;
     Icon : TZBinaryPropValue;
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
@@ -465,7 +468,7 @@ var
       Inc(J,Models.Get(I).Count);
     ZLog.GetLog(Self.ClassName).Write( 'Models: ' + IntToStr(J) + ', managed: ' + ManagedHeap_GetStatus );
   end;
-  {$ifend}
+  {$endif}
 
 begin
   Now := Platform_GetTime;
@@ -509,7 +512,7 @@ begin
       FpsTime := Time;
       {$if not (defined(minimal) or defined(ZgeViz))}
       InDumpDebugInfo;
-      {$ifend}
+      {$endif}
     end;
 
     {$ifndef zgeviz}
@@ -575,6 +578,9 @@ end;
 
 procedure TZApplication.Run;
 begin
+  if Self.PointerSize<>SizeOf(Pointer) then
+    ZHalt('Data must be saved in same bitness version of ZGameEditor');
+
   Init;
   //Skip initial tree update for now because it triggers AppState.OnStart etc. which can cause trouble
   //Any component needing init should override InitAfterPropsAreSet instead.
@@ -777,7 +783,7 @@ begin
       Self.OnBeginRenderPass.ExecuteCommands;
 
     {$ifndef zgeviz}
-    if {$if defined(minimal) and (not defined(android))}(ViewportRatio=vprCustom) and {$ifend}
+    if {$if defined(minimal) and (not defined(android))}(ViewportRatio=vprCustom) and {$endif}
       (CurrentRenderTarget=nil) then
       UpdateViewport;
     {$endif}
@@ -977,17 +983,21 @@ begin
     else if (ZcGlobalNames[I] is TDefineConstant) and SymTab.Contains(String((ZcGlobalNames[I] as TDefineConstant).Name)) then
       //Also remove inline constants
       SymTab.Remove(String(TDefineConstant(ZcGlobalNames[I]).Name))
+    else if (ZcGlobalNames[I] is TZcOpClass) and SymTab.Contains(String((ZcGlobalNames[I] as TZcOpClass).Id)) then
+      //Also remove user defined classes
+      SymTab.Remove(String(TZcOpClass(ZcGlobalNames[I]).Id))
     else if (ZcGlobalNames[I] is TZcOpGlobalVar) then
       SymTab.Remove(TZcOpGlobalVar(ZcGlobalNames[I]).Id);
   end;
   ZcGlobalNames.Clear;
 
   //Remove global variables (declared in zlibraries)
-  for I := 0 to GlobalVars.Count-1 do
-  begin
-    SymTab.Remove(String(TDefineVariableBase(GlobalVars[I]).Name))
-  end;
-  GlobalVars.Clear;
+  for I := 0 to GlobalVariables.Count-1 do
+    SymTab.Remove(String(TDefineVariableBase(GlobalVariables[I]).Name));
+  GlobalVariables.Clear;
+
+  //Remove user-defined classes
+  UserClasses.Clear;
 
   //Remove stringconstants
   ClearConstantPool;
@@ -1250,7 +1260,10 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'ConstantPool',{$ENDIF}(@ConstantPool), zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'GlobalVars',{$ENDIF}(@GlobalVars), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'GlobalVariables',{$ENDIF}(@GlobalVariables), zptComponentList);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'UserClasses',{$ENDIF}@UserClasses, zptComponentList);
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
@@ -1258,6 +1271,11 @@ begin
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
     {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+
+  List.AddProperty({$IFNDEF MINIMAL}'PointerSize',{$ENDIF}@PointerSize, zptByte);
+    List.GetLast.DefaultValue.ByteValue := SizeOf(Pointer);
+    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 
   {$IFNDEF MINIMAL}
   List.AddProperty('FileVersion',@FileVersion, zptInteger);
@@ -1322,6 +1340,9 @@ begin
   AudioPlayer.DesignerStopAllAudio;
   Self.CurrentState := nil;
   Self.DeltaTime := 0;
+
+  while Self.LiveThreadCount>0 do
+    Platform_Sleep(0);
 end;
 {$endif}
 

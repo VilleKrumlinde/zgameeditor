@@ -41,20 +41,31 @@ type
   TExecutionEnvironment = record
   const
     ZcStackSize=16384;
-  private
-    gCurrentPc : ^TExpBase;
-    gCurrentBP : integer;
   type
     TStackElement = NativeUInt;
     PStackElement = ^TStackElement;
+    PExpBase = ^TExpBase;
+  private
+    gCurrentPc : PExpBase;
+    gCurrentBP : integer;
   var
     ZcStack : array[0..ZcStackSize div SizeOf(TStackElement)] of TStackElement;
     ZcStackPtr : PStackElement;
+  strict private
+    {$ifdef CALLSTACK}
+    procedure LogCallstack;
+    {$endif}
   private
     function StackGetDepth : integer; inline;
     procedure StackPopTo(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     procedure StackPopToPointer(var X); {$IFDEF RELEASE}inline;{$ENDIF}
     function StackPopFloat : single;
+    {$ifndef minimal}
+    procedure ScriptError(const S : string);
+    {$endif}
+    {$ifdef CALLSTACK}
+    procedure CheckNilDeref(P : pointer);
+    {$endif}
     {$if defined(cpux64) or defined(cpuaarch64)}
     function StackPopAndGetPtr(const Count : integer) : PStackElement; inline;
     {$endif}
@@ -81,6 +92,7 @@ type
     Lock : pointer;
     HasExecutedInitializer : boolean;
     procedure InitGlobalArea;
+    procedure RemoveManagedTargets;
   private
     procedure AquireLock;
     procedure ReleaseLock;
@@ -93,10 +105,12 @@ type
     HasInitializer : boolean;
     GlobalArea : pointer; //Storage for non-managed global variables
     GlobalAreaSize : integer;
+    ManagedVariables : TZBinaryPropValue;
     procedure Update; override;
     destructor Destroy; override;
     {$ifndef minimal}
     procedure DesignerReset; override;
+    procedure AddGlobalVar(const Typ : TZcDataType);
     {$endif}
   end;
 
@@ -125,9 +139,8 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    _Type : TZcDataTypeKind;
+    _Type : TZcDataType;
     {$ifndef minimal}
-    _ReferenceClassId : TZClassIds;  //This is used to verify type of global declared reference variables
     function GetDisplayName: ansistring; override;
     {$endif}
   end;
@@ -378,11 +391,14 @@ type
     HasFrame : boolean;
     HasReturnValue : boolean;
     Arguments : integer;
+    {$ifdef CALLSTACK}
+    FunctionName : string;
+    {$endif}
   end;
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
     emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop, emBinaryNot,
-    emNot);
+    emNot,emGetUserClass);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -513,12 +529,11 @@ type
     IsValue : boolean;
   end;
 
-  TExpInitLocalArray = class(TExpBase)
+  TExpInitArray = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    StackSlot : integer;
     Dimensions : TArrayDimensions;
     _Type : TZcDataTypeKind;
     Size1,Size2,Size3 : integer;
@@ -557,6 +572,46 @@ type
     False : (SingleValue : single);
   end;
 
+  TUserClass = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    SizeInBytes : integer;
+    ManagedFields : TZBinaryPropValue;
+    BaseClass : TUserClass;
+    Vmt : TZBinaryPropValue;
+    DefinedInLib : TZLibrary;
+    InitializerIndex : integer;
+  end;
+
+  TUserClassInstance = class
+  strict private
+    ManagedCount : integer;
+    ManagedCleanup : PPointer;
+  public
+    InstanceData : pointer;
+    TheClass : TUserClass;
+    constructor Create(TheClass : TUserClass);
+    destructor Destroy; override;
+  end;
+
+  TExpNewClassInstance = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    TheClass : TUserClass;
+  end;
+
+  TExpVirtualFuncCall = class(TExpBase)
+  protected
+    procedure Execute(Env : PExecutionEnvironment); override;
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    VmtIndex : integer;
+  end;
+
+
 //Run a compiled expression
 //Uses global vars for state.
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
@@ -572,7 +627,7 @@ uses ZMath, ZPlatform, ZApplication, ZLog, Meshes,
   AudioComponents, AudioPlayer
 {$ifndef MSWINDOWS} {$ifdef fpc}, BaseUnix{$endif} {$endif}
 {$if (not defined(minimal))}, SysUtils, Math, TypInfo, Classes{$endif}
-{$if defined(cpux64) and defined(mswindows)}, WinApi.Windows{$endif}
+{$if defined(cpux64) and defined(mswindows)}, Windows{$endif}
   ;
 
 {$POINTERMATH ON}
@@ -613,7 +668,7 @@ procedure TExecutionEnvironment.StackPush(const X);
 begin
   {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
-    ZHalt('Zc Stack Overflow (infinite recursion?)');
+    ScriptError('Zc Stack Overflow (infinite recursion?)');
   {$endif}
   PInteger(ZcStackPtr)^ := PInteger(@X)^;
   Inc(ZcStackPtr);
@@ -624,7 +679,7 @@ procedure TExecutionEnvironment.StackPushPointer(const X);
 begin
   {$ifdef debug}
   if StackGetDepth>=High(ZcStack) then
-    ZHalt('Zc Stack Overflow (infinite recursion?)');
+    ScriptError('Zc Stack Overflow (infinite recursion?)');
   {$endif}
   ZcStackPtr^ := TStackElement( PPointer(@X)^ );
   Inc(ZcStackPtr);
@@ -635,7 +690,7 @@ procedure TExecutionEnvironment.StackPopTo(var X);
 begin
   {$ifdef debug}
   if StackGetDepth=0 then
-    ZHalt('Zc Stack Underflow');
+    ScriptError('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
   PInteger(@X)^ := PInteger(ZcStackPtr)^;
@@ -646,7 +701,7 @@ procedure TExecutionEnvironment.StackPopToPointer(var X);
 begin
   {$ifdef debug}
   if StackGetDepth=0 then
-    ZHalt('Zc Stack Underflow');
+    ScriptError('Zc Stack Underflow');
   {$endif}
   Dec(ZcStackPtr);
   PPointer(@X)^ := pointer(ZcStackPtr^);
@@ -663,11 +718,52 @@ begin
   Inc(Result,Index);
 end;
 
+{$ifdef CALLSTACK}
+procedure TExecutionEnvironment.LogCallstack;
+var
+  Log : TLog;
+
+  procedure DoOne(P : PExpBase);
+  begin
+    while P<>nil do
+    begin
+      if (P^ is TExpReturn) then
+      begin
+        Log.Error(TExpReturn(P^).FunctionName);
+        TExpReturn(P^).Execute(@Self);
+        P := Self.gCurrentPc;
+        Continue;
+      end;
+      Inc(P);
+    end;
+  end;
+
+begin
+  Log := ZLog.GetLog('Zc');
+  Log.Error('Callstack:');
+  DoOne(Self.gCurrentPc);
+end;
+
+procedure TExecutionEnvironment.CheckNilDeref(P : pointer);
+begin
+  if NativeUInt(P)<=1024 then
+    Self.ScriptError('Null pointer referenced in expression');
+end;
+{$endif}
+
+{$ifndef minimal}
+procedure TExecutionEnvironment.ScriptError(const S : string);
+begin
+  {$ifdef CALLSTACK}
+  LogCallstack;
+  {$endif}
+  ZHalt(S);
+end;
+{$endif}
+
 function RunCode(Code : TZComponentList; Env : PExecutionEnvironment=nil) : TCodeReturnValue;
-{$IFNDEF MINIMAL}
-  {$IFNDEF ZGEVIZ}
-    {$DEFINE GUARD_LIMIT}
-  {$ENDIF}
+{$IFDEF ZDESIGNER}
+  {$DEFINE GUARD_LIMIT}
 {$ENDIF}
 const
   NilP : pointer = nil;
@@ -692,37 +788,30 @@ begin
   Env.StackPushPointer(NilP); //Push return adress nil
 
   {$ifdef GUARD_LIMIT}
-  GuardLimit := High(Integer);
+  GuardLimit := Round(1E8);
   GuardAllocLimit := ManagedHeap_GetAllocCount + 1000000*10;
   {$endif}
   while True do
   begin
     TExpBase(Env.gCurrentPc^).Execute(Env);
     if Env.gCurrentPc=nil then
-       break;
+      Break;
     Inc(Env.gCurrentPc);
     {$ifdef GUARD_LIMIT}
     Dec(GuardLimit);
-    if GuardLimit=0 then
-      ZHalt('Infinite loop?');
+    if (GuardLimit=0) and (TThread.CurrentThread.ThreadID=MainThreadID) then
+      Env.ScriptError('Infinite loop?');
     if ManagedHeap_GetAllocCount>GuardAllocLimit then
-      ZHalt('Ten million strings allocated. Infinite loop?');
+      Env.ScriptError('Ten million strings allocated. Infinite loop?');
     {$endif}
   end;
   if Env.StackGetDepth=1 then
     Env.StackPopToPointer(Result.PointerValue);
-  {$ifndef minimal}
+  {$ifdef ZDESIGNER}
   if (Env=@LocalEnv) and (Env.StackGetDepth>0) then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
 end;
-
-{$ifdef debug}
-procedure CheckNilDeref(P : pointer);
-begin
-  ZAssert( NativeUInt(P)>1024,'Null pointer referenced in expression');
-end;
-{$endif}
 
 function CreateManagedValue(const Typ : TZcDataTypeKind) : pointer;
 var
@@ -736,7 +825,7 @@ begin
         A.Dimensions := dadTwo;
         A.SizeDim1 := 4;
         A.SizeDim2 := 4;
-        A._Type := zctFloat;
+        A._Type.Kind := zctFloat;
         Result := A;
       end;
     zctVec2, zctVec3, zctVec4 :
@@ -744,7 +833,7 @@ begin
         A := TDefineArray.Create(nil);
         A.Dimensions := dadOne;
         A.SizeDim1 := 2 + Ord(Typ)-Ord(zctVec2);
-        A._Type := zctFloat;
+        A._Type.Kind := zctFloat;
         Result := A;
       end;
   end;
@@ -839,7 +928,7 @@ begin
     vbkMinus : V := A2 - A1;
     vbkMul : V := A2 * A1;
     vbkDiv : V := A2 / A1;
-    {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
+    {$ifndef minimal}else Env.ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -867,7 +956,7 @@ begin
         V := A2 mod A1
       else
         V := 0; //avoid runtime div by zero error
-    {$ifndef minimal}else begin ZHalt('Invalid binary op'); exit; end;{$endif}
+    {$ifndef minimal}else Env.ScriptError('Invalid binary op'); {$endif}
   end;
   Env.StackPush(V);
 end;
@@ -907,7 +996,7 @@ begin
               jsJumpGE : Jump := L>=R;
               jsJumpNE : Jump := L<>R;
               jsJumpEQ : Jump := L=R;
-            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            {$ifndef minimal}else Env.ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutInt:
@@ -921,7 +1010,7 @@ begin
               jsJumpGE : Jump := Li>=Ri;
               jsJumpNE : Jump := Li<>Ri;
               jsJumpEQ : Jump := Li=Ri;
-            {$ifndef minimal}else ZHalt('Invalid jump op');{$endif}
+            {$ifndef minimal}else Env.ScriptError('Invalid jump op');{$endif}
             end;
           end;
         jutString:
@@ -991,9 +1080,9 @@ end;
 
 procedure TDefineVariable.InitManaged;
 begin
-  if (Self._Type in [zctMat4,zctVec2,zctVec3,zctVec4]) and (Self.PointerValue=nil) then
+  if (Self._Type.Kind in [zctMat4,zctVec2,zctVec3,zctVec4]) and (Self.PointerValue=nil) then
     //Create default empty value
-    Self.PointerValue := CreateManagedValue(Self._Type);
+    Self.PointerValue := CreateManagedValue(Self._Type.Kind);
 end;
 
 procedure TDefineVariable.InitAfterPropsAreSet;
@@ -1099,7 +1188,7 @@ begin
     fcQuit :
       begin
         {$ifndef minimal}
-        raise EZHalted.Create('Quit called');
+        Env.ScriptError('Quit called');
         {$else}
         HasReturnValue := False;
         ZApp.Terminating := True;
@@ -1235,7 +1324,7 @@ begin
         TZThreadComponent(P1).Start(I1);
         HasReturnValue := False;
       end;
-  {$ifndef minimal}else begin ZHalt('Invalid func op'); exit; end;{$endif}
+  {$ifndef minimal}else Env.ScriptError('Invalid func op'); {$endif}
   end;
   if HasReturnValue then
     Env.StackPush(V);
@@ -1270,7 +1359,7 @@ end;
 function TDefineConstant.GetDisplayName: AnsiString;
 begin
   Result := inherited GetDisplayName + ' ';
-  case _Type of
+  case _Type.Kind of
     zctFloat: Result := Result + AnsiString(FormatFloat('###0.#',Value));
     zctInt: Result := Result + AnsiString(IntToStr(IntValue));
     zctString: Result := Result + '"' + StringValue + '"';
@@ -1295,7 +1384,7 @@ end;
 
 destructor TDefineArray.Destroy;
 begin
-  CleanUpManagedValues(_Type,Limit,AllocPtr);
+  CleanUpManagedValues(_Type.Kind,Limit,AllocPtr);
   if (Data<>nil) and (not IsExternal) then
     FreeMem(Data);
   inherited;
@@ -1307,7 +1396,7 @@ begin
   if (Limit<>CalcLimit) then
     AllocData;
   {$ifndef minimal}
-  ZAssert(not (Persistent and (_Type in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
+  ZAssert(not (Persistent and (_Type.Kind in [zctString,zctModel,zctMat4,zctVec3,zctVec2,zctVec4])),'Persistent arrays of this datatype not supported');
   {$endif}
   if Persistent then
   begin
@@ -1325,7 +1414,7 @@ end;
 
 function TDefineArray.GetElementSize: integer;
 begin
-  Result := GetZcTypeSize(Self._Type);
+  Result := GetZcTypeSize(Self._Type.Kind);
 end;
 
 function TDefineArray.CalcLimit: integer;
@@ -1366,9 +1455,9 @@ begin
 
   Self.AllocPtr := P^;
   Self.AllocItemCount := Self.Limit;
-  Self.AllocType := Self._Type;
+  Self.AllocType := Self._Type.Kind;
 
-  if Self._Type in [zctString] then
+  if Self._Type.Kind in [zctString,zctClass] then
   begin
     P := P^;
     for I := 0 to Self.Limit - 1 do
@@ -1383,7 +1472,7 @@ procedure TDefineArray.CleanUpManagedValues(TheType : TZcDataTypeKind; Count : i
 var
   I : integer;
 begin
-  if (not (TheType in [zctString])) or (Count=0) then
+  if (not (TheType in [zctString,zctClass])) or (Count=0) then
     Exit;
   for I := 0 to Count - 1 do
   begin
@@ -1424,7 +1513,7 @@ begin
     ((Dimensions=dadThree) and ((I1>=SizeDim1) or (I2>=SizeDim2) or (I3>=SizeDim3)))
     then
   begin
-    ZHalt('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
+    Env.ScriptError('Array access outside range: ' + String(Self.Name) + ' ' + IntToStr(I1) + ' ' + IntToStr(I2) + ' ' + IntToStr(I3));
     Result := nil;
     Exit;
   end;
@@ -1654,8 +1743,8 @@ begin
     emPtrDeref4 :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         V := PInteger(P)^;
         Env.StackPush(V);
@@ -1663,8 +1752,8 @@ begin
     emPtrDeref1 :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         V := PByte(P)^;
         Env.StackPush(V);
@@ -1672,8 +1761,8 @@ begin
     emPtrDerefPointer :
       begin
         Env.StackPopToPointer(P);
-        {$ifdef debug}
-        CheckNilDeref(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer(P^);
       end;
@@ -1705,6 +1794,15 @@ begin
           V := 0;
         Env.StackPush(V);
       end;
+    emGetUserClass :
+      begin
+        //Convert TUserClassInstance to the instancedata for field access
+        Env.StackPopToPointer(P);
+        {$ifdef CALLSTACK}
+        Env.CheckNilDeref(P);
+        {$endif}
+        Env.StackPushPointer( TUserClassInstance(P).InstanceData );
+      end;
   end;
 end;
 
@@ -1732,6 +1830,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasInitializer',{$ENDIF}@HasInitializer, zptBoolean);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'GlobalAreaSize',{$ENDIF}@GlobalAreaSize, zptInteger);
+   {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+   {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'ManagedVariables',{$ENDIF}@ManagedVariables, zptBinary);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 end;
@@ -1764,12 +1865,49 @@ begin
   InitGlobalArea;
 end;
 
+procedure TZLibrary.RemoveManagedTargets;
+var
+  Offsets : PInteger;
+  I,ManagedCount : integer;
+  P : pointer;
+begin
+  if (Self.ManagedVariables.Size>0) and (GlobalArea<>nil) then
+  begin
+    //Remove targets for managed variables
+    ManagedCount := Self.ManagedVariables.Size div 4;
+    Offsets := PInteger(ManagedVariables.Data);
+    for I := 0 to ManagedCount-1 do
+    begin
+      P := Pointer(IntPtr(Self.GlobalArea) + Offsets^);
+      ManagedHeap_RemoveTarget( P );
+      Inc(Offsets);
+    end;
+  end;
+end;
+
 procedure TZLibrary.InitGlobalArea;
+var
+  Offsets : PInteger;
+  I,ManagedCount : integer;
+  P : pointer;
 begin
   if (Self.GlobalAreaSize>0) then
   begin
     ReAllocMem(Self.GlobalArea,Self.GlobalAreaSize);
     FillChar(Self.GlobalArea^,Self.GlobalAreaSize,0);
+
+    if Self.ManagedVariables.Size>0 then
+    begin
+      //Add targets for managed fields
+      ManagedCount := Self.ManagedVariables.Size div 4;
+      Offsets := PInteger(ManagedVariables.Data);
+      for I := 0 to ManagedCount-1 do
+      begin
+        P := Pointer(IntPtr(Self.GlobalArea) + Offsets^);
+        ManagedHeap_AddTarget( P );
+        Inc(Offsets);
+      end;
+    end;
   end;
 end;
 
@@ -1779,6 +1917,7 @@ begin
   if Lock<>nil then
     Platform_FreeMutex(Lock);
   {$endif}
+  RemoveManagedTargets;
   FreeMem(GlobalArea);
   inherited;
 end;
@@ -1787,8 +1926,22 @@ end;
 procedure TZLibrary.DesignerReset;
 begin
   Self.HasExecutedInitializer := False;
+  RemoveManagedTargets;
   InitGlobalArea;
   inherited;
+end;
+
+procedure TZLibrary.AddGlobalVar(const Typ: TZcDataType);
+begin
+  //Need to always increase 8 here instead of sizeof(pointer) to
+  //allow generated binary to be compatible with both 32 and 64 bit runtime.
+  if Typ.Kind in ManagedTypes then
+  begin
+    Inc(ManagedVariables.Size,4);
+    ReallocMem(ManagedVariables.Data,ManagedVariables.Size);
+    PInteger( pointer(IntPtr(ManagedVariables.Data)+ManagedVariables.Size-4) )^ := Self.GlobalAreaSize;
+  end;
+  Inc(Self.GlobalAreaSize,8);
 end;
 {$endif}
 
@@ -1903,7 +2056,7 @@ end;
 procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}@_Type.Kind, zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4','xptr']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
@@ -1914,7 +2067,7 @@ var
   I : integer;
   P : TZProperty;
 begin
-  I := Ord(Self._Type);
+  I := Ord(Self._Type.Kind);
   P := Self.GetProperties.GetByName('Type');
   if I<Length(P.Options) then
     Result := inherited GetDisplayName + ' <' + AnsiString(P.Options[ I ]) + '>'
@@ -2385,7 +2538,7 @@ begin
   W([$49,$ff,$e3]); //jmp r11
 
   {$ifdef mswindows}
-  WinApi.Windows.VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
+  Windows.VirtualProtect(Result,CodeSize,PAGE_EXECUTE_READWRITE,@OldProtect);
   {$else}
   mprotect(Result,CodeSize,PROT_READ or PROT_WRITE or PROT_EXEC);
   {$endif}
@@ -2552,7 +2705,7 @@ begin
   if Self.ReturnType.Kind<>zctVoid then
     Env.StackPush(RetVal);
 end;
-{$ifend}
+{$endif}
 
 {$if defined(cpuaarch64)}  // ARM64
 
@@ -2779,7 +2932,7 @@ begin
   fpmunmap(Trampoline,512);
 end;
 
-{$ifend}
+{$endif}
 
 { TExpLoadComponent }
 
@@ -2809,8 +2962,8 @@ begin
   if not IsInit then
   begin
     Env.StackPopToPointer(C);
-    {$ifdef debug}
-    CheckNilDeref(C);
+    {$ifdef CALLSTACK}
+    Env.CheckNilDeref(C);
     {$endif}
     Self.Offset := C.GetProperties.GetById(Self.PropId).Offset;
     Env.StackPushPointer(C);
@@ -2910,7 +3063,7 @@ begin
       zptString : V.StringValue := PAnsiChar(RawValue);
     {$ifndef minimal}
     else
-      ZHalt(ClassName + ' invalid datatype for argument');
+      Env.ScriptError(ClassName + ' invalid datatype for argument');
     {$endif}
     end;
 
@@ -2926,12 +3079,11 @@ begin
   end;
 end;
 
-{ TExpInitLocalArray }
+{ TExpInitArray }
 
-procedure TExpInitLocalArray.DefineProperties(List: TZPropertyList);
+procedure TExpInitArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'StackSlot',{$ENDIF}(@StackSlot), zptInteger);
   List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}(@Dimensions), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'Size1',{$ENDIF}(@Size1), zptInteger);
@@ -2939,21 +3091,19 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Size3',{$ENDIF}(@Size3), zptInteger);
 end;
 
-procedure TExpInitLocalArray.Execute(Env : PExecutionEnvironment);
+procedure TExpInitArray.Execute(Env : PExecutionEnvironment);
 var
-  P : TExecutionEnvironment.PStackElement;
   A : TDefineArray;
 begin
   //Use pointer size to get all bits in 64-bit mode
-  P := Env.StackGetPtrToItem( Env.gCurrentBP + Self.StackSlot );
   A := TDefineArray.Create(nil);
   ManagedHeap_AddValueObject(A);
   A.Dimensions := Self.Dimensions;
-  A._Type := Self._Type;
+  A._Type.Kind := Self._Type;
   A.SizeDim1 := Self.Size1;
   A.SizeDim2 := Self.Size2;
   A.SizeDim3 := Self.Size3;
-  PPointer(P)^ := A;
+  Env.StackPushPointer(A);
 end;
 
 { TExpMat4 }
@@ -3069,7 +3219,7 @@ begin
         begin
           Prop := TZComponent(P3).GetProperties.GetByName( String(PAnsiChar(P2)) );
           if (Prop=nil) or (Prop.PropertyType<>zptComponentList) then
-            ZHalt('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
+            Env.ScriptError('CreateComponent called with invalid proplistname: ' + String(PAnsiChar(P2)));
           C := Ci.ZClass.Create( TZComponent(P3).GetProperty(Prop).ComponentListValue );
           C.ZApp.HasScriptCreatedComponents := True;
         end;
@@ -3086,7 +3236,7 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetNumericProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop); //Must read prop first, when modifying rects
         case Prop.PropertyType of
           zptFloat,zptScalar: Value.FloatValue := V;
@@ -3097,7 +3247,7 @@ begin
           zptByte: Value.ByteValue := Round(V);
           zptBoolean: Value.BooleanValue := ByteBool(Round(V));
         else
-          ZHalt('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetNumericProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3109,17 +3259,17 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptString : Value.StringValue := AnsiString(PAnsiChar(P3));
           zptExpression : Value.ExpressionValue.Source := String(PAnsiChar(P3));
         else
-          ZHalt('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         if (Prop.Name='Name') then
         begin
           if Assigned(ZApp.SymTab.Lookup(String(PAnsiChar(P3)))) then
-            ZHalt('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
+            Env.ScriptError('SetStringProperty tried to set duplicate name: ' + String(PAnsiChar(P3)));
           ZApp.SymTab.Add(String(PAnsiChar(P3)),TZComponent(P1));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
@@ -3134,11 +3284,11 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetObjectProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         case Prop.PropertyType of
           zptComponentRef : Value.ComponentValue := P3;
         else
-          ZHalt('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('SetObjectProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
         TZComponent(P1).SetProperty(Prop,Value);
       end;
@@ -3156,13 +3306,13 @@ begin
         Env.StackPopToPointer(P1); //comp
         Prop := TZComponent(P1).GetProperties.GetByName( String(PAnsiChar(P2)) );
         if Prop=nil then
-          ZHalt('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('GetStringProperty called with invalid propname: ' + String(PAnsiChar(P2)));
         Value := TZComponent(P1).GetProperty(Prop);
         case Prop.PropertyType of
           zptString : TmpS := Value.StringValue;
           zptExpression : TmpS := AnsiString(Value.ExpressionValue.Source);
         else
-          ZHalt('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
+          Env.ScriptError('GetStringProperty called with prop of unsupported type: ' + String(PAnsiChar(P2)));
         end;
 
         Dest := ManagedHeap_Alloc(Length(TmpS)+1);
@@ -3272,6 +3422,137 @@ begin
   Inc(Env.gCurrentPc,Destination);
 end;
 
+{ TExpNewClassInstance }
+
+procedure TExpNewClassInstance.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'TheClass',{$ENDIF}@TheClass, zptComponentRef);
+end;
+
+procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
+var
+  P : TUserClassInstance;
+  Cls : TUserClass;
+begin
+  Cls := Self.TheClass;
+
+  P := TUserClassInstance.Create(Cls);
+  ManagedHeap_AddValueObject(P);
+  Env.StackPushPointer(P);
+
+  //todo: call initializer not here but generate code in constructor instead
+  if Cls.InitializerIndex<>-1 then
+  begin //Call initializer
+    Env.StackPushPointer(P); //push "this" as argument to initializer
+    Env.StackPushPointer(Env.gCurrentPC);
+    Env.gCurrentPC := Cls.DefinedInLib.Source.Code.GetPtrToItem(Cls.InitializerIndex);
+    Dec(Env.gCurrentPc);
+  end;
+end;
+
+{ TUserClassInstance }
+
+constructor TUserClassInstance.Create(TheClass: TUserClass);
+var
+  I : integer;
+  P : pointer;
+  Offsets : PInteger;
+  Mp : PPointer;
+begin
+  Self.TheClass := TheClass;
+
+  GetMem(Self.InstanceData,TheClass.SizeInBytes);
+  FillChar(Self.InstanceData^,TheClass.SizeInBytes,0);
+
+  ManagedCount := (TheClass.ManagedFields.Size div 4);
+  if ManagedCount>0 then
+  begin
+    //Copy pointers to owned memory to avoid dangling pointer to UserClass
+    GetMem(ManagedCleanup,ManagedCount*SizeOf(Pointer));
+
+    //Add targets for managed fields
+    Offsets := PInteger(TheClass.ManagedFields.Data);
+    Mp := ManagedCleanup;
+    for I := 0 to ManagedCount-1 do
+    begin
+      P := Pointer(IntPtr(Self.InstanceData) + Offsets^);
+      ManagedHeap_AddTarget( P );
+      Mp^ := P;
+      Inc(Mp);
+      Inc(Offsets);
+    end;
+  end;
+end;
+
+destructor TUserClassInstance.Destroy;
+var
+  I : integer;
+  Mp : PPointer;
+begin
+  //Remove targets for managed fields
+  if Self.ManagedCount>0 then
+  begin
+    Mp := ManagedCleanup;
+    for I := 0 to Self.ManagedCount-1 do
+    begin
+      ManagedHeap_RemoveTarget( Mp^ );
+      Inc(Mp);
+    end;
+    FreeMem(ManagedCleanup);
+  end;
+
+  FreeMem(InstanceData);
+  inherited;
+end;
+
+{ TUserClass }
+
+procedure TUserClass.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}'ManagedFields',{$ENDIF}@ManagedFields, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'BaseClass',{$ENDIF}@BaseClass, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'Vmt',{$ENDIF}@Vmt, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'DefinedInLib',{$ENDIF}@DefinedInLib, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}'InitializerIndex',{$ENDIF}@InitializerIndex, zptInteger);
+end;
+
+{ TExpVirtualFuncCall }
+
+procedure TExpVirtualFuncCall.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'VmtIndex',{$ENDIF}@VmtIndex, zptInteger);
+end;
+
+procedure TExpVirtualFuncCall.Execute(Env: PExecutionEnvironment);
+
+  procedure InCheck(C : TUserClass);
+  var
+    Pc : integer;
+  begin
+    Pc := PIntegerArray(C.Vmt.Data)^[ Self.VmtIndex ];
+    if Pc<>-1 then
+    begin
+      Env.gCurrentPC := C.DefinedInLib.Source.Code.GetPtrToItem(Pc-1);
+      Exit;
+    end;
+    {$ifdef debug}
+    Assert(Assigned(C.BaseClass),'virtual method error');
+    {$endif}
+    InCheck(C.BaseClass);
+  end;
+
+var
+  P : TUserClassInstance;
+begin
+  Env.StackPopToPointer(P);
+  Env.StackPushPointer(Env.gCurrentPC);
+  InCheck(P.TheClass);
+end;
+
 initialization
 
   ZClasses.Register(TZExpression,ZExpressionClassId);
@@ -3342,7 +3623,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpInvokeComponent,ExpInvokeComponentClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
-  ZClasses.Register(TExpInitLocalArray,ExpInitLocalArrayClassId);
+  ZClasses.Register(TExpInitArray,ExpInitLocalArrayClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpMat4FuncCall,ExpMat4FuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
@@ -3353,6 +3634,13 @@ initialization
   ZClasses.Register(TExpSwitchTable,ExpSwitchTableClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
   ZClasses.Register(TExpAccessGlobal,ExpAccessGlobalClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+
+  ZClasses.Register(TUserClass,UserClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpNewClassInstance,ExpNewClassInstanceId);
+    {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
+  ZClasses.Register(TExpVirtualFuncCall,ExpVirtualFuncCallClassId);
     {$ifndef minimal}ComponentManager.LastAdded.NoUserCreate:=True;{$endif}
 
   {$ifndef minimal}

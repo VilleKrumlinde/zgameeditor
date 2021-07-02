@@ -9,9 +9,6 @@
         <Projects Include="tools\ZDesigner\ZDesigner.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="tools\SynGen\SynGen.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -40,23 +37,14 @@
     <Target Name="ZDesigner:Make">
         <MSBuild Projects="tools\ZDesigner\ZDesigner.dproj" Targets="Make"/>
     </Target>
-    <Target Name="SynGen">
-        <MSBuild Projects="tools\SynGen\SynGen.dproj"/>
-    </Target>
-    <Target Name="SynGen:Clean">
-        <MSBuild Projects="tools\SynGen\SynGen.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="SynGen:Make">
-        <MSBuild Projects="tools\SynGen\SynGen.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="ZzDC;ZDesigner;SynGen"/>
+        <CallTarget Targets="ZzDC;ZDesigner"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ZzDC:Clean;ZDesigner:Clean;SynGen:Clean"/>
+        <CallTarget Targets="ZzDC:Clean;ZDesigner:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ZzDC:Make;ZDesigner:Make;SynGen:Make"/>
+        <CallTarget Targets="ZzDC:Make;ZDesigner:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

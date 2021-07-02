@@ -27,7 +27,7 @@ The application top-most component. This component is automatically created when
 @dd Read only. The current number of frames per second. This value can be displayed on screen using the @ref  RenderText component and is useful for detecting performance issues.
 
 @dt CurrentRenderPass
-@dd Read only. Can be used to define different behaviour on multiple render passes.
+@dd Read only. Can be used to define different behavior on multiple render passes.
 
 @dt @anchor ZApplicationMousePosition MousePosition
 @dd Read only. X and Y coordinates of the current mouse position, in -1 to 1 range.
@@ -131,7 +131,8 @@ The application top-most component. This component is automatically created when
 @dd Read only. Width and height of application window.
 
 @dt @anchor ZApplicationIcon Icon
-@dd Load a ICO-file to this property for customizing the application icon of the generated EXE file. Note: The icon is only inserted in compressed Windows EXE files, not for other platforms.
+@dd Load a ICO-file to this property for customizing the application icon of the generated EXE file.
+@note The icon is only inserted in compressed Windows EXE files, not for other platforms.
 
 @dt PreviewClearColor
 @dd Choose which color to use as a background in the @ref PreviewWindow of the designer. Available in designer only.
@@ -183,7 +184,7 @@ This property is reflected by AndroidManifest.xml file as `<uses-sdk android:min
 @dt @anchor ZApplicationLights Lights
 @dd A list of Light components that the application uses.
 
-@dt Content
+@dt @anchor ZApplicationContent Content
 @dd The application content list. Put your game components here.
 
 @dlx

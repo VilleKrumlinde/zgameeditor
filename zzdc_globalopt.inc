@@ -6,3 +6,7 @@
 {$ENDIF}
 
 {$endif}
+
+{$ifdef zdesigner}
+  {$define CALLSTACK}  //Show callstack if error in zexpression runtime
+{$endif}

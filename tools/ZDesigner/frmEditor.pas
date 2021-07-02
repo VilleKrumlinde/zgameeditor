@@ -334,6 +334,7 @@ type
     procedure QuickCompListViewCustomDrawItem(Sender: TCustomListView;
       Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure BuildZ80MenuItemClick(Sender: TObject);
+    procedure OnAppInfoClose(Sender : TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -438,6 +439,7 @@ type
     procedure ParseEvalExpression(const Expr : string);
     procedure FilterQuickCompList;
     procedure BuildZ80(OutFile : string);
+    procedure CMDialogChar(var Message: TCMDialogChar); message CM_DIALOGCHAR;
   protected
     procedure CreateWnd; override;
   public
@@ -853,6 +855,11 @@ begin
   end;
 end;
 
+procedure TEditorForm.OnAppInfoClose(Sender : TObject);
+begin
+  (Sender as TForm).Close;
+end;
+
 procedure TEditorForm.OpenProject(const FileName : string; const IsTemplate : boolean = False);
 var
   C : TZComponent;
@@ -864,6 +871,27 @@ var
     Result.FileVersion := AppFileVersion;
     Result.RefreshSymbolTable;
     Result.Caption:=AppName + ' application';
+  end;
+
+  procedure InShowAppInfo;
+  var
+    F: TForm;
+    M: TMemo;
+  begin
+    F := TForm.CreateNew(Self);
+    F.Position := poOwnerFormCenter;
+    F.BorderStyle := bsNone;
+    M := TMemo.Create(F);
+    M.Align := alClient;
+    M.Text := string(ZApp.Comment);
+    M.Parent := F;
+    M.TabStop := False;
+    M.OnClick := Self.OnAppInfoClose;
+    F.PopupMode := pmAuto;
+    F.PopupParent := Self;
+    F.Show;
+    F.SetFocus;
+    F.OnDeactivate := Self.OnAppInfoClose;
   end;
 
 begin
@@ -905,6 +933,12 @@ begin
   Tree.Items[0].Selected := True;  //Select "App" component as default
   //After scaling, hscroll position is sometimes not left 0
   Tree.Perform(WM_HSCROLL, MakeWParam(SB_PAGELEFT, 0), 0);
+
+  if ZApp.Comment<>'' then
+  begin
+    //todo: showappinfo
+//    InShowAppInfo;
+  end;
 end;
 
 function TEditorForm.OnGetLibraryPath : string;
@@ -3922,6 +3956,14 @@ begin
   ClearRoot;
 end;
 
+procedure TEditorForm.CMDialogChar(var Message: TCMDialogChar);
+begin
+  //Avoid ZGE to switch focus from preview if shortcut is pressed without ALT-key
+  //https://stackoverflow.com/questions/53418294/why-shortcut-without-pressing-the-alt-key
+  if Boolean(Message.KeyData shr 29 and 1) then
+    inherited;
+end;
+
 procedure TEditorForm.ClearRoot;
 begin
   AudioPlayer.DesignerResetMixer;
@@ -4279,9 +4321,9 @@ var
       if Arg.Typ.Kind=zctArray then
       begin
         if Arg.Id = '' then
-          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[]'
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type.Kind] + '[]'
         else
-          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type] + '[] ' + Arg.Id;
+          Result := Result + ZcTypeNames[TDefineArray(Arg.Typ.TheArray)._Type.Kind] + '[] ' + Arg.Id;
       end else
       if Arg.Id = '' then
         Result := Result + GetZcTypeName(Arg.Typ)
@@ -4403,8 +4445,8 @@ begin
         if C is TDefineVariable then
         begin //If var of ref-type, show props of referenced type instead (i.e. Bitmap bmp)
           Cv := C as TDefineVariable;
-          if Cv._Type=zctReference then
-            PropList := ComponentManager.GetInfoFromId(Cv._ReferenceClassId).GetProperties;
+          if Cv._Type.Kind=zctReference then
+            PropList := ComponentManager.GetInfoFromId(Cv._Type.ReferenceClassId).GetProperties;
         end;
         for I := 0 to PropList.Count - 1 do
         begin
@@ -4700,7 +4742,7 @@ begin
           NeedJpeg := True
         else if (AllObjects[I] is TExpInvokeComponent) then
           UsedComponents.Add(ComponentManager.GetInfoFromId(TZClassIds((AllObjects[I] as TExpInvokeComponent).InvokeClassId)).ZClass.ClassName)
-        else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type in [zctVec2,zctVec3,zctVec4,zctMat4])  then
+        else if (AllObjects[I] is TDefineVariable) and ((AllObjects[I] as TDefineVariable)._Type.Kind in [zctVec2,zctVec3,zctVec4,zctMat4])  then
           NeedArray := True
         else if (AllObjects[I] is TExpMat4FuncCall) and ((AllObjects[I] as TExpMat4FuncCall).Kind in [fcMatMultiply..fcVec4])  then
           NeedArray := True

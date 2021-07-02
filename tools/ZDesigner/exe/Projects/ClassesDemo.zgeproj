@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<ZApplication Name="App" Caption="Classes" ClearColor="0.4549 0.5529 0.6157 1" ScreenMode="1" FileVersion="2">
+  <OnLoaded>
+    <ZExternalLibrary Comment="OpenGL 4.0 graphics" ModuleName="opengl32" DefinitionsFile="opengl.txt">
+      <BeforeInitExp>
+<![CDATA[if(ANDROID) {
+  if(App.GLBase==0)
+    this.ModuleName="libGLESv1_CM.so";
+  else
+    this.ModuleName="libGLESv2.so";
+}]]>
+      </BeforeInitExp>
+    </ZExternalLibrary>
+    <ZLibrary>
+      <Source>
+<![CDATA[class TSphere {
+  private float angle=rnd();
+  private float distance, speed;
+  virtual void update() { }
+  virtual void render() { }
+}
+
+class TMoon : TSphere {
+
+  TMoon() {
+     distance=random(3.5,0.25);
+     speed=random(0.0035,0.0005);
+  }
+
+  override void update() {
+    angle+= speed;
+  }
+
+  override void render() {
+    glPushMatrix();
+      float f=0.2;
+      glRotatef(angle*360,0,0,1);
+      glScalef(f,f,f);
+      glTranslatef(distance + noise2(App.time,App.time*1.2) ,0,0);
+      @RenderSprite();
+    glPopMatrix();
+  }
+}
+
+class TPlanet : TSphere {
+  private float radius;
+  private TMoon[] moons;
+
+  private void test() { }
+
+  TPlanet(float dist) {
+     this.distance=dist;
+     this.speed=random(0.0015,0.0007);
+     this.radius=random(0,0.1);
+
+     int nmoons=random(4,3);
+     moons.SizeDim1=nmoons;
+     for(int i=0; i<nmoons; i++)
+       moons[i]=new TMoon();
+  }
+
+  override void render() {
+    glPushMatrix();
+      float f=1.0;
+      glRotatef(angle*360,0,0,1);
+      glScalef(f,f,f);
+      glTranslatef(distance,0,0);
+      glScalef(1+radius,1+radius,1+radius);
+      @RenderSprite();
+
+      for(int i=0; i<moons.SizeDim1; i++)
+        moons[i].render();
+    glPopMatrix();
+  }
+
+  override void update() {
+    angle+=speed;
+    for(int i=0; i<moons.SizeDim1; i++)
+      moons[i].update();
+  }
+}
+
+TSphere[] planets;]]>
+      </Source>
+    </ZLibrary>
+    <ZExpression>
+      <Expression>
+<![CDATA[const int nrOfPlanets = 4;
+
+Planets.SizeDim1=nrOfPlanets;
+float dist=0.0;
+for(int i=0; i<nrOfPlanets; i++) {
+  TPlanet p = new TPlanet(dist);
+  dist+=1.25;
+  Planets[i]=p;
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnLoaded>
+  <OnUpdate>
+    <ZExpression>
+      <Expression>
+<![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
+  TSphere p = Planets[i];
+  p.update();
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnUpdate>
+  <OnRender>
+    <UseMaterial Material="Material1"/>
+    <RenderSetColor Color="0.7529 0.4627 0.2627 1"/>
+    <ZExpression>
+      <Expression>
+<![CDATA[for(int i=0; i<Planets.SizeDim1; i++) {
+  TSphere p = Planets[i];
+  p.render();
+}]]>
+      </Expression>
+    </ZExpression>
+  </OnRender>
+  <Content>
+    <Bitmap Name="Bitmap1" Comment="Anti-Aliased Circle" Width="256" Height="256" Filter="2">
+      <Producers>
+        <BitmapExpression>
+          <Expression>
+<![CDATA[// Local variables
+
+float B, S, X1, Y1;
+
+// Distance from center ( per axis )
+
+X1 = 0.5-X;
+Y1 = 0.5-Y;
+
+B = 64/2; // 64 = BitmapSize | 2 = Anti-Aliasing bias ( in pixels )
+
+Pixel.A = B*0.5-sqrt(X1*X1+Y1*Y1)*B;
+
+// Set RGB to white
+
+Pixel.R = 1;
+Pixel.G = 1;
+Pixel.B = 1;]]>
+          </Expression>
+        </BitmapExpression>
+      </Producers>
+    </Bitmap>
+    <Material Name="Material1" Blend="1" ZBuffer="0">
+      <Textures>
+        <MaterialTexture Texture="Bitmap1" TexCoords="1"/>
+      </Textures>
+    </Material>
+  </Content>
+</ZApplication>

@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+{Copyright (c) 2021 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,8 @@ THE SOFTWARE.}
 //This unit is the glue between ZExpressions and Zc
 //VM code generation
 unit Compiler;
+
+{$include zzdc_globalopt.inc}
 
 interface
 
@@ -155,9 +157,8 @@ begin
   case Typ of
     zctByte : Result := TExpAssign1.Create(nil);
     zctInt,zctFloat : Result := TExpAssign4.Create(nil);
-    zctModel,zctString,zctXptr,zctVoid,zctNull,zctArray,zctReference : Result := TExpAssignPointer.Create(nil);
   else
-    raise ECodeGenError.Create('Wrong datatype for assign');
+    Result := TExpAssignPointer.Create(nil);
   end;
 end;
 
@@ -244,21 +245,34 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     Kind : TExpMiscKind;
   begin
     Etyp := Op.GetIdentifierInfo;
-    if ETyp.Kind=edtPropIndex then
-      Etyp := Op.Children.First.GetIdentifierInfo;
-
-    if Etyp.Kind=edtProperty then
-      PTyp := Etyp.Prop.PropertyType
-    else if Etyp.Kind=edtModelDefined then
-      PTyp := zptComponentRef
+    if ETyp.Kind=edtField then
+    begin
+      //todo: save pointersize in app and fail if not expected
+      case GetZcTypeSize(ETyp.Field.GetDataType.Kind) of
+        1 : Kind := emPtrDeref1;
+        SizeOf(Pointer) : Kind := emPtrDerefPointer;
+      else
+        Kind := emPtrDeref4;
+      end;
+    end
     else
-      raise ECodeGenError.Create('Failed to deref ' + Op.Id);
+    begin
+      if ETyp.Kind=edtPropIndex then
+        Etyp := Op.Children.First.GetIdentifierInfo;
 
-    case PTyp of
-      zptString,zptComponentRef,zptPointer: Kind := emPtrDerefPointer;
-      zptByte,zptBoolean: Kind := emPtrDeref1;
-    else
-      Kind := emPtrDeref4;
+      if Etyp.Kind=edtProperty then
+        PTyp := Etyp.Prop.PropertyType
+      else if Etyp.Kind=edtModelDefined then
+        PTyp := zptComponentRef
+      else
+        raise ECodeGenError.Create('Failed to deref ' + Op.Id);
+
+      case PTyp of
+        zptString,zptComponentRef,zptPointer: Kind := emPtrDerefPointer;
+        zptByte,zptBoolean: Kind := emPtrDeref1;
+      else
+        Kind := emPtrDeref4;
+      end;
     end;
     TExpMisc.Create(Target,Kind);
   end;
@@ -350,13 +364,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     A : TObject;
   begin
     A := GenArrayAddress(Op);
-    case TDefineArray(A)._Type of
+    case TDefineArray(A)._Type.Kind of
       zctByte :
         TExpMisc.Create(Target, emPtrDeref1);
-      zctString,zctModel,zctXptr :
+      zctString,zctModel,zctXptr,zctClass :
         TExpMisc.Create(Target, emPtrDerefPointer);
       else
-        if TDefineArray(A)._Type in [zctMat4,zctVec2,zctVec3,zctVec4] then
+        if TDefineArray(A)._Type.Kind in [zctMat4,zctVec2,zctVec3,zctVec4] then
         begin
           //Do not deref, pointer points to list of values
         end else
@@ -498,6 +512,29 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
     DefineLabel(LExit);
   end;
 
+  procedure DoGenNew;
+  var
+    NewC : TExpNewClassInstance;
+  begin
+    NewC := TExpNewClassInstance.Create(Target);
+    NewC.TheClass := (Op.Ref as TZcOpClass).RuntimeClass;
+  end;
+
+  procedure DoGenInitArray(Op : TZcOp);
+  var
+    Loc : TZcOpVariableBase;
+  begin
+    Loc := Op.Ref as TZcOpVariableBase;
+    with TExpInitArray.Create(Target) do
+    begin
+      Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
+      _Type := TDefineArray(Loc.Typ.TheArray)._Type.Kind;
+      Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
+      Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
+      Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
+    end;
+  end;
+
 begin
   case Op.Kind of
     zcNop : ;
@@ -512,7 +549,7 @@ begin
     zcBinaryShiftR : DoGenBinary(vbkBinaryShiftRight);
     zcConstLiteral : DoLiteral;
     zcIdentifier : DoGenIdentifier;
-    zcFuncCall : GenFuncCall(Op,True);
+    zcFuncCall,zcMethodCall : GenFuncCall(Op,True);
     zcCompLT,zcCompGT,zcCompEQ,
     zcCompNE,zcCompLE,zcCompGE,
     zcAnd, zcOr : DoGenBoolean;
@@ -535,7 +572,9 @@ begin
       begin
         GenValue(Op.Child(0));
         TExpMisc.Create(Target,emNot);
-      end
+      end;
+    zcNew : DoGenNew;
+    zcInitArray : DoGenInitArray(Op);
   else
     //Gen(Op); //Any op can occur in a value block because of inlining
     raise ECodeGenError.Create('Unsupported operator for value expression: ' + IntToStr(ord(Op.Kind)) );
@@ -620,6 +659,12 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
           GenAddress(Op.Children.First);
           GenAddToPointer(ETyp.PropIndex * 4);
         end;
+      edtField :
+        begin
+          GenValue(Op.Children.First);
+          TExpMisc.Create(Target,emGetUserClass);
+          GenAddToPointer(ETyp.Field.ByteOffset);
+        end
       else
         raise ECodeGenError.Create('Invalid datatype for select: ' + Op.Id);
     end;
@@ -697,34 +742,42 @@ begin
   end else if LeftOp.Kind=zcSelect then
   begin
     Etyp := LeftOp.GetIdentifierInfo;
-    case Etyp.Kind of
-      edtProperty : Prop := Etyp.Prop;
-      edtPropIndex :
-        begin
-          Etyp := LeftOp.Children.First.GetIdentifierInfo;
-          Assert(Etyp.Kind=edtProperty);
-          Prop := Etyp.Prop;
-        end
-    else
-      raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
-    end;
-    if Prop.IsReadOnly then
-      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-    if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
-      raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
-
-    if Assigned(Prop.NotifyWhenChanged) then
-    begin //This property should notify when assigned, generate notify call
-      GenValue(RightOp);
-      GenValue(LeftOp.Children.First);
-      with TExpConstantInt.Create(Target) do
-        Constant := Prop.PropId;
-      TExpMisc.Create(Target,emNotifyPropChanged);
-    end else
+    if Etyp.Kind=edtField then
     begin
       GenAddress(LeftOp);
       GenValue(RightOp);
-      Target.AddComponent( MakeAssignOp(Prop.PropertyType) );
+      Target.AddComponent( MakeAssignOp( LeftOp.GetDataType.Kind ) );
+    end else
+    begin
+      case Etyp.Kind of
+        edtProperty : Prop := Etyp.Prop;
+        edtPropIndex :
+          begin
+            Etyp := LeftOp.Children.First.GetIdentifierInfo;
+            Assert(Etyp.Kind=edtProperty);
+            Prop := Etyp.Prop;
+          end
+      else
+        raise ECodeGenError.Create('Invalid type: ' + LeftOp.Id);
+      end;
+      if Prop.IsReadOnly then
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+      if (Prop.PropertyType=zptString) and (not Prop.IsManagedTarget) then
+        raise ECodeGenError.Create('Cannot assign readonly property identifier: ' + LeftOp.Id);
+
+      if Assigned(Prop.NotifyWhenChanged) then
+      begin //This property should notify when assigned, generate notify call
+        GenValue(RightOp);
+        GenValue(LeftOp.Children.First);
+        with TExpConstantInt.Create(Target) do
+          Constant := Prop.PropId;
+        TExpMisc.Create(Target,emNotifyPropChanged);
+      end else
+      begin
+        GenAddress(LeftOp);
+        GenValue(RightOp);
+        Target.AddComponent( MakeAssignOp(Prop.PropertyType) );
+      end;
     end;
 
    if LeaveValue=alvPost then
@@ -742,7 +795,7 @@ begin
     end
     else
     begin
-      Target.AddComponent( MakeAssignOp((A as TDefineArray)._Type ) );
+      Target.AddComponent( MakeAssignOp((A as TDefineArray)._Type.Kind ) );
       if LeaveValue=alvPost then
         GenValue(LeftOp);
     end;
@@ -917,6 +970,12 @@ var
       Func.Lib := Component as TZLibrary;
       Func.LibIndex := Target.Count;
     end;
+
+    if (mdVirtual in Func.Modifiers) or (mdOverride in Func.Modifiers) then
+    begin
+      PIntegerArray(Func.MemberOf.RuntimeClass.Vmt.Data)^[ Func.VmtIndex ] := Target.Count;
+    end;
+
     if IsExternalLibrary and (Func.Id<>'') and (Func.Id<>'__f') then
     begin
       Func.IsExternal := True;
@@ -944,8 +1003,33 @@ var
     Ret.HasFrame := Func.NeedFrame;
     Ret.HasReturnValue := Func.ReturnType.Kind<>zctVoid;
     Ret.Arguments := Func.Arguments.Count;
+    {$ifdef CALLSTACK}
+    if IsLibrary then
+    begin
+      Ret.FunctionName := Func.Id;
+      if Assigned(Func.MemberOf) then
+        Ret.FunctionName := Func.MemberOf.Id + '.' + Ret.FunctionName;
+    end
+    else
+      Ret.FunctionName := string(Component.GetDisplayName);
+    {$endif}
     if IsLibrary then
       Ret.Lib := Component as TZLibrary;
+  end;
+
+  procedure DoGenClass(Cls : TZcOpClass);
+  var
+    Func : TZcOpFunctionUserDefined;
+  begin
+    for Func in Cls.Methods do
+      DoGenFunction(Func);
+    Cls.RuntimeClass.DefinedInLib := Component as TZLibrary;
+    if Cls.Initializer.Statements.Count>0 then
+    begin
+      Cls.RuntimeClass.InitializerIndex := Target.Count;
+      DoGenFunction(Cls.Initializer);
+    end else
+      Cls.RuntimeClass.InitializerIndex := -1;
   end;
 
   procedure DoGenSwitch(Op : TZcOpSwitch);
@@ -1095,22 +1179,6 @@ var
     RestoreReturn;
   end;
 
-  procedure DoGenInitLocalArray(Op : TZcOp);
-  var
-    Loc : TZcOpLocalVar;
-  begin
-    Loc := Op.Ref as TZcOpLocalVar;
-    with TExpInitLocalArray.Create(Target) do
-    begin
-      StackSlot := Loc.Ordinal;
-      Dimensions := TDefineArray(Loc.Typ.TheArray).Dimensions;
-      _Type := TDefineArray(Loc.Typ.TheArray)._Type;
-      Size1 := TDefineArray(Loc.Typ.TheArray).SizeDim1;
-      Size2 := TDefineArray(Loc.Typ.TheArray).SizeDim2;
-      Size3 := TDefineArray(Loc.Typ.TheArray).SizeDim3;
-    end;
-  end;
-
 begin
   case Op.Kind of
     zcAssign,zcPreInc,zcPreDec,zcPostDec,zcPostInc : GenAssign(Op,alvNone);
@@ -1120,7 +1188,7 @@ begin
       for I := 0 to Op.Children.Count-1 do
         Gen(Op.Child(I));
     zcReturn : DoGenReturn;
-    zcFuncCall : GenFuncCall(Op,False);
+    zcFuncCall,zcMethodCall : GenFuncCall(Op,False);
     zcFunction : DoGenFunction(Op as TZcOpFunctionUserDefined);
     zcForLoop : DoGenForLoop;
     zcWhile : DoWhile(True);
@@ -1139,7 +1207,7 @@ begin
     zcInvokeComponent : GenInvoke(Op as TZcOpInvokeComponent, False);
     zcInlineBlock : DoGenInlineBlock(Op);
     zcInlineReturn : DoGenInlineReturn;
-    zcInitLocalArray : DoGenInitLocalArray(Op);
+    zcClass : DoGenClass(Op as TZcOpClass);
   else
     //GenValue(Op); //Value expressions (return values) can appear because of inlining
     raise ECodeGenError.Create('Unsupported operator: ' + IntToStr(ord(Op.Kind)) );
@@ -1185,7 +1253,7 @@ begin
   case T of
     zctFloat: Op._Type := jutFloat;
     zctInt,zctByte: Op._Type := jutInt;
-    zctXptr,zctNull,zctModel,zctReference : Op._Type := jutPointer;
+    zctXptr,zctNull,zctModel,zctReference,zctClass : Op._Type := jutPointer;
     zctString:
       begin
         Op._Type := jutString;
@@ -1487,6 +1555,7 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     FE : TExpExternalFuncCall;
     S : AnsiString;
     Arg : TZcOpArgumentVar;
+    VF : TExpVirtualFuncCall;
   begin
     if NeedReturnValue and (UserFunc.ReturnType.Kind=zctVoid) then
       raise ECodeGenError.Create('Function in expression must return a value: ' + Op.Id);
@@ -1521,10 +1590,18 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
     end
     else
     begin
-      F := TExpUserFuncCall.Create(Target);
-      F.Lib := UserFunc.Lib;
-      F.Index := UserFunc.LibIndex;
-      F.Ref := UserFunc;
+      if (mdVirtual in UserFunc.Modifiers) or (mdOverride in UserFunc.Modifiers) then
+      begin
+        GenValue(Op.Child(0)); //load "this" as parameter for TExpVirtualFuncCall
+        VF := TExpVirtualFuncCall.Create(Target);
+        VF.VmtIndex := UserFunc.VmtIndex;
+      end else
+      begin
+        F := TExpUserFuncCall.Create(Target);
+        F.Lib := UserFunc.Lib;
+        F.Index := UserFunc.LibIndex;
+        F.Ref := UserFunc;
+      end;
     end;
 
     if (not NeedReturnValue) and (UserFunc.ReturnType.Kind<>zctVoid) then
@@ -1535,10 +1612,23 @@ procedure TZCodeGen.GenFuncCall(Op: TZcOp; NeedReturnValue : boolean);
 var
   MangledName : string;
   O : TObject;
+  Cls : TZcOpClass;
 begin
-  Assert(Op.Kind=zcFuncCall);
-  MangledName := MangleFunc(Op.Id,Op.Children.Count);
-  O := SymTab.Lookup(MangledName);
+  Assert(Op.Kind in [zcFuncCall,zcMethodCall]);
+
+  if Op.Kind=zcFuncCall then
+  begin
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := SymTab.Lookup(MangledName);
+  end else
+  begin
+    Cls := Op.Ref as TZcOpClass;
+    MangledName := MangleFunc(Op.Id,Op.Children.Count);
+    O := Cls.FindMethod(MangledName);
+    if (O=nil) and SameText(MangledName,Cls.Initializer.MangledName) then
+      O := Cls.Initializer;
+  end;
+
   if Assigned(O) and (O is TZcOpFunctionUserDefined) then
   begin
     DoGenUserFunc(O as TZcOpFunctionUserDefined);
@@ -1597,7 +1687,10 @@ begin
   Target := Ze.Code;
 
   if ThisC is TZLibrary then
+  begin //Reset global variables
     (ThisC as TZLibrary).GlobalAreaSize := 0;
+    (ThisC as TZLibrary).ManagedVariables.Size := 0;
+  end;
 
   CompilerContext.SymTab := SymTab;
   CompilerContext.ThisC := ThisC;
@@ -1646,6 +1739,7 @@ begin
     Compiler.ZApp := ZApp;
 
     Compiler.SetSource(S);
+    Compiler.LookAroundGap(1,10);
 
     try
       Compiler.Execute;

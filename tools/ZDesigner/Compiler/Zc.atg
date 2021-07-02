@@ -23,7 +23,13 @@ private = (.
     procedure AddSwitchLabel(SwitchOp : TZcOpSwitch; var Op: TZcOp);
     procedure OnParserError(Sender: TObject; ErrorType,ErrorCode, line,col: Integer; const Msg, data: string);
     function IsConst : boolean;
+    function IdentAndLPar : boolean;
     function GetInitializer : TZcOpFunctionUserDefined;
+    function IsLocalVarDecl : boolean;
+    function IsPointerOrDims(var PeekIndex : integer) : boolean;
+    function IsFieldDecl : boolean;
+    function NotFinalComma : boolean;
+    procedure AddBaseClassToSymTab(TheClass : TZcOpClass);
     .)
 precreate = (.
     ZFunctions := TObjectList.Create(False);
@@ -100,6 +106,102 @@ begin
     ((CurrentInputSymbol=privateSym) and (Symbols[2].Id=constSym));
 end;
 
+function TZc.IdentAndLPar : boolean;
+begin
+  Result := (CurrentInputSymbol=identSym) and (Symbols[2].Id=lparSym);
+end;
+
+// skip: { "[" { "," } "]" | "*" }
+// !!! Proceeds from current peek position !!!
+function TZc.IsPointerOrDims(var PeekIndex : integer) : boolean;
+begin
+  if Symbols[PeekIndex].Id=lbracksym then
+  begin
+    repeat
+      Inc(PeekIndex);
+      if PeekIndex>=Self.LookAheadCount then
+        Exit(True);
+    until Symbols[PeekIndex].Id=rbrackSym;
+    Inc(PeekIndex);
+  end;
+  Result := True;
+
+(*
+  for (;;) {
+    if (pt.kind == _lbrack) {
+      do pt = scanner.Peek();
+      while (pt.kind == _comma);
+      if (pt.kind != _rbrack) return false;
+    } else if (pt.kind != _times) break;
+    pt = scanner.Peek();
+  }
+  return true;
+*)
+end;
+
+function TZc.IsLocalVarDecl : boolean;
+var
+  PeekIndex : integer;
+begin
+  PeekIndex := 1;
+
+	if (CurrentInputSymbol in [floatSym,intSym,byteSym,stringSym,modelSym,xptrSym,
+    mat_fourSym,vec_twoSym,vec_threeSym,vec_fourSym,
+  	MaterialSym,SoundSym,ShaderSym,BitmapSym,MeshSym,
+  	CameraSym,FontSym,SampleSym,FileSym,ComponentSym
+    ]) then
+    Inc(PeekIndex)
+  else if (CurrentInputSymbol=identSym) then
+    Inc(PeekIndex)
+  else
+    Exit(False);
+
+  Result := IsPointerOrDims(PeekIndex) and (Symbols[PeekIndex].Id=identSym);
+
+(*  string ignore;
+  Token pt = la;
+  scanner.ResetPeek();
+
+  if (typeKW[la.kind] || la.kind == _void) {
+    pt = scanner.Peek();
+    if (la.kind == _void && pt.kind != _times) { return false; }
+  } else if (la.kind == _ident && !IsQualident(ref pt, out ignore)) {
+    return false;
+  }
+
+  return IsPointerOrDims(ref pt) && pt.kind == _ident;*)
+
+end;
+
+function TZc.IsFieldDecl : boolean;
+// ident ("," | "=" | ";")
+begin
+  Result := (CurrentInputSymbol=identSym) and
+    (Symbols[2].Id in [commaSym,assgnSym,scolonSym]);
+
+(*
+bool IsFieldDecl () {
+  int peek = Peek(1).kind;
+  return la.kind == _ident &&
+         (peek == _comma || peek == _assgn || peek == _scolon);
+}
+*)
+end;
+
+function TZc.NotFinalComma : boolean;
+begin
+  Result := (CurrentInputSymbol=commaSym) and
+    (not (Symbols[2].Id in [rbraceSym,rbrackSym]));
+
+(*
+/* True, if the comma is not a trailing one, *
+ * like the last one in: a, b, c,            */
+bool NotFinalComma () {
+  int peek = Peek(1).kind;
+  return la.kind == _comma && peek != _rbrace && peek != _rbrack;
+*)
+end;
+
 function TZc.GetInitializer : TZcOpFunctionUserDefined;
 begin
   if not Self.AllowInitializer then
@@ -134,6 +236,17 @@ begin
   Func.Statements.Add(OutOp);
   Self.ZFunctions.Add(Func);
 end;
+
+procedure TZc.AddBaseClassToSymTab(TheClass : TZcOpClass);
+var
+  F: TZcOpField;
+begin
+  for F in TheClass.Fields do
+    SymTab.Add(F.Id,F);
+  if Assigned(TheClass.BaseClass) then
+    AddBaseClassToSymTab(TheClass.BaseClass);
+end;
+
 .)
 
 END
@@ -235,7 +348,7 @@ HOMOGRAPHS
   "Shader" 
   "Bitmap" 
   "Mesh"
-  "Camera" 
+  "Camera"
   "Font"
   "Sample"
   "File"
@@ -247,37 +360,91 @@ PRODUCTIONS
  *--------------------------- Declarations -------------------------------*
  *------------------------------------------------------------------------*/
 
-ZcFuncRest<Typ : TZcDataType; const Name : string; IsPrivate,IsInline : boolean>
+ZcFuncRest<Typ : TZcDataType; const Name : string; M : TModifiers; Cls : TZcOpClass>
 (.
 var
-  Func : TZcOpFunctionUserDefined;
+  Func,OtherFunc : TZcOpFunctionUserDefined;
+  Arg : TZcOpArgumentVar;
 .)
 =
      (.
-        if SymTab.Contains(Name) then
-          ZError('Name already defined: ' + Name);
+        if (not Assigned(Cls)) or (not SameText(Name,Cls.Id)) then
+        begin //Check for dup except if name of class constructor
+          if SymTab.Contains(Name) then
+            ZError('Name already defined: ' + Name);
+        end;
 
-        if IsPrivate then
+        if mdPrivate in M then
           Func := TZcOpFunctionUserDefined.Create(nil)
         else
           Func := TZcOpFunctionUserDefined.Create(GlobalNames);
         Func.Id := Name;
         Func.ReturnType := Typ;
-        Func.IsInline := IsInline;
+        Func.Modifiers := M;
         Self.CurrentFunction := Func;
         SymTab.PushScope;
         try
+
+          if Assigned(Cls) then
+          begin
+            //Add implicit "this" argument to method definition
+            Arg := TZcOpArgumentVar.Create(nil);
+            Arg.Id := 'this';
+            Arg.Typ.Kind := zctClass;
+            Arg.Typ.TheClass := Cls;
+            Func.MemberOf := Cls;
+            Func.AddArgument(Arg);
+            SymTab.Add(Arg.Id,Arg);
+
+            if [mdVirtual,mdOverride]<=M then
+              ZError('A function cannot be both virtual and override ' + Name);
+
+            if mdVirtual in M then
+            begin
+              Func.VmtIndex := Cls.RuntimeClass.Vmt.Size div 4;
+              Inc(Cls.RuntimeClass.Vmt.Size,4);
+              ReallocMem(Cls.RuntimeClass.Vmt.Data,Cls.RuntimeClass.Vmt.Size);
+            end;
+          end else
+          begin
+            if (M-[mdPrivate,mdInline])<>[] then
+              ZError('Invalid modifiers for function ' + Name);
+          end;
+
      .)
     [ FormalParams ] ")"
       (.
         Func.MangledName := MangleFunc(Name,CurrentFunction.Arguments.Count);
-        if SymTab.Contains(Func.MangledName) then
-          ZError('Name already defined: ' + Name);
-        if IsPrivate then
-          SymTab.AddPrevious(Func.MangledName,Func)
+        if Assigned(Cls) then
+        begin
+          OtherFunc := Cls.FindMethod(Func.MangledName);
+
+          Cls.Methods.Add(Func);
+          //TODO: cannot add to symtab here because that could bind other method calls wrong (m.update in ClassesDemo)
+          //SymTab.AddPrevious(Func.MangledName,Func);
+
+          if mdOverride in M then
+          begin
+            if not Assigned(Cls.BaseClass) then
+              ZError('Cannot override without baseclass ' + Name);
+            if not Assigned(OtherFunc) then
+              ZError('No method with this name in base class ' + Name);
+            if not (mdVirtual in OtherFunc.Modifiers) then
+              ZError('Method is not marked as virtual in base class ' + Name);
+            Func.VmtIndex := OtherFunc.VmtIndex;
+          end else if Assigned(OtherFunc) then
+            ZError('Name already defined: ' + Name);
+        end
         else
-          SymTab.AddPrevious(Func.MangledName,Func,2);
-        ZFunctions.Add(Func);
+        begin
+          if SymTab.Contains(Func.MangledName) then
+            ZError('Name already defined: ' + Name);
+          if mdPrivate in M then
+            SymTab.AddPrevious(Func.MangledName,Func)
+          else
+            SymTab.AddPrevious(Func.MangledName,Func,2);
+          ZFunctions.Add(Func);
+        end;
       .)
     "{" ZcFuncBody "}"
         (.
@@ -291,8 +458,9 @@ var
 Zc (. var
         Typ : TZcDataType;
         Name : string;
-        IsPrivate,IsInline : boolean;
+        M : TModifiers;
         Op : TZcOp;
+        IsPrivate : boolean;
     .)
 =
   {
@@ -301,21 +469,241 @@ Zc (. var
       [ "private" (. IsPrivate:= True; .) ]
       ConstantDeclarationList<IsPrivate>
     |
-      (. IsPrivate := False; IsInline := False; .)
-      [ "private" (. IsPrivate:= True; .) ]
-      [ "inline" (. IsInline:= True; .) ]
+      (. IsPrivate := False; .)
+    /*  [ "private" (. IsPrivate:= True; .) ] */
+      TypeDecl<IsPrivate>
+    |
+      (. M := [];  .)
+      {GlobalModifier<m>}
       ("void" (. Typ.Kind := zctVoid; .) | Type<Typ> ) ident (. Name := LexString; .)
        /* Need to separate between global variable and method declarations */
        (
-         "(" ZcFuncRest<Typ,Name,IsPrivate,IsInline>
-         | GlobalVarDecl<Typ,Name,IsPrivate> ";"
+         "(" ZcFuncRest<Typ,Name,M,nil>
+         | GlobalVarDecl<Typ,Name, mdPrivate in M > ";"
        )
-    |
+    | /* Library initialization block */
       (. CurrentFunction := GetInitializer; .)
       Block<Op>
       (. GetInitializer.Statements.Add(Op); CurrentFunction := nil; .)
   }
 
+.
+
+/*------------------------------------------------------------------------*/
+Field<Typ : TZcDataType; Cls : TZcOpClass; IsPrivate : boolean>
+(.
+var
+  Fld : TZcOpField;
+  Op,InitOp : TZcOp;
+  FldSize : integer;
+.)
+= ident
+  (.
+     Fld := TZcOpField.Create(nil);
+     Fld.Id := LexString;
+     Fld.Typ := Typ;
+     Fld.IsPrivate := IsPrivate;
+     Fld.MemberOf := Cls;
+
+     if Assigned(Cls.FindField(Fld.Id)) then
+       ZError('Field already defined ' + Fld.Id);
+
+     //field align
+     FldSize := GetZcTypeSize(Fld.Typ.Kind);
+     Cls.RuntimeClass.SizeInBytes := AlignX(Cls.RuntimeClass.SizeInBytes, FldSize);
+     Fld.ByteOffset := Cls.RuntimeClass.SizeInBytes;
+     Inc(Cls.RuntimeClass.SizeInBytes, FldSize );
+
+     if Fld.Typ.Kind in ManagedTypes then
+     begin //Managed field
+       Inc(Cls.RuntimeClass.ManagedFields.Size,4);
+       ReallocMem(Cls.RuntimeClass.ManagedFields.Data,Cls.RuntimeClass.ManagedFields.Size);
+       PInteger( pointer(IntPtr(Cls.RuntimeClass.ManagedFields.Data)+Cls.RuntimeClass.ManagedFields.Size-4) )^ := Fld.ByteOffset;
+     end;
+
+     Cls.Fields.Add(Fld);
+
+     SymTab.AddPrevious(Fld.Id,Fld);
+
+     InitOp := nil;
+     CurrentFunction := Cls.Initializer; //Needed so that any temporary locals in init are added to the correct function
+  .)
+
+  [ "=" Init<InitOp> ]
+
+  (.
+     Op := nil;
+     MakeVarInitializer(Fld,InitOp,Op);
+     if Assigned(Op) then
+       Cls.Initializer.Statements.Add(Op);
+     CurrentFunction := nil;
+  .)
+.
+/*------------------------------------------------------------------------*/
+StructMember<Cls : TZcOpClass; M : TModifiers> (.
+var
+  Typ : TZcDataType;
+  Name : string;
+.)
+=
+(. Typ.Kind := zctVoid; .)
+
+  /*--- void method (procedure) declaration: */
+  "void" ident (. Name := LexString; .)
+          (
+            "(" ZcFuncRest<Typ,Name,M,Cls>
+          )
+
+/*--- constructor or static constructor declaration: */
+|
+  IF (. IdentAndLPar .)
+  ident (.
+     Name := LexString;
+     if not SameText(Name,Cls.Id) then
+       ZError('Constructor must have same name as class: ' + Name);
+     .)
+     "(" ZcFuncRest<Typ,Name,M,Cls>
+|
+
+Type<Typ>
+  (
+        /*--- field declaration: */
+        IF (. IsFieldDecl .)
+          (.
+            if (M-[mdPrivate])<>[] then
+              ZError('Field cannot have these modifiers ' + LexString);
+            SymTab.PushScope;
+            try
+              //Add "this" to scope
+              SymTab.Add(Cls.Initializer.Arguments.First.Id, Cls.Initializer.Arguments.First);
+          .)
+          Field<Typ,Cls,mdPrivate in M> {"," Field<Typ,Cls,mdPrivate in M>} ";"
+          (.
+            finally
+              SymTab.PopScope;
+            end;
+          .)
+
+        | ident  (. Name := LexString; .)
+          ( /*--- "not void" method (function) declaration: */
+            "(" ZcFuncRest<Typ,Name,M,Cls>
+          )
+
+  )
+.
+
+/*------------------------------------------------------------------------*/
+GlobalModifier<var M : TModifiers>
+= "private"      (. if mdPrivate in m then ZError('private already specified'); Include(m,mdPrivate); .)
+| "inline"       (. if mdInline in m then ZError('inline already specified'); Include(m,mdInline); .)
+.
+
+/*------------------------------------------------------------------------*/
+MemberModifier<var M : TModifiers>
+= "private"      (. if mdPrivate in m then ZError('private already specified'); Include(m,mdPrivate); .)
+| "inline"       (. if mdInline in m then ZError('inline already specified'); Include(m,mdInline); .)
+| "virtual"       (. if mdVirtual in m then ZError('virtual already specified'); Include(m,mdVirtual); .)
+| "override"       (. if mdOverride in m then ZError('override already specified'); Include(m,mdOverride); .)
+.
+
+/*------------------------------------------------------------------------*/
+ClassMember<Cls : TZcOpClass; M : TModifiers>
+= StructMember<Cls,M>
+/* | "~" ident "(" ")" (Block | ";") */
+.
+
+/*------------------------------------------------------------------------*/
+ClassBody<Cls : TZcOpClass>
+(.
+var
+  M : TModifiers;
+.)
+= "{" (. try
+           SymTab.PushScope;
+
+           if Assigned(Cls.BaseClass) then
+             //Make sure any inherited fields also can be accessed without the "this" prefix
+             AddBaseClassToSymTab(Cls.BaseClass);
+      .)
+      {
+        (. M := []; .)
+        {MemberModifier<m>}
+        ClassMember<Cls,M>
+      }
+  "}" (.
+         finally
+           SymTab.PopScope;
+         end;
+      .)
+.
+
+/*------------------------------------------------------------------------*/
+TypeDecl<IsPrivate : boolean>
+(.
+var
+  Cls : TZcOpClass;
+  BaseTyp : TZcDataType;
+  Name : string;
+  Op : TZcOp;
+  Size : integer;
+.)
+=
+  "class" ident (. Name := LexString; .)
+    (. BaseTyp.Kind := zctVoid; .)
+    [":" ClassType<BaseTyp> ]
+    (.
+      if SymTab.Contains(Name) then
+        ZError('Name already defined: ' + Name);
+      Cls := TZcOpClass.Create(GlobalNames);
+      Cls.Id := Name;
+
+      Cls.RuntimeClass := TUserClass.Create(Self.ZApp.UserClasses);
+      if BaseTyp.Kind<>zctVoid then
+      begin //base class specified
+        Cls.BaseClass := BaseTyp.TheClass as TZcOpClass;
+        Cls.RuntimeClass.SizeInBytes := Cls.BaseClass.RuntimeClass.SizeInBytes;
+        Cls.RuntimeClass.BaseClass := Cls.BaseClass.RuntimeClass;
+
+        //Copy VMT from base
+        Cls.RuntimeClass.Vmt.Size := Cls.BaseClass.RuntimeClass.Vmt.Size;
+        if Cls.RuntimeClass.Vmt.Size>0 then
+        begin
+          GetMem(Cls.RuntimeClass.Vmt.Data,Cls.RuntimeClass.Vmt.Size);
+          //fill with -1 to indicate method is not overridden
+          FillChar(Cls.RuntimeClass.Vmt.Data^,Cls.RuntimeClass.Vmt.Size,$ff);
+        end;
+
+        //Copy managed list from base
+        Size := Cls.BaseClass.RuntimeClass.ManagedFields.Size;
+        if Size<>0 then
+        begin
+          Cls.RuntimeClass.ManagedFields.Size := Size;
+          GetMem(Cls.RuntimeClass.ManagedFields.Data,Size);
+          Move(Cls.BaseClass.RuntimeClass.ManagedFields.Data^,Cls.RuntimeClass.ManagedFields.Data^,Size);
+        end;
+
+        //if baseclass has initializer, then inject call to "$baseclass.init" in childclass initializer.
+        if Cls.BaseClass.Initializer.Statements.Count>0 then
+        begin
+          Op := MakeOp(zcMethodCall,'$init');
+          Op.Ref := Cls.BaseClass;
+          Op.Children.Add( MakeOp(zcIdentifier,'this') );
+          Op.Children.Last.Ref := Cls.Initializer.Arguments.First;
+          Cls.Initializer.Statements.Add(Op);
+        end;
+      end;
+      CompilerContext.CurrentClass := Cls;
+
+      SymTab.AddPrevious(Cls.Id,Cls);
+    .)
+    ClassBody<Cls> [";"]
+    (.
+      ZFunctions.Add(Cls);
+      CompilerContext.CurrentClass := nil;
+    .)
+/*|
+  ( "struct" ident [Base] StructBody  [";"]
+  )*/
 .
 
 /*------------------------------------------------------------------------*/
@@ -367,9 +755,14 @@ LocalVarDecl<var OutOp : TZcOp> (. var Typ : TZcDataType; .)
 
 /*------------------------------------------------------------------------*/
 
-LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitOp : TZcOp; .)
+LocalVar<Typ : TZcDataType; var OutOp : TZcOp>
+(.
+var
+  Loc : TZcOpLocalVar;
+  InitOp : TZcOp;
+.)
 = ident
-     (. 
+     (.
         if SymTab.ScopeContains(LexString) then
           ZError('Name already defined: ' + LexString);
 
@@ -382,42 +775,27 @@ LocalVar<Typ : TZcDataType; var OutOp : TZcOp> (. var Loc : TZcOpLocalVar; InitO
         SymTab.Add(Loc.Id,Loc);
         CurrentFunction.AddLocal(Loc);
 
-        if (Loc.Typ.Kind in [zctArray, zctMat4,zctVec2,zctVec3,zctVec4]) then
-        begin
-          //Alloc new local array.
-          //But only do this if there isn't a initial assignment that is compatible (and doesn't result in a memcpy).
-          if (not Assigned(Loc.InitExpression)) or
-            (not (Loc.InitExpression.GetDataType.Kind in [Loc.Typ.Kind, zctNull])) then
-          begin
-            if OutOp=nil then
-              OutOp := MakeOp(zcBlock);
-            OutOp.Children.Add( MakeOp(zcInitLocalArray,Loc.Id) );
-          end;
-        end;
-
-        if Assigned(Loc.InitExpression) then
-        begin
-          //Generate tree for initial assignment
-          if OutOp=nil then
-            OutOp := MakeOp(zcBlock);
-          OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id),Loc.InitExpression) );
-        end;
-
+        MakeVarInitializer(Loc,Loc.InitExpression,OutOp);
      .)
 .
 
 /*------------------------------------------------------------------------*/
 
 GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
-(. var V : TDefineVariableBase; Glob : TZcOpGlobalVar; InitOp : TZcOp; .)
+(.
+var
+  V : TDefineVariableBase;
+  Glob : TZcOpGlobalVar;
+  InitOp : TZcOp;
+.)
 =
      (.
         if SymTab.ScopeContains(Name) then
           ZError('Name already defined: ' + Name);
 
         V := nil;
-        if Typ.Kind in [zctInt,zctFloat,zctByte,zctXptr,zctReference] then
-        begin  //Simple primitives are stored in global area
+        if not (Typ.Kind in [zctArray,zctMat4,zctVec2,zctVec3,zctVec4]) then
+        begin  //Stored in global area
           if IsPrivate then
             Glob := TZcOpGlobalVar.Create(nil)
           else
@@ -426,7 +804,9 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
           Glob.Offset := Glob.Lib.GlobalAreaSize;
           Glob.Id := Name;
           Glob.Typ := Typ;
-          Inc(Glob.Lib.GlobalAreaSize,SizeOf(Pointer));
+
+          Glob.Lib.AddGlobalVar(Typ);
+
           if IsPrivate then
             SymTab.Add(Name,Glob)
           else
@@ -434,16 +814,16 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
         end
         else if Typ.Kind=zctArray then
         begin
+          //todo: store arrays in global area too, need to generate initialization code
           TDefineArray(Typ.TheArray)._ZApp := Self.ZApp; //must have zapp set to clone
           V := TDefineArray(Typ.TheArray).Clone as TDefineVariableBase;
-          V._ReferenceClassId := Typ.ReferenceClassId;
-          Self.ZApp.GlobalVars.AddComponent(V);
+          V._Type := TDefineArray(Typ.TheArray)._Type;
+          Self.ZApp.GlobalVariables.AddComponent(V);
         end
         else
-        begin
-          V := TDefineVariable.Create(Self.ZApp.GlobalVars);
-          V._Type := Typ.Kind;
-          V._ReferenceClassId := Typ.ReferenceClassId;
+        begin //zctMat4,zctVec2,zctVec3,zctVec4
+          V := TDefineVariable.Create(Self.ZApp.GlobalVariables);
+          V._Type := Typ;
         end;
 
         if Assigned(V) then
@@ -457,6 +837,7 @@ GlobalVarRest<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
         end;
      .)
      [ "=" Init<InitOp> (.
+       //todo: array initializer of global arrays
        GetInitializer.Statements.Add( MakeAssign(atAssign, CheckPrimary( MakeIdentifier(Name) ),InitOp) );
        .)
      ]
@@ -475,8 +856,21 @@ GlobalVarDecl<Typ : TZcDataType; const Name : string; IsPrivate : boolean>
 /*------------------------------------------------------------------------*/
 
 Init<var OutOp : TZcOp>
-= Expr<OutOp>
+= Expr<OutOp> | ArrayInit<OutOp>
 .
+
+/*------------------------------------------------------------------------*/
+ArrayInit<var OutOp : TZcOp>
+(.
+var
+  Op : TZcOp;
+.)
+= "{" (. OutOp := MakeOp(zcBlock); .)
+  [Init<Op> (. OutOp.Children.Add(Op); .)
+    {IF (. NotFinalComma .) "," Init<Op> (. OutOp.Children.Add(Op); .)
+    } [","] ] "}"
+.
+
 
 /*------------------------------------------------------------------------*/
 Argument<var OutOp : TZcOp>
@@ -490,9 +884,20 @@ Argument<var OutOp : TZcOp>
  *-------------------------------- Types ---------------------------------*
  *------------------------------------------------------------------------*/
 
-/* Attribute "type" is needed for error messages in EmbeddedStatement     *
- * and for array creation expressions                                     */
-
+ClassType<var Typ : TZcDataType>
+(.
+var
+  O : TObject;
+.)
+= ident
+    (.
+       O := SymTab.Lookup(LexString);
+       if (O=nil) or (not (O is TZcOpClass)) then
+         ZError('Unknown type: ' + LexString);
+       Typ.Kind := zctClass;
+       Typ.TheClass := O;
+    .)
+.
 
 Type<var Typ : TZcDataType>
 (.
@@ -502,13 +907,16 @@ Type<var Typ : TZcDataType>
     I : integer;
 .)
 =  (. FillChar(Typ,SizeOf(Typ),0); .)
-  ( SimpleType<Typ> )
+  (
+    SimpleType<Typ>
+    | ClassType<Typ>
+  )
   {
     (
       "["       (.
                    A := TDefineArray.Create(nil);
                    GlobalNames.Add(A);
-                   A._Type := Typ.Kind;
+                   A._Type := Typ;
                    Typ.Kind := zctArray;
                    Typ.TheArray := A;
                 .)
@@ -634,22 +1042,22 @@ ident (. CnsName := LexString; .) "=" Expr<Op>
    case Typ.Kind of
      zctByte:
        begin
-         Cns._Type := zctByte;
+         Cns._Type.Kind := zctByte;
          Cns.ByteValue := Round(Lit.Value);
        end;
      zctInt:
        begin
-         Cns._Type := zctInt;
+         Cns._Type.Kind := zctInt;
          Cns.IntValue := Round(Lit.Value);
        end;
      zctFloat:
        begin
-         Cns._Type := zctFloat;
+         Cns._Type.Kind := zctFloat;
          Cns.Value := Lit.Value;
        end;
      zctString:
        begin
-         Cns._Type := zctString;
+         Cns._Type.Kind := zctString;
          Cns.SetString('StringValue',AnsiString(Lit.StringValue));
        end;
      else
@@ -672,13 +1080,9 @@ Statement<var OutOp : TZcOp>
 
 ConstantDeclarationList<false>
 
-/*IF IsLocalVarDecl THEN
-BEGIN
-  LocalVarDecl ";"
-END
-|  EmbeddedStatement<OutOp> */
+| IF (. IsLocalVarDecl .)
+    LocalVarDecl<OutOp> ";"
 
-| LocalVarDecl<OutOp> ";"
 | EmbeddedStatement<OutOp>
   /* LL(1) confict between LocalVarDecl and StatementExpr: *
    * ident {"." ident} { "[" ...                           */
@@ -860,7 +1264,7 @@ SwitchLabel<var OutOp : TZcOp>
 ForInit<var OutOp : TZcOp>     (. var Op : TZcOp; .)
 = (. Op:=nil; OutOp := MakeOp(zcBlock); .)
 (
-LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
+IF (. IsLocalVarDecl .) LocalVarDecl<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
 | (. Op:=nil; .) StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .)
   { (. Op:=nil; .) "," StatementExpr<Op> (. if Assigned(Op) then OutOp.Children.Add(Op); .) }
 )
@@ -1065,8 +1469,7 @@ InvokeArgument<var OutOp : TZcOp; Ci : TZComponentInfo>
       ZError(LexString + ' is not a property of ' + Ci.ZClassName);
     if not (Prop.PropertyType in [zptFloat,zptInteger,zptByte,zptBoolean,zptString,zptComponentRef]) then
       ZError(LexString + ' property of ' + Ci.ZClassName + ' is of a datatype that cannot be set using inline component invokation syntax');
-    OutOp := MakeOp(zcIdentifier);
-    OutOp.Id := LexString;
+    OutOp := MakeOp(zcIdentifier,LexString);
   .)
   ":" Expr<Op>
   (. if Op=nil then
@@ -1116,8 +1519,11 @@ InlineComponent<var OutOp : TZcOp>
 
 /*------------------------------------------------------------------------*/
 Primary<var OutOp : TZcOp>
-(. var Op : TZcOp; S : string; V : double;
-     Typ : TZcDataType;
+(.
+var Op,ConsCall : TZcOp; S : string; V : double;
+  Typ : TZcDataType;
+  Cls : TZcOpClass;
+  Loc : TZcOpLocalVar;
 .)
 =            (. OutOp := nil; .)
   (
@@ -1143,6 +1549,45 @@ Primary<var OutOp : TZcOp>
     | "short"  | "string" | "uint" | "ulong"   | "ushort"
     ) "." ident */
   | ReinterpretCast<OutOp>
+  | "new" Type<Typ>
+    ( /*--- object creation expression */
+      (. if Typ.Kind<>zctClass then
+           ZError('new can only be used with Class-types');
+         OutOp := MakeOp(zcNew,LexString);
+      .)
+      "(" [Argument<Op> (. OutOp.Children.Add(Op); .)
+         {"," Argument<Op> (. OutOp.Children.Add(Op); .) }] ")"
+
+      (.
+         //Look for constructor
+         Cls := Typ.TheClass as TZcOpClass;
+         Op := Cls.FindMethod( MangleFunc(OutOp.Id,OutOp.Children.Count+1) );
+
+         if Assigned(Op) then
+         begin
+           //Constructor call generates: #inline { temp=new x; temp.constructor(); inlinereturn(temp) }
+           Loc := MakeTemp(zctClass);
+           Loc.Typ.TheClass := Cls;
+           SymTab.Add(Loc.Id,Loc);
+           CurrentFunction.AddLocal(Loc);
+
+           ConsCall := MakeOp(zcMethodCall);
+           ConsCall.Id := Cls.Id;
+           ConsCall.Ref := Cls;
+           ConsCall.Children.Add( MakeOp(zcIdentifier,Loc.Id) ); //"this"
+           ConsCall.Children.AddRange(OutOp.Children); //rest of constructor arguments
+
+           OutOp := MakeOp(zcInlineBlock);
+           OutOp.Children.Add( MakeAssign(atAssign, MakeOp(zcIdentifier,Loc.Id), MakeOp(zcNew,Cls.Id)) );
+           OutOp.Children.Add( ConsCall );
+           OutOp.Children.Add( MakeOp(zcInlineReturn, MakeOp(zcIdentifier,Loc.Id)) );
+
+           if not VerifyFunctionCall(ConsCall,S,CurrentFunction,Cls) then
+             ZError(S);
+         end else if OutOp.Children.Count>0 then
+           ZError('no matching constructor found: ' + OutOp.Id);
+      .)
+    )
   )
 
   {
@@ -1153,7 +1598,7 @@ Primary<var OutOp : TZcOp>
 
   | "." (. IsInIdent := True; .) ident (.
 
-      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess]) then
+      if not (OutOp.Kind in [zcIdentifier,zcSelect,zcFuncCall,zcArrayAccess,zcInlineBlock,zcReinterpretCast,zcNew]) then
         ZError('Invalid use of "."');
 
       Op := MakeOp(zcSelect,LexString);
@@ -1166,16 +1611,31 @@ Primary<var OutOp : TZcOp>
     .)
 
   | "(" (.
-           if (OutOp=nil) or (OutOp.Kind<>zcIdentifier) then
+           if (OutOp=nil) then
              ZError('Unexpected "("');
-           OutOp.Kind:=zcFuncCall;
+           Cls := nil;
+           if (OutOp.Kind<>zcIdentifier) then
+           begin
+             Typ := OutOp.Children.First.GetDataType;
+             if Typ.Kind=zctClass then
+             begin
+               Cls := Typ.TheClass as TZcOpClass;
+               OutOp.Ref := Cls;
+             end
+             else
+               ZError('Unexpected "("');
+           end;
+           if Assigned(Cls) then
+             OutOp.Kind := zcMethodCall
+           else
+             OutOp.Kind := zcFuncCall;
          .)
         [Argument<Op> (. OutOp.Children.Add(Op); .)
           {"," Argument<Op> (. OutOp.Children.Add(Op); .)
           }
         ]
         (.
-           if not VerifyFunctionCall(OutOp,S,CurrentFunction) then
+           if not VerifyFunctionCall(OutOp,S,CurrentFunction,Cls) then
              ZError(S);
         .)
     ")"
