@@ -29,6 +29,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
+import android.graphics.Color;
 
 public class ZgeActivity extends Activity
 {
@@ -47,6 +48,8 @@ public class ZgeActivity extends Activity
 
         zge = new Zge(this);
         setContentView( zge );
+        
+        getWindow().getDecorView().setBackgroundColor(Color.BLACK);
     }
 
     @Override
