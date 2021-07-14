@@ -54,6 +54,7 @@ type
     procedure ClearAll;
     procedure PushScope;
     procedure PopScope;
+    procedure DumpToLog;
     {$ifndef fpc}
     procedure Iterate(F : TSymTabFunc; Context : pointer = nil);
     {$endif}
@@ -190,6 +191,22 @@ begin
   Key := LowerCase(Name);
   CurrentScope.Remove(Key);
 end;
+
+procedure TSymbolTable.DumpToLog;
+var
+  I : integer;
+  List : TSymTabScope;
+  Entry : TSymTabEntry;
+begin
+  Log.Write('Scopes: ' + IntToStr(Scopes.Count));
+  for I := Scopes.Count-1 downto 0 do
+  begin
+    List := Scopes[I];
+    for Entry in List.Values do
+      Log.Write(Entry.Name + ' ' + Entry.Value.ClassName);
+  end;
+end;
+
 
 {$ifndef fpc}
 procedure TSymbolTable.Iterate(F: TSymTabFunc; Context: pointer);

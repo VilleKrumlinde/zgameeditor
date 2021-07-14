@@ -464,7 +464,7 @@ var
 
 const
   AppName = 'ZGameEditor';
-  AppVersion = '4.0b';
+  AppVersion = '5.0b';
   ZgeProjExtension = '.zgeproj';
 
 procedure SetupGLShading;
