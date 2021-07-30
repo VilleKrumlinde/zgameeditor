@@ -101,51 +101,66 @@ end;
 procedure GLESPixelsFromTexture(B : TZBitmap; P : PFloat; ElementsPerPix : integer);
 var
   Sp,Tp : PByte;
-  Count,I : integer;
+  Count,I,Fbo : integer;
 begin
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  Count := B.PixelWidth * B.PixelHeight;
+  GetMem(Tp,Count*4);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity;
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity;
-    glDisable(GL_LIGHTING);
-    glDisable(GL_CULL_FACE);
+  if B.ZApp.Driver.Kind=glbFixed then
+  begin //GL ES 1.0
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-    glViewport(0, 0, B.PixelWidth, B.PixelHeight);
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity;
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity;
+      glDisable(GL_LIGHTING);
+      glDisable(GL_CULL_FACE);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ZERO);
+      glViewport(0, 0, B.PixelWidth, B.PixelHeight);
 
-    glDisable(GL_DEPTH_TEST);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ZERO);
 
-    glEnable(GL_TEXTURE_2D);
+      glDisable(GL_DEPTH_TEST);
+
+      glEnable(GL_TEXTURE_2D);
+      B.UseTextureBegin;
+      glScalef(2,2,2);
+      B.ZApp.Driver.RenderUnitQuad();
+
+      //Only rgba-format seems to work on GLES
+      glReadPixels(0, 0, B.PixelWidth, B.PixelHeight, GL_RGBA, GL_UNSIGNED_BYTE, Tp);
+    glPopAttrib;
+  end else //GL ES 2.0
+  begin //https://stackoverflow.com/a/53993894/43673
+    glGenFramebuffers(1, @Fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, Fbo);
+
     B.UseTextureBegin;
-    glScalef(2,2,2);
-    B.ZApp.Driver.RenderUnitQuad();
+    glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, B.Handle, 0);
 
-    Count := B.PixelWidth * B.PixelHeight;
-    GetMem(Tp,Count*4);
-
-    //Only rgba-format seems to work on GLES
     glReadPixels(0, 0, B.PixelWidth, B.PixelHeight, GL_RGBA, GL_UNSIGNED_BYTE, Tp);
 
-    Sp := Tp;
-    while Count>0 do
-    begin
-      for I := 0 to ElementsPerPix-1 do
-      begin
-        P^ := Sp^ / 255;
-        Inc(P);
-        Inc(Sp);
-      end;
-      if ElementsPerPix=3 then
-        Inc(Sp);
-      Dec(Count);
-    end;
-    FreeMem(Tp);
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+    glDeleteFramebuffers(1, @fbo);
+  end;
 
-  glPopAttrib;
+  Sp := Tp;
+  while Count>0 do
+  begin
+    for I := 0 to ElementsPerPix-1 do
+    begin
+      P^ := Sp^ / 255;
+      Inc(P);
+      Inc(Sp);
+    end;
+    if ElementsPerPix=3 then
+      Inc(Sp);
+    Dec(Count);
+  end;
+  FreeMem(Tp);
+
 end;
 {$endif}
 
