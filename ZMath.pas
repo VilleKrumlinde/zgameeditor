@@ -466,12 +466,14 @@ var
       B(j,k,i,4) + B(k,i,j,5) + B(i,j,k,6) + B(J,K,I,7);
   end;
 
-  function K(AA : integer) : single;
+  function K(const AA : integer) : single;
   var
     S,P,Q,R : single;
     X,Y,Z,T,Tmp1 : single;
     H, B5,B4,B3,B2,BB : integer;
   begin
+    if AA<0 then
+      Exit(0); //Can happen if incoming parameters contain NAN
     S := (A[0]+A[1]+A[2])/6.0;
     X:= U - A[0]+S;
     Y := V-A[1] + S;
