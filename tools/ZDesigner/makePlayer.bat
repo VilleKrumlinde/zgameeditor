@@ -64,7 +64,11 @@ if %zgeproduct%==NORMAL (
   rem %dcc% -DMINIMAL -Dzzdc_screensaver %commonparams%
 
   rem Bloated (required to avoid Windows antivirus to complain about false positive)
-  %dcc% -DZDEBUG;zzdc_screensaver -U.\tools\ZDesigner\3rdparty;.\3rdparty;.\tools\ZDesigner\Compiler;.\components;.\tools\ZDesigner -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner -NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Xml;Data;Datasnap;Web;Soap ZzDC.dpr -GD
+  rem %dcc% -DZDEBUG;zzdc_screensaver -U.\tools\ZDesigner\3rdparty;.\3rdparty;.\tools\ZDesigner\Compiler;.\components;.\tools\ZDesigner -$J+ -$I- -B -N.\build\obj\ -E.\tools\zdesigner -NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Xml;Data;Datasnap;Web;Soap ZzDC.dpr -GD
+
+  rem Using Freepascal
+  rem C:\fpc\bin\i386-win32\fpc -Xm -XXis -O2 -dMINIMAL -FUt:\temp -B -Mdelphi -FE.\tools\zdesigner zzdc.dpr
+  C:\fpc\bin\i386-win32\ppcrossx64 -Xm -XXis -O2 -dMINIMAL -dzzdc_screensaver -FUt:\temp -B -Mdelphi -FE.\tools\zdesigner zzdc.dpr
 
   set playername=Player_SS.bin
 ) else if %zgeproduct%==OSX (
