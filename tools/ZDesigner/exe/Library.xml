@@ -1315,10 +1315,7 @@ mat4 matrixFromEuler(vec3 rotation)
 {
   float sx, cx, sy, cy, sz, cz;
 
-  // Would have been nice if you could do "rotation *= PI*2" :-(
-  rotation.x *= PI*2;
-  rotation.y *= PI*2;
-  rotation.z *= PI*2;
+  rotation *= PI*2;
 
   sx = sin(rotation.x);
   cx = cos(rotation.x);
