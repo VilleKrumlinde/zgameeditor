@@ -23,15 +23,17 @@ unit frmAbout;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, GLPanel, ZExpressions;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls, GLPanel, ZExpressions;
 
 type
   TAboutForm = class(TForm)
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   protected
+    {$ifndef ZgeLazarus}
     procedure CreateParams(var Params: TCreateParams); override;
+    {$endif}
   private
     { Private declarations }
     Glp : TGLPanelZGE;
@@ -58,11 +60,13 @@ begin
 end;
 
 
+{$ifndef ZgeLazarus}
 procedure TAboutForm.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   Params.Style := Params.Style or WS_DLGFRAME;
 end;
+{$endif}
 
 procedure TAboutForm.FormCreate(Sender: TObject);
 var

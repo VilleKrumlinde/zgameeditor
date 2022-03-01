@@ -3,9 +3,12 @@ unit frmShaderPropEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
-  SynEdit, frmCustomPropEditBase, Vcl.ExtCtrls;
+  {$ifndef ZgeLazarus}
+  SynEdit,
+  {$endif}
+  Windows, Messages, SysUtils, Classes,
+  Graphics, Controls, Forms, Dialogs, StdCtrls,
+  frmCustomPropEditBase, ExtCtrls;
 
 type
   TShaderPropEditForm = class(TCustomPropEditBaseForm)
@@ -25,10 +28,13 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure EditorSpecialLineColors(Sender: TObject;
       Line: Integer; var Special: Boolean; var FG, BG: TColor);
-    procedure EditorStatusChange(Sender: TObject;
-      Changes: TSynStatusChanges);
+    {$ifndef ZgeLazarus}
+    procedure EditorStatusChange(Sender: TObject; Changes: TSynStatusChanges);
+    {$endif}
   public
+    {$ifndef ZgeLazarus}
     ShaderSynEdit : TSynEdit;
+    {$endif}
     procedure SaveChanges; override;
     procedure ShowError(MsgText: String);
     procedure HideError;
@@ -39,12 +45,16 @@ implementation
 {$R *.dfm}
 
 uses
-  dmCommon, SynHighlighterGLSL, SynEditSearch, Types;
+  {$ifndef ZgeLazarus}
+  SynHighlighterGLSL, SynEditSearch,
+  {$endif}
+  dmCommon, Types;
 
 procedure TShaderPropEditForm.FormCreate(Sender: TObject);
 begin
   inherited;
 
+  {$ifndef ZgeLazarus}
   ShaderSynEdit := TSynEdit.Create(Self);
   ShaderSynEdit.Highlighter := TSynGLSLSyn.Create(Self);
   ShaderSynEdit.Align := alClient;
@@ -64,10 +74,14 @@ begin
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ShaderSynEdit.SearchEngine := TSynEditSearch.Create(Self);
   ShaderSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
+  {$endif}
 end;
 
-procedure TShaderPropEditForm.EditorMouseMove(Sender: TObject;
-  Shift: TShiftState; X, Y: Integer);
+procedure TShaderPropEditForm.EditorMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   MouseCoord: TDisplayCoord;
   UnderLine: Integer;
@@ -106,9 +120,13 @@ begin
   else
     FUnderLine := -1;
 end;
+{$endif}
 
-procedure TShaderPropEditForm.EditorSpecialLineColors(Sender: TObject;
-  Line: Integer; var Special: Boolean; var FG, BG: TColor);
+procedure TShaderPropEditForm.EditorSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   Index: Integer;
 begin
@@ -119,9 +137,10 @@ begin
       Special := True;
     end;
 end;
+{$endif}
 
-procedure TShaderPropEditForm.EditorStatusChange(Sender: TObject;
-  Changes: TSynStatusChanges);
+{$ifndef ZgeLazarus}
+procedure TShaderPropEditForm.EditorStatusChange(Sender: TObject;  Changes: TSynStatusChanges);
 var
   NewCaretY: Integer;
 begin
@@ -134,6 +153,7 @@ begin
     FOldCaretY := NewCaretY;
   end;
 end;
+{$endif}
 
 procedure TShaderPropEditForm.OnShaderExprChanged(Sender: TObject);
 begin
@@ -144,7 +164,9 @@ procedure TShaderPropEditForm.SaveChanges;
 begin
   if CompileShaderButton.Enabled then
     CompileShaderButton.OnClick(CompileShaderButton);
+  {$ifndef ZgeLazarus}
   ShaderSynEdit.MarkModifiedLinesAsSaved;
+  {$endif}
 end;
 
 procedure TShaderPropEditForm.ShowError(MsgText: String);
@@ -186,8 +208,12 @@ begin
   Splitter.Top := ShaderPanel.Height - Splitter.Height - CompileErrorLabel.Height;
 end;
 
-procedure TShaderPropEditForm.EditorGutterPaint(Sender: TObject; aLine, X,
-  Y: Integer);
+procedure TShaderPropEditForm.EditorGutterPaint(Sender: TObject; aLine, X, Y: Integer);
+{$ifdef ZgeLazarus}
+begin
+
+end;
+{$else}
 var
   SynEdit: TSynEdit;
   num: string;
@@ -228,6 +254,7 @@ begin
     SynEdit.Canvas.LineTo(numRct.Right, numRct.Top);
   end;
 end;
+{$endif}
 
 procedure TShaderPropEditForm.HideError;
 begin

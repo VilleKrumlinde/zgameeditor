@@ -23,14 +23,17 @@ unit dmCommon;
 interface
 
 uses
-  SysUtils, Classes, Vcl.ImgList, Vcl.Controls, Vcl.Menus, Vcl.ActnList, Vcl.XPStyleActnCtrls,
-  Vcl.ActnMan, Vcl.StdActns, Vcl.Dialogs, System.Actions, System.ImageList;
+  {$ifndef ZgeLazarus}ActnMan, Actions, ImageList,{$endif}
+  SysUtils, Classes, ImgList, Controls, Menus, ActnList,
+  StdActns, Dialogs, Vcl.XPStyleActnCtrls;
 
 type
   TCommonModule = class(TDataModule)
     CompIconsImageList: TImageList;
     SynEditPopupMenu: TPopupMenu;
+    {$ifndef ZgeLazarus}
     ActionManager1: TActionManager;
+    {$endif}
     Selectall1: TMenuItem;
     EditCopy1: TEditCopy;
     Copy1: TMenuItem;
@@ -69,9 +72,17 @@ implementation
 
 {$R *.dfm}
 
-uses Vcl.Forms, SynEdit, SynEditTypes;
+uses
+  {$ifndef ZgeLazarus}
+  SynEdit, SynEditTypes,
+  {$endif}
+  Forms;
 
 procedure TCommonModule.FindActionExecute(Sender: TObject);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   Syn : TSynEdit;
 begin
@@ -82,8 +93,13 @@ begin
   FindDialog1.Tag := IntPtr(Syn);
   FindDialog1.Execute(Syn.Handle);
 end;
+{$endif}
 
 procedure TCommonModule.ReplaceActionExecute(Sender: TObject);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   Syn : TSynEdit;
 begin
@@ -94,8 +110,13 @@ begin
   ReplaceDialog1.Tag := IntPtr(Syn);
   ReplaceDialog1.Execute(Syn.Handle);
 end;
+{$endif}
 
 procedure TCommonModule.FindDialog1Find(Sender: TObject);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   Syn : TSynEdit;
   Opt : TSynSearchOptions;
@@ -117,8 +138,13 @@ begin
 //    ssoEntireScope, ssoSelectedOnly, ssoReplace, ssoReplaceAll, ssoPrompt];
   Syn.SearchReplace(FindDialog1.FindText,'',Opt);
 end;
+{$endif}
 
 procedure TCommonModule.ReplaceDialog1Replace(Sender: TObject);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   Syn : TSynEdit;
   Opt : TSynSearchOptions;
@@ -144,5 +170,6 @@ begin
 //    ssoEntireScope, ssoSelectedOnly, ssoReplace, ssoReplaceAll, ssoPrompt];
   Syn.SearchReplace(ReplaceDialog1.FindText,ReplaceDialog1.ReplaceText,Opt);
 end;
+{$endif}
 
 end.

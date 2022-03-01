@@ -3,8 +3,8 @@ unit frmSoundEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, frmCompEditBase,
-  Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Samples.Spin, ZClasses, DesignerGUI, AudioComponents;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, frmCompEditBase,
+  Dialogs, ComCtrls, ExtCtrls, StdCtrls, Vcl.Samples.Spin, ZClasses, DesignerGUI, AudioComponents;
 
 type
   TSoundEditFrame = class(TCompEditFrameBase)
@@ -107,7 +107,7 @@ implementation
 {$R *.dfm}
 
 uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
-  frmEnvelopeFrame,ZPlatform,Math, uHelp, System.Types, Vcl.Clipbrd;
+  frmEnvelopeFrame,ZPlatform,Math, uHelp, Types, Clipbrd;
 
 const
   NoteKeys : string = 'awsedftgyhuj';
@@ -230,12 +230,12 @@ end;
 
 procedure TSoundEditFrame.HelpButtonClick(Sender: TObject);
 begin
-  ShowHelp('ComponentRef.Sound');
+  uHelp.ShowHelp('ComponentRef.Sound');
 end;
 
 procedure TSoundEditFrame.HelpMixerButtonClick(Sender: TObject);
 begin
-  ShowHelp('ComponentRef.AudioMixer');
+  uHelp.ShowHelp('ComponentRef.AudioMixer');
 end;
 
 procedure TSoundEditFrame.MasterVolumeTrackBarChange(Sender: TObject);
@@ -614,7 +614,9 @@ begin
     Str.Position := 0;
     Str.Read(S[1],Str.Size);
     S := 'ZZDC' + S;
+    {$ifndef ZgeLazarus}
     Clipboard.SetTextBuf( PChar(String(S)) );
+    {$endif}
   finally
     Str.Free;
   end;

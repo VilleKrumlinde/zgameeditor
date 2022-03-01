@@ -3,8 +3,8 @@ unit frmSelectComponent;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.ComCtrls, ZClasses, Vcl.StdCtrls;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ComCtrls, ZClasses, StdCtrls;
 
 type
   TSelectComponentForm = class(TForm)
@@ -35,7 +35,11 @@ var
 
 implementation
 
-uses dmCommon,uHelp,CommCtrl, Vcl.Styles, Vcl.Themes, Math;
+uses
+  {$ifndef ZgeLazarus}
+  Vcl.Styles, Vcl.Themes,
+  {$endif}
+  dmCommon,uHelp,CommCtrl, Math;
 
 {$R *.dfm}
 
@@ -72,9 +76,12 @@ begin
 end;
 
 //Reference: http://theroadtodelphi.wordpress.com/2012/03/14/vcl-styles-and-owner-draw/
-procedure TSelectComponentForm.CompListViewCustomDrawItem(
-  Sender: TCustomListView; Item: TListItem; State: TCustomDrawState;
-  var DefaultDraw: Boolean);
+procedure TSelectComponentForm.CompListViewCustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+{$ifdef ZgeLazarus}
+begin
+  DefaultDraw := True;
+end;
+{$else}
 var
   LStyles   : TCustomStyleServices;
   LColor    : TColor;
@@ -97,6 +104,7 @@ begin
   Sender.Canvas.Font.Color  := LColor;
   Sender.Canvas.Brush.Color := LStyles.GetStyleColor(scListView);
 end;
+{$endif}
 
 procedure TSelectComponentForm.CompListViewDblClick(Sender: TObject);
 begin
@@ -166,7 +174,9 @@ end;
 
 procedure TSelectComponentForm.HelpButtonClick(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   HtmlHelp(0,Application.HelpFile + '::/' + GetSelectedClass.ZClassName + '.html', HH_DISPLAY_TOPIC, 0);
+  {$endif}
 end;
 
 

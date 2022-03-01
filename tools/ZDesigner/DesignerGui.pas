@@ -22,8 +22,8 @@ unit DesignerGui;
 
 interface
 
-uses Vcl.Controls,Classes,Vcl.ExtCtrls,ZClasses,Vcl.ComCtrls,Contnrs,Vcl.Forms,Vcl.Menus,Vcl.Graphics,
-  Winapi.Windows, BitmapProducers;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,
+  {$ifndef ZgeLazarus}Winapi.Windows, {$endif}BitmapProducers;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -100,7 +100,7 @@ procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string
 
 implementation
 
-uses Vcl.StdCtrls,System.SysUtils,Math,Vcl.Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
+uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   Vcl.ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,Vcl.AxCtrls,CommCtrl,
   frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,

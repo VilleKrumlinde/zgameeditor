@@ -8,14 +8,14 @@ procedure GoUrl(const Url : string);
 
 implementation
 
-uses ShellApi,Vcl.Forms,WinTypes;
+uses ShellApi,Forms,Windows;
 
 const
   HelpRoot = 'http://www.zgameeditor.org/';
 
 procedure GoUrl(const Url : string);
 begin
-  ShellExecute(Application.MainForm.Handle,'open',PChar( Url ),nil,nil,SW_SHOWDEFAULT);
+  ShellExecuteW(Application.MainForm.Handle,'open',PChar( Url ),nil,nil,SW_SHOWDEFAULT);
 end;
 
 procedure ShowHelp(const Topic : string);

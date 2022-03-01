@@ -3,9 +3,9 @@ unit frmScriptedCompEditBase;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmCompEditBase, GLPanel, ZClasses, DesignerGui,
-  ZApplication, Vcl.ExtCtrls, Vcl.StdCtrls;
+  Windows, Messages, SysUtils, Classes, Graphics,
+  Controls, Forms, Dialogs, frmCompEditBase, GLPanel, ZClasses, DesignerGui,
+  ZApplication, ExtCtrls, StdCtrls;
 
 type
   TScriptedCompEditFrameBase = class(TCompEditFrameBase)
@@ -68,7 +68,9 @@ end;
 procedure TScriptedCompEditFrameBase.HelpButtonClick(Sender: TObject);
 begin
   inherited;
+  {$ifndef ZgeLazarus}
   HtmlHelp(0,Application.HelpFile + '::/' + InfoLabel.Hint + '.html', HH_DISPLAY_TOPIC, 0);
+  {$endif}
 end;
 
 procedure TScriptedCompEditFrameBase.OnBindData(Sender: TObject);

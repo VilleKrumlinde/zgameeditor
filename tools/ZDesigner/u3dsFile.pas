@@ -139,7 +139,7 @@ uses ZLog,SysUtils,ZMath,Renderer,
   {$ifndef zgeviz}
   frm3dsImportOptions,
   {$endif}
-  Vcl.Controls, Vcl.Forms, Vcl.Graphics;
+  Controls, Forms, Graphics;
 
 function ColorToZColor(C : TColor) : TZColorf;
 begin

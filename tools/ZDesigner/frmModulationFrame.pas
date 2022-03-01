@@ -3,8 +3,8 @@ unit frmModulationFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ComCtrls, AudioPlayer;
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, ComCtrls, AudioPlayer;
 
 type
   TModulationFrame = class(TFrame)

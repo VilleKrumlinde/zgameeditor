@@ -3,9 +3,12 @@ unit frmExprPropEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmCustomPropEditBase, Vcl.StdCtrls,
-  SynEdit, SynCompletionProposal, Vcl.ExtCtrls;
+  {$ifndef ZgeLazarus}
+  SynEdit, SynCompletionProposal,
+  {$endif}
+  Windows, Messages, SysUtils, Classes, Graphics,
+  Controls, Forms, Dialogs, frmCustomPropEditBase, StdCtrls,
+  ExtCtrls;
 
 type
   TExprPropEditForm = class(TCustomPropEditBaseForm)
@@ -24,10 +27,14 @@ type
     procedure EditorGutterPaint(Sender: TObject; aLine, X, Y: Integer);
     procedure EditorMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    {$ifndef ZgeLazarus}
     procedure EditorStatusChange(Sender: TObject; Changes: TSynStatusChanges);
+    {$endif}
   public
+    {$ifndef ZgeLazarus}
     ExprSynEdit : TSynEdit;
     AutoComp,ParamComp : TSynCompletionProposal;
+    {$endif}
     procedure SaveChanges; override;
     procedure ShowError(MsgText: String);
     procedure HideError;
@@ -37,17 +44,24 @@ implementation
 
 {$R *.dfm}
 
-uses dmCommon, SynHighlighterZc, SynEditSearch, Types;
+uses
+  {$ifndef ZgeLazarus}
+  SynHighlighterZc, SynEditSearch,
+  {$endif}
+  dmCommon, Types;
 
 procedure TExprPropEditForm.ExprHelpButtonClick(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   HtmlHelp(0,Application.HelpFile + '::/ScriptingLanguage.html', HH_DISPLAY_TOPIC, 0);
+  {$endif}
 end;
 
 procedure TExprPropEditForm.FormCreate(Sender: TObject);
 begin
   inherited;
 
+  {$ifndef ZgeLazarus}
   ExprSynEdit := TSynEdit.Create(Self);
   ExprSynEdit.Align := alClient;
   ExprSynEdit.Gutter.Visible := True;
@@ -87,10 +101,15 @@ begin
   ParamComp.ShortCut := 24608;
   ParamComp.Editor := ExprSynEdit;
   ParamComp.TimerInterval := 2000;
+  {$endif}
 end;
 
 procedure TExprPropEditForm.EditorMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   MouseCoord: TDisplayCoord;
   UnderLine: Integer;
@@ -129,9 +148,10 @@ begin
   else
     FUnderLine := -1;
 end;
+{$endif}
 
-procedure TExprPropEditForm.EditorStatusChange(Sender: TObject;
-  Changes: TSynStatusChanges);
+{$ifndef ZgeLazarus}
+procedure TExprPropEditForm.EditorStatusChange(Sender: TObject; Changes: TSynStatusChanges);
 var
   NewCaretY: Integer;
 begin
@@ -143,6 +163,7 @@ begin
     FOldCaretY := NewCaretY;
   end;
 end;
+{$endif}
 
 procedure TExprPropEditForm.OnExprChanged(Sender: TObject);
 begin
@@ -154,11 +175,16 @@ begin
   inherited;
   if ExprCompileButton.Enabled then
     ExprCompileButton.OnClick(ExprCompileButton);
+  {$ifndef ZgeLazarus}
   ExprSynEdit.MarkModifiedLinesAsSaved;
+  {$endif}
 end;
 
-procedure TExprPropEditForm.EditorGutterPaint(Sender: TObject; aLine, X,
-  Y: Integer);
+procedure TExprPropEditForm.EditorGutterPaint(Sender: TObject; aLine, X,  Y: Integer);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   SynEdit: TSynEdit;
   num: string;
@@ -199,6 +225,7 @@ begin
     SynEdit.Canvas.LineTo(numRct.Right, numRct.Top);
   end;
 end;
+{$endif}
 
 procedure TExprPropEditForm.ShowError(MsgText: String);
 begin
@@ -212,7 +239,9 @@ end;
 procedure TExprPropEditForm.HideError;
 begin
   CompileErrorLabel.Caption := '';
+  {$ifndef ZgeLazarus}
   CompileErrorLabel.BevelKind := bkNone;
+  {$endif}
   CompileErrorLabel.Hide;
   Splitter.Hide;
 end;

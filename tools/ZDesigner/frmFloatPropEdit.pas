@@ -3,9 +3,9 @@ unit frmFloatPropEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmCustomPropEditBase, Vcl.ComCtrls,
-  Vcl.StdCtrls;
+  Windows, Messages, SysUtils, Classes, Graphics,
+  Controls, Forms, Dialogs, frmCustomPropEditBase, ComCtrls,
+  StdCtrls;
 
 type
   TFloatPropEditForm = class(TCustomPropEditBaseForm)

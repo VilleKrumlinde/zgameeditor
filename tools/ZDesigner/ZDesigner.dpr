@@ -20,6 +20,10 @@ THE SOFTWARE.}
 
 program ZDesigner;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 {$WEAKLINKRTTI ON}
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
@@ -28,9 +32,12 @@ program ZDesigner;
 {$endif}
 
 uses
-  Vcl.Forms,
-  Windows,
-  Vcl.HTMLHelpViewer,
+  Forms,
+{$IFDEF FPC}
+  LCLIntf, LCLType, LMessages,
+{$ELSE}
+  Vcl.HTMLHelpViewer, Vcl.Themes, Vcl.Styles, Windows,
+{$ENDIF}
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
@@ -84,8 +91,6 @@ uses
   frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
   ZPlatform in '..\..\ZPlatform.pas',
   frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm},
-  Vcl.Themes,
-  Vcl.Styles,
   CocoAncestor in 'Compiler\CocoAncestor.pas',
   CocoSets in 'Compiler\CocoSets.pas',
   frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm},

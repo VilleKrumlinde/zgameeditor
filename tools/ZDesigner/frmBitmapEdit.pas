@@ -3,9 +3,9 @@ unit frmBitmapEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, frmCompEditBase, Vcl.ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
-  Vcl.Menus, Vcl.StdCtrls,GlPanel;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
+  Menus, StdCtrls,GlPanel;
 
 type
   TBitmapEditFrame = class(TCompEditFrameBase)

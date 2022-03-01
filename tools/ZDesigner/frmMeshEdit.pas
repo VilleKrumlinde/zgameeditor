@@ -3,9 +3,9 @@ unit frmMeshEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, frmCompEditBase, Vcl.ExtCtrls, ZClasses,DesignerGui, Contnrs, Meshes,
-  Vcl.Menus, Vcl.StdCtrls,GlPanel;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, Meshes,
+  Menus, StdCtrls,GlPanel;
 
 type
   TMeshEditFrame = class(TCompEditFrameBase)

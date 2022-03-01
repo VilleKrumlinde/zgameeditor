@@ -3,8 +3,8 @@ unit frmCustomPropEditBase;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, DesignerGUI, ZClasses;
+  Windows, Messages, SysUtils, Classes, Graphics,
+  Controls, Forms, StdCtrls, DesignerGUI, ZClasses;
 
 type
   TCustomPropEditBaseForm = class(TForm)

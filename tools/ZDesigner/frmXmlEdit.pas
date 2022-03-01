@@ -3,8 +3,11 @@ unit frmXmlEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls, SynEdit, Vcl.ExtCtrls;
+  {$ifndef ZgeLazarus}
+  SynEdit,
+  {$endif}
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls;
 
 type
   TXmlEditForm = class(TForm)
@@ -16,7 +19,9 @@ type
     { Private declarations }
   public
     { Public declarations }
+    {$ifndef ZgeLazarus}
     SynEdit : TSynEdit;
+    {$endif}
   end;
 
 var
@@ -26,10 +31,15 @@ implementation
 
 {$R *.dfm}
 
-uses SynHighlighterXML, SynEditSearch, dmCommon;
+uses
+  {$ifndef ZgeLazarus}
+  SynHighlighterXML, SynEditSearch,
+  {$endif}
+  dmCommon;
 
 procedure TXmlEditForm.FormCreate(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   SynEdit := TSynEdit.Create(Self);
   SynEdit.Align := alClient;
   SynEdit.Gutter.Visible := True;
@@ -44,6 +54,7 @@ begin
   SynEdit.SearchEngine := TSynEditSearch.Create(Self);
   SynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
   SynEdit.MaxScrollWidth := 4096;
+  {$endif}
 end;
 
 end.

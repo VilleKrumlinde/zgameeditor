@@ -3,8 +3,8 @@ unit frmLfoFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, AudioPlayer,
-  Vcl.ComCtrls, Vcl.StdCtrls;
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, AudioPlayer,
+  ComCtrls, StdCtrls;
 
 type
   TLfoFrame = class(TFrame)

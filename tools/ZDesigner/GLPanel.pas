@@ -3,8 +3,8 @@ unit GLPanel;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  OpenGL12, Vcl.ExtCtrls, ZApplication;
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  OpenGL12, ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)
@@ -16,7 +16,9 @@ type
     procedure SetDCPixelFormat(const DC: HDC);
     procedure CreateRenderContext;
   protected
+    {$ifndef ZgeLazarus}
     procedure CreateParams(var Params: TCreateParams); override;
+    {$endif}
     procedure WMEraseBackground( var msg:TWMEraseBkgnd ); message WM_ERASEBKGND;
     procedure WMGETDLGCODE( var msg:TMessage); message WM_GETDLGCODE;
     procedure Paint; override;
@@ -288,7 +290,7 @@ procedure TGLPanelZGE.RenderTimerTimer(Sender: TObject);
 begin
   if Self.Tag=0 then
   begin
-    //Must have focus for mousehwheel to work
+    //Must have focus for mousewheel to work
     Self.SetFocus;
     Self.Tag := 1;
   end;

@@ -1,10 +1,19 @@
 unit frmSettings;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ComCtrls;
+{$IFnDEF FPC}
+  Windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, ComCtrls;
 
 type
   TSettingsForm = class(TForm)
@@ -62,7 +71,7 @@ implementation
 
 uses frmEditor, Registry;
 
-{$R *.DFM}
+{$R *.dfm}
 
 const
   ZgeRegName = 'ZgeProjFile';
