@@ -1313,18 +1313,20 @@ mat4 matrixFromRotationZ(float angle)
 
 mat4 matrixFromEuler(vec3 rotation)
 {
-  float sx, cx, sy, cy, sz, cz;
+  float rx, ry, rz, sx, cx, sy, cy, sz, cz;
 
-  rotation *= PI*2;
+  rx = rotation.x*PI*2;
+  ry = rotation.y*PI*2;
+  rz = rotation.z*PI*2;
 
-  sx = sin(rotation.x);
-  cx = cos(rotation.x);
+  sx = sin(rx);
+  cx = cos(rx);
 
-  sy = sin(rotation.y);
-  cy = cos(rotation.y);
+  sy = sin(ry);
+  cy = cos(ry);
 
-  sz = sin(rotation.z);
-  cz = cos(rotation.z);
+  sz = sin(rz);
+  cz = cos(rz);
 
   mat4 m;
 
