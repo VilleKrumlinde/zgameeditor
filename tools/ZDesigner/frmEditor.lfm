@@ -1,0 +1,1512 @@
+object EditorForm: TEditorForm
+  Left = 726
+  Height = 1112
+  Top = 408
+  Width = 2688
+  Caption = 'ZDesigner'
+  ClientHeight = 1073
+  ClientWidth = 2688
+  Color = clBtnFace
+  DesignTimePPI = 192
+  Font.Color = clWindowText
+  Font.Height = -22
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  Menu = MainMenu1
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
+  OnKeyPress = FormKeyPress
+  Position = poScreenCenter
+  ShowHint = True
+  LCLVersion = '2.2.0.4'
+  object Splitter2: TSplitter
+    Left = 690
+    Height = 895
+    Top = 178
+    Width = 10
+  end
+  object LeftPanel: TPanel
+    Left = 0
+    Height = 895
+    Top = 178
+    Width = 690
+    Align = alLeft
+    ClientHeight = 895
+    ClientWidth = 690
+    Constraints.MinWidth = 246
+    TabOrder = 0
+    object TreePanel: TGroupBox
+      Left = 1
+      Height = 893
+      Top = 1
+      Width = 688
+      Align = alClient
+      Caption = 'Project &tree'
+      ClientHeight = 861
+      ClientWidth = 684
+      Constraints.MinHeight = 370
+      TabOrder = 0
+      object GamutImage: TImage
+        Left = 352
+        Height = 210
+        Top = 512
+        Width = 210
+        Visible = False
+      end
+    end
+  end
+  object ViewerPanel: TPanel
+    Left = 700
+    Height = 895
+    Top = 178
+    Width = 1988
+    Align = alClient
+    ClientHeight = 895
+    ClientWidth = 1988
+    TabOrder = 1
+    object Splitter1: TSplitter
+      Cursor = crVSplit
+      Left = 1
+      Height = 10
+      Top = 500
+      Width = 1986
+      Align = alBottom
+      ResizeAnchor = akBottom
+    end
+    object LowerRightPanel: TPanel
+      Left = 1
+      Height = 384
+      Top = 510
+      Width = 1986
+      Align = alBottom
+      ClientHeight = 384
+      ClientWidth = 1986
+      Constraints.MinHeight = 40
+      TabOrder = 0
+      object Splitter4: TSplitter
+        Left = 1557
+        Height = 382
+        Top = 1
+        Width = 10
+        Align = alRight
+        ResizeAnchor = akRight
+      end
+      object LogPanel: TPanel
+        Left = 1567
+        Height = 382
+        Top = 1
+        Width = 418
+        Align = alRight
+        ClientHeight = 382
+        ClientWidth = 418
+        Constraints.MinWidth = 10
+        DoubleBuffered = True
+        ParentDoubleBuffered = False
+        TabOrder = 0
+        object LogListBox: TListBox
+          Left = 1
+          Height = 345
+          Top = 1
+          Width = 416
+          Align = alClient
+          Color = 2976796
+          ItemHeight = 28
+          OnDrawItem = LogListBoxDrawItem
+          OnMouseMove = LogListBoxMouseMove
+          PopupMenu = LogPopupMenu
+          Style = lbOwnerDrawFixed
+          TabOrder = 0
+        end
+        object EvalEdit: TEdit
+          Left = 1
+          Height = 35
+          Hint = 'Evaluate. Type expression here and press enter.'
+          Top = 346
+          Width = 416
+          Align = alBottom
+          Color = clInactiveCaption
+          OnKeyDown = EvalEditKeyDown
+          TabOrder = 1
+        end
+      end
+      object PropEditParentPanel: TPanel
+        Left = 1
+        Height = 382
+        Top = 1
+        Width = 1556
+        Align = alClient
+        TabOrder = 1
+      end
+    end
+    object Panel2: TPanel
+      Left = 1
+      Height = 499
+      Top = 1
+      Width = 1986
+      Align = alClient
+      ClientHeight = 499
+      ClientWidth = 1986
+      TabOrder = 1
+      object Splitter3: TSplitter
+        Left = 717
+        Height = 497
+        Top = 1
+        Width = 10
+      end
+      object PropListPanel: TPanel
+        Left = 1
+        Height = 497
+        Top = 1
+        Width = 716
+        Align = alLeft
+        ClientHeight = 497
+        ClientWidth = 716
+        Constraints.MinWidth = 200
+        TabOrder = 1
+        object PropListParent: TGroupBox
+          Left = 1
+          Height = 495
+          Top = 1
+          Width = 714
+          Align = alClient
+          Caption = '&Properties'
+          TabOrder = 0
+        end
+        object QuickCompListParent: TPanel
+          Left = 1
+          Height = 495
+          Top = 1
+          Width = 714
+          Align = alClient
+          ClientHeight = 495
+          ClientWidth = 714
+          TabOrder = 1
+          object QuickCompListView: TListView
+            Left = 1
+            Height = 433
+            Top = 61
+            Width = 712
+            Align = alClient
+            Columns = <>
+            HideSelection = False
+            ReadOnly = True
+            RowSelect = True
+            SortType = stText
+            TabOrder = 0
+            OnClick = QuickCompListViewClick
+            OnCustomDrawItem = QuickCompListViewCustomDrawItem
+            OnMouseDown = QuickCompListViewMouseDown
+          end
+          object Panel3: TPanel
+            Left = 1
+            Height = 60
+            Top = 1
+            Width = 712
+            Align = alTop
+            Alignment = taLeftJustify
+            Caption = 'Click component to add.'#13#10' Hold Ctrl  to add and select.'
+            TabOrder = 1
+          end
+        end
+      end
+      object ViewerPageControl: TPageControl
+        Left = 727
+        Height = 497
+        Top = 1
+        Width = 1258
+        ActivePage = ViewerGlTabSheet
+        Align = alClient
+        TabIndex = 0
+        TabOrder = 0
+        object ViewerGlTabSheet: TTabSheet
+          Caption = 'ViewerGlTabSheet'
+          ClientHeight = 444
+          ClientWidth = 1242
+          TabVisible = False
+          object RotateModelPanel: TPanel
+            Left = 0
+            Height = 124
+            Top = 0
+            Width = 1242
+            Align = alTop
+            ClientHeight = 124
+            ClientWidth = 1242
+            TabOrder = 0
+            object ViewTranslateLabel: TLabel
+              Left = 1024
+              Height = 74
+              Top = 12
+              Width = 78
+              Alignment = taRightJustify
+              AutoSize = False
+              Caption = 'ViewTranslateLabel'
+              WordWrap = True
+            end
+            object Label2: TLabel
+              Left = 18
+              Height = 27
+              Top = 54
+              Width = 84
+              Caption = 'Rotate X'
+            end
+            object Label3: TLabel
+              Left = 208
+              Height = 27
+              Top = 54
+              Width = 84
+              Caption = 'Rotate Y'
+            end
+            object Label4: TLabel
+              Left = 396
+              Height = 27
+              Top = 54
+              Width = 83
+              Caption = 'Rotate Z'
+            end
+            object Label5: TLabel
+              Left = 798
+              Height = 27
+              Top = 54
+              Width = 54
+              Caption = 'Zoom'
+            end
+            object ViewRotateXTrackBar: TTrackBar
+              Left = 0
+              Height = 60
+              Top = 0
+              Width = 194
+              Max = 100
+              OnChange = ViewRotateXTrackBarChange
+              Position = 0
+              TickStyle = tsNone
+              TabOrder = 0
+            end
+            object TrackBar2: TTrackBar
+              Tag = 1
+              Left = 188
+              Height = 60
+              Top = 0
+              Width = 194
+              Max = 100
+              OnChange = ViewRotateXTrackBarChange
+              Position = 0
+              TickStyle = tsNone
+              TabOrder = 1
+            end
+            object TrackBar3: TTrackBar
+              Tag = 2
+              Left = 376
+              Height = 60
+              Top = 0
+              Width = 194
+              Max = 100
+              OnChange = ViewRotateXTrackBarChange
+              Position = 0
+              TickStyle = tsNone
+              TabOrder = 2
+            end
+            object ZoomTrackBar: TTrackBar
+              Left = 778
+              Height = 60
+              Top = 0
+              Width = 246
+              OnChange = ZoomTrackBarChange
+              Position = 0
+              TickStyle = tsNone
+              TabOrder = 3
+            end
+            object Panel4: TPanel
+              Left = 617
+              Height = 122
+              Top = 1
+              Width = 624
+              Align = alRight
+              ClientHeight = 122
+              ClientWidth = 624
+              ParentBackground = False
+              TabOrder = 4
+              object NormalsCheckBox: TCheckBox
+                Left = 56
+                Height = 35
+                Top = 12
+                Width = 116
+                Anchors = [akTop, akRight]
+                Caption = 'Normals'
+                OnClick = NormalsCheckBoxClick
+                TabOrder = 0
+              end
+              object ResetCameraButton: TButton
+                Left = 424
+                Height = 42
+                Top = 62
+                Width = 180
+                Anchors = [akTop, akRight]
+                Caption = 'Reset camera'
+                OnClick = ResetCameraButtonClick
+                TabOrder = 1
+              end
+              object ResetModelButton: TButton
+                Left = 424
+                Height = 42
+                Top = 12
+                Width = 180
+                Anchors = [akTop, akRight]
+                Caption = '&Reset time'
+                Enabled = False
+                OnClick = ResetModelButtonClick
+                TabOrder = 2
+              end
+              object UpdateTimeCheckBox: TCheckBox
+                Left = 222
+                Height = 35
+                Top = 12
+                Width = 154
+                Anchors = [akTop, akRight]
+                Caption = 'Update time'
+                OnClick = UpdateTimeCheckBoxClick
+                TabOrder = 3
+              end
+              object WireframeCheckBox: TCheckBox
+                Left = 222
+                Height = 35
+                Top = 54
+                Width = 138
+                Anchors = [akTop, akRight]
+                Caption = 'Wireframe'
+                TabOrder = 4
+              end
+              object BoundsCheckBox: TCheckBox
+                Left = 65
+                Height = 35
+                Hint = 'Click to display collision bounds'
+                Top = 54
+                Width = 107
+                Anchors = [akTop, akRight]
+                Caption = 'Bounds'
+                OnClick = BoundsCheckBoxClick
+                TabOrder = 5
+              end
+            end
+          end
+          object AppControlPanel: TPanel
+            Left = 0
+            Height = 100
+            Top = 124
+            Width = 1242
+            Align = alTop
+            ClientHeight = 100
+            ClientWidth = 1242
+            TabOrder = 1
+            object DisableShadersCheckBox: TCheckBox
+              Left = 294
+              Height = 35
+              Hint = 'Click to disable OpenGL shaders'
+              Top = 8
+              Width = 190
+              Caption = 'Disable shaders'
+              OnClick = DisableShadersCheckBoxClick
+              TabOrder = 0
+            end
+            object DisableFBOCheckBox: TCheckBox
+              Left = 294
+              Height = 35
+              Hint = 'Click to disable OpenGL FBO (render to texture)'
+              Top = 42
+              Width = 154
+              Caption = 'Disable FBO'
+              OnClick = DisableFBOCheckBoxClick
+              TabOrder = 1
+            end
+            object AppStartButton: TButton
+              Left = 4
+              Height = 62
+              Top = 14
+              Width = 142
+              Action = AppPreviewStartAction
+              Constraints.MaxHeight = 62
+              TabOrder = 2
+            end
+            object AppStopButton: TButton
+              Left = 144
+              Height = 62
+              Top = 14
+              Width = 142
+              Action = AppPreviewStopAction
+              Constraints.MaxHeight = 100
+              TabOrder = 3
+            end
+          end
+        end
+        object ViewerCompTabSheet: TTabSheet
+          ClientHeight = 444
+          ClientWidth = 1242
+          ImageIndex = 1
+          TabVisible = False
+          object Panel1: TPanel
+            Left = 0
+            Height = 48
+            Top = 0
+            Width = 1242
+            Align = alTop
+            ClientHeight = 48
+            ClientWidth = 1242
+            TabOrder = 0
+            object DetachCompEditorButton: TButton
+              Left = 4
+              Height = 40
+              Top = 2
+              Width = 160
+              Caption = 'Detach'
+              OnClick = DetachCompEditorButtonClick
+              TabOrder = 0
+            end
+          end
+          object CompEditorParentPanel: TPanel
+            Left = 0
+            Height = 396
+            Top = 48
+            Width = 1242
+            Align = alClient
+            TabOrder = 1
+          end
+        end
+        object ViewerBlankTabSheet: TTabSheet
+          ImageIndex = 3
+          TabVisible = False
+        end
+      end
+    end
+  end
+  object ToolBar1: TToolBar
+    Left = 0
+    Height = 178
+    Top = 0
+    Width = 2688
+    AutoSize = True
+    ButtonHeight = 88
+    ButtonWidth = 356
+    Caption = 'ToolBar1'
+    DisabledImages = ActionDisabledImageList
+    Images = ActionImageList
+    List = True
+    TabOrder = 2
+    object ToolButton8: TToolButton
+      Left = 1
+      Top = 2
+      Action = FileOpenAction
+    end
+    object ToolButton1: TToolButton
+      Left = 357
+      Top = 2
+      Action = SaveProjectAction
+    end
+    object ToolButton6: TToolButton
+      Left = 713
+      Height = 88
+      Top = 2
+      Caption = 'ToolButton6'
+      ImageIndex = 3
+      Style = tbsSeparator
+    end
+    object ToolButton2: TToolButton
+      Left = 721
+      Top = 2
+      Action = AddComponentAction
+    end
+    object ToolButton3: TToolButton
+      Left = 1077
+      Top = 2
+      Action = DeleteComponentAction
+    end
+    object ToolButton7: TToolButton
+      Left = 1433
+      Height = 88
+      Top = 2
+      Caption = 'ToolButton7'
+      ImageIndex = 3
+      Style = tbsSeparator
+    end
+    object ToolButton4: TToolButton
+      Left = 1441
+      Top = 2
+      Action = MoveUpComponentAction
+    end
+    object ToolButton5: TToolButton
+      Left = 1797
+      Top = 2
+      Action = MoveDownComponentAction
+    end
+    object ToolButton9: TToolButton
+      Left = 2153
+      Height = 88
+      Top = 2
+      Caption = 'ToolButton9'
+      ImageIndex = 3
+      Style = tbsSeparator
+    end
+    object ToolButton10: TToolButton
+      Left = 2161
+      Top = 2
+      Action = EditCopyAction
+    end
+    object ToolButton11: TToolButton
+      Left = 1
+      Top = 90
+      Action = EditPasteAction
+    end
+    object ToolButton12: TToolButton
+      Left = 357
+      Height = 88
+      Top = 90
+      Caption = 'ToolButton12'
+      ImageIndex = 8
+      Style = tbsSeparator
+    end
+    object ToolButton15: TToolButton
+      Left = 365
+      Top = 90
+      Action = LockShowAction
+    end
+    object ToolButton16: TToolButton
+      Left = 721
+      Height = 88
+      Top = 90
+      Caption = 'ToolButton16'
+      ImageIndex = 11
+      Style = tbsSeparator
+    end
+    object ToolButton13: TToolButton
+      Left = 729
+      Top = 90
+      Action = RunExeAction
+    end
+    object ToolButton14: TToolButton
+      Left = 1085
+      Height = 88
+      Top = 90
+      Caption = 'ToolButton14'
+      ImageIndex = 9
+      Style = tbsSeparator
+    end
+    object ToolButton17: TToolButton
+      Left = 1093
+      Top = 90
+      Action = EditXmlAction
+    end
+  end
+  object SaveDialog: TSaveDialog
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
+    Left = 96
+    Top = 80
+  end
+  object Timer1: TTimer
+    Interval = 30
+    OnTimer = Timer1Timer
+    Left = 176
+    Top = 80
+  end
+  object ActionList1: TActionList
+    Images = ActionImageList
+    Left = 96
+    Top = 256
+    object AddComponentAction: TAction
+      Caption = 'Add component'
+      Hint = 'Add component'
+      ImageIndex = 0
+      OnExecute = AddComponentActionExecute
+      OnUpdate = AddComponentActionUpdate
+      ShortCut = 16449
+    end
+    object ResetComponentAction: TAction
+      Caption = 'Reset component'
+      OnExecute = ResetComponentActionExecute
+    end
+    object DeleteComponentAction: TAction
+      Caption = 'Delete component'
+      Hint = 'Delete component'
+      ImageIndex = 4
+      OnExecute = DeleteComponentActionExecute
+      OnUpdate = DeleteComponentActionUpdate
+      ShortCut = 8238
+    end
+    object CopyComponentAction: TAction
+      Caption = 'Copy component'
+      OnExecute = CopyComponentActionExecute
+      OnUpdate = CopyComponentActionUpdate
+      ShortCut = 16451
+    end
+    object PasteComponentAction: TAction
+      Caption = 'Paste component'
+      OnExecute = PasteComponentActionExecute
+      OnUpdate = PasteComponentActionUpdate
+      ShortCut = 16470
+    end
+    object MoveUpComponentAction: TAction
+      Caption = 'Move up'
+      Hint = 'Move up'
+      ImageIndex = 1
+      OnExecute = MoveUpComponentActionExecute
+      OnUpdate = MoveUpComponentActionUpdate
+      SecondaryShortCuts.Strings = (
+        'Ctrl-Up'
+      )
+      ShortCut = 16422
+    end
+    object MoveDownComponentAction: TAction
+      Caption = 'Move down'
+      Hint = 'Move down'
+      ImageIndex = 2
+      OnExecute = MoveDownComponentActionExecute
+      OnUpdate = MoveDownComponentActionUpdate
+      ShortCut = 16424
+    end
+    object SaveProjectAction: TAction
+      Caption = 'Save'
+      Hint = 'Save'
+      ImageIndex = 3
+      OnExecute = SaveProjectActionExecute
+      ShortCut = 16467
+    end
+    object LockShowAction: TAction
+      Caption = 'Lock preview to this component'
+      Hint = 'Toggle lock preview selected component'
+      ImageIndex = 10
+      OnExecute = LockShowActionExecute
+      OnUpdate = LockShowActionUpdate
+      ShortCut = 16460
+    end
+    object NewProjectAction: TAction
+      Caption = 'New project'
+      OnExecute = NewProjectActionExecute
+      ShortCut = 16462
+    end
+    object FileExitAction: TFileExit
+      Category = 'File'
+      Caption = 'E&xit'
+      Hint = 'Exit|Quits the application'
+      ImageIndex = 14
+    end
+    object FileOpenAction: TFileOpen
+      Category = 'File'
+      Caption = '&Open...'
+      Dialog.DefaultExt = '.*.zgeproj'
+      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj|Any file (*.*)|*.*'
+      Hint = 'Open|Opens an existing file'
+      ImageIndex = 5
+      ShortCut = 16463
+      BeforeExecute = FileOpenActionBeforeExecute
+      OnAccept = FileOpenActionAccept
+    end
+    object EditCopyAction: TEditCopy
+      Category = 'Edit'
+      Caption = '&Copy component'
+      Enabled = False
+      Hint = 'Copy|Copies the selection and puts it on the Clipboard'
+      ImageIndex = 6
+      OnExecute = CopyComponentActionExecute
+      OnUpdate = CopyComponentActionUpdate
+      ShortCut = 16451
+    end
+    object EditPasteAction: TEditPaste
+      Category = 'Edit'
+      Caption = '&Paste component'
+      Hint = 'Paste|Inserts Clipboard contents'
+      ImageIndex = 7
+      OnExecute = PasteComponentActionExecute
+      OnUpdate = PasteComponentActionUpdate
+      ShortCut = 16470
+    end
+    object FileSaveAsAction: TFileSaveAs
+      Category = 'File'
+      Caption = 'Save &As...'
+      Dialog.DefaultExt = '.*.zgeproj'
+      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj'
+      Dialog.Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing]
+      Hint = 'Save As|Saves the active file with a new name'
+      ShortCut = 24659
+      BeforeExecute = FileSaveAsActionBeforeExecute
+      OnAccept = FileSaveAsActionAccept
+    end
+    object RunExeAction: TAction
+      Caption = 'Build and run'
+      Hint = 'Run'
+      ImageIndex = 8
+      OnExecute = GenerateEXEClick
+      ShortCut = 120
+    end
+    object GenerateReleaseLinuxAction: TAction
+      Caption = 'Build Linux x86 binary'
+      OnExecute = GenerateReleaseLinuxActionExecute
+    end
+    object FileSaveBinaryAsAction: TAction
+      Category = 'File'
+      Caption = 'Save binary as...'
+      OnExecute = SaveBinaryMenuItemClick
+      Visible = False
+    end
+    object GenerateScreenSaverAction: TAction
+      Caption = 'Build Screensaver'
+      OnExecute = GenerateScreenSaverActionExecute
+    end
+    object GenerateReleaseAction: TAction
+      Caption = 'Build and compress Windows exe-file'
+      OnExecute = GenerateReleaseActionExecute
+    end
+    object AboutAction: TAction
+      Caption = 'About...'
+      OnExecute = AboutActionExecute
+    end
+    object GenerateReleaseSSAction: TAction
+      Caption = 'Build and compress Screensaver'
+      OnExecute = GenerateReleaseSSActionExecute
+    end
+    object AppPreviewStartAction: TAction
+      Caption = 'Start'
+      Hint = 'Run application in preview window'
+      ImageIndex = 8
+      OnExecute = AppPreviewStartActionExecute
+      ShortCut = 32781
+    end
+    object AppPreviewStopAction: TAction
+      Caption = 'Stop'
+      Enabled = False
+      Hint = 'Stop application'
+      ImageIndex = 9
+      OnExecute = AppPreviewStopActionExecute
+    end
+    object FileNewWindowAction: TAction
+      Category = 'File'
+      Caption = 'New &Window'
+      OnExecute = FileNewWindowActionExecute
+    end
+    object Import3dsAction: TAction
+      Caption = 'Import 3D-Model...'
+      OnExecute = Import3dsActionExecute
+    end
+    object GenerateReleaseOsx86Action: TAction
+      Caption = 'Build Mac OS X Intel binary'
+      OnExecute = GenerateReleaseOsx86ActionExecute
+    end
+    object ShowSettingsAction: TAction
+      Caption = 'Settings...'
+      OnExecute = ShowSettingsActionExecute
+    end
+    object AndroidBuildReleaseApkAction: TAction
+      Caption = 'Android: Build APK (release)'
+      OnExecute = AndroidBuildReleaseApkActionExecute
+    end
+    object FindComponentAction: TAction
+      Category = 'Edit'
+      Caption = 'Find component'
+      OnExecute = FindComponentActionExecute
+      ShortCut = 16454
+    end
+    object ShowCompilerDetailsAction: TAction
+      Caption = 'Show compiler details'
+      OnExecute = ShowCompilerDetailsActionExecute
+    end
+    object UndoDeleteAction: TAction
+      Caption = 'Undo delete'
+      OnExecute = UndoDeleteActionExecute
+      OnUpdate = UndoDeleteActionUpdate
+    end
+    object ForceRefreshAction: TAction
+      Caption = 'Refresh content'
+      OnExecute = ForceRefreshActionExecute
+      ShortCut = 116
+    end
+    object HelpContentsAction: TAction
+      Caption = '&Contents'
+      OnExecute = HelpContentsActionExecute
+      ShortCut = 112
+    end
+    object EditXmlAction: TAction
+      Category = 'Edit'
+      Caption = 'Edit project as XML'
+      Hint = 'Edit as XML'
+      ImageIndex = 13
+      OnExecute = EditXmlActionExecute
+      ShortCut = 16461
+    end
+    object DisableComponentAction: TAction
+      Caption = 'Disable component'
+      OnExecute = DisableComponentActionExecute
+      OnUpdate = DisableComponentActionUpdate
+      ShortCut = 16452
+    end
+    object GenerateAndroidAction: TAction
+      Caption = 'Android: Build zzdc.dat file'
+      OnExecute = GenerateAndroidActionExecute
+    end
+    object AndroidRunAction: TAction
+      Caption = 'Android: Run project'
+      OnExecute = AndroidRunActionExecute
+    end
+    object AndroidBuildDebugApkAction: TAction
+      Caption = 'Android: Build APK (debug)'
+      OnExecute = AndroidBuildDebugApkActionExecute
+    end
+    object ImportBitmapAction: TAction
+      Caption = 'Import Bitmaps...'
+      OnExecute = ImportBitmapActionExecute
+    end
+    object ImportAudioAction: TAction
+      Caption = 'Import Audio...'
+      OnExecute = ImportAudioActionExecute
+    end
+  end
+  object TreePopupMenu: TPopupMenu
+    Images = ActionImageList
+    Left = 336
+    Top = 80
+    object Addcomponent2: TMenuItem
+      Action = AddComponentAction
+    end
+    object AddFromLibraryMenuItem: TMenuItem
+      Caption = 'Add from library...'
+      OnClick = AddFromLibraryMenuItemClick
+      object TMenuItem
+      end
+    end
+    object Import3DSfile1: TMenuItem
+      Action = Import3dsAction
+    end
+    object N12: TMenuItem
+      Caption = '-'
+    end
+    object DeleteComponentAction1: TMenuItem
+      Action = DeleteComponentAction
+    end
+    object Undodelete1: TMenuItem
+      Action = UndoDeleteAction
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object Findcomponent1: TMenuItem
+      Action = FindComponentAction
+    end
+    object Copy1: TMenuItem
+      Action = CopyComponentAction
+      Bitmap.Data = {
+        36040000424D3604000000000000360000002800000010000000100000000100
+        2000000000000004000064000000640000000000000000000000000000FF0000
+        00FF000000FF000000FF000000FF919898009198980091989800919898009198
+        9800919898009198980091989800919898009198980091989800000000FF9198
+        980091989800919898009198980090999A00F7E7DC00F7E7DC00F7E7DD00F7E7
+        DC00F7E7DD00F7E7DC00F7E7DD00F7E7DD00F7E7DC00909A9A00000000FF9099
+        9A00F7E7DC00F7E7DC00F7E7DD008D9C9D00F8E9DF00C7A59100C19E8900BA93
+        7C00B1886F00A87C6400F7E8DF00F7E8DE00F8E8DE008D9B9E00000000FF8D9C
+        9D00F8E9DF00C7A59100C19E89008A9EA100F8EAE100F8EAE100F8EAE100F8EA
+        E100F8EAE100F8EAE100F8EAE100F8EAE100F8EAE1008A9EA200000000FF8A9E
+        A200F8EAE100F8EAE100F8EAE10087A0A600F9ECE400C7A59100C3A08C00BF9A
+        8400B8927A00B2897100AC826800A7786100F9ECE40087A1A600000000FF87A1
+        A600F9ECE400C7A59100C3A08C0085A3AA00F9EEE600F9EEE700F9EEE700F9EE
+        E700F9EEE700F9EEE700F9EEE700F9EEE600F9EEE70084A3AB00000000FF84A4
+        AA00F9EEE600F9EEE700F9EEE70081A6B000F9F0EA00C7A59100C3A08C00BF9A
+        8400B8927A00B2897100AC826800A7786100F9F0EA0081A7B000000000FF81A7
+        B000F9F0EA00C7A59100C3A08C007BAAB400FAF2ED00FAF2ED00FAF2EE00FAF2
+        ED00FAF2ED00FAF2ED00FAF2ED00FAF2ED00FAF2ED007CAAB500000000FF7CAA
+        B500FAF2ED00FAF2ED00FAF2EE0078ACB900FBF5F000C7A59100C3A08C00BF9A
+        8400B8927A00B2897100AC826800A7786100FBF4F00078ACB900000000FF79AD
+        BA00FBF5F000C7A59100C3A08C0076AFBE00FBF5F200FBF6F300FBF6F200FBF6
+        F300FBF5F300FBF6F300FBF6F300FBF6F300FBF6F30075AFBE00000000FF75AF
+        BD00FBF5F200FBF6F300FBF6F20073B2C100FBF8F500C7A59100BC978100AD84
+        6B00A3745C00FBF8F6008FC8E0007ABDDA0066B2D40073B1C100000000FF72B2
+        C200FBF8F500C7A59100BC97810071B4C400FBF9F700FCF9F800FBF9F800FBF9
+        F700FCF9F800FCF9F8007ABDDA0067B2D50071B4C400000000FF000000FF71B3
+        C400FBF9F700FCF9F800FBF9F8006FB5C700FCFAF900FCFAF900FCFAF900FCFA
+        F900FCFAF900FCFAF90067B2D4006FB5C700000000FF000000FF000000FF6FB5
+        C700FCFAF900FCFAF900FCFAF9006FB5C7006FB5C7006FB5C7006FB5C7006FB5
+        C7006FB5C7006FB5C7006FB5C700000000FF000000FF000000FF000000FF6FB5
+        C7006FB5C7006FB5C7006FB5C7006FB5C7006FB5C7006FB5C7006FB5C7006FB5
+        C700000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FF000000FF000000FF000000FF
+      }
+      ImageIndex = 6
+    end
+    object Paste1: TMenuItem
+      Action = PasteComponentAction
+      Bitmap.Data = {
+        36040000424D3604000000000000360000002800000010000000100000000100
+        2000000000000004000064000000640000000000000000000000000000FF0000
+        00FF000000FF6590B500618DB3005A89B1005484AF00AE948700AE958700AD95
+        8700AD948700AD948700AD958700AD948700AD948700000000FF000000FF0000
+        00FF6896BC006AAED8006FC5F1006FC6F2006FC6F100AA988C00F8E8DE00F7E9
+        DF00F8E8DF00F7E9DE00F7E9DE00F7E8DE00AA988D00000000FF000000FF0000
+        00FF6998BE0077C8F10077C9F20077C8F20077C9F200A69C9200F8EAE100F7EB
+        E200F8EAE200F8EBE200F8EAE100F8EAE200A69B9200000000FF000000FF0000
+        00FF6A9BC10083CCF20083CDF20083CCF30083CCF300A1A09900F8EDE600C7A5
+        9100BC978100AD846B00A3745C00F8EDE500A19F9A00000000FF000000FF0000
+        00FF6D9EC4008ED1F2008ED0F2008ED0F3008ED0F3009CA4A100F9F0EA00F9F0
+        EA00F9F0EA00F9F0EA00F9F0EA00F9F0EA009CA4A100000000FF000000FF0000
+        00FF70A2C7009AD5F3009AD4F30099D5F40099D4F40097A8A800FAF3EF00C7A5
+        9100BC978100AD846B00A3745C00F9F2EE0097A8A800000000FF000000FF0000
+        00FF72A5CA00A5D8F500A5D8F400A5D9F400A5D9F40092ACB000FBF6F300FBF5
+        F200FAF6F200FAF6F300FAF6F300FAF5F30092ADAF00000000FF000000FF0000
+        00FF74A9CE00B0DDF400B0DDF500B0DDF400B0DDF5008EB0B600FAF8F500C7A5
+        9100A3745C00FAF7F6008FC8E0007ABDDA008EB0B600000000FF000000FF0000
+        00FF76ACD000BAE1F500BAE1F500BAE1F600BAE1F5008AB4BB00FBF9F800FBF9
+        F800FBF9F800FBF9F8007ABDDA008EB0B600000000FF000000FF000000FF0000
+        00FF78AED300C2E4F600C2E3F600C2E4F500C2E4F6008AB4BB008AB4BB008AB4
+        BB008AB4BB008AB4BB008AB4BB00629AC300000000FF000000FF000000FF0000
+        00FF79B0D400C8E6F600C8E6F600C8E6F600C8E6F600C8E6F600C8E6F600C8E6
+        F600C8E6F600C8E6F600C8E6F60073A8CC00000000FF000000FF000000FF0000
+        00FF79B0D400C8E6F60096715E00B4948100B4948100B4948000B4948100B494
+        8100B494810096715D00C8E6F60077ACCE00000000FF000000FF000000FF0000
+        00FF000000FF5F9AC5005F9AC500A0826F00C0A79800C0A79700C0A79700C0A7
+        9800A0826F005081AD005F9AC500000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FFAA918200000000FF000000FF000000FF0000
+        00FFAA918200000000FF000000FF000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FF000000FFB09B8E00000000FF000000FFB09B
+        8E00000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0000
+        00FF000000FF000000FF000000FF000000FF000000FF000000FF
+      }
+      ImageIndex = 7
+    end
+    object Moveup1: TMenuItem
+      Action = MoveUpComponentAction
+    end
+    object Movedown1: TMenuItem
+      Action = MoveDownComponentAction
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
+    object Refresh1: TMenuItem
+      Action = ForceRefreshAction
+    end
+    object ResetComponentAction1: TMenuItem
+      Action = ResetComponentAction
+    end
+    object Disablecomponent1: TMenuItem
+      Action = DisableComponentAction
+    end
+    object Lockshow1: TMenuItem
+      Action = LockShowAction
+    end
+  end
+  object ActionImageList: TImageList
+    Left = 416
+    Top = 192
+    Bitmap = {
+      4C7A0F0000001000000010000000DD1900000000000078DAD59A075854C7DE87
+      7F80C66BAFC98DE6DA892589C64463624C3409D178ADD71244548A82084AEF45
+      3F9A11902A205D7A151005419022881445A50BC8D27BAFBBCB52F69B73C095AA
+      987BF33DF7CBF3BC99E1CCBCFF29E7CC78667701DE7FDC2186E727BA365E9D7F
+      9711FDD00E3B8DE1BC6F3CCA91AA2EA3F933BE66B028CE9617E16C451134834F
+      BEB7AFEA2FCCF3A9FCBBEA2B7A1D8582E711287A1E251C81E4ABCC1128D2656F
+      18EDCB391F8458FE631AF13C92E60DCFA7907C0AAF5CCEF9C018FF9CED1E9C48
+      0DA1114921A406D3E9E03592A7AE0F214DEA8EF625AEFD02C96B4290301F44F8
+      A107C17328F518BC4ECA25CD0779D77C9CBAB20347A36FE01881CABFEFFC8BE8
+      7D8F231116384C10D1DBF6DEFEEF5A5B79FEEF9A5BDFDB3FA2B619C3F90BD60B
+      F72F5E83F877D7F922E33850FC59B7B57F80E67D632C328C4575CF004D1587A4
+      844546B1938AB1C82006B9DD03C863F60F42F2B9DDFD348B0C1EBC35C6C24BF7
+      F1A8AD7F187D482269D2B06B0B2F458F1B63816E24C21AFA08FDB83D94860D4B
+      6F0F4B17E8448E89B1402B02F387A0F26E55BD835453F4F1AE2FD01E4CDF368E
+      F91A776059D607CBF25E92F6D279EADA64E77FBEEA6D18317A47308F5C9BAC3F
+      4F2964AC4FAE4DD69FAB1034C69FAB706BF2FEC5C031FE1C726DB2FE1C39FFB1
+      3EB9F63ECFF01C593F0CE7FFC9FE3166EDFF993D80AA5FD73B3008A71FF59CF7
+      DB03A8F53FC6378C9DB4BF90ACF352763F4D09D943A87421D91726EB2F206B3C
+      87EC17395DFD43E90016E8DD9FBC4FF682D4F63EA4B4F7937490053A51935F7F
+      647D4737F78DE09D6B5EFD0E59E377315FFD2E9D06D7F7E1D630A8F54FD7192A
+      1F6FCDBB93BDE60D7D83D4BC4E5F5F9B782F98AB1C0CDB8A3ED8116CC9DE6347
+      E77BC9B541A8BFDFB50F50EBDCACB477187DBC74DE24F780391703C659FF01EF
+      B77E87ED01EFBBF647EF017FE53A155C34C372FBCA798A5A422B377B9FDA303F
+      5CFAEBA9F765B7F0C5C86E41CCF9411EC87D8BD88BDB1073E13B789FDA344F63
+      D79A2D0B674EA52693BB6BCD42296659165884815E368185FE1E26FABADBC069
+      6B406F4733FD773F8785DEF646306B197C55E9915382D50E2DFC64EE34D73FF6
+      7DBA96599A85FAC0CB18E050F59848BB7606BD9D2DA47E03FA981D74DC3E663B
+      7A9A2AC0AE7D8596CC683465C622ECFCB669BEA737CE659666A2CE5F8FAE4341
+      F99CF67AF476B5D0ED52ED73DAEAC0AE638055F30AE55E5A68CD4B4284CC663E
+      6ABCDD8C0CD4129FAA43916E2E45D27AF4B33B499F48DB5DADE8A92F058BB4CD
+      AA2E4499A7066A130370EFDC665073D5559C8E5A3F5DD2BFF2419A2B8933D436
+      AB139CE66A9ECBAC2E4089BB3AAAE2BC41DA0635CF5D85A9A8F1D5A5FB9D6E7E
+      16E916D2786A2347B880275632E4FA59BAEC35452E2A288FBE89BB525FD3F7A7
+      A3201995DEDAA824E3AAF4D64205C95778699371123C35514ADA2BB9A906869B
+      0A5EB928A1D855058C0827849D1DF2F312075D02E5D1780FBA651E1A747F4BDC
+      5469AFC859198584A2DB76083DF315EDB765C711478BA67C2806D536EDDE5407
+      83B44DB985CE4A28705444BEA302F2822C102CF915A289DF9A19830A4FADA1E7
+      E7DDE4D85F40B69F2982243691F9DB8AD6E751745F07C87C4B245C7D2BD4B3F0
+      E2FA793CF73242A038F1E5B6A225E31EF1B5683FBE38F1AD50FE33AB73C870D3
+      873FF1A364BFE16B7E72973C135A936EFF09758F9D75E023F6259FF9C1B52B1B
+      1F07A3213978D2E34F73D241AA8326AC0EAF5FF0FD8A794AA7B72CD9EB2EBA61
+      7E24791E2308D47375873C1BB7CF7E8510728F6E496E422099AB00D25F7FB12F
+      E9766D8F7D36E7CC77FFD8FE27F68CEE89CAF8F804CA0404A6E54E54CECF3F2D
+      77FEBC8DD653A7CE491CCFD552E742536D00E3C5A0DC33E26C9C3FD703C155B2
+      C7F9F93EC81FEDEAEB510C4045B17F440CCA9538CD86FC855EE8E97041E567CF
+      DE604DCAFA87EAB094E439FCBA5A0330FD830B1DCD7EC8C9F482F228C44FB171
+      518E035D2D2EC44FB3B0EB970601E27046F5912527C3145057E9C715032ED494
+      FB7046820DB1932C5C38CF81B62697CEFFFA733DE5B2269823D619F14E0105D2
+      CFCB642C7ADA545FC89C90B19D126541E8A7B7BABC1827843BF8758977EA0417
+      2784495F54B8C46DE49F844BE6EA83DC932758E43E7071FC1817BF1FE1424981
+      8BDDBFB6818FEF83DC77B9A2224C489FE14045890B65E2295CE492B923718EB2
+      F0E3F696096350EE89E34C48491257910B11612676EEA813F8E1FB3AFE83FBBA
+      704E9A8B83FBBBB1E5EBC631316897D43F2BC181A202D56FE2FE58F77AAE585F
+      7F5929B04BA80392125CECD9DD850D9FD7830F6F624C9D3A375EF8583724C539
+      103ECAC48E1F6A47CF336BFDBA32819D3FB663EF1E26BEDCD0007EBE39F1C3FB
+      3065CADCF8037B3B885B3FD13CB356AD281118CFE5C510981BFF8E7BC4E29BC0
+      FD6F66E68CE9B17E3606F034D54490FD557CBA62A9D1FBF8F6AAE258307B8637
+      BDD681063F1B43CC9F332BC84E550CF3162E0AB0F209C668D66FFE5665A278B3
+      674EBF6B217714D6E70FD2753DB28B70AB8D45E3D7D203F7C65E58780661D567
+      1B2E8DE75BCA1E818DCC41D89EDB074BAF5BF06F618E701DEBFAA194DB0BD39B
+      FEF8C3C91B8676EEB864ED0C6D73076898D88E789FBBE611008F06E6307700DA
+      455C9CCB1D9FD1BE89AB2F9C6B3A79EEB5E0681AB3A02898F885E30F6F721677
+      0F8281B31F2EDB7B42D7C60DDA964ED0BA664FC7FAC3D91BD7CB3BE83EEB2797
+      C0D23F0C0625FD302EE38EC0A094EC450C2E540BB890CB27EB39300BCBD77E71
+      DAC8DE1DA6C5ED30AFE0C222E00ECC6352E93AC3FB2C96C9C5D1675CEC7DDC87
+      9F1EB0B0C1EB15761E9598C3CF2F90AB6FE30A8397ADD07B5C0673BF30E83306
+      209333E8496691B54CBC03A97DD815CFC2F7911DD814DC04C1F306F8E0C37F28
+      52E3D7B37484567613AEF984C034E9399448DB52C43FF99C8B7FA50F604F2207
+      3BA2BBB139AC05EB02EA31F7CA33ACDC2B4A54BE02FA7362337B5C8ACF81994F
+      282E1593BEBEE0E2D8532EF62573F0536C37B686B761435023567B546381792E
+      569DD3C7EC0FFFBEEFF5FC6B5CBD0E53CF5B90BD4BB613AB673C04CC5331CD24
+      1E730C23B04837104B34DCB14CF90656FC53948F7FCA947BAF7D35632B48EB5B
+      415CEB2A84E5757040520142BF4BE0BBDF0E63C3B65F20B8610B96AC5C87851F
+      2FC5ECF91F62F682BFFFD77D16A0782F15EFE25D7E1FA787C7FBC6520E4F466F
+      0F0B7D3D6C92B2313ADE7064C87D1A1D43E56E127AD9DD48F5B541AC83019423
+      46C67B9DA7D0892B2231F2E83AAF7DF5DB71E8EDEE402FB393D001D5BB8923E2
+      85185F80B7DA29728D09ABB4323AC639D20FD53B89740CED9018E2B7D1F51F79
+      9843E376FC887874DADD39F4F71BD46FC7D3BE5ED03D70C8396B90166891F53F
+      3C5E82B331EE5FD7C15D5365041B9E87BF9624391BB5D1F528DF80ACF91E7256
+      7B5D5F37286244BC37F99150ED52BEB14F107A5A6A08B534067E23E38DD73E55
+      4EB54BF9573DFDC8B9A98A57FF8AF7C87863192C33F61E3CCF9BDDF402BBA19C
+      C7558F91F1C66D9F9453ED52BE85AB1BD8E47C47D54FBC690AB39B9E23E24D04
+      D52EE55B3B3993F35DF1100C8C8E1763AB873B268A08D09302AB8E9C23EB4AC8
+      59B404162E3769DFC6D111C3191D6F6C3A98B776761E775D8D8EF736FEAA3D21
+      CCC512E3E5274310F9F77D32D74623EEFC18141E868A78E8EF487018C291BEF6
+      2F8310BA7CFCEF0B739156C3C40D653144D8190CA13F2C6F40CA4ED37534839F
+      63227F32A806648CF1B542739054C5445225A1AA9BCE9B453C189733CE8FC6F8
+      1AC1998829EF1E8249A754DD5EDE1E3608B5F758868DFDFE402DF039C2185D84
+      6E5E4AD5E30CED63D4FEC561BDD9BF46C750F17D02DF826E42177C0B07B91E1C
+      36B4777580C3A4E81C84EC65D743467E06A8E4950AE7BC4E38E776C229AF0B4E
+      B95D70080800A7B375CC3EDA43F624AA6CB82F7F331996591DB0CCA4E8A471F5
+      F1A4F799F1A0CA467C7FEA9208A38C0E183D236474D2787A3881DD5C33A67D76
+      73353CDD47AE3D59C77868A6B54333BD83A41D74EAE77A9DDE27588D152425D0
+      69399DF773B93EC23F7F231672A105507CDC0EC5940E423B821CCDE97D8245F6
+      1236B56FD4970C42AE05395A8CB987D2D6F72069110E51D33B38667C1BA17657
+      114ADEB74328EC861896FF2BD63DBF007FF192CF5718FEEB8A84A09897CAAC53
+      1E8AB37ED31716FC68DD27867CA4ECADE78485738245ED2F2EB67DEE8DA49AA7
+      78D1988BF4FAE7086544E1C2FD4BD87DE5D8E2BFCD9B113C912BEDAF3333B438
+      06C51D65B8E46E04E7573EB02F74874F692812EA92A199688A3D56BFCF9C366F
+      FA8818A45F8C13B61796041645A2A0BD183605AE10B3900697CB8559AE3D4C73
+      ED60986D81D0B248C8DED7C5361DA1257CFC7C8CD7FE275FAC30304EBD81EC96
+      97B023ED99E6D842C4549CF629349F1943364907F2A97AB8551A0121B7DF3177
+      D50283D7FEA12BE282B718F7E04BFAA9FFF41A74D2AFE0909130CFA7107BA00E
+      D16865986539E272B20D3E97D92CC8FBEEDD576DFABD8A3898E5DD801671290E
+      8EF2298E472940E6A11E5C7303F1B5FE0FD379DFB57B294D0F60DC85EE0B53A8
+      66E8D3ECBB72645C5F3A4E172EB941F8F2D2B73C7FF7E5DF054D331C6092630F
+      D9C75A907CA8809D977E1BE39EB8AF04E38C1BD08E33C72A89F5BCFE9367C3E0
+      70D0390432C271E6A1264EC729E2079D3D235CE1888B108D54816F5138B65AFE
+      8C19CB67F1E68FBA17428687979C27F7C6FFD51D7AAE7ED4DE3FE846C813571E
+      2788EB5378172281725825B37E09F8C118FE0C50CFD52ECBA333CF846B901811
+      F8838C47EA812ECE44EBE0CA5307E286433850166BD536CE9C327BCAB8CFE0B4
+      B9D383B76AFFB278A7E341E8265AC23ED317F62F7CA11167822DE63F61B5CCFA
+      C513B9C3C6523C67D57CC3F5D25F096ED2FB6ED6173ADFCC5A25B15670C6B259
+      86A4CFC5FFDFCEFEFF97383A1660B770DA3BA1EA8DE7EF3898868030F63BA1EA
+      4DE807B071F060DD8450E513F95B770CF6EDE0EEBA09A1CAA97A6FF377EFA89B
+      90B7FA5BEF4343A30D5B37D64D085DFE165FE15C1B362EAB9B10AA9CAA37AEBF
+      266D72EDAF19BFFD65731ED2E3DBB1B56E42A872AADE443E757FDEC544BE8258
+      265DF62EA87AFFAD6BC8D7D717DEDEDEF0F0F0809B9B1B9CC919C3C1C1017676
+      76B0B6B67E6BBF7D7C7CE0E5E585D8D8583C79F204191919749A949484909010
+      989B9BC3D4D41413B99E9E9E484E4E467C7C3C9DBF71E3066C6D6DE9F6434343
+      698C8D8D616060302606553F262606090909E41E3BD2FDB5B1B181A5A525CCCC
+      CC70F5EA5572EF0270F3E64DE8EAEA8EF1A9B1526D5371A83647971B1A1AD27D
+      0F0C0C84A6A6E69872272727A4A4A4D0ED5A59598D29D7D3D3A3DBBD75EB16D4
+      D4D446948B3F2A87894700AFBF22D1C5387ABF1487EE9560DF1D067E0B29C6AF
+      012FC9B3AF41BB67F52CF0A5D39B3D4C2CA91CE99D7D78DAD98F5CE6005E32B9
+      28E8E2A28CCD4529A1A89B8B67ED7D486AE620AE7190F5B6F93C5F34A10C69C4
+      572DED81694D3FEC6BB970AEE622A8858B80662E9C2AB950C9EBC171F24E7C80
+      BCE33EA8E76095451ECF177E504AFF5E41BEB807C71E34433CAE152E24C666BF
+      0AFCD3A71CD6155C32867A6CF5A9C46FC96DB85FD7837F98E4F2FCC351254869
+      EBC3F942723EA9E887751D69B39E8B4DEEA53872ED2ECC887F3EB30707C9BBF1
+      AF896D88ACEDC14746393C7FFF5D061EB5F6E26C3E1B7B239B2042DAB76FE462
+      A30303FB0C6FC1B89C8B9D81F5245E397E8A6F4544750FE6EB65F37C6A7E135B
+      7A713A8705B9577DB844C66E45C6EDD0C1852D49754AB93891C1C6AFC4FD3EA6
+      05E1953D98A599C5F37F0E788584A65E1C7FD18D9D614DD81FD30A91A45688A5
+      B44234B995F4A915DFF8D6609D7339B6DE6FC19D4A36A6A9BED903B67B172196
+      DC93D8C63E24B40C2085DCBBE7E4BEE570B8C824692AE9474C7D1FC2AB7A1056
+      C1A611507CC1F3B7B815D2CFC367762FB1C63A1F2BCDF3E8F9FDD838070BF5B3
+      3157278BEEEFDFD4323155F905F815887BF1F95FB2074D992250BC7DCB46C348
+      770BC1D247B766952406CE0A773111DCF6D5E786530404DEFAFEB2F8A345C1A9
+      A14E8B7BEA8BC1AC63A0B3BA88A6BBB618DD55F948F0BAB6F8E345F383C77717
+      06973CF49FC96A28454B49262A1FFAA120C4042F6F5D0123C6058DF9A9E8AC29
+      C48B10EB997F5F382F78E4F72E028C443FEB25CC7A069A0A1E13471FC5314E60
+      3655A2BBA902556921C8F6D346CDF368B457E4E18EB5DA1201726678ED6FDBB4
+      DEA0AB3217ADC5CF90E7AF874C7775FAF3BFBE21A87C96BF3E5E786BA3212F09
+      0DB989D8BC6E39EFFD35C85253B0B3BA10A5316E78E1AE8A676E4AE86EAC44D5
+      D370D4E6C4D39F1B5693F491832CF2C3ADD152968D1B6AC779EFCF99C196D33B
+      C83C65F9EA21C35511A94E724826752B32EE81DDD902664B1D0A633D90687B0E
+      C9CE8A68ABC847A4D919DEFB7BBAB7F1F48EAA4264F96821D951168F6E9CC723
+      7B19FACCDE49CEAB8976171067799670060924DF5A99873083133CDF455742B0
+      B53C0785117648759043929D0C1E5E9746BC95144D8C9924EE9B4A22CA54024F
+      FDAEA0A1380357C577F2FAFFD59AA5065519F7D1909F8C5447459EC76A6F0293
+      9CD5234D4ED3449848A2E2790C198B2F3E5BFAE6FC2440DEFF5DD58F2D692848
+      47E5B36824D8CA22FA9A045EDCB6A5A1DC3B7F88A3282110555909B876FADB25
+      027C7C23DEFF17CE99111CA47378666DDE235467C723DDD71851E40C78CFF42C
+      923D2EA32C231A9599717095DE3673FECC0FC67D0617CEFE5BB0CDD91F17BF8C
+      F1427DD113349565D1D415A42127C205578F6F583C7FE6D4B7BEFF93B114AF5F
+      32D750EFF0064107C96F66DD10DF3C4B7BFF5AC1B51FCF3214E0FBAF7CFF7FE7
+      3E624CFE379A897EF73F1977540C4C146382F6465FC74431FEA48FFF803FA9F9
+      1867FCF813F381C9C498682C93EDFB24FC3FFB9BF3B7C59B4CFBDCFFB0FF9FF8
+      EDFCBFFDDBFBC9B2E65C23D65F68C46AF936082A3761AD5A1DD66B34D3AC566A
+      C14A850EAC536CC1A7CA35F8EC5223D6EA364350B513AB2E7663C5F9761C356F
+      83D7E3566CD36CC47EAB5AF83EEEC049C75A78A575E29045135613573FA01936
+      E4BD67BB71253CD3BAB0D3A0014B2F7662F9B9561CBDD6806A760F24ACAA7025
+      B201258D3D10B7CB461367003AFE0D58A3D288B4576C645731B153BF008D3D03
+      D8ADC7C027175AB15CAA199B942AF092BCD73ADC6620B6B01D417185F8FD5A26
+      BAFB06E0155B8DAFF51B50D7DE8B97E56DF841230B2D9C7EFCACFA024BCF3762
+      F9994608CA37E2CEF316E4BFAA474D070B8A96F110B529460FA7174F0B9A71C8
+      B60E2C4E0F8A2B9BB143ED053A285F390D2BCFD56385443D962AB4C128B81A9C
+      1E36DA596C6C97BA8D937655609331D5B7B3A0E15F8A9E5E3618954DD8A9F68C
+      F6859453B05ABA0E2BC4EAF089621B0E9B9780D5C3425E6923560847E2F48D06
+      B4B677A3A6B51351CF6B50D5D88EC28A66ECD4788236322F42CA8FB14A92F8A7
+      6A68FF5B9D523477F721EA0983C4CC207E13AA9B3A919AC7402BB307312979C8
+      2DA3FC74B492F9FB5929052BC56AB152B40AAB943B71D2B61A5D1C268A1A3BB1
+      FE6201C41DEB50DDCC4240D40BB49131D987A420BBAC157BD49FA08B3D805F48
+      FB6B4F5761B5480D562875C134BC191D3D3DE4DEF461DF95328839D4A3AC910D
+      23D7141454B743FF662272CA5BB15B2D031DC4FF492D0DCB4F5662E9F15AAC56
+      6B475C5E37A2D20A5049DA3409A880A4431DCA9A5810D64F8445500EF43C9EE2
+      25997F21F50CB493360EE8C563A3740E968930F0AD413D1ADA9950B12567BFEC
+      1A2464D640D6A51855CD1DD8241D8FE5C27760E05388A28A06ECD64C47378783
+      843C72CFD3DBB05BA500C28ECD6863B2B153FE36AEDFAFC0AB162694BCF2C168
+      60618DD4137C245D854BE4EC905DDC8CDF5452D14CE6AFA777002C1617A73453
+      71C2BD1DD7235E619578048E5CAF80C3C332883B14C08A9CDB964B64E1EFF2DD
+      E4796884B97F1EBE97790697B87A04C71523F841217E9688C13A75061688DCC5
+      1AF9E75843D6D027276FE3F30B4FB0EC4404793E0BB18CDCDFB5178BB174BF2F
+      D68AE663A9F03D2C3BE8858FF6B863D1CF5158A9D98A25CA151054276B578389
+      D5EA5510D4A8C52AC50AACB8588FE50AD45A6DC6D29345103C558D6532955826
+      CDC062F122ACD89DF3A7F698E55FFCA82165FF74CA71A388F9EFE31D56BB2978
+      C12517C6614510B1BE8F43BA411FBE2EBB7CF932A833B28E8E0EB4B4B4A0AEAE
+      0E55555528292941D12D17F26EF9F8E34E318272EA1040EEB1B05514F66AF8F1
+      7CEA6C4D9DFB29A8B33805F5D90585BC6B0E02B36A1144704825E7D1C4121CB3
+      8C84908A27CFA7DA747074C0BFAC8FF35C1717171A39A74CF83DAF86E5C35298
+      C416C38C70D8FC1E76C8DFE4F9547FF7591DC17653219EEBEAEA4A23659F01CF
+      A795B46B78BF084684436611F856D691E7EF323900313F199CF43E8B6F0C7EC0
+      D77ADBF0A5E637F842F56B88D9A4C32DB502865145D00D7F09BDBB2F71C0241C
+      9BA4EC687FFDE92F379CF69586F9337B983CB581519A392E3FBE0AED2443AC53
+      D808118B4770482A830EF15442F371EA5133FE79F52E3E13B7FAF0E3AD9F889D
+      F2918259862D7493AF403941071763D52113A308D5781D7C2AF7198E98C4C336
+      9E01D5E05C484695E39FB95CFC641685D527CDE8F6D79CF8FCF363AE27796DAA
+      3FBC04A5384DC83F50C52AE935D86B140DF39857B8E89F0529DF2C9C0E2FC52E
+      E3302C13BECA1BFFB76A3F609FDD11FC667D106B2E7E0EC1F3EBB052EA532C97
+      5C0D21BD705C8D2C84B4D70B88BB6540F26606840CC3B0F8A821CF171313C377
+      EA3F62BBDA4EFAB32BEA731C0AEAF3A8ED9AB76140C62E413C11A7749C727E82
+      9FF543B1E8D0FFF07C515151B8BBBBE37BE51D3C8F82FA2C6C8B4A2074437371
+      82B847EC52216C9F869D97433077BF1ECF1716161ED126E551509F6B6D90F781
+      4650362107CA7E5990717F861D9742306BAFF687D4F3AAA8A88823478EE0D0A1
+      433870E000F6EEDD8B3D7BF660D7AE5D10121222FF56B862938A3FB6EB846297
+      5104F69B46E307BD60CCD8A3F9E1E4D61E5F3DDF946929FCB33F749BF2F13ACD
+      A9ABBF3FB940C44260C65EDD05FF0BB1C8C964
+    }
+  end
+  object MainMenu1: TMainMenu
+    Images = ActionImageList
+    Left = 80
+    Top = 176
+    object File1: TMenuItem
+      Caption = '&File'
+      object NewProjectMenuItem: TMenuItem
+        Caption = 'New project'
+        object emptyproject1: TMenuItem
+          Action = NewProjectAction
+          Caption = '(empty project)'
+        end
+        object N16: TMenuItem
+          Caption = '-'
+        end
+      end
+      object Open1: TMenuItem
+        Action = FileOpenAction
+      end
+      object ReopenMenuItem: TMenuItem
+        Caption = 'Reopen'
+      end
+      object NewWindow1: TMenuItem
+        Action = FileNewWindowAction
+      end
+      object OpenAllProjectsMenuItem: TMenuItem
+        Caption = '_Open all projects in path'
+        Visible = False
+        OnClick = OpenAllProjectsMenuItemClick
+      end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object Import3dsAction1: TMenuItem
+        Action = Import3dsAction
+      end
+      object Importbitmap1: TMenuItem
+        Action = ImportBitmapAction
+      end
+      object ImportAudio1: TMenuItem
+        Action = ImportAudioAction
+      end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object Save1: TMenuItem
+        Action = SaveProjectAction
+        Caption = 'Save Project'
+      end
+      object SaveAs1: TMenuItem
+        Action = FileSaveAsAction
+        Caption = 'Save Project &As...'
+      end
+      object SaveBinaryMenuItem: TMenuItem
+        Action = FileSaveBinaryAsAction
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object Exit1: TMenuItem
+        Action = FileExitAction
+      end
+    end
+    object Edit1: TMenuItem
+      Caption = 'Edit'
+      object Undodelete2: TMenuItem
+        Action = UndoDeleteAction
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object EditasXML1: TMenuItem
+        Action = EditXmlAction
+      end
+    end
+    object Run1: TMenuItem
+      Caption = 'Project'
+      object Run2: TMenuItem
+        Action = RunExeAction
+      end
+      object N4: TMenuItem
+        Caption = '-'
+      end
+      object Buildreleaseversionsmallest1: TMenuItem
+        Action = GenerateReleaseAction
+      end
+      object RemoveUnusedMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Remove unused code'
+        Checked = True
+      end
+      object EnableFunctionInlining: TMenuItem
+        AutoCheck = True
+        Caption = 'Enable function inlining'
+        Checked = True
+        OnClick = EnableFunctionInliningClick
+      end
+      object DetailedBuildReportMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Display detailed build report'
+      end
+      object N9: TMenuItem
+        Caption = '-'
+      end
+      object BuildandcompressLinuxbinary1: TMenuItem
+        Action = GenerateReleaseLinuxAction
+      end
+      object BuildMacOSXIntelbinary1: TMenuItem
+        Action = GenerateReleaseOsx86Action
+      end
+      object BuildZ80MenuItem: TMenuItem
+        Caption = 'Build Z80 file'
+        OnClick = BuildZ80MenuItemClick
+      end
+      object N17: TMenuItem
+        Caption = '-'
+      end
+      object BuildAndroidbinaryexperimental1: TMenuItem
+        Action = GenerateAndroidAction
+      end
+      object AndroidRunproject1: TMenuItem
+        Action = AndroidRunAction
+      end
+      object AndroidBuildAPK1: TMenuItem
+        Action = AndroidBuildDebugApkAction
+      end
+      object AndroidBuildAPKrelease1: TMenuItem
+        Action = AndroidBuildReleaseApkAction
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object GenerateScreenSaverAction1: TMenuItem
+        Action = GenerateScreenSaverAction
+      end
+      object Buildreleasescreensaverversionsmallest1: TMenuItem
+        Action = GenerateReleaseSSAction
+      end
+    end
+    object ools1: TMenuItem
+      Caption = 'Tools'
+      object Settings2: TMenuItem
+        Action = ShowSettingsAction
+      end
+      object Findunsedcomponents1: TMenuItem
+        Caption = 'Find unused components'
+        OnClick = Findunsedcomponents1Click
+      end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+      object N10: TMenuItem
+        Action = ShowCompilerDetailsAction
+      end
+      object EnableThreadedProcessingMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Enable threaded processing'
+        Checked = True
+        OnClick = EnableThreadedProcessingMenuItemClick
+      end
+    end
+    object StyleMenuItem: TMenuItem
+      Caption = 'Style'
+      object OpenStyleMenuItem: TMenuItem
+        Caption = 'Open style...'
+        OnClick = OpenStyleMenuItemClick
+      end
+      object N15: TMenuItem
+        Caption = '-'
+      end
+    end
+    object Help1: TMenuItem
+      Caption = 'Help'
+      object Contents1: TMenuItem
+        Action = HelpContentsAction
+      end
+      object N13: TMenuItem
+        Caption = '-'
+      end
+      object Onlinehelp1: TMenuItem
+        Caption = 'ZGameEditor Home Page'
+        OnClick = Onlinehelp1Click
+      end
+      object ForumsMenuItems: TMenuItem
+        Caption = 'Get help on the Online Forums'
+        OnClick = ForumsMenuItemsClick
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object About1: TMenuItem
+        Action = AboutAction
+      end
+    end
+  end
+  object ActionDisabledImageList: TImageList
+    Left = 416
+    Top = 304
+    Bitmap = {
+      4C7A0C0000001000000010000000BF0900000000000078DAED99494C54DB1686
+      7740A323070E344EDEC038BB4E1CE98C193A71487470634CC4C481D882C636D8
+      97BDD88BBDA26283D88B2850D8C578B9884F787657FAA600A5C742A3F19D6FE1
+      3EEE3A9E4355893EDFCDD5E44B1DF65AFFDAFD3EEB6C95B2FF7DFA8CF9EC55E6
+      E6D35F42DA5158785B99441B4F74258F7AF946BDFF51F1FF4CEFEC6F5ED11F21
+      841B0FCA6E3D7C10115EFA6B77FC11E1A537B9ECBF1542B4F389CFC5BC1BC2B7
+      8E7FF6CD6BC2CFD2F767FDFE24CC3DA8FABBCFFBD377743DEFDF0BD1C6C0BF3B
+      D8D34B4F2F91C6C0AFB5B3CB957031B037B6B4D9045A5A55E04D2FBACC2B06E5
+      D58DCD4255A0C97EFE52F6E53792FDF7A2A63E8468D623F6B28AEA10A299037C
+      1FFF5519C22F7DF46BF86F787E7C97F6E3FFF6DD3B9BA045B4E3DF5F7DE7DBA0
+      D0D1FD567EA3D5477B7638F54DAD6D16ED36D1EAEB9ADF8410C99E37A9B4CE20
+      9348F28F97D63913097D9D814FAB6AFB24927E949657BB12CD3BE07BECDF6FD5
+      7E8FF7E7CFDCEBD1A0F5EFAC3D0ACF9F3F551F3F7EF404BBF635F53DC1A0EAE9
+      092ABF3F5FBDB772062FB06B5F53FFB6BB5B107B4F3094E05BFB19BBF635F5DD
+      5D9DAAABB353ECDD5D1D0E3AED67ECF881A9EFEC68571DED6D626F6F6BB1E968
+      6F0DF9C58E1F98FAB6D616017BD9CB724FB06B5F53DFF2BA59A8F8EB85F87881
+      5DFB9AFAE6C6807ADDD428F0ACD1654EB099FAA640BD6A6AA8B77F73AF5EFA0A
+      6C8D0D75BD3E81FA107DA0BE5635D4D5C82FBE1F3E7C0881BE538E5D63EAEB6B
+      AA7AA9AD16BF674F4A6C0A0AF204CAB16B5F535F575D6923F5D456D9FC595C24
+      506EFA99FA9ACA721BFCCC39CB3E9B69B7DFF433F5FDD97F51D2ED658B8989A9
+      1C306040A9971DDB881123B60D1A34A8D04D7BF8F06175E8D021E516233636B6
+      74F3E6CD6AFBF6ED6AECD8B193ACBFFFE3D41E3F7E5C484F4F0F898176D3A64D
+      6AF7EEDDEAD8B1638AE761C3866DB36C1F3FFB04F7EEDD1B73E4C81175E6CC19
+      45AC1D3B76480CB41B376E54BB76ED52478F1E553CA7A4A4C45A9AF78E3606D3
+      D2D2620F1C38A04E9E3CA9F6EFDFAFB66CD9A2366CD8A076EEDCA988CD737272
+      32DAA0C71805ADF8B1B4937E501F3AC664FDFAF56AFEFCF97D69ED186BD6AC91
+      BED05674B469DEBC7931116865AC7C3E9FD4B96EDD3AB576ED5AB56FDF3EB570
+      E142852D9C16CDB66DDBA4FFCC8335AE6ACF9E3D6AF5EAD56ACE9C39CA9AABD2
+      BEB45BB76E151DF55AFEB13367CE8C59B66C99CCC7F2E5CBD58C1933BE8A8116
+      7FC69BB65AFD17EDE7FE06A74F9F1EBB60C10269D7A2458BD4B469D342620C1E
+      3C389FF6B1BEF89D3D7BB6739C8353A64C89B5C6502D59B24459F1D4C08103F3
+      CD36586B3A1FDBAC59B3BCC6393879F2E45837AD1923CC1C05BDB43F1AC68675
+      C13C44AB9D3B77AEBA7CF9B23263E9F2E2E26275EAD4A9AFF0FBFD7DD6C31C02
+      BE8F1E3D52814040686E6E56F5F5F5B2CF6FDF763FDFB416F0C3DFD4C2D3A74F
+      650FB076817387F5C51A3563A1AFAEAE0ED13E7FFE5C959595B9E2D453077AAD
+      BD78F1A2A0C7813300CC7600FB9A5894BD7CF952B4F7EFDF174D7979B927F40B
+      4E9F3E2DFB41EB2B2B2B457BF5EA55B19B6D7EFCF8B18CF1C3870FD5CD9B37E5
+      7C631D1716164A5BF031EB7EF2E489AD0374050505A2BD72E58A4A4C4C54AB56
+      AD9271405F5252225A7CA8DBD41157EBB2B3B3E57C98306182BA7EFDBAE81987
+      BCBC3CBB6EADD3756A5D4646869CC3D43D69D2247B0E1843E6F0D2A54BF6D802
+      6B94F373C58A1502E79FB5B7A56E730FA0C76EBD133837D4D4A953554242821A
+      3F7E3CEF29357AF4683572E448357CF8703564C8103574E8D0BFDDB77C3838AF
+      C3114ECF5C69A28DC53BC6A937FF768BEDD4E7E7E72BEBFD2DEF68DE215E7ADE
+      ABBCDBF0D17ADED7AC418D335E6A6AAAAC1FCA4E9C38213168037BCFD4E3CFFA
+      A6DC8CE785D6B3AED9231A7215331EEB9875CA9EE35DBA78F16275EBD62DF143
+      CF7ACECDCDB5FD9DF1BCC00F3DBA9C9C1C75E3C60D81FD63C673AB1FBBDE47F8
+      A0D7FECE784EB40D3FF49CCBD7AE5DB371C673AB1F3B36FD3E42873FCFCE785E
+      E0879E7C927353E38CC77B73E5CA95923B506EFAA1A77D26CE785EE0E7B69F9C
+      F1FAE2479D09B48D3C1ABCDAE9057375F0E0C1109CEF4D27E7CF9F97F719E87C
+      D18432E61F3BBE4E3D7B9AB9214F64BEDCC0860FFBDB4B1F09EC77B7339039E5
+      7DA5E79733C60DFAE07606926399B89D639C3DFADC30A14CE71E1ACAF439E63C
+      BF9C31384B78CF9AE873C80D7DF668384BB2B2B24260DE38679CE72865CE3C94
+      33E7ECD9B3F2FDA641C739E3863E3B34FC4D4E64629E2366FD94E9BDAFC1D799
+      C3EA73805C45A3FF76EE09E2B106185FF22B607FB20E9CEB8732E7DEE57B517F
+      EFB157F806E2B92F7EC4BE2FAB2C532959896AA26F9C8A4B1D25F04C19B6BEB4
+      F8C4FBC6A85145A982AF30DD2243A55EF7A9C48C443B8E9736212D5EA558BE68
+      3F7DFA24BF49D7D38494CF888F2306EDA2DEA42CFC7D2AF7DFB9A2FF12C31702
+      BE665FA4EEF489EAF78C24C1D4EB18DAA631DB40BC84F4DF6D9C7A1D43DB53B2
+      52A40DA63E3E35DE26EB8FACAFF4B0A0F1B6D8D1332F5A1F97FA2F352E658C8D
+      9B9E36697B92D506345FF4A3D498D4DF6C9C7AFED6B6785F9CD5FF8490FA65BD
+      A4C559C40BA69E675D3E313D5EC639C1F235C78FB988F3FD26B638CBA6F5FCC6
+      B10E81F8965EEAB67C9D6B51D65EDA38B1A38371D6B88EB3B4F1E9712AC12AC7
+      864F5F6BB0B71DBDF524597F03CF9461F3D23AF74F9C6F94BD7F788E64FFFCD3
+      E1CE2052BCF4CF9E05C2124E9F93F3C09370FA9292672AE7C2034FB087D35FB0
+      FCBC08A77FF0C0D267FA3DC1DE97DEEF2F5199969F17D87F64FDBDFDF77B12AE
+      FFFD9DFFFEACBFFF07C83FC825C8F1C8BBF5772AF9995BDE69C21D0B77297C5B
+      72FF52545424BFDCC391CF91F378E51D68B9E7BA7BF7AEE4993C932793E7513F
+      393B703FCB7D8B538F3F791D392EB930ED256FD377F0E44499999972A7C77798
+      534F5FA99B386E779C7CBFD176F2427240A79D5C9BBB2AEAD5DF95264B972E95
+      7AC9519393939573DDF09DA4DB4B7E09E479DC4B914B93CFF2FD81966F19FC4D
+      7D5B5B9B6A6F6F575D5D5DAABBBB5B7E83C1A0C03376EE289B9A9A04BE57B49E
+      7C1CFB8B172FE42EB2B6B656D0FE94959696DAF771DC959ADF308C7B6B6BABB5
+      379EC9DC712F585757277D3D77EE9CAAAAAA92EF11FA70E7CE1DD5D0D0207704
+      5A4F3EDCD2D2227786DCE15137F799AC45D61C7793DC11323FC4C666E6DFC47E
+      F3E68DDC3BD216C6833A58C37CB7555454587BFF82E4D4B48FB6B126B49EF17D
+      FDFAB5D4411F682F7AFA4F5F5FBD7A256B192DDF1EB4CFFC1EA59FF8E2C39C31
+      9EF493B1BA77EF9EB4091FF606F716353535F6FD27F0ADA0E7857E747474C81C
+      3277FC32378D8D8D522F73017C8B98B93FEB81FFE7611DF26DC5F8B20EF59EA3
+      BDEC1DD6315AD6E3AF9CE117BFF867F35F7FEAF90B
+    }
+  end
+  object LogPopupMenu: TPopupMenu
+    Left = 80
+    Top = 624
+    object LogCopytoclipboardMenuItem: TMenuItem
+      Caption = 'Copy to clipboard'
+      OnClick = LogCopytoclipboardMenuItemClick
+    end
+    object LogClearMenuItem: TMenuItem
+      Caption = 'Clear'
+      OnClick = LogClearMenuItemClick
+    end
+    object LogShowTraceOnly: TMenuItem
+      Caption = 'Show expression trace only'
+      OnClick = LogShowTraceOnlyClick
+    end
+  end
+  object OpenStyleDialog: TOpenDialog
+    Title = 'Open style'
+    DefaultExt = '.*.vsf'
+    Filter = 'Style (*.vsf)|*.vsf'
+    Left = 112
+    Top = 736
+  end
+  object HighDPIImageListContainer: TImageList
+    Left = 112
+    Top = 416
+  end
+end

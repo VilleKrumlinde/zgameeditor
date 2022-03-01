@@ -479,7 +479,11 @@ procedure SetupGLShading;
 
 implementation
 
+{$ifdef ZgeLazarus}
+{$R *.lfm}
+{$else}
 {$R *.dfm}
+{$endif}
 
 uses
 {$IFnDEF FPC}
