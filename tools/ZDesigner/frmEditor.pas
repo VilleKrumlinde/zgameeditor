@@ -40,7 +40,7 @@ uses
   ToolWin, frmBitmapEdit, frmMeshEdit,
   ZApplication, GLDrivers,
   ZBitmap, Generics.Collections, CommCtrl,
-  frmCustomPropEditBase, System.Actions;
+  frmCustomPropEditBase;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -1716,7 +1716,9 @@ var
 begin
   S := Application.ExeName;
   P := '-blank';
+  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open',PChar(S), PChar(P), nil, SW_SHOWDEFAULT);
+  {$endif}
 end;
 
 procedure TEditorForm.FileOpenActionAccept(Sender: TObject);
@@ -2673,7 +2675,9 @@ begin
   {$endif}
 
   BatFile := '/c "' + ExePath + 'Android\r.bat' + '"';
+  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open', 'cmd', PChar(BatFile), nil, SW_SHOWDEFAULT);
+  {$endif}
 end;
 
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
@@ -2682,7 +2686,9 @@ var
 begin
   OutFile := BuildRelease(bbNormalUncompressed);
   //Kör den skapade filen
+  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
+  {$endif}
 end;
 
 procedure TEditorForm.GenerateScreenSaverActionExecute(Sender: TObject);
@@ -3658,6 +3664,7 @@ var
   S: string;
   M : TMemoryStream;
 begin
+  {$ifndef ZgeLazarus}
   M := TMemoryStream.Create;
   for S in Files do
   begin
@@ -3676,6 +3683,7 @@ begin
     Tree.Selected := Node;
   end;
   M.Free;
+  {$endif}
 end;
 
 procedure TEditorForm.ImportAudioActionExecute(Sender: TObject);
@@ -4405,6 +4413,7 @@ begin
     LoadSysLibrary;
 end;
 
+{$ifndef ZgeLazarus}
 procedure AutoCompAddOne(const S : string; Item : TObject; Context : pointer);
 var
   C : TSynCompletionProposal;
@@ -4459,7 +4468,9 @@ begin
   C.ItemList.AddObject(Desc,TObject(PChar(Ins)));
   C.InsertList.Add(Ins);
 end;
+{$endif}
 
+{$ifndef ZgeLazarus}
 procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
@@ -4586,7 +4597,9 @@ begin
   (Comp.InsertList as TStringList).Sort;
   (Comp.ItemList as TStringList).Sort;
 end;
+{$endif}
 
+{$ifndef ZgeLazarus}
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
@@ -4646,6 +4659,7 @@ begin
     Dec(I);
   end;
 end;
+{$endif}
 
 procedure TEditorForm.ParseEvalExpression(const Expr: string);
 var
@@ -4714,6 +4728,7 @@ begin
   Result := Length(List[Index2])-Length(List[Index1]);
 end;
 
+{$ifndef ZgeLazarus}
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
   TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine,SectionNr : integer;
@@ -5045,6 +5060,7 @@ begin
 
   NamesToRemove.Free;
 end;
+{$endif}
 
 procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);
 var
@@ -5087,6 +5103,7 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
+{$ifndef ZgeLazarus}
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
 
 {  procedure RecolorHighlighter(H : TSynCustomHighlighter);
@@ -5122,6 +5139,7 @@ begin
 //  RecolorHighlighter(ExprSynEdit.Highlighter);
 //  RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
+{$endif}
 
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
 var
@@ -5129,15 +5147,19 @@ var
 begin
   M := (Sender as TMenuItem);
   M.Checked := True;
+  {$ifndef ZgeLazarus}
   SwitchToStyle(M.Hint,nil);
+  {$endif}
 end;
 
 procedure TEditorForm.OpenStyleMenuItemClick(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   if OpenStyleDialog.Execute(Self.Handle) then
   begin
     SwitchToStyle('', TStyleManager.LoadFromFile(OpenStyleDialog.FileName));
   end;
+  {$endif}
 end;
 
 procedure TEditorForm.BuildStyleMenu;
@@ -5145,6 +5167,7 @@ var
   M : TMenuItem;
   S : string;
 begin
+  {$ifndef ZgeLazarus}
   for S in TDirectory.GetFiles(ExePath + 'Styles','*.vsf') do
   begin
     TStyleManager.LoadFromFile(S);
@@ -5159,6 +5182,7 @@ begin
     M.RadioItem := True;
     StyleMenuItem.Add(M);
   end;
+  {$endif}
 end;
 
 procedure TEditorForm.BuildZ80MenuItemClick(Sender: TObject);
@@ -5170,7 +5194,9 @@ begin
   else
     OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
   try
+    {$ifndef ZgeLazarus}
     wglMakeCurrent(Glp.Canvas.Handle,Glp.GetHrc);
+    {$endif}
     BuildZ80(OutFile);
   except on E : Exception do
     ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check the Z80 demo projects.'+#13+#13+E.Message);
@@ -5237,6 +5263,10 @@ begin
 end;
 
 procedure TEditorForm.BuildAndroidApk(const IsDebug : boolean);
+{$ifdef ZgeLazarus}
+begin
+end;
+{$else}
 var
   TemplatePath,OverridePath,ProjectPath,OutFile : string;
   Lookups : TDictionary<string,string>;
@@ -5457,6 +5487,7 @@ begin
       '<A HREF="' + ProjectPath + '">Open project folder</A>' + #13#13 +
       'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
 end;
+{$endif}
 
 { TPropEditKey }
 

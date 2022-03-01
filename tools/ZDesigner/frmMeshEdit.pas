@@ -82,7 +82,7 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, System.Types,
+uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, Types,
   OpenGL12,ZOpenGL;
 
 {$R *.dfm}

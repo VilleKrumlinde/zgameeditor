@@ -70,8 +70,8 @@ var
 
 implementation
 
-uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, Vcl.ExtDlgs,
-  System.Types, OpenGL12, Renderer, ZOpenGL;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
+  Types, OpenGL12, Renderer, ZOpenGL;
 
 {$R *.dfm}
 

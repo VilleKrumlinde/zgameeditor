@@ -3,8 +3,13 @@ unit frmSoundEdit;
 interface
 
 uses
+  {$ifdef ZgeLazarus}
+  Spin,
+  {$else}
+  Vcl.Samples.Spin,
+  {$endif}
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, frmCompEditBase,
-  Dialogs, ComCtrls, ExtCtrls, StdCtrls, Vcl.Samples.Spin, ZClasses, DesignerGUI, AudioComponents;
+  Dialogs, ComCtrls, ExtCtrls, StdCtrls, ZClasses, DesignerGUI, AudioComponents;
 
 type
   TSoundEditFrame = class(TCompEditFrameBase)

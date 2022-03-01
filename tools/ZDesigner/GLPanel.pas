@@ -63,11 +63,13 @@ implementation
 
 uses ZLog, ZPlatform, ZClasses, frmEditor;
 
+{$ifndef ZgeLazarus}
 procedure TGLPanel.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   Params.WindowClass.style := Params.WindowClass.style or CS_OWNDC;
 end;
+{$endif}
 
 procedure TGLPanel.SetDCPixelFormat(const DC: HDC);
 var
@@ -155,7 +157,9 @@ end;
 constructor TGLPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  {$ifndef ZgeLazarus}
   Locked := True;
+  {$endif}
   Color := clBlack;
 end;
 

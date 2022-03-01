@@ -34,9 +34,15 @@ program ZDesigner;
 uses
   Forms,
 {$IFDEF FPC}
-  LCLIntf, LCLType, LMessages,
+  LCLIntf, LCLType, LMessages, Interfaces,
 {$ELSE}
   Vcl.HTMLHelpViewer, Vcl.Themes, Vcl.Styles, Windows,
+  unitPEFile in '3rdparty\unitPEFile.pas',
+  unitResourceDetails in '3rdparty\unitResourceDetails.pas',
+  unitResourceRCData in '3rdparty\unitResourceRCData.pas',
+  unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
+  unitEXIcon in '3rdparty\unitEXIcon.pas',
+  uTinyGif in '3rdparty\uTinyGif.pas',
 {$ENDIF}
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
@@ -72,18 +78,12 @@ uses
   uHelp in 'uHelp.pas',
   frmToolMissing in 'frmToolMissing.pas' {ToolMissingForm},
   ZFile in '..\..\ZFile.pas',
-  unitPEFile in '3rdparty\unitPEFile.pas',
-  unitResourceDetails in '3rdparty\unitResourceDetails.pas',
-  unitResourceRCData in '3rdparty\unitResourceRCData.pas',
   frmMemoEdit in 'frmMemoEdit.pas' {MemoEditForm},
   uMidiFile in 'uMidiFile.pas',
-  uTinyGif in '3rdparty\uTinyGif.pas',
   u3dsFile in 'u3dsFile.pas',
   frm3dsImportOptions in 'frm3dsImportOptions.pas' {Import3dsForm},
   frmRawAudioImportOptions in 'frmRawAudioImportOptions.pas' {ImportRawAudioForm},
   frmSettings in 'frmSettings.pas' {SettingsForm},
-  unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
-  unitEXIcon in '3rdparty\unitEXIcon.pas',
   Zc_Ops in 'Compiler\Zc_Ops.pas',
   frmBitmapEdit in 'frmBitmapEdit.pas' {BitmapEditFrame: TFrame},
   SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
@@ -116,12 +116,13 @@ begin
   //Disable dpi virtualization
   //SetProcessDPIAware;
 
+  Application.Initialize;
+  {$ifndef ZgeLazarus}
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;
-
-  Application.Initialize;
   Application.MainFormOnTaskbar := True;
   TStyleManager.TrySetStyle('Carbon');
+  {$endif}
   Application.Title := frmEditor.AppName;
   Application.CreateForm(TCommonModule, CommonModule);
   Application.CreateForm(TEditorForm, EditorForm);

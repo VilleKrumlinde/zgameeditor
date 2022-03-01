@@ -96,16 +96,22 @@ function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
 function ZColorToColor(C : TZColorf) : TColor;
 function ColorToZColor(C : TColor) : TZColorf;
+{$ifndef ZgeLazarus}
 procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
+{$endif}
 
 implementation
 
-uses StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
-  Vcl.ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,Vcl.AxCtrls,CommCtrl,
+uses
+  {$ifndef ZgeLazarus}
+  Vcl.AxCtrls,Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,Winapi.GDIPAPI, Winapi.GDIPOBJ,
+  Vcl.Imaging.Pngimage,
+  {$endif}
+  StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
+  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,CommCtrl,
   frmRawAudioImportOptions,ZFile,
-  frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
-  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath,
-  Winapi.GDIPAPI, Winapi.GDIPOBJ;
+  frmArrayEdit, ZExpressions, ZApplication, u3dsFile, Meshes,
+  ZMath;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -244,7 +250,9 @@ end;
 procedure TZPropertiesEditor.ChangeScale(M, D: Integer);
 begin
   inherited;
+  {$ifndef ZgeLazarus}
   PanelHeight := MulDiv(PanelHeight,M,D);
+  {$endif}
 end;
 
 constructor TZPropertiesEditor.Create(Owner: TComponent);
@@ -278,7 +286,9 @@ begin
     Exit;
 
   //Important: otherwise vertscrollbars appears that crash if clicked upon
+  {$ifndef ZgeLazarus}
   Self.DisableAutoRange;
+  {$endif}
 
   PEditor := nil;
   WantsFocus := nil;
@@ -315,7 +325,9 @@ begin
       WantsFocus := PEditor;
   end;
 
+  {$ifndef ZgeLazarus}
   Self.EnableAutoRange;
+  {$endif}
 
   Show;
 end;
@@ -427,7 +439,9 @@ begin
 
   if Prop.PropertyType=zptExpression then
   begin
+    {$ifndef ZgeLazarus}
     Edit.Text := Value.ExpressionValue.Source.Substring(0,100);
+    {$endif}
     Edit.Tag:=100;
     Self.IsExpression := True;
   end
@@ -596,7 +610,9 @@ begin
   if ColorDialog=nil then
     ColorDialog := TColorDialog.Create(Application);
   ColorDialog.Color := ZColorToColor( Value.ColorfValue );
+  {$ifndef ZgeLazarus}
   ColorDialog.Options := [cdFullOpen];
+  {$endif}
   if ColorDialog.Execute then
   begin
     AlphaTemp := Value.ColorfValue.V[3];
@@ -816,7 +832,11 @@ begin
   if Index=-1 then
     Node := Items.AddChild(Parent,'') as TZComponentTreeNode
   else
+    {$ifdef ZgeLazarus}
+    Node := Items.Insert(Parent.Items[Index],'') as TZComponentTreeNode;
+    {$else}
     Node := Items.Insert(Parent.Item[Index],'') as TZComponentTreeNode;
+    {$endif}
 
   Node.Component := C;
   Node.ImageIndex := ComponentManager.GetInfo(C).ImageIndex;
@@ -1049,9 +1069,11 @@ begin
 //**************************************************************************
 
    if Selected = nil then
-      Exit;
+     Exit;
 
+   {$ifndef ZgeLazarus}
    TreeView_SelectItem( Selected.Handle, Selected.ItemId );
+   {$endif}
 
    Result := inherited GetPopupMenu;
 end;
@@ -1364,6 +1386,7 @@ end;
 
 { TZBinaryPropEdit }
 
+{$ifndef ZgeLazarus}
 function GraphicToBitmap(Pic :TPicture) : Vcl.Graphics.TBitmap;
 var
   Bmp: Vcl.Graphics.TBitmap;
@@ -1538,11 +1561,14 @@ begin
     Pic.Free;
   end;
 end;
+{$endif}
 
 procedure TZBinaryPropEdit.OnClearValue(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   if Application.MessageBox('Clear the current value?', PChar(Application.Title), MB_YESNO)<>IDYES then
     Exit;
+  {$endif}
   Value.BinaryValue.Size := 0;
   Value.BinaryValue.Data := nil;
   UpdateProp;
@@ -1564,7 +1590,9 @@ var
 //      D.DefaultExt := '*.bmp';
       if not D.Execute then
         Exit;
+      {$ifndef ZgeLazarus}
       GetPictureStream(TBitmapFromFile(Self.Component),D.FileName,M);
+      {$endif}
       Result := True;
     finally
       D.Free;

@@ -116,7 +116,7 @@ type
 
 implementation
 
-uses ZLog,ZClasses,Vcl.Forms,ZApplication,Vcl.Dialogs,Winapi.Windows,AudioPlayer,DesignerGui;
+uses ZLog,ZClasses,Forms,ZApplication,Dialogs,Windows,AudioPlayer,DesignerGui;
 
 procedure WriteVarLength(Stream : TMemoryStream; Value: LongInt; Mask: Byte = 0);
 var

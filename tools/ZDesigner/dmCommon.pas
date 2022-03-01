@@ -23,9 +23,9 @@ unit dmCommon;
 interface
 
 uses
-  {$ifndef ZgeLazarus}ActnMan, Actions, ImageList,{$endif}
+  {$ifndef ZgeLazarus}ActnMan, Actions, ImageList,Vcl.XPStyleActnCtrls,{$endif}
   SysUtils, Classes, ImgList, Controls, Menus, ActnList,
-  StdActns, Dialogs, Vcl.XPStyleActnCtrls;
+  StdActns, Dialogs ;
 
 type
   TCommonModule = class(TDataModule)
