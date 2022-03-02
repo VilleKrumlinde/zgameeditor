@@ -66,7 +66,9 @@
       <Unit>
         <Filename Value="frmEditor.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="EditorForm"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
         <Filename Value="..\..\Animators.pas"/>

@@ -653,6 +653,10 @@ begin
   FillQuickCompList;
 
   EvalHistory := TStringList.Create;
+
+  {$ifdef ZgeLazarus}
+  ToolBar1.Hide; //LCL toolbar looks broken, best to hide it
+  {$endif}
 end;
 
 
@@ -1012,7 +1016,9 @@ begin
     //Must compile directly after load because no zc-instructions are saved in the xml
     CompileAll;
   finally
-    {$ifndef ZgeLazarus}
+    {$ifdef ZgeLazarus}
+    ZApp.Driver := GLDrivers.CreateDriver(ZApp.GLBase);
+    {$else}
     TThread.Synchronize(nil,
       procedure
       begin
