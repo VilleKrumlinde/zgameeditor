@@ -4,10 +4,12 @@ interface
 
 uses
   {$ifndef ZgeLazarus}
-  Windows, Messages,
+  Windows, Messages, OpenGL12,
+  {$else}
+  dglOpenGL,
   {$endif}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  dglOpenGL, ExtCtrls, ZApplication;
+  ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)

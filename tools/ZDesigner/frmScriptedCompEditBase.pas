@@ -29,7 +29,11 @@ type
 
 implementation
 
-uses frmEditor, ZPlatform;
+uses
+  {$ifndef ZgeLazarus}
+  Windows,
+  {$endif}
+  frmEditor, ZPlatform;
 
 {$R *.dfm}
 

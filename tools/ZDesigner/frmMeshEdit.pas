@@ -87,8 +87,14 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, Types,
-  dglOpenGL,ZOpenGL;
+uses
+  {$ifndef ZgeLazarus}
+  OpenGL12,
+  {$else}
+  dglOpenGL,
+  {$endif}
+  Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, Types,
+  ZOpenGL;
 
 {$R *.dfm}
 
