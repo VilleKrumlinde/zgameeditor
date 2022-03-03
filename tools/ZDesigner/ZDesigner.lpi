@@ -337,7 +337,7 @@
     <SearchPaths>
       <IncludeFiles Value="..\..;Compiler;3rdparty;$(ProjOutDir)"/>
       <Libraries Value="..\.."/>
-      <OtherUnitFiles Value="..\..;Compiler;3rdparty;..\..\3rdparty"/>
+      <OtherUnitFiles Value="..\..;Compiler;3rdparty;..\..\3rdparty;..\..\3rdparty\sdl2"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       <ObjectPath Value="..\.."/>
     </SearchPaths>
@@ -368,7 +368,8 @@
 -dPUREPASCAL
 -dzlog
 -dzdebug
--dZgeLazarus"/>
+-dZgeLazarus
+-dZZDC_SDL"/>
       <OtherDefines Count="8">
         <Define0 Value="Borland"/>
         <Define1 Value="Ver150"/>

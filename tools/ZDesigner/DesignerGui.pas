@@ -105,10 +105,10 @@ implementation
 uses
   {$ifndef ZgeLazarus}
   Vcl.AxCtrls,Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,Winapi.GDIPAPI, Winapi.GDIPOBJ,
-  Vcl.Imaging.Pngimage,
+  Vcl.Imaging.Pngimage, CommCtrl,
   {$endif}
   StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
-  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,CommCtrl,
+  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,
   frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, ZApplication, u3dsFile, Meshes,
   ZMath;

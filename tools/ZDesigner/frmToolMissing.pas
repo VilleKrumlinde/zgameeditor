@@ -3,7 +3,7 @@ unit frmToolMissing;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls;
 
 type
@@ -33,7 +33,7 @@ implementation
 
 {$R *.dfm}
 
-uses ShellApi,uHelp;
+uses uHelp;
 
 procedure TToolMissingForm.DownloadURLLabelClick(Sender: TObject);
 begin

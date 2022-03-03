@@ -3,7 +3,10 @@ unit frmCustomPropEditBase;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics,
   Controls, Forms, StdCtrls, DesignerGUI, ZClasses;
 
 type

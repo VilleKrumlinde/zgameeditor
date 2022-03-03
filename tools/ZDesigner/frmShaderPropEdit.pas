@@ -4,9 +4,9 @@ interface
 
 uses
   {$ifndef ZgeLazarus}
-  SynEdit,
+  SynEdit, Windows, Messages,
   {$endif}
-  Windows, Messages, SysUtils, Classes,
+  SysUtils, Classes,
   Graphics, Controls, Forms, Dialogs, StdCtrls,
   frmCustomPropEditBase, ExtCtrls;
 

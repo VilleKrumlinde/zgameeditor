@@ -43,14 +43,14 @@ uses
   unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
   unitEXIcon in '3rdparty\unitEXIcon.pas',
   uTinyGif in '3rdparty\uTinyGif.pas',
-{$ENDIF}
+  OpenGL12 in 'OpenGL12.pas',
+  {$ENDIF}
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
   ZBitmap in '..\..\ZBitmap.pas',
   BitmapProducers in '..\..\BitmapProducers.pas',
   GLPanel in 'GLPanel.pas',
-  OpenGL12 in 'OpenGL12.pas',
   frmEditor in 'frmEditor.pas' {EditorForm},
   Animators in '..\..\Animators.pas',
   Meshes in '..\..\Meshes.pas',

@@ -3,7 +3,7 @@ unit frmSelectComponent;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ZClasses, StdCtrls;
 
 type
@@ -37,9 +37,9 @@ implementation
 
 uses
   {$ifndef ZgeLazarus}
-  Vcl.Styles, Vcl.Themes,
+  Vcl.Styles, Vcl.Themes, CommCtrl,
   {$endif}
-  dmCommon,uHelp,CommCtrl, Math;
+  dmCommon,uHelp, Math;
 
 {$R *.dfm}
 
@@ -67,7 +67,10 @@ begin
   end;
   SetLength(EnabledList,Length(Infos^));
 
+
+  {$ifndef ZgeLazarus}
   ListView_SetColumnWidth(CompListView.Handle, 0, 200);
+  {$endif}
 end;
 
 function TSelectComponentForm.GetSelectedClass: TZComponentInfo;

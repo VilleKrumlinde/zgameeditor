@@ -3,7 +3,7 @@ unit frmScriptedCompEditBase;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics,
+  SysUtils, Classes, Graphics,
   Controls, Forms, Dialogs, frmCompEditBase, GLPanel, ZClasses, DesignerGui,
   ZApplication, ExtCtrls, StdCtrls;
 
@@ -42,7 +42,9 @@ begin
 
   Glp := TGLPanelZGE.Create(Self);
   Glp.Align := alClient;
+  {$ifndef ZgeLazarus}
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  {$endif}
   Glp.Parent := Self;
   Glp.OnBindData := Self.OnBindData;
   Glp.OnUpdateData := Self.OnUpdateData;

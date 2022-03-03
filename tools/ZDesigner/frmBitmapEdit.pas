@@ -3,9 +3,14 @@ unit frmBitmapEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$else}
+  LCLIntf,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, ZBitmap,
-  Menus, StdCtrls,GlPanel;
+  Menus, StdCtrls, GlPanel;
 
 type
   TBitmapEditFrame = class(TCompEditFrameBase)
@@ -71,7 +76,7 @@ var
 implementation
 
 uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
-  Types, OpenGL12, Renderer, ZOpenGL;
+  Types, dglOpenGL, Renderer, ZOpenGL;
 
 {$R *.dfm}
 
@@ -614,7 +619,9 @@ begin
 
   Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
+  {$ifndef ZgeLazarus}
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  {$endif}
   Glp.OnGLDraw := Self.OnGlDraw;
   Glp.Visible := not DisablePreviewCheckBox.Checked;
   Glp.Parent := PreviewPanel;

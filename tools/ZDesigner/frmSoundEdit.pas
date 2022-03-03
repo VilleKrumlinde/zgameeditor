@@ -6,9 +6,9 @@ uses
   {$ifdef ZgeLazarus}
   Spin,
   {$else}
-  Vcl.Samples.Spin,
+  Vcl.Samples.Spin, Windows, Messages,
   {$endif}
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, frmCompEditBase,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, frmCompEditBase,
   Dialogs, ComCtrls, ExtCtrls, StdCtrls, ZClasses, DesignerGUI, AudioComponents;
 
 type
@@ -111,7 +111,11 @@ implementation
 
 {$R *.dfm}
 
-uses MMSystem, AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
+uses
+  {$ifndef ZgeLazarus}
+  MMSystem,
+  {$endif}
+  AudioPlayer, frmModulationFrame,frmLfoFrame,frmChannelFrame,
   frmEnvelopeFrame,ZPlatform,Math, uHelp, Types, Clipbrd;
 
 const

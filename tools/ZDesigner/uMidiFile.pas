@@ -116,7 +116,11 @@ type
 
 implementation
 
-uses ZLog,ZClasses,Forms,ZApplication,Dialogs,Windows,AudioPlayer,DesignerGui;
+uses
+  {$ifndef ZgeLazarus}
+  Windows,
+  {$endif}
+  ZLog,ZClasses,Forms,ZApplication,Dialogs,AudioPlayer,DesignerGui;
 
 procedure WriteVarLength(Stream : TMemoryStream; Value: LongInt; Mask: Byte = 0);
 var
@@ -593,6 +597,7 @@ begin
     InstGroup := (Root as TZApplication).Content[0] as TLogicalGroup;
     if Music.Instruments.Count>0 then
     begin
+      {$ifndef ZgeLazarus}
       case Application.MessageBox('Music->Instruments list property will be overwritten with instruments of the imported midi-file. Is this ok?'#13#13 +
         'Select YES to OVERWRITE instruments'#13+
         'Select NO to KEEP the instruments that are already there'#13 +
@@ -602,6 +607,7 @@ begin
         IDNO : Exit;
         IDCANCEL : Abort;
       end;
+      {$endif}
     end;
     Music.Instruments.Clear;
     if UsedPatchesList.Count=0 then

@@ -3,7 +3,7 @@ unit frmFloatPropEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics,
+  SysUtils, Classes, Graphics,
   Controls, Forms, Dialogs, frmCustomPropEditBase, ComCtrls,
   StdCtrls;
 

@@ -3,7 +3,10 @@ unit frmMusicEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, frmCompEditBase, StdCtrls,ZClasses,AudioComponents, ExtCtrls, DesignerGUI,
   ComCtrls, CheckLst;
 

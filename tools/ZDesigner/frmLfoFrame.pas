@@ -3,7 +3,10 @@ unit frmLfoFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, AudioPlayer,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs, AudioPlayer,
   ComCtrls, StdCtrls;
 
 type

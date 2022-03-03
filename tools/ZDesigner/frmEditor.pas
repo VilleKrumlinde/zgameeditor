@@ -29,7 +29,7 @@ interface
 uses
 {$IFnDEF FPC}
   Windows, SynCompletionProposal, unitPEFile, Vcl.Imaging.Jpeg, Vcl.Themes,
-  Vcl.Imaging.pngimage, ImageList,
+  Vcl.Imaging.pngimage, ImageList, CommCtrl,
 {$ELSE}
   LCLIntf, LCLType, LMessages,
 {$ENDIF}
@@ -39,7 +39,7 @@ uses
   uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
   ToolWin, frmBitmapEdit, frmMeshEdit,
   ZApplication, GLDrivers,
-  ZBitmap, Generics.Collections, CommCtrl,
+  ZBitmap, Generics.Collections,
   frmCustomPropEditBase;
 
 type
@@ -367,7 +367,7 @@ type
     SynEditFontSize,AutoCompTimerInterval : integer;
     Log : TLog;
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
-    DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
+    DetachedPropEditors : TDictionary<TPropEditKey,TForm>;
     MainScaling : integer;
     EvalHistory : TStringList;
     QuickCompEnabledList : array of boolean;
@@ -434,7 +434,9 @@ type
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
+    {$ifndef ZgeLazarus}
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
+    {$endif}
     procedure ImportBitmaps(Files: TStringList);
     procedure ImportAudioFiles(Files: TStringList);
     procedure ImportModelFiles(Files: TStringList);
@@ -562,7 +564,7 @@ begin
   LoadGamutBitmap;
   {$endif}
   DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
-  DetachedPropEditors := TObjectDictionary<TPropEditKey,TForm>.Create([doOwnsValues]);
+  DetachedPropEditors := TDictionary<TPropEditKey,TForm>.Create();
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -590,7 +592,10 @@ begin
   Tree.OnRecreate := OnTreeRecreate;
 
   //InitAudio needs hwnd of main window to work
+
+  {$ifndef ZgeLazarus}
   Platform_DesignerSetDC(0,Self.Handle);
+  {$endif}
   Platform_InitAudio;
 
   Glp := TGLPanel.Create(Self);
@@ -1302,11 +1307,8 @@ begin
   inherited;
 end;
 
+{$ifndef ZgeLazarus}
 procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   i, fileCount: integer;
   fileName: array[0..MAX_PATH] of char;
@@ -3364,8 +3366,10 @@ end;
 
 procedure TEditorForm.GlWindowProc(var Message: TMessage);
 begin
+  {$ifndef ZgeLazarus}
   if IsAppRunning then
     Platform_DesignerWindowProc( pointer(@Message) );
+  {$endif}
   OldGlWindowProc(Message);
 end;
 

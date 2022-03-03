@@ -8,14 +8,18 @@ procedure GoUrl(const Url : string);
 
 implementation
 
+{$ifndef ZgeLazarus}
 uses ShellApi,Forms,Windows;
+{$endif}
 
 const
   HelpRoot = 'http://www.zgameeditor.org/';
 
 procedure GoUrl(const Url : string);
 begin
+  {$ifndef ZgeLazarus}
   ShellExecuteW(Application.MainForm.Handle,'open',PChar( Url ),nil,nil,SW_SHOWDEFAULT);
+  {$endif}
 end;
 
 procedure ShowHelp(const Topic : string);

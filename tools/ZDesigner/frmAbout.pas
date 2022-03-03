@@ -23,7 +23,10 @@ unit frmAbout;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, GLPanel, ZExpressions;
 
 type
@@ -55,7 +58,9 @@ uses frmEditor, uHelp, Renderer;
 procedure TAboutForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   //Post an extra mouseup to avoid app being closed immediately if reopened
+  {$ifndef ZgeLazarus}
   PostMessage(Glp.Handle,WM_LBUTTONUP,0,0);
+  {$endif}
   Application.ProcessMessages;
 end;
 
@@ -74,7 +79,9 @@ var
 begin
   Glp := TGLPanelZGE.Create(Self);
   Glp.Align := alClient;
+  {$ifndef ZgeLazarus}
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
+  {$endif}
   Glp.Parent := Self;
   Glp.OnUpdateData := Self.OnUpdateData;
 

@@ -3,7 +3,10 @@ unit frmChannelFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   ComCtrls, AudioPlayer, StdCtrls;
 
 type

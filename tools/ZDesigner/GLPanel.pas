@@ -3,32 +3,41 @@ unit GLPanel;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  OpenGL12, ExtCtrls, ZApplication;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  dglOpenGL, ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)
   private
+    {$ifndef ZgeLazarus}
     Hrc: HGLRC;
+    {$endif}
     InitCalled: Boolean;
     FOnGLDraw: TNotifyEvent;
     FOnGLInit: TNotifyEvent;
+    {$ifndef ZgeLazarus}
     procedure SetDCPixelFormat(const DC: HDC);
+    {$endif}
     procedure CreateRenderContext;
   protected
     {$ifndef ZgeLazarus}
     procedure CreateParams(var Params: TCreateParams); override;
-    {$endif}
     procedure WMEraseBackground( var msg:TWMEraseBkgnd ); message WM_ERASEBKGND;
     procedure WMGETDLGCODE( var msg:TMessage); message WM_GETDLGCODE;
+    {$endif}
     procedure Paint; override;
     procedure SetParent(AParent: TWinControl); override;
     procedure DestroyHandle; override;
     procedure CreateHandle; override;
     property Color default clBlack;
   public
+    {$ifndef ZgeLazarus}
     SharedHrc: HGLRC;
     function GetHrc : HGLRC;
+    {$endif}
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     property MouseCapture;
@@ -47,7 +56,9 @@ type
     RenderTimer : TTimer;
     OldGlWindowProc : TWndMethod;
     procedure RenderTimerTimer(Sender: TObject);
+    {$ifndef ZgeLazarus}
     procedure GlWindowProc(var Message: TMessage);
+    {$endif}
   protected
     procedure Paint; override;
   public
@@ -69,7 +80,6 @@ begin
   inherited;
   Params.WindowClass.style := Params.WindowClass.style or CS_OWNDC;
 end;
-{$endif}
 
 procedure TGLPanel.SetDCPixelFormat(const DC: HDC);
 var
@@ -110,10 +120,12 @@ begin
   if not SetPixelFormat(DC, nPixelFormat, @pfd) then
     raise Exception.Create('Error SetPixelFormat Nr:'+IntToStr(GetLastError)+' nPFrmt:'+IntToStr(nPixelFormat));
 end;
+{$endif}
 
 
 procedure TGLPanel.CreateRenderContext;
 begin
+  {$ifndef ZgeLazarus}
   // Create a rendering context.
   SetDCPixelFormat(Canvas.Handle);
 
@@ -130,6 +142,7 @@ begin
     glViewport(0,0,ClientWidth,ClientHeight);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   end;
+  {$endif}
 end;
 
 
@@ -143,6 +156,7 @@ begin
       OnGlInit(Self);
   end;
 
+  {$ifndef ZgeLazarus}
   wglMakeCurrent(Canvas.Handle,hrc);
 
   Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
@@ -151,6 +165,7 @@ begin
     OnGLDraw(Self);
 
   SwapBuffers(Canvas.Handle);
+  {$endif}
 end;
 
 
@@ -166,11 +181,13 @@ end;
 destructor TGLPanel.Destroy;
 begin
   // Clean up and terminate.
+  {$ifndef ZgeLazarus}
   wglMakeCurrent(0,0);
   inherited;
   if (hrc <> 0) and (SharedHrc=0) then
     //Delete context if we owned it
     wglDeleteContext(HRC)
+  {$endif}
 end;
 
 procedure TGLPanel.ForceInitGL;
@@ -179,6 +196,7 @@ begin
   Paint;
 end;
 
+{$ifndef ZgeLazarus}
 function TGLPanel.GetHrc: HGLRC;
 begin
   Result := Self.Hrc;
@@ -194,6 +212,7 @@ begin
   //Needed to detect arrow keys in zzdc-runtime
   Msg.Result := DLGC_WANTARROWS;
 end;
+{$endif}
 
 procedure TGLPanel.SetParent(AParent: TWinControl);
 begin
@@ -205,7 +224,9 @@ end;
 procedure TGLPanel.DestroyHandle;
 begin
   glFinish();
+  {$ifndef ZgeLazarus}
   wglMakeCurrent(0,0);
+  {$endif}
   inherited;
 end;
 
@@ -229,7 +250,9 @@ begin
   Self.TabStop := True;
 
   OldGlWindowProc := Self.WindowProc;
+  {$ifndef ZgeLazarus}
   Self.WindowProc := GlWindowProc;
+  {$endif}
 end;
 
 destructor TGLPanelZGE.Destroy;
@@ -238,12 +261,14 @@ begin
   inherited;
 end;
 
+{$ifndef ZgeLazarus}
 procedure TGLPanelZGE.GlWindowProc(var Message: TMessage);
 begin
   SetWindowLongPtr(Self.Handle,GWL_USERDATA, NativeInt(Self.App) );
   Platform_DesignerWindowProc( pointer(@Message) );
   OldGlWindowProc(Message);
 end;
+{$endif}
 
 procedure TGLPanelZGE.LoadApp(const FileName: string);
 var

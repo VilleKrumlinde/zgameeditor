@@ -3,7 +3,10 @@ unit frmArrayEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs,ZExpressions, Grids, StdCtrls, ZClasses, ComCtrls;
 
 type
