@@ -12,7 +12,6 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <Title Value="ZDesigner"/>
-      <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
     <BuildModes>
@@ -369,7 +368,13 @@
 -dzlog
 -dzdebug
 -dZgeLazarus
--dZZDC_SDL"/>
+-dMACOS
+-k-framework
+-kCocoa
+-k-framework
+-kCoreAudio
+-k-framework
+-kQuartzCore"/>
       <OtherDefines Count="8">
         <Define0 Value="Borland"/>
         <Define1 Value="Ver150"/>

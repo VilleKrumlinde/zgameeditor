@@ -75,14 +75,8 @@ var
 
 implementation
 
-uses
-  {$ifndef ZgeLazarus}
-  OpenGL12,
-  {$else}
-  dglOpenGL,
-  {$endif}
-  Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
-  Types, Renderer, ZOpenGL;
+uses Meshes, Math, SugiyamaLayout, ZLog, frmEditor, BitmapProducers, ExtDlgs,
+  Types, dglOpenGL, Renderer, ZOpenGL;
 
 {$R *.dfm}
 

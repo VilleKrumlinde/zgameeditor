@@ -32,6 +32,7 @@ program ZDesigner;
 {$endif}
 
 uses
+  cthreads,
   Forms,
 {$IFDEF FPC}
   LCLIntf, LCLType, LMessages, Interfaces,

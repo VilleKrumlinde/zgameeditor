@@ -237,7 +237,7 @@ uses
     Windows
   {$endif}
 
-  {$ifdef LINUX}
+  {$if defined(LINUX) or defined(DARWIN)}
     Libc, Xlib, Types
   {$endif LINUX}
   ;

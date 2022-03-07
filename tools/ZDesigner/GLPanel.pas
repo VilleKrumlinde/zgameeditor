@@ -2,14 +2,16 @@ unit GLPanel;
 
 interface
 
+{$if defined(fpc) and defined(macos)}
+{$modeswitch objectivec1}
+{$endif}
+
 uses
   {$ifndef ZgeLazarus}
-  Windows, Messages, OpenGL12,
-  {$else}
-  dglOpenGL,
+  Windows, Messages,
   {$endif}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtCtrls, ZApplication;
+  dglOpenGL, ExtCtrls, ZApplication;
 
 type
   TGLPanel = class(TCustomPanel)
@@ -74,7 +76,11 @@ type
 
 implementation
 
-uses ZLog, ZPlatform, ZClasses, frmEditor;
+uses
+  {$ifdef MACOS}
+  CocoaUtils, CocoaAll, CocoaPrivate,
+  {$endif}
+  ZLog, ZPlatform, ZClasses, frmEditor;
 
 {$ifndef ZgeLazarus}
 procedure TGLPanel.CreateParams(var Params: TCreateParams);
@@ -126,8 +132,39 @@ end;
 
 
 procedure TGLPanel.CreateRenderContext;
+{$ifdef MACOS}
+const
+  Attr: array[0..15] of NSOpenGLPixelFormatAttribute =
+    (NSOpenGLPFADepthSize, 16,
+     NSOpenGLPFAColorSize, 32,
+     NSOpenGLPFAAlphaSize, 8,
+     NSOpenGLPFADoubleBuffer,
+     NSOpenGLPFAStencilSize, 8,
+     //Request multisample
+     NSOpenGLPFAMultisample,
+     NSOpenGLPFASampleBuffers, 1,
+     NSOpenGLPFASamples, 8,
+     NSOpenGLPFANoRecovery,
+     0);
+var
+  Ctx: NSOpenGLContext;
+  Fmt: NSOpenGLPixelFormat;
+  P : Pointer;
+  View: pointer;
+{$endif}
 begin
-  {$ifndef ZgeLazarus}
+  {$ifdef MACOS}
+  Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
+  P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
+  Ctx := NSOpenGLContext(P);
+
+  View := NSObject(Handle).lclContentView;
+  Ctx.setView( NSView(View) );
+  Ctx.Update;
+
+  Ctx.makeCurrentContext;
+
+  {$else}
   // Create a rendering context.
   SetDCPixelFormat(Canvas.Handle);
 
@@ -158,14 +195,15 @@ begin
       OnGlInit(Self);
   end;
 
-  {$ifndef ZgeLazarus}
+  {$ifdef MSWINDOWS}
   wglMakeCurrent(Canvas.Handle,hrc);
-
   Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
+  {$endif}
 
   if Assigned(OnGLDraw) then
     OnGLDraw(Self);
 
+  {$ifdef MSWINDOWS}
   SwapBuffers(Canvas.Handle);
   {$endif}
 end;
