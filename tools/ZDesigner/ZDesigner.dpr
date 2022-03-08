@@ -32,11 +32,12 @@ program ZDesigner;
 {$endif}
 
 uses
-{$IFDEF FPC}
+  {$IFDEF FPC}
+  {$ifdef macos}
   cthreads,
+  {$endif}
   LCLIntf, LCLType, LMessages, Interfaces,
-{$ELSE}
-  Forms,
+  {$ELSE}
   Vcl.HTMLHelpViewer, Vcl.Themes, Vcl.Styles, Windows,
   unitPEFile in '3rdparty\unitPEFile.pas',
   unitResourceDetails in '3rdparty\unitResourceDetails.pas',
@@ -46,6 +47,7 @@ uses
   uTinyGif in '3rdparty\uTinyGif.pas',
   OpenGL12 in 'OpenGL12.pas',
   {$ENDIF}
+  Forms,
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',

@@ -548,6 +548,8 @@ constructor TEditorForm.Create(AOwner: TComponent);
   end;
   {$endif}
 
+var
+  ff:tform;
 begin
   Driver := CreateDriver(glbFixed);
   inherited Create(AOwner);
@@ -593,7 +595,7 @@ begin
 
   //InitAudio needs hwnd of main window to work
 
-  {$ifndef ZgeLazarus}
+  {$ifdef MSWINDOWS}
   Platform_DesignerSetDC(0,Self.Handle);
   {$endif}
   Platform_InitAudio;
@@ -660,7 +662,10 @@ begin
   EvalHistory := TStringList.Create;
 
   {$ifdef ZgeLazarus}
-  ToolBar1.Hide; //LCL toolbar looks broken, best to hide it
+  //ToolBar1.Hide; //LCL toolbar looks broken, best to hide it
+ff:=tform.create(self);
+ appcontrolpanel.parent := ff;
+ff.show;
   {$endif}
 end;
 
@@ -3927,6 +3932,7 @@ end;
 procedure TEditorForm.QuickCompListViewCustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
 {$ifdef ZgeLazarus}
 begin
+  DefaultDraw := True;
 end;
 {$else}
 //Reference: http://theroadtodelphi.wordpress.com/2012/03/14/vcl-styles-and-owner-draw/

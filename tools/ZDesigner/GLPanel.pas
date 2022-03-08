@@ -7,7 +7,7 @@ interface
 {$endif}
 
 uses
-  {$ifndef ZgeLazarus}
+  {$ifdef MSWINDOWS}
   Windows, Messages,
   {$endif}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
@@ -19,18 +19,18 @@ type
     {$ifdef MACOS}
     Hrc : pointer;
     {$endif}
-    {$ifndef ZgeLazarus}
+    {$ifdef MSWINDOWS}
     Hrc: HGLRC;
     {$endif}
     InitCalled: Boolean;
     FOnGLDraw: TNotifyEvent;
     FOnGLInit: TNotifyEvent;
-    {$ifndef ZgeLazarus}
+    {$ifdef MSWINDOWS}
     procedure SetDCPixelFormat(const DC: HDC);
     {$endif}
     procedure CreateRenderContext;
   protected
-    {$ifndef ZgeLazarus}
+    {$ifndef fpc}
     procedure CreateParams(var Params: TCreateParams); override;
     procedure WMEraseBackground( var msg:TWMEraseBkgnd ); message WM_ERASEBKGND;
     procedure WMGETDLGCODE( var msg:TMessage); message WM_GETDLGCODE;
@@ -41,7 +41,7 @@ type
     procedure CreateHandle; override;
     property Color default clBlack;
   public
-    {$ifndef ZgeLazarus}
+    {$ifdef MSWINDOWS}
     SharedHrc: HGLRC;
     function GetHrc : HGLRC;
     {$endif}
@@ -63,7 +63,7 @@ type
     RenderTimer : TTimer;
     OldGlWindowProc : TWndMethod;
     procedure RenderTimerTimer(Sender: TObject);
-    {$ifndef ZgeLazarus}
+    {$ifndef fpc}
     procedure GlWindowProc(var Message: TMessage);
     {$endif}
   protected
@@ -85,13 +85,15 @@ uses
   {$endif}
   ZLog, ZPlatform, ZClasses, frmEditor;
 
-{$ifndef ZgeLazarus}
+{$ifndef fpc}
 procedure TGLPanel.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   Params.WindowClass.style := Params.WindowClass.style or CS_OWNDC;
 end;
+{$endif}
 
+{$ifdef MSWINDOWS}
 procedure TGLPanel.SetDCPixelFormat(const DC: HDC);
 var
   i: Integer;
@@ -181,8 +183,9 @@ begin
 
   Ctx.makeCurrentContext;
   Self.Hrc := Ctx;
+  {$endif}
 
-  {$else}
+  {$ifdef MSWINDOWS}
   // Create a rendering context.
   SetDCPixelFormat(Canvas.Handle);
 
@@ -196,6 +199,7 @@ begin
   if hrc <> 0 then
   begin
     wglMakeCurrent(Canvas.Handle,hrc);
+    dglOpenGL.ReadExtensions;
     glViewport(0,0,ClientWidth,ClientHeight);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   end;
@@ -238,7 +242,7 @@ end;
 constructor TGLPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  {$ifndef ZgeLazarus}
+  {$ifndef fpc}
   Locked := True;
   {$endif}
   Color := clBlack;
@@ -247,7 +251,7 @@ end;
 destructor TGLPanel.Destroy;
 begin
   // Clean up and terminate.
-  {$ifndef ZgeLazarus}
+  {$ifdef MSWINDOWS}
   wglMakeCurrent(0,0);
   inherited;
   if (hrc <> 0) and (SharedHrc=0) then
@@ -262,12 +266,14 @@ begin
   Paint;
 end;
 
-{$ifndef ZgeLazarus}
+{$ifdef MSWINDOWS}
 function TGLPanel.GetHrc: HGLRC;
 begin
   Result := Self.Hrc;
 end;
+{$endif}
 
+{$ifndef fpc}
 procedure TGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);
 begin
   Msg.Result := 1;
@@ -289,7 +295,7 @@ end;
 
 procedure TGLPanel.DestroyHandle;
 begin
-  {$ifndef ZgeLazarus}
+  {$ifdef MSWINDOWS}
   glFinish();
   wglMakeCurrent(0,0);
   {$endif}

@@ -74,7 +74,7 @@ end;
 procedure TScriptedCompEditFrameBase.HelpButtonClick(Sender: TObject);
 begin
   inherited;
-  {$ifdef MSWINDOWS}
+  {$ifndef fpc}
   Windows.HtmlHelp(0,Application.HelpFile + '::/' + InfoLabel.Hint + '.html', HH_DISPLAY_TOPIC, 0);
   {$endif}
 end;
