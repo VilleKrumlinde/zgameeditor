@@ -37,7 +37,7 @@ implementation
 
 uses
   {$ifndef ZgeLazarus}
-  Vcl.Styles, Vcl.Themes, CommCtrl,
+  Vcl.Styles, Vcl.Themes, CommCtrl, Windows,
   {$endif}
   dmCommon,uHelp, Math;
 

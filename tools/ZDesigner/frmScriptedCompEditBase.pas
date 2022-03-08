@@ -29,7 +29,11 @@ type
 
 implementation
 
-uses frmEditor, ZPlatform;
+uses
+  {$ifdef MSWINDOWS}
+  Windows,
+  {$endif}
+  frmEditor, ZPlatform;
 
 {$R *.dfm}
 
@@ -70,8 +74,8 @@ end;
 procedure TScriptedCompEditFrameBase.HelpButtonClick(Sender: TObject);
 begin
   inherited;
-  {$ifndef ZgeLazarus}
-  HtmlHelp(0,Application.HelpFile + '::/' + InfoLabel.Hint + '.html', HH_DISPLAY_TOPIC, 0);
+  {$ifdef MSWINDOWS}
+  Windows.HtmlHelp(0,Application.HelpFile + '::/' + InfoLabel.Hint + '.html', HH_DISPLAY_TOPIC, 0);
   {$endif}
 end;
 

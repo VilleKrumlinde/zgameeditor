@@ -16,6 +16,9 @@ uses
 type
   TGLPanel = class(TCustomPanel)
   private
+    {$ifdef MACOS}
+    Hrc : pointer;
+    {$endif}
     {$ifndef ZgeLazarus}
     Hrc: HGLRC;
     {$endif}
@@ -151,6 +154,9 @@ var
   Fmt: NSOpenGLPixelFormat;
   P : Pointer;
   View: pointer;
+
+  MainWindow: NSWindow;
+  MainWindowRect : NSRect;
 {$endif}
 begin
   {$ifdef MACOS}
@@ -158,11 +164,23 @@ begin
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
   Ctx := NSOpenGLContext(P);
 
-  View := NSObject(Handle).lclContentView;
+
+  MainWindowRect.origin.x := 300.0;
+  MainWindowRect.origin.y := 300.0;
+  MainWindowRect.size.width := 300.0;
+  MainWindowRect.size.height := 500.0;
+  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
+    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
+    NSBackingStoreBuffered, False);
+  MainWindow.makeKeyAndOrderFront(NSapp);
+
+//  View := NSObject(Handle).lclContentView;
+  View := MainWindow.contentView;
   Ctx.setView( NSView(View) );
   Ctx.Update;
 
   Ctx.makeCurrentContext;
+  Self.Hrc := Ctx;
 
   {$else}
   // Create a rendering context.
@@ -195,6 +213,10 @@ begin
       OnGlInit(Self);
   end;
 
+  {$ifdef MACOS}
+  NSOpenGLContext(hrc).update;
+  {$endif}
+
   {$ifdef MSWINDOWS}
   wglMakeCurrent(Canvas.Handle,hrc);
   Platform_DesignerSetDC(Self.Canvas.Handle, Self.Handle);
@@ -202,6 +224,10 @@ begin
 
   if Assigned(OnGLDraw) then
     OnGLDraw(Self);
+
+  {$ifdef MACOS}
+  NSOpenGLContext(hrc).flushBuffer;
+  {$endif}
 
   {$ifdef MSWINDOWS}
   SwapBuffers(Canvas.Handle);
@@ -263,8 +289,8 @@ end;
 
 procedure TGLPanel.DestroyHandle;
 begin
-  glFinish();
   {$ifndef ZgeLazarus}
+  glFinish();
   wglMakeCurrent(0,0);
   {$endif}
   inherited;

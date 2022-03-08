@@ -32,11 +32,11 @@ program ZDesigner;
 {$endif}
 
 uses
-  cthreads,
-  Forms,
 {$IFDEF FPC}
+  cthreads,
   LCLIntf, LCLType, LMessages, Interfaces,
 {$ELSE}
+  Forms,
   Vcl.HTMLHelpViewer, Vcl.Themes, Vcl.Styles, Windows,
   unitPEFile in '3rdparty\unitPEFile.pas',
   unitResourceDetails in '3rdparty\unitResourceDetails.pas',
