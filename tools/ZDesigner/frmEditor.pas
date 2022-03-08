@@ -548,8 +548,6 @@ constructor TEditorForm.Create(AOwner: TComponent);
   end;
   {$endif}
 
-var
-  ff:tform;
 begin
   Driver := CreateDriver(glbFixed);
   inherited Create(AOwner);
@@ -662,10 +660,10 @@ begin
   EvalHistory := TStringList.Create;
 
   {$ifdef ZgeLazarus}
-  //ToolBar1.Hide; //LCL toolbar looks broken, best to hide it
-ff:=tform.create(self);
- appcontrolpanel.parent := ff;
-ff.show;
+  ViewerGLTabSheet.TabVisible := True;
+  ViewerCompTabSheet.TabVisible := True;
+  ViewerBlankTabSheet.TabVisible := True;
+  QuickCompListView.ViewStyle := vsReport;
   {$endif}
 end;
 

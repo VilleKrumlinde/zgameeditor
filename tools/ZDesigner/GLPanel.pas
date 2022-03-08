@@ -156,9 +156,6 @@ var
   Fmt: NSOpenGLPixelFormat;
   P : Pointer;
   View: pointer;
-
-  MainWindow: NSWindow;
-  MainWindowRect : NSRect;
 {$endif}
 begin
   {$ifdef MACOS}
@@ -166,23 +163,16 @@ begin
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
   Ctx := NSOpenGLContext(P);
 
-
-  MainWindowRect.origin.x := 300.0;
-  MainWindowRect.origin.y := 300.0;
-  MainWindowRect.size.width := 300.0;
-  MainWindowRect.size.height := 500.0;
-  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
-    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
-    NSBackingStoreBuffered, False);
-  MainWindow.makeKeyAndOrderFront(NSapp);
-
-//  View := NSObject(Handle).lclContentView;
-  View := MainWindow.contentView;
+  View := NSObject(Handle).lclContentView;
   Ctx.setView( NSView(View) );
   Ctx.Update;
 
   Ctx.makeCurrentContext;
   Self.Hrc := Ctx;
+
+  dglOpenGL.ReadExtensions;
+  glViewport(0,0,ClientWidth,ClientHeight);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   {$endif}
 
   {$ifdef MSWINDOWS}

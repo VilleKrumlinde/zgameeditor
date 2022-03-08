@@ -293,7 +293,11 @@ begin
   PEditor := nil;
   WantsFocus := nil;
   PropList := C.GetProperties;
+  {$ifdef ZgeLazarus}
+  for I:=PropList.Count-1 downto 0 do
+  {$else}
   for I:=0 to PropList.Count-1 do
+  {$endif}
   begin
     Prop := TZProperty(PropList[I]);
     if {Prop.NeverPersist or }Prop.ExcludeFromXml or Prop.HideInGui then
