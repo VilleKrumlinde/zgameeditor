@@ -10,18 +10,20 @@ uses
   {$ifdef MSWINDOWS}
   Windows, Messages,
   {$endif}
+  {$ifdef ZgeLazarus}
+  LCLType, LCLIntf, LMessages, 
+  {$endif}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   dglOpenGL, ExtCtrls, ZApplication;
 
-type
+type 
+  {$ifdef MACOS}
+  HGLRC = pointer;
+  {$endif}
+
   TGLPanel = class(TCustomPanel)
   private
-    {$ifdef MACOS}
-    Hrc : pointer;
-    {$endif}
-    {$ifdef MSWINDOWS}
     Hrc: HGLRC;
-    {$endif}
     InitCalled: Boolean;
     FOnGLDraw: TNotifyEvent;
     FOnGLInit: TNotifyEvent;
@@ -40,13 +42,18 @@ type
     procedure DestroyHandle; override;
     procedure CreateHandle; override;
     property Color default clBlack;
+    {$ifdef ZgeLazarus}
+    procedure WMPaint(var Message: TLMPaint); message LM_PAINT;
+    {$endif}
   public
-    {$ifdef MSWINDOWS}
     SharedHrc: HGLRC;
     function GetHrc : HGLRC;
-    {$endif}
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    {$ifdef ZgeLazarus}
+    procedure Invalidate; override;
+    procedure EraseBackground(DC: HDC); override;
+    {$endif}
     property MouseCapture;
     property Canvas;
     property OnGLDraw: TNotifyEvent read FOnGLDraw write FOnGLDraw;
@@ -156,6 +163,10 @@ var
   Fmt: NSOpenGLPixelFormat;
   P : Pointer;
   View: pointer;
+
+  MainWindow: NSWindow;
+  MainWindowRect : NSRect;
+
 {$endif}
 begin
   {$ifdef MACOS}
@@ -163,7 +174,17 @@ begin
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
   Ctx := NSOpenGLContext(P);
 
-  View := NSObject(Handle).lclContentView;
+  MainWindowRect.origin.x := 300.0;
+  MainWindowRect.origin.y := 300.0;
+  MainWindowRect.size.width := 300.0;
+  MainWindowRect.size.height := 500.0;
+  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
+    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
+    NSBackingStoreBuffered, False);
+  MainWindow.makeKeyAndOrderFront(NSapp);
+
+//  View := NSObject(Handle).lclContentView;
+  View := MainWindow.contentView;
   Ctx.setView( NSView(View) );
   Ctx.Update;
 
@@ -228,6 +249,14 @@ begin
   {$endif}
 end;
 
+{$ifdef ZgeLazarus}
+procedure TGLPanel.WMPaint(var Message: TLMPaint);
+begin
+  Include(FControlState, csCustomPaint);
+  Paint;
+  Exclude(FControlState, csCustomPaint);
+end;
+{$endif}
 
 constructor TGLPanel.Create(AOwner: TComponent);
 begin
@@ -248,20 +277,45 @@ begin
     //Delete context if we owned it
     wglDeleteContext(HRC)
   {$endif}
+
+  {$ifdef MACOS}
+  if (hrc <> nil) and (SharedHrc=nil) then
+    //Delete context if we owned it
+    NSOpenGLContext(HRC).release;
+  inherited;
+  {$endif}
 end;
 
 procedure TGLPanel.ForceInitGL;
 begin
   HandleNeeded;
   Paint;
+  {$ifdef MACOS}
+  TCocoaCustomControl(Handle).lclClearCallback;
+  {$endif}
 end;
 
-{$ifdef MSWINDOWS}
+{$ifdef ZgeLazarus}
+procedure TGLPanel.Invalidate; 
+begin
+  {$ifdef MACOS}
+  if csCustomPaint in FControlState then 
+    Exit;
+  if Parent<>nil then
+    TCocoaCustomControl(Handle).lclClearCallback;
+  {$endif}
+  inherited;
+end;
+
+procedure TGLPanel.EraseBackground(DC: HDC); 
+begin
+end;
+{$endif}
+
 function TGLPanel.GetHrc: HGLRC;
 begin
   Result := Self.Hrc;
 end;
-{$endif}
 
 {$ifndef fpc}
 procedure TGLPanel.WMEraseBackground(var Msg:TWMEraseBkgnd);

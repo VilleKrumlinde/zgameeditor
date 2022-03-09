@@ -25,8 +25,6 @@ inherited MeshEditFrame: TMeshEditFrame
       Width = 196
       Height = 337
       Align = alClient
-      BevelInner = bvNone
-      BevelOuter = bvNone
       BorderStyle = bsNone
       PopupMenu = PopupMenu1
       TabOrder = 0
@@ -76,7 +74,6 @@ inherited MeshEditFrame: TMeshEditFrame
       Width = 230
       Height = 22
       Align = alBottom
-      BevelOuter = bvNone
       TabOrder = 2
       object SaveMeshToFileButton: TButton
         Left = 104
@@ -103,7 +100,6 @@ inherited MeshEditFrame: TMeshEditFrame
       Width = 230
       Height = 281
       Align = alClient
-      BevelOuter = bvNone
       TabOrder = 3
     end
   end
@@ -119,6 +115,12 @@ inherited MeshEditFrame: TMeshEditFrame
       OnClick = DeleteMenuItemClick
     end
     object PreviewMenuItem: TMenuItem
+      Caption = 'Preview'
+      OnClick = PreviewMenuItemClick
+    end
+  end
+end
+wMenuItem: TMenuItem
       Caption = 'Preview'
       OnClick = PreviewMenuItemClick
     end

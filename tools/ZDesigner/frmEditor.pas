@@ -660,10 +660,14 @@ begin
   EvalHistory := TStringList.Create;
 
   {$ifdef ZgeLazarus}
+  {$ifdef MACOS} //Cocoa LCL needs some workarounds
   ViewerGLTabSheet.TabVisible := True;
   ViewerCompTabSheet.TabVisible := True;
   ViewerBlankTabSheet.TabVisible := True;
-  QuickCompListView.ViewStyle := vsReport;
+  with QuickCompListView.Columns.Add do
+    Width := 200;
+  QuickCompListView.ShowColumnHeaders := False;
+  {$endif}
   {$endif}
 end;
 
@@ -1805,7 +1809,7 @@ begin
     Node := Tree.Items[I] as TZComponentTreeNode;
     if Node.Component=C then
     begin
-      PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
+      PostMessage(Self.Handle,WM_USER + 1,0,IntPtr(Node));
       Break;
     end;
   end;
