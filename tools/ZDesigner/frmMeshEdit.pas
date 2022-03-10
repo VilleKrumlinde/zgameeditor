@@ -395,7 +395,7 @@ begin
     M := TMenuItem.Create(AddMenuItem);
     M.Caption := Ci.ZClassName;
     M.OnClick := OnAddClick;
-    M.Tag := Integer(Ci);
+    M.Tag := IntPtr(Ci);
     AddMenuItem.Add(M);
   end;
 end;

@@ -1727,7 +1727,7 @@ begin
     Node := Tree.Items[I] as TZComponentTreeNode;
     if Node.Component=C then
     begin
-      PostMessage(Self.Handle,WM_USER + 1,0,Integer(Node));
+      PostMessage(Self.Handle,WM_USER + 1,0,IntPtr(Node));
       Break;
     end;
   end;
@@ -4610,7 +4610,7 @@ end;
 
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
-  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine,SectionNr : integer;
+  TotalRemovedBytes,TotalKeptBytes,I,{$ifdef CPU386}J,{$endif}FirstLine,SectionNr : integer;
   Section,DataSection : TImageSection;
   Stream : TMemoryStream;
   MapNames : TObjectList;
