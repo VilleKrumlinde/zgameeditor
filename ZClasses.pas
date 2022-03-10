@@ -312,6 +312,7 @@ type
     Offset : NativeInt;
     PropertyType : TZPropertyType;
     PropId : integer;             //Ordningsnr på denna property för en klass
+    GlobalData : pointer;      //Either Offset or GlobalData are set (see AudioMixer for global data)
     NotifyWhenChanged : TPropNotifyProc;  //Call PropertyHasChanged
     {$IFNDEF MINIMAL}public{$ELSE}private{$ENDIF}
     {$IFNDEF MINIMAL}
@@ -336,9 +337,10 @@ type
   TZPropertyList = class(TZArrayList)
   private
     NextId : integer;
-    TheSelf : NativeInt;
   public
+    TheSelf : NativeInt;
     procedure AddProperty({$IFNDEF MINIMAL}const Name : string; {$ENDIF} const Addr: pointer; const PropType : TZPropertyType);
+    procedure AddGlobalDataProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Addr: pointer; const PropType : TZPropertyType);
     {$IFNDEF MINIMAL}
     procedure SetDesignerProperty;
     function GetByName(const Name : string) : TZProperty;
@@ -1233,7 +1235,10 @@ function TZComponent.GetProperty(Prop: TZProperty) : TZPropertyValue;
 var
   P : pointer;
 begin
-  P := pointer(NativeInt(Self) + Prop.Offset);
+  if Assigned(Prop.GlobalData) then
+    P := Prop.GlobalData
+  else
+    P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       Result.FloatValue := PFloat(P)^;
@@ -1279,7 +1284,10 @@ var
   S : ansistring;
   {$endif}
 begin
-  P := pointer(NativeInt(Self) + Prop.Offset);
+  if Assigned(Prop.GlobalData) then
+    P := Prop.GlobalData
+  else
+    P := pointer(NativeInt(Self) + Prop.Offset);
   case Prop.PropertyType of
     zptFloat,zptScalar :
       PFloat(P)^ := Value.FloatValue;
@@ -1354,7 +1362,10 @@ end;
 //Används för att hitta target för propertyrefs
 function TZComponent.GetPropertyPtr(Prop: TZProperty; Index: integer): pointer;
 begin
-  Result := pointer(NativeInt(Self) + Prop.Offset);
+  if Assigned(Prop.GlobalData) then
+    Exit(Prop.GlobalData)
+  else
+    Result := pointer(NativeInt(Self) + Prop.Offset);
   if Index>0 then
     Result := pointer(NativeInt(Result) + Index*4);
 end;
@@ -1493,7 +1504,7 @@ begin
         begin
           Result.SetProperty(Prop,Value);
           if (Value.ComponentValue<>nil) and (Value.ComponentValue.ObjId<>0) then
-            FixUps.Add( TObject(PPointer(NativeInt(Result) + Prop.Offset)) );
+            FixUps.Add( Result.GetPropertyPtr(Prop,0) );
         end;
       zptComponentList :
         begin
@@ -2176,7 +2187,23 @@ begin
   Inc(NextId);
   {$IFNDEF MINIMAL}
   P.Name := Name;
-  Assert( ((P.Offset>=0) and (P.Offset<4096)) or (TObject(Self.TheSelf).ClassName='TAudioMixer') );
+  Assert( ((P.Offset>=0) and (P.Offset<32768)) );
+  {$ENDIF}
+  Self.Add(P);
+end;
+
+procedure TZPropertyList.AddGlobalDataProperty({$IFNDEF MINIMAL}const Name: string;{$ENDIF} const Addr: pointer; const PropType : TZPropertyType);
+var
+  P : TZProperty;
+begin
+  P := TZProperty.Create;
+  P.PropertyType := PropType;
+  P.GlobalData := Addr;
+
+  P.PropId := NextId;
+  Inc(NextId);
+  {$IFNDEF MINIMAL}
+  P.Name := Name;
   {$ENDIF}
   Self.Add(P);
 end;
@@ -3009,7 +3036,7 @@ begin
         begin
           PStream.Read(Value.ComponentValue,4);
           if Value.ComponentValue<>nil then
-            FixUps.Add( TObject(PPointer(NativeInt(C) + Prop.Offset)) );
+            FixUps.Add( C.GetPropertyPtr(Prop,0) );
         end;
       zptVector3f :
         PStream.Read(Value.Vector3fValue,SizeOf(TZVector3f));

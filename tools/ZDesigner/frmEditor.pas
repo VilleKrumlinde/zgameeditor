@@ -4753,7 +4753,7 @@ end;
 {$ifndef ZgeLazarus}
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
-  TotalRemovedBytes,TotalKeptBytes,I,J,FirstLine,SectionNr : integer;
+  TotalRemovedBytes,TotalKeptBytes,I,{$ifdef CPU386}J,{$endif}FirstLine,SectionNr : integer;
   Section,DataSection : TImageSection;
   Stream : TMemoryStream;
   MapNames : TObjectList;

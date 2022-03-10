@@ -56,10 +56,10 @@ begin
   SustainTrackBar.Position := Round( E.SustainLevel*SustainTrackBar.Max );
   ReleaseTrackBar.Position := Round( (E.ReleaseTime/EnvTimeScale)*ReleaseTrackBar.Max );
 
-  AttackTrackBar.Tag := integer(@E.AttackTime);
-  DecayTrackBar.Tag := integer(@E.DecayTime);
-  SustainTrackBar.Tag := integer(@E.SustainLevel);
-  ReleaseTrackBar.Tag := integer(@E.ReleaseTime);
+  AttackTrackBar.Tag := IntPtr(@E.AttackTime);
+  DecayTrackBar.Tag := IntPtr(@E.DecayTime);
+  SustainTrackBar.Tag := IntPtr(@E.SustainLevel);
+  ReleaseTrackBar.Tag := IntPtr(@E.ReleaseTime);
 
   Draw;
 end;

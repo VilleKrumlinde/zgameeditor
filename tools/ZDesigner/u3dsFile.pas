@@ -965,9 +965,9 @@ var
   L : longword;
   OldP : integer;
 begin
-  L := Stream.Position - integer(P) + 2;
+  L := Stream.Position - IntPtr(P) + 2;
   OldP := Stream.Position;
-  Stream.Position := integer(P);
+  Stream.Position := IntPtr(P);
   Stream.Write(L,4);
   Stream.Position := OldP;
 end;
