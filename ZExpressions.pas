@@ -398,7 +398,7 @@ type
 
   TExpMiscKind = (emPop,emDup,emLoadCurrentModel,emPtrDeref4,emPtrDeref1,
     emPtrDerefPointer, emNotifyPropChanged, emLoadNull, emNop, emBinaryNot,
-    emNot,emGetUserClass);
+    emNot,emGetUserClass,emGetGlobalDataProp);
   TExpMisc = class(TExpBase)
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
@@ -1802,6 +1802,13 @@ begin
         Env.CheckNilDeref(P);
         {$endif}
         Env.StackPushPointer( TUserClassInstance(P).InstanceData );
+      end;
+    emGetGlobalDataProp :
+      begin
+        Env.StackPopTo(V);
+        Env.StackPopToPointer(P);
+        P := TZComponent(P).GetPropertyPtr(TZComponent(P).GetProperties.GetById(V),0);
+        Env.StackPushPointer(P);
       end;
   end;
 end;

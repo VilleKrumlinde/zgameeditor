@@ -644,15 +644,23 @@ procedure TZCodeGen.GenAddress(Op: TZcOp);
       edtProperty :
         begin
           GenValue(Op.Children.First);
-          {$ifdef zgeviz}
-          with TExpConstantInt.Create(Target) do
-            Constant := ETyp.Prop.Offset;
-          {$else}
-          //For binaries, the offset needs to be runtime (offsets are different on Android etc)
-          with TExpLoadPropOffset.Create(Target) do
-            PropId := ETyp.Prop.PropId;
-          {$endif}
-          TExpAddToPointer.Create(Target);
+          if Assigned(ETyp.Prop.GlobalData) then
+          begin //Audiomixer has global data
+            with TExpConstantInt.Create(Target) do
+              Constant := ETyp.Prop.PropId;
+            TExpMisc.Create(Target,emGetGlobalDataProp);
+          end else
+          begin
+            {$ifdef zgeviz}
+            with TExpConstantInt.Create(Target) do
+              Constant := ETyp.Prop.Offset;
+            {$else}
+            //For binaries, the offset needs to be runtime (offsets are different on Android etc)
+            with TExpLoadPropOffset.Create(Target) do
+              PropId := ETyp.Prop.PropId;
+            {$endif}
+            TExpAddToPointer.Create(Target);
+          end;
         end;
       edtPropIndex :
         begin

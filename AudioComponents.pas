@@ -518,21 +518,21 @@ var
 begin
   inherited;
 
-  List.AddProperty({$IFNDEF MINIMAL}'MasterVolume',{$ENDIF}(@AudioPlayer.MasterVolume), zptScalar);
+  //All the properties below are in global data section
+
+  List.AddGlobalDataProperty({$IFNDEF MINIMAL}'MasterVolume',{$ENDIF}@AudioPlayer.MasterVolume, zptScalar);
     List.GetLast.DefaultValue.FloatValue := 1.0;
 
-  //Läser/skriver till global data
-  //Fungerar så länge det enbart finns en instans
   for I := 0 to MaxChannels-1 do
   begin
     {$ifndef minimal}
     S := 'Ch' + IntToStr(I);
     {$endif}
     Channel := AudioPlayer.GetChannel(I);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Channel.Active), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Volume',{$ENDIF}(@Channel.Volume), zptScalar);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'UseDelay',{$ENDIF}(@Channel.UseDelay), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'DelayLength',{$ENDIF}(@Channel.DelayLength), zptScalar);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}@Channel.Active, zptBoolean);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'Volume',{$ENDIF}@Channel.Volume, zptScalar);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'UseDelay',{$ENDIF}@Channel.UseDelay, zptBoolean);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'DelayLength',{$ENDIF}@Channel.DelayLength, zptScalar);
   end;
 
   for I := 0 to High(GlobalLfos) do
@@ -541,10 +541,10 @@ begin
     S := 'Lfo' + Chr(Ord('0')+I);
     {$endif}
     Lfo := @GlobalLfos[I];
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Lfo.Active), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'IsBipolar',{$ENDIF}(@Lfo.IsBipolar), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Style',{$ENDIF}(@Lfo.Style), zptByte);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Speed',{$ENDIF}(@Lfo.Speed), zptFloat);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}@Lfo.Active, zptBoolean);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'IsBipolar',{$ENDIF}@Lfo.IsBipolar, zptBoolean);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'Style',{$ENDIF}@Lfo.Style, zptByte);
+    List.AddGlobalDataProperty({$IFNDEF MINIMAL}S + 'Speed',{$ENDIF}@Lfo.Speed, zptFloat);
   end;
 end;
 
@@ -886,6 +886,7 @@ initialization
     ComponentManager.LastAdded.HasGlobalData := True;
     {$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=17;{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.AutoName := True;{$endif}
 
   ZClasses.Register(TSample,SampleClassId);
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=30;{$endif}
