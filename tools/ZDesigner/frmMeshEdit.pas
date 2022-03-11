@@ -632,9 +632,7 @@ begin
 
   Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
-  {$ifndef ZgeLazarus}
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
-  {$endif}
   Glp.OnGLDraw := Self.OnGlDraw;
   Glp.Visible := not DisablePreviewCheckBox.Checked;
   Glp.OnMouseDown := OnGLPanelMouseDown;

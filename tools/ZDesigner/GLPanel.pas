@@ -171,7 +171,7 @@ var
 begin
   {$ifdef MACOS}
   Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
-  P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
+  P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, SharedHrc);
   Ctx := NSOpenGLContext(P);
 
   MainWindowRect.origin.x := 300.0;
@@ -229,6 +229,7 @@ begin
   end;
 
   {$ifdef MACOS}
+  NSOpenGLContext(hrc).makeCurrentContext;
   NSOpenGLContext(hrc).update;
   {$endif}
 
@@ -282,6 +283,7 @@ begin
   if (hrc <> nil) and (SharedHrc=nil) then
     //Delete context if we owned it
     NSOpenGLContext(HRC).release;
+  NSView(NSOpenGLContext(HRC).View).window.close;
   inherited;
   {$endif}
 end;

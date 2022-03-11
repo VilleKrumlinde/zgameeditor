@@ -443,9 +443,7 @@ begin
 
   if Prop.PropertyType=zptExpression then
   begin
-    {$ifndef ZgeLazarus}
-    Edit.Text := Value.ExpressionValue.Source.Substring(0,100);
-    {$endif}
+    Edit.Text := Copy(Value.ExpressionValue.Source,1,100);
     Edit.Tag:=100;
     Self.IsExpression := True;
   end

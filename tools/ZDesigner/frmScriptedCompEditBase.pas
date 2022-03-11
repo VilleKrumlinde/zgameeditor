@@ -46,9 +46,7 @@ begin
 
   Glp := TGLPanelZGE.Create(Self);
   Glp.Align := alClient;
-  {$ifndef ZgeLazarus}
   Glp.SharedHrc := (Owner as TEditorForm).Glp.GetHrc;
-  {$endif}
   Glp.Parent := Self;
   Glp.OnBindData := Self.OnBindData;
   Glp.OnUpdateData := Self.OnUpdateData;
