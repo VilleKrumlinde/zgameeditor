@@ -489,10 +489,11 @@ implementation
 
 uses
 {$IFnDEF FPC}
-  ShellApi, SynEditHighlighter, SynHighlighterZc, SynEditTypes, SynEditSearch, SynEdit,
+  ShellApi, SynHighlighterZc,
   unitResourceDetails, unitResourceGraphics, System.IOUtils, Winapi.Imm,
 {$ELSE}
 {$ENDIF}
+  SynEditHighlighter, SynEditTypes, SynEditSearch, SynEdit,
   Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
   frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
   dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd,
@@ -667,6 +668,7 @@ begin
   with QuickCompListView.Columns.Add do
     Width := 200;
   QuickCompListView.ShowColumnHeaders := False;
+  ToolBar1.AutoSize := False;
   {$endif}
   {$endif}
 end;
@@ -701,16 +703,16 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
 
     F.ExprPanel.Caption := F.ExprPanel.Caption + ' (' + Prop.Name + ')';
 
-    {$ifndef ZgeLazarus}
     F.ExprSynEdit.Text := Component.GetProperty(Prop).ExpressionValue.Source;
+    {$ifndef ZgeLazarus}
     F.ExprSynEdit.ResetModificationIndicator;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
-    F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
     F.AutoComp.TimerInterval := Self.AutoCompTimerInterval;
     F.ParamComp.TimerInterval := Self.AutoCompTimerInterval;
-    F.ExprCompileButton.OnClick := Self.ExprCompileButtonClick;
     {$endif}
+    F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
+    F.ExprCompileButton.OnClick := Self.ExprCompileButtonClick;
   end;
 
   procedure ShowShaderEditor(Edit: TEdit);
@@ -720,11 +722,11 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F := MakePropEditor(TShaderPropEditForm) as TShaderPropEditForm;
 
     F.ShaderPanel.Caption := F.ShaderPanel.Caption + ' (' + Prop.Name + ')';
-    {$ifndef ZgeLazarus}
     F.ShaderSynEdit.Text := String(Component.GetProperty(Prop).StringValue);
+    {$ifndef ZgeLazarus}
     F.ShaderSynEdit.ResetModificationIndicator;
-    F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
     {$endif}
+    F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
   end;
 
@@ -2473,9 +2475,7 @@ begin
   F.CompileShaderButton.Enabled := False;
 
   Value := F.Component.GetProperty(F.Prop);
-  {$ifndef ZgeLazarus}
   S := AnsiString(TrimRight(F.ShaderSynEdit.Text));
-  {$endif}
   if Value.StringValue<>S then
   begin
     Value.StringValue := S;
@@ -2512,9 +2512,7 @@ begin
   F.ExprCompileButton.Enabled := False;
 
   Value := F.Component.GetProperty(F.Prop);
-  {$ifndef ZgeLazarus}
   S := TrimRight(F.ExprSynEdit.Text);
-  {$endif}
 
   if Value.ExpressionValue.Source=S then
     Exit;
@@ -2547,8 +2545,8 @@ begin
         F.ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
         F.ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
         F.ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
-        F.ExprSynEdit.SetFocus;
         {$endif}
+        F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
         F.ShowError(E.Message);
         Log.Write(E.Message);
@@ -2755,7 +2753,6 @@ begin
   F := XmlEditForm;
   SymTemp := TSymbolTable.Create;
   try
-    {$ifndef ZgeLazarus}
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
     F.SynEdit.Font.Size := Self.SynEditFontSize;
@@ -2785,7 +2782,6 @@ begin
 
       Break;
     until False;
-    {$endif}
   finally
     SymTemp.Free;
   end;
@@ -4161,7 +4157,6 @@ begin
     Key := #0; //Eat the beep
     Exit;
   end;
-  {$ifndef ZgeLazarus}
   if (Key = #13) and (not (ActiveControl is TSynEdit)) and
     (not (ActiveControl is TCustomMemo)) and
     (not IsAppRunning) then
@@ -4170,7 +4165,6 @@ begin
     Key := #0; // Eat the Beep
     SelectNext(ActiveControl as TWinControl, True, True) // Forward
   end;
-  {$endif}
   if Assigned(CompEditor) then
     CompEditor.OnKeyPress(Key);
   for F in DetachedCompEditors.Values do

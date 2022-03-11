@@ -3,14 +3,22 @@ unit frmExprPropEdit;
 interface
 
 uses
-  {$ifndef ZgeLazarus}
-  SynEdit, SynCompletionProposal, Windows, Messages,
+  SynEdit, 
+  {$ifdef ZgeLazarus}
+  SynCompletion, 
+  {$else}
+  Windows, Messages,
+  SynCompletionProposal, 
   {$endif}
   SysUtils, Classes, Graphics,
   Controls, Forms, Dialogs, frmCustomPropEditBase, StdCtrls,
   ExtCtrls;
 
 type
+  {$ifdef ZgeLazarus}
+  TSynCompletionProposal = TSynCompletion;
+  {$endif}
+
   TExprPropEditForm = class(TCustomPropEditBaseForm)
     ExprPanel: TGroupBox;
     ExprCompileButton: TButton;
@@ -27,14 +35,10 @@ type
     procedure EditorGutterPaint(Sender: TObject; aLine, X, Y: Integer);
     procedure EditorMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
-    {$ifndef ZgeLazarus}
     procedure EditorStatusChange(Sender: TObject; Changes: TSynStatusChanges);
-    {$endif}
   public
-    {$ifndef ZgeLazarus}
     ExprSynEdit : TSynEdit;
     AutoComp,ParamComp : TSynCompletionProposal;
-    {$endif}
     procedure SaveChanges; override;
     procedure ShowError(MsgText: String);
     procedure HideError;
@@ -46,9 +50,11 @@ implementation
 
 uses
   {$ifndef ZgeLazarus}
-  SynHighlighterZc, SynEditSearch,
+  SynHighlighterZc, 
   {$endif}
+  SynEditSearch,
   dmCommon, Types;
+
 
 procedure TExprPropEditForm.ExprHelpButtonClick(Sender: TObject);
 begin
@@ -61,47 +67,52 @@ procedure TExprPropEditForm.FormCreate(Sender: TObject);
 begin
   inherited;
 
-  {$ifndef ZgeLazarus}
   ExprSynEdit := TSynEdit.Create(Self);
   ExprSynEdit.Align := alClient;
   ExprSynEdit.Gutter.Visible := True;
-  ExprSynEdit.Gutter.ShowModification := True;
-  ExprSynEdit.Gutter.ShowLineNumbers := False;
   ExprSynEdit.Parent := ExprPanel;
   ExprSynEdit.OnChange := OnExprChanged;
   ExprSynEdit.OnMouseMove := EditorMouseMove;
   ExprSynEdit.OnStatusChange := EditorStatusChange;
+  {$ifndef ZgeLazarus}
+  ExprSynEdit.Gutter.ShowModification := True;
+  ExprSynEdit.Gutter.ShowLineNumbers := False;
   ExprSynEdit.OnGutterPaint := EditorGutterPaint;
   ExprSynEdit.Highlighter := TSynZcSyn.Create(Self);
-  ExprSynEdit.WantTabs := True;
-  ExprSynEdit.TabWidth := 2;
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
     eoShowScrollHint, eoTabsToSpaces, eoHideShowScrollbars, eoScrollPastEol,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces, eoAutoSizeMaxScrollWidth];
   ExprSynEdit.SearchEngine := TSynEditSearch.Create(Self);
-  ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
   ExprSynEdit.MaxScrollWidth := 2048;
+  {$endif}
+  ExprSynEdit.WantTabs := True;
+  ExprSynEdit.TabWidth := 2;
+  ExprSynEdit.PopupMenu := dmCommon.CommonModule.SynEditPopupMenu;
 
   // SynEdit autocompletion
   AutoComp := TSynCompletionProposal.Create(Self);
   AutoComp.Editor := ExprSynEdit;
   AutoComp.EndOfTokenChr := '+-/*=()[]., @';
-  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
   AutoComp.ShortCut := 16416;
+  {$ifndef ZgeLazarus}
+  AutoComp.TriggerChars := 'abcdefghijklmnopqrstuvxyz.@';
   AutoComp.Options := DefaultProposalOptions + [scoCaseSensitive,
     scoUseBuiltInTimer, scoUseInsertList, scoUsePrettyText];
   AutoComp.TimerInterval := 2000;
+  {$endif}
+
 
   // SynEdit autocompletion for parameters
   ParamComp := TSynCompletionProposal.Create(Self);
+  {$ifndef ZgeLazarus}
   ParamComp.DefaultType := ctParams;
   ParamComp.Options := [scoLimitToMatchedText, scoUseBuiltInTimer];
   ParamComp.TriggerChars := '(';
+  ParamComp.TimerInterval := 2000;
+  {$endif}
   ParamComp.EndOfTokenChr := '';
   ParamComp.ShortCut := 24608;
   ParamComp.Editor := ExprSynEdit;
-  ParamComp.TimerInterval := 2000;
-  {$endif}
 end;
 
 procedure TExprPropEditForm.EditorMouseMove(Sender: TObject;
@@ -150,11 +161,11 @@ begin
 end;
 {$endif}
 
-{$ifndef ZgeLazarus}
 procedure TExprPropEditForm.EditorStatusChange(Sender: TObject; Changes: TSynStatusChanges);
 var
   NewCaretY: Integer;
 begin
+  {$ifndef ZgeLazarus}
   if (scCaretY in Changes) and TSynEdit(Sender).Gutter.Visible  then
   begin
     NewCaretY := TSynEdit(Sender).CaretY;
@@ -162,8 +173,8 @@ begin
     TSynEdit(Sender).InvalidateGutterLine(NewCaretY);
     FOldCaretY := NewCaretY;
   end;
+  {$endif}
 end;
-{$endif}
 
 procedure TExprPropEditForm.OnExprChanged(Sender: TObject);
 begin
