@@ -174,14 +174,15 @@ begin
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, SharedHrc);
   Ctx := NSOpenGLContext(P);
 
-  MainWindowRect.origin.x := 300.0;
-  MainWindowRect.origin.y := 300.0;
-  MainWindowRect.size.width := 300.0;
-  MainWindowRect.size.height := 500.0;
+  MainWindowRect.origin.x := 600.0;
+  MainWindowRect.origin.y := 600.0;
+  MainWindowRect.size.width := 600;
+  MainWindowRect.size.height := 300;
   MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
     NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
     NSBackingStoreBuffered, False);
   MainWindow.makeKeyAndOrderFront(NSapp);
+  MainWindow.setLevel(3);
 
 //  View := NSObject(Handle).lclContentView;
   View := MainWindow.contentView;
@@ -280,10 +281,11 @@ begin
   {$endif}
 
   {$ifdef MACOS}
+  if (hrc <> nil) then
+    NSView(NSOpenGLContext(HRC).View).window.close;
   if (hrc <> nil) and (SharedHrc=nil) then
     //Delete context if we owned it
     NSOpenGLContext(HRC).release;
-  NSView(NSOpenGLContext(HRC).View).window.close;
   inherited;
   {$endif}
 end;

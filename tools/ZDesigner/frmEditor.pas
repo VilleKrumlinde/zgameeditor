@@ -507,10 +507,9 @@ uses
 
 constructor TEditorForm.Create(AOwner: TComponent);
 
-  {$ifndef ZgeLazarus}
   procedure LoadGamutBitmap;
   var
-    B : TPngImage;
+    B : {$ifdef ZgeLazarus}TPortableNetworkGraphic{$else}TPngImage{$endif};
     Zb : TZBitmap;
     Bf : TBitmapFromFile;
     Value : TZPropertyValue;
@@ -520,7 +519,7 @@ constructor TEditorForm.Create(AOwner: TComponent);
   begin
     M := TMemoryStream.Create;
     try
-      B := Self.GamutImage.Picture.Graphic as TPngImage;
+      B := Self.GamutImage.Picture.Graphic as {$ifdef ZgeLazarus}TPortableNetworkGraphic{$else}TPngImage{$endif};
       for Y := 0 to B.Height-1 do
       begin
         PPixel := B.ScanLine[Y];
@@ -529,7 +528,7 @@ constructor TEditorForm.Create(AOwner: TComponent);
           M.Write(PPixel.rgbRed,1);
           M.Write(PPixel.rgbGreen,1);
           M.Write(PPixel.rgbBlue,1);
-          Inc(NativeUInt(PPixel),3);
+          Inc(NativeUInt(PPixel),{$ifdef ZgeLazarus}4{$else}3{$endif});
         end;
       end;
       Value.BinaryValue.Size := M.Size;
@@ -547,7 +546,6 @@ constructor TEditorForm.Create(AOwner: TComponent);
 
     Self.GamutZBitmap := Zb;
   end;
-  {$endif}
 
 begin
   Driver := CreateDriver(glbFixed);
@@ -561,9 +559,7 @@ begin
   Self.Log := ZLog.GetLog(Self.ClassName);
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 
-  {$ifndef ZgeLazarus}
   LoadGamutBitmap;
-  {$endif}
   DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
   DetachedPropEditors := TDictionary<TPropEditKey,TForm>.Create();
 
@@ -670,6 +666,7 @@ begin
   QuickCompListView.ShowColumnHeaders := False;
   ToolBar1.AutoSize := False;
   {$endif}
+  StyleMenuItem.Visible := False;
   {$endif}
 end;
 
@@ -780,7 +777,11 @@ var
   Ci : TZComponentInfo;
   I : TZClassIds;
   Item : TListItem;
+  J : integer;
+  L : TStringList;
 begin
+  L := TStringList.Create;
+  L.Sorted := True;
   Infos := ZClasses.ComponentManager.GetAllInfos;
   for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
@@ -790,12 +791,20 @@ begin
     Assert(Ci<>nil, 'Component info=nil. Component class removed?');
     if Ci.NoUserCreate then
       Continue;
+    L.AddObject(Ci.ZClassName,Ci);
+  end;
+
+  for J := 0 to L.Count-1 do
+  begin
     Item := QuickCompListView.Items.Add;
+    Ci := TZComponentInfo(L.Objects[J]);
     Item.Caption := Ci.ZClassName;
     Item.Data := Ci;
     Item.ImageIndex := Ci.ImageIndex;
   end;
+
   SetLength(QuickCompEnabledList,QuickCompListView.Items.Count);
+  L.Free;
 //  ListView_SetColumnWidth(QuickCompListView.Handle, 0, 200);
 end;
 
@@ -1101,10 +1110,11 @@ begin
 end;
 
 procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
+{$ifndef fpc}
 begin
-  {$ifndef ZgeLazarus}
   TThread.Synchronize(nil,
     procedure
+{$endif}
     var
       I : integer;
       Tmp : TStringList;
@@ -1128,9 +1138,12 @@ begin
       end;
       LogListBox.ItemIndex := LogListBox.Items.Count-1;
     end
+{$ifndef fpc}
   );
-  {$endif}
 end;
+{$else}
+  ;
+{$endif}
 
 procedure TEditorForm.ReadAppSettingsFromIni;
 var
