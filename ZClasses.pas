@@ -660,7 +660,6 @@ uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
   {$ifndef minimal}
     ,LibXmlParserU
     ,SysUtils,Math,zlib,Zc_Ops
-    {$ifndef fpc},AnsiStrings{$endif}
     {$ifdef fpc}
     ,zstream,strutils
     {$endif}
@@ -2613,13 +2612,9 @@ begin
         Continue;
       case Prop.PropertyType of
         zptString :
-          {$ifndef fpc}
-          if (AnsiStrings.AnsiPos(#10,Value.StringValue)=0) {and
-            (Pos('<',Value.StringValue)=0) and
-            (Pos('>',Value.StringValue)=0)} then
+          if Pos(AnsiChar(#10),Value.StringValue)=0 then
             NormalProps.Add(Prop)
           else
-          {$endif}
             NestedProps.Add(Prop);
         zptComponentList :
           NestedProps.Add(Prop);
@@ -3615,7 +3610,7 @@ begin
   end;
 
   if C.Name<>'' then
-    SymTab.Add(String(LowerCase(C.Name)),C);
+    SymTab.Add(LowerCase(String(C.Name)),C);
 
   Self.MainXml := SaveMainXml;
 
