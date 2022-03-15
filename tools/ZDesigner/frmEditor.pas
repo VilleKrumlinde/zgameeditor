@@ -492,6 +492,9 @@ uses
   ShellApi, SynHighlighterZc,
   unitResourceDetails, unitResourceGraphics, System.IOUtils, Winapi.Imm,
 {$ELSE}
+  {$ifdef darwin}
+  BaseUnix,
+  {$endif}
 {$ENDIF}
   SynEditHighlighter, SynEditTypes, SynEditSearch, SynEdit,
   Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
@@ -2980,13 +2983,13 @@ begin
   case Kind of
     bbNormal, bbNormalUncompressed :
       begin
-        Ext := 'exe';
+        Ext := '.exe';
         PlayerName := ExePath + 'player.bin';
         UseCodeRemoval := RemoveUnusedMenuItem.Checked;
       end;
     bbScreenSaver, bbScreenSaverUncompressed :
       begin
-        Ext := 'scr';
+        Ext := '.scr';
         PlayerName := ExePath + 'player_ss.bin';
       end;
     bbNormalLinux :
@@ -2998,7 +3001,7 @@ begin
     bbNormalMacos :
       begin
         Ext := '';
-        PlayerName := 'player_osx86.bin';
+        PlayerName := 'player_macos.bin';
         UsePiggyback := True;
       end;
   end;
@@ -3010,10 +3013,10 @@ begin
   else
   begin
     if CurrentFileName='' then
-      OutFile := ExePath + 'untitled.' + Ext
+      OutFile := ExePath + 'untitled' + Ext
     else
       //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
-      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
+      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),Ext);
   end;
 
   if FileExists(OutFile) then
@@ -3044,6 +3047,11 @@ begin
     ReplaceResource(PlayerName,OutFile,TempFile,UseCodeRemoval);
     DeleteFile(TempFile);
   end;
+
+  {$ifdef darwin}
+  if Kind in [bbNormalLinux,bbNormalMacos] then
+    FpChmod(OutFile,777);
+  {$endif}
 
   (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;
   (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := 0;

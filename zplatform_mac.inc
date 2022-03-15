@@ -164,9 +164,13 @@ procedure Platform_SetMousePos(const X,Y : integer);
 begin
 end;
 
+var
+  ExeName : string;
+
 function Platform_GetExeFileName : PAnsiChar;
 begin
-  Result := PAnsiChar(ParamStr(0));
+  ExeName := ParamStr(0);
+  Result := PAnsiChar(ExeName);
 end;
 
 procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
