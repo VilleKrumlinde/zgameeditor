@@ -8,14 +8,16 @@ var
   MacLastMouse : array[0..1] of integer;
   MacKeys : array[0..511] of boolean;
 
+{$modeswitch objectivec1}
 
 implementation
 
 {$i-}  //No io-test on files, code tests ioresult
 
-uses AudioPlayer, ZApplication, SyncObjs, Classes,
-  {$ifdef fpc}dl,CocoaAll{$else}Posix.Dlfcn{$endif}, ZOpenGL,
-  {$ifndef minimal}Sysutils{$endif};
+uses AudioPlayer, ZApplication, ZOpenGL,
+  SyncObjs, Classes,
+  dl, CocoaAll
+  {$ifndef minimal}, Sysutils{$endif};
 
 var
   StartTime : double;
@@ -36,9 +38,48 @@ begin
 
 end;
 
+var
+  MainWindow: NSWindow;
+  Ctx: NSOpenGLContext;
+
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
+const
+  Attr: array[0..15] of NSOpenGLPixelFormatAttribute =
+    (NSOpenGLPFADepthSize, 16,
+     NSOpenGLPFAColorSize, 32,
+     NSOpenGLPFAAlphaSize, 8,
+     NSOpenGLPFADoubleBuffer,
+     NSOpenGLPFAStencilSize, 8,
+     //Request multisample
+     NSOpenGLPFAMultisample,
+     NSOpenGLPFASampleBuffers, 1,
+     NSOpenGLPFASamples, 8,
+     NSOpenGLPFANoRecovery,
+     0);
+var
+  Fmt: NSOpenGLPixelFormat;
+  P : Pointer;
+  View: pointer;
+  MainWindowRect : NSRect;
 begin
-  Result := 0;
+  Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
+  P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
+  Ctx := NSOpenGLContext(P);
+
+  MainWindowRect.origin.x := 600.0;
+  MainWindowRect.origin.y := 600.0;
+  MainWindowRect.size.width := Width;
+  MainWindowRect.size.height := Height;
+
+  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
+    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
+    NSBackingStoreBuffered, False);
+  MainWindow.makeKeyAndOrderFront(NSapp);
+
+  Ctx.setView( MainWindow.contentView );
+  Ctx.Update;
+
+  Ctx.makeCurrentContext;
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
@@ -47,14 +88,41 @@ end;
 
 procedure Platform_ShutdownScreen;
 begin
+  MainWindow.close;
+  Ctx.release;
 end;
 
 procedure Platform_SwapBuffers;
 begin
+  Ctx.flushBuffer;
+end;
+
+type
+  TTimerHandler = objcclass(NSObject)
+    Callback : TRunCallback;
+    procedure TimerEvent(sender : id); message 'TimerEvent:';
+  end;
+
+var
+  TimerHandler: TTimerHandler;
+  DisplayTimer : NSTimer;
+
+procedure TTimerHandler.TimerEvent(sender : id);
+begin
+  Callback();
 end;
 
 procedure Platform_Run(Callback : TRunCallback);
 begin
+  TimerHandler := TTimerHandler.alloc;
+  TimerHandler.Callback := Callback;
+
+  DisplayTimer := NSTimer.timerWithTimeInterval_target_selector_userInfo_repeats(1.0/1000.0, 
+    TimerHandler, ObjCSelector('TimerEvent:'), nil, True);
+
+  NSRunLoop.currentRunLoop.addTimer_forMode(DisplayTimer , NSDefaultRunLoopMode);
+
+  NSApplication.sharedApplication.run();
 end;
 
 {$ifndef fpc}
@@ -98,7 +166,7 @@ end;
 
 function Platform_GetExeFileName : PAnsiChar;
 begin
-  Result := '';
+  Result := PAnsiChar(ParamStr(0));
 end;
 
 procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
@@ -340,10 +408,12 @@ begin
   Result := 1;
 end;
 
+{$ifndef minimal}
 procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
 begin
 
 end;
+{$endif}
 
 initialization
 

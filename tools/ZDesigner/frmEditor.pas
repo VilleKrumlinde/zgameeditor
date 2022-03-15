@@ -667,6 +667,7 @@ begin
   ToolBar1.AutoSize := False;
   {$endif}
   StyleMenuItem.Visible := False;
+  SaveBinaryMenuItem.Visible := True;
   {$endif}
 end;
 

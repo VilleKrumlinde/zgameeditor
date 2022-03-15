@@ -22,6 +22,10 @@ unit ZPlatform;
 
 {$include zzdc_globalopt.inc}
 
+{$if defined(fpc) and defined(darwin)}
+{$modeswitch objectivec1}
+{$endif}
+
 interface
 
 uses ZClasses;
