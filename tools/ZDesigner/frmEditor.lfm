@@ -779,7 +779,7 @@ object EditorForm: TEditorForm
       OnExecute = Import3dsActionExecute
     end
     object GenerateReleaseOsx86Action: TAction
-      Caption = 'Build Mac OS X Intel binary'
+      Caption = 'Build MacOS Intel binary'
       OnExecute = GenerateReleaseOsx86ActionExecute
     end
     object ShowSettingsAction: TAction

@@ -39,9 +39,38 @@ begin
 end;
 
 type
+  {$if FPC_FULlVERSION<30200}
+  TObjCBool = boolean;
+  {$else}
+  TObjCBool = ObjCBOOL;
+  {$endif}
+
   TZgeWindow = objcclass(NSWindow)
     procedure sendEvent(theEvent: NSEvent); override;
+    procedure keyDown (theEvent: NSEvent); override;
+    function canBecomeKeyWindow : TObjCBool; override;
   end;
+
+function TranslateKey(const Key : integer) : byte;
+begin
+  case Key of
+    NSUpArrowFunctionKey : Result := ord('^');
+    NSDownArrowFunctionKey : Result := ord('_');
+    NSLeftArrowFunctionKey : Result := ord('<');
+    NSRightArrowFunctionKey : Result := ord('>');
+  else 
+    Result := byte(Key);
+  end;
+end;
+
+function TZgeWindow.canBecomeKeyWindow : TObjCBool; 
+begin
+  Result := True;
+end;
+
+procedure TZgeWindow.keyDown(theEvent: NSEvent);
+begin
+end;
 
 procedure TZgeWindow.sendEvent(theEvent: NSEvent);
 var
@@ -68,8 +97,8 @@ begin
       begin
         MacKeys[ Ord('}') ] := theEvent.type_=NSRightMouseDown;
       end;
-    NSKeyUp : MacKeys[ byte(theEvent.keyCode) ] := False;
-    NSKeyDown : MacKeys[ byte(theEvent.keyCode) ] := True;
+    NSKeyUp : MacKeys[ TranslateKey(theEvent.keyCode) ] := False;
+    NSKeyDown : MacKeys[ TranslateKey(theEvent.keyCode) ] := True;
   end;
 
   inherited sendEvent(theEvent);
@@ -102,6 +131,11 @@ begin
   Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
   Ctx := NSOpenGLContext(P);
+
+  if Width=-1 then
+    Width := 800;
+  if Height=-1 then
+    Height := 600;
 
   MainWindowRect.origin.x := 600.0;
   MainWindowRect.origin.y := 600.0;

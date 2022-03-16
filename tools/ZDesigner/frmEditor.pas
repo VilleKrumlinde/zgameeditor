@@ -3050,7 +3050,7 @@ begin
 
   {$ifdef darwin}
   if Kind in [bbNormalLinux,bbNormalMacos] then
-    FpChmod(OutFile,777);
+    SysUtils.ExecuteProcess('/bin/chmod', '755 ' + OutFile, []);
   {$endif}
 
   (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;
@@ -4005,7 +4005,9 @@ begin
   Tree.ClearSelection(True);
   //Must set selected to false before moving, otherwise error in comctrls when using keyboard shortcut
   Node.Selected := False;
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  Node.MoveTo(Node.Parent.Items[Node.Index-1],naInsert);
+  {$else}
   Node.MoveTo(Node.Parent.Item[Node.Index-1],naInsert);
   {$endif}
   Node.Selected := True;
@@ -4033,12 +4035,14 @@ begin
   Node := Tree.Selected;
   Tree.ClearSelection(True);
   Node.Selected := False;
-  {$ifndef ZgeLazarus}
   if I<L.Count-2 then
+    {$ifdef ZgeLazarus}
+    Node.MoveTo(Node.Parent.Items[Node.Index+2],naInsert)
+    {$else}
     Node.MoveTo(Node.Parent.Item[Node.Index+2],naInsert)
+    {$endif}
   else
     Node.MoveTo(Node.Parent.GetLastChild,naAdd);
-  {$endif}
   Node.Selected := True;
 
   SetFileChanged(True);

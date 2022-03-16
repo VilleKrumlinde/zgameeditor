@@ -11,7 +11,8 @@
         <MainUnitHasScaledStatement Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="ZDesigner"/>
+      <Title Value="ZGameEditor"/>
+      <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
     <BuildModes>
@@ -122,7 +123,9 @@
       <Unit>
         <Filename Value="dmCommon.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="CommonModule"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="DataModule"/>
       </Unit>
       <Unit>
         <Filename Value="..\..\AudioPlayer.pas"/>
@@ -333,10 +336,13 @@
   <CompilerOptions>
     <Version Value="11"/>
     <PathDelim Value="\"/>
+    <Target>
+      <Filename Value=".\ZGameEditor.app\Contents\MacOS\ZGameEditor"/>
+    </Target>
     <SearchPaths>
       <IncludeFiles Value="..\..;Compiler;3rdparty;$(ProjOutDir)"/>
       <Libraries Value="..\.."/>
-      <OtherUnitFiles Value="..\..;Compiler;3rdparty;..\..\3rdparty;..\..\3rdparty\sdl2"/>
+      <OtherUnitFiles Value="..\..;Compiler;3rdparty;3rdparty\synedit_lcl;..\..\3rdparty;..\..\3rdparty\sdl2"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       <ObjectPath Value="..\.."/>
     </SearchPaths>
