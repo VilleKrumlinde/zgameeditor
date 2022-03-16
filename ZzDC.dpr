@@ -54,6 +54,9 @@ program ZzDC;
 
 
 uses
+  {$if defined(Fpc) and defined(darwin)}
+  cthreads,
+  {$endif}
   ZClasses in 'ZClasses.pas',
   ZOpenGL in 'ZOpenGL.pas',
   ZBitmap in 'ZBitmap.pas',

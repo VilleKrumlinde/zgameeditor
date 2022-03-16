@@ -16,7 +16,7 @@ implementation
 
 uses AudioPlayer, ZApplication, ZOpenGL,
   SyncObjs, Classes,
-  dl, CocoaAll
+  dl, CocoaAll, MacOSAll
   {$ifndef minimal}, Sysutils{$endif};
 
 var
@@ -38,8 +38,45 @@ begin
 
 end;
 
+type
+  TZgeWindow = objcclass(NSWindow)
+    procedure sendEvent(theEvent: NSEvent); override;
+  end;
+
+procedure TZgeWindow.sendEvent(theEvent: NSEvent);
 var
-  MainWindow: NSWindow;
+  Nsp : NSPoint;
+  P : TPoint;
+  View : NSView;
+begin
+  View := Self.contentView;
+
+  Nsp := theEvent.locationInWindow;
+  Nsp.y := View.bounds.size.height-Nsp.y;
+
+//  Nsp := View.convertPointToBacking(Nsp);
+  
+  MacLastMouse[0] := Trunc(Nsp.x);
+  MacLastMouse[1] := abs(Trunc(Nsp.y));
+
+  case theEvent.type_ of
+    NSLeftMouseDown,NSLeftMouseUp : 
+      begin
+        MacKeys[ Ord('{') ] := theEvent.type_=NSLeftMouseDown;
+      end;
+    NSRightMouseDown,NSRightMouseUp : 
+      begin
+        MacKeys[ Ord('}') ] := theEvent.type_=NSRightMouseDown;
+      end;
+    NSKeyUp : MacKeys[ byte(theEvent.keyCode) ] := False;
+    NSKeyDown : MacKeys[ byte(theEvent.keyCode) ] := True;
+  end;
+
+  inherited sendEvent(theEvent);
+end;
+
+var
+  MainWindow: TZgeWindow;
   Ctx: NSOpenGLContext;
 
 function Platform_InitScreen(var Width, Height : integer; UseFullScreen : boolean; Title : PAnsiChar; ZApp : pointer) : integer;
@@ -71,10 +108,10 @@ begin
   MainWindowRect.size.width := Width;
   MainWindowRect.size.height := Height;
 
-  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
+  MainWindow := TZgeWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
     NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
     NSBackingStoreBuffered, False);
-  MainWindow.makeKeyAndOrderFront(NSapp);
+  MainWindow.makeKeyAndOrderFront(NSApplication.sharedApplication);
 
   Ctx.setView( MainWindow.contentView );
   Ctx.Update;
