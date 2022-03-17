@@ -3050,7 +3050,7 @@ begin
 
   {$ifdef darwin}
   if Kind in [bbNormalLinux,bbNormalMacos] then
-    SysUtils.ExecuteProcess('/bin/chmod', '755 ' + OutFile, []);
+    SysUtils.ExecuteProcess('/bin/chmod', '755 "' + OutFile + '"', []);
   {$endif}
 
   (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;

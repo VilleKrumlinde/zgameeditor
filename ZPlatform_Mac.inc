@@ -45,10 +45,15 @@ type
   TObjCBool = ObjCBOOL;
   {$endif}
 
+  TZgeApplicationDelegate = objcclass(NSObject, NSApplicationDelegateProtocol)
+    function applicationShouldTerminateAfterLastWindowClosed(sender: NSApplication): TObjCBool;
+  end;
+
   TZgeWindow = objcclass(NSWindow)
     procedure sendEvent(theEvent: NSEvent); override;
     procedure keyDown (theEvent: NSEvent); override;
     function canBecomeKeyWindow : TObjCBool; override;
+    function canBecomeMainWindow : TObjCBool; override;
   end;
 
 function TranslateKey(const Key : integer) : byte;
@@ -64,6 +69,11 @@ begin
 end;
 
 function TZgeWindow.canBecomeKeyWindow : TObjCBool; 
+begin
+  Result := True;
+end;
+
+function TZgeWindow.canBecomeMainWindow : TObjCBool; 
 begin
   Result := True;
 end;
@@ -104,6 +114,11 @@ begin
   inherited sendEvent(theEvent);
 end;
 
+function TZgeApplicationDelegate.applicationShouldTerminateAfterLastWindowClosed(sender: NSApplication): TObjCBool;
+begin
+  Result := True;
+end;
+
 var
   MainWindow: TZgeWindow;
   Ctx: NSOpenGLContext;
@@ -127,6 +142,7 @@ var
   P : Pointer;
   View: pointer;
   MainWindowRect : NSRect;
+  Del : TZgeApplicationDelegate;
 begin
   Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
@@ -147,14 +163,20 @@ begin
     NSBackingStoreBuffered, False);
   MainWindow.makeKeyAndOrderFront(NSApplication.sharedApplication);
 
+  Platform_SetWindowCaption(Title);
+
   Ctx.setView( MainWindow.contentView );
   Ctx.Update;
 
   Ctx.makeCurrentContext;
+
+  Del := TZgeApplicationDelegate.alloc;
+  NSApplication.sharedApplication.setDelegate(Del);
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
 begin
+  MainWindow.setTitle( NSSTR(Title) );
 end;
 
 procedure Platform_ShutdownScreen;
