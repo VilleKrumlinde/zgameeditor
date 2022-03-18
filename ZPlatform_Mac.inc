@@ -56,6 +56,12 @@ type
     function canBecomeMainWindow : TObjCBool; override;
   end;
 
+  TZgeView = objcclass(NSView)
+    procedure keyDown (theEvent: NSEvent); override;
+    function acceptsFirstResponder : TObjCBool; override;
+    function becomeFirstResponder : TObjCBool; override;
+  end;
+
 function TranslateKey(const Key : integer) : byte;
 begin
   case Key of
@@ -119,6 +125,22 @@ begin
   Result := True;
 end;
 
+
+function TZgeView.acceptsFirstResponder : TObjCBool; 
+begin
+  Result := True;
+end;
+
+function TZgeView.becomeFirstResponder : TObjCBool; 
+begin
+  Result := True;
+end;
+
+procedure TZgeView.keyDown (theEvent: NSEvent); 
+begin
+  writeln('down');
+end;
+
 var
   MainWindow: TZgeWindow;
   Ctx: NSOpenGLContext;
@@ -140,7 +162,7 @@ const
 var
   Fmt: NSOpenGLPixelFormat;
   P : Pointer;
-  View: pointer;
+  View: TZgeView;
   MainWindowRect : NSRect;
   Del : TZgeApplicationDelegate;
 begin
@@ -163,9 +185,13 @@ begin
     NSBackingStoreBuffered, False);
   MainWindow.makeKeyAndOrderFront(NSApplication.sharedApplication);
 
+  View := TZgeView.alloc;
+  MainWindow.setContentView(View);
+  MainWindow.makeFirstResponder(View);
+
   Platform_SetWindowCaption(Title);
 
-  Ctx.setView( MainWindow.contentView );
+  Ctx.setView( View );
   Ctx.Update;
 
   Ctx.makeCurrentContext;

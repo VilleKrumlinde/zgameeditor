@@ -668,6 +668,8 @@ begin
     Width := 200;
   QuickCompListView.ShowColumnHeaders := False;
   ToolBar1.AutoSize := False;
+  GenerateReleaseLinuxAction.Enabled := False;
+  GenerateReleaseAction.Enabled := False;
   {$endif}
   StyleMenuItem.Visible := False;
   SaveBinaryMenuItem.Visible := True;
@@ -2718,9 +2720,11 @@ procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
 begin
+  {$ifdef MACOS}
+  OutFile := BuildRelease(bbNormalMacos);
+  SysUtils.ExecuteProcess(OutFile, []);
+  {$else}
   OutFile := BuildRelease(bbNormalUncompressed);
-  //Kör den skapade filen
-  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
   {$endif}
 end;
@@ -3085,10 +3089,12 @@ begin
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+    {$ifndef MACOS}
     bbNormalMacos:
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+    {$endif}
   end;
 
   //Return created filename
