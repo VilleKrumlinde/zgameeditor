@@ -60,6 +60,7 @@ type
     procedure keyDown (theEvent: NSEvent); override;
     function acceptsFirstResponder : TObjCBool; override;
     function becomeFirstResponder : TObjCBool; override;
+    function canBecomeKeyView : TObjCBool; override;
   end;
 
 function TranslateKey(const Key : integer) : byte;
@@ -114,7 +115,7 @@ begin
         MacKeys[ Ord('}') ] := theEvent.type_=NSRightMouseDown;
       end;
     NSKeyUp : MacKeys[ TranslateKey(theEvent.keyCode) ] := False;
-    NSKeyDown : MacKeys[ TranslateKey(theEvent.keyCode) ] := True;
+    NSKeyDown : begin writeln('kdown'); MacKeys[ TranslateKey(theEvent.keyCode) ] := True; end;
   end;
 
   inherited sendEvent(theEvent);
@@ -141,6 +142,12 @@ begin
   writeln('down');
 end;
 
+function TZgeView.canBecomeKeyView : TObjCBool;
+begin
+  Result := True;
+end;
+
+
 var
   MainWindow: TZgeWindow;
   Ctx: NSOpenGLContext;
@@ -166,6 +173,9 @@ var
   MainWindowRect : NSRect;
   Del : TZgeApplicationDelegate;
 begin
+  Del := TZgeApplicationDelegate.alloc;
+  NSApplication.sharedApplication.setDelegate(Del);
+
   Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
   P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, nil);
   Ctx := NSOpenGLContext(P);
@@ -181,13 +191,14 @@ begin
   MainWindowRect.size.height := Height;
 
   MainWindow := TZgeWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
-    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
+    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask,
     NSBackingStoreBuffered, False);
-  MainWindow.makeKeyAndOrderFront(NSApplication.sharedApplication);
 
   View := TZgeView.alloc;
   MainWindow.setContentView(View);
   MainWindow.makeFirstResponder(View);
+
+  MainWindow.makeKeyAndOrderFront(NSApplication.sharedApplication);
 
   Platform_SetWindowCaption(Title);
 
@@ -195,9 +206,6 @@ begin
   Ctx.Update;
 
   Ctx.makeCurrentContext;
-
-  Del := TZgeApplicationDelegate.alloc;
-  NSApplication.sharedApplication.setDelegate(Del);
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
