@@ -57,21 +57,43 @@ type
   end;
 
   TZgeView = objcclass(NSView)
-    procedure keyDown (theEvent: NSEvent); override;
     function acceptsFirstResponder : TObjCBool; override;
     function becomeFirstResponder : TObjCBool; override;
     function canBecomeKeyView : TObjCBool; override;
   end;
 
-function TranslateKey(const Key : integer) : byte;
+function NSStrToStr(const AStr: NSString): string;
+var
+  R: NSRange;
 begin
-  case Key of
-    NSUpArrowFunctionKey : Result := ord('^');
-    NSDownArrowFunctionKey : Result := ord('_');
-    NSLeftArrowFunctionKey : Result := ord('<');
-    NSRightArrowFunctionKey : Result := ord('>');
+  if AStr <> nil then
+  begin
+    SetLength(Result, AStr.length);
+    R.location := 0;
+    R.length := AStr.length;
+    AStr.getCharacters_range({$if FPC_FULlVERSION<30200}PAnsiChar{$ELSE}unicharPtr{$ENDIF}(Result), R);
+  end
+  else
+    Result := '';
+end;
+
+function TranslateKey(const Event : NSEvent) : byte;
+var
+  S : string;
+begin
+  case Event.KeyCode of
+    $7E : Result := ord('^');
+    $7D : Result := ord('_');
+    $7B : Result := ord('<');
+    $7C : Result := ord('>');
   else 
-    Result := byte(Key);
+    begin
+      S := NSStrToStr(Event.charactersIgnoringModifiers());
+      if Length(S)>0 then
+        Result := byte(UpCase(S[1]))
+      else
+        Result := 0;
+    end;
   end;
 end;
 
@@ -85,8 +107,9 @@ begin
   Result := True;
 end;
 
-procedure TZgeWindow.keyDown(theEvent: NSEvent);
+procedure TZgeWindow.keyDown (theEvent: NSEvent); 
 begin
+  //Empty method needed to get rid of keyboard beep
 end;
 
 procedure TZgeWindow.sendEvent(theEvent: NSEvent);
@@ -114,8 +137,8 @@ begin
       begin
         MacKeys[ Ord('}') ] := theEvent.type_=NSRightMouseDown;
       end;
-    NSKeyUp : MacKeys[ TranslateKey(theEvent.keyCode) ] := False;
-    NSKeyDown : begin writeln('kdown'); MacKeys[ TranslateKey(theEvent.keyCode) ] := True; end;
+    NSKeyUp : MacKeys[ TranslateKey(theEvent) ] := False;
+    NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
   end;
 
   inherited sendEvent(theEvent);
@@ -135,11 +158,6 @@ end;
 function TZgeView.becomeFirstResponder : TObjCBool; 
 begin
   Result := True;
-end;
-
-procedure TZgeView.keyDown (theEvent: NSEvent); 
-begin
-  writeln('down');
 end;
 
 function TZgeView.canBecomeKeyView : TObjCBool;
