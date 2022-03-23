@@ -492,8 +492,9 @@ uses
   ShellApi, SynHighlighterZc,
   unitResourceDetails, unitResourceGraphics, System.IOUtils, Winapi.Imm,
 {$ELSE}
+  FileUtil,
   {$ifdef darwin}
-  BaseUnix,
+  BaseUnix, 
   {$endif}
 {$ENDIF}
   SynEditHighlighter, SynEditTypes, SynEditSearch, SynEdit,
@@ -2722,7 +2723,7 @@ var
 begin
   {$ifdef MACOS}
   OutFile := BuildRelease(bbNormalMacos);
-  SysUtils.ExecuteProcess(OutFile, []);
+  SysUtils.ExecuteProcess('/usr/bin/open', '"' + OutFile + '"', []);
   {$else}
   OutFile := BuildRelease(bbNormalUncompressed);
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
@@ -2960,6 +2961,76 @@ begin
 end;
 {$endif}
 
+{$ifdef macos}
+procedure EstablishMacAppBundle(const ExePath,ProjectPath,AppName : string);
+var
+  TemplatePath,OutFile,BundlePath : string;
+  Lookups : TDictionary<string,string>;
+
+  procedure MCopy(const Name : string; const DoReplaceStrings : boolean);
+  var
+    Src,Dst,Key,S,DstContent : string;
+    I : integer;
+    L : TStringList;
+    NeedReplace : boolean;
+  begin
+    Src := TemplatePath + Name;
+    Dst := BundlePath + Name;
+    if FileExists(Dst) then
+      Exit;
+    if not DoReplaceStrings then
+    begin
+      CopyFile(Src, Dst, [cffOverwriteFile], True)
+    end
+    else
+    begin
+      L := TStringList.Create;
+      try
+        L.LoadFromFile(Src);
+        for I := 0 to L.Count-1 do
+        begin
+          S := L[I];
+          if Pos('$',S)=0 then
+            Continue;
+          for Key in Lookups.Keys do
+          begin
+            if Pos(Key,S)>0 then
+            begin
+              S := StringReplace(S,Key,Lookups[Key],[rfReplaceAll]);
+              if Pos(Lookups[Key],DstContent)<=0 then
+                NeedReplace := True;
+            end;
+          end;
+          L[I] := S;
+        end;
+        L.SaveToFile(Dst);
+      finally
+        L.Free;
+      end;
+    end;
+  end;
+
+var
+  S,BinaryPath : string;
+begin
+  TemplatePath := ExePath + 'Mac' + PathDelim + 'BundleTemplate' + PathDelim;
+  BundlePath := ProjectPath + PathDelim + AppName + '.app' + PathDelim;
+
+  Lookups := TDictionary<string,string>.Create;
+  try
+    Lookups.Add('$binaryname$', AppName );
+    
+    BinaryPath := BundlePath + 'Contents' + PathDelim + 'MacOS' + PathDelim;
+    ForceDirectories(BinaryPath);
+
+    MCopy('Contents' + PathDelim + 'Info.plist', True);
+    MCopy('Contents' + PathDelim + 'PkgInfo', False);
+  finally
+    Lookups.Free;
+  end;
+end;
+{$endif}
+
 function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
   OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
@@ -3021,6 +3092,13 @@ begin
     else
       //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
       OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),Ext);
+    {$ifdef macos}
+    if Kind=bbNormalMacos then
+    begin
+      EstablishMacAppBundle(ExePath,ExtractFilePath(OutFile),ExtractFileName(OutFile));
+      OutFile := OutFile + '.app/Contents/MacOS/' + ExtractFileName(OutFile);
+    end;
+    {$endif}
   end;
 
   if FileExists(OutFile) then
@@ -3052,7 +3130,7 @@ begin
     DeleteFile(TempFile);
   end;
 
-  {$ifdef darwin}
+  {$ifdef macos}
   if Kind in [bbNormalLinux,bbNormalMacos] then
     SysUtils.ExecuteProcess('/bin/chmod', '755 "' + OutFile + '"', []);
   {$endif}
@@ -3089,23 +3167,28 @@ begin
       ShowMessageWithLink('Created file: '#13#13 + OutFile,
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
-    {$ifndef MACOS}
     bbNormalMacos:
-      ShowMessageWithLink('Created file: '#13#13 + OutFile,
-        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
-        'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
-    {$endif}
+      begin
+      {$ifndef MACOS}
+        ShowMessageWithLink('Created file: '#13#13 + OutFile,
+          '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+          'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
+      {$else}
+         OutFile := ExtractFilePath(OutFile) + '../../../' + ExtractFileName(OutFile) + '.app';
+      {$endif}
+      end;
   end;
 
   //Return created filename
   Result := OutFile;
 end;
 
+
+
 procedure TEditorForm.GenerateReleaseActionExecute(Sender: TObject);
 begin
   BuildRelease(bbNormal);
 end;
-
 
 procedure TEditorForm.GenerateReleaseLinuxActionExecute(Sender: TObject);
 begin
