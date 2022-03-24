@@ -2726,7 +2726,9 @@ begin
   SysUtils.ExecuteProcess('/usr/bin/open', '"' + OutFile + '"', []);
   {$else}
   OutFile := BuildRelease(bbNormalUncompressed);
-  ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
+    {$ifndef fpc}
+    ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
+    {$endif}
   {$endif}
 end;
 
