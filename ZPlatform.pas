@@ -114,6 +114,10 @@ const
   RightKey = '>';
 
 
+var
+  //Contains keyup/down events since last frame
+  KeyDownList,KeyUpList : TZArrayList;
+
 type
   TScreenMode =
     packed record
