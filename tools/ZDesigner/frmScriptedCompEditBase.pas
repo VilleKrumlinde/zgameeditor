@@ -51,7 +51,7 @@ begin
   Glp.OnBindData := Self.OnBindData;
   Glp.OnUpdateData := Self.OnUpdateData;
 
-  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Editors\' + ScriptName);
+  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Editors' + PathDelim + ScriptName);
 end;
 
 procedure TScriptedCompEditFrameBase.UpdateData;

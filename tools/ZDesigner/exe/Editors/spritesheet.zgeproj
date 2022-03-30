@@ -4,6 +4,10 @@
     <Group Comment="External">
       <Children>
         <ZExternalLibrary ModuleName="opengl32">
+          <BeforeInitExp>
+<![CDATA[if(MACOS)
+  this.ModuleName="/System/Library/Frameworks/OpenGL.framework/OpenGL";]]>
+          </BeforeInitExp>
           <Source>
 <![CDATA[//
 
