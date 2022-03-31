@@ -31,9 +31,7 @@ type
   TCommonModule = class(TDataModule)
     CompIconsImageList: TImageList;
     SynEditPopupMenu: TPopupMenu;
-    {$ifndef ZgeLazarus}
-    ActionManager1: TActionManager;
-    {$endif}
+    ActionManager1: TActionList;
     Selectall1: TMenuItem;
     EditCopy1: TEditCopy;
     Copy1: TMenuItem;
@@ -73,50 +71,37 @@ implementation
 {$R *.dfm}
 
 uses
-  {$ifndef ZgeLazarus}
-  SynEdit, SynEditTypes,
-  {$endif}
-  Forms;
+  SynEdit, SynEditTypes, Forms;
 
 procedure TCommonModule.FindActionExecute(Sender: TObject);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   Syn : TSynEdit;
 begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
+  {$ifndef ZgeLazarus}
   Syn.CaretXY := BufferCoord(0,0); //Force search to start from beginning
+  {$endif}
   FindDialog1.Tag := IntPtr(Syn);
-  FindDialog1.Execute(Syn.Handle);
+  FindDialog1.Execute{$ifndef ZgeLazarus}(Syn.Handle){$endif};
 end;
-{$endif}
 
 procedure TCommonModule.ReplaceActionExecute(Sender: TObject);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   Syn : TSynEdit;
 begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
+  {$ifndef ZgeLazarus}
   Syn.CaretXY := BufferCoord(0,0); //Force search/replace to start from beginning
+  {$endif}
   ReplaceDialog1.Tag := IntPtr(Syn);
-  ReplaceDialog1.Execute(Syn.Handle);
+  ReplaceDialog1.Execute{$ifndef ZgeLazarus}(Syn.Handle){$endif};
 end;
-{$endif}
 
 procedure TCommonModule.FindDialog1Find(Sender: TObject);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   Syn : TSynEdit;
   Opt : TSynSearchOptions;
@@ -138,13 +123,8 @@ begin
 //    ssoEntireScope, ssoSelectedOnly, ssoReplace, ssoReplaceAll, ssoPrompt];
   Syn.SearchReplace(FindDialog1.FindText,'',Opt);
 end;
-{$endif}
 
 procedure TCommonModule.ReplaceDialog1Replace(Sender: TObject);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   Syn : TSynEdit;
   Opt : TSynSearchOptions;
@@ -170,6 +150,5 @@ begin
 //    ssoEntireScope, ssoSelectedOnly, ssoReplace, ssoReplaceAll, ssoPrompt];
   Syn.SearchReplace(ReplaceDialog1.FindText,ReplaceDialog1.ReplaceText,Opt);
 end;
-{$endif}
 
 end.

@@ -794,44 +794,105 @@ object CommonModule: TCommonModule
     }
   end
   object SynEditPopupMenu: TPopupMenu
-    Left = 128
-    Top = 416
+    Left = 64
+    Top = 208
     object Undo1: TMenuItem
+      Action = EditUndo1
     end
     object N2: TMenuItem
       Caption = '-'
     end
     object Cut1: TMenuItem
+      Action = EditCut1
     end
     object Copy1: TMenuItem
+      Action = EditCopy1
     end
     object Paste1: TMenuItem
+      Action = EditPaste1
     end
     object Delete1: TMenuItem
+      Action = EditDelete1
     end
     object N3: TMenuItem
       Caption = '-'
     end
     object Find1: TMenuItem
+      Action = FindAction
     end
     object Replace1: TMenuItem
+      Action = ReplaceAction
     end
     object N1: TMenuItem
       Caption = '-'
     end
     object Selectall1: TMenuItem
+      Action = EditSelectAll1
+    end
+  end
+  object ActionManager1: TActionList
+    Left = 136
+    Top = 208
+    object EditUndo1: TEditUndo
+      Category = 'Edit'
+      Caption = '&Undo'
+      Hint = 'Undo|Reverts the last action'
+      ImageIndex = 3
+      ShortCut = 16474
+    end
+    object EditCut1: TEditCut
+      Category = 'Edit'
+      Caption = 'Cu&t'
+      Hint = 'Cut|Cuts the selection and puts it on the Clipboard'
+      ImageIndex = 0
+      ShortCut = 16472
+    end
+    object EditCopy1: TEditCopy
+      Category = 'Edit'
+      Caption = '&Copy'
+      Hint = 'Copy|Copies the selection and puts it on the Clipboard'
+      ImageIndex = 1
+      ShortCut = 16451
+    end
+    object EditPaste1: TEditPaste
+      Category = 'Edit'
+      Caption = '&Paste'
+      Hint = 'Paste|Inserts Clipboard contents'
+      ImageIndex = 2
+      ShortCut = 16470
+    end
+    object EditDelete1: TEditDelete
+      Category = 'Edit'
+      Caption = '&Delete'
+      Hint = 'Delete|Erases the selection'
+      ImageIndex = 5
+    end
+    object EditSelectAll1: TEditSelectAll
+      Category = 'Edit'
+      Caption = 'Select &All'
+      Hint = 'Select All|Selects the entire document'
+      ShortCut = 16449
+    end
+    object FindAction: TAction
+      Caption = 'Find'
+      ShortCut = 16454
+      OnExecute = FindActionExecute
+    end
+    object ReplaceAction: TAction
+      Caption = 'Replace'
+      ShortCut = 16456
+      OnExecute = ReplaceActionExecute
     end
   end
   object FindDialog1: TFindDialog
     OnFind = FindDialog1Find
-    Left = 416
-    Top = 432
+    Left = 208
+    Top = 216
   end
   object ReplaceDialog1: TReplaceDialog
-    Options = [frDown, frReplace, frReplaceAll, frHidePromptOnReplace]
     OnFind = ReplaceDialog1Replace
     OnReplace = ReplaceDialog1Replace
-    Left = 528
-    Top = 432
+    Left = 264
+    Top = 216
   end
 end

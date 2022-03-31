@@ -3209,6 +3209,9 @@ end;
 
 procedure TEditorForm.AboutActionExecute(Sender: TObject);
 begin
+  {$ifdef ZgeLazarus}
+  Exit; //avoid crash for now
+  {$endif}
   AboutForm := TAboutForm.Create(Self);
   try
     AboutForm.Caption := 'About ' + AppName;
@@ -3495,7 +3498,9 @@ var
   FromNode,ToNode : TTreeNode;
   IsCopy : boolean;
 begin
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  IsCopy := GetKeyState(VK_CONTROL)<0;
+  {$else}
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
   {$endif}
 
@@ -3534,7 +3539,9 @@ var
   I : integer;
   Nodes : TObjectList;
 begin
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  IsCopy := GetKeyState(VK_CONTROL)<0;
+  {$else}
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
   {$endif}
 
