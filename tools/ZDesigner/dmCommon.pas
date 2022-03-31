@@ -107,11 +107,13 @@ var
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(FindDialog1.Tag);
+  {$ifndef ZgeLazarus}
   if Screen.ActiveControl<>Syn then
   begin
     FindDialog1.CloseDialog;
     Exit;
   end;
+  {$endif}
   Opt := [];
   if frWholeWord in FindDialog1.Options then
     Include(Opt,ssoWholeWord);
@@ -130,11 +132,13 @@ var
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(ReplaceDialog1.Tag);
+  {$ifndef ZgeLazarus}
   if Screen.ActiveControl<>Syn then
   begin
     ReplaceDialog1.CloseDialog;
     Exit;
   end;
+  {$endif}
   Opt := [];
   if frWholeWord in ReplaceDialog1.Options then
     Include(Opt,ssoWholeWord);
