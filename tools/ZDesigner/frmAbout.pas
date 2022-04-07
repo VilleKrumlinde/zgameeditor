@@ -83,7 +83,7 @@ begin
   Glp.Parent := Self;
   Glp.OnUpdateData := Self.OnUpdateData;
 
-  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Projects\about.zgeproj');
+  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Projects' + PathDelim + 'about.zgeproj');
   if Glp.App.BindComponent<TRenderText>('VersionText',R) then
   begin
     R.SetString('Text','Version ' + frmEditor.AppVersion);

@@ -1,5 +1,7 @@
 unit GLPanel;
 
+//Based on https://gitlab.com/freepascal.org/lazarus/lazarus/-/blob/main/components/opengl/glcocoanscontext.pas
+
 interface
 
 {$if defined(fpc) and defined(macos)}
@@ -11,7 +13,7 @@ uses
   Windows, Messages,
   {$endif}
   {$ifdef ZgeLazarus}
-  LCLType, LCLIntf, LMessages, 
+  LCLType, LCLIntf, LMessages, WSLCLClasses, WSControls,
   {$endif}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   dglOpenGL, ExtCtrls, ZApplication;
@@ -21,7 +23,7 @@ type
   HGLRC = pointer;
   {$endif}
 
-  TGLPanel = class(TCustomPanel)
+  TGLPanel = class(TWinControl)
   private
     Hrc: HGLRC;
     InitCalled: Boolean;
@@ -30,20 +32,20 @@ type
     {$ifdef MSWINDOWS}
     procedure SetDCPixelFormat(const DC: HDC);
     {$endif}
-    procedure CreateRenderContext;
   protected
     {$ifndef fpc}
     procedure CreateParams(var Params: TCreateParams); override;
     procedure WMEraseBackground( var msg:TWMEraseBkgnd ); message WM_ERASEBKGND;
     procedure WMGETDLGCODE( var msg:TMessage); message WM_GETDLGCODE;
     {$endif}
-    procedure Paint; override;
+    procedure Paint; virtual;
     procedure SetParent(AParent: TWinControl); override;
     procedure DestroyHandle; override;
     procedure CreateHandle; override;
     property Color default clBlack;
     {$ifdef ZgeLazarus}
     procedure WMPaint(var Message: TLMPaint); message LM_PAINT;
+    class procedure WSRegisterClass; override;
     {$endif}
   public
     SharedHrc: HGLRC;
@@ -53,9 +55,10 @@ type
     {$ifdef ZgeLazarus}
     procedure Invalidate; override;
     procedure EraseBackground(DC: HDC); override;
+    procedure RealizeBounds; override;
     {$endif}
     property MouseCapture;
-    property Canvas;
+//    property Canvas;
     property OnGLDraw: TNotifyEvent read FOnGLDraw write FOnGLDraw;
     property OnGLInit: TNotifyEvent read FOnGLInit write FOnGLInit;
     property OnMouseDown;
@@ -84,13 +87,56 @@ type
     destructor Destroy; override;
   end;
 
+  TWSOpenGLPanel = class(TWSWinControl)
+  published
+    class function CreateHandle(const AWinControl: TWinControl;
+                                const AParams: TCreateParams): HWND; override;
+    class procedure DestroyHandle(const AWinControl: TWinControl); override;
+    class function GetDoubleBuffered(const AWinControl: TWinControl): Boolean; override;
+  end;
+
+
+
 implementation
 
 uses
   {$ifdef MACOS}
-  CocoaUtils, CocoaAll, CocoaPrivate,
+  CocoaUtils, CocoaAll, CocoaPrivate, MacOSAll, CocoaWSCommon, types, LCLMessageGlue,
   {$endif}
   ZLog, ZPlatform, ZClasses, frmEditor;
+
+type
+  TCocoaOpenGLView = objcclass(NSOpenGLView)
+  public
+    Owner: TWinControl;
+    nsGL: NSOpenGLContext;
+    callback: TLCLCommonCallback;
+    backingScaleFactor: Single;
+    function acceptsFirstResponder: LCLObjCBoolean; override;
+    function becomeFirstResponder: LCLObjCBoolean; override;
+    function resignFirstResponder: LCLObjCBoolean; override;
+    procedure drawRect(dirtyRect: NSRect); override;
+    procedure dealloc; override;
+    function lclGetCallback: ICommonCallback; override;
+    procedure lclClearCallback; override;
+    function lclIsEnabled: Boolean; override;
+    // mouse
+    procedure mouseDown(event: NSEvent); override;
+    procedure mouseUp(event: NSEvent); override;
+    procedure rightMouseDown(event: NSEvent); override;
+    procedure rightMouseUp(event: NSEvent); override;
+    procedure rightMouseDragged(event: NSEvent); override;
+    procedure otherMouseDown(event: NSEvent); override;
+    procedure otherMouseUp(event: NSEvent); override;
+    procedure otherMouseDragged(event: NSEvent); override;
+    procedure mouseDragged(event: NSEvent); override;
+    procedure mouseEntered(event: NSEvent); override;
+    procedure mouseExited(event: NSEvent); override;
+    procedure mouseMoved(event: NSEvent); override;
+    procedure scrollWheel(event: NSEvent); override;
+    // other
+    procedure resetCursorRects; override;
+  end;
 
 {$ifndef fpc}
 procedure TGLPanel.CreateParams(var Params: TCreateParams);
@@ -143,84 +189,30 @@ end;
 {$endif}
 
 
-procedure TGLPanel.CreateRenderContext;
-{$ifdef MACOS}
-const
-  Attr: array[0..15] of NSOpenGLPixelFormatAttribute =
-    (NSOpenGLPFADepthSize, 16,
-     NSOpenGLPFAColorSize, 32,
-     NSOpenGLPFAAlphaSize, 8,
-     NSOpenGLPFADoubleBuffer,
-     NSOpenGLPFAStencilSize, 8,
-     //Request multisample
-     NSOpenGLPFAMultisample,
-     NSOpenGLPFASampleBuffers, 1,
-     NSOpenGLPFASamples, 8,
-     NSOpenGLPFANoRecovery,
-     0);
+function GetCGLContextObj(OpenGLControlHandle: HWND): CGLContextObj;
 var
-  Ctx: NSOpenGLContext;
-  Fmt: NSOpenGLPixelFormat;
-  P : Pointer;
-  View: pointer;
-
-  MainWindow: NSWindow;
-  MainWindowRect : NSRect;
-
-{$endif}
+  View: NSOpenGLView;
 begin
-  {$ifdef MACOS}
-  Fmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
-  P := NSOpenGLContext(NSOpenGLContext.alloc).initWithFormat_shareContext(Fmt, SharedHrc);
-  Ctx := NSOpenGLContext(P);
-
-  MainWindowRect.origin.x := 600.0;
-  MainWindowRect.origin.y := 600.0;
-  MainWindowRect.size.width := 600;
-  MainWindowRect.size.height := 300;
-  MainWindow := NSWindow.alloc.initWithContentRect_stylemask_backing_defer(MainWindowRect,
-    NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask or NSResizableWindowMask,
-    NSBackingStoreBuffered, False);
-  MainWindow.makeKeyAndOrderFront(NSapp);
-  MainWindow.setLevel(3);
-
-//  View := NSObject(Handle).lclContentView;
-  View := MainWindow.contentView;
-  Ctx.setView( NSView(View) );
-  Ctx.Update;
-
-  Ctx.makeCurrentContext;
-  Self.Hrc := Ctx;
-
-  dglOpenGL.ReadExtensions;
-  glViewport(0,0,ClientWidth,ClientHeight);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  {$endif}
-
-  {$ifdef MSWINDOWS}
-  // Create a rendering context.
-  SetDCPixelFormat(Canvas.Handle);
-
-  if SharedHrc<>0 then
-    //Use existing hrc
-    //http://stackoverflow.com/questions/13581303/opengl-share-existing-textures-with-future-contexts
-    Hrc := SharedHrc;
-
-  if hrc=0 then
-    hrc := wglCreateContext(Canvas.Handle);
-  if hrc <> 0 then
-  begin
-    wglMakeCurrent(Canvas.Handle,hrc);
-    dglOpenGL.ReadExtensions;
-    glViewport(0,0,ClientWidth,ClientHeight);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  end;
-  {$endif}
+  Result:=nil;
+  if OpenGLControlHandle=0 then exit;
+  View:=TCocoaOpenGLView(OpenGLControlHandle);
+  Result:=CGLContextObj(View.openGLContext.CGLContextObj);
+//  NSScreen.mainScreen.colorSpace;
 end;
 
+function LOpenGLMakeCurrent(Handle: HWND): boolean;
+var
+  CGLContext: CGLContextObj;
+begin
+  if Handle=0 then exit;
+  CGLContext := GetCGLContextObj(Handle);
+  Result:=CGLSetCurrentContext(CGLContext)=kCGLNoError;
+end;
 
 procedure TGLPanel.Paint;
 begin
+LOpenGLMakeCurrent(Handle);
+
   // Draw the scene.
   if (not InitCalled) and (Self.Handle<>0) then
   begin
@@ -230,8 +222,8 @@ begin
   end;
 
   {$ifdef MACOS}
-  NSOpenGLContext(hrc).makeCurrentContext;
-  NSOpenGLContext(hrc).update;
+//  NSOpenGLContext(hrc).makeCurrentContext;
+//  NSOpenGLContext(hrc).update;
   {$endif}
 
   {$ifdef MSWINDOWS}
@@ -243,7 +235,7 @@ begin
     OnGLDraw(Self);
 
   {$ifdef MACOS}
-  NSOpenGLContext(hrc).flushBuffer;
+//  NSOpenGLContext(hrc).flushBuffer;
   {$endif}
 
   {$ifdef MSWINDOWS}
@@ -254,8 +246,13 @@ end;
 {$ifdef ZgeLazarus}
 procedure TGLPanel.WMPaint(var Message: TLMPaint);
 begin
+TCocoaOpenGLView(Handle).nsGL.makeCurrentContext;
   Include(FControlState, csCustomPaint);
+  inherited WMPaint(Message);
   Paint;
+  glFlush();
+//NSOpenGLContext(Handle).flushBuffer;
+TCocoaOpenGLView(Handle).nsGL.flushBuffer;
   Exclude(FControlState, csCustomPaint);
 end;
 {$endif}
@@ -263,7 +260,10 @@ end;
 constructor TGLPanel.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  {$ifndef fpc}
+  ControlStyle:=ControlStyle-[csSetCaption];
+  {$ifdef fpc}
+  FCompStyle:=csNonLCL;  
+  {$else}
   Locked := True;
   {$endif}
   Color := clBlack;
@@ -281,11 +281,11 @@ begin
   {$endif}
 
   {$ifdef MACOS}
-  if (hrc <> nil) then
+(*  if (hrc <> nil) then
     NSView(NSOpenGLContext(HRC).View).window.close;
   if (hrc <> nil) and (SharedHrc=nil) then
     //Delete context if we owned it
-    NSOpenGLContext(HRC).release;
+    NSOpenGLContext(HRC).release; *)
   inherited;
   {$endif}
 end;
@@ -294,9 +294,6 @@ procedure TGLPanel.ForceInitGL;
 begin
   HandleNeeded;
   Paint;
-  {$ifdef MACOS}
-  TCocoaCustomControl(Handle).lclClearCallback;
-  {$endif}
 end;
 
 {$ifdef ZgeLazarus}
@@ -305,8 +302,6 @@ begin
   {$ifdef MACOS}
   if csCustomPaint in FControlState then 
     Exit;
-  if Parent<>nil then
-    TCocoaCustomControl(Handle).lclClearCallback;
   {$endif}
   inherited;
 end;
@@ -314,6 +309,18 @@ end;
 procedure TGLPanel.EraseBackground(DC: HDC); 
 begin
 end;
+
+procedure TGLPanel.RealizeBounds;
+begin
+  if IsVisible and HandleAllocated
+  and ([csDestroying]*ComponentState=[]) then
+  begin
+    if LOpenGLMakeCurrent(Self.Handle) then
+      ;//LOpenGLViewport(Handle,0,0,Width,Height);
+  end;
+  inherited RealizeBounds;
+end;
+
 {$endif}
 
 function TGLPanel.GetHrc: HGLRC;
@@ -353,12 +360,19 @@ end;
 procedure TGLPanel.CreateHandle;
 begin
   inherited;
-  if Self.Parent<>nil then
-  begin
-    CreateRenderContext;
-  end;
+  Self.Hrc := Pointer(Self.Handle);
 end;
 
+class procedure TGLPanel.WSRegisterClass;
+const
+  Registered : Boolean = False;
+begin
+  if Registered then
+    Exit;
+  inherited WSRegisterClass;
+  RegisterWSComponent(TGLPanel,TWSOpenGLPanel);
+  Registered := True;
+end;
 
 { TGLPanelZGE }
 
@@ -444,6 +458,255 @@ begin
     Self.Tag := 1;
   end;
   Invalidate;
+end;
+
+
+{ TWSOpenGLPanel }
+
+
+{ TCocoaOpenGLView }
+
+function TCocoaOpenGLView.acceptsFirstResponder: LCLObjCBoolean;
+begin
+  Result := True;
+end;
+
+function TCocoaOpenGLView.becomeFirstResponder: LCLObjCBoolean;
+begin
+  Result:=inherited becomeFirstResponder;
+  callback.BecomeFirstResponder;
+end;
+
+function TCocoaOpenGLView.resignFirstResponder: LCLObjCBoolean;
+begin
+  Result:=inherited resignFirstResponder;
+  callback.ResignFirstResponder;
+end;
+
+procedure TCocoaOpenGLView.dealloc;
+begin
+  inherited dealloc;
+end;
+
+function TCocoaOpenGLView.lclGetCallback: ICommonCallback;
+begin
+  Result := callback;
+end;
+
+procedure TCocoaOpenGLView.lclClearCallback;
+begin
+  callback := nil;
+end;
+
+function TCocoaOpenGLView.lclIsEnabled: Boolean;
+begin
+  Result := Owner.Enabled;
+end;
+
+procedure TCocoaOpenGLView.mouseDown(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+  begin
+    // do not pass mouseDown below or it will pass it to the parent control
+    // causing double events
+    //inherited mouseDown(event);
+  end;
+end;
+
+procedure TCocoaOpenGLView.mouseUp(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+    inherited mouseUp(event);
+end;
+
+procedure TCocoaOpenGLView.rightMouseDown(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+    inherited rightMouseDown(event);
+end;
+
+procedure TCocoaOpenGLView.rightMouseUp(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+    inherited rightMouseUp(event);
+end;
+
+procedure TCocoaOpenGLView.rightMouseDragged(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseMove(event) then
+    inherited rightMouseDragged(event);
+end;
+
+procedure TCocoaOpenGLView.otherMouseDown(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+    inherited otherMouseDown(event);
+end;
+
+procedure TCocoaOpenGLView.otherMouseUp(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
+    inherited otherMouseUp(event);
+end;
+
+procedure TCocoaOpenGLView.otherMouseDragged(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseMove(event) then
+    inherited otherMouseDragged(event);
+end;
+
+procedure TCocoaOpenGLView.mouseDragged(event: NSEvent);
+begin
+  if Assigned(callback)
+    then callback.MouseMove(event)
+    else inherited mouseDragged(event);
+end;
+
+procedure TCocoaOpenGLView.mouseEntered(event: NSEvent);
+begin
+  inherited mouseEntered(event);
+end;
+
+procedure TCocoaOpenGLView.mouseExited(event: NSEvent);
+begin
+  inherited mouseExited(event);
+end;
+
+procedure TCocoaOpenGLView.mouseMoved(event: NSEvent);
+begin
+  if not Assigned(callback) or not callback.MouseMove(event) then
+    inherited mouseMoved(event);
+end;
+
+procedure TCocoaOpenGLView.scrollWheel(event: NSEvent);
+begin
+  if Assigned(callback)
+    then callback.scrollWheel(event)
+    else inherited scrollWheel(event);
+end;
+
+procedure TCocoaOpenGLView.resetCursorRects;
+begin
+  if not Assigned(callback) or not callback.resetCursorRects then
+    inherited resetCursorRects;
+end;
+
+procedure TCocoaOpenGLView.drawRect(dirtyRect: NSRect);
+var
+  ctx : NSGraphicsContext;
+  PS  : TPaintStruct;
+  r   : NSRect;
+begin
+  ctx := NSGraphicsContext.currentContext;
+  inherited drawRect(dirtyRect);
+  if CheckMainThread and Assigned(callback) then
+  begin
+    if ctx = nil then
+    begin
+      // In macOS 10.14 (mojave) current context is nil
+      // we still can paint anything releated to OpenGL!
+      // todo: consider creating a dummy context (for a bitmap)
+      FillChar(PS, SizeOf(TPaintStruct), 0);
+      r := frame;
+      r.origin.x:=0;
+      r.origin.y:=0;
+      PS.hdc := HDC(0);
+      PS.rcPaint := NSRectToRect(r);
+      LCLSendPaintMsg(Owner, HDC(0), @PS);
+    end
+    else
+      callback.Draw(ctx, bounds, dirtyRect);
+  end;
+end;
+
+type
+  TTestContext = objcclass(NSOpenGLContext)
+  public
+    procedure dealloc; override;
+  end;
+
+procedure TTestContext.dealloc;
+begin
+end;
+
+class function TWSOpenGLPanel.CreateHandle(const AWinControl: TWinControl;
+  const AParams: TCreateParams): HWND;
+const
+  Attr: array[0..14] of NSOpenGLPixelFormatAttribute =
+    (NSOpenGLPFADepthSize, 16,
+     NSOpenGLPFAColorSize, 32,
+     NSOpenGLPFAAlphaSize, 8,
+//     NSOpenGLPFADoubleBuffer,
+     NSOpenGLPFAStencilSize, 8,
+     //Request multisample
+     NSOpenGLPFAMultisample,
+     NSOpenGLPFASampleBuffers, 1,
+     NSOpenGLPFASamples, 8,
+     NSOpenGLPFANoRecovery,
+     0);
+var
+  View: TCocoaOpenGLView;
+  Attrs: NSOpenGLPixelFormatAttributePtr;
+  PixFmt: NSOpenGLPixelFormat;
+  p: NSView;
+  ns: NSRect;
+  aNSOpenGLContext,sharedCtx: NSOpenGLContext;
+  CGLContext: CGLContextObj;
+  i : integer;
+begin
+  Result:=0;
+
+  if TGLPanel(AWinControl).SharedHrc=nil then
+    sharedCtx := nil
+  else
+    sharedCtx := TCocoaOpenGLView(TGLPanel(AWinControl).SharedHrc).nsGL;
+
+  p := nil;
+  if (AParams.WndParent <> 0) then
+    p := NSObject(AParams.WndParent).lclContentView;
+  if Assigned(p) then
+    LCLToNSRect(types.Bounds(AParams.X, AParams.Y, AParams.Width, AParams.Height),
+      p.frame.size.height, ns)
+  else
+    ns := GetNSRect(AParams.X, AParams.Y, AParams.Width, AParams.Height);
+
+  PixFmt := NSOpenGLPixelFormat(NSOpenGLPixelFormat.alloc).initWithAttributes(@Attr[0]);
+  aNSOpenGLContext := TTestContext(TTestContext.alloc).initWithFormat_shareContext(PixFmt, sharedCtx);
+
+  View := TCocoaOpenGLView(TCocoaOpenGLView.alloc).initWithFrame_pixelFormat(ns,PixFmt);
+  View.setHidden(AParams.Style and WS_VISIBLE = 0);
+  if Assigned(p) then
+    p.addSubview(View);
+  SetViewDefaults(View);
+  View.Owner:=AWinControl;
+  View.nsGL := aNSOpenGLContext;
+  View.callback:=TLCLCommonCallback.Create(View, AWinControl);
+//    aNSOpenGLContext.setView(view);
+  Result:=TLCLIntfHandle(View);
+
+  //https://stackoverflow.com/a/44183191/43673
+  view.setOpenGLContext(aNSOpenGLContext);
+
+{  if Assigned(sharedCtx) then
+  begin
+    aNSOpenGLContext.makeCurrentContext;
+    i := -1;
+    glGenTextures(1, @i);
+    writeln(inttostr(i));
+  end;}
+end;
+
+class procedure TWSOpenGLPanel.DestroyHandle(const AWinControl: TWinControl);
+begin
+//  LOpenGLDestroyContextInfo(AWinControl);
+  // do not use "inherited DestroyHandle", because the LCL changes the hierarchy at run time
+//  TWSWinControlClass(ClassParent).DestroyHandle(AWinControl);
+end;
+
+class function TWSOpenGLPanel.GetDoubleBuffered(const AWinControl: TWinControl): Boolean;
+begin
+  Result := False;
+  if AWinControl=nil then ;
 end;
 
 initialization
