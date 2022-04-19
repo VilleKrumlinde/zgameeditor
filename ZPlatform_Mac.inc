@@ -16,8 +16,7 @@ implementation
 
 uses AudioPlayer, ZApplication, ZOpenGL,
   SyncObjs, Classes,
-  dl, CocoaAll, MacOSAll
-  {$ifndef minimal}, Sysutils{$endif};
+  dl, CocoaAll, MacOSAll, Sysutils;
 
 var
   StartTime : double;
@@ -449,6 +448,7 @@ end;
 
 procedure Platform_Sleep(time : integer);
 begin
+  Sleep(time);
 end;
 
 function Platform_GetJoystickAxis(JoyId : integer; Axis : integer) : single;

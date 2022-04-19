@@ -96,16 +96,17 @@ function FindInstanceOf(C : TZComponent; Zc : TZComponentClass) : TZComponent;
 function DesignerFormatFloat(V : single) : string;
 function ZColorToColor(C : TZColorf) : TColor;
 function ColorToZColor(C : TColor) : TZColorf;
-{$ifndef ZgeLazarus}
 procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
-{$endif}
 
 implementation
 
 uses
   {$ifndef ZgeLazarus}
   Vcl.AxCtrls,Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,Winapi.GDIPAPI, Winapi.GDIPOBJ,
-  Vcl.Imaging.Pngimage, CommCtrl,
+  Vcl.Imaging.Pngimage, CommCtrl, 
+  {$endif}
+  {$ifdef ZgeLazarus}
+  LclType, 
   {$endif}
   StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
   ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,
@@ -1388,19 +1389,28 @@ end;
 
 { TZBinaryPropEdit }
 
-{$ifndef ZgeLazarus}
-function GraphicToBitmap(Pic :TPicture) : Vcl.Graphics.TBitmap;
+function GraphicToBitmap(Pic :TPicture) : Graphics.TBitmap;
+{$ifdef ZgeLazarus}
+type
+  TPngImage=TPortableNetworkGraphic;
+{$endif}
 var
-  Bmp: Vcl.Graphics.TBitmap;
+  Bmp: Graphics.TBitmap;
 begin
-  Bmp := Vcl.Graphics.TBitmap.Create;
+  Bmp := Graphics.TBitmap.Create;
+  {$ifndef ZgeLazarus}
   if Pic.Graphic is TPngImage then
   begin
     (Pic.Graphic as TPngImage).AssignTo(Bmp);
   end
   else
+  {$endif}
   begin
     Bmp.PixelFormat := pf24bit;
+    {$ifdef ZgeLazarus}
+    if Pic.Graphic is TPngImage then
+      Bmp.PixelFormat := pf32bit;
+    {$endif}
     Bmp.Width := Pic.Graphic.Width;
     Bmp.Height := Pic.Graphic.Height;
     Bmp.Canvas.Draw(0,0,Pic.Graphic);
@@ -1409,7 +1419,8 @@ begin
   Result := Bmp;
 end;
 
-function BitmapFromGdi(const FileName : string) : Vcl.Graphics.TBitmap;
+{$ifdef MSWINDOWS}
+function BitmapFromGdi(const FileName : string) : Graphics.TBitmap;
 var
   Pic: TGPBitmap;
   I,W,H,PixelSize : integer;
@@ -1459,12 +1470,13 @@ begin
   end;
   Pic.Free;
 end;
+{$endif}
 
 procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
 var
   Pic : TPicture;
   OwnBm : boolean;
-  Bm : Vcl.Graphics.TBitmap;
+  Bm : Graphics.TBitmap;
   X,Y : integer;
   R,G,B,A : byte;
   ZBm : TZBitmap;
@@ -1485,10 +1497,13 @@ begin
     end;
 
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
-    if not (Pic.Graphic is Vcl.Graphics.TBitmap) then
+    if not (Pic.Graphic is Graphics.TBitmap) then
     begin
+      {$ifdef mswindows}
       Bm := BitmapFromGdi(FileName);
-//      Bm := GraphicToBitmap(Pic);
+      {$else}
+      Bm := GraphicToBitmap(Pic);
+      {$endif}
       OwnBm := True;
     end
     else
@@ -1563,7 +1578,6 @@ begin
     Pic.Free;
   end;
 end;
-{$endif}
 
 procedure TZBinaryPropEdit.OnClearValue(Sender: TObject);
 begin
@@ -1592,9 +1606,7 @@ var
 //      D.DefaultExt := '*.bmp';
       if not D.Execute then
         Exit;
-      {$ifndef ZgeLazarus}
       GetPictureStream(TBitmapFromFile(Self.Component),D.FileName,M);
-      {$endif}
       Result := True;
     finally
       D.Free;

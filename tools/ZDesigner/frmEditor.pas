@@ -3801,7 +3801,6 @@ var
   S: string;
   M : TMemoryStream;
 begin
-  {$ifndef ZgeLazarus}
   M := TMemoryStream.Create;
   for S in Files do
   begin
@@ -3820,7 +3819,6 @@ begin
     Tree.Selected := Node;
   end;
   M.Free;
-  {$endif}
 end;
 
 procedure TEditorForm.ImportAudioActionExecute(Sender: TObject);
