@@ -1156,7 +1156,7 @@ begin
     Edit := TEdit.Create(Self);
     Edit.Tag := I;
     Edit.Width := 40;
-    Edit.Align := alLeft;
+    Edit.Left := I * Edit.Width;
     Edit.Text := DesignerFormatFloat(FloatP^[I]);
     Edit.OnChange := OnEditChange;
     Edit.OnEnter := OnFocusControl;
