@@ -674,6 +674,7 @@ begin
   {$endif}
   StyleMenuItem.Visible := False;
   SaveBinaryMenuItem.Visible := True;
+  ViewerPageControl.ShowTabs := False;
   {$endif}
 end;
 

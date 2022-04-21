@@ -1396,23 +1396,32 @@ type
 {$endif}
 var
   Bmp: Graphics.TBitmap;
+  Png : TPngImage;
+  PPixel,PDest : PRGBQuad;
+  X,Y : integer;
 begin
   Bmp := Graphics.TBitmap.Create;
-  {$ifndef ZgeLazarus}
+  Bmp.PixelFormat := pf24bit;
+  Bmp.Width := Pic.Graphic.Width;
+  Bmp.Height := Pic.Graphic.Height;
   if Pic.Graphic is TPngImage then
   begin
-    (Pic.Graphic as TPngImage).AssignTo(Bmp);
+    Bmp.PixelFormat := pf32bit;
+    Png := Pic.Graphic as TPngImage;
+    for Y := 0 to Png.Height-1 do
+    begin
+      PPixel := Png.ScanLine[Y];
+      PDest := Bmp.ScanLine[Y];
+      for X := 0  to Png.Width-1 do
+      begin
+        PDest^ := PPixel^;
+        Inc(PDest);
+        Inc(NativeUInt(PPixel),{$ifdef ZgeLazarus}4{$else}3{$endif});
+      end;
+    end;
   end
   else
-  {$endif}
   begin
-    Bmp.PixelFormat := pf24bit;
-    {$ifdef ZgeLazarus}
-    if Pic.Graphic is TPngImage then
-      Bmp.PixelFormat := pf32bit;
-    {$endif}
-    Bmp.Width := Pic.Graphic.Width;
-    Bmp.Height := Pic.Graphic.Height;
     Bmp.Canvas.Draw(0,0,Pic.Graphic);
   end;
   //Pic.Assign(Bmp);
