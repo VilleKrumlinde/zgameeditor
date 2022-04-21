@@ -111,30 +111,18 @@ begin
   //Empty method needed to get rid of keyboard beep
 end;
 
-procedure Platform_DesignerHandleMacEvent(Event : pointer);
+procedure Platform_DesignerHandleMacEvent(Event,View : pointer);
 var
   theEvent: NSEvent;
+  theView : NSView;
+  Nsp : NSPoint;
 begin
   theEvent := NSEvent(Event);
-  case theEvent.type_ of
-    NSKeyUp : MacKeys[ TranslateKey(theEvent) ] := False;
-    NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
-  end;
-end;
-
-procedure TZgeWindow.sendEvent(theEvent: NSEvent);
-var
-  Nsp : NSPoint;
-  P : TPoint;
-  View : NSView;
-begin
-  View := Self.contentView;
+  theView := NSView(View);
 
   Nsp := theEvent.locationInWindow;
-  Nsp.y := View.bounds.size.height-Nsp.y;
-
-//  Nsp := View.convertPointToBacking(Nsp);
-  
+  Nsp := theView.convertPoint_fromView(Nsp,nil);
+  Nsp.y := theView.bounds.size.height-Nsp.y;
   MacLastMouse[0] := Trunc(Nsp.x);
   MacLastMouse[1] := abs(Trunc(Nsp.y));
 
@@ -150,7 +138,14 @@ begin
     NSKeyUp : MacKeys[ TranslateKey(theEvent) ] := False;
     NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
   end;
+end;
 
+procedure TZgeWindow.sendEvent(theEvent: NSEvent);
+var
+  View : NSView;
+begin
+  View := Self.contentView;
+  Platform_DesignerHandleMacEvent(theEvent,View);
   inherited sendEvent(theEvent);
 end;
 

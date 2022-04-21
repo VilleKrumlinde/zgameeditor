@@ -507,30 +507,22 @@ end;
 
 procedure TCocoaOpenGLView.mouseDown(event: NSEvent);
 begin
-  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
-  begin
-    // do not pass mouseDown below or it will pass it to the parent control
-    // causing double events
-    //inherited mouseDown(event);
-  end;
+  Platform_DesignerHandleMacEvent(event,Self);
 end;
 
 procedure TCocoaOpenGLView.mouseUp(event: NSEvent);
 begin
-  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
-    inherited mouseUp(event);
+  Platform_DesignerHandleMacEvent(event,Self);
 end;
 
 procedure TCocoaOpenGLView.rightMouseDown(event: NSEvent);
 begin
-  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
-    inherited rightMouseDown(event);
+  Platform_DesignerHandleMacEvent(event,Self);
 end;
 
 procedure TCocoaOpenGLView.rightMouseUp(event: NSEvent);
 begin
-  if not Assigned(callback) or not callback.MouseUpDownEvent(event) then
-    inherited rightMouseUp(event);
+  Platform_DesignerHandleMacEvent(event,Self);
 end;
 
 procedure TCocoaOpenGLView.rightMouseDragged(event: NSEvent);
@@ -576,8 +568,7 @@ end;
 
 procedure TCocoaOpenGLView.mouseMoved(event: NSEvent);
 begin
-  if not Assigned(callback) or not callback.MouseMove(event) then
-    inherited mouseMoved(event);
+  Platform_DesignerHandleMacEvent(event,Self);
 end;
 
 procedure TCocoaOpenGLView.scrollWheel(event: NSEvent);
@@ -595,13 +586,13 @@ end;
 
 procedure TCocoaOpenGLView.keyUp(event:NSEvent);
 begin
-  Platform_DesignerHandleMacEvent(event);
+  Platform_DesignerHandleMacEvent(event,Self);
   inherited;
 end;
 
 procedure TCocoaOpenGLView.keyDown(theEvent: NSEvent); 
 begin
-  Platform_DesignerHandleMacEvent(theEvent);
+  Platform_DesignerHandleMacEvent(theEvent,Self);
 end;
 
 procedure TCocoaOpenGLView.drawRect(dirtyRect: NSRect);
