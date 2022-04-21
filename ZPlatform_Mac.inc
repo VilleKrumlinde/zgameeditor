@@ -111,6 +111,17 @@ begin
   //Empty method needed to get rid of keyboard beep
 end;
 
+procedure Platform_DesignerHandleMacEvent(Event : pointer);
+var
+  theEvent: NSEvent;
+begin
+  theEvent := NSEvent(Event);
+  case theEvent.type_ of
+    NSKeyUp : MacKeys[ TranslateKey(theEvent) ] := False;
+    NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
+  end;
+end;
+
 procedure TZgeWindow.sendEvent(theEvent: NSEvent);
 var
   Nsp : NSPoint;

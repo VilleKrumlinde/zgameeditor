@@ -136,6 +136,8 @@ type
     procedure scrollWheel(event: NSEvent); override;
     // other
     procedure resetCursorRects; override;
+    procedure keyUp(event:NSEvent); override;
+    procedure keyDown (theEvent: NSEvent); override;
   end;
 
 {$ifndef fpc}
@@ -589,6 +591,17 @@ procedure TCocoaOpenGLView.resetCursorRects;
 begin
   if not Assigned(callback) or not callback.resetCursorRects then
     inherited resetCursorRects;
+end;
+
+procedure TCocoaOpenGLView.keyUp(event:NSEvent);
+begin
+  Platform_DesignerHandleMacEvent(event);
+  inherited;
+end;
+
+procedure TCocoaOpenGLView.keyDown(theEvent: NSEvent); 
+begin
+  Platform_DesignerHandleMacEvent(theEvent);
 end;
 
 procedure TCocoaOpenGLView.drawRect(dirtyRect: NSRect);

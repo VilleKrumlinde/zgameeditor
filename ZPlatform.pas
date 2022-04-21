@@ -111,6 +111,10 @@ procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
 procedure Platform_DesignerSetFilePath(const P : AnsiString);
 {$endif}
 
+{$if defined(macos) and defined(ZgeLazarus)}
+procedure Platform_DesignerHandleMacEvent(Event : pointer);
+{$endif}
+
 const
   UpKey = '^';
   DownKey = '_';
