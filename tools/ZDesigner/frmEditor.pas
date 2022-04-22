@@ -434,7 +434,9 @@ type
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
-    {$ifndef ZgeLazarus}
+    {$ifdef ZgeLazarus}
+    procedure LclDropFiles(Sender: TObject; const FileNames: array of AnsiString);
+    {$else}
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
     {$endif}
     procedure ImportBitmaps(Files: TStringList);
@@ -675,6 +677,8 @@ begin
   StyleMenuItem.Visible := False;
   SaveBinaryMenuItem.Visible := True;
   ViewerPageControl.ShowTabs := False;
+  Self.AllowDropFiles := True;
+  Self.OnDropFiles := LclDropFiles;
   {$endif}
 end;
 
@@ -1337,7 +1341,43 @@ begin
   inherited;
 end;
 
-{$ifndef ZgeLazarus}
+{$ifdef ZgeLazarus}
+procedure TEditorForm.LclDropFiles(Sender: TObject; const FileNames: array of AnsiString);
+var
+  FileName : string;
+  ModelFiles,BitmapFiles,AudioFiles : TStringList;
+  BmMatch,AudioMatch,ModelMatch : string;
+begin
+  BitmapFiles := TStringList.Create;
+  AudioFiles := TStringList.Create;
+  ModelFiles := TStringList.Create;
+
+  BmMatch := '.png .jpg .jpeg .bmp .gif';
+  AudioMatch := '.ogg';
+  ModelMatch := '.3ds .obj';
+
+  for FileName in FileNames do
+  begin
+    if Pos(LowerCase(ExtractFileExt(FileName)),BmMatch)>0 then
+      BitmapFiles.Add(Filename)
+    else if Pos(LowerCase(ExtractFileExt(FileName)),AudioMatch)>0 then
+      AudioFiles.Add(Filename)
+    else if Pos(LowerCase(ExtractFileExt(FileName)),ModelMatch)>0 then
+      ModelFiles.Add(Filename)
+  end;
+
+  if BitmapFiles.Count>0 then
+    ImportBitmaps(BitmapFiles);
+  if AudioFiles.Count>0 then
+    ImportAudioFiles(AudioFiles);
+  if ModelFiles.Count>0 then
+    ImportModelFiles(ModelFiles);
+
+  BitmapFiles.Free;
+  AudioFiles.Free;
+  ModelFiles.Free;
+end;
+{$else}
 procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
 var
   i, fileCount: integer;
@@ -3210,9 +3250,6 @@ end;
 
 procedure TEditorForm.AboutActionExecute(Sender: TObject);
 begin
-  {$ifdef ZgeLazarus}
-  Exit; //avoid crash for now
-  {$endif}
   AboutForm := TAboutForm.Create(Self);
   try
     AboutForm.Caption := 'About ' + AppName;
@@ -3437,7 +3474,7 @@ begin
   AppPreviewStartAction.Enabled := False;
   AppPreviewStopAction.Enabled := True;
   Glp.SetFocus;
-  Timer1.Interval := 15; //Try 60fps in preview
+  Timer1.Interval := 16; //Try 60fps in preview
   IsAppRunning := True;
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
