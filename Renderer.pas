@@ -2717,9 +2717,11 @@ begin
     Exit;
 
   TilesPerRow := (Ts.Bitmap.PixelWidth+Ts.TileBorder) div (Ts.TileWidth+Ts.TileBorder);
+  if TilesPerRow=0 then
+    Exit;
 
   X := (Self.TileIndex mod TilesPerRow) * (Ts.TileWidth+Ts.TileBorder);
-	Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
+  Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
 
   Driver := Self.ZApp.Driver;
 
