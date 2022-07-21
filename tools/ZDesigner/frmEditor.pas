@@ -2660,6 +2660,7 @@ begin
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
     F.SynEdit.Font.Size := Self.SynEditFontSize;
+    F.ActiveControl := F.SynEdit;
     repeat
       if (F.ShowModal=mrOk) and F.SynEdit.Modified then
       begin
@@ -2689,6 +2690,8 @@ begin
   finally
     SymTemp.Free;
   end;
+  CommonModule.FindDialog1.CloseDialog;
+  CommonModule.ReplaceDialog1.CloseDialog;
 end;
 
 procedure TEditorForm.EnableFunctionInliningClick(Sender: TObject);
