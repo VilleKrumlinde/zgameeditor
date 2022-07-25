@@ -714,6 +714,7 @@ begin
   Driver.PushMatrix();
     Driver.Translate(Translate[0],Translate[1],Translate[2]);
     Driver.ApplyRotation(Rotate);
+    Driver.UpdateNormalMatrix;
     if not VecIsIdentity3(Scale) then
       Driver.Scale(Scale[0],Scale[1],Scale[2]);
     Children.ExecuteCommands;
