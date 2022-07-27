@@ -359,6 +359,7 @@ type
     UndoParent : TZComponentTreeNode;
     SysLibrary : TZComponent;
     SynEditFontSize,AutoCompTimerInterval : integer;
+    SynEditFontName : string;
     Log : TLog;
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
     DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
@@ -662,6 +663,8 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
     F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.ExprSynEdit.Font.Name := Self.SynEditFontName;
     F.AutoComp.TimerInterval := Self.AutoCompTimerInterval;
     F.ParamComp.TimerInterval := Self.AutoCompTimerInterval;
     F.ExprCompileButton.OnClick := Self.ExprCompileButtonClick;
@@ -678,6 +681,8 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F.ShaderSynEdit.ResetModificationIndicator;
 
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.ShaderSynEdit.Font.Name := Self.SynEditFontName;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
   end;
 
@@ -1104,6 +1109,7 @@ begin
     end;
 
     SynEditFontSize := Ini.ReadInteger(Section,'CodeEditorFontSize',10);
+    SynEditFontName := Ini.ReadString(Section,'CodeEditorFontName','');
 
     S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
     if S<>TStyleManager.ActiveStyle.Name then
@@ -1295,6 +1301,7 @@ begin
       Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
       Ini.WriteInteger(Section,'CodeEditorFontSize',SynEditFontSize);
+      Ini.WriteString(Section,'CodeEditorFontName',SynEditFontName);
 
       Ini.WriteInteger(Section,'Scaling',Self.MainScaling);
 
@@ -2660,6 +2667,8 @@ begin
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
     F.SynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.SynEdit.Font.Name := Self.SynEditFontName;
     F.ActiveControl := F.SynEdit;
     repeat
       if (F.ShowModal=mrOk) and F.SynEdit.Modified then
