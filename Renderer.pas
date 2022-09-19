@@ -2635,6 +2635,7 @@ begin
   M1.Shader := M2.Shader;
   M1.Light := M2.Light;
   M1.Shading := M2.Shading;
+  M1.ZBuffer := M2.ZBuffer;
 end;
 
 

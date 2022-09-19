@@ -825,12 +825,10 @@ begin
         1 :
           begin
             //Render application
-            Driver.PushMatrix;
             if Self.OnRender.Count>0 then
               Self.OnRender.ExecuteCommands;
             if Self.CurrentState<>nil then
               Self.CurrentState.OnRender.ExecuteCommands;
-            Driver.PopMatrix;
           end;
       end;
     end;
