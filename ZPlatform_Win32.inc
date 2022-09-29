@@ -146,7 +146,6 @@ type
 function WndProc(hWnd: HWND; Msg: UINT;  wParam: WPARAM;  lParam: LPARAM): LRESULT; stdcall;
 var
   ZApp : TZApplication;
-  Key : byte;
 begin
   Result := 0;
   case Msg of
@@ -168,11 +167,11 @@ begin
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
-        Key := {$ifdef cpux64}wParam and 255{$else}Key := Lo(wParam)]{$endif};
-        Keys[ Key ] := True;
-        //Save keydown event, but only if this is not a auto-repeated key
-        if (lParam and $40000000)=0 then
-          KeyDownList.Add(TObject(Key));
+        {$ifdef cpux64}
+        Keys[ wParam and 255 ] := True;
+        {$else}
+        Keys[Lo(wParam)] := True;
+        {$endif}
       end;
     WM_KEYUP:         // Set the released key (wparam) to equal false so we can check if its pressed
       begin
@@ -184,9 +183,11 @@ begin
             PostMessage(hWnd,WM_QUIT,0,0);
         end;
         {$endif}
-        Key := {$ifdef cpux64}wParam and 255{$else}Key := Lo(wParam)]{$endif};
-        Keys[ Key ] := False;
-        KeyUpList.Add(TObject(Key));
+        {$ifdef cpux64}
+        Keys[ wParam and 255 ] := False;
+        {$else}
+        Keys[Lo(wParam)] := False;
+        {$endif}
       end;
     WM_MOUSEMOVE :
       begin
@@ -1943,10 +1944,8 @@ begin
   Result := sysinfo.dwNumberOfProcessors;
 end;
 
-initialization
-  KeyDownList := TZArrayList.CreateReferenced;
-  KeyUpList := TZArrayList.CreateReferenced;
-finalization
-  KeyDownList.Free;
-  KeyUpList.Free;
+{initialization
+
+finalization}
+
 end.

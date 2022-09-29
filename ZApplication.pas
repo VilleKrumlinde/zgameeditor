@@ -520,12 +520,6 @@ begin
       ManagedHeap_GarbageCollect;
     {$endif}
 
-    //Reset keyboard events
-    if Assigned(ZPlatform.KeyDownList) then
-      ZPlatform.KeyDownList.Clear;
-    if Assigned(ZPlatform.KeyUpList) then
-      ZPlatform.KeyUpList.Clear;
-
     {$ifdef minimal}
     if FrameRateStyle<>frsFree then
     begin //Give remaining time back to the OS to avoid 100% cpu pressure
@@ -825,10 +819,12 @@ begin
         1 :
           begin
             //Render application
+            Driver.PushMatrix;
             if Self.OnRender.Count>0 then
               Self.OnRender.ExecuteCommands;
             if Self.CurrentState<>nil then
               Self.CurrentState.OnRender.ExecuteCommands;
+            Driver.PopMatrix;
           end;
       end;
     end;
