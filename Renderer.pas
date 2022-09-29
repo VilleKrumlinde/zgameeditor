@@ -714,6 +714,7 @@ begin
   Driver.PushMatrix();
     Driver.Translate(Translate[0],Translate[1],Translate[2]);
     Driver.ApplyRotation(Rotate);
+    Driver.UpdateNormalMatrix;
     if not VecIsIdentity3(Scale) then
       Driver.Scale(Scale[0],Scale[1],Scale[2]);
     Children.ExecuteCommands;
@@ -2634,6 +2635,7 @@ begin
   M1.Shader := M2.Shader;
   M1.Light := M2.Light;
   M1.Shading := M2.Shading;
+  M1.ZBuffer := M2.ZBuffer;
 end;
 
 
@@ -2717,9 +2719,11 @@ begin
     Exit;
 
   TilesPerRow := (Ts.Bitmap.PixelWidth+Ts.TileBorder) div (Ts.TileWidth+Ts.TileBorder);
+  if TilesPerRow=0 then
+    Exit;
 
   X := (Self.TileIndex mod TilesPerRow) * (Ts.TileWidth+Ts.TileBorder);
-	Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
+  Y := (Self.TileIndex div TilesPerRow) * (Ts.TileHeight+Ts.TileBorder);
 
   Driver := Self.ZApp.Driver;
 

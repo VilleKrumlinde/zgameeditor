@@ -101,20 +101,16 @@ begin
   Result := '';
 end;
 
-procedure MakeFullPath(FileName : PAnsiChar; var Buf : array of AnsiChar);
-var
-  I : integer;
-  Tmp : PAnsiChar;
+procedure MakeFullPath(FileName : PAnsiChar; out Buf : array of AnsiChar);
 begin
-  Tmp := @Buf;
-  ZStrCopy(Tmp,Platform_GetExeFileName);
-  I := ZStrLength(Tmp);
-  while (I>0) and (not (Tmp[I] in ['\','/'])) do
-    Dec(I);
-  if I>0 then
-    Tmp[I+1] := #0;
-  //Append filename
-  ZStrCat(Tmp,FileName);
+  Assert(Length(DesignerFilePath) + Length(FileName) < Length(Buf));
+  if (Length(FileName)>0) and (FileName[0]='/') then
+    ZStrCopy(PAnsiChar(@Buf),FileName)  //Absolute path specified
+  else
+  begin
+    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+    ZStrCat(PAnsiChar(@Buf),FileName);
+  end;
 end;
 
 procedure Platform_WriteFile(FileName : PAnsiChar; Memory : pointer; Size : integer; Append : Boolean);

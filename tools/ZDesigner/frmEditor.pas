@@ -27,20 +27,14 @@ interface
 {$DEFINE ZZDC_FPC} //Runtime engine built with Freepascal
 
 uses
-{$IFnDEF FPC}
-  Windows, SynCompletionProposal, unitPEFile, Vcl.Imaging.Jpeg, Vcl.Themes,
-  Vcl.Imaging.pngimage, ImageList, CommCtrl,
-{$ELSE}
-  LCLIntf, LCLType, LMessages,
-{$ENDIF}
-  Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, ZClasses, DesignerGui, GLPanel, ComCtrls, Menus, StdCtrls,
-  ActnList, ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
-  uSymTab, frmMusicEdit, ZLog, Buttons, StdActns, ExtCtrls,
-  ToolWin, frmBitmapEdit, frmMeshEdit,
-  ZApplication, GLDrivers,
-  ZBitmap, Generics.Collections,
-  frmCustomPropEditBase;
+  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, ZClasses, DesignerGui, GLPanel, Vcl.ComCtrls, Vcl.Menus, Vcl.StdCtrls,
+  Vcl.ActnList, Vcl.ImgList, frmSoundEdit, frmCompEditBase, Contnrs,
+  uSymTab, frmMusicEdit, ZLog, Vcl.Buttons, Vcl.StdActns, Vcl.ExtCtrls,
+  Vcl.ToolWin, SynCompletionProposal, frmBitmapEdit, frmMeshEdit, unitPEFile,
+  Vcl.Imaging.Jpeg, Vcl.Themes, ZApplication, GLDrivers, System.Actions,
+  Vcl.Imaging.pngimage, ZBitmap, Generics.Collections, CommCtrl,
+  System.ImageList, frmCustomPropEditBase;
 
 type
   TBuildBinaryKind = (bbNormal,bbNormalUncompressed,bbScreenSaver,bbScreenSaverUncompressed,
@@ -365,9 +359,10 @@ type
     UndoParent : TZComponentTreeNode;
     SysLibrary : TZComponent;
     SynEditFontSize,AutoCompTimerInterval : integer;
+    SynEditFontName : string;
     Log : TLog;
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
-    DetachedPropEditors : TDictionary<TPropEditKey,TForm>;
+    DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
     MainScaling : integer;
     EvalHistory : TStringList;
     QuickCompEnabledList : array of boolean;
@@ -416,29 +411,23 @@ type
     procedure LoadSysLibrary;
     procedure OnAddFromLibraryItemClick(Sender: TObject);
     procedure AddNewComponentToTree(C: TZComponent; SelectIt : boolean = true);
-    {$ifndef ZgeLazarus}
     procedure AutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
     procedure ParamAutoCompOnExecute(Kind: SynCompletionType; Sender: TObject;  var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
-    procedure RemoveUnusedCode(Module: TPEModule);
-    procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
-    {$endif}
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
     procedure OnGlInit(Sender: TObject);
     procedure OnAppException(Sender: TObject; E: Exception);
+    procedure RemoveUnusedCode(Module: TPEModule);
     procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
     procedure ClearRoot;
     procedure SetRoot(C: TZComponent);
     procedure SaveCurrentEdits;
     procedure BuildStyleMenu;
+    procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     procedure OnTreeRecreate(Sender : TObject);
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
-    {$ifdef ZgeLazarus}
-    procedure LclDropFiles(Sender: TObject; const FileNames: array of AnsiString);
-    {$else}
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
-    {$endif}
     procedure ImportBitmaps(Files: TStringList);
     procedure ImportAudioFiles(Files: TStringList);
     procedure ImportModelFiles(Files: TStringList);
@@ -483,30 +472,15 @@ procedure SetupGLShading;
 
 implementation
 
-{$ifdef ZgeLazarus}
-{$R *.lfm}
-{$else}
 {$R *.dfm}
-{$endif}
 
-uses
-{$IFnDEF FPC}
-  ShellApi, SynHighlighterZc,
-  unitResourceDetails, unitResourceGraphics, System.IOUtils, Winapi.Imm,
-{$ELSE}
-  FileUtil,
-  {$ifdef darwin}
-  BaseUnix, 
-  {$endif}
-{$ENDIF}
-  SynEditHighlighter, SynEditTypes, SynEditSearch, SynEdit,
-  Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
-  frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
-  dmCommon, frmAbout, uHelp, frmToolMissing, Clipbrd,
-  u3dsFile, AudioPlayer, frmSettings, Zc_Ops,
-  frmXmlEdit, frmArrayEdit, Types,
-  frmAndroidApk, ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
-  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, uObjFile, ZFile,
+uses Math, ZOpenGL, BitmapProducers, Meshes, Renderer, Compiler, ZExpressions,
+  ShellApi, SynEditHighlighter, SynHighlighterZc,frmSelectComponent, AudioComponents, IniFiles, ZPlatform,
+  dmCommon, frmAbout, uHelp, frmToolMissing, Vcl.Clipbrd, unitResourceDetails,
+  u3dsFile, AudioPlayer, frmSettings, unitResourceGraphics, Zc_Ops,
+  SynEditTypes, SynEditSearch, frmXmlEdit, frmArrayEdit, System.Types, System.IOUtils,
+  frmAndroidApk, Winapi.Imm, Vcl.ExtDlgs, frmSpriteSheetEdit, frmTileSetEdit,
+  frmExprPropEdit, frmShaderPropEdit, frmFloatPropEdit, SynEdit, uObjFile, ZFile,
   RetroCoding;
 
 { TEditorForm }
@@ -515,7 +489,7 @@ constructor TEditorForm.Create(AOwner: TComponent);
 
   procedure LoadGamutBitmap;
   var
-    B : {$ifdef ZgeLazarus}TPortableNetworkGraphic{$else}TPngImage{$endif};
+    B : TPngImage;
     Zb : TZBitmap;
     Bf : TBitmapFromFile;
     Value : TZPropertyValue;
@@ -525,7 +499,7 @@ constructor TEditorForm.Create(AOwner: TComponent);
   begin
     M := TMemoryStream.Create;
     try
-      B := Self.GamutImage.Picture.Graphic as {$ifdef ZgeLazarus}TPortableNetworkGraphic{$else}TPngImage{$endif};
+      B := Self.GamutImage.Picture.Graphic as TPngImage;
       for Y := 0 to B.Height-1 do
       begin
         PPixel := B.ScanLine[Y];
@@ -534,7 +508,7 @@ constructor TEditorForm.Create(AOwner: TComponent);
           M.Write(PPixel.rgbRed,1);
           M.Write(PPixel.rgbGreen,1);
           M.Write(PPixel.rgbBlue,1);
-          Inc(NativeUInt(PPixel),{$ifdef ZgeLazarus}4{$else}3{$endif});
+          Inc(NativeUInt(PPixel),3);
         end;
       end;
       Value.BinaryValue.Size := M.Size;
@@ -558,16 +532,14 @@ begin
   inherited Create(AOwner);
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
 
-  {$ifndef ZgeLazarus}
   Math.SetExceptionMask(exAllArithmeticExceptions);
-  {$endif}
 
   Self.Log := ZLog.GetLog(Self.ClassName);
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
 
   LoadGamutBitmap;
   DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
-  DetachedPropEditors := TDictionary<TPropEditKey,TForm>.Create();
+  DetachedPropEditors := TObjectDictionary<TPropEditKey,TForm>.Create([doOwnsValues]);
 
   //Zc expressions needs '.' set
   Application.UpdateFormatSettings := False;
@@ -595,10 +567,7 @@ begin
   Tree.OnRecreate := OnTreeRecreate;
 
   //InitAudio needs hwnd of main window to work
-
-  {$ifdef MSWINDOWS}
   Platform_DesignerSetDC(0,Self.Handle);
-  {$endif}
   Platform_InitAudio;
 
   Glp := TGLPanel.Create(Self);
@@ -639,19 +608,15 @@ begin
 
   Application.OnException := OnAppException;
 
-  {$ifndef ZgeLazarus}
   SaveBinaryMenuItem.Visible := DebugHook<>0;
   ShowCompilerDetailsAction.Checked := DebugHook<>0;
   DetailedBuildReportMenuItem.Visible := DebugHook<>0;
   OpenAllProjectsMenuItem.Visible := DebugHook<>0;
-  {$endif}
 
   UndoNodes := TObjectList.Create(True);
   UndoIndices := TObjectList.Create(False);
 
-  {$ifndef ZgeLazarus}
   TStyleManager.Engine.RegisterStyleHook(TCustomSynEdit, TMemoStyleHook);
-  {$endif}
 
   BuildStyleMenu;
   ReadAppSettingsFromIni;
@@ -661,25 +626,6 @@ begin
   FillQuickCompList;
 
   EvalHistory := TStringList.Create;
-
-  {$ifdef ZgeLazarus}
-  {$ifdef MACOS} //Cocoa LCL needs some workarounds
-  ViewerGLTabSheet.TabVisible := True;
-  ViewerCompTabSheet.TabVisible := True;
-  ViewerBlankTabSheet.TabVisible := True;
-  with QuickCompListView.Columns.Add do
-    Width := 200;
-  QuickCompListView.ShowColumnHeaders := False;
-  ToolBar1.AutoSize := False;
-  GenerateReleaseLinuxAction.Enabled := False;
-  GenerateReleaseAction.Enabled := False;
-  {$endif}
-  StyleMenuItem.Visible := False;
-  SaveBinaryMenuItem.Visible := True;
-  ViewerPageControl.ShowTabs := False;
-  Self.AllowDropFiles := True;
-  Self.OnDropFiles := LclDropFiles;
-  {$endif}
 end;
 
 
@@ -713,14 +659,14 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
     F.ExprPanel.Caption := F.ExprPanel.Caption + ' (' + Prop.Name + ')';
 
     F.ExprSynEdit.Text := Component.GetProperty(Prop).ExpressionValue.Source;
-    {$ifndef ZgeLazarus}
     F.ExprSynEdit.ResetModificationIndicator;
     F.AutoComp.OnExecute := AutoCompOnExecute;
     F.ParamComp.OnExecute := ParamAutoCompOnExecute;
+    F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.ExprSynEdit.Font.Name := Self.SynEditFontName;
     F.AutoComp.TimerInterval := Self.AutoCompTimerInterval;
     F.ParamComp.TimerInterval := Self.AutoCompTimerInterval;
-    {$endif}
-    F.ExprSynEdit.Font.Size := Self.SynEditFontSize;
     F.ExprCompileButton.OnClick := Self.ExprCompileButtonClick;
   end;
 
@@ -732,10 +678,11 @@ procedure TEditorForm.OnPropEditFocusControl(Sender: TObject; Prop : TZProperty;
 
     F.ShaderPanel.Caption := F.ShaderPanel.Caption + ' (' + Prop.Name + ')';
     F.ShaderSynEdit.Text := String(Component.GetProperty(Prop).StringValue);
-    {$ifndef ZgeLazarus}
     F.ShaderSynEdit.ResetModificationIndicator;
-    {$endif}
+
     F.ShaderSynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.ShaderSynEdit.Font.Name := Self.SynEditFontName;
     F.CompileShaderButton.OnClick := Self.CompileShaderButtonClick;
   end;
 
@@ -789,11 +736,7 @@ var
   Ci : TZComponentInfo;
   I : TZClassIds;
   Item : TListItem;
-  J : integer;
-  L : TStringList;
 begin
-  L := TStringList.Create;
-  L.Sorted := True;
   Infos := ZClasses.ComponentManager.GetAllInfos;
   for I := Low(TComponentInfoArray) to High(TComponentInfoArray) do
   begin
@@ -803,36 +746,24 @@ begin
     Assert(Ci<>nil, 'Component info=nil. Component class removed?');
     if Ci.NoUserCreate then
       Continue;
-    L.AddObject(Ci.ZClassName,Ci);
-  end;
-
-  for J := 0 to L.Count-1 do
-  begin
     Item := QuickCompListView.Items.Add;
-    Ci := TZComponentInfo(L.Objects[J]);
     Item.Caption := Ci.ZClassName;
     Item.Data := Ci;
     Item.ImageIndex := Ci.ImageIndex;
   end;
-
   SetLength(QuickCompEnabledList,QuickCompListView.Items.Count);
-  L.Free;
 //  ListView_SetColumnWidth(QuickCompListView.Handle, 0, 200);
 end;
 
 procedure TEditorForm.CreateWnd;
 begin
   inherited;
-  {$ifndef ZgeLazarus}
   DragAcceptFiles(WindowHandle, True);
-  {$endif}
 end;
 
 procedure OnTaskdialogHyperlinkClick(this : pointer; sender : tobject);
 begin
-  {$ifndef ZgeLazarus}
   GoUrl( (Sender as TTaskDialog).URL );
-  {$endif}
 end;
 
 procedure ShowMessageWithLink(const S1,S2 : string);
@@ -840,7 +771,6 @@ var
   D: TTaskDialog;
   M : TMethod;
 begin
-  {$ifndef ZgeLazarus}
   if (Win32MajorVersion >= 6) then
   begin
     //Display dialog with hyperlinks on Vista or higher
@@ -860,7 +790,6 @@ begin
       D.Free;
     end;
   end else
-  {$endif}
     //Display without hyperlinks
     ShowMessage(S1);
 end;
@@ -870,7 +799,6 @@ var
   Name : string;
   Mi : TMenuItem;
 begin
-  {$ifndef ZgeLazarus}
   for Name in TDirectory.GetFiles(ExePath + 'Templates','*.zgeproj') do
   begin
     Mi := TMenuItem.Create(Self);
@@ -880,7 +808,6 @@ begin
     Mi.Caption := TPath.GetFileNameWithoutExtension(Name);
     NewProjectMenuItem.Add(Mi);
   end;
-  {$endif}
 end;
 
 
@@ -925,14 +852,12 @@ var
 begin
   //Debug code to test opening all projects
   Path := Self.ExePath + 'Projects';
-  {$ifndef ZgeLazarus}
   for FileName in TDirectory.GetFiles(Path,'*.zgeproj',TSearchOption.soAllDirectories) do
   begin
     CloseProject;
     OutputDebugString(PWideChar(FileName));
     OpenProject(FileName);
   end;
-  {$endif}
 end;
 
 procedure TEditorForm.OnAppInfoClose(Sender : TObject);
@@ -1037,9 +962,7 @@ begin
 //  SelectComponent(Self.Root);
 
   //Needed for platform wndproc
-  {$ifndef ZgeLazarus}
   SetWindowLongPtr(Glp.Handle,GWL_USERDATA, NativeInt(ZApp) );
-  {$endif}
 
   //Sätt till nytt värde så att form.caption ändras
   _FileChanged := True;
@@ -1051,9 +974,6 @@ begin
     //Must compile directly after load because no zc-instructions are saved in the xml
     CompileAll;
   finally
-    {$ifdef ZgeLazarus}
-    ZApp.Driver := GLDrivers.CreateDriver(ZApp.GLBase);
-    {$else}
     TThread.Synchronize(nil,
       procedure
       begin
@@ -1069,7 +989,6 @@ begin
         CheckGLError;
       end
     );
-    {$endif}
   end;
 end;
 
@@ -1122,11 +1041,9 @@ begin
 end;
 
 procedure TEditorForm.OnReceiveLogMessage(Log : TLog; Mess : TLogString; Level : TLogLevel);
-{$ifndef fpc}
 begin
   TThread.Synchronize(nil,
     procedure
-{$endif}
     var
       I : integer;
       Tmp : TStringList;
@@ -1150,12 +1067,8 @@ begin
       end;
       LogListBox.ItemIndex := LogListBox.Items.Count-1;
     end
-{$ifndef fpc}
   );
 end;
-{$else}
-  ;
-{$endif}
 
 procedure TEditorForm.ReadAppSettingsFromIni;
 var
@@ -1163,7 +1076,7 @@ var
   Section,S : string;
   OldState : TWindowState;
 begin
-  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,unicodestring('.ini')) );
+  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
   try
     Section := 'Designer';
 
@@ -1196,12 +1109,11 @@ begin
     end;
 
     SynEditFontSize := Ini.ReadInteger(Section,'CodeEditorFontSize',10);
+    SynEditFontName := Ini.ReadString(Section,'CodeEditorFontName','');
 
-    {$ifndef ZgeLazarus}
     S := Ini.ReadString(Section, 'Style', TStyleManager.ActiveStyle.Name);
     if S<>TStyleManager.ActiveStyle.Name then
       SwitchToStyle(S,nil);
-    {$endif}
 
     if (ParamCount=1) and FileExists(ParamStr(1)) then
       OpenProject(ParamStr(1))
@@ -1249,10 +1161,6 @@ end;
 
 procedure TEditorForm.ResizeImageListImagesforHighDPI(const imgList: TImageList);
 //Credits: http://zarko-gajic.iz.hr/resizing-delphis-timagelist-bitmaps-to-fit-high-dpi-scaling-size-for-menus-toolbars-trees-etc/
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 const
   DevImgSIZE = 16;
 var
@@ -1320,7 +1228,6 @@ begin
     end;
   end;
 end;
-{$endif}
 
 procedure TEditorForm.WipeUndoHistory;
 begin
@@ -1331,53 +1238,14 @@ end;
 
 procedure TEditorForm.WmActivate(var M: TMessage);
 begin
-  {$ifndef ZgeLazarus}
   if M.WParam=WA_ACTIVE then
   begin
     //From Kjell: Avoid keeping a input method to this window
     ImmAssociateContext(Self.Handle,0);
   end;
-  {$endif}
   inherited;
 end;
 
-{$ifdef ZgeLazarus}
-procedure TEditorForm.LclDropFiles(Sender: TObject; const FileNames: array of AnsiString);
-var
-  FileName : string;
-  ModelFiles,BitmapFiles,AudioFiles : TStringList;
-  BmMatch,AudioMatch,ModelMatch : string;
-begin
-  BitmapFiles := TStringList.Create;
-  AudioFiles := TStringList.Create;
-  ModelFiles := TStringList.Create;
-
-  BmMatch := '.png .jpg .jpeg .bmp .gif';
-  AudioMatch := '.ogg';
-  ModelMatch := '.3ds .obj';
-
-  for FileName in FileNames do
-  begin
-    if Pos(LowerCase(ExtractFileExt(FileName)),BmMatch)>0 then
-      BitmapFiles.Add(Filename)
-    else if Pos(LowerCase(ExtractFileExt(FileName)),AudioMatch)>0 then
-      AudioFiles.Add(Filename)
-    else if Pos(LowerCase(ExtractFileExt(FileName)),ModelMatch)>0 then
-      ModelFiles.Add(Filename)
-  end;
-
-  if BitmapFiles.Count>0 then
-    ImportBitmaps(BitmapFiles);
-  if AudioFiles.Count>0 then
-    ImportAudioFiles(AudioFiles);
-  if ModelFiles.Count>0 then
-    ImportModelFiles(ModelFiles);
-
-  BitmapFiles.Free;
-  AudioFiles.Free;
-  ModelFiles.Free;
-end;
-{$else}
 procedure TEditorForm.WMDROPFILES(var msg: TWMDropFiles);
 var
   i, fileCount: integer;
@@ -1417,14 +1285,13 @@ begin
   AudioFiles.Free;
   ModelFiles.Free;
 end;
-{$endif}
 
 procedure TEditorForm.WriteAppSettingsToIni;
 var
   Ini : TIniFile;
   Section,S,FName : string;
 begin
-  FName := ChangeFileExt(Application.ExeName,unicodestring('.ini'));
+  FName := ChangeFileExt(Application.ExeName,'.ini');
   Ini := TIniFile.Create( FName );
   try
     try
@@ -1434,6 +1301,7 @@ begin
       Ini.WriteInteger(Section,'GuiLayout',GuiLayout);
 
       Ini.WriteInteger(Section,'CodeEditorFontSize',SynEditFontSize);
+      Ini.WriteString(Section,'CodeEditorFontName',SynEditFontName);
 
       Ini.WriteInteger(Section,'Scaling',Self.MainScaling);
 
@@ -1459,9 +1327,7 @@ begin
 
       Ini.WriteInteger(Section,'CodeCompletionDelay',Self.AutoCompTimerInterval);
 
-      {$ifndef ZgeLazarus}
       Ini.WriteString(Section,'Style', TStyleManager.ActiveStyle.Name);
-      {$endif}
 
       Ini.WriteString(Section,'AndroidSdkPath',Self.AndroidSdkPath);
       Ini.WriteString(Section,'AndroidSdCardPath',Self.AndroidSdCardPath);
@@ -1488,7 +1354,7 @@ var
   Expanded : array of integer;
   Node,SelectedNode : TTreeNode;
 begin
-  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,unicodestring('.ini')) );
+  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
   try
     Section := 'Project: ' + ExtractFileName(CurrentFileName);
 
@@ -1554,7 +1420,7 @@ begin
   finally
     L.Free;
   end;
-  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,unicodestring('.ini')) );
+  Ini := TIniFile.Create( ChangeFileExt(Application.ExeName,'.ini') );
   try
     Section := 'Project: ' + ExtractFileName(CurrentFileName);
     if Tree.ZSelected<>nil then
@@ -1798,9 +1664,7 @@ var
 begin
   S := Application.ExeName;
   P := '-blank';
-  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open',PChar(S), PChar(P), nil, SW_SHOWDEFAULT);
-  {$endif}
 end;
 
 procedure TEditorForm.FileOpenActionAccept(Sender: TObject);
@@ -1831,10 +1695,8 @@ procedure TEditorForm.FindComponentActionExecute(Sender: TObject);
 var
   S : string;
 begin
-  {$ifndef ZgeLazarus}
   if InputQuery('Find component','Enter name of component to search for',S) then
     FindComponentAndFocusInTree(S);
-  {$endif}
 end;
 
 procedure TEditorForm.DoChangeTreeFocus(var Message : TMessage);
@@ -2475,9 +2337,7 @@ end;
 
 procedure TEditorForm.HelpContentsActionExecute(Sender: TObject);
 begin
-  {$ifndef ZgeLazarus}
   HtmlHelp(0,Application.HelpFile, HH_DISPLAY_TOC, 0);
-  {$endif}
 end;
 
 procedure TEditorForm.ShowCompilerDetailsActionExecute(Sender: TObject);
@@ -2602,11 +2462,9 @@ begin
         Tree.Selected := Node;
       end else
       begin
-        {$ifndef ZgeLazarus}
         F.ExprSynEdit.CaretXY := BufferCoord(E.Col-1,E.Line);
         F.ExprSynEdit.BlockBegin := BufferCoord(0,E.Line);
         F.ExprSynEdit.BlockEnd := BufferCoord(0,E.Line+1);
-        {$endif}
         F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
         F.ShowError(E.Message);
@@ -2623,9 +2481,7 @@ begin
         Tree.Selected := Node;
       end else
       begin
-        {$ifndef ZgeLazarus}
         F.CompileErrorLabel.BevelKind := bkTile;
-        {$endif}
         F.ShowError(E.Message);
         Log.Write(E.Message);
       end;
@@ -2746,31 +2602,21 @@ begin
 
   ApkPath := ExePath + 'Android\ZGEAndroid-debug.apk';
 
-  {$ifndef ZgeLazarus}
   SetEnvironmentVariable('ANDROID_SDK_PATH',PWideChar(Self.AndroidSdkPath));
   SetEnvironmentVariable('ZZDC_PATH',PWideChar(OutFile));
   SetEnvironmentVariable('APK_PATH',PWideChar(ApkPath));
-  {$endif}
 
   BatFile := '/c "' + ExePath + 'Android\r.bat' + '"';
-  {$ifndef ZgeLazarus}
   ShellExecute(Handle, 'open', 'cmd', PChar(BatFile), nil, SW_SHOWDEFAULT);
-  {$endif}
 end;
 
 procedure TEditorForm.GenerateEXEClick(Sender: TObject);
 var
   OutFile : string;
 begin
-  {$ifdef MACOS}
-  OutFile := BuildRelease(bbNormalMacos);
-  SysUtils.ExecuteProcess('/usr/bin/open', '"' + OutFile + '"', []);
-  {$else}
   OutFile := BuildRelease(bbNormalUncompressed);
-    {$ifndef fpc}
-    ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
-    {$endif}
-  {$endif}
+  //Kör den skapade filen
+  ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TEditorForm.GenerateScreenSaverActionExecute(Sender: TObject);
@@ -2821,6 +2667,9 @@ begin
     F.SynEdit.Text := String(Sa);
     F.SynEdit.Modified := False;
     F.SynEdit.Font.Size := Self.SynEditFontSize;
+    if Self.SynEditFontName<>'' then
+      F.SynEdit.Font.Name := Self.SynEditFontName;
+    F.ActiveControl := F.SynEdit;
     repeat
       if (F.ShowModal=mrOk) and F.SynEdit.Modified then
       begin
@@ -2850,6 +2699,8 @@ begin
   finally
     SymTemp.Free;
   end;
+  CommonModule.FindDialog1.CloseDialog;
+  CommonModule.ReplaceDialog1.CloseDialog;
 end;
 
 procedure TEditorForm.EnableFunctionInliningClick(Sender: TObject);
@@ -2893,10 +2744,6 @@ begin
 end;
 
 procedure TEditorForm.ExecToolAndWait(const ExeFile,ParamString : string);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   SEInfo: TShellExecuteInfo;
   ExitCode: DWORD;
@@ -2922,13 +2769,9 @@ begin
   else
     ShowMessage('Error ' + ExeFile);
 end;
-{$endif}
+
 
 procedure TEditorForm.ReplaceResource(const ExeFile,OutFile,DataFile : string; UseCodeRemoval : boolean);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   M : TPEResourceModule;
   R : TResourceDetails;
@@ -3002,77 +2845,6 @@ begin
     M.Free;
   end;
 end;
-{$endif}
-
-{$ifdef macos}
-procedure EstablishMacAppBundle(const ExePath,ProjectPath,AppName : string);
-var
-  TemplatePath,OutFile,BundlePath : string;
-  Lookups : TDictionary<string,string>;
-
-  procedure MCopy(const Name : string; const DoReplaceStrings : boolean);
-  var
-    Src,Dst,Key,S,DstContent : string;
-    I : integer;
-    L : TStringList;
-    NeedReplace : boolean;
-  begin
-    Src := TemplatePath + Name;
-    Dst := BundlePath + Name;
-    if FileExists(Dst) then
-      Exit;
-    if not DoReplaceStrings then
-    begin
-      CopyFile(Src, Dst, [cffOverwriteFile], True)
-    end
-    else
-    begin
-      L := TStringList.Create;
-      try
-        L.LoadFromFile(Src);
-        for I := 0 to L.Count-1 do
-        begin
-          S := L[I];
-          if Pos('$',S)=0 then
-            Continue;
-          for Key in Lookups.Keys do
-          begin
-            if Pos(Key,S)>0 then
-            begin
-              S := StringReplace(S,Key,Lookups[Key],[rfReplaceAll]);
-              if Pos(Lookups[Key],DstContent)<=0 then
-                NeedReplace := True;
-            end;
-          end;
-          L[I] := S;
-        end;
-        L.SaveToFile(Dst);
-      finally
-        L.Free;
-      end;
-    end;
-  end;
-
-var
-  S,BinaryPath : string;
-begin
-  TemplatePath := ExePath + 'Mac' + PathDelim + 'BundleTemplate' + PathDelim;
-  BundlePath := ProjectPath + PathDelim + AppName + '.app' + PathDelim;
-
-  Lookups := TDictionary<string,string>.Create;
-  try
-    Lookups.Add('$binaryname$', AppName );
-    
-    BinaryPath := BundlePath + 'Contents' + PathDelim + 'MacOS' + PathDelim;
-    ForceDirectories(BinaryPath);
-
-    MCopy('Contents' + PathDelim + 'Info.plist', True);
-    MCopy('Contents' + PathDelim + 'PkgInfo', False);
-  finally
-    Lookups.Free;
-  end;
-end;
-{$endif}
 
 function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
 var
@@ -3084,13 +2856,9 @@ var
   var
     Handle : THandle;
   begin
-    {$ifdef ZgeLazarus}
-    Exit(0);
-    {$else}
     Handle := FileOpen(OutFile,fmOpenRead or fmShareDenyNone);
     Result := GetFileSize(Handle,nil);
     FileClose(Handle);
-    {$endif}
   end;
 
 var
@@ -3101,13 +2869,13 @@ begin
   case Kind of
     bbNormal, bbNormalUncompressed :
       begin
-        Ext := '.exe';
+        Ext := 'exe';
         PlayerName := ExePath + 'player.bin';
         UseCodeRemoval := RemoveUnusedMenuItem.Checked;
       end;
     bbScreenSaver, bbScreenSaverUncompressed :
       begin
-        Ext := '.scr';
+        Ext := 'scr';
         PlayerName := ExePath + 'player_ss.bin';
       end;
     bbNormalLinux :
@@ -3119,7 +2887,7 @@ begin
     bbNormalMacos :
       begin
         Ext := '';
-        PlayerName := 'player_macos.bin';
+        PlayerName := 'player_osx86.bin';
         UsePiggyback := True;
       end;
   end;
@@ -3131,17 +2899,10 @@ begin
   else
   begin
     if CurrentFileName='' then
-      OutFile := ExePath + 'untitled' + Ext
+      OutFile := ExePath + 'untitled.' + Ext
     else
       //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
-      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),Ext);
-    {$ifdef macos}
-    if Kind=bbNormalMacos then
-    begin
-      EstablishMacAppBundle(ExePath,ExtractFilePath(OutFile),ExtractFileName(OutFile));
-      OutFile := OutFile + '.app/Contents/MacOS/' + ExtractFileName(OutFile);
-    end;
-    {$endif}
+      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
   end;
 
   if FileExists(OutFile) then
@@ -3172,11 +2933,6 @@ begin
     ReplaceResource(PlayerName,OutFile,TempFile,UseCodeRemoval);
     DeleteFile(TempFile);
   end;
-
-  {$ifdef macos}
-  if Kind in [bbNormalLinux,bbNormalMacos] then
-    SysUtils.ExecuteProcess('/bin/chmod', '755 "' + OutFile + '"', []);
-  {$endif}
 
   (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;
   (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := 0;
@@ -3211,27 +2967,20 @@ begin
         '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
         'To run this file on Linux see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
     bbNormalMacos:
-      begin
-      {$ifndef MACOS}
-        ShowMessageWithLink('Created file: '#13#13 + OutFile,
-          '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
-          'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
-      {$else}
-         OutFile := ExtractFilePath(OutFile) + '../../../' + ExtractFileName(OutFile) + '.app';
-      {$endif}
-      end;
+      ShowMessageWithLink('Created file: '#13#13 + OutFile,
+        '<A HREF="' + ExtractFilePath(OutFile) + '">Open containing folder</A>' + #13#13 +
+        'To run this file on Mac see <A HREF="http://www.zgameeditor.org/index.php/Howto/GenCrossPlatform">Generate files for Linux and OS X</A>');
   end;
 
   //Return created filename
   Result := OutFile;
 end;
 
-
-
 procedure TEditorForm.GenerateReleaseActionExecute(Sender: TObject);
 begin
   BuildRelease(bbNormal);
 end;
+
 
 procedure TEditorForm.GenerateReleaseLinuxActionExecute(Sender: TObject);
 begin
@@ -3474,7 +3223,7 @@ begin
   AppPreviewStartAction.Enabled := False;
   AppPreviewStopAction.Enabled := True;
   Glp.SetFocus;
-  Timer1.Interval := 16; //Try 60fps in preview
+  Timer1.Interval := 15; //Try 60fps in preview
   IsAppRunning := True;
   //Needed because of styles-bug: http://stackoverflow.com/questions/9580563/disabling-tbutton-issue-on-a-vcl-styled-form
   AppStartButton.Perform(CM_RECREATEWND, 0, 0);
@@ -3523,10 +3272,8 @@ end;
 
 procedure TEditorForm.GlWindowProc(var Message: TMessage);
 begin
-  {$ifndef ZgeLazarus}
   if IsAppRunning then
     Platform_DesignerWindowProc( pointer(@Message) );
-  {$endif}
   OldGlWindowProc(Message);
 end;
 
@@ -3536,11 +3283,7 @@ var
   FromNode,ToNode : TTreeNode;
   IsCopy : boolean;
 begin
-  {$ifdef ZgeLazarus}
-  IsCopy := GetKeyState(VK_CONTROL)<0;
-  {$else}
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
-  {$endif}
 
   Accept:=False;
   FromNode:=Tree.Selected;
@@ -3577,11 +3320,7 @@ var
   I : integer;
   Nodes : TObjectList;
 begin
-  {$ifdef ZgeLazarus}
-  IsCopy := GetKeyState(VK_CONTROL)<0;
-  {$else}
   IsCopy := GetAsyncKeyState(VK_CONTROL)<0;
-  {$endif}
 
   Nodes := Tree.SortSelections;
   try
@@ -3757,9 +3496,7 @@ begin
     Stream.Position := 0;
     Stream.Read(S[1],Stream.Size);
     S := 'ZZDC' + S;
-    {$ifndef ZgeLazarus}
     Clipboard.SetTextBuf( PChar(String(S)) );
-    {$endif}
   finally
     Stream.Free;
     if Assigned(Group) then
@@ -3778,7 +3515,6 @@ begin
   begin
     Parent := Tree.FindNodeForComponentList(ZApp.Content);
     Assert(Parent<>nil,'Can''t find app.content node');
-    {$ifndef ZgeLazarus}
     if ExtractFileExt(S).ToLower='.3ds' then
     begin
       Imp := T3dsImport.Create(S);
@@ -3804,7 +3540,6 @@ begin
         ObjImp.Free;
       end;
     end;
-    {$endif}
   end;
 end;
 
@@ -4083,12 +3818,8 @@ begin
   AddNewComponentToTree(C, QuickCompListView.Tag<>0);
 end;
 
-procedure TEditorForm.QuickCompListViewCustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
-{$ifdef ZgeLazarus}
-begin
-  DefaultDraw := True;
-end;
-{$else}
+procedure TEditorForm.QuickCompListViewCustomDrawItem(Sender: TCustomListView;
+  Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
 //Reference: http://theroadtodelphi.wordpress.com/2012/03/14/vcl-styles-and-owner-draw/
 var
   LStyles   : TCustomStyleServices;
@@ -4112,7 +3843,6 @@ begin
   Sender.Canvas.Font.Color  := LColor;
   Sender.Canvas.Brush.Color := LStyles.GetStyleColor(scListView);
 end;
-{$endif}
 
 procedure TEditorForm.QuickCompListViewMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -4139,11 +3869,7 @@ begin
   Tree.ClearSelection(True);
   //Must set selected to false before moving, otherwise error in comctrls when using keyboard shortcut
   Node.Selected := False;
-  {$ifdef ZgeLazarus}
-  Node.MoveTo(Node.Parent.Items[Node.Index-1],naInsert);
-  {$else}
   Node.MoveTo(Node.Parent.Item[Node.Index-1],naInsert);
-  {$endif}
   Node.Selected := True;
 
   SetFileChanged(True);
@@ -4170,11 +3896,7 @@ begin
   Tree.ClearSelection(True);
   Node.Selected := False;
   if I<L.Count-2 then
-    {$ifdef ZgeLazarus}
-    Node.MoveTo(Node.Parent.Items[Node.Index+2],naInsert)
-    {$else}
     Node.MoveTo(Node.Parent.Item[Node.Index+2],naInsert)
-    {$endif}
   else
     Node.MoveTo(Node.Parent.GetLastChild,naAdd);
   Node.Selected := True;
@@ -4232,7 +3954,7 @@ begin
 
   if _FileChanged then
   begin
-    case Application.MessageBox('File has changed. Save changes?', {$ifdef ZgeLazarus}''{$else}PChar(Self.Caption){$endif}, MB_YESNOCANCEL) of
+    case Application.MessageBox('File has changed. Save changes?', PChar(Self.Caption), MB_YESNOCANCEL) of
       IDYES :  SaveProjectAction.Execute;
       IDNO :  ;
       IDCANCEL :
@@ -4589,7 +4311,6 @@ begin
     LoadSysLibrary;
 end;
 
-{$ifndef ZgeLazarus}
 procedure AutoCompAddOne(const S : string; Item : TObject; Context : pointer);
 var
   C : TSynCompletionProposal;
@@ -4644,9 +4365,7 @@ begin
   C.ItemList.AddObject(Desc,TObject(PChar(Ins)));
   C.InsertList.Add(Ins);
 end;
-{$endif}
 
-{$ifndef ZgeLazarus}
 procedure TEditorForm.AutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
@@ -4773,9 +4492,7 @@ begin
   (Comp.InsertList as TStringList).Sort;
   (Comp.ItemList as TStringList).Sort;
 end;
-{$endif}
 
-{$ifndef ZgeLazarus}
 procedure TEditorForm.ParamAutoCompOnExecute(Kind: SynCompletionType;
   Sender: TObject; var CurrentInput: string; var x, y: Integer;
   var CanExecute: Boolean);
@@ -4835,7 +4552,6 @@ begin
     Dec(I);
   end;
 end;
-{$endif}
 
 procedure TEditorForm.ParseEvalExpression(const Expr: string);
 var
@@ -4904,7 +4620,6 @@ begin
   Result := Length(List[Index2])-Length(List[Index1]);
 end;
 
-{$ifndef ZgeLazarus}
 procedure TEditorForm.RemoveUnusedCode(Module : TPEModule);
 var
   TotalRemovedBytes,TotalKeptBytes,I,{$ifdef CPU386}J,{$endif}FirstLine,SectionNr : integer;
@@ -5236,7 +4951,6 @@ begin
 
   NamesToRemove.Free;
 end;
-{$endif}
 
 procedure TEditorForm.DisableComponentActionExecute(Sender: TObject);
 var
@@ -5279,7 +4993,6 @@ begin
   ShadersSupported := not (Sender as TCheckBox).Checked;
 end;
 
-{$ifndef ZgeLazarus}
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
 
 {  procedure RecolorHighlighter(H : TSynCustomHighlighter);
@@ -5315,7 +5028,6 @@ begin
 //  RecolorHighlighter(ExprSynEdit.Highlighter);
 //  RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
-{$endif}
 
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
 var
@@ -5323,19 +5035,15 @@ var
 begin
   M := (Sender as TMenuItem);
   M.Checked := True;
-  {$ifndef ZgeLazarus}
   SwitchToStyle(M.Hint,nil);
-  {$endif}
 end;
 
 procedure TEditorForm.OpenStyleMenuItemClick(Sender: TObject);
 begin
-  {$ifndef ZgeLazarus}
   if OpenStyleDialog.Execute(Self.Handle) then
   begin
     SwitchToStyle('', TStyleManager.LoadFromFile(OpenStyleDialog.FileName));
   end;
-  {$endif}
 end;
 
 procedure TEditorForm.BuildStyleMenu;
@@ -5343,7 +5051,6 @@ var
   M : TMenuItem;
   S : string;
 begin
-  {$ifndef ZgeLazarus}
   for S in TDirectory.GetFiles(ExePath + 'Styles','*.vsf') do
   begin
     TStyleManager.LoadFromFile(S);
@@ -5358,7 +5065,6 @@ begin
     M.RadioItem := True;
     StyleMenuItem.Add(M);
   end;
-  {$endif}
 end;
 
 procedure TEditorForm.BuildZ80MenuItemClick(Sender: TObject);
@@ -5370,9 +5076,7 @@ begin
   else
     OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.z80');
   try
-    {$ifndef ZgeLazarus}
     wglMakeCurrent(Glp.Canvas.Handle,Glp.GetHrc);
-    {$endif}
     BuildZ80(OutFile);
   except on E : Exception do
     ShowMessage('Z80 code generation failed.'#13'Only a very limited set of ZGE features is supported for Z80.'#13'Please check the Z80 demo projects.'+#13+#13+E.Message);
@@ -5439,10 +5143,6 @@ begin
 end;
 
 procedure TEditorForm.BuildAndroidApk(const IsDebug : boolean);
-{$ifdef ZgeLazarus}
-begin
-end;
-{$else}
 var
   TemplatePath,OverridePath,ProjectPath,OutFile : string;
   Lookups : TDictionary<string,string>;
@@ -5663,7 +5363,6 @@ begin
       '<A HREF="' + ProjectPath + '">Open project folder</A>' + #13#13 +
       'To run this file on Android devices see this <A HREF="http://www.emix8.org/forum/viewtopic.php?t=874">forum thread.</A>');
 end;
-{$endif}
 
 { TPropEditKey }
 
