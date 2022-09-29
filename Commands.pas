@@ -60,6 +60,8 @@ type
     Keys : TPropString;
     RepeatDelay : single;
     OnPressed : TZComponentList;
+    OnKeyUp : TZComponentList;
+    OnKeyDown : TZComponentList;
     KeyIndex : integer;
     CharCode : word;
     procedure Execute; override;
@@ -234,6 +236,8 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'CharCode',{$ENDIF}(@CharCode), zptByte);
   List.AddProperty({$IFNDEF MINIMAL}'RepeatDelay',{$ENDIF}(@RepeatDelay), zptFloat);
   List.AddProperty({$IFNDEF MINIMAL}'OnPressed',{$ENDIF}(@OnPressed), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnKeyUp',{$ENDIF}@OnKeyUp, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}'OnKeyDown',{$ENDIF}@OnKeyDown, zptComponentList);
   List.AddProperty({$IFNDEF MINIMAL}'KeyIndex',{$ENDIF}(@KeyIndex), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -260,12 +264,19 @@ begin
   Index := 0;
   while P^[Index]<>0 do
   begin
+    Self.KeyIndex := Index;
+
     if Platform_IsKeyPressed(AnsiChar(P^[Index])) then
     begin
-      Self.KeyIndex := Index;
       OnPressed.ExecuteCommands;
       LastPressedAt := ZApp.Time;
     end;
+
+    if Assigned(ZPlatform.KeyDownList) and (ZPlatform.KeyDownList.IndexOf(TObject(P^[Index]))>=0) then
+      OnKeyDown.ExecuteCommands;
+    if Assigned(ZPlatform.KeyUpList) and (ZPlatform.KeyUpList.IndexOf(TObject(P^[Index]))>=0) then
+      OnKeyUp.ExecuteCommands;
+
     Inc(Index);
   end;
 end;
