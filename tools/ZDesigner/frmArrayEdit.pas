@@ -68,7 +68,8 @@ begin
       end;
   end;
   Inc(P,Index * TheArray.GetElementSize);
-  SetValueFromText(Value,P);
+  // for some reason this value is sent as ansistring on Lazarus (bug #15)
+  SetValueFromText( Utf8String(PansiChar(Value)),P);
 end;
 
 procedure TArrayEditForm.SetArray(A: TDefineArray);
