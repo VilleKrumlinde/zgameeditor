@@ -27,6 +27,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="LazOpenGLContext"/>
+      </Item>
+      <Item>
         <PackageName Value="LCL"/>
       </Item>
     </RequiredPackages>

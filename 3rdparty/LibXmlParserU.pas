@@ -154,7 +154,7 @@ unit LibXmlParserU;
 interface
 
 uses
-  Windows, SysUtils, Classes, Contnrs;
+  SysUtils, Classes, Contnrs;
 
 const
   CVersion      = '2.0.5';           // Release version number

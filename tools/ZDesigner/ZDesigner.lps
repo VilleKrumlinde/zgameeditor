@@ -22,7 +22,7 @@
       <Unit>
         <Filename Value="DesignerGui.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="33"/>
+        <EditorIndex Value="32"/>
         <TopLine Value="100"/>
         <CursorPos X="35" Y="108"/>
         <UsageCount Value="46"/>
@@ -57,16 +57,16 @@
         <Filename Value="GLPanel.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="29"/>
-        <TopLine Value="150"/>
-        <CursorPos X="26" Y="165"/>
+        <EditorIndex Value="28"/>
+        <TopLine Value="6"/>
+        <CursorPos X="50" Y="9"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="OpenGL12.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="46"/>
+        <EditorIndex Value="44"/>
         <TopLine Value="230"/>
         <CursorPos X="5" Y="241"/>
         <UsageCount Value="46"/>
@@ -105,7 +105,7 @@
       <Unit>
         <Filename Value="..\..\ZApplication.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="47"/>
+        <EditorIndex Value="45"/>
         <TopLine Value="731"/>
         <CursorPos Y="750"/>
         <UsageCount Value="46"/>
@@ -175,7 +175,7 @@
         <Filename Value="frmCompEditBase.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="44"/>
+        <EditorIndex Value="43"/>
         <CursorPos Y="6"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -191,7 +191,9 @@
       <Unit>
         <Filename Value="dmCommon.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="CommonModule"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="DataModule"/>
         <EditorIndex Value="2"/>
         <TopLine Value="47"/>
         <CursorPos X="8" Y="73"/>
@@ -220,7 +222,7 @@
         <Filename Value="frmChannelFrame.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="38"/>
+        <EditorIndex Value="37"/>
         <CursorPos X="3" Y="9"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -229,7 +231,7 @@
         <Filename Value="frmEnvelopeFrame.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="39"/>
+        <EditorIndex Value="38"/>
         <CursorPos X="3" Y="9"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -238,7 +240,7 @@
         <Filename Value="frmLfoFrame.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="37"/>
+        <EditorIndex Value="36"/>
         <CursorPos X="3" Y="9"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -247,7 +249,7 @@
         <Filename Value="frmModulationFrame.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="36"/>
+        <EditorIndex Value="35"/>
         <CursorPos Y="6"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -256,7 +258,7 @@
         <Filename Value="frmSoundEdit.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="35"/>
+        <EditorIndex Value="34"/>
         <TopLine Value="103"/>
         <CursorPos X="3" Y="115"/>
         <UsageCount Value="46"/>
@@ -266,7 +268,7 @@
         <Filename Value="frmMusicEdit.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="41"/>
+        <EditorIndex Value="40"/>
         <CursorPos X="3" Y="9"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -274,7 +276,7 @@
       <Unit>
         <Filename Value="..\..\ImplicitMeshes.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="24"/>
+        <EditorIndex Value="23"/>
         <TopLine Value="847"/>
         <CursorPos X="2" Y="859"/>
         <UsageCount Value="46"/>
@@ -292,7 +294,7 @@
       <Unit>
         <Filename Value="uHelp.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="40"/>
+        <EditorIndex Value="39"/>
         <TopLine Value="13"/>
         <CursorPos X="11" Y="22"/>
         <UsageCount Value="46"/>
@@ -347,7 +349,7 @@
         <Filename Value="frmMemoEdit.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="31"/>
+        <EditorIndex Value="30"/>
         <TopLine Value="5"/>
         <CursorPos X="3" Y="6"/>
         <UsageCount Value="46"/>
@@ -356,7 +358,7 @@
       <Unit>
         <Filename Value="uMidiFile.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="32"/>
+        <EditorIndex Value="31"/>
         <TopLine Value="594"/>
         <CursorPos X="15" Y="610"/>
         <UsageCount Value="46"/>
@@ -391,7 +393,7 @@
         <Filename Value="frmRawAudioImportOptions.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="34"/>
+        <EditorIndex Value="33"/>
         <CursorPos X="89" Y="15"/>
         <UsageCount Value="46"/>
         <Loaded Value="True"/>
@@ -400,7 +402,7 @@
         <Filename Value="frmSettings.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="49"/>
+        <EditorIndex Value="47"/>
         <TopLine Value="57"/>
         <CursorPos X="15" Y="61"/>
         <UsageCount Value="46"/>
@@ -437,7 +439,7 @@
         <Filename Value="frmBitmapEdit.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="42"/>
+        <EditorIndex Value="41"/>
         <TopLine Value="611"/>
         <CursorPos X="11" Y="624"/>
         <UsageCount Value="46"/>
@@ -455,7 +457,7 @@
         <Filename Value="frmMeshEdit.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="43"/>
+        <EditorIndex Value="42"/>
         <TopLine Value="624"/>
         <CursorPos X="11" Y="637"/>
         <UsageCount Value="46"/>
@@ -473,7 +475,7 @@
       <Unit>
         <Filename Value="..\..\ZPlatform.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="25"/>
+        <EditorIndex Value="24"/>
         <TopLine Value="118"/>
         <CursorPos X="20" Y="139"/>
         <UsageCount Value="46"/>
@@ -624,7 +626,7 @@
       </Unit>
       <Unit>
         <Filename Value="frmEditor.lfm"/>
-        <EditorIndex Value="48"/>
+        <EditorIndex Value="46"/>
         <CursorPos X="30" Y="16"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
@@ -671,19 +673,18 @@
       </Unit>
       <Unit>
         <Filename Value="..\..\3rdparty\LibXmlParserU.pas"/>
-        <EditorIndex Value="28"/>
-        <TopLine Value="146"/>
+        <EditorIndex Value="27"/>
+        <TopLine Value="144"/>
         <CursorPos X="3" Y="157"/>
         <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="dglOpenGL.pas"/>
-        <EditorIndex Value="45"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="15095"/>
         <CursorPos X="21" Y="15115"/>
         <UsageCount Value="19"/>
-        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="..\..\..\fpc\packages\sdl\src\sdl.pas"/>
@@ -694,7 +695,7 @@
       </Unit>
       <Unit>
         <Filename Value="..\..\3rdparty\sdl2\sdl2.pas"/>
-        <EditorIndex Value="26"/>
+        <EditorIndex Value="25"/>
         <TopLine Value="155"/>
         <CursorPos X="17" Y="166"/>
         <UsageCount Value="18"/>
@@ -702,7 +703,7 @@
       </Unit>
       <Unit>
         <Filename Value="..\..\3rdparty\sdl2\sdlaudio.inc"/>
-        <EditorIndex Value="27"/>
+        <EditorIndex Value="26"/>
         <TopLine Value="542"/>
         <CursorPos X="78" Y="556"/>
         <UsageCount Value="18"/>
@@ -710,16 +711,15 @@
       </Unit>
       <Unit>
         <Filename Value="..\..\zplatform_mac.inc"/>
-        <EditorIndex Value="23"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="230"/>
         <CursorPos X="3" Y="271"/>
         <UsageCount Value="17"/>
-        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="..\..\..\..\..\Applications\Lazarus\lcl\interfaces\cocoa\cocoautils.pas"/>
         <UnitName Value="CocoaUtils"/>
-        <EditorIndex Value="30"/>
+        <EditorIndex Value="29"/>
         <TopLine Value="156"/>
         <CursorPos X="60" Y="167"/>
         <UsageCount Value="11"/>
@@ -798,16 +798,8 @@
         <Caret Line="12" Column="3"/>
       </Position>
       <Position>
-        <Filename Value="..\..\zplatform_mac.inc"/>
-        <Caret Line="66" Column="31" TopLine="52"/>
-      </Position>
-      <Position>
         <Filename Value="frmEditor.pas"/>
         <Caret Line="3363" Column="41" TopLine="3360"/>
-      </Position>
-      <Position>
-        <Filename Value="..\..\zplatform_mac.inc"/>
-        <Caret Line="271" Column="3" TopLine="230"/>
       </Position>
       <Position>
         <Filename Value="GLPanel.pas"/>
@@ -852,6 +844,14 @@
       <Position>
         <Filename Value="GLPanel.pas"/>
         <Caret Line="161" Column="30" TopLine="151"/>
+      </Position>
+      <Position>
+        <Filename Value="GLPanel.pas"/>
+        <Caret Line="165" Column="26" TopLine="150"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\3rdparty\LibXmlParserU.pas"/>
+        <Caret Line="157" Column="3" TopLine="144"/>
       </Position>
     </JumpHistory>
     <RunParams>
