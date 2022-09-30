@@ -5,3 +5,7 @@ tools/ZDesigner/lib
 tools/ZDesigner/ZGameEditor.app
 tools/ZDesigner/.DS_Store
 tools/.DS_Store
+tools/ZDesigner/exe/.DS_Store
+tools/ZDesigner/ZGameEditor.app.zip
+tools/ZDesigner/zzdc
+tools/ZDesigner/zzdc.map

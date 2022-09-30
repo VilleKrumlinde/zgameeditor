@@ -55,7 +55,7 @@ type
     function canBecomeMainWindow : TObjCBool; override;
   end;
 
-  TZgeView = objcclass(NSView)
+  TZgeView = objcclass(NSOpenGLView)
     function acceptsFirstResponder : TObjCBool; override;
     function becomeFirstResponder : TObjCBool; override;
     function canBecomeKeyView : TObjCBool; override;
@@ -218,6 +218,7 @@ begin
     NSBackingStoreBuffered, False);
 
   View := TZgeView.alloc;
+  View.setWantsBestResolutionOpenGLSurface(False);
   MainWindow.setContentView(View);
   MainWindow.makeFirstResponder(View);
 

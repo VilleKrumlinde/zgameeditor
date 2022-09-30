@@ -678,6 +678,7 @@ begin
   aNSOpenGLContext := TTestContext(TTestContext.alloc).initWithFormat_shareContext(PixFmt, sharedCtx);
 
   View := TCocoaOpenGLView(TCocoaOpenGLView.alloc).initWithFrame_pixelFormat(ns,PixFmt);
+  View.setWantsBestResolutionOpenGLSurface(False);
   View.setHidden(AParams.Style and WS_VISIBLE = 0);
   if Assigned(p) then
     p.addSubview(View);
