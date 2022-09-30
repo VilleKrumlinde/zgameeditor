@@ -276,7 +276,7 @@ procedure TZPropertiesEditor.RebuildGui;
 var
   PropList : TZPropertyList;
   Prop : TZProperty;
-  I : integer;
+  I,CurTop : integer;
   PEditor : TZPropertyEditBase;
 begin
   Hide;
@@ -294,11 +294,8 @@ begin
   PEditor := nil;
   WantsFocus := nil;
   PropList := C.GetProperties;
-  {$ifdef ZgeLazarus}
-  for I:=PropList.Count-1 downto 0 do
-  {$else}
+  CurTop := 0;
   for I:=0 to PropList.Count-1 do
-  {$endif}
   begin
     Prop := TZProperty(PropList[I]);
     if {Prop.NeverPersist or }Prop.ExcludeFromXml or Prop.HideInGui then
@@ -318,16 +315,18 @@ begin
     end;
     PEditor.IsReadOnlyProp := Prop.NeverPersist;// or Prop.IsReadOnly;
     PEditor.Height := Self.PanelHeight;
+    PEditor.Width := Self.Width;
+    PEditor.Anchors := [akLeft,akTop,akRight];
     PEditor.Parent := Self;
     PEditor.SetProp(C,Prop);
-    PEditor.Top := 10000;
-    PEditor.Align := alTop;
+    PEditor.Top := CurTop;
     PEditor.OnPropValueChanged := Self.OnPropEditValueChanged;
     //Autofocus viktiga propertys
     //'Name' får focus
     //NeedRefreshNodeName causes focus-error if adding new rendermesh-component, skip for now
     if {(Prop.NeedRefreshNodeName) or }(Prop.PropertyType=zptExpression) then
       WantsFocus := PEditor;
+    Inc(CurTop,PEditor.Height);
   end;
 
   {$ifndef ZgeLazarus}
