@@ -423,6 +423,7 @@ type
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     {$endif}
     procedure DoChangeTreeFocus(var Message : TMessage); message WM_USER + 1;
+    procedure DoRefreshMruMenu(var Message : TMessage); message WM_USER + 2;
     procedure OnGlInit(Sender: TObject);
     procedure OnAppException(Sender: TObject; E: Exception);
     procedure FindCurrentModel(Node: TZComponentTreeNode; var Model: TZComponent);
@@ -2643,9 +2644,10 @@ begin
         for I := 0 to Value.ExpressionValue.Code.Count - 1 do
           Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
     end;
-
-    if F.Component=Self.Tree.ZSelected.Component then
-      Self.Ed.SetComponent(F.Component); //This will force rebuildgui to show latest values
+ 
+    if Assigned(Self.Tree.ZSelected) then
+      if F.Component=Self.Tree.ZSelected.Component then
+        Self.Ed.SetComponent(F.Component); //This will force rebuildgui to show latest values
   end;
 end;
 
@@ -3625,6 +3627,11 @@ begin
   SetFileChanged(True);
 end;
 
+procedure TEditorForm.DoRefreshMruMenu(var Message : TMessage); 
+begin
+  RefreshMenuFromMruList;
+end;
+
 procedure TEditorForm.SetCurrentFileName(const F: string);
 const
   MruListMax=16;
@@ -3641,7 +3648,7 @@ begin
     while MruList.Count>MruListMax do
       MruList.Delete(MruListMax);
   end;
-  RefreshMenuFromMruList;
+  PostMessage(Self.Handle,WM_USER + 2,0,0);
 end;
 
 procedure TEditorForm.SetFileChanged(Value: Boolean);
@@ -4264,6 +4271,7 @@ begin
 
   LockShow := False;
   SelectComponent(nil);
+  Tree.Items.Clear;
 
   if IsAppRunning then
     AppPreviewStopAction.Execute;

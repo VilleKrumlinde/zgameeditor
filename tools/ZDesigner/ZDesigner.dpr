@@ -34,6 +34,7 @@ program ZDesigner;
 uses
   {$IFDEF FPC}
   {$ifdef macos}
+  cmem,
   cthreads,
   {$endif}
   LCLIntf, LCLType, LMessages, Interfaces,
