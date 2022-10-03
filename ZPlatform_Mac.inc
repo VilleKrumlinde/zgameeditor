@@ -20,6 +20,7 @@ uses AudioPlayer, ZApplication, ZOpenGL,
 
 var
   StartTime : double;
+  TheApp : TZApplication;
 
 {$ifndef minimal}
 var
@@ -59,6 +60,8 @@ type
     function acceptsFirstResponder : TObjCBool; override;
     function becomeFirstResponder : TObjCBool; override;
     function canBecomeKeyView : TObjCBool; override;
+    procedure mouseMoved(theEvent: NSEvent); override;
+    procedure updateTrackingAreas; override;
   end;
 
 function NSStrToStr(const AStr: NSString): string;
@@ -135,7 +138,12 @@ begin
       begin
         MacKeys[ Ord('}') ] := theEvent.type_=NSRightMouseDown;
       end;
-    NSKeyUp : MacKeys[ TranslateKey(theEvent) ] := False;
+    NSKeyUp : 
+      begin
+        MacKeys[ TranslateKey(theEvent) ] := False;
+        if (theEvent.KeyCode=kVK_Escape) and TheApp.EscapeToQuit then
+          Halt;
+      end;
     NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
   end;
 end;
@@ -170,6 +178,28 @@ begin
   Result := True;
 end;
 
+procedure TZgeView.updateTrackingAreas;
+var
+  track: NSTrackingArea;
+begin
+  track:=NSTrackingArea(NSTrackingArea.alloc).initWithRect_options_owner_userInfo(
+    self.bounds
+    , NSTrackingMouseEnteredAndExited or NSTrackingMouseMoved or NSTrackingActiveAlways
+    , self, nil);
+  self.addTrackingArea(track);
+  track.release;
+end;
+
+procedure TZgeView.mouseMoved(theEvent: NSEvent);
+var
+  Nsp : NSPoint;
+begin
+  Nsp := theEvent.locationInWindow;
+  Nsp := convertPoint_fromView(Nsp,nil);
+  Nsp.y := bounds.size.height-Nsp.y;
+  MacLastMouse[0] := Trunc(Nsp.x);
+  MacLastMouse[1] := abs(Trunc(Nsp.y));
+end;
 
 var
   MainWindow: TZgeWindow;
@@ -230,6 +260,8 @@ begin
   Ctx.Update;
 
   Ctx.makeCurrentContext;
+  
+  TheApp := TZApplication(ZApp);
 end;
 
 procedure Platform_SetWindowCaption(Title : PAnsiChar);
