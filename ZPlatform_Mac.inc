@@ -247,7 +247,7 @@ begin
     NSTitledWindowMask or NSClosableWindowMask or NSMiniaturizableWindowMask,
     NSBackingStoreBuffered, False);
 
-  View := TZgeView.alloc;
+  View := TZgeView.alloc.initWithFrame(MainWindowRect);
   View.setWantsBestResolutionOpenGLSurface(False);
   MainWindow.setContentView(View);
   MainWindow.makeFirstResponder(View);
