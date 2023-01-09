@@ -390,6 +390,14 @@ public class Zge extends GLSurfaceView
             7, // MotionEvent.AXIS_RTRIGGER or OuyaController.AXIS_R2
             event.getAxisValue(MotionEvent.AXIS_RY));
 
+        NativeSetJoyAxisValue(controllerNb,
+            8, // MotionEvent.AXIS_HAT_X
+            event.getAxisValue(MotionEvent.AXIS_HAT_X));
+
+        NativeSetJoyAxisValue(controllerNb,
+            9, // MotionEvent.AXIS_HAT_Y
+            event.getAxisValue(MotionEvent.AXIS_HAT_Y));
+
         return true;
       }
 
