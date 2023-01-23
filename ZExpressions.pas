@@ -2832,6 +2832,8 @@ begin
           if IntI<IntRegCount then
           begin
             W(Int32Regs[IntI]);
+            // modify the offset so it becomes "ldr w0, [x8,#offset]"
+            P[-3] := P[-3] or Offs;
             Inc(IntI);
           end
           else
@@ -2842,6 +2844,7 @@ begin
           if IntI<IntRegCount then
           begin
             W(PtrRegs[IntI]);
+            P[-3] := P[-3] or (Offs shr 1);
             Inc(IntI);
           end
           else
@@ -2852,6 +2855,7 @@ begin
           if FloatI<FloatRegCount then
           begin
             W(Float32Regs[FloatI]);
+            P[-3] := P[-3] or Offs;
             Inc(FloatI);
           end
           else
@@ -2869,11 +2873,13 @@ begin
           begin
             Assert(StackI<High(Int32Stack));
             W(Int32Stack[StackI]);
+            P[-7] := P[-7] or Offs;
           end;
         8 :
           begin
             Assert(StackI<High(PtrStack));
             W(PtrStack[StackI]);
+            P[-7] := P[-7] or (Offs shr 1);
           end;
       else
         Assert(False,'This argument type not yet supported on 64-bit');
@@ -2881,15 +2887,14 @@ begin
       Inc(StackI);
     end;
 
-    W([$08,$21,$00,$91]); //add x8, x8, #8
-
     Inc(Offs, SizeOf(TExecutionEnvironment.TStackElement) );
   end;
 
-  W([$68,$00,$00,$10]); //adr x8,12  (PC relative offset to function pointer)
+  W([$68,$00,$00,$10]); //adr x8,12  (PC relative offset to function pointer. 12 is the number of bytes in these three lines.)
   W([$08,$01,$40,$F9]); //ldr x8,[x8]
   W([$00,$01,$1f,$d6]); //br x8
-  //Store function pointer
+
+  // Store function pointer
   PPointer(P)^ := Proc; Inc(P,8);
 
   {$IFDEF MACOS}
