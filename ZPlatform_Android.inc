@@ -44,7 +44,7 @@ var
 
 const
   MAX_JOYSTICKS = 16;
-  MAX_AXES = 6;
+  MAX_AXES = 10;
 
 type
   PJoystick = ^TJoystick;
