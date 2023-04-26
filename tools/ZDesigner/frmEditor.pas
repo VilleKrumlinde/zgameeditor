@@ -402,7 +402,7 @@ type
     function CloseProject: boolean;
     procedure BuildBinary(const PlayerName, OutputName: string);
     procedure ExecToolAndWait(const ExeFile, ParamString: string);
-    function BuildRelease(Kind : TBuildBinaryKind) : string;
+    function BuildRelease(Kind : TBuildBinaryKind; OutFile : string = '') : string;
     procedure ResetCamera;
     procedure ReadAppSettingsFromIni;
     procedure WriteAppSettingsToIni;
@@ -1206,6 +1206,13 @@ begin
 
     if (ParamCount=1) and FileExists(ParamStr(1)) then
       OpenProject(ParamStr(1))
+    else if (ParamCount=3) and (ParamStr(1)='/b') then
+    begin
+      // build project and quit
+      OpenProject(ParamStr(2));
+      BuildRelease(bbNormalUncompressed, ParamStr(3));
+      Close;
+    end
     else
     begin
       S := Ini.ReadString(Section,'LastOpenedProject','');
@@ -2805,7 +2812,16 @@ var
   Stream : TMemoryStream;
   SymTemp : TSymbolTable;
   C : TZComponent;
+  I,J : integer;
+  ExpandedNodes : TList;
 begin
+  ExpandedNodes := TList.Create;
+  for I := 0 to Tree.Items.Count-1 do
+  begin
+    if Tree.Items[I].Expanded then
+      ExpandedNodes.Add( pointer(Tree.Items[I].AbsoluteIndex) );
+  end;
+
   CommitAllEdits;
   Stream := ComponentManager.SaveXmlToStream(Self.Root) as TMemoryStream;
   try
@@ -2845,6 +2861,16 @@ begin
         ClearRoot;
         SetRoot(C);
         SetFileChanged(True);
+
+        for I := 0 to ExpandedNodes.Count-1 do
+        begin
+          for J := 0 to Tree.Items.Count-1 do
+          begin
+            if Tree.Items[J].AbsoluteIndex=integer(ExpandedNodes[I]) then
+              Tree.Items[J].Expanded := True;
+          end;
+        end;
+
       end;
 
       Break;
@@ -2852,6 +2878,10 @@ begin
   finally
     SymTemp.Free;
   end;
+  CommonModule.FindDialog1.CloseDialog;
+  CommonModule.ReplaceDialog1.CloseDialog;
+
+  ExpandedNodes.Free;
 end;
 
 procedure TEditorForm.EnableFunctionInliningClick(Sender: TObject);
@@ -3076,9 +3106,9 @@ begin
 end;
 {$endif}
 
-function TEditorForm.BuildRelease(Kind : TBuildBinaryKind) : string;
+function TEditorForm.BuildRelease(Kind : TBuildBinaryKind; OutFile : string = '') : string;
 var
-  OutFile,TempFile,Tool,ToolParams,PlayerName,Ext : string;
+  TempFile,Tool,ToolParams,PlayerName,Ext : string;
   ToolPath : string;
   UsePiggyback,UseCodeRemoval : boolean;
 
@@ -3132,11 +3162,14 @@ begin
   end
   else
   begin
-    if CurrentFileName='' then
-      OutFile := ExePath + 'untitled' + Ext
-    else
-      //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
-      OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),Ext);
+    if OutFile='' then
+    begin
+      if CurrentFileName='' then
+        OutFile := ExePath + 'untitled' + Ext
+      else
+        //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
+        OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
+    end;
     {$ifdef macos}
     if Kind=bbNormalMacos then
     begin
