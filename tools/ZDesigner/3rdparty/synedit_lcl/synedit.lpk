@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <PathDelim Value="\"/>
+    <Name Value="SynEdit"/>
+    <Type Value="RunAndDesignTime"/>
+    <BuildMethod Value="Both"/>
+    <Author Value="Lazarus Team, SynEdit"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <SearchPaths>
+        <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)/$(LCLWidgetType)"/>
+      </SearchPaths>
+      <CodeGeneration>
+        <VerifyObjMethodCallValidity Value="True"/>
+      </CodeGeneration>
+      <Other>
+        <CompilerMessages>
+          <IgnoredMessages idx5024="True" idx4055="True"/>
+        </CompilerMessages>
+        <CustomOptions Value="$(IDEBuildOptions) -CR -dgc"/>
+      </Other>
+    </CompilerOptions>
+    <Description Value="SynEdit is a line-based editing component with support for syntax-highlighting.
+
+Originally based on the Synedit project at http://sourceforge.net/projects/synedit, it was ported to LCL and heavily extended by the Lazarus developers.
+"/>
+    <License Value="MPL-1.1 or GPL-2 at the users choice
+
+SynEdit and all it&apos;s units are subject to the Mozilla Public License Version 1.1 (the &quot;License&quot;); you may not use these files except in compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an &quot;AS IS&quot; basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the specific language governing rights and limitations under the License.
+
+Alternatively, the contents of these files may be used under the terms of the GNU General Public License Version 2 or later (the &quot;GPL&quot;), in which case the provisions of the GPL are applicable instead of those above.
+If you wish to allow use of your version of these files only under the terms of the GPL and not to allow others to use your version of this file under the MPL, indicate your decision by deleting the provisions above and replace them with the notice and other provisions required by the GPL. If you do not delete the provisions above, a recipient may use your version of this file under either the MPL or the GPL.
+"/>
+    <Version Major="1"/>
+    <Files>
+      <Item>
+        <Filename Value="synbeautifier.pas"/>
+        <UnitName Value="SynBeautifier"/>
+      </Item>
+      <Item>
+        <Filename Value="syncompletion.pas"/>
+        <UnitName Value="SynCompletion"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsynimm.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="LazSynIMM"/>
+        <CustomOptions Items="FPMake" Version="2">
+          <_FPMake Items="AllOSes/TargetOSes">
+            <_AllOSes Value="False"/>
+            <_TargetOSes Value="win32,win64"/>
+          </_FPMake>
+        </CustomOptions>
+      </Item>
+      <Item>
+        <Filename Value="synedit.pp"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="SynEdit"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditautocomplete.pp"/>
+        <UnitName Value="SynEditAutoComplete"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditexport.pas"/>
+        <UnitName Value="SynEditExport"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditfoldedview.pp"/>
+        <UnitName Value="SynEditFoldedView"/>
+      </Item>
+      <Item>
+        <Filename Value="synedithighlighter.pp"/>
+        <UnitName Value="SynEditHighlighter"/>
+      </Item>
+      <Item>
+        <Filename Value="synedithighlighterfoldbase.pas"/>
+        <UnitName Value="SynEditHighlighterFoldBase"/>
+      </Item>
+      <Item>
+        <Filename Value="synedithighlighterxmlbase.pas"/>
+        <UnitName Value="SynEditHighlighterXMLBase"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditkeycmds.pp"/>
+        <UnitName Value="SynEditKeyCmds"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsyneditmousecmdstypes.pp"/>
+        <UnitName Value="LazSynEditMouseCmdsTypes"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterpo.pp"/>
+        <UnitName Value="SynHighlighterPo"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditlines.pas"/>
+        <UnitName Value="SynEditLines"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarks.pp"/>
+        <UnitName Value="SynEditMarks"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkup.pp"/>
+        <UnitName Value="SynEditMarkup"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupbracket.pp"/>
+        <UnitName Value="SynEditMarkupBracket"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupctrlmouselink.pp"/>
+        <UnitName Value="SynEditMarkupCtrlMouseLink"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkuphighall.pp"/>
+        <UnitName Value="SynEditMarkupHighAll"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupselection.pp"/>
+        <UnitName Value="SynEditMarkupSelection"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupspecialline.pp"/>
+        <UnitName Value="SynEditMarkupSpecialLine"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupwordgroup.pp"/>
+        <UnitName Value="SynEditMarkupWordGroup"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmiscclasses.pp"/>
+        <UnitName Value="SynEditMiscClasses"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmiscprocs.pp"/>
+        <UnitName Value="SynEditMiscProcs"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmousecmds.pp"/>
+        <UnitName Value="SynEditMouseCmds"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditplugins.pas"/>
+        <UnitName Value="SynEditPlugins"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditpointclasses.pas"/>
+        <UnitName Value="SynEditPointClasses"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditregexsearch.pas"/>
+        <UnitName Value="SynEditRegexSearch"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditsearch.pp"/>
+        <UnitName Value="SynEditSearch"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditstrconst.pp"/>
+        <UnitName Value="SynEditStrConst"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittextbase.pas"/>
+        <UnitName Value="SynEditTextBase"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittextbuffer.pp"/>
+        <UnitName Value="SynEditTextBuffer"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittextbidichars.pas"/>
+        <UnitName Value="SynEditTextBidiChars"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittexttabexpander.pas"/>
+        <UnitName Value="SynEditTextTabExpander"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittexttrimmer.pas"/>
+        <UnitName Value="SynEditTextTrimmer"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittypes.pp"/>
+        <UnitName Value="SynEditTypes"/>
+      </Item>
+      <Item>
+        <Filename Value="synexporthtml.pas"/>
+        <UnitName Value="SynExportHTML"/>
+      </Item>
+      <Item>
+        <Filename Value="syngutter.pp"/>
+        <UnitName Value="SynGutter"/>
+      </Item>
+      <Item>
+        <Filename Value="syngutterbase.pp"/>
+        <UnitName Value="SynGutterBase"/>
+      </Item>
+      <Item>
+        <Filename Value="syngutterchanges.pas"/>
+        <UnitName Value="SynGutterChanges"/>
+      </Item>
+      <Item>
+        <Filename Value="synguttercodefolding.pp"/>
+        <UnitName Value="SynGutterCodeFolding"/>
+      </Item>
+      <Item>
+        <Filename Value="syngutterlinenumber.pp"/>
+        <UnitName Value="SynGutterLineNumber"/>
+      </Item>
+      <Item>
+        <Filename Value="syngutterlineoverview.pp"/>
+        <UnitName Value="SynGutterLineOverview"/>
+      </Item>
+      <Item>
+        <Filename Value="synguttermarks.pp"/>
+        <UnitName Value="SynGutterMarks"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterany.pas"/>
+        <UnitName Value="SynHighlighterAny"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightercpp.pp"/>
+        <UnitName Value="SynHighlighterCpp"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightercss.pas"/>
+        <UnitName Value="SynHighlighterCss"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterdiff.pas"/>
+        <UnitName Value="SynHighlighterDiff"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterhashentries.pas"/>
+        <UnitName Value="SynHighlighterHashEntries"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterhtml.pp"/>
+        <UnitName Value="SynHighlighterHTML"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterjava.pas"/>
+        <UnitName Value="SynHighlighterJava"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterjscript.pas"/>
+        <UnitName Value="SynHighlighterJScript"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterlfm.pas"/>
+        <UnitName Value="SynHighlighterLFM"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightermulti.pas"/>
+        <UnitName Value="SynHighlighterMulti"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterpas.pp"/>
+        <UnitName Value="SynHighlighterPas"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterperl.pas"/>
+        <UnitName Value="SynHighlighterPerl"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterphp.pas"/>
+        <UnitName Value="SynHighlighterPHP"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterposition.pas"/>
+        <UnitName Value="SynHighlighterPosition"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterpython.pas"/>
+        <UnitName Value="SynHighlighterPython"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightersql.pas"/>
+        <UnitName Value="SynHighlighterSQL"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightertex.pas"/>
+        <UnitName Value="SynHighlighterTeX"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterunixshellscript.pas"/>
+        <UnitName Value="synhighlighterunixshellscript"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlightervb.pas"/>
+        <UnitName Value="SynHighlighterVB"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterxml.pas"/>
+        <UnitName Value="SynHighlighterXML"/>
+      </Item>
+      <Item>
+        <Filename Value="synmacrorecorder.pas"/>
+        <UnitName Value="SynMacroRecorder"/>
+      </Item>
+      <Item>
+        <Filename Value="synmemo.pas"/>
+        <UnitName Value="SynMemo"/>
+      </Item>
+      <Item>
+        <Filename Value="synpluginsyncroedit.pp"/>
+        <UnitName Value="SynPluginSyncroEdit"/>
+      </Item>
+      <Item>
+        <Filename Value="synpluginsyncronizededitbase.pp"/>
+        <UnitName Value="SynPluginSyncronizedEditBase"/>
+      </Item>
+      <Item>
+        <Filename Value="synplugintemplateedit.pp"/>
+        <UnitName Value="SynPluginTemplateEdit"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsynedittext.pas"/>
+        <UnitName Value="LazSynEditText"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsyntextarea.pp"/>
+        <UnitName Value="LazSynTextArea"/>
+      </Item>
+      <Item>
+        <Filename Value="syntextdrawer.pp"/>
+        <UnitName Value="SynTextDrawer"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupguttermark.pp"/>
+        <UnitName Value="SynEditMarkupGutterMark"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterbat.pas"/>
+        <UnitName Value="SynHighlighterBat"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterini.pas"/>
+        <UnitName Value="SynHighlighterIni"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupspecialchar.pp"/>
+        <UnitName Value="SynEditMarkupSpecialChar"/>
+      </Item>
+      <Item>
+        <Filename Value="allsynedit.pas"/>
+        <Type Value="Main Unit"/>
+        <UnitName Value="allsynedit"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittextdoublewidthchars.pas"/>
+        <UnitName Value="SynEditTextDoubleWidthChars"/>
+      </Item>
+      <Item>
+        <Filename Value="synedittextsystemcharwidth.pas"/>
+        <UnitName Value="SynEditTextSystemCharWidth"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupifdef.pp"/>
+        <UnitName Value="SynEditMarkupIfDef"/>
+      </Item>
+      <Item>
+        <Filename Value="synpluginmulticaret.pp"/>
+        <UnitName Value="SynPluginMultiCaret"/>
+      </Item>
+      <Item>
+        <Filename Value="synhighlighterpike.pas"/>
+        <UnitName Value="synhighlighterpike"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditmarkupfoldcoloring.pas"/>
+        <UnitName Value="SynEditMarkupFoldColoring"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditviewedlinemap.pp"/>
+        <UnitName Value="SynEditViewedLineMap"/>
+      </Item>
+      <Item>
+        <Filename Value="syneditwrappedview.pp"/>
+        <UnitName Value="SynEditWrappedView"/>
+      </Item>
+      <Item>
+        <Filename Value="synbeautifierpascal.pas"/>
+        <UnitName Value="SynBeautifierPascal"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsyngtk2imm.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="LazSynGtk2IMM"/>
+      </Item>
+      <Item>
+        <Filename Value="lazsynimmbase.pas"/>
+        <UnitName Value="LazSynIMMBase"/>
+      </Item>
+    </Files>
+    <LazDoc Paths="docs\xml"/>
+    <i18n>
+      <EnableI18N Value="True"/>
+      <OutDir Value="languages"/>
+    </i18n>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="fcl-registry"/>
+        <DependencyType Value="FPMake"/>
+      </Item>
+      <Item>
+        <PackageName Value="regexpr"/>
+        <DependencyType Value="FPMake"/>
+      </Item>
+      <Item>
+        <PackageName Value="LCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <CustomOptions Items="ExternHelp" Version="2">
+      <_ExternHelp Items="Count"/>
+    </CustomOptions>
+  </Package>
+</CONFIG>

@@ -3,8 +3,11 @@ unit frmArrayEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs,ZExpressions, Vcl.Grids, Vcl.StdCtrls, ZClasses, Vcl.ComCtrls;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs,ZExpressions, Grids, StdCtrls, ZClasses, ComCtrls;
 
 type
   TArrayEditForm = class(TForm)
@@ -39,7 +42,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesignerGUI,Vcl.Clipbrd;
+uses DesignerGUI,Clipbrd;
 
 { TArrayEditForm }
 
@@ -65,7 +68,8 @@ begin
       end;
   end;
   Inc(P,Index * TheArray.GetElementSize);
-  SetValueFromText(Value,P);
+  // for some reason this value is sent as ansistring on Lazarus (bug #15)
+  SetValueFromText( Utf8String(PansiChar(Value)),P);
 end;
 
 procedure TArrayEditForm.SetArray(A: TDefineArray);

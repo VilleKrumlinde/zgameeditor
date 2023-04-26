@@ -3,8 +3,8 @@ unit frmToolMissing;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls;
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls;
 
 type
   TToolMissingForm = class(TForm)
@@ -33,7 +33,7 @@ implementation
 
 {$R *.dfm}
 
-uses ShellApi,uHelp;
+uses uHelp;
 
 procedure TToolMissingForm.DownloadURLLabelClick(Sender: TObject);
 begin

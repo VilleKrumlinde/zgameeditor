@@ -30,7 +30,7 @@ unit SugiyamaLayout;
 
 interface
 
-uses Contnrs, Vcl.Controls;
+uses Contnrs, Controls;
 
 
 type

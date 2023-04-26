@@ -257,7 +257,11 @@ var LineBreak: String = sLineBreak;
 
 implementation
 
-uses SysUtils,Winapi.Windows,Generics.Collections;
+uses SysUtils,
+  {$IFNDEF FPC}
+  Winapi.Windows,
+  {$ENDIF}
+  Generics.Collections;
 
 var
   _GlobalCleanUps : TObjectList<TObject>;

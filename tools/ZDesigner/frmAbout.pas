@@ -23,15 +23,20 @@ unit frmAbout;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, GLPanel, ZExpressions;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls, GLPanel, ZExpressions;
 
 type
   TAboutForm = class(TForm)
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   protected
+    {$ifndef ZgeLazarus}
     procedure CreateParams(var Params: TCreateParams); override;
+    {$endif}
   private
     { Private declarations }
     Glp : TGLPanelZGE;
@@ -53,16 +58,20 @@ uses frmEditor, uHelp, Renderer;
 procedure TAboutForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   //Post an extra mouseup to avoid app being closed immediately if reopened
+  {$ifndef ZgeLazarus}
   PostMessage(Glp.Handle,WM_LBUTTONUP,0,0);
+  {$endif}
   Application.ProcessMessages;
 end;
 
 
+{$ifndef ZgeLazarus}
 procedure TAboutForm.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   Params.Style := Params.Style or WS_DLGFRAME;
 end;
+{$endif}
 
 procedure TAboutForm.FormCreate(Sender: TObject);
 var
@@ -74,7 +83,7 @@ begin
   Glp.Parent := Self;
   Glp.OnUpdateData := Self.OnUpdateData;
 
-  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Projects\about.zgeproj');
+  Glp.LoadApp((Owner as TEditorForm).ExePath + 'Projects' + PathDelim + 'about.zgeproj');
   if Glp.App.BindComponent<TRenderText>('VersionText',R) then
   begin
     R.SetString('Text','Version ' + frmEditor.AppVersion);

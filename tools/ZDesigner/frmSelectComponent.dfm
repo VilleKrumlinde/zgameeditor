@@ -24,10 +24,6 @@ object SelectComponentForm: TSelectComponentForm
     Top = 10
     Width = 945
     Height = 525
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <>
     HideSelection = False
@@ -39,7 +35,6 @@ object SelectComponentForm: TSelectComponentForm
     ViewStyle = vsList
     OnCustomDrawItem = CompListViewCustomDrawItem
     OnDblClick = CompListViewDblClick
-    OnInfoTip = CompListViewInfoTip
     OnSelectItem = CompListViewSelectItem
   end
   object OkButton: TButton
@@ -47,10 +42,6 @@ object SelectComponentForm: TSelectComponentForm
     Top = 545
     Width = 92
     Height = 31
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = 'OK'
     Default = True
@@ -63,10 +54,6 @@ object SelectComponentForm: TSelectComponentForm
     Top = 545
     Width = 92
     Height = 31
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Cancel = True
     Caption = 'Cancel'
@@ -78,10 +65,6 @@ object SelectComponentForm: TSelectComponentForm
     Top = 545
     Width = 92
     Height = 31
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akLeft, akBottom]
     Caption = '&Help'
     Enabled = False

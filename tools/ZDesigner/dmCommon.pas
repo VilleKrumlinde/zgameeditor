@@ -23,14 +23,15 @@ unit dmCommon;
 interface
 
 uses
-  SysUtils, Classes, Vcl.ImgList, Vcl.Controls, Vcl.Menus, Vcl.ActnList, Vcl.XPStyleActnCtrls,
-  Vcl.ActnMan, Vcl.StdActns, Vcl.Dialogs, System.Actions, System.ImageList;
+  {$ifndef ZgeLazarus}ActnMan, Actions, ImageList,Vcl.XPStyleActnCtrls,{$endif}
+  SysUtils, Classes, ImgList, Controls, Menus, ActnList,
+  StdActns, Dialogs ;
 
 type
   TCommonModule = class(TDataModule)
     CompIconsImageList: TImageList;
     SynEditPopupMenu: TPopupMenu;
-    ActionManager1: TActionManager;
+    ActionManager1: TActionList;
     Selectall1: TMenuItem;
     EditCopy1: TEditCopy;
     Copy1: TMenuItem;
@@ -69,7 +70,8 @@ implementation
 
 {$R *.dfm}
 
-uses Vcl.Forms, SynEdit, SynEditTypes;
+uses
+  SynEdit, SynEditTypes, Forms;
 
 procedure TCommonModule.FindActionExecute(Sender: TObject);
 var
@@ -78,9 +80,11 @@ begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
+  {$ifndef ZgeLazarus}
   Syn.CaretXY := BufferCoord(0,0); //Force search to start from beginning
+  {$endif}
   FindDialog1.Tag := IntPtr(Syn);
-  FindDialog1.Execute(Syn.Handle);
+  FindDialog1.Execute{$ifndef ZgeLazarus}(Syn.Handle){$endif};
 end;
 
 procedure TCommonModule.ReplaceActionExecute(Sender: TObject);
@@ -90,9 +94,11 @@ begin
   Syn := (((Sender as TAction).ActionComponent as TMenuItem).GetParentMenu as TPopUpMenu).PopupComponent as TSynEdit;
   if Syn=nil then
     Syn := Screen.ActiveControl as TSynEdit;
+  {$ifndef ZgeLazarus}
   Syn.CaretXY := BufferCoord(0,0); //Force search/replace to start from beginning
+  {$endif}
   ReplaceDialog1.Tag := IntPtr(Syn);
-  ReplaceDialog1.Execute(Syn.Handle);
+  ReplaceDialog1.Execute{$ifndef ZgeLazarus}(Syn.Handle){$endif};
 end;
 
 procedure TCommonModule.FindDialog1Find(Sender: TObject);
@@ -101,11 +107,13 @@ var
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(FindDialog1.Tag);
+  {$ifndef ZgeLazarus}
   if Screen.ActiveControl<>Syn then
   begin
     FindDialog1.CloseDialog;
     Exit;
   end;
+  {$endif}
   Opt := [];
   if frWholeWord in FindDialog1.Options then
     Include(Opt,ssoWholeWord);
@@ -124,11 +132,13 @@ var
   Opt : TSynSearchOptions;
 begin
   Syn := TSynEdit(ReplaceDialog1.Tag);
+  {$ifndef ZgeLazarus}
   if Screen.ActiveControl<>Syn then
   begin
     ReplaceDialog1.CloseDialog;
     Exit;
   end;
+  {$endif}
   Opt := [];
   if frWholeWord in ReplaceDialog1.Options then
     Include(Opt,ssoWholeWord);

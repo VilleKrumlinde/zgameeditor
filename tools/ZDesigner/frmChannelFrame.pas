@@ -3,8 +3,11 @@ unit frmChannelFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.ComCtrls, AudioPlayer, Vcl.StdCtrls;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  ComCtrls, AudioPlayer, StdCtrls;
 
 type
   TChannelFrame = class(TFrame)

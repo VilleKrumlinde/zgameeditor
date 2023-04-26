@@ -8,7 +8,8 @@
     this.ModuleName="libGLESv1_CM.so";
   else
     this.ModuleName="libGLESv2.so";
-}]]>
+} else if(MACOS)
+  this.ModuleName="/System/Library/Frameworks/OpenGL.framework/OpenGL";]]>
       </BeforeInitExp>
     </ZExternalLibrary>
     <ZLibrary Comment="Sprites">

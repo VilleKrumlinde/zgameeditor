@@ -3,9 +3,14 @@ unit frmMeshEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, frmCompEditBase, Vcl.ExtCtrls, ZClasses,DesignerGui, Contnrs, Meshes,
-  Vcl.Menus, Vcl.StdCtrls,GlPanel;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$else}
+  LCLIntf,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, frmCompEditBase, ExtCtrls, ZClasses,DesignerGui, Contnrs, Meshes,
+  Menus, StdCtrls,GlPanel;
 
 type
   TMeshEditFrame = class(TCompEditFrameBase)
@@ -82,8 +87,8 @@ var
 
 implementation
 
-uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, System.Types,
-  OpenGL12,ZOpenGL;
+uses Math, SugiyamaLayout, ZLog, frmEditor, Renderer, u3dsFile, Types,
+  dglOpenGL,ZOpenGL;
 
 {$R *.dfm}
 
@@ -217,6 +222,8 @@ begin
   Str := StringReplace(Str,'Mesh','',[]);
 
   C := Page.Canvas;
+
+  {$ifndef ZgeLazarus}
   //Back
   if Selected then
     C.Brush.Color := RGB(190, 190, 220)
@@ -228,6 +235,7 @@ begin
     C.Brush.Color := RGB(170, 170, 230)
   else
     C.Brush.Color := RGB(190, 190, 190); //RGB(170, 170, 170);
+  {$endif}
   if DesignerPreviewProducer=Producer then
     C.Pen.Width := 2
   else

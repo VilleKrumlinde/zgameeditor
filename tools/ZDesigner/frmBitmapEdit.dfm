@@ -27,8 +27,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Width = 245
       Height = 345
       Align = alClient
-      BevelInner = bvNone
-      BevelOuter = bvNone
       BorderStyle = bsNone
       PopupMenu = PopupMenu1
       TabOrder = 0
@@ -58,7 +56,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
       Width = 337
       Height = 345
       Align = alClient
-      BevelOuter = bvNone
       TabOrder = 0
       object Panel1: TPanel
         Left = 0
@@ -66,7 +63,6 @@ inherited BitmapEditFrame: TBitmapEditFrame
         Width = 337
         Height = 22
         Align = alBottom
-        BevelOuter = bvNone
         TabOrder = 0
         object DisablePreviewCheckBox: TCheckBox
           Left = 2

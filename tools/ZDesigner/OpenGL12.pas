@@ -237,7 +237,7 @@ uses
     Windows
   {$endif}
 
-  {$ifdef LINUX}
+  {$if defined(LINUX) or defined(DARWIN)}
     Libc, Xlib, Types
   {$endif LINUX}
   ;
@@ -6925,7 +6925,7 @@ procedure ReadImplementationProperties;
 implementation
 
 uses
-  SysUtils, Classes, System.Types;
+  SysUtils, Classes, Types;
 
 type                                   
   EOpenGLException = class(Exception);
@@ -9697,8 +9697,8 @@ begin
   CloseOpenGL;
 
   {$ifdef Win32}
-    GLHandle := LoadLibrary(PChar(GLName)); 
-    GLUHandle := LoadLibrary(PChar(GLUName)); 
+    GLHandle := LoadLibraryW(PChar(GLName));
+    GLUHandle := LoadLibraryW(PChar(GLUName));
   {$endif}
 
   {$ifdef LINUX}

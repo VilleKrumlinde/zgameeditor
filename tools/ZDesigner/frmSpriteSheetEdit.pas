@@ -3,9 +3,9 @@ unit frmSpriteSheetEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmScriptedCompEditBase, Vcl.ExtCtrls, ZExpressions,
-  Renderer, Vcl.StdCtrls;
+  SysUtils, Classes, Graphics,
+  Controls, Forms, Dialogs, frmScriptedCompEditBase, ExtCtrls, ZExpressions,
+  Renderer, StdCtrls;
 
 type
   TSpriteSheetEditFrame = class(TScriptedCompEditFrameBase)
@@ -33,7 +33,11 @@ implementation
 
 {$R *.dfm}
 
-uses frmEditor, System.JSON, IOUtils;
+uses frmEditor
+  {$ifndef ZgeLazarus}
+  , System.JSON, IOUtils
+  {$endif}
+  ;
 
 { TSpriteSheetEditFrame }
 
@@ -166,6 +170,11 @@ begin
 end;
 
 procedure TSpriteSheetEditFrame.ImportFromFile(const F: string);
+{$ifdef ZgeLazarus}
+begin
+
+end;
+{$else}
 var
   J : TJsonObject;
   V : TJsonValue;
@@ -208,7 +217,7 @@ begin
     M.Free;
   end;
 end;
-
+{$endif}
 
 
 end.

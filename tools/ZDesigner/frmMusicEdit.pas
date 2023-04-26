@@ -3,9 +3,12 @@ unit frmMusicEdit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, frmCompEditBase, Vcl.StdCtrls,ZClasses,AudioComponents, Vcl.ExtCtrls, DesignerGUI,
-  Vcl.ComCtrls, Vcl.CheckLst;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, frmCompEditBase, StdCtrls,ZClasses,AudioComponents, ExtCtrls, DesignerGUI,
+  ComCtrls, CheckLst;
 
 type
   TMusicEditFrame = class(TCompEditFrameBase)

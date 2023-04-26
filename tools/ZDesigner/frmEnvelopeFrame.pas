@@ -3,8 +3,11 @@ unit frmEnvelopeFrame;
 interface
 
 uses 
-  Windows, Messages, SysUtils, Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.ComCtrls, Vcl.StdCtrls, AudioPlayer, Vcl.ExtCtrls;
+  {$ifndef ZgeLazarus}
+  Windows, Messages,
+  {$endif}
+  SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  ComCtrls, StdCtrls, AudioPlayer, ExtCtrls;
 
 type
   TEnvelopeFrame = class(TFrame)

@@ -3,9 +3,9 @@ unit frmTileSetEdit;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, frmScriptedCompEditBase, Vcl.ExtCtrls, Renderer,
-  Vcl.StdCtrls;
+  SysUtils, Classes, Graphics,
+  Controls, Forms, Dialogs, frmScriptedCompEditBase, ExtCtrls, Renderer,
+  StdCtrls;
 
 type
   TTileSetEditFrame = class(TScriptedCompEditFrameBase)

@@ -13,10 +13,6 @@ inherited ExprPropEditForm: TExprPropEditForm
     Top = 0
     Width = 604
     Height = 220
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = '&Code editor'
@@ -36,10 +32,6 @@ inherited ExprPropEditForm: TExprPropEditForm
       Top = 186
       Width = 600
       Height = 32
-      Margins.Left = 4
-      Margins.Top = 4
-      Margins.Right = 4
-      Margins.Bottom = 4
       Align = alBottom
       AutoSize = False
       Color = clWhite
@@ -60,10 +52,6 @@ inherited ExprPropEditForm: TExprPropEditForm
     Top = 228
     Width = 92
     Height = 30
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = 'C&ompile'
     Enabled = False
@@ -74,10 +62,6 @@ inherited ExprPropEditForm: TExprPropEditForm
     Top = 228
     Width = 92
     Height = 30
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = '&Help'
     TabOrder = 3

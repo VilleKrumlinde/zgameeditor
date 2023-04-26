@@ -20,6 +20,10 @@ THE SOFTWARE.}
 
 program ZDesigner;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 {$WEAKLINKRTTI ON}
 {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 
@@ -28,16 +32,29 @@ program ZDesigner;
 {$endif}
 
 uses
-  Vcl.Forms,
-  Windows,
-  Vcl.HTMLHelpViewer,
+  {$IFDEF FPC}
+  {$ifdef macos}
+  cmem,
+  cthreads,
+  {$endif}
+  LCLIntf, LCLType, LMessages, Interfaces,
+  {$ELSE}
+  Vcl.HTMLHelpViewer, Vcl.Themes, Vcl.Styles, Windows,
+  unitPEFile in '3rdparty\unitPEFile.pas',
+  unitResourceDetails in '3rdparty\unitResourceDetails.pas',
+  unitResourceRCData in '3rdparty\unitResourceRCData.pas',
+  unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
+  unitEXIcon in '3rdparty\unitEXIcon.pas',
+  uTinyGif in '3rdparty\uTinyGif.pas',
+  OpenGL12 in 'OpenGL12.pas',
+  {$ENDIF}
+  Forms,
   ZLog in '..\..\ZLog.pas',
   DesignerGui in 'DesignerGui.pas',
   ZClasses in '..\..\ZClasses.pas',
   ZBitmap in '..\..\ZBitmap.pas',
   BitmapProducers in '..\..\BitmapProducers.pas',
   GLPanel in 'GLPanel.pas',
-  OpenGL12 in 'OpenGL12.pas',
   frmEditor in 'frmEditor.pas' {EditorForm},
   Animators in '..\..\Animators.pas',
   Meshes in '..\..\Meshes.pas',
@@ -65,18 +82,12 @@ uses
   uHelp in 'uHelp.pas',
   frmToolMissing in 'frmToolMissing.pas' {ToolMissingForm},
   ZFile in '..\..\ZFile.pas',
-  unitPEFile in '3rdparty\unitPEFile.pas',
-  unitResourceDetails in '3rdparty\unitResourceDetails.pas',
-  unitResourceRCData in '3rdparty\unitResourceRCData.pas',
   frmMemoEdit in 'frmMemoEdit.pas' {MemoEditForm},
   uMidiFile in 'uMidiFile.pas',
-  uTinyGif in '3rdparty\uTinyGif.pas',
   u3dsFile in 'u3dsFile.pas',
   frm3dsImportOptions in 'frm3dsImportOptions.pas' {Import3dsForm},
   frmRawAudioImportOptions in 'frmRawAudioImportOptions.pas' {ImportRawAudioForm},
   frmSettings in 'frmSettings.pas' {SettingsForm},
-  unitResourceGraphics in '3rdparty\unitResourceGraphics.pas',
-  unitEXIcon in '3rdparty\unitEXIcon.pas',
   Zc_Ops in 'Compiler\Zc_Ops.pas',
   frmBitmapEdit in 'frmBitmapEdit.pas' {BitmapEditFrame: TFrame},
   SugiyamaLayout in '3rdparty\SugiyamaLayout.pas',
@@ -84,8 +95,6 @@ uses
   frmArrayEdit in 'frmArrayEdit.pas' {ArrayEditForm},
   ZPlatform in '..\..\ZPlatform.pas',
   frmXmlEdit in 'frmXmlEdit.pas' {XmlEditForm},
-  Vcl.Themes,
-  Vcl.Styles,
   CocoAncestor in 'Compiler\CocoAncestor.pas',
   CocoSets in 'Compiler\CocoSets.pas',
   frmAndroidApk in 'frmAndroidApk.pas' {AndroidApkForm},
@@ -111,12 +120,13 @@ begin
   //Disable dpi virtualization
   //SetProcessDPIAware;
 
+  Application.Initialize;
+  {$ifndef ZgeLazarus}
   //Report memleaks when run inside delphi debugger
   ReportMemoryLeaksOnShutdown := DebugHook<>0;
-
-  Application.Initialize;
   Application.MainFormOnTaskbar := True;
   TStyleManager.TrySetStyle('Carbon');
+  {$endif}
   Application.Title := frmEditor.AppName;
   Application.CreateForm(TCommonModule, CommonModule);
   Application.CreateForm(TEditorForm, EditorForm);

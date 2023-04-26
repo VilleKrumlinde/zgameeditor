@@ -22,8 +22,8 @@ unit DesignerGui;
 
 interface
 
-uses Vcl.Controls,Classes,Vcl.ExtCtrls,ZClasses,Vcl.ComCtrls,Contnrs,Vcl.Forms,Vcl.Menus,Vcl.Graphics,
-  Winapi.Windows, BitmapProducers;
+uses Controls,Classes,ExtCtrls,ZClasses,ComCtrls,Contnrs,Forms,Menus,Graphics,
+  {$ifndef ZgeLazarus}Winapi.Windows, {$endif}BitmapProducers;
 
 type
   TPropValueChangedEvent = procedure of object;
@@ -100,12 +100,19 @@ procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string
 
 implementation
 
-uses Vcl.StdCtrls,System.SysUtils,Math,Vcl.Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
-  Vcl.ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,Vcl.AxCtrls,CommCtrl,
+uses
+  {$ifndef ZgeLazarus}
+  Vcl.AxCtrls,Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,Winapi.GDIPAPI, Winapi.GDIPOBJ,
+  Vcl.Imaging.Pngimage, CommCtrl, 
+  {$endif}
+  {$ifdef ZgeLazarus}
+  LclType, 
+  {$endif}
+  StdCtrls,SysUtils,Math,Dialogs,frmEditor,Compiler,ZLog,ZBitmap,
+  ExtDlgs,frmMemoEdit,uMidiFile,AudioComponents,
   frmRawAudioImportOptions,ZFile,
-  frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
-  Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath,
-  Winapi.GDIPAPI, Winapi.GDIPOBJ;
+  frmArrayEdit, ZExpressions, ZApplication, u3dsFile, Meshes,
+  ZMath;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -244,7 +251,9 @@ end;
 procedure TZPropertiesEditor.ChangeScale(M, D: Integer);
 begin
   inherited;
+  {$ifndef ZgeLazarus}
   PanelHeight := MulDiv(PanelHeight,M,D);
+  {$endif}
 end;
 
 constructor TZPropertiesEditor.Create(Owner: TComponent);
@@ -267,7 +276,7 @@ procedure TZPropertiesEditor.RebuildGui;
 var
   PropList : TZPropertyList;
   Prop : TZProperty;
-  I : integer;
+  I,CurTop : integer;
   PEditor : TZPropertyEditBase;
 begin
   Hide;
@@ -278,11 +287,14 @@ begin
     Exit;
 
   //Important: otherwise vertscrollbars appears that crash if clicked upon
+  {$ifndef ZgeLazarus}
   Self.DisableAutoRange;
+  {$endif}
 
   PEditor := nil;
   WantsFocus := nil;
   PropList := C.GetProperties;
+  CurTop := 0;
   for I:=0 to PropList.Count-1 do
   begin
     Prop := TZProperty(PropList[I]);
@@ -303,19 +315,23 @@ begin
     end;
     PEditor.IsReadOnlyProp := Prop.NeverPersist;// or Prop.IsReadOnly;
     PEditor.Height := Self.PanelHeight;
+    PEditor.Width := Self.Width;
+    PEditor.Anchors := [akLeft,akTop,akRight];
     PEditor.Parent := Self;
     PEditor.SetProp(C,Prop);
-    PEditor.Top := 10000;
-    PEditor.Align := alTop;
+    PEditor.Top := CurTop;
     PEditor.OnPropValueChanged := Self.OnPropEditValueChanged;
     //Autofocus viktiga propertys
     //'Name' får focus
     //NeedRefreshNodeName causes focus-error if adding new rendermesh-component, skip for now
     if {(Prop.NeedRefreshNodeName) or }(Prop.PropertyType=zptExpression) then
       WantsFocus := PEditor;
+    Inc(CurTop,PEditor.Height);
   end;
 
+  {$ifndef ZgeLazarus}
   Self.EnableAutoRange;
+  {$endif}
 
   Show;
 end;
@@ -427,7 +443,7 @@ begin
 
   if Prop.PropertyType=zptExpression then
   begin
-    Edit.Text := Value.ExpressionValue.Source.Substring(0,100);
+    Edit.Text := Copy(Value.ExpressionValue.Source,1,100);
     Edit.Tag:=100;
     Self.IsExpression := True;
   end
@@ -596,7 +612,9 @@ begin
   if ColorDialog=nil then
     ColorDialog := TColorDialog.Create(Application);
   ColorDialog.Color := ZColorToColor( Value.ColorfValue );
+  {$ifndef ZgeLazarus}
   ColorDialog.Options := [cdFullOpen];
+  {$endif}
   if ColorDialog.Execute then
   begin
     AlphaTemp := Value.ColorfValue.V[3];
@@ -816,7 +834,11 @@ begin
   if Index=-1 then
     Node := Items.AddChild(Parent,'') as TZComponentTreeNode
   else
+    {$ifdef ZgeLazarus}
+    Node := Items.Insert(Parent.Items[Index],'') as TZComponentTreeNode;
+    {$else}
     Node := Items.Insert(Parent.Item[Index],'') as TZComponentTreeNode;
+    {$endif}
 
   Node.Component := C;
   Node.ImageIndex := ComponentManager.GetInfo(C).ImageIndex;
@@ -1049,9 +1071,11 @@ begin
 //**************************************************************************
 
    if Selected = nil then
-      Exit;
+     Exit;
 
+   {$ifndef ZgeLazarus}
    TreeView_SelectItem( Selected.Handle, Selected.ItemId );
+   {$endif}
 
    Result := inherited GetPopupMenu;
 end;
@@ -1131,7 +1155,7 @@ begin
     Edit := TEdit.Create(Self);
     Edit.Tag := I;
     Edit.Width := 40;
-    Edit.Align := alLeft;
+    Edit.Left := I * Edit.Width;
     Edit.Text := DesignerFormatFloat(FloatP^[I]);
     Edit.OnChange := OnEditChange;
     Edit.OnEnter := OnFocusControl;
@@ -1364,27 +1388,47 @@ end;
 
 { TZBinaryPropEdit }
 
-function GraphicToBitmap(Pic :TPicture) : Vcl.Graphics.TBitmap;
+function GraphicToBitmap(Pic :TPicture) : Graphics.TBitmap;
+{$ifdef ZgeLazarus}
+type
+  TPngImage=TPortableNetworkGraphic;
+{$endif}
 var
-  Bmp: Vcl.Graphics.TBitmap;
+  Bmp: Graphics.TBitmap;
+  Png : TPngImage;
+  PPixel,PDest : PRGBQuad;
+  X,Y : integer;
 begin
-  Bmp := Vcl.Graphics.TBitmap.Create;
+  Bmp := Graphics.TBitmap.Create;
+  Bmp.PixelFormat := pf24bit;
+  Bmp.Width := Pic.Graphic.Width;
+  Bmp.Height := Pic.Graphic.Height;
   if Pic.Graphic is TPngImage then
   begin
-    (Pic.Graphic as TPngImage).AssignTo(Bmp);
+    Bmp.PixelFormat := pf32bit;
+    Png := Pic.Graphic as TPngImage;
+    for Y := 0 to Png.Height-1 do
+    begin
+      PPixel := Png.ScanLine[Y];
+      PDest := Bmp.ScanLine[Y];
+      for X := 0  to Png.Width-1 do
+      begin
+        PDest^ := PPixel^;
+        Inc(PDest);
+        Inc(NativeUInt(PPixel),{$ifdef ZgeLazarus}4{$else}3{$endif});
+      end;
+    end;
   end
   else
   begin
-    Bmp.PixelFormat := pf24bit;
-    Bmp.Width := Pic.Graphic.Width;
-    Bmp.Height := Pic.Graphic.Height;
     Bmp.Canvas.Draw(0,0,Pic.Graphic);
   end;
   //Pic.Assign(Bmp);
   Result := Bmp;
 end;
 
-function BitmapFromGdi(const FileName : string) : Vcl.Graphics.TBitmap;
+{$ifdef MSWINDOWS}
+function BitmapFromGdi(const FileName : string) : Graphics.TBitmap;
 var
   Pic: TGPBitmap;
   I,W,H,PixelSize : integer;
@@ -1434,12 +1478,13 @@ begin
   end;
   Pic.Free;
 end;
+{$endif}
 
 procedure GetPictureStream(var BmFile : TBitmapFromFile; const Filename : string; Stream : TMemoryStream);
 var
   Pic : TPicture;
   OwnBm : boolean;
-  Bm : Vcl.Graphics.TBitmap;
+  Bm : Graphics.TBitmap;
   X,Y : integer;
   R,G,B,A : byte;
   ZBm : TZBitmap;
@@ -1460,10 +1505,13 @@ begin
     end;
 
     //Om bild laddats via TOleGraphic (gif/jpg) så måste den konverteras
-    if not (Pic.Graphic is Vcl.Graphics.TBitmap) then
+    if not (Pic.Graphic is Graphics.TBitmap) then
     begin
+      {$ifdef mswindows}
       Bm := BitmapFromGdi(FileName);
-//      Bm := GraphicToBitmap(Pic);
+      {$else}
+      Bm := GraphicToBitmap(Pic);
+      {$endif}
       OwnBm := True;
     end
     else
@@ -1541,8 +1589,10 @@ end;
 
 procedure TZBinaryPropEdit.OnClearValue(Sender: TObject);
 begin
+  {$ifndef ZgeLazarus}
   if Application.MessageBox('Clear the current value?', PChar(Application.Title), MB_YESNO)<>IDYES then
     Exit;
+  {$endif}
   Value.BinaryValue.Size := 0;
   Value.BinaryValue.Data := nil;
   UpdateProp;

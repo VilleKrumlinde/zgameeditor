@@ -22,6 +22,10 @@ unit ZPlatform;
 
 {$include zzdc_globalopt.inc}
 
+{$if defined(fpc) and defined(darwin)}
+{$modeswitch objectivec1}
+{$endif}
+
 interface
 
 uses ZClasses;
@@ -107,6 +111,10 @@ procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
 procedure Platform_DesignerSetFilePath(const P : AnsiString);
 {$endif}
 
+{$if defined(macos) and defined(ZgeLazarus)}
+procedure Platform_DesignerHandleMacEvent(Event,View : pointer);
+{$endif}
+
 const
   UpKey = '^';
   DownKey = '_';
@@ -139,6 +147,8 @@ const
   {$INCLUDE ZPlatform_Android.inc}
 {$elseif Defined(ZZDC_MacZgeViz)}
   {$INCLUDE ZPlatform_MacZgeViz.inc}
+{$elseif Defined(DARWIN)}
+  {$INCLUDE ZPlatform_Mac.inc}
 {$else}
   {$INCLUDE ZPlatform_Win32.inc}
 {$endif}

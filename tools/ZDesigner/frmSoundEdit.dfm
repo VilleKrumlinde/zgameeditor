@@ -97,7 +97,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 375
         Height = 169
         Anchors = [akLeft, akTop, akRight]
-        BevelOuter = bvNone
         Constraints.MinWidth = 100
         FullRepaint = False
         ParentBackground = False
@@ -121,8 +120,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 113
         VertScrollBar.Visible = False
-        BevelInner = bvNone
-        BevelOuter = bvNone
         BorderStyle = bsNone
         TabOrder = 0
       end
@@ -147,8 +144,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Width = 521
         Height = 61
         VertScrollBar.Visible = False
-        BevelInner = bvNone
-        BevelOuter = bvNone
         BorderStyle = bsNone
         TabOrder = 3
       end
@@ -382,8 +377,6 @@ inherited SoundEditFrame: TSoundEditFrame
         Top = 468
         Width = 640
         Height = 69
-        BevelInner = bvNone
-        BevelOuter = bvNone
         BorderStyle = bsNone
         Ctl3D = True
         ParentCtl3D = False

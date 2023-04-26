@@ -5,8 +5,9 @@ rem no param=build normal, SS=build screensaver
 rem -GD = detailed map file
 
 set zgeproduct=NORMAL
+set BIT=64
 FOR %%A IN (%*) DO (
-  if "%%A"=="64" set BIT=64
+  if "%%A"=="32" set BIT=32
   if "%%A"=="SS" set zgeproduct=SS
   if "%%A"=="OSX" set zgeproduct=OSX
 )

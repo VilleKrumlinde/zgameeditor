@@ -22,10 +22,6 @@ object XmlEditForm: TXmlEditForm
     Top = 10
     Width = 819
     Height = 571
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
   end
@@ -34,10 +30,6 @@ object XmlEditForm: TXmlEditForm
     Top = 594
     Width = 98
     Height = 32
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Caption = '&OK'
     Default = True
@@ -49,10 +41,6 @@ object XmlEditForm: TXmlEditForm
     Top = 594
     Width = 98
     Height = 32
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
     Anchors = [akRight, akBottom]
     Cancel = True
     Caption = '&Cancel'

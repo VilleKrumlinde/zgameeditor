@@ -2,7 +2,7 @@ unit RetroCoding;
 
 interface
 
-uses System.Classes, ZApplication, ZClasses, ZBitmap, Zc_Ops;
+uses Classes, ZApplication, ZClasses, ZBitmap, Zc_Ops;
 
 type
   TRtlRoutine = (rrtSwitch);
@@ -465,7 +465,9 @@ begin
   S := StringReplace(S,' ','',[rfReplaceAll]);
 
   SetLength(Buf,Length(S) div 2);
+  {$ifndef ZgeLazarus}
   HexToBin(PWideChar(S),Buf[0],Length(Buf));
+  {$endif}
 
   Cpu.PeepholeWrite(Buf);
 //  Code.Write(Buf[0],Length(Buf));
@@ -491,7 +493,9 @@ begin
   S := StringReplace(S,' ','',[rfReplaceAll]);
 
   SetLength(Buf,Length(S) div 2);
+  {$ifndef ZgeLazarus}
   HexToBin(PWideChar(S),Buf[0],Length(Buf));
+  {$endif}
 
   Ms.Write(Buf[0],Length(Buf));
 end;
@@ -762,7 +766,8 @@ begin
             // 56                     LD   d,(hl)
             // 62 6B                  LD   hl,de
             // E9                     JP   (hl)
-
+
+
   else
     Builder.Fail('rtl not handled');
   end;

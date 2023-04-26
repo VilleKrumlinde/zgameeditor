@@ -527,7 +527,7 @@ type
     constructor CreateFromFile(FileName : PAnsiChar; IsRelative : Boolean);
     constructor CreateFromMemory(M : pointer; Size : integer);
     destructor Destroy; override;
-    procedure Read(var Buf; Count : integer);
+    procedure Read(out Buf; Count : integer);
     function GetMemory : PBytes;
     procedure BitsBegin;
     function ReadBit : boolean;
@@ -660,7 +660,6 @@ uses ZMath,ZLog, ZPlatform, ZApplication, ZExpressions
   {$ifndef minimal}
     ,LibXmlParserU
     ,SysUtils,Math,zlib,Zc_Ops
-    {$ifndef fpc},AnsiStrings{$endif}
     {$ifdef fpc}
     ,zstream,strutils
     {$endif}
@@ -2568,6 +2567,9 @@ var
   var
     Zs : TCompressionStream;
     Mem : TMemoryStream;
+    {$ifdef Fpc}
+    Tmp : ansistring;
+    {$endif}
   begin
     Mem := TMemoryStream.Create;
     try
@@ -2578,8 +2580,15 @@ var
         Zs.Free;
       end;
       Mem.Position:=0;
+    
       SetLength(Result,Mem.Size*2);
-      Classes.BinToHex(PAnsiChar(Mem.Memory),{$ifdef fpc}PAnsiChar(Result){$else}PWideChar(Result){$endif},Mem.Size);
+      {$ifdef Fpc}
+      SetLength(Tmp,Mem.Size*2);
+      Classes.BinToHex(PAnsiChar(Mem.Memory),PAnsiChar(Tmp),Mem.Size);
+      Result := Tmp;
+      {$else}
+      Classes.BinToHex(PAnsiChar(Mem.Memory),PWideChar(Result),Mem.Size);
+      {$endif}
     finally
       Mem.Free;
     end;
@@ -2613,13 +2622,9 @@ begin
         Continue;
       case Prop.PropertyType of
         zptString :
-          {$ifndef fpc}
-          if (AnsiStrings.AnsiPos(#10,Value.StringValue)=0) {and
-            (Pos('<',Value.StringValue)=0) and
-            (Pos('>',Value.StringValue)=0)} then
+          if Pos(AnsiChar(#10),Value.StringValue)=0 then
             NormalProps.Add(Prop)
           else
-          {$endif}
             NestedProps.Add(Prop);
         zptComponentList :
           NestedProps.Add(Prop);
@@ -2651,7 +2656,7 @@ begin
             V := '0';
           end
           else
-            V := FloatToStr( RoundTo( Value.FloatValue ,-FloatTextDecimals) );
+            V := InFloat( Value.FloatValue );
         zptRectf : V := InArray(Value.RectfValue.Area);
         zptColorf : V := InArray(Value.ColorfValue.V);
         zptInteger : V := IntToStr(Value.IntegerValue);
@@ -2848,7 +2853,7 @@ begin
   Result := @Memory^[Position]
 end;
 
-procedure TZInputStream.Read(var Buf; Count: integer);
+procedure TZInputStream.Read(out Buf; Count: integer);
 begin
   if Position+Count>Size then
   begin
@@ -3615,7 +3620,7 @@ begin
   end;
 
   if C.Name<>'' then
-    SymTab.Add(String(LowerCase(C.Name)),C);
+    SymTab.Add(LowerCase(String(C.Name)),C);
 
   Self.MainXml := SaveMainXml;
 

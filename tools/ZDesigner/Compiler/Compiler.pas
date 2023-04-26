@@ -58,7 +58,7 @@ var
 
 implementation
 
-uses Zc, Zc_Ops, Vcl.Dialogs, Generics.Collections, Math
+uses Zc, Zc_Ops, Dialogs, Generics.Collections, Math
   {$if defined(zgeviz) and defined(fpc)}
   ,WideStrings
   {$endif}
@@ -1673,10 +1673,12 @@ var
   I : integer;
 begin
   Result := S;
+  {$ifndef ZgeLazarus}
   I := S.LastIndexOf('/*');
   if (I>-1) and ((I=1) or (S[I]<>'/')) then
     if S.LastIndexOf('*/')<I then
       Result := S + '*/';
+  {$endif}
 end;
 
 procedure Compile(ZApp: TZApplication; ThisC : TZComponent; const Ze : TZExpressionPropValue;
