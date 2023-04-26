@@ -436,8 +436,63 @@ begin
   
 end;
 
-procedure Platform_InitAudio;
+
+var
+  audioFormat: AudioStreamBasicDescription;
+  outputUnit: AudioUnit;
+  MixBuffer : array[0..SoundBufferFramesSize-1] of TSoundMixUnit;
+
+function AudioOutputCallback(inRefCon: UnivPtr; var ioActionFlags: AudioUnitRenderActionFlags; const (*var*) inTimeStamp: AudioTimeStamp; inBusNumber: UInt32; inNumberFrames: UInt32; ioData: AudioBufferListPtr ): OSStatus;
+var
+  BytesToWrite, FramesToWrite : integer;
 begin
+  BytesToWrite := inNumberFrames * 8;
+
+  FramesToWrite := BytesToWrite  div SizeOf(TSoundOutputUnit);
+
+  FillChar(MixBuffer,FramesToWrite * SizeOf(TSoundMixUnit),0);
+
+  Platform_EnterMutex(VoicesMutex);
+    AudioPlayer.RenderToMixBuffer(@MixBuffer[0],FramesToWrite);
+  Platform_LeaveMutex(VoicesMutex);
+
+  // Copy audio samples to output buffer
+  Move(MixBuffer[0], ioData.mBuffers[0].mData^, BytesToWrite);
+
+  Result := noErr;
+end;
+
+procedure Platform_InitAudio;
+var
+  outputDesc: AudioComponentDescription;
+  outputComp: AudioComponent;
+  outCallback : AURenderCallbackStruct;
+begin
+  audioFormat.mSampleRate := 44100.0;
+  audioFormat.mFormatID := kAudioFormatLinearPCM;
+  audioFormat.mFormatFlags := kAudioFormatFlagIsFloat or kAudioFormatFlagIsPacked or kAudioFormatFlagIsNonInterleaved;
+  audioFormat.mBytesPerPacket := 4;
+  audioFormat.mFramesPerPacket := 1;
+  audioFormat.mBytesPerFrame := 4;
+  audioFormat.mChannelsPerFrame := 2;
+  audioFormat.mBitsPerChannel := 32;
+
+  outputDesc.componentType := kAudioUnitType_Output;
+  outputDesc.componentSubType := kAudioUnitSubType_DefaultOutput;
+  outputDesc.componentManufacturer := kAudioUnitManufacturer_Apple;
+  outputDesc.componentFlags := 0;
+  outputDesc.componentFlagsMask := 0;
+
+  outputComp := AudioComponentFindNext(nil, outputDesc);
+  AudioComponentInstanceNew(outputComp, outputUnit);
+
+  AudioUnitSetProperty(outputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, @audioFormat, SizeOf(audioFormat));
+
+  outCallback.inputProc := @AudioOutputCallback;
+  AudioUnitSetProperty(outputUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, @outCallback, SizeOf(outCallback));
+
+  AudioUnitInitialize(outputUnit);
+  AudioOutputUnitStart(outputUnit);
 end;
 
 procedure Platform_ShutdownAudio;

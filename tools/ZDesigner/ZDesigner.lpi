@@ -383,7 +383,11 @@
 -k-framework
 -kCoreAudio
 -k-framework
--kQuartzCore"/>
+-kQuartzCore
+-k-framework
+-kAudioToolbox
+-k-framework
+-kAudioUnit"/>
       <OtherDefines Count="8">
         <Define0 Value="Borland"/>
         <Define1 Value="Ver150"/>
