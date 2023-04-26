@@ -3797,7 +3797,9 @@ begin
     Stream.Position := 0;
     Stream.Read(S[1],Stream.Size);
     S := 'ZZDC' + S;
-    {$ifndef ZgeLazarus}
+    {$ifdef ZgeLazarus}
+    Clipboard.AsText := String(S);
+    {$else}
     Clipboard.SetTextBuf( PChar(String(S)) );
     {$endif}
   finally
