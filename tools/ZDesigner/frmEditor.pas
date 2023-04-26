@@ -3168,7 +3168,7 @@ begin
         OutFile := ExePath + 'untitled' + Ext
       else
         //Must expand filename because we need absolute path when calling tools, not relative paths like .\projects
-        OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),'.' + Ext);
+        OutFile := ChangeFileExt(ExpandFileName(CurrentFileName),Ext);
     end;
     {$ifdef macos}
     if Kind=bbNormalMacos then
@@ -3214,7 +3214,7 @@ begin
   {$endif}
 
   (ZApp.SymTab.Lookup('android') as TDefineConstant).Value := 0;
-  (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := 0;
+  (ZApp.SymTab.Lookup('macos') as TDefineConstant).Value := {$ifdef macos}1{$else}0{$endif};
   (ZApp.SymTab.Lookup('linux') as TDefineConstant).Value := 0;
 
   DebugC.Value := 1;
