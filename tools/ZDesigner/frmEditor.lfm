@@ -17,7 +17,7 @@ object EditorForm: TEditorForm
   OnKeyPress = FormKeyPress
   Position = poScreenCenter
   ShowHint = True
-  LCLVersion = '2.3.0.0'
+  LCLVersion = '2.2.6.0'
   object Splitter2: TSplitter
     Left = 345
     Height = 738
@@ -41,7 +41,7 @@ object EditorForm: TEditorForm
       Width = 343
       Align = alClient
       Caption = 'Project tree'
-      ClientHeight = 714
+      ClientHeight = 706
       ClientWidth = 333
       Constraints.MinHeight = 185
       TabOrder = 0
@@ -703,8 +703,8 @@ object EditorForm: TEditorForm
     object FileOpenAction: TFileOpen
       Category = 'File'
       Caption = '&Open...'
-      Dialog.DefaultExt = '.*.zgeproj'
-      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj|Any file (*.*)|*.*'
+      Dialog.DefaultExt = '.zgeproj'
+      Dialog.Filter = 'Project files (*.zgeproj)|*.zgeproj'
       Hint = 'Open|Opens an existing file'
       ImageIndex = 5
       ShortCut = 16463
