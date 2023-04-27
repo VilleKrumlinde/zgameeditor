@@ -470,13 +470,13 @@ var
 begin
   audioFormat.mSampleRate := 44100.0;
   audioFormat.mFormatID := kAudioFormatLinearPCM;
-  audioFormat.mFormatFlags := kAudioFormatFlagIsFloat or kAudioFormatFlagIsPacked or kAudioFormatFlagIsNonInterleaved;
-  audioFormat.mBytesPerPacket := 4;
+  audioFormat.mFormatFlags := kAudioFormatFlagIsFloat or kAudioFormatFlagIsPacked;
   audioFormat.mFramesPerPacket := 1;
-  audioFormat.mBytesPerFrame := 4;
   audioFormat.mChannelsPerFrame := 2;
   audioFormat.mBitsPerChannel := 32;
-
+  audioFormat.mBytesPerFrame := (audioFormat.mBitsPerChannel * audioFormat.mChannelsPerFrame) div 8;
+  audioFormat.mBytesPerPacket := audioFormat.mBytesPerFrame * audioFormat.mFramesPerPacket;
+  
   outputDesc.componentType := kAudioUnitType_Output;
   outputDesc.componentSubType := kAudioUnitSubType_DefaultOutput;
   outputDesc.componentManufacturer := kAudioUnitManufacturer_Apple;
