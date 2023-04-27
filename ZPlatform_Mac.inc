@@ -143,8 +143,13 @@ begin
         MacKeys[ TranslateKey(theEvent) ] := False;
         if (theEvent.KeyCode=kVK_Escape) and TheApp.EscapeToQuit then
           Halt;
+        KeyUpList.Add(TObject( TranslateKey(theEvent) ));
       end;
-    NSKeyDown : MacKeys[ TranslateKey(theEvent) ] := True;
+    NSKeyDown :
+      begin
+        MacKeys[ TranslateKey(theEvent) ] := True;
+        KeyDownList.Add(TObject( TranslateKey(theEvent) ));
+      end;
   end;
 end;
 
@@ -660,6 +665,14 @@ end;
 
 initialization
 
+  KeyDownList := TZArrayList.CreateReferenced;
+  KeyUpList := TZArrayList.CreateReferenced;
+
   StartTime := CACurrentMediaTime;
+
+finalization
+
+  KeyDownList.Free;
+  KeyUpList.Free;
 
 end.
