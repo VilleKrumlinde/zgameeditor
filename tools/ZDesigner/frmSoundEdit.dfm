@@ -213,14 +213,14 @@ inherited SoundEditFrame: TSoundEditFrame
       end
       object GroupBox3: TGroupBox
         Left = 224
-        Top = 61
+        Top = 56
         Width = 185
-        Height = 44
+        Height = 50
         Caption = 'Oscillator 1'
         TabOrder = 5
         object Osc1WaveformCombo: TComboBox
           Left = 7
-          Top = 16
+          Top = 0
           Width = 82
           Height = 21
           Style = csDropDownList
@@ -234,7 +234,7 @@ inherited SoundEditFrame: TSoundEditFrame
         end
         object Osc1PWTrackBar: TTrackBar
           Left = 95
-          Top = 17
+          Top = 0
           Width = 70
           Height = 24
           Hint = 'Square Pulse Width'
