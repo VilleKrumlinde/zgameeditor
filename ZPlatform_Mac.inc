@@ -506,18 +506,22 @@ end;
 
 function Platform_CreateMutex : pointer;
 begin
+  Result := TCriticalSection.Create;
 end;
 
 procedure Platform_FreeMutex(P : pointer);
 begin
+  TCriticalSection(P).Free;
 end;
 
 procedure Platform_EnterMutex(P : pointer);
 begin
+  TCriticalSection(P).Enter;
 end;
 
 procedure Platform_LeaveMutex(P : pointer);
 begin
+  TCriticalSection(P).Leave;
 end;
 
 function Platform_GenerateFontDisplayLists(Size : integer; FirstChar,LastChar : integer) : integer;
