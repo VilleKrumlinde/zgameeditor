@@ -141,8 +141,10 @@ begin
     NSKeyUp : 
       begin
         MacKeys[ TranslateKey(theEvent) ] := False;
+        {$IFDEF MINIMAL}
         if (theEvent.KeyCode=kVK_Escape) and TheApp.EscapeToQuit then
           Halt;
+        {$ENDIF}
         KeyUpList.Add(TObject( TranslateKey(theEvent) ));
       end;
     NSKeyDown :
