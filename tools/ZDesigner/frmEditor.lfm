@@ -719,7 +719,7 @@ object EditorForm: TEditorForm
       ImageIndex = 6
       OnExecute = CopyComponentActionExecute
       OnUpdate = CopyComponentActionUpdate
-      ShortCut = 16451
+      ShortCut = 4163
     end
     object EditPasteAction: TEditPaste
       Category = 'Edit'
@@ -728,7 +728,7 @@ object EditorForm: TEditorForm
       ImageIndex = 7
       OnExecute = PasteComponentActionExecute
       OnUpdate = PasteComponentActionUpdate
-      ShortCut = 16470
+      ShortCut = 4182
     end
     object FileSaveAsAction: TFileSaveAs
       Category = 'File'
