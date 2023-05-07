@@ -504,6 +504,8 @@ end;
 
 procedure Platform_ShutdownAudio;
 begin
+  AudioOutputUnitStop(outputUnit);
+  AudioUnitUninitialize(outputUnit);
 end;
 
 function Platform_CreateMutex : pointer;
