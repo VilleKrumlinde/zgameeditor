@@ -31,7 +31,9 @@ implementation
 {$R *.dfm}
 
 uses
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  SynEditTypes,
+  {$else}
   SynHighlighterXML, SynEditSearch,
   {$endif}
   dmCommon;
@@ -40,15 +42,20 @@ procedure TXmlEditForm.FormCreate(Sender: TObject);
 begin
   SynEdit := TSynEdit.Create(Self);
   SynEdit.Align := alClient;
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  SynEdit.Options := [eoAutoIndent, eoDragDropEditing,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  SynEdit.Options2 := [eoEnhanceEndKey];
+  {$else}
   SynEdit.Gutter.Visible := True;
   SynEdit.Gutter.ShowLineNumbers := True;
   SynEdit.Highlighter := TSynXMLSyn.Create(Self);
+  SynEdit.MaxScrollWidth := 4096;
   SynEdit.Options := [eoAutoIndent, eoDragDropEditing, eoEnhanceEndKey,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
   SynEdit.SearchEngine := TSynEditSearch.Create(Self);
-  SynEdit.MaxScrollWidth := 4096;
   {$endif}
   SynEdit.Parent := Panel1;
   SynEdit.WantTabs := True;

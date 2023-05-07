@@ -5,7 +5,7 @@ interface
 uses
   SynEdit, 
   {$ifdef ZgeLazarus}
-  SynCompletion, 
+  SynCompletion, synedittypes,
   {$else}
   Windows, Messages,
   SynCompletionProposal, 
@@ -74,7 +74,12 @@ begin
   ExprSynEdit.OnChange := OnExprChanged;
   ExprSynEdit.OnMouseMove := EditorMouseMove;
   ExprSynEdit.OnStatusChange := EditorStatusChange;
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ExprSynEdit.Options2 := [eoEnhanceEndKey];
+  {$else}
   ExprSynEdit.Gutter.ShowModification := True;
   ExprSynEdit.Gutter.ShowLineNumbers := False;
   ExprSynEdit.OnGutterPaint := EditorGutterPaint;

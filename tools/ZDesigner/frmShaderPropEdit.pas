@@ -42,8 +42,10 @@ implementation
 {$R *.dfm}
 
 uses
-  {$ifndef ZgeLazarus}
-  SynHighlighterGLSL, 
+  {$ifdef ZgeLazarus}
+  synedittypes,
+  {$else}
+  SynHighlighterGLSL,
   {$endif}
   SynEditSearch,
   dmCommon, Types;
@@ -53,7 +55,12 @@ begin
   inherited;
 
   ShaderSynEdit := TSynEdit.Create(Self);
-  {$ifndef ZgeLazarus}
+  {$ifdef ZgeLazarus}
+  ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing,
+    eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
+    eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
+  ShaderSynEdit.Options2 := [eoEnhanceEndKey];
+  {$else}
   ShaderSynEdit.Highlighter := TSynGLSLSyn.Create(Self);
   ShaderSynEdit.Gutter.Visible := True;
   ShaderSynEdit.Gutter.ShowModification := True;
