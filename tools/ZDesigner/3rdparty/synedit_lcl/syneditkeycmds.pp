@@ -1202,7 +1202,7 @@ begin
   AddKey(ecUndo, VK_BACK, [ssAlt]);
   AddKey(ecRedo, VK_BACK, [ssAlt,ssShift]);
   AddKey(ecLineBreak, VK_RETURN, []);
-  AddKey(ecSelectAll, ord('A'), [ssCtrl]);
+  AddKey(ecSelectAll, ord('A'), [ssMeta]);
   AddKey(ecCopy, ord('C'), [ssMeta]);
   AddKey(ecBlockIndent, ord('I'), [ssCtrl,ssShift]);
   AddKey(ecLineBreak, ord('M'), [ssCtrl]);
