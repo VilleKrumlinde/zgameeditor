@@ -78,7 +78,7 @@ begin
   ExprSynEdit.Options := [eoAutoIndent, eoDragDropEditing,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
-  ExprSynEdit.Options2 := [eoEnhanceEndKey];
+  ExprSynEdit.Options2 := [eoEnhanceEndKey, eoOverwriteBlock];
   {$else}
   ExprSynEdit.Gutter.ShowModification := True;
   ExprSynEdit.Gutter.ShowLineNumbers := False;

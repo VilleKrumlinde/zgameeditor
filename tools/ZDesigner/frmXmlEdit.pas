@@ -46,7 +46,7 @@ begin
   SynEdit.Options := [eoAutoIndent, eoDragDropEditing,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
-  SynEdit.Options2 := [eoEnhanceEndKey];
+  SynEdit.Options2 := [eoEnhanceEndKey, eoOverwriteBlock];
   {$else}
   SynEdit.Gutter.Visible := True;
   SynEdit.Gutter.ShowLineNumbers := True;

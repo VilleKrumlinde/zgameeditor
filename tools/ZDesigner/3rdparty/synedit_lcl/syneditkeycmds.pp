@@ -1203,13 +1203,13 @@ begin
   AddKey(ecRedo, VK_BACK, [ssAlt,ssShift]);
   AddKey(ecLineBreak, VK_RETURN, []);
   AddKey(ecSelectAll, ord('A'), [ssCtrl]);
-  AddKey(ecCopy, ord('C'), [ssCtrl]);
+  AddKey(ecCopy, ord('C'), [ssMeta]);
   AddKey(ecBlockIndent, ord('I'), [ssCtrl,ssShift]);
   AddKey(ecLineBreak, ord('M'), [ssCtrl]);
   AddKey(ecInsertLine, ord('N'), [ssCtrl]);
   AddKey(ecDeleteWord, ord('T'), [ssCtrl]);
   AddKey(ecBlockUnindent, ord('U'), [ssCtrl,ssShift]);
-  AddKey(ecPaste, ord('V'), [ssCtrl]);
+  AddKey(ecPaste, ord('V'), [ssMeta]);
   AddKey(ecCut, ord('X'), [ssCtrl]);
   AddKey(ecDeleteLine, ord('Y'), [ssCtrl]);
   AddKey(ecDeleteEOL, ord('Y'), [ssCtrl,ssShift]);

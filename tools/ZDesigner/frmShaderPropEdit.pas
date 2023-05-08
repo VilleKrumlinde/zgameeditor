@@ -59,7 +59,7 @@ begin
   ShaderSynEdit.Options := [eoAutoIndent, eoDragDropEditing,
     eoScrollPastEol, eoShowScrollHint, eoTabsToSpaces,
     eoGroupUndo, eoTabIndent, eoTrimTrailingSpaces];
-  ShaderSynEdit.Options2 := [eoEnhanceEndKey];
+  ShaderSynEdit.Options2 := [eoEnhanceEndKey, eoOverwriteBlock];
   {$else}
   ShaderSynEdit.Highlighter := TSynGLSLSyn.Create(Self);
   ShaderSynEdit.Gutter.Visible := True;
