@@ -3650,6 +3650,8 @@ begin
         //Flytta tr?dnoder
         FromNode.MoveTo(ToNode,naAddChild);
 
+        Tree.Selected := ToNode.GetLastChild; //Needed on Mac because of issue #24
+        
         if CompEditor<>nil then
           CompEditor.OnTreeChanged;
       end;
