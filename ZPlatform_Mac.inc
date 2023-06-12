@@ -355,11 +355,27 @@ begin
 end;
 
 var
-  ExeName : string;
+  ExeName : ansistring;
+
+function mbGetModuleName(Address: Pointer): AnsiString;
+//https://forum.lazarus.freepascal.org/index.php?topic=46695.0
+const
+  Dummy: Boolean = False;
+var
+  dlinfo: dl_info;
+begin
+  if Address = nil then Address:= @Dummy;
+  FillChar({%H-}dlinfo, SizeOf(dlinfo), #0);
+  if dladdr(Address, @dlinfo) = 0 then
+    Result:= EmptyStr
+  else begin
+    Result:= UTF8Encode(dlinfo.dli_fname);
+  end;
+end;
 
 function Platform_GetExeFileName : PAnsiChar;
 begin
-  ExeName := ParamStr(0);
+  ExeName := mbGetModuleName(get_caller_addr(get_frame));
   Result := PAnsiChar(ExeName);
 end;
 
@@ -369,7 +385,12 @@ var
   Tmp : PAnsiChar;
 begin
   Tmp := @Buf;
+
+  {$ifndef minimal}
+  ZStrCopy(Tmp, PAnsiChar(DesignerFilePath));
+  {$else}
   ZStrCopy(Tmp,Platform_GetExeFileName);
+  {$endif}
   I := ZStrLength(Tmp);
   while (I>0) and (not (Tmp[I] in ['\','/'])) do
     Dec(I);
