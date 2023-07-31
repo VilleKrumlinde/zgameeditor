@@ -131,6 +131,7 @@ type
     DefinitionsFile : TPropString;
     function GetDisplayName: ansistring; override;
     procedure DesignerReset; override;
+    destructor Destroy; override;
     {$endif}
   end;
 
@@ -2221,9 +2222,17 @@ begin
   if Self.ModuleHandle<>0 then
   begin
     {$ifdef MSWINDOWS}
+    Platform_FreeModule(Self.ModuleHandle);
     Self.ModuleHandle := 0;
     {$endif}
   end;
+end;
+
+destructor TZExternalLibrary.Destroy;
+begin
+  if Self.ModuleHandle<>0 then
+    Platform_FreeModule(Self.ModuleHandle);
+  inherited;
 end;
 
 function TZExternalLibrary.GetDisplayName: AnsiString;

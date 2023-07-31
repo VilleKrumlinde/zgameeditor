@@ -105,6 +105,7 @@ type
   TDesignerAudioCallback = procedure(P : pointer; FrameCount : integer);
 procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
 procedure Platform_DesignerSetFilePath(const P : AnsiString);
+procedure Platform_FreeModule(Handle : NativeUInt);
 {$endif}
 
 const

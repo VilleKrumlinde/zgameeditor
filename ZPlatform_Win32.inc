@@ -1868,6 +1868,13 @@ begin
   {$endif}
 end;
 
+{$ifndef minimal}
+procedure Platform_FreeModule(Handle : NativeUInt);
+begin
+  FreeLibrary(Handle);
+end;
+{$endif}
+
 function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : pointer;
 begin
   Result := GetProcAddress(Module,Name);
