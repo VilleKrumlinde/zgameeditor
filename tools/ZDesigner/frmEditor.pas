@@ -1117,13 +1117,6 @@ begin
 
     if (ParamCount=1) and FileExists(ParamStr(1)) then
       OpenProject(ParamStr(1))
-    else if (ParamCount=3) and (ParamStr(1)='/b') then
-    begin
-      // build project and quit
-      OpenProject(ParamStr(2));
-      BuildRelease(bbNormalUncompressed, ParamStr(3));
-      Close;
-    end
     else
     begin
       S := Ini.ReadString(Section,'LastOpenedProject','');
@@ -1163,6 +1156,15 @@ begin
     EnableThreadedProcessingMenuItem.OnClick(EnableThreadedProcessingMenuItem);
   finally
     Ini.Free;
+  end;
+
+  if (ParamCount=3) and (ParamStr(1)='/b') then
+  begin
+    // build project and quit
+    OpenProject(ParamStr(2));
+    BuildRelease(bbNormalUncompressed, ParamStr(3));
+    Close;
+    Application.Terminate;
   end;
 end;
 
@@ -1997,7 +1999,7 @@ begin
   else if (ShowNode is TZApplication) then
     OnRender := (ShowNode as TZApplication).OnRender;
 
-  if OnRender=nil then
+  if (OnRender=nil) or (ZApp=nil) then
     Exit;
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
