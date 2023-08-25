@@ -473,16 +473,9 @@ var
 begin
   Now := Platform_GetTime;
 
-  {.$ifdef minimal} //Ok, lets try to have frame rate setting respected in designer too
   if Now>=NextFrameTime then
-  {.$endif}
   begin  //Delay until next frame
-    if (FrameRateStyle<>frsFree)  //But not if set to "Free"
-      {$ifdef MSWINDOWS}
-      //Or if wglSwapIntervalEXT has been called because then vsync-wait is enabled in driver already
-      and not ((Self.FrameRateStyle=frsSyncedWithMonitor) and Assigned(wglSwapIntervalEXT))
-      {$endif}
-      then
+    if (FrameRateStyle<>frsFree) then //But not if set to "Free"
     begin
       if FrameRateStyle=frsFixed then
         TargetFrameRate := Self.FixedFrameRate;
@@ -491,6 +484,17 @@ begin
       if NextFrameTime<Now-1 then
         NextFrameTime := Now;
       NextFrameTime := NextFrameTime + (1.0 / TargetFrameRate);
+      {$ifdef MSWINDOWS}
+      if Self.FrameRateStyle=frsSyncedWithMonitor then
+      begin
+        if Assigned(wglSwapIntervalEXT) then
+          // If wglSwapIntervalEXT has been called then vsync-wait is enabled in driver already so we should not wait
+          NextFrameTime := Now
+        else
+          // but if wglSwapIntervalEXT is not available (Parallels on Mac) then make default to 60fps
+          NextFrameTime := NextFrameTime + (1.0 / 60);
+      end;
+      {$endif}
     end;
 
     UpdateTime;
