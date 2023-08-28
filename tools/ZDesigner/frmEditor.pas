@@ -2660,6 +2660,7 @@ var
   C : TZComponent;
   I,J : integer;
   ExpandedNodes : TList;
+  Node : TTreeNode;
 begin
   ExpandedNodes := TList.Create;
   for I := 0 to Tree.Items.Count-1 do
@@ -2711,12 +2712,25 @@ begin
         SetRoot(C);
         SetFileChanged(True);
 
-        for I := 0 to ExpandedNodes.Count-1 do
+        if (ExpandedNodes.Count>0) and (Tree.Items.Count>0) then
         begin
-          for J := 0 to Tree.Items.Count-1 do
+          I := 0;
+          Node := Tree.Items[0];
+          while (Node<>nil) and (ExpandedNodes.Count>0) do
           begin
-            if Tree.Items[J].AbsoluteIndex=integer(ExpandedNodes[I]) then
-              Tree.Items[J].Expanded := True;
+            J := 0;
+            while J<ExpandedNodes.Count do
+            begin
+              if I=integer(ExpandedNodes[J]) then
+              begin
+                Node.Expanded := True;
+                ExpandedNodes.Delete(J);
+                Break;
+              end else
+                Inc(J);
+            end;
+            Node := Node.GetNext;
+            Inc(I);
           end;
         end;
 
