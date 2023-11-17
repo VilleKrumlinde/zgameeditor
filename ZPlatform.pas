@@ -104,7 +104,7 @@ function Platform_TouchGetId(const TouchIndex : integer) : integer;
 type
   TDesignerAudioCallback = procedure(P : pointer; FrameCount : integer);
 procedure Platform_DesignerSetAudioCallback(F : TDesignerAudioCallback);
-procedure Platform_DesignerSetFilePath(const P : AnsiString);
+procedure Platform_DesignerSetFilePath(const P : string);
 procedure Platform_FreeModule(Handle : NativeUInt);
 {$endif}
 

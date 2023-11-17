@@ -734,9 +734,9 @@ end;
 
 {$ifndef minimal}
 var
-  DesignerFilePath : AnsiString;
+  DesignerFilePath : string;
 
-procedure Platform_DesignerSetFilePath(const P : AnsiString);
+procedure Platform_DesignerSetFilePath(const P : string);
 begin
   DesignerFilePath := P;
 end;
@@ -764,7 +764,7 @@ begin
     ZStrCopy(PAnsiChar(@Buf),FileName)  //Absolute path specified
   else
   begin
-    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(UTF8String(DesignerFilePath)));
     ZStrCat(PAnsiChar(@Buf),FileName);
   end;
   {$endif}
@@ -813,19 +813,24 @@ procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size
 var
   Handle : THandle;
   Dummy : longword;
+  {$ifdef minimal}
   Buf : array[0..254] of AnsiChar;
+  {$endif}
 begin
-
-  //Open file relative to path of exe-file
-  if IsRelative {$ifndef minimal}and (not TPath.IsPathRooted(string(FileName))){$endif} then
+  // Open file relative to path of exe-file
+  {$ifndef minimal}
+  if IsRelative and (not TPath.IsPathRooted(string(FileName))) then
+    Handle := CreateFileW( PChar(DesignerFilePath + string(FileName)) , GENERIC_READ, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)
+  else
+    Handle := CreateFileA(FileName, GENERIC_READ, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  {$else}
+  if IsRelative then
   begin
     MakeFullPath(FileName,Buf);
     FileName := @Buf;
   end;
-
-  Handle := CreateFileA(FileName, GENERIC_READ,
-    0, nil, OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL, 0);
+  Handle := CreateFileA(FileName, GENERIC_READ, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  {$endif}
 
   if Handle=INVALID_HANDLE_VALUE then
   begin
@@ -1850,18 +1855,18 @@ end;
 function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
 {$ifndef minimal}
 var
-  S : AnsiString;
+  S : string;
 {$endif}
 begin
   //Open file relative to path of exe-file
   {$ifndef minimal}
   //Inside designer we must provide full path to zgeproj-file
-  S := AnsiString(ChangeFileExt(String(DesignerFilePath) + String(Name),'.dll'));
-  if FileExists(string(S)) then
-    Result := LoadLibraryA(PAnsiChar(S))
+  S := ChangeFileExt(DesignerFilePath + String(Name), '.dll');
+  if FileExists(S) then
+    Result := LoadLibraryW(PChar(S))
   else
     //Not found in zgeproj-path, assume system32-dll such as user32 and load without path
-    Result := LoadLibraryA(Name)
+    Result := LoadLibraryW(PChar(String(Name)))
   {$else}
   //In engine always let the OS find the dll without path
   Result := LoadLibraryA(Name);

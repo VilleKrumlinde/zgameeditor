@@ -610,7 +610,7 @@ begin
 
 end;
 
-procedure Platform_DesignerSetFilePath(const P : AnsiString);
+procedure Platform_DesignerSetFilePath(const P : string);
 begin
 
 end;

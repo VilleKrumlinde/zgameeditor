@@ -22,9 +22,9 @@ var
 
 {$ifndef minimal}
 var
-  DesignerFilePath : AnsiString;
+  DesignerFilePath : string;
 
-procedure Platform_DesignerSetFilePath(const P : AnsiString);
+procedure Platform_DesignerSetFilePath(const P : string);
 begin
   DesignerFilePath := P;
 end;
@@ -108,7 +108,7 @@ begin
     ZStrCopy(PAnsiChar(@Buf),FileName)  //Absolute path specified
   else
   begin
-    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(DesignerFilePath));
+    ZStrCopy(PAnsiChar(@Buf),PAnsiChar(UTF8String(DesignerFilePath)));
     ZStrCat(PAnsiChar(@Buf),FileName);
   end;
 end;
@@ -145,31 +145,24 @@ end;
 
 procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
 var
-  F : file;
-  Buf : array[0..511] of AnsiChar;
+  ms : TMemoryStream;
+  name : string;
 begin
   //Open file relative to path of exe-file
   if IsRelative then
+    name := DesignerFilePath + string(FileName)
+  else
+    name := string(FileName);
+    
+  if FileExists(name) then
   begin
-    MakeFullPath(FileName,Buf);
-    FileName := @Buf;
+    ms := TMemoryStream.Create;
+    ms.LoadFromFile(name);
+    Size := ms.Size;
+    GetMem(Memory, Size);
+    Move(ms.Memory^, Memory^, Size);
+    ms.Free;
   end;
-
-  System.FileMode := 0;
-  System.Assign(F,FileName);
-
-  System.Reset(F,1);
-  if IOResult<>0 then
-  begin
-    Exit;
-  end;
-
-  Size := System.FileSize(F);
-
-  GetMem(Memory,Size);
-  System.BlockRead(F,Memory^,Size);
-
-  System.Close(F);
 end;
 
 procedure Platform_InitGlobals;
@@ -248,15 +241,15 @@ end;
 function Platform_LoadModule(const Name : PAnsiChar) : NativeUInt;
 {$ifndef minimal}
 var
-  S : AnsiString;
+  s : string;
 {$endif}
 begin
   //Open file relative to path of exe-file
   {$ifndef minimal}
   //Inside designer we must provide full path to zgeproj-file
-  S := AnsiString(ChangeFileExt(String(DesignerFilePath) + String(Name),'.dylib'));
-  if FileExists(string(S)) then
-    Result := NativeUInt( dlopen(PAnsiChar(S), RTLD_NOW) )
+  s := ChangeFileExt(DesignerFilePath + String(Name),'.dylib');
+  if FileExists(s) then
+    Result := NativeUInt( dlopen(PAnsiChar(UTF8String(s)), RTLD_NOW) )
   else
     //Not found in zgeproj-path, assume system32-dll such as user32 and load without path
     Result := NativeUInt( dlopen(Name, RTLD_NOW) );

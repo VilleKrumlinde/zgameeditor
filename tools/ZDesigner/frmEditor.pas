@@ -3418,7 +3418,7 @@ begin
   CurrentFileName := F;
   if F<>'' then
   begin
-    Platform_DesignerSetFilePath( AnsiString( ExtractFilePath(CurrentFileName) ) );
+    Platform_DesignerSetFilePath( ExtractFilePath(CurrentFileName) );
     SetCurrentDir( ExtractFilePath(CurrentFileName) );
     //Add to MRU-list
     if MruList.IndexOf(F)>-1 then
