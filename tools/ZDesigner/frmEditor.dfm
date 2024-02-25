@@ -1018,6 +1018,12 @@ object EditorForm: TEditorForm
       Caption = 'Import Audio...'
       OnExecute = ImportAudioActionExecute
     end
+    object HelpComponentAction: TAction
+      Caption = 'Open Online Component Help'
+      Hint = 'Opens Online Help for this Component'
+      ShortCut = 8304
+      OnExecute = HelpComponentActionExecute
+    end
   end
   object TreePopupMenu: TPopupMenu
     Images = ActionImageList
@@ -1078,6 +1084,12 @@ object EditorForm: TEditorForm
     end
     object Lockshow1: TMenuItem
       Action = LockShowAction
+    end
+    object N18: TMenuItem
+      Caption = '-'
+    end
+    object HelpComponent1: TMenuItem
+      Action = HelpComponentAction
     end
   end
   object ActionImageList: TImageList
