@@ -4170,8 +4170,21 @@ begin
 end;
 
 procedure TEditorForm.HelpComponentActionExecute(Sender: TObject);
+var
+  Ci : TZComponentInfo;
+  S, URL : string;
 begin
-  uHelp.GoUrl(HelpComponentURL);
+  URL := URL + HelpComponentURL;
+  if Assigned(Tree.ZSelected.Component) then
+    URL := URL + ComponentManager.GetInfo(Tree.ZSelected.Component).ZClassName;
+  if Assigned(Tree.ZSelected.ComponentList) then
+  begin
+    S := Tree.ZSelected.Prop.Name;
+    Ci := ComponentManager.GetInfo(Tree.ZSelected.ComponentList.Owner);
+    // Use both anchors and text fragments
+    URL := URL + Ci.ZClassName + '#' + S + ':~:text=' + S;
+  end;
+  uHelp.GoUrl(URL);
 end;
 
 procedure TEditorForm.OnGLPanelMouseDown(Sender: TObject;
