@@ -241,6 +241,8 @@ type
     OpenAllProjectsMenuItem: TMenuItem;
     EvalEdit: TEdit;
     BuildZ80MenuItem: TMenuItem;
+    N18: TMenuItem;
+    HelpComponentAction: TAction;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -335,6 +337,7 @@ type
       Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure BuildZ80MenuItemClick(Sender: TObject);
     procedure OnAppInfoClose(Sender : TObject);
+    procedure HelpComponentActionExecute(Sender : TObject);
   private
     { Private declarations }
     Ed : TZPropertiesEditor;
@@ -354,6 +357,7 @@ type
     PackerProg,PackerParams : string;
     AndroidSdkPath,AndroidSdCardPath,AndroidAntPath,
     AndroidKeystorePath,AndroidKeystoreAlias : string;
+    HelpComponentURL : string;
     GuiLayout : integer;
     UndoNodes,UndoIndices : TObjectList;
     UndoParent : TZComponentTreeNode;
@@ -1136,6 +1140,11 @@ begin
     S := Ini.ReadString(Section,'MruList', '');
     MruList.CommaText := S;
 
+    S := Ini.ReadString(Section,'HelpComponentURL', '');
+    if S='' then
+      S := 'https://www.zgameeditor.org/index.php/ComponentRef/';
+    Self.HelpComponentURL := S;
+
     LowerRightPanel.Height := Min(Max(Ini.ReadInteger(Section,'LowerRightPanel.Height',LowerRightPanel.Height),100),Screen.Height);
     LogPanel.Width := Min(Max(Ini.ReadInteger(Section,'LogPanel.Width',LogPanel.Width),20),Screen.Width);
     LeftPanel.Width := Min(Max(Ini.ReadInteger(Section,'LeftPanel.Width',LeftPanel.Width),20),Screen.Width);
@@ -1346,6 +1355,8 @@ begin
       Ini.WriteString(Section,'AndroidKeystoreAlias',Self.AndroidKeystoreAlias);
 
       Ini.WriteBool(Section,'UseThreadedProcessing',EnableThreadedProcessingMenuItem.Checked);
+
+      Ini.WriteString(Section, 'HelpComponentURL', Self.HelpComponentURL);
     except
       ShowMessage('Could not save settings to file: ' + FName);
     end;
@@ -4156,6 +4167,24 @@ end;
 procedure TEditorForm.Onlinehelp1Click(Sender: TObject);
 begin
   uHelp.ShowHelp('');
+end;
+
+procedure TEditorForm.HelpComponentActionExecute(Sender: TObject);
+var
+  Ci : TZComponentInfo;
+  S, URL : string;
+begin
+  URL := URL + HelpComponentURL;
+  if Assigned(Tree.ZSelected.Component) then
+    URL := URL + ComponentManager.GetInfo(Tree.ZSelected.Component).ZClassName;
+  if Assigned(Tree.ZSelected.ComponentList) then
+  begin
+    S := Tree.ZSelected.Prop.Name;
+    Ci := ComponentManager.GetInfo(Tree.ZSelected.ComponentList.Owner);
+    // Use both anchors and text fragments
+    URL := URL + Ci.ZClassName + '#' + S + ':~:text=' + S;
+  end;
+  uHelp.GoUrl(URL);
 end;
 
 procedure TEditorForm.OnGLPanelMouseDown(Sender: TObject;
