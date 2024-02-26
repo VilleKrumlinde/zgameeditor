@@ -280,7 +280,6 @@ begin
   //Important: otherwise vertscrollbars appears that crash if clicked upon
   Self.DisableAutoRange;
 
-  PEditor := nil;
   WantsFocus := nil;
   PropList := C.GetProperties;
   for I:=0 to PropList.Count-1 do
