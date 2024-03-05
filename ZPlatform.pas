@@ -118,6 +118,7 @@ const
 var
   //Contains keyup/down events since last frame
   KeyDownList,KeyUpList : TZArrayList;
+  Platform_SyncWithMonitor : procedure(const Delay : integer);
 
 type
   TScreenMode =

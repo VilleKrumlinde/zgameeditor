@@ -308,13 +308,6 @@ begin
 
     TargetFrameRate := Platform_GetDisplayRefreshRate;
 
-    {$ifdef MSWINDOWS}
-    if (Self.FrameRateStyle=frsSyncedWithMonitor) and Assigned(wglSwapIntervalEXT) then
-    begin
-      wglSwapIntervalEXT(1);
-    end;
-    {$endif}
-
     if Platform_CommandLine('s') then
       NoSound := True;
     if not NoSound then
@@ -473,7 +466,7 @@ var
 begin
   Now := Platform_GetTime;
 
-  if Now>=NextFrameTime then
+  if (Now>=NextFrameTime) {$ifdef minimal}or (Self.FrameRateStyle=frsSyncedWithMonitor){$endif} then
   begin  //Delay until next frame
     if (FrameRateStyle<>frsFree) then //But not if set to "Free"
     begin
@@ -484,17 +477,6 @@ begin
       if NextFrameTime<Now-1 then
         NextFrameTime := Now;
       NextFrameTime := NextFrameTime + (1.0 / TargetFrameRate);
-      {$ifdef MSWINDOWS}
-      if Self.FrameRateStyle=frsSyncedWithMonitor then
-      begin
-        if Assigned(wglSwapIntervalEXT) then
-          // If wglSwapIntervalEXT has been called then vsync-wait is enabled in driver already so we should not wait
-          NextFrameTime := Now
-        else
-          // but if wglSwapIntervalEXT is not available (Parallels on Mac) then make default to 60fps
-          NextFrameTime := NextFrameTime + (1.0 / 60);
-      end;
-      {$endif}
     end;
 
     UpdateTime;
@@ -534,8 +516,13 @@ begin
     if FrameRateStyle<>frsFree then
     begin //Give remaining time back to the OS to avoid 100% cpu pressure
       Remaining := Trunc((NextFrameTime - Platform_GetTime) * 1000);
-      if Remaining>0 then
-        Platform_Sleep(Remaining);
+      if (Self.FrameRateStyle=frsSyncedWithMonitor) and Assigned(Platform_SyncWithMonitor) then
+        Platform_SyncWithMonitor(Remaining)
+      else
+      begin
+        if Remaining>0 then
+          Platform_Sleep(Remaining);
+      end;
     end;
     {$endif}
   end;

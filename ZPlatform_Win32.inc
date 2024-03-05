@@ -48,6 +48,15 @@ uses ZOpenGL, ZLog, {$ifdef FPC}Windows{$else}Winapi.Windows{$endif}, ZApplicati
  {$ENDIF}
  ;
 
+const
+  DwmName = 'DWMAPI.DLL';
+
+var
+  DwmModule : HMODULE;
+
+var
+  DwmFlush : function : longint; stdcall;
+  DwmIsCompositionEnabled : function(var pfEnabled: LongBool): longint; stdcall;
 
 //gl code based on, http://www.sulaco.co.za
 
@@ -318,6 +327,7 @@ var
   DesktopSize : TRect;
   WinX,WinY,DesktopPixelDepth : integer;
   UseFullScreenWindow : boolean;
+  dwmEnabled : LongBool;
 begin
   GetClientRect(GetDesktopWindow,DesktopSize);
 
@@ -556,6 +566,23 @@ begin
   //Must have initial mouseposition in screensaver mode
   GetCursorPos(LastMouse);
   {$endif}
+
+  if DwmModule = 0 then
+  begin
+    DwmModule := LoadLibrary(DwmName);
+    if DwmModule<>0 then
+    begin
+      DwmFlush := GetProcAddress(DwmModule, 'DwmFlush');
+      DwmIsCompositionEnabled := GetProcAddress(DwmModule, 'DwmIsCompositionEnabled');
+    end;
+  end;
+
+  if (TZApplication(ZApp).FrameRateStyle=frsSyncedWithMonitor) and Assigned(wglSwapIntervalEXT) then
+  begin
+    // Only call wglSwapIntervalEXT if dwm is not enabled
+    if (not Assigned(DwmIsCompositionEnabled)) or (not ((DwmIsCompositionEnabled(dwmEnabled)=0) and dwmEnabled)) then
+      wglSwapIntervalEXT(1);
+  end;
 
   Result := h_Wnd;
 end;
@@ -1398,8 +1425,25 @@ begin
   Result := wglGetProcAddress(P);
 end;
 
+procedure Win32Platform_SyncWithMonitor(const Delay : integer);
+var
+  enabled : LongBool;
+begin
+  if Assigned(DwmIsCompositionEnabled) and (DwmIsCompositionEnabled(enabled)=0) and enabled then
+    // If DWM is available then use that
+    DWMFlush
+  else
+  begin
+    // Else rely on wglSwapIntervalEXT. Use sleep as last solution.
+    if not Assigned(wglSwapIntervalEXT) then
+      Platform_Sleep(Delay);
+  end;
+end;
+
 procedure Platform_InitGlobals;
 begin
+  Platform_SyncWithMonitor := Win32Platform_SyncWithMonitor;
+
   {$ifdef zzdc_screensaver}
   InitScreenSaver;
   {$endif}
@@ -1459,7 +1503,7 @@ begin
             ZStrConvertInt(ScreenModes[I].H, PAnsiChar(@Tmp1));
             ZStrCat(Str, Tmp1);
           end;
-          SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, Integer(@Str));
+          SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_ADDSTRING, 0, IntPtr(@Str));
         end;
         SendDlgItemMessageA(Dialog, ID_COMBOBOX, CB_SETCURSEL, byte(App.ScreenMode), 0);
 
@@ -1713,7 +1757,7 @@ type
   HINTERNET = Pointer;
   PInternetAsyncResult = ^TInternetAsyncResult;
   TInternetAsyncResult = packed record
-    dwResult: DWORD; { the HINTERNET, DWORD or BOOL return code from an async API }
+    dwResult: DWORD_PTR; { the HINTERNET, DWORD or BOOL return code from an async API }
     dwError: DWORD; { dwError - the error code if the API failed }
   end;
 
@@ -1806,7 +1850,7 @@ begin
         nil,nil,INTERNET_FLAG_ASYNC);
       InternetSetStatusCallback(SessionHandle,@NetCallBack);
     end;
-    InternetOpenUrlA(SessionHandle,Url,nil,0,0,Cardinal(WebOpen));
+    InternetOpenUrlA(SessionHandle,Url,nil,0,0,IntPtr(WebOpen));
   end;
   {$ifndef minimal}
   ZLog.GetLog('Platform').Write('Net open: ' + Url);
