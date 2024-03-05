@@ -5070,25 +5070,6 @@ begin
 end;
 
 procedure TEditorForm.SwitchToStyle(const StyleName : string; const StyleHandle : TStyleManager.TStyleServicesHandle);
-
-{  procedure RecolorHighlighter(H : TSynCustomHighlighter);
-  var
-    I : integer;
-    A : TSynHighlighterAttributes;
-  begin
-    H.WhitespaceAttribute.Background := StyleServices.GetSystemColor(clWindow);
-    for I := 0 to H.AttrCount-1 do
-    begin
-      A := H.Attribute[I];
-      if A.Style=[fsBold] then
-        A.Foreground := StyleServices.GetSystemColor(clWindowText)
-      else if A.Style=[fsItalic] then
-        A.Foreground := StyleServices.GetSystemColor(clGrayText)
-      else
-        A.Foreground := StyleServices.GetSystemColor(clWindowText);
-    end;
-  end;}
-
 begin
   //Make sure we leave the currently selected component because nodes will be recreated
   Tree.Selected := nil;
@@ -5100,9 +5081,6 @@ begin
   end
   else
     TStyleManager.SetStyle( StyleHandle );
-  Application.ProcessMessages;
-//  RecolorHighlighter(ExprSynEdit.Highlighter);
-//  RecolorHighlighter(ShaderSynEdit.Highlighter);
 end;
 
 procedure TEditorForm.OnChooseStyleMenuItemClick(Sender: TObject);
@@ -5111,7 +5089,12 @@ var
 begin
   M := (Sender as TMenuItem);
   M.Checked := True;
-  SwitchToStyle(M.Hint,nil);
+
+  TThread.ForceQueue(nil,
+    procedure
+    begin
+      SwitchToStyle(M.Hint,nil);
+    end);
 end;
 
 procedure TEditorForm.OpenStyleMenuItemClick(Sender: TObject);

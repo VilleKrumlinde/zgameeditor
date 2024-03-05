@@ -947,7 +947,7 @@ procedure TZComponentTreeView.MyCustomAdvancedDrawItem(Sender: TCustomTreeView; 
 begin
   if Node=LockShowNode then
     Canvas.Font.Style := [fsBold]
-  else if Assigned((Node as TZComponentTreeNode).Component) and (Node as TZComponentTreeNode).Component.DesignDisable then
+  else if (Node is TZComponentTreeNode) and Assigned((Node as TZComponentTreeNode).Component) and (Node as TZComponentTreeNode).Component.DesignDisable then
     Canvas.Font.Style := [fsStrikeOut]
   else
     Canvas.Font.Style := [];
