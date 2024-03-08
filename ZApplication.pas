@@ -39,10 +39,13 @@ resourcestring
   strContent = 'Content';
   strCaption = 'Caption';
   strDeltaTime = 'DeltaTime';
+  strDeltaTimeHint = 'Read only. The time in seconds that has passed since last frame was rendered.';
   strTime = 'Time';
+  strTimeHint = 'Read only. Time in seconds since application was started.';
   strGLBase = 'GLBase';
   strThreadsEnabled = 'ThreadsEnabled';
   strFpsCounter = 'FpsCounter';
+  strFpsCounterHint = 'Read only. The current number of frames per second.';
   strCurrentRenderPass = 'CurrentRenderPass';
   strMousePosition = 'MousePosition';
   strMouseWheelDelta = 'MouseWheelDelta';
@@ -1219,9 +1222,11 @@ begin
     List.GetLast.NotifyWhenChanged := @AppCaptionChanged;
   List.AddProperty({$IFNDEF MINIMAL}strDeltaTime,{$ENDIF}(@DeltaTime), zptFloat);
     List.GetLast.NeverPersist := True;
+    List.GetLast.Hint := strDeltaTimeHint;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}strTime,{$ENDIF}(@Time), zptFloat);
     List.GetLast.NeverPersist := True;
+    List.GetLast.Hint := strTimeHint;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 
   List.AddProperty({$IFNDEF MINIMAL}strGLBase,{$ENDIF}(@GLBase), zptByte);
@@ -1233,6 +1238,7 @@ begin
 
   List.AddProperty({$IFNDEF MINIMAL}strFpsCounter,{$ENDIF}(@FpsCounter), zptFloat);
     List.GetLast.NeverPersist := True;
+    List.GetLast.Hint := strFpsCounterHint;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}strCurrentRenderPass,{$ENDIF}(@CurrentRenderPass), zptInteger);
     List.GetLast.NeverPersist := True;
