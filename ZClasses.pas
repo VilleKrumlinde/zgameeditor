@@ -327,6 +327,7 @@ type
     HideInGui : boolean;        //Visa inte denna prop i gui
     ReturnType : TZcDataType;      //For expresssions: return type of expression
     ExpressionKind : TExpressionKind;  //For expressions: kind of expression
+    Hint : string; //For editor tooltips: a short explanation of this property
     procedure SetChildClasses(const C : array of TZComponentClass);
     procedure SetOptions(const O : array of string);
     constructor Create;

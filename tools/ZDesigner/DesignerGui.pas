@@ -382,7 +382,7 @@ begin
   NameLabel.Caption := Prop.Name;
   NameLabel.Parent := NamePanel;}
   NamePanel.Caption := ' ' + Prop.Name;
-  NamePanel.Hint := Prop.Name;
+  NamePanel.Hint := Prop.Hint;
 
   if IsReadOnlyProp then
     NamePanel.Font.Color := clGrayText
