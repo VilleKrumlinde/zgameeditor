@@ -26,6 +26,11 @@ interface
 
 uses ZClasses,Meshes;
 
+resourcestring
+  strCat1 = 'Cat1';
+  strCat2 = 'Cat2';
+  strAction = 'Action';
+
 type
   //Action to take when colliding
   TCollisionAction =
@@ -505,11 +510,11 @@ end;
 procedure TDefineCollision.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Cat1',{$ENDIF}(@Cat1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strCat1,{$ENDIF}(@Cat1), zptInteger);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Cat2',{$ENDIF}(@Cat2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strCat2,{$ENDIF}(@Cat2), zptInteger);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Action',{$ENDIF}(@Action), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strAction,{$ENDIF}(@Action), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Collision','Stop']);{$endif}
 end;
 

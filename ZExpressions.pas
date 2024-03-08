@@ -33,6 +33,69 @@ interface
 
 uses ZClasses;
 
+resourcestring
+  strExpression = 'Expression';
+  strConstant = 'Constant';
+  strKind = 'Kind';
+  strDestination = 'Destination';
+  strType = 'Type';
+  strValue = 'Value';
+  strIntValue = 'IntValue';
+  strStringValue = 'StringValue';
+  strModelValue = 'ModelValue';
+  strByteValue = 'ByteValue';
+  strPointerValue = 'PointerValue';
+  strDimensions = 'Dimensions';
+  strSizeDim1 = 'SizeDim1';
+  strSizeDim2 = 'SizeDim2';
+  strSizeDim3 = 'SizeDim3';
+  strPersistent = 'Persistent';
+  strValues = 'Values';
+  strSize = 'Size';
+  strIndex = 'Index';
+  strOffset = 'Offset';
+  strLib = 'Lib';
+  strHasFrame = 'HasFrame';
+  strHasReturnValue = 'HasReturnValue';
+  strArguments = 'Arguments';
+  strSource = 'Source';
+  strUseThreadLock = 'UseThreadLock';
+  strHasInitializer = 'HasInitializer';
+  strGlobalAreaSize = 'GlobalAreaSize';
+  strManagedVariables = 'ManagedVariables';
+  strModuleName = 'ModuleName';
+  strCallingConvention = 'CallingConvention';
+  strBeforeInitExp = 'BeforeInitExp';
+  strDefinitionsFile = 'DefinitionsFile';
+  strFuncName = 'FuncName';
+  strArgCount = 'ArgCount';
+  strReturnType = 'ReturnType';
+  strArgTypes = 'ArgTypes';
+  strComponent = 'Component';
+  strPropId = 'PropId';
+  strDefinedIndex = 'DefinedIndex';
+  strDefinedName = 'DefinedName';
+  strComponentRef = 'ComponentRef';
+  strInvokeClassId = 'InvokeClassId';
+  strInvokeArgCount = 'InvokeArgCount';
+  strInvokedItemList = 'InvokedItemList';
+  strIsValue = 'IsValue';
+  strSize1 = 'Size1';
+  strSize2 = 'Size2';
+  strSize3 = 'Size3';
+  strLowBound = 'LowBound';
+  strHighBound = 'HighBound';
+  strDefaultOrExit = 'DefaultOrExit';
+  strJumps = 'Jumps';
+  strTheClass = 'TheClass';
+  strSizeInBytes = 'SizeInBytes';
+  strManagedFields = 'ManagedFields';
+  strBaseClass = 'BaseClass';
+  strVmt = 'Vmt';
+  strDefinedInLib = 'DefinedInLib';
+  strInitializerIndex = 'InitializerIndex';
+  strVmtIndex = 'VmtIndex';
+
 type
   TExpBase = class;
 
@@ -846,7 +909,7 @@ end;
 procedure TZExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strExpression,{$ENDIF}(@Expression), zptExpression);
 end;
 
 procedure TZExpression.Execute;
@@ -859,7 +922,7 @@ end;
 procedure TExpConstantFloat.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}(@Constant), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strConstant,{$ENDIF}(@Constant), zptFloat);
 end;
 
 procedure TExpConstantFloat.Execute(Env : PExecutionEnvironment);
@@ -879,7 +942,7 @@ end;
 procedure TExpConstantInt.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Constant',{$ENDIF}(@Constant), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strConstant,{$ENDIF}(@Constant), zptInteger);
 end;
 
 procedure TExpConstantInt.Execute(Env : PExecutionEnvironment);
@@ -899,7 +962,7 @@ end;
 procedure TExpOpBinaryBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
 end;
 
 {$ifndef minimal}
@@ -968,9 +1031,9 @@ end;
 procedure TExpJump.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Destination',{$ENDIF}(@Destination), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strDestination,{$ENDIF}(@Destination), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strType,{$ENDIF}(@_Type), zptByte);
 end;
 
 procedure TExpJump.Execute(Env : PExecutionEnvironment);
@@ -1049,20 +1112,20 @@ end;
 procedure TDefineVariable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strValue,{$ENDIF}(@Value), zptFloat);
     //Variabler är ingen ide att spara, de måste sättas ifrån kod
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strIntValue,{$ENDIF}(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strStringValue,{$ENDIF}(@StringValue), zptString);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'ModelValue',{$ENDIF}(@ModelValue), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strModelValue,{$ENDIF}(@ModelValue), zptComponentRef);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strByteValue,{$ENDIF}(@ByteValue), zptByte);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'PointerValue',{$ENDIF}(@PointerValue), zptPointer);
+  List.AddProperty({$IFNDEF MINIMAL}strPointerValue,{$ENDIF}(@PointerValue), zptPointer);
     List.GetLast.NeverPersist := True;
     List.GetLast.IsManagedTarget := True;
     {$ifdef zgeviz} //In zgeviz whole apps are cloned and then copy pointervalue is not correct behavior
@@ -1097,7 +1160,7 @@ end;
 procedure TExpFuncCallBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
 end;
 
 {$ifndef minimal}
@@ -1338,19 +1401,19 @@ procedure TDefineConstant.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   //Defineconstant class or properties are never stored in binary
-  List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strValue,{$ENDIF}(@Value), zptFloat);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strIntValue,{$ENDIF}(@IntValue), zptInteger);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'StringValue',{$ENDIF}(@StringValue), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strStringValue,{$ENDIF}(@StringValue), zptString);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ByteValue',{$ENDIF}(@ByteValue), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strByteValue,{$ENDIF}(@ByteValue), zptByte);
    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
    {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True; {$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromBinary := True; {$endif}
@@ -1374,13 +1437,13 @@ end;
 procedure TDefineArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}(@Dimensions), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strDimensions,{$ENDIF}(@Dimensions), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['One','Two','Three']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SizeDim1',{$ENDIF}(@SizeDim1), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'SizeDim2',{$ENDIF}(@SizeDim2), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'SizeDim3',{$ENDIF}(@SizeDim3), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Persistent',{$ENDIF}(@Persistent), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Values',{$ENDIF}(@Values), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strSizeDim1,{$ENDIF}(@SizeDim1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSizeDim2,{$ENDIF}(@SizeDim2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSizeDim3,{$ENDIF}(@SizeDim3), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strPersistent,{$ENDIF}(@Persistent), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strValues,{$ENDIF}(@Values), zptBinary);
 end;
 
 destructor TDefineArray.Destroy;
@@ -1547,7 +1610,7 @@ end;
 procedure TExpStackFrame.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Size',{$ENDIF}(@Size), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSize,{$ENDIF}(@Size), zptInteger);
 end;
 
 procedure TExpStackFrame.Execute(Env : PExecutionEnvironment);
@@ -1566,8 +1629,8 @@ end;
 procedure TExpAccessLocal.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}(@Index), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strIndex,{$ENDIF}(@Index), zptInteger);
 end;
 
 procedure TExpAccessLocal.Execute(Env : PExecutionEnvironment);
@@ -1601,9 +1664,9 @@ end;
 procedure TExpAccessGlobal.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}@Kind, zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Offset',{$ENDIF}@Offset, zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}@Lib, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}@Kind, zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strOffset,{$ENDIF}@Offset, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strLib,{$ENDIF}@Lib, zptComponentRef);
 end;
 
 procedure TExpAccessGlobal.Execute(Env : PExecutionEnvironment);
@@ -1637,10 +1700,10 @@ end;
 procedure TExpReturn.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'HasFrame',{$ENDIF}(@HasFrame), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'HasReturnValue',{$ENDIF}(@HasReturnValue), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Arguments',{$ENDIF}(@Arguments), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}(@Lib), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strHasFrame,{$ENDIF}(@HasFrame), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strHasReturnValue,{$ENDIF}(@HasReturnValue), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strArguments,{$ENDIF}(@Arguments), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strLib,{$ENDIF}(@Lib), zptComponentRef);
 end;
 
 {$warnings off}
@@ -1723,7 +1786,7 @@ end;
 procedure TExpMisc.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
 end;
 
 procedure TExpMisc.Execute(Env : PExecutionEnvironment);
@@ -1832,15 +1895,15 @@ end;
 procedure TZLibrary.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}@Source, zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strSource,{$ENDIF}@Source, zptExpression);
     {$ifndef minimal}List.GetLast.ExpressionKind := ekiLibrary;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'UseThreadLock',{$ENDIF}@UseThreadLock, zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'HasInitializer',{$ENDIF}@HasInitializer, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strUseThreadLock,{$ENDIF}@UseThreadLock, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strHasInitializer,{$ENDIF}@HasInitializer, zptBoolean);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'GlobalAreaSize',{$ENDIF}@GlobalAreaSize, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strGlobalAreaSize,{$ENDIF}@GlobalAreaSize, zptInteger);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'ManagedVariables',{$ENDIF}@ManagedVariables, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strManagedVariables,{$ENDIF}@ManagedVariables, zptBinary);
    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
    {$ifndef minimal}List.GetLast.ExcludeFromXml := True;{$endif}
 end;
@@ -1958,8 +2021,8 @@ end;
 procedure TExpUserFuncCall.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}(@Lib), zptComponentRef);
-  List.AddProperty({$IFNDEF MINIMAL}'Index',{$ENDIF}(@Index), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strLib,{$ENDIF}(@Lib), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strIndex,{$ENDIF}(@Index), zptInteger);
 end;
 
 procedure TExpUserFuncCall.Execute(Env : PExecutionEnvironment);
@@ -1976,7 +2039,7 @@ end;
 procedure TExpConvert.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
 end;
 
 procedure TExpConvert.Execute(Env : PExecutionEnvironment);
@@ -2064,7 +2127,7 @@ end;
 procedure TDefineVariableBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}@_Type.Kind, zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strType,{$ENDIF}@_Type.Kind, zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['float','int','string','model','byte','mat4','vec2','vec3','vec4','xptr']);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName:=True;{$endif}
 end;
@@ -2089,7 +2152,7 @@ end;
 procedure TExpStringConstant.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$ifndef minimal}'Value',{$ENDIF}(@Value), zptString);
+  List.AddProperty({$ifndef minimal}strValue,{$ENDIF}(@Value), zptString);
 end;
 
 { TExpStringConCat }
@@ -2164,13 +2227,13 @@ end;
 procedure TZExternalLibrary.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ModuleName',{$ENDIF}(@ModuleName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strModuleName,{$ENDIF}(@ModuleName), zptString);
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
     List.GetLast.IsManagedTarget := True;
-  List.AddProperty({$IFNDEF MINIMAL}'CallingConvention',{$ENDIF}(@CallingConvention), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strCallingConvention,{$ENDIF}(@CallingConvention), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Stdcall','Cdecl']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'BeforeInitExp',{$ENDIF}(@BeforeInitExp), zptExpression);
-  List.AddProperty({$IFNDEF MINIMAL}'Source',{$ENDIF}(@Source), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strBeforeInitExp,{$ENDIF}(@BeforeInitExp), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strSource,{$ENDIF}(@Source), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
 '//Import a DLL-library by setting ModuleName to name of the DLL'#13#10 +
@@ -2183,7 +2246,7 @@ begin
     {$endif}
 
   {$ifndef minimal}
-  List.AddProperty({$IFNDEF MINIMAL}'DefinitionsFile',{$ENDIF}(@DefinitionsFile), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinitionsFile,{$ENDIF}(@DefinitionsFile), zptString);
     List.SetDesignerProperty;
   {$endif}
 end;
@@ -2246,11 +2309,11 @@ end;
 procedure TExpExternalFuncCall.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Lib',{$ENDIF}(@Lib), zptComponentRef);
-  List.AddProperty({$IFNDEF MINIMAL}'FuncName',{$ENDIF}(@FuncName), zptString);
-  List.AddProperty({$IFNDEF MINIMAL}'ArgCount',{$ENDIF}(@ArgCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'ReturnType',{$ENDIF}(@ReturnType), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'ArgTypes',{$ENDIF}(@ArgTypes), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strLib,{$ENDIF}(@Lib), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strFuncName,{$ENDIF}(@FuncName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strArgCount,{$ENDIF}(@ArgCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strReturnType,{$ENDIF}(@ReturnType), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strArgTypes,{$ENDIF}(@ArgTypes), zptString);
 end;
 
 {$ifndef minimal}
@@ -2960,7 +3023,7 @@ end;
 procedure TExpLoadComponent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Component',{$ENDIF}(@Component), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strComponent,{$ENDIF}(@Component), zptComponentRef);
 end;
 
 procedure TExpLoadComponent.Execute(Env : PExecutionEnvironment);
@@ -2973,7 +3036,7 @@ end;
 procedure TExpLoadPropOffset.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'PropId',{$ENDIF}(@PropId), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strPropId,{$ENDIF}(@PropId), zptInteger);
 end;
 
 procedure TExpLoadPropOffset.Execute(Env : PExecutionEnvironment);
@@ -2998,11 +3061,11 @@ end;
 procedure TExpLoadModelDefined.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'DefinedIndex',{$ENDIF}(@DefinedIndex), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinedIndex,{$ENDIF}(@DefinedIndex), zptInteger);
   {$ifndef minimal}
-  List.AddProperty({$IFNDEF MINIMAL}'DefinedName',{$ENDIF}(@DefinedName), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinedName,{$ENDIF}(@DefinedName), zptString);
     List.SetDesignerProperty;
-  List.AddProperty({$IFNDEF MINIMAL}'ComponentRef',{$ENDIF}@ComponentRef, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strComponentRef,{$ENDIF}@ComponentRef, zptComponentRef);
     List.SetDesignerProperty;
   {$endif}
 end;
@@ -3043,11 +3106,11 @@ end;
 procedure TExpInvokeComponent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'InvokeClassId',{$ENDIF}(@InvokeClassId), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'InvokeArgCount',{$ENDIF}(@InvokeArgCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'InvokedItemList',{$ENDIF}(@InvokedItemList), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strInvokeClassId,{$ENDIF}(@InvokeClassId), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strInvokeArgCount,{$ENDIF}(@InvokeArgCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strInvokedItemList,{$ENDIF}(@InvokedItemList), zptComponentList);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'IsValue',{$ENDIF}(@IsValue), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strIsValue,{$ENDIF}(@IsValue), zptBoolean);
 end;
 
 procedure TExpInvokeComponent.Execute(Env : PExecutionEnvironment);
@@ -3105,11 +3168,11 @@ end;
 procedure TExpInitArray.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Dimensions',{$ENDIF}(@Dimensions), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Size1',{$ENDIF}(@Size1), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Size2',{$ENDIF}(@Size2), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Size3',{$ENDIF}(@Size3), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strDimensions,{$ENDIF}(@Dimensions), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strType,{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strSize1,{$ENDIF}(@Size1), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSize2,{$ENDIF}(@Size2), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSize3,{$ENDIF}(@Size3), zptInteger);
 end;
 
 procedure TExpInitArray.Execute(Env : PExecutionEnvironment);
@@ -3350,7 +3413,7 @@ end;
 procedure TExpGetRawMemElement.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strType,{$ENDIF}(@_Type), zptByte);
 end;
 
 procedure TExpGetRawMemElement.Execute(Env : PExecutionEnvironment);
@@ -3385,8 +3448,8 @@ end;
 procedure TExpArrayUtil.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Type',{$ENDIF}(@_Type), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strType,{$ENDIF}(@_Type), zptByte);
 end;
 
 procedure TExpArrayUtil.Execute(Env : PExecutionEnvironment);
@@ -3422,10 +3485,10 @@ end;
 procedure TExpSwitchTable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'LowBound',{$ENDIF}@LowBound, zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'HighBound',{$ENDIF}@HighBound, zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'DefaultOrExit',{$ENDIF}@DefaultOrExit, zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Jumps',{$ENDIF}@Jumps, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strLowBound,{$ENDIF}@LowBound, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strHighBound,{$ENDIF}@HighBound, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strDefaultOrExit,{$ENDIF}@DefaultOrExit, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strJumps,{$ENDIF}@Jumps, zptBinary);
 end;
 
 procedure TExpSwitchTable.Execute(Env: PExecutionEnvironment);
@@ -3448,7 +3511,7 @@ end;
 procedure TExpNewClassInstance.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'TheClass',{$ENDIF}@TheClass, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strTheClass,{$ENDIF}@TheClass, zptComponentRef);
 end;
 
 procedure TExpNewClassInstance.Execute(Env: PExecutionEnvironment);
@@ -3532,12 +3595,12 @@ end;
 procedure TUserClass.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'SizeInBytes',{$ENDIF}@SizeInBytes, zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'ManagedFields',{$ENDIF}@ManagedFields, zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'BaseClass',{$ENDIF}@BaseClass, zptComponentRef);
-  List.AddProperty({$IFNDEF MINIMAL}'Vmt',{$ENDIF}@Vmt, zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'DefinedInLib',{$ENDIF}@DefinedInLib, zptComponentRef);
-  List.AddProperty({$IFNDEF MINIMAL}'InitializerIndex',{$ENDIF}@InitializerIndex, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strSizeInBytes,{$ENDIF}@SizeInBytes, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strManagedFields,{$ENDIF}@ManagedFields, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strBaseClass,{$ENDIF}@BaseClass, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strVmt,{$ENDIF}@Vmt, zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinedInLib,{$ENDIF}@DefinedInLib, zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strInitializerIndex,{$ENDIF}@InitializerIndex, zptInteger);
 end;
 
 { TExpVirtualFuncCall }
@@ -3545,7 +3608,7 @@ end;
 procedure TExpVirtualFuncCall.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'VmtIndex',{$ENDIF}@VmtIndex, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strVmtIndex,{$ENDIF}@VmtIndex, zptInteger);
 end;
 
 procedure TExpVirtualFuncCall.Execute(Env: PExecutionEnvironment);

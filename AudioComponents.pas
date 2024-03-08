@@ -26,6 +26,59 @@ interface
 
 uses ZClasses,AudioPlayer;
 
+resourcestring
+  strLength = 'Length';
+  strVolume = 'Volume';
+  strBaseNoteNr = 'BaseNoteNr';
+  strOsc1Waveform = 'Osc1Waveform';
+  strOsc1NoteModifier = 'Osc1NoteModifier';
+  strOsc1PW = 'Osc1PW';
+  strUseOsc2 = 'UseOsc2';
+  strOsc2Waveform = 'Osc2Waveform';
+  strOsc2NoteModifier = 'Osc2NoteModifier';
+  strOsc2Volume = 'Osc2Volume';
+  strHardSync = 'HardSync';
+  strUseFilter = 'UseFilter';
+  strFilterCutoff = 'FilterCutoff';
+  strFilterQ = 'FilterQ';
+  strPan = 'Pan';
+  strActive = 'Active';
+  strSource = 'Source';
+  strDestination = 'Destination';
+  strAmount = 'Amount';
+  strAttackTime = 'AttackTime';
+  strDecayTime = 'DecayTime';
+  strSustainLevel = 'SustainLevel';
+  strReleaseTime = 'ReleaseTime';
+  strIsBipolar = 'IsBipolar';
+  strStyle = 'Style';
+  strSpeed = 'Speed';
+  strSample = 'Sample';
+  strSampleRepeatPosition = 'SampleRepeatPosition';
+  strUseSampleHz = 'UseSampleHz';
+  strPatternString = 'PatternString';
+  strSound = 'Sound';
+  strNoteNr = 'NoteNr';
+  strChannel = 'Channel';
+  strReplayDelay = 'ReplayDelay';
+  strByReference = 'ByReference';
+  strMusicFile = 'MusicFile';
+  strInstruments = 'Instruments';
+  strLoopPlayback = 'LoopPlayback';
+  strTempo = 'Tempo';
+  strOnPlayNote = 'OnPlayNote';
+  strNoteParam = 'NoteParam';
+  strNoteChannelParam = 'NoteChannelParam';
+  strNoteLengthParam = 'NoteLengthParam';
+  strKind = 'Kind';
+  strMusic = 'Music';
+  strExpression = 'Expression';
+  strTime = 'Time';
+  strSampleData = 'SampleData';
+  strSampleRate = 'SampleRate';
+  strSampleFormat = 'SampleFormat';
+  strSampleFileFormat = 'SampleFileFormat';
+
 type
   TSound = class(TZComponent)
   protected
@@ -173,28 +226,28 @@ var
   {$endif}
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}(@Voice.Length), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strLength,{$ENDIF}(@Voice.Length), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Volume',{$ENDIF}(@Voice.Volume), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}strVolume,{$ENDIF}(@Voice.Volume), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.25;
-  List.AddProperty({$IFNDEF MINIMAL}'BaseNoteNr',{$ENDIF}(@Voice.BaseNoteNr), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strBaseNoteNr,{$ENDIF}(@Voice.BaseNoteNr), zptFloat);
 
-  List.AddProperty({$IFNDEF MINIMAL}'Osc1Waveform',{$ENDIF}(@Voice.Osc1.Waveform), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Osc1NoteModifier',{$ENDIF}(@Voice.Osc1.NoteModifier), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Osc1PW',{$ENDIF}(@Voice.Osc1.PulseWidth), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc1Waveform,{$ENDIF}(@Voice.Osc1.Waveform), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc1NoteModifier,{$ENDIF}(@Voice.Osc1.NoteModifier), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc1PW,{$ENDIF}(@Voice.Osc1.PulseWidth), zptFloat);
 
-  List.AddProperty({$IFNDEF MINIMAL}'UseOsc2',{$ENDIF}(@Voice.UseOsc2), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'Osc2Waveform',{$ENDIF}(@Voice.Osc2.Waveform), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'Osc2NoteModifier',{$ENDIF}(@Voice.Osc2.NoteModifier), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Osc2Volume',{$ENDIF}(@Voice.Osc2Volume), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strUseOsc2,{$ENDIF}(@Voice.UseOsc2), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc2Waveform,{$ENDIF}(@Voice.Osc2.Waveform), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc2NoteModifier,{$ENDIF}(@Voice.Osc2.NoteModifier), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strOsc2Volume,{$ENDIF}(@Voice.Osc2Volume), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'HardSync',{$ENDIF}(@Voice.HardSync), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strHardSync,{$ENDIF}(@Voice.HardSync), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'UseFilter',{$ENDIF}(@Voice.UseFilter), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'FilterCutoff',{$ENDIF}(@Voice.FilterCutoff), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'FilterQ',{$ENDIF}(@Voice.FilterQ), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strUseFilter,{$ENDIF}(@Voice.UseFilter), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strFilterCutoff,{$ENDIF}(@Voice.FilterCutoff), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strFilterQ,{$ENDIF}(@Voice.FilterQ), zptFloat);
 
-  List.AddProperty({$IFNDEF MINIMAL}'Pan',{$ENDIF}(@Voice.Pan), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}strPan,{$ENDIF}(@Voice.Pan), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 0.5;
 
   {$ifndef minimal}
@@ -207,10 +260,10 @@ begin
     S := 'Mod' + Chr(Ord('0')+I);
     {$endif}
     Modulation := @Voice.Modulations[I];
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Modulation.Active), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Source',{$ENDIF}(@Modulation.Source), zptByte);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Destination',{$ENDIF}(@Modulation.Destination), zptByte);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Amount',{$ENDIF}(@Modulation.Amount), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strActive,{$ENDIF}(@Modulation.Active), zptBoolean);
+    List.AddProperty({$IFNDEF MINIMAL}S + strSource,{$ENDIF}(@Modulation.Source), zptByte);
+    List.AddProperty({$IFNDEF MINIMAL}S + strDestination,{$ENDIF}(@Modulation.Destination), zptByte);
+    List.AddProperty({$IFNDEF MINIMAL}S + strAmount,{$ENDIF}(@Modulation.Amount), zptFloat);
   end;
 
   for I := 0 to High(Voice.Envelopes[0]) do
@@ -219,12 +272,12 @@ begin
     S := 'Env' + Chr(Ord('0')+I);
     {$endif}
     Envelope := @Voice.Envelopes[0,I];
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Envelope.Active), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'AttackTime',{$ENDIF}(@Envelope.AttackTime), zptFloat);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'DecayTime',{$ENDIF}(@Envelope.DecayTime), zptFloat);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'SustainLevel',{$ENDIF}(@Envelope.SustainLevel), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strActive,{$ENDIF}(@Envelope.Active), zptBoolean);
+    List.AddProperty({$IFNDEF MINIMAL}S + strAttackTime,{$ENDIF}(@Envelope.AttackTime), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strDecayTime,{$ENDIF}(@Envelope.DecayTime), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strSustainLevel,{$ENDIF}(@Envelope.SustainLevel), zptFloat);
       List.GetLast.DefaultValue.FloatValue := 1.0;
-    List.AddProperty({$IFNDEF MINIMAL}S + 'ReleaseTime',{$ENDIF}(@Envelope.ReleaseTime), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strReleaseTime,{$ENDIF}(@Envelope.ReleaseTime), zptFloat);
   end;
 
   for I := 0 to High(Voice.Lfos) do
@@ -233,10 +286,10 @@ begin
     S := 'Lfo' + Chr(Ord('0')+I);
     {$endif}
     Lfo := @Voice.Lfos[I];
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Active',{$ENDIF}(@Lfo.Active), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'IsBipolar',{$ENDIF}(@Lfo.IsBipolar), zptBoolean);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Style',{$ENDIF}(@Lfo.Style), zptByte);
-    List.AddProperty({$IFNDEF MINIMAL}S + 'Speed',{$ENDIF}(@Lfo.Speed), zptFloat);
+    List.AddProperty({$IFNDEF MINIMAL}S + strActive,{$ENDIF}(@Lfo.Active), zptBoolean);
+    List.AddProperty({$IFNDEF MINIMAL}S + strIsBipolar,{$ENDIF}(@Lfo.IsBipolar), zptBoolean);
+    List.AddProperty({$IFNDEF MINIMAL}S + strStyle,{$ENDIF}(@Lfo.Style), zptByte);
+    List.AddProperty({$IFNDEF MINIMAL}S + strSpeed,{$ENDIF}(@Lfo.Speed), zptFloat);
   end;
 
   {$ifndef minimal}
@@ -244,13 +297,13 @@ begin
     TZProperty(List[I]).HideInGui := True;
   {$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}(@Voice.SampleRef), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strSample,{$ENDIF}(@Voice.SampleRef), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSample]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SampleRepeatPosition',{$ENDIF}(@Voice.SampleRepeatPosition), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'UseSampleHz',{$ENDIF}(@Voice.UseSampleHz), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strSampleRepeatPosition,{$ENDIF}(@Voice.SampleRepeatPosition), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strUseSampleHz,{$ENDIF}(@Voice.UseSampleHz), zptBoolean);
 
   {$ifndef minimal}
-  List.AddProperty({$IFNDEF MINIMAL}'PatternString',{$ENDIF}(@Self.PatternString), zptString);
+  List.AddProperty({$IFNDEF MINIMAL}strPatternString,{$ENDIF}(@Self.PatternString), zptString);
     List.SetDesignerProperty;
     List.GetLast.DefaultValue.StringValue := 'jhgfgddfgdjdgddhjhgfgddfgdjdfssh';
   {$endif}
@@ -261,12 +314,12 @@ end;
 procedure TPlaySound.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Sound',{$ENDIF}(@Sound), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strSound,{$ENDIF}(@Sound), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSound]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'NoteNr',{$ENDIF}(@NoteNr), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'Channel',{$ENDIF}(@Channel), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'ReplayDelay',{$ENDIF}(@ReplayDelay), zptFloat);
-  List.AddProperty({$IFNDEF MINIMAL}'ByReference',{$ENDIF}(@ByReference), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strNoteNr,{$ENDIF}(@NoteNr), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strChannel,{$ENDIF}(@Channel), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strReplayDelay,{$ENDIF}(@ReplayDelay), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strByReference,{$ENDIF}(@ByReference), zptBoolean);
 end;
 
 procedure TPlaySound.Execute;
@@ -386,23 +439,23 @@ end;
 procedure TMusic.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'MusicFile',{$ENDIF}(@MusicFile), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'Instruments',{$ENDIF}(@Instruments), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strMusicFile,{$ENDIF}(@MusicFile), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strInstruments,{$ENDIF}(@Instruments), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TSound]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'LoopPlayback',{$ENDIF}(@LoopPlayback), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strLoopPlayback,{$ENDIF}(@LoopPlayback), zptBoolean);
 
-  List.AddProperty({$IFNDEF MINIMAL}'Tempo',{$ENDIF}(@Tempo), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strTempo,{$ENDIF}(@Tempo), zptFloat);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'Volume',{$ENDIF}(@Volume), zptScalar);
+  List.AddProperty({$IFNDEF MINIMAL}strVolume,{$ENDIF}(@Volume), zptScalar);
     List.GetLast.DefaultValue.FloatValue := 1.0;
-  List.AddProperty({$IFNDEF MINIMAL}'OnPlayNote',{$ENDIF}(@OnPlayNote), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'NoteParam',{$ENDIF}(@NoteParam), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strOnPlayNote,{$ENDIF}(@OnPlayNote), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strNoteParam,{$ENDIF}(@NoteParam), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'NoteChannelParam',{$ENDIF}(@NoteChannelParam), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strNoteChannelParam,{$ENDIF}(@NoteChannelParam), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'NoteLengthParam',{$ENDIF}(@NoteLengthParam), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strNoteLengthParam,{$ENDIF}(@NoteLengthParam), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -486,9 +539,9 @@ end;
 procedure TMusicControl.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Kind',{$ENDIF}(@Kind), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strKind,{$ENDIF}(@Kind), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Start','Stop']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Music',{$ENDIF}(@Music), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strMusic,{$ENDIF}(@Music), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMusic]);{$endif}
 end;
 
@@ -572,7 +625,7 @@ end;
 procedure TSample.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Length',{$ENDIF}(@Length),zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strLength,{$ENDIF}(@Length),zptFloat);
 end;
 
 destructor TSample.Destroy;
@@ -609,16 +662,16 @@ end;
 procedure TSampleExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strExpression,{$ENDIF}(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//Sample : current sample (-1..1)'#13#10 +
       '//Time : current time'#13#10 +
       '//Example: this.Sample=sin(Time*((PI*2)*777));'#13#10;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Sample',{$ENDIF}(@Sample), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strSample,{$ENDIF}(@Sample), zptFloat);
     List.GetLast.NeverPersist := True;
-  List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}(@Time), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strTime,{$ENDIF}(@Time), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -663,13 +716,13 @@ end;
 procedure TSampleImport.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'SampleData',{$ENDIF}(@Self.SampleData), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'SampleRate',{$ENDIF}(@Self.SampleRate), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strSampleData,{$ENDIF}(@Self.SampleData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strSampleRate,{$ENDIF}(@Self.SampleRate), zptFloat);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SampleFormat',{$ENDIF}(@Self.SampleFormat), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strSampleFormat,{$ENDIF}(@Self.SampleFormat), zptByte);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.SetOptions(['8 bit signed','16 bit signed']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'SampleFileFormat',{$ENDIF}(@Self.SampleFileFormat), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strSampleFileFormat,{$ENDIF}(@Self.SampleFileFormat), zptByte);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.SetOptions(['RAW','OGG']);{$endif}
 end;

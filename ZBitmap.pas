@@ -26,6 +26,12 @@ interface
 
 uses ZOpenGL, ZClasses;
 
+resourcestring
+  strWidth = 'Width';
+  strHeight = 'Height';
+  strFilter = 'Filter';
+  strHandle = 'Handle';
+
 type
   TBitmapSize = (bs16,bs32,bs64,bs128,bs256,bs512,bs1024,bs2048,bs4096);
 
@@ -434,13 +440,13 @@ begin
   {$ifndef minimal}
 //  List.GetByName('Producers').SetChildClasses([TBitmapExpression,TBitmapRect,TBitmapZoomRotate]);
   {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Width',{$ENDIF}@Width, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strWidth,{$ENDIF}@Width, zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 64;
-  List.AddProperty({$IFNDEF MINIMAL}'Height',{$ENDIF}@Height, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strHeight,{$ENDIF}@Height, zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 64;
-  List.AddProperty({$IFNDEF MINIMAL}'Filter',{$ENDIF}(@Filter), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strFilter,{$ENDIF}(@Filter), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Linear','Nearest','Mipmap']);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Handle',{$ENDIF}(@Handle), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strHandle,{$ENDIF}(@Handle), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;

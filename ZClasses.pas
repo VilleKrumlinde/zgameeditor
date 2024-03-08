@@ -30,6 +30,20 @@ interface
 uses uSymTab,Contnrs,Classes,Generics.Collections;
 {$endif}
 
+resourcestring
+  strName = 'Name';
+  strComment = 'Comment';
+  strDesignDisable = 'DesignDisable';
+  strObjId = 'ObjId';
+  strChildren = 'Children';
+  strProducers = 'Producers';
+  strDefinitions = 'Definitions';
+  strOnStart = 'OnStart';
+  strOnUpdate = 'OnUpdate';
+  strOnRender = 'OnRender';
+  strOnLeave = 'OnLeave';
+  strExpression = 'Expression';
+
 type
   //Baseclasses for all central concepts in ZGE
 
@@ -1214,17 +1228,17 @@ end;
 procedure TZComponent.DefineProperties(List: TZPropertyList);
 begin
   {$IFNDEF MINIMAL}
-  List.AddProperty('Name', @Name, zptString);
+  List.AddProperty(strName, @Name, zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('Comment', @Comment, zptString);
+  List.AddProperty(strComment, @Comment, zptString);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
-  List.AddProperty('DesignDisable', @DesignDisable, zptBoolean);
+  List.AddProperty(strDesignDisable, @DesignDisable, zptBoolean);
     List.SetDesignerProperty;
     List.GetLast.NeedRefreshNodeName := True;
   {$ENDIF}
-  List.AddProperty({$IFNDEF MINIMAL}'ObjId',{$ENDIF}@ObjId, zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strObjId,{$ENDIF}@ObjId, zptInteger);
     {$IFNDEF MINIMAL}
     List.GetLast.ExcludeFromXml := True;
     List.GetLast.IsReadOnly := True;
@@ -3806,7 +3820,7 @@ end;
 procedure TLogicalGroup.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Children',{$ENDIF}@Children, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strChildren,{$ENDIF}@Children, zptComponentList);
 end;
 
 procedure TLogicalGroup.Execute;
@@ -3826,7 +3840,7 @@ end;
 procedure TContent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Producers',{$ENDIF}@Producers, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strProducers,{$ENDIF}@Producers, zptComponentList);
 end;
 
 type
@@ -3949,11 +3963,11 @@ end;
 procedure TStateBase.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}@Definitions, zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnStart',{$ENDIF}@OnStart, zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}@OnUpdate, zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}@OnRender, zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnLeave',{$ENDIF}@OnLeave, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinitions,{$ENDIF}@Definitions, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnStart,{$ENDIF}@OnStart, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnUpdate,{$ENDIF}@OnUpdate, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnRender,{$ENDIF}@OnRender, zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnLeave,{$ENDIF}@OnLeave, zptComponentList);
 end;
 
 
@@ -4265,7 +4279,7 @@ end;
 procedure TZThreadComponent.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strExpression,{$ENDIF}(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source :=
       '//int param : parameter passed in the createThread call';

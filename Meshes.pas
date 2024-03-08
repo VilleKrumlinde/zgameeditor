@@ -27,6 +27,60 @@ interface
 
 uses ZClasses, ZBitmap, ZExpressions, ZOpenGL;
 
+resourcestring
+  strCurrentRecursion = 'CurrentRecursion';
+  strDefinitions = 'Definitions';
+  strStates = 'States';
+  strOnSpawn = 'OnSpawn';
+  strOnUpdate = 'OnUpdate';
+  strOnCollision = 'OnCollision';
+  strOnRender = 'OnRender';
+  strOnRemove = 'OnRemove';
+  strBaseModel = 'BaseModel';
+  strPosition = 'Position';
+  strRotation = 'Rotation';
+  strVelocity = 'Velocity';
+  strScale = 'Scale';
+  strRotationVelocity = 'RotationVelocity';
+  strCategory = 'Category';
+  strCollisionBounds = 'CollisionBounds';
+  strCollisionOffset = 'CollisionOffset';
+  strCollisionStyle = 'CollisionStyle';
+  strRenderOrder = 'RenderOrder';
+  strClassId = 'ClassId';
+  strCollidedWith = 'CollidedWith';
+  strPersonality = 'Personality';
+  strZSamples = 'ZSamples';
+  strRadialSamples = 'RadialSamples';
+  strNoiseSpeed = 'NoiseSpeed';
+  strNoiseScale = 'NoiseScale';
+  strSymmetryX = 'SymmetryX';
+  strSymmetryY = 'SymmetryY';
+  strSymmetryZ = 'SymmetryZ';
+  strExpression = 'Expression';
+  strAutoNormals = 'AutoNormals';
+  strVertexColors = 'VertexColors';
+  strHasTexCoords = 'HasTexCoords';
+  strModel = 'Model';
+  strSpawnStyle = 'SpawnStyle';
+  strUseSpawnerPosition = 'UseSpawnerPosition';
+  strSpawnerIsParent = 'SpawnerIsParent';
+  strOfType = 'OfType';
+  strState = 'State';
+  strXCount = 'XCount';
+  strYCount = 'YCount';
+  strGrid2DOnly = 'Grid2DOnly';
+  strMeshData = 'MeshData';
+  strHasVertexColors = 'HasVertexColors';
+  strHasTextureCoords = 'HasTextureCoords';
+  strAreIndicesUncompressed = 'AreIndicesUncompressed';
+  strMesh = 'Mesh';
+  strAccumulate = 'Accumulate';
+  strCount = 'Count';
+  strRecursionCount = 'RecursionCount';
+  strOnIteration = 'OnIteration';
+  strIteration = 'Iteration';
+
 type
   PMeshVertexIndex = ^TMeshVertexIndex;
   TMeshVertexIndex = {$ifdef Android}word{$else}integer{$endif}; //word,integer
@@ -672,7 +726,7 @@ begin
   {$ifndef minimal}
   List.GetByName('Producers').SetChildClasses([TMeshProducer]);
   {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CurrentRecursion',{$ENDIF}(@CurrentRecursion), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strCurrentRecursion,{$ENDIF}(@CurrentRecursion), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
@@ -797,43 +851,43 @@ procedure TModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
 
-  List.AddProperty({$IFNDEF MINIMAL}'Definitions',{$ENDIF}(@Definitions), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'States',{$ENDIF}(@States), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strDefinitions,{$ENDIF}(@Definitions), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strStates,{$ENDIF}(@States), zptComponentList);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'OnSpawn',{$ENDIF}(@OnSpawn), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnUpdate',{$ENDIF}(@OnUpdate), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}(@OnCollision), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRender',{$ENDIF}(@OnRender), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'OnRemove',{$ENDIF}(@OnRemove), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnSpawn,{$ENDIF}(@OnSpawn), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnUpdate,{$ENDIF}(@OnUpdate), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnCollision,{$ENDIF}(@OnCollision), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnRender,{$ENDIF}(@OnRender), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnRemove,{$ENDIF}(@OnRemove), zptComponentList);
     {$ifndef minimal}{List.GetLast.SetChildClasses([TDefineVariable,TDefineConstant,TMesh,TModel,TZBitmap]);}{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'BaseModel',{$ENDIF}(@BaseModel), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strBaseModel,{$ENDIF}(@BaseModel), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Velocity',{$ENDIF}(@Velocity), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strPosition,{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strRotation,{$ENDIF}(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strVelocity,{$ENDIF}(@Velocity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strScale,{$ENDIF}(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
-  List.AddProperty({$IFNDEF MINIMAL}'RotationVelocity',{$ENDIF}(@RotationVelocity), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Category',{$ENDIF}(@Category), zptByte);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionBounds',{$ENDIF}(@CollisionBounds), zptRectf);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionOffset',{$ENDIF}(@CollisionOffset), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'CollisionStyle',{$ENDIF}(@CollisionStyle), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strRotationVelocity,{$ENDIF}(@RotationVelocity), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strCategory,{$ENDIF}(@Category), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strCollisionBounds,{$ENDIF}(@CollisionBounds), zptRectf);
+  List.AddProperty({$IFNDEF MINIMAL}strCollisionOffset,{$ENDIF}(@CollisionOffset), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strCollisionStyle,{$ENDIF}(@CollisionStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(CollisionStyleNames);{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'RenderOrder',{$ENDIF}(@RenderOrder), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strRenderOrder,{$ENDIF}(@RenderOrder), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(['Normal','Depthsorted']);{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'ClassId',{$ENDIF}(@ModelClassId), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strClassId,{$ENDIF}(@ModelClassId), zptInteger);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'CollidedWith',{$ENDIF}(@CollidedWith), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strCollidedWith,{$ENDIF}(@CollidedWith), zptComponentRef);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
 
-  List.AddProperty({$IFNDEF MINIMAL}'Personality',{$ENDIF}(@Personality), zptFloat);
+  List.AddProperty({$IFNDEF MINIMAL}strPersonality,{$ENDIF}(@Personality), zptFloat);
     List.GetLast.NeverPersist := True;
     List.GetLast.DontClone := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
@@ -966,9 +1020,9 @@ end;
 procedure TMeshSphere.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'ZSamples',{$ENDIF}(@ZSamples), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strZSamples,{$ENDIF}(@ZSamples), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
-  List.AddProperty({$IFNDEF MINIMAL}'RadialSamples',{$ENDIF}(@RadialSamples), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strRadialSamples,{$ENDIF}(@RadialSamples), zptInteger);
     List.GetLast.DefaultValue.IntegerValue := 10;
 end;
 
@@ -1121,11 +1175,11 @@ end;
 procedure TMeshNoise.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'NoiseSpeed',{$ENDIF}(@NoiseSpeed), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'NoiseScale',{$ENDIF}(@NoiseScale), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryX',{$ENDIF}(@SymmetryX), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryY',{$ENDIF}(@SymmetryY), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SymmetryZ',{$ENDIF}(@SymmetryZ), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strNoiseSpeed,{$ENDIF}(@NoiseSpeed), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strNoiseScale,{$ENDIF}(@NoiseScale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strSymmetryX,{$ENDIF}(@SymmetryX), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strSymmetryY,{$ENDIF}(@SymmetryY), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strSymmetryZ,{$ENDIF}(@SymmetryZ), zptBoolean);
 end;
 
 procedure TMeshNoise.ProduceOutput(Content : TContent; Stack: TZArrayList);
@@ -1179,7 +1233,7 @@ end;
 procedure TMeshExpression.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Expression',{$ENDIF}(@Expression), zptExpression);
+  List.AddProperty({$IFNDEF MINIMAL}strExpression,{$ENDIF}(@Expression), zptExpression);
     {$ifndef minimal}
     List.GetLast.DefaultValue.ExpressionValue.Source := '//V : current vertex'#13#10+
       '//N : current normal (turn off AutoNormals when modifying normals)'#13#10+
@@ -1187,10 +1241,10 @@ begin
       '//TexCoord : current texture coordinate (turn on HasTexCoords)';
     List.GetLast.ExpressionKind := ekiMesh;
     {$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'AutoNormals',{$ENDIF}(@AutoNormals), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strAutoNormals,{$ENDIF}(@AutoNormals), zptBoolean);
     List.GetLast.DefaultValue.BooleanValue := True;
-  List.AddProperty({$IFNDEF MINIMAL}'VertexColors',{$ENDIF}(@VertexColors), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'HasTexCoords',{$ENDIF}(@HasTexCoords), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strVertexColors,{$ENDIF}(@VertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strHasTexCoords,{$ENDIF}(@HasTexCoords), zptBoolean);
 end;
 
 procedure TMeshExpression.VertexTask(Task: pointer);
@@ -1312,7 +1366,7 @@ end;
 procedure TMeshProducer.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strScale,{$ENDIF}(@Scale), zptVector3f);
     List.GetLast.DefaultValue.Vector3fValue := ZMath.UNIT_XYZ3;
 end;
 
@@ -1328,18 +1382,18 @@ const
 procedure TSpawnModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Model',{$ENDIF}(@Model), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strModel,{$ENDIF}(@Model), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Scale',{$ENDIF}(@Scale), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strPosition,{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strRotation,{$ENDIF}(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strScale,{$ENDIF}(@Scale), zptVector3f);
     VecCopy3(ZMath.UNIT_XYZ3,List.GetLast.DefaultValue.Vector3fValue);
-  List.AddProperty({$IFNDEF MINIMAL}'SpawnStyle',{$ENDIF}(@SpawnStyle), zptByte);
+  List.AddProperty({$IFNDEF MINIMAL}strSpawnStyle,{$ENDIF}(@SpawnStyle), zptByte);
     {$ifndef minimal}List.GetLast.SetOptions(SpawnStyleNames);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'UseSpawnerPosition',{$ENDIF}(@UseSpawnerPosition), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'SpawnerIsParent',{$ENDIF}(@SpawnerIsParent), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strUseSpawnerPosition,{$ENDIF}(@UseSpawnerPosition), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strSpawnerIsParent,{$ENDIF}(@SpawnerIsParent), zptBoolean);
 end;
 
 
@@ -1564,7 +1618,7 @@ end;
 procedure TRemoveModel.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Model',{$ENDIF}(@Model), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strModel,{$ENDIF}(@Model), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
     {$ifndef minimal}List.GetLast.NeedRefreshNodeName := True;{$endif}
 end;
@@ -1594,7 +1648,7 @@ end;
 procedure TRemoveAllModels.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OfType',{$ENDIF}(@OfType), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strOfType,{$ENDIF}(@OfType), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModel]);{$endif}
 end;
 
@@ -1634,7 +1688,7 @@ end;
 procedure TSetModelState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'State',{$ENDIF}(@State), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strState,{$ENDIF}(@State), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TModelState]);{$endif}
 end;
 
@@ -1667,7 +1721,7 @@ end;
 procedure TModelState.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'OnCollision',{$ENDIF}(@OnCollision), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strOnCollision,{$ENDIF}(@OnCollision), zptComponentList);
 end;
 
 { TMeshBox }
@@ -1675,9 +1729,9 @@ end;
 procedure TMeshBox.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'XCount',{$ENDIF}(@XCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'YCount',{$ENDIF}(@YCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'Grid2DOnly',{$ENDIF}(@Grid2DOnly), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strXCount,{$ENDIF}(@XCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strYCount,{$ENDIF}(@YCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strGrid2DOnly,{$ENDIF}(@Grid2DOnly), zptBoolean);
 end;
 
 procedure TMeshBox.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1772,11 +1826,11 @@ end;
 procedure TMeshImport.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}(@MeshData), zptBinary);
-  List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}(@HasVertexColors), zptBoolean);
-  List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}(@HasTextureCoords), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strMeshData,{$ENDIF}(@MeshData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}strHasVertexColors,{$ENDIF}(@HasVertexColors), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strHasTextureCoords,{$ENDIF}(@HasTextureCoords), zptBoolean);
   {$IFDEF HugeMeshes}
-  List.AddProperty({$IFNDEF MINIMAL}'AreIndicesUncompressed',{$ENDIF}@AreIndicesUncompressed, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strAreIndicesUncompressed,{$ENDIF}@AreIndicesUncompressed, zptBoolean);
   {$ENDIF}
 end;
 
@@ -1955,7 +2009,7 @@ end;
 procedure TMeshLoad.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Mesh',{$ENDIF}(@Mesh), zptComponentRef);
+  List.AddProperty({$IFNDEF MINIMAL}strMesh,{$ENDIF}(@Mesh), zptComponentRef);
     {$ifndef minimal}List.GetLast.SetChildClasses([TMesh]);{$endif}
 end;
 
@@ -2005,9 +2059,9 @@ end;
 procedure TMeshTransform.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Accumulate',{$ENDIF}(@Accumulate), zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}strPosition,{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strRotation,{$ENDIF}(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strAccumulate,{$ENDIF}(@Accumulate), zptBoolean);
 end;
 
 procedure TMeshTransform.ProduceOutput(Content : TContent; Stack: TZArrayList);
@@ -2038,14 +2092,14 @@ end;
 procedure TMeshLoop.DefineProperties(List: TZPropertyList);
 begin
   inherited;
-  List.AddProperty({$IFNDEF MINIMAL}'Count',{$ENDIF}(@Count), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'RecursionCount',{$ENDIF}(@RecursionCount), zptInteger);
-  List.AddProperty({$IFNDEF MINIMAL}'OnIteration',{$ENDIF}(@OnIteration), zptComponentList);
-  List.AddProperty({$IFNDEF MINIMAL}'Iteration',{$ENDIF}(@Iteration), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strCount,{$ENDIF}(@Count), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strRecursionCount,{$ENDIF}(@RecursionCount), zptInteger);
+  List.AddProperty({$IFNDEF MINIMAL}strOnIteration,{$ENDIF}(@OnIteration), zptComponentList);
+  List.AddProperty({$IFNDEF MINIMAL}strIteration,{$ENDIF}(@Iteration), zptInteger);
     List.GetLast.NeverPersist:=True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'Position',{$ENDIF}(@Position), zptVector3f);
-  List.AddProperty({$IFNDEF MINIMAL}'Rotation',{$ENDIF}(@Rotation), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strPosition,{$ENDIF}(@Position), zptVector3f);
+  List.AddProperty({$IFNDEF MINIMAL}strRotation,{$ENDIF}(@Rotation), zptVector3f);
 end;
 
 procedure TMeshLoop.ProduceOutput(Content : TContent; Stack: TZArrayList);
