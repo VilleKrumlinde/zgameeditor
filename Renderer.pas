@@ -104,7 +104,7 @@ type
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
-    ProgHandle,VShaderHandle,FShaderHandle,GShaderHandle : cardinal;
+    ProgHandle: cardinal;
     VertexShaderSource : TPropString;
     FragmentShaderSource : TPropString;
     GeometryShaderSource : TPropString;
@@ -1811,11 +1811,20 @@ procedure TShader.ReInit;
     {$ifndef minimal}CheckGLError;{$endif}
   end;
 
+  procedure InDestroy(H : PGLuint);
+  begin
+    if H^=0 then
+      Exit;
+    glDetachShader(ProgHandle,H^);
+    glDeleteShader(H^);
+  end;
+
 const
   TexVar : array[0..4] of ansichar = 'tex'#0#0;
 var
   I,J : integer;
   Driver : TGLDriverBase;
+  VShaderHandle,FShaderHandle,GShaderHandle : cardinal;
 begin
   CleanUp;
 
@@ -1840,6 +1849,10 @@ begin
     {$ifndef minimal}
     if Assigned(Self.ZApp.OnShaderCacheAdd) then Self.ZApp.OnShaderCacheAdd(Self);
     {$endif}
+
+    InDestroy(@VShaderHandle);
+    InDestroy(@FShaderHandle);
+    InDestroy(@GShaderHandle);
   end;
 
   //Initialize uniform variables for accessing multi-textures
@@ -2025,16 +2038,6 @@ begin
 end;
 
 procedure TShader.CleanUp;
-
-  procedure InDestroy(H : PGLuint);
-  begin
-    if H^=0 then
-      Exit;
-    glDetachShader(ProgHandle,H^);
-    glDeleteShader(H^);
-    H^ := 0;
-  end;
-
 begin
   {$ifndef minimal}
   if HasExternalHandle then
@@ -2043,10 +2046,6 @@ begin
 
   if ProgHandle=0 then
     Exit;
-
-  InDestroy(@VShaderHandle);
-  InDestroy(@FShaderHandle);
-  InDestroy(@GShaderHandle);
 
   glDeleteProgram(ProgHandle);
   ProgHandle := 0;
