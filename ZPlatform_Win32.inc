@@ -513,7 +513,7 @@ begin
       //cAccumGreenBits := 0;                    // Number of green bits in a-buffer
       //cAccumBlueBits  := 0;                    // Number of blue bits in a-buffer
       //cAccumAlphaBits := 0;                    // Number of alpha bits in a-buffer
-      cDepthBits      := 16;                   // Specifies the depth of the depth buffer
+      cDepthBits      := 24;                   // Specifies the depth of the depth buffer
       //cStencilBits    := 0;                    // Turn off stencil buffer
       //cAuxBuffers     := 0;                    // Not supported
       iLayerType      := PFD_MAIN_PLANE;       // Ignored

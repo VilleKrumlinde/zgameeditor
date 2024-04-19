@@ -88,7 +88,7 @@ begin
                          or PFD_DOUBLEBUFFER;
     iPixelType:= PFD_TYPE_RGBA;    // RGBA pixel values
     cColorBits:= 32;
-    cDepthBits:= 16;
+    cDepthBits:= 24;
     iLayerType:= PFD_MAIN_PLANE;    // Layer type
     cAlphaBits := 8;
     cStencilBits := 8; //NanoVG requires stencil buffer
