@@ -105,7 +105,7 @@ uses Vcl.StdCtrls,System.SysUtils,Math,Vcl.Dialogs,frmEditor,Compiler,ZLog,ZBitm
   frmRawAudioImportOptions,ZFile,
   frmArrayEdit, ZExpressions, Vcl.Imaging.Pngimage, ZApplication, u3dsFile, Meshes,
   Vcl.Imaging.Jpeg, Vcl.Themes, Vcl.Styles,ZMath,
-  Winapi.GDIPAPI, Winapi.GDIPOBJ;
+  Winapi.GDIPAPI, Winapi.GDIPOBJ, uObjFile;
 
 type
   TZPropertyEditBase = class(TCustomPanel)
@@ -1702,21 +1702,37 @@ var
   var
     D : TOpenDialog;
     Imp : T3dsImport;
+    ObjImp : TObjImport;
   begin
     D := TOpenDialog.Create(Self);
     try
-      D.Filter := '3D-studio files (*.3ds)|*.3ds';
-      D.DefaultExt := '*.3ds';
+      D.Filter := 'All 3d-models|*.3ds;*.obj|3D-studio files (*.3ds)|*.3ds|OBJ files (*.obj)|*.obj';
+      //D.DefaultExt := '*.3ds';
       if not D.Execute then
         Exit;
-      Imp := T3dsImport.Create(D.FileName);
-      try
-        Imp.MeshImpToUpdate := Component as TMeshImport;
-        Imp.Import(True);
-        Component.Change;
-      finally
-        Imp.Free;
+
+      if ExtractFileExt(D.FileName).ToLower='.3ds' then
+      begin
+        Imp := T3dsImport.Create(D.FileName);
+        try
+          Imp.MeshImpToUpdate := Component as TMeshImport;
+          Imp.Import(True);
+          Component.Change;
+        finally
+          Imp.Free;
+        end;
+      end else if ExtractFileExt(D.FileName).ToLower='.obj' then
+      begin
+        ObjImp := TObjImport.Create(D.FileName);
+        try
+          ObjImp.MeshImpToUpdate := Component as TMeshImport;
+          ObjImp.Import;
+          Component.Change;
+        finally
+          ObjImp.Free;
+        end;
       end;
+
     finally
       D.Free;
     end;

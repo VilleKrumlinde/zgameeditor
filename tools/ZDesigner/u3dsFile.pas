@@ -519,7 +519,8 @@ begin
           Round(InMesh.VertexColors[I].R * 255);
         Stream.Write(Color,4);
       end;
-    end;
+    end else
+      MeshImp.HasVertexColors := False;
 
     if DataFile.IncludeTextureCoords and (Length(InMesh.TextureCoords)>0) then
     begin
@@ -545,7 +546,8 @@ begin
       StU.Free;
       StV.Free;
       //Stream.Write(InMesh.TextureCoords[0],8 * InMesh.NVertices);
-    end;
+    end else
+      MeshImp.HasTextureCoords := True;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then

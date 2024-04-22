@@ -213,7 +213,14 @@ begin
     else if L[0]='v' then
     begin
       Verts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  );
-      Colors.Add( Vector3f(0.8,0.8,0.8) );
+      if L.Count = 7 then
+      begin
+        // vertex color specified
+        Colors.Add( Vector3f( StrToFloatDef(L[4],0),StrToFloatDef(L[5],0),StrToFloatDef(L[6],0)  ) );
+        HasVertexColors := True;
+      end
+      else
+        Colors.Add( Vector3f(0.8,0.8,0.8) );
     end
     else if L[0]='vn' then
     begin
@@ -356,7 +363,7 @@ begin
     end;
     {$ENDIF}
 
-   if Self.IncludeVertexColors and Self.HasVertexColors then
+    if Self.IncludeVertexColors and Self.HasVertexColors then
     begin
       MeshImp.HasVertexColors := True;
       for I := 0 to Self.Colors.Count - 1 do
@@ -368,7 +375,8 @@ begin
           Round(Self.Colors[I][0] * 255);
         Stream.Write(Color,4);
       end;
-    end;
+    end else
+      MeshImp.HasVertexColors := False;
 
     if Self.IncludeTextureCoords and (Self.TexCoords.Count=Self.Verts.Count) then
     begin
@@ -394,7 +402,8 @@ begin
       StU.Free;
       StV.Free;
       //Stream.Write(InMesh.TextureCoords[0],8 * InMesh.NVertices);
-    end;
+    end else
+      MeshImp.HasTextureCoords := False;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then
@@ -414,8 +423,7 @@ var
   MeshImp : TMeshImport;
 begin
   OutMesh := TMesh.Create(nil);
-//  OutMesh.SetString('Comment',AnsiString(InMesh.Name));
-//  OutMesh.SetString('Name',AnsiString(NamePrefix + 'Mesh' + IntToStr(DataFile.MeshList.IndexOf(M))));
+  OutMesh.SetString('Comment','Imported from ' + AnsiString(ExtractFileName(Self.FileName)));
 
   MeshImp := TMeshImport.Create(OutMesh.Producers);
   UpdateMeshImp(MeshImp);
