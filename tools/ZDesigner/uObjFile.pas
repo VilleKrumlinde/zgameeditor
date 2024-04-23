@@ -213,10 +213,10 @@ begin
     else if L[0]='v' then
     begin
       Verts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  );
-      if L.Count = 7 then
+      if L.Count >= 7 then
       begin
-        // vertex color specified
-        Colors.Add( Vector3f( StrToFloatDef(L[4],0),StrToFloatDef(L[5],0),StrToFloatDef(L[6],0)  ) );
+        // vertex RGB color specified
+        Colors.Add( Vector3f( StrToFloatDef(L[L.Count-3],0),StrToFloatDef(L[L.Count-2],0),StrToFloatDef(L[L.Count-1],0)  ) );
         HasVertexColors := True;
       end
       else

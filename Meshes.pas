@@ -1774,9 +1774,15 @@ begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}(@MeshData), zptBinary);
   List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}(@HasVertexColors), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}(@HasTextureCoords), zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   {$IFDEF HugeMeshes}
   List.AddProperty({$IFNDEF MINIMAL}'AreIndicesUncompressed',{$ENDIF}@AreIndicesUncompressed, zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   {$ENDIF}
 end;
 
