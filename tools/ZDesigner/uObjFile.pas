@@ -216,7 +216,7 @@ begin
       if L.Count >= 7 then
       begin
         // vertex RGB color specified
-        Colors.Add( Vector3f( StrToFloatDef(L[L.Count-3],0),StrToFloatDef(L[L.Count-2],0),StrToFloatDef(L[L.Count-1],0)  ) );
+        Colors.Add( Vector3f( StrToFloatDef(L[4],0),StrToFloatDef(L[5],0),StrToFloatDef(L[6],0)  ) );
         HasVertexColors := True;
       end
       else
