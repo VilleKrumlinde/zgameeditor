@@ -850,7 +850,7 @@ begin
     sffRaw :
       begin
         SourceCount := Self.SampleData.Size shr (ord(Self.SampleFormat));
-        S.Length := SourceCount / AudioRate;
+        S.Length := SourceCount / Self.SampleRate;
 
         P := S.GetMemory;
 
