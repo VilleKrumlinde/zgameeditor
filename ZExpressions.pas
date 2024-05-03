@@ -726,7 +726,7 @@ var
 
   procedure DoOne(P : PExpBase);
   begin
-    while P<>nil do
+    while (P<>nil) and (P^<>nil) do
     begin
       if (P^ is TExpReturn) then
       begin
