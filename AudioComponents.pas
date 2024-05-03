@@ -119,6 +119,7 @@ type
     Length : single;
     destructor Destroy; override;
     function GetMemory : PSampleUnit;
+    procedure Update; override;
   end;
 
   TSampleExpression = class(TContentProducer)
@@ -602,6 +603,13 @@ begin
   end;
   IsChanged := False;
   Producers.IsChanged := False;
+end;
+
+procedure TSample.Update;
+begin
+  inherited;
+  if IsChanged or Producers.IsChanged then
+    ReInit;
 end;
 
 { TSampleExpression }
