@@ -540,7 +540,7 @@ var
 begin
   if SaveDialog=nil then
   begin
-    SaveDialog := TSaveDialog.Create(Self);
+    SaveDialog := TSaveDialog.Create(Application);
     SaveDialog.Filter := 'RAW audio file (*.raw)|*.raw';
     SaveDialog.DefaultExt := '*.raw';
   end;
