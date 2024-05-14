@@ -129,6 +129,7 @@ type
   public
     Expression : TZExpressionPropValue;
     Time,Sample : single;
+    SampleIndex : integer;
   end;
 
   TSampleImport = class(TContentProducer)
@@ -629,15 +630,18 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'Time',{$ENDIF}(@Time), zptFloat);
     List.GetLast.NeverPersist := True;
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'SampleIndex',{$ENDIF}@SampleIndex, zptInteger);
+    List.GetLast.NeverPersist := True;
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
 end;
 
 procedure TSampleExpression.ProduceOutput(Content: TContent;
   Stack: TZArrayList);
 var
   S : TSample;
-  TimeStep : single;
   I : integer;
   P : PSampleUnit;
+  TimeStep: single;
 begin
   if Stack.Count>0 then
     S := TSample( Stack.Pop )
@@ -654,12 +658,13 @@ begin
     TimeStep := S.Length/S.SampleCount;
     for I := 0 to S.SampleCount-1 do
     begin
+      Self.Time := I * TimeStep;
       Self.Sample := P^.Left;
+      Self.SampleIndex := I;
       ZExpressions.RunCode(Expression.Code);
       P^.Left := Self.Sample;
       P^.Right := Self.Sample;
       Inc(P);
-      Self.Time := Self.Time + TimeStep;
     end;
   end;
 
