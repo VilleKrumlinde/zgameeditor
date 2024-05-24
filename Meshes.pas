@@ -151,6 +151,7 @@ type
     {$IFDEF HugeMeshes}
     AreIndicesUncompressed : boolean;
     {$ENDIF}
+    AreTexCoordsUncompressed : boolean;
   end;
 
   //Combine the vertexes of two meshes
@@ -1784,6 +1785,9 @@ begin
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   {$ENDIF}
+  List.AddProperty({$IFNDEF MINIMAL}'AreTexCoordsUncompressed',{$ENDIF}@AreTexCoordsUncompressed, zptBoolean);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
 procedure TMeshImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1871,18 +1875,30 @@ begin
   //Texture coordinates
   if Self.HasTextureCoords then
   begin
-    for J := 0 to 1 do
+    if Self.AreTexCoordsUncompressed then
     begin
       PTex := pointer(Mesh.TexCoords);
-      Stream.Read(Sm,2);
-      PTex^[J] := Sm / High(Smallint);
-      K := Sm;
-      for I := 0 to VertCount-2 do
+      for I := 0 to VertCount-1 do
       begin
+        Stream.Read(Ptex^[0],4);
+        Stream.Read(Ptex^[1],4);
         Inc(PTex);
+      end
+    end else
+    begin
+      for J := 0 to 1 do
+      begin
+        PTex := pointer(Mesh.TexCoords);
         Stream.Read(Sm,2);
-        Inc(K,Sm);
-        PTex^[J] := K / High(Smallint);
+        PTex^[J] := Sm / High(Smallint);
+        K := Sm;
+        for I := 0 to VertCount-2 do
+        begin
+          Inc(PTex);
+          Stream.Read(Sm,2);
+          Inc(K,Sm);
+          PTex^[J] := K / High(Smallint);
+        end;
       end;
     end;
   end;

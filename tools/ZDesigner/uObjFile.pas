@@ -194,12 +194,16 @@ var
       Exit(I-1);
   end;
 
+var
+  TexCoordReMapping : TList<TZVector3f>;
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
 
   L2 := TStringList.Create;
   L2.Delimiter := '/';
+
+  TexCoordReMapping := TList<TZVector3f>.Create;
 
   Mat := nil;
   for S in Lines do
@@ -239,6 +243,13 @@ begin
         begin
           L2.DelimitedText := L[1+I];
           Face.Index[I] := FaceIndex(StrToInt(L2[0]));
+          if L2.Count > 1 then
+          begin
+            // When faces specify texcoord index then use this for vert -> texcoord mapping
+            if TexCoordReMapping.Count=0 then
+              TexCoordReMapping.AddRange(TexCoords);
+            TexCoordReMapping[ Face.Index[I] ] := TexCoords[ StrToInt(L2[1]) - 1 ];
+          end;
           if Assigned(Mat) then
           begin
             Colors[ Face.Index[I] ] := Mat.Diffuse;
@@ -278,6 +289,13 @@ begin
   L.Free;
   L2.Free;
 
+  if TexCoordReMapping.Count>0 then
+  begin
+    Self.TexCoords.Clear;
+    Self.TexCoords.AddRange(TexCoordReMapping);
+  end;
+  TexCoordReMapping.Free;
+
   if AutoScale or AutoCenter then
     ScaleAndCenter;
 
@@ -291,13 +309,14 @@ procedure TObjImport.UpdateMeshImp(MeshImp: TMeshImport);
 //Write to MeshImp from 3dsMesh
 var
   I,Color : integer;
-  Stream,StU,StV : TMemoryStream;
-  MinV,MaxV,DiffV : TZVector3f;
+  Stream : TMemoryStream;
+  MinV,MaxV,DiffV,V : TZVector3f;
   W : word;
   {$IFDEF HugeMeshes}
   J : integer;
-  {$ENDIF}
+  {$ELSE}
   Sm : smallint;
+  {$ENDIF}
 begin
   ZLog.GetLog(Self.ClassName).Write('Obj-file vertcount: ' + IntToStr(Self.Verts.Count) );
 
@@ -378,30 +397,15 @@ begin
     end else
       MeshImp.HasVertexColors := False;
 
-    if Self.IncludeTextureCoords and (Self.TexCoords.Count=Self.Verts.Count) then
+    if Self.IncludeTextureCoords and (Self.TexCoords.Count>=Self.Verts.Count) then
     begin
       MeshImp.HasTextureCoords := True;
-      StU := TMemoryStream.Create;
-      StV := TMemoryStream.Create;
-
-      //Delta-encode in separate streams
-      W := Round( Frac(Self.TexCoords[0][0]) * High(Smallint) );
-      StU.Write(W,2);
-      W := Round( Frac(Self.TexCoords[0][1]) * High(Smallint) );
-      StV.Write(W,2);
-
-      for I := 1 to Self.TexCoords.Count-1 do
+      MeshImp.AreTexCoordsUncompressed := True;
+      for I := 0 to Self.Verts.Count-1 do
       begin
-        Sm := Round( (Self.TexCoords[I][0]-Self.TexCoords[I-1][0]) * High(SmallInt) );
-        StU.Write(Sm,2);
-        Sm := Round( (Self.TexCoords[I][1]-Self.TexCoords[I-1][1]) * High(SmallInt) );
-        StV.Write(Sm,2);
+        V := texcoords[i];
+        Stream.Write(v, 8);
       end;
-      StU.SaveToStream(Stream);
-      StV.SaveToStream(Stream);
-      StU.Free;
-      StV.Free;
-      //Stream.Write(InMesh.TextureCoords[0],8 * InMesh.NVertices);
     end else
       MeshImp.HasTextureCoords := False;
 
