@@ -135,23 +135,19 @@ type
     AutoNormals,VertexColors,HasTexCoords : boolean;
   end;
 
-  {$IFDEF ZGEVIZ}
-    {$DEFINE HugeMeshes}
-  {$ENDIF}
-
   //Created by 3ds-import
   TMeshImport = class(TMeshProducer)
+  public type
+    TMeshTexCoordFormat = (mtcNone, mtcDeltaS16, mtcFloat);
+    TMeshIndicesFormat = (mifWord, mifInteger);
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
   public
     HasVertexColors : boolean;
-    HasTextureCoords : boolean;
+    HasTextureCoords : TMeshTexCoordFormat;
+    IndicesFormat : TMeshIndicesFormat;
     MeshData : TZBinaryPropValue;
-    {$IFDEF HugeMeshes}
-    AreIndicesUncompressed : boolean;
-    {$ENDIF}
-    AreTexCoordsUncompressed : boolean;
   end;
 
   //Combine the vertexes of two meshes
@@ -1774,18 +1770,13 @@ procedure TMeshImport.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'MeshData',{$ENDIF}(@MeshData), zptBinary);
+  List.AddProperty({$IFNDEF MINIMAL}'IndicesFormat',{$ENDIF}@IndicesFormat, zptByte);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
   List.AddProperty({$IFNDEF MINIMAL}'HasVertexColors',{$ENDIF}(@HasVertexColors), zptBoolean);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}(@HasTextureCoords), zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  {$IFDEF HugeMeshes}
-  List.AddProperty({$IFNDEF MINIMAL}'AreIndicesUncompressed',{$ENDIF}@AreIndicesUncompressed, zptBoolean);
-    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
-    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
-  {$ENDIF}
-  List.AddProperty({$IFNDEF MINIMAL}'AreTexCoordsUncompressed',{$ENDIF}@AreTexCoordsUncompressed, zptBoolean);
+  List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}@HasTextureCoords, zptByte);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
@@ -1813,7 +1804,7 @@ begin
   Stream.Read(TriCount,4);
 
   Mesh := TMesh.Create(nil);
-  Mesh.CreateData( VertCount,TriCount, Self.HasTextureCoords, Self.HasVertexColors);
+  Mesh.CreateData( VertCount,TriCount, Self.HasTextureCoords <> mtcNone, Self.HasVertexColors);
 
   Stream.Read(MinV,3*4);
   Stream.Read(DiffV,3*4);
@@ -1835,35 +1826,46 @@ begin
   //Indices
   IndP := pointer(Mesh.Indices);
   PrevIndP := IndP;
-  {$IFDEF HugeMeshes}
-  if Self.AreIndicesUncompressed then
-    Stream.Read(IndP^,(TriCount*3)*SizeOf(TMeshVertexIndex))
-  else
-  begin
-  {$ENDIF}
 
-  {$if sizeof(TMeshVertexIndex)=2}
-  Stream.Read(IndP^,2*3);
-  Inc(IndP,3);
-  {$else}
-  for I := 0 to 2 do
-  begin
-    Stream.Read(Sm,2);
-    IndP^:=Sm;
-    Inc(IndP);
+  case Self.IndicesFormat of
+    mifWord :
+      begin
+        {$if sizeof(TMeshVertexIndex)=2}
+        Stream.Read(IndP^,2*3);
+        Inc(IndP,3);
+        {$else}
+        for I := 0 to 2 do
+        begin
+          Stream.Read(Sm,2);
+          IndP^:=Sm;
+          Inc(IndP);
+        end;
+        {$endif}
+        for I := 0 to ((TriCount-1)*3)-1 do
+        begin
+          Stream.Read(Sm,2);
+          IndP^ := PrevIndP^ + Sm;
+          Inc(IndP);
+          Inc(PrevIndP);
+        end;
+      end;
+    mifInteger :
+      begin
+        {$if sizeof(TMeshVertexIndex)=4}
+        Stream.Read(IndP^,(TriCount*3)*SizeOf(TMeshVertexIndex))
+        {$else}
+        {$ifndef minimal}
+        ZLog.GetLog(Self.ClassName).Warning('Possible mesh import corruption (int32 -> word indices)');
+        {$endif}
+        for I := 0 to (TriCount*3) - 1 do
+        begin
+          Stream.Read(J,4);
+          IndP^ := J;
+          Inc(IndP);
+        end;
+        {$endif}
+      end;
   end;
-  {$endif}
-  for I := 0 to ((TriCount-1)*3)-1 do
-  begin
-    Stream.Read(Sm,2);
-    IndP^ := PrevIndP^ + Sm;
-    Inc(IndP);
-    Inc(PrevIndP);
-  end;
-
-  {$IFDEF HugeMeshes}
-  end;
-  {$ENDIF}
 
   //Vertex colors
   if Self.HasVertexColors then
@@ -1873,34 +1875,34 @@ begin
   end;
 
   //Texture coordinates
-  if Self.HasTextureCoords then
-  begin
-    if Self.AreTexCoordsUncompressed then
-    begin
-      PTex := pointer(Mesh.TexCoords);
-      for I := 0 to VertCount-1 do
+  case Self.HasTextureCoords of
+    mtcDeltas16 :
       begin
-        Stream.Read(Ptex^[0],4);
-        Stream.Read(Ptex^[1],4);
-        Inc(PTex);
-      end
-    end else
-    begin
-      for J := 0 to 1 do
-      begin
-        PTex := pointer(Mesh.TexCoords);
-        Stream.Read(Sm,2);
-        PTex^[J] := Sm / High(Smallint);
-        K := Sm;
-        for I := 0 to VertCount-2 do
+        for J := 0 to 1 do
         begin
-          Inc(PTex);
+          PTex := pointer(Mesh.TexCoords);
           Stream.Read(Sm,2);
-          Inc(K,Sm);
-          PTex^[J] := K / High(Smallint);
+          PTex^[J] := Sm / High(Smallint);
+          K := Sm;
+          for I := 0 to VertCount-2 do
+          begin
+            Inc(PTex);
+            Stream.Read(Sm,2);
+            Inc(K,Sm);
+            PTex^[J] := K / High(Smallint);
+          end;
         end;
       end;
-    end;
+    mtcFloat :
+      begin
+        PTex := pointer(Mesh.TexCoords);
+        for I := 0 to VertCount-1 do
+        begin
+          Stream.Read(Ptex^[0],4);
+          Stream.Read(Ptex^[1],4);
+          Inc(PTex);
+        end
+      end;
   end;
 
   Mesh.Scale( Self.Scale );

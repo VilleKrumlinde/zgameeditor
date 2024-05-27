@@ -26,10 +26,6 @@ interface
 
 uses ZClasses, Classes, Generics.Collections, Meshes;
 
-{$IFDEF ZGEVIZ}
-  {$DEFINE HugeMeshes}
-{$ENDIF}
-
 type
   TObjFace = record
     Index : array[0..2] of integer;
@@ -47,6 +43,7 @@ type
     FileName : string;
     Materials : TObjectDictionary<string,TObjMaterial>;
     HasVertexColors : boolean;
+    RequireFloatTexCoords : boolean;
     procedure UpdateMeshImp(MeshImp: TMeshImport);
     function GenerateMesh : TZComponent;
     procedure AddMaterialLib(const MatFileName : string);
@@ -196,6 +193,7 @@ var
 
 var
   TexCoordReMapping : TList<TZVector3f>;
+  V: TZVector3f;
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
@@ -233,7 +231,12 @@ begin
     else if L[0]='vt' then
     begin
       if L.Count>=3 then
-        TexCoords.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),0  )  );
+      begin
+        V := Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),0  );
+        TexCoords.Add( V );
+        if (V[0]<0) or (V[0]>1) or (V[1]<0) or (V[1]>1) then
+          RequireFloatTexCoords := True;
+      end;
     end
     else if L[0]='f' then
     begin
@@ -309,14 +312,11 @@ procedure TObjImport.UpdateMeshImp(MeshImp: TMeshImport);
 //Write to MeshImp from 3dsMesh
 var
   I,Color : integer;
-  Stream : TMemoryStream;
+  Stream,StU,StV : TMemoryStream;
   MinV,MaxV,DiffV,V : TZVector3f;
   W : word;
-  {$IFDEF HugeMeshes}
   J : integer;
-  {$ELSE}
   Sm : smallint;
-  {$ENDIF}
 begin
   ZLog.GetLog(Self.ClassName).Write('Obj-file vertcount: ' + IntToStr(Self.Verts.Count) );
 
@@ -352,35 +352,39 @@ begin
       Stream.Write(W,2);
     end;
 
-    {$IFDEF HugeMeshes}
-    MeshImp.AreIndicesUncompressed := True;
-    for I := 0 to Self.Faces.Count - 1 do
+    if Verts.Count > High(Word) then
     begin
-      J := Self.Faces[I].Index[0];
-      Stream.Write(J,4);
-      J := Self.Faces[I].Index[1];
-      Stream.Write(J,4);
-      J := Self.Faces[I].Index[2];
-      Stream.Write(J,4);
-    end;
-    {$ELSE}
-    //Delta-encode indices
-    Sm := Self.Faces[0].Index[0];
-    Stream.Write(Sm,2);
-    Sm := Self.Faces[0].Index[1];
-    Stream.Write(Sm,2);
-    Sm := Self.Faces[0].Index[2];
-    Stream.Write(Sm,2);
-    for I := 1 to Self.Faces.Count - 1 do
+      MeshImp.IndicesFormat := mifInteger;
+      for I := 0 to Self.Faces.Count - 1 do
+      begin
+        J := Self.Faces[I].Index[0];
+        Stream.Write(J,4);
+        J := Self.Faces[I].Index[1];
+        Stream.Write(J,4);
+        J := Self.Faces[I].Index[2];
+        Stream.Write(J,4);
+      end;
+    end
+    else
     begin
-      Sm := Self.Faces[I].Index[0] - Self.Faces[I-1].Index[0];
+      MeshImp.IndicesFormat := mifWord;
+      //Delta-encode indices
+      Sm := Self.Faces[0].Index[0];
       Stream.Write(Sm,2);
-      Sm := Self.Faces[I].Index[1] - Self.Faces[I-1].Index[1];
+      Sm := Self.Faces[0].Index[1];
       Stream.Write(Sm,2);
-      Sm := Self.Faces[I].Index[2] - Self.Faces[I-1].Index[2];
+      Sm := Self.Faces[0].Index[2];
       Stream.Write(Sm,2);
+      for I := 1 to Self.Faces.Count - 1 do
+      begin
+        Sm := Self.Faces[I].Index[0] - Self.Faces[I-1].Index[0];
+        Stream.Write(Sm,2);
+        Sm := Self.Faces[I].Index[1] - Self.Faces[I-1].Index[1];
+        Stream.Write(Sm,2);
+        Sm := Self.Faces[I].Index[2] - Self.Faces[I-1].Index[2];
+        Stream.Write(Sm,2);
+      end;
     end;
-    {$ENDIF}
 
     if Self.IncludeVertexColors and Self.HasVertexColors then
     begin
@@ -399,15 +403,44 @@ begin
 
     if Self.IncludeTextureCoords and (Self.TexCoords.Count>=Self.Verts.Count) then
     begin
-      MeshImp.HasTextureCoords := True;
-      MeshImp.AreTexCoordsUncompressed := True;
-      for I := 0 to Self.Verts.Count-1 do
+      if RequireFloatTexCoords then
       begin
-        V := texcoords[i];
-        Stream.Write(v, 8);
+        MeshImp.HasTextureCoords := mtcFloat;
+        for I := 0 to Self.Verts.Count-1 do
+        begin
+          V := TexCoords[I];
+          Stream.Write(V, 8);
+        end;
+      end else
+      begin
+        MeshImp.HasTextureCoords := mtcDeltaS16;
+        StU := TMemoryStream.Create;
+        StV := TMemoryStream.Create;
+
+        //Delta-encode in separate streams
+        W := Round( Frac(Self.TexCoords[0][0]) * High(Smallint) );
+        StU.Write(W,2);
+        W := Round( Frac(Self.TexCoords[0][1]) * High(Smallint) );
+        StV.Write(W,2);
+        V := Self.TexCoords[0];
+        for I := 1 to Self.Verts.Count-1 do
+        begin
+          //Idea from Kjell: decode while encoding and take the delta from the decoded value
+          //to prevent precision problems. Helps when there are many (100k+) texcoords.
+          Sm := Round( (Self.TexCoords[I][0]-V[0]) * High(SmallInt) );
+          StU.Write(Sm,2);
+          V[0] := V[0] + (Sm / High(Smallint));
+          Sm := Round( (Self.TexCoords[I][1]-V[1]) * High(SmallInt) );
+          StV.Write(Sm,2);
+          V[1] := V[1] + (Sm / High(Smallint));
+        end;
+        StU.SaveToStream(Stream);
+        StV.SaveToStream(Stream);
+        StU.Free;
+        StV.Free;
       end;
     end else
-      MeshImp.HasTextureCoords := False;
+      MeshImp.HasTextureCoords := mtcNone;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then

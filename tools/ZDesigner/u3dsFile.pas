@@ -26,10 +26,6 @@ interface
 
 uses ZClasses, Classes, Contnrs, Meshes;
 
-{$IFDEF ZGEVIZ}
-  {$DEFINE HugeMeshes}
-{$ENDIF}
-
 type
   TChunkInfo = record
     Id : word;
@@ -426,14 +422,11 @@ end;
 procedure T3dsImport.UpdateMeshImp(InMesh : T3dsMesh; MeshImp: TMeshImport);
 //Write to MeshImp from 3dsMesh
 var
-  I,Color : integer;
+  I,J,Color : integer;
   Stream,StU,StV : TMemoryStream;
   MinV,MaxV,DiffV : TZVector3f;
   W : word;
   Sm : smallint;
-  {$IFDEF HugeMeshes}
-  J : integer;
-  {$ENDIF}
 begin
   MeshImp.Scale := Vector3f(Self.MeshScale,Self.MeshScale,Self.MeshScale);
 
@@ -477,35 +470,39 @@ begin
         InMesh.Faces[I].V3 := W;
       end;
 
-    {$IFDEF HugeMeshes}
-    MeshImp.AreIndicesUncompressed := True;
-    for I := 0 to InMesh.NFaces - 1 do
+    if InMesh.NVertices > High(Word) then
     begin
-      J := InMesh.Faces[I].V1;
-      Stream.Write(J,4);
-      J := InMesh.Faces[I].V2;
-      Stream.Write(J,4);
-      J := InMesh.Faces[I].V3;
-      Stream.Write(J,4);
-    end;
-    {$ELSE}
-    //Delta-encode indices
-    Sm := InMesh.Faces[0].V1;
-    Stream.Write(Sm,2);
-    Sm := InMesh.Faces[0].V2;
-    Stream.Write(Sm,2);
-    Sm := InMesh.Faces[0].V3;
-    Stream.Write(Sm,2);
-    for I := 1 to InMesh.NFaces - 1 do
+      MeshImp.IndicesFormat := mifInteger;
+      for I := 0 to InMesh.NFaces - 1 do
+      begin
+        J := InMesh.Faces[I].V1;
+        Stream.Write(J,4);
+        J := InMesh.Faces[I].V2;
+        Stream.Write(J,4);
+        J := InMesh.Faces[I].V3;
+        Stream.Write(J,4);
+      end;
+    end
+    else
     begin
-      Sm := InMesh.Faces[I].V1 - InMesh.Faces[I-1].V1;
+      MeshImp.IndicesFormat := mifWord;
+      //Delta-encode indices
+      Sm := InMesh.Faces[0].V1;
       Stream.Write(Sm,2);
-      Sm := InMesh.Faces[I].V2 - InMesh.Faces[I-1].V2;
+      Sm := InMesh.Faces[0].V2;
       Stream.Write(Sm,2);
-      Sm := InMesh.Faces[I].V3 - InMesh.Faces[I-1].V3;
+      Sm := InMesh.Faces[0].V3;
       Stream.Write(Sm,2);
+      for I := 1 to InMesh.NFaces - 1 do
+      begin
+        Sm := InMesh.Faces[I].V1 - InMesh.Faces[I-1].V1;
+        Stream.Write(Sm,2);
+        Sm := InMesh.Faces[I].V2 - InMesh.Faces[I-1].V2;
+        Stream.Write(Sm,2);
+        Sm := InMesh.Faces[I].V3 - InMesh.Faces[I-1].V3;
+        Stream.Write(Sm,2);
+      end;
     end;
-    {$ENDIF}
 
     if DataFile.IncludeVertexColors and (InMesh.UsedMaterials>0) then
     begin
@@ -524,7 +521,7 @@ begin
 
     if DataFile.IncludeTextureCoords and (Length(InMesh.TextureCoords)>0) then
     begin
-      MeshImp.HasTextureCoords := True;
+      MeshImp.HasTextureCoords := mtcDeltaS16;
       StU := TMemoryStream.Create;
       StV := TMemoryStream.Create;
 
@@ -547,7 +544,7 @@ begin
       StV.Free;
       //Stream.Write(InMesh.TextureCoords[0],8 * InMesh.NVertices);
     end else
-      MeshImp.HasTextureCoords := True;
+      MeshImp.HasTextureCoords := mtcNone;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then
