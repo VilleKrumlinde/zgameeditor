@@ -140,6 +140,7 @@ type
   public type
     TMeshTexCoordFormat = (mtcNone, mtcDeltaS16, mtcFloat);
     TMeshIndicesFormat = (mifWord, mifInteger);
+    TMeshNormalsFormat = (mnfNone, mnfFloat);
   protected
     procedure DefineProperties(List: TZPropertyList); override;
     procedure ProduceOutput(Content : TContent; Stack: TZArrayList); override;
@@ -147,6 +148,7 @@ type
     HasVertexColors : boolean;
     HasTextureCoords : TMeshTexCoordFormat;
     IndicesFormat : TMeshIndicesFormat;
+    NormalsFormat : TMeshNormalsFormat;
     MeshData : TZBinaryPropValue;
   end;
 
@@ -1779,6 +1781,9 @@ begin
   List.AddProperty({$IFNDEF MINIMAL}'HasTextureCoords',{$ENDIF}@HasTextureCoords, zptByte);
     {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
     {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
+  List.AddProperty({$IFNDEF MINIMAL}'NormalsFormat',{$ENDIF}@NormalsFormat, zptByte);
+    {$ifndef minimal}List.GetLast.IsReadOnly := True;{$endif}
+    {$ifndef minimal}List.GetLast.HideInGui := True;{$endif}
 end;
 
 procedure TMeshImport.ProduceOutput(Content: TContent; Stack: TZArrayList);
@@ -1905,8 +1910,13 @@ begin
       end;
   end;
 
+  if NormalsFormat = mnfFloat then
+    Stream.Read(Mesh.Normals^, VertCount * SizeOf(TZVector3f));
+
   Mesh.Scale( Self.Scale );
-  Mesh.ComputeNormals;
+
+  if NormalsFormat = mnfNone then
+    Mesh.ComputeNormals;
 
   Stream.Free;
 

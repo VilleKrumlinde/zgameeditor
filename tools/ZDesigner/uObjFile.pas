@@ -49,7 +49,7 @@ type
     procedure AddMaterialLib(const MatFileName : string);
     procedure ScaleAndCenter;
   public
-    AutoScale,AutoCenter,IncludeVertexColors,IncludeTextureCoords : boolean;
+    AutoScale,AutoCenter,IncludeVertexColors,IncludeTextureCoords,IncludeNormals : boolean;
     MeshImpToUpdate : TMeshImport;
     ResultMesh : TMesh;
     constructor Create(const FileName : string);
@@ -59,7 +59,7 @@ type
 
 implementation
 
-uses SysUtils, ZMath, ZLog;
+uses SysUtils, ZMath, ZLog, Math;
 
 { TObjImport }
 
@@ -76,6 +76,7 @@ begin
   Self.FileName := FileName;
   Self.IncludeVertexColors := True;
   Self.IncludeTextureCoords := True;
+  Self.IncludeNormals := True;
 end;
 
 destructor TObjImport.Destroy;
@@ -102,12 +103,12 @@ begin
 
   for I := 0 to Self.Verts.Count-1 do
   begin
-    MinV[0] := Min(MinV[0],Self.Verts[I][0]);
-    MinV[1] := Min(MinV[1],Self.Verts[I][1]);
-    MinV[2] := Min(MinV[2],Self.Verts[I][2]);
-    MaxV[0] := Max(MaxV[0],Self.Verts[I][0]);
-    MaxV[1] := Max(MaxV[1],Self.Verts[I][1]);
-    MaxV[2] := Max(MaxV[2],Self.Verts[I][2]);
+    MinV[0] := Math.Min(MinV[0],Self.Verts[I][0]);
+    MinV[1] := Math.Min(MinV[1],Self.Verts[I][1]);
+    MinV[2] := Math.Min(MinV[2],Self.Verts[I][2]);
+    MaxV[0] := Math.Max(MaxV[0],Self.Verts[I][0]);
+    MaxV[1] := Math.Max(MaxV[1],Self.Verts[I][1]);
+    MaxV[2] := Math.Max(MaxV[2],Self.Verts[I][2]);
   end;
   VecSub3(MaxV,MinV,DV);
 
@@ -175,25 +176,31 @@ begin
 end;
 
 procedure TObjImport.Import;
+
+  function FaceIndex(Count, I : integer) : integer;
+  begin
+    if I < 0 then
+      //Negative index means relative postion of vertex
+      Exit(Count + I)
+    else
+      Exit(I - 1);
+  end;
+
+type
+  TVertEntry = record
+    VertIndex, TexCoordIndex, NormalIndex : integer;
+  end;
 var
   S : string;
   L,L2 : TStringList;
-  Face : TObjFace;
-  I,J : integer;
+  I : integer;
   Mat : TObjMaterial;
-
-  function FaceIndex(I : integer) : integer;
-  begin
-    if I<0 then
-      //Negative index means relative postion of vertex
-      Exit(Self.Verts.Count+I)
-    else
-      Exit(I-1);
-  end;
-
-var
-  TexCoordReMapping : TList<TZVector3f>;
+  Face,OtherFace : TObjFace;
   V: TZVector3f;
+  AllColors, AllVerts, AllNormals, AllTexCoords : TList<TZVector3f>;
+  Entry : TVertEntry;
+  EntryCache : TDictionary<TVertEntry, integer>;
+  NewVertIndex : integer;
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
@@ -201,7 +208,12 @@ begin
   L2 := TStringList.Create;
   L2.Delimiter := '/';
 
-  TexCoordReMapping := TList<TZVector3f>.Create;
+  AllVerts := TList<TZVector3f>.Create;
+  AllNormals := TList<TZVector3f>.Create;
+  AllTexCoords := TList<TZVector3f>.Create;
+  AllColors := TList<TZVector3f>.Create;
+
+  EntryCache := TDictionary<TVertEntry, integer>.Create;
 
   Mat := nil;
   for S in Lines do
@@ -214,26 +226,21 @@ begin
       Continue
     else if L[0]='v' then
     begin
-      Verts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  );
+      AllVerts.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  );
       if L.Count >= 7 then
-      begin
         // vertex RGB color specified
-        Colors.Add( Vector3f( StrToFloatDef(L[4],0),StrToFloatDef(L[5],0),StrToFloatDef(L[6],0)  ) );
-        HasVertexColors := True;
-      end
-      else
-        Colors.Add( Vector3f(0.8,0.8,0.8) );
+        AllColors.Add( Vector3f( StrToFloatDef(L[4],0),StrToFloatDef(L[5],0),StrToFloatDef(L[6],0)  ) );
     end
     else if L[0]='vn' then
     begin
-      Normals.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  )
+      AllNormals.Add(  Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),StrToFloatDef(L[3],0)  )  )
     end
     else if L[0]='vt' then
     begin
       if L.Count>=3 then
       begin
         V := Vector3f( StrToFloatDef(L[1],0),StrToFloatDef(L[2],0),0  );
-        TexCoords.Add( V );
+        AllTexCoords.Add( V );
         if (V[0]<0) or (V[0]>1) or (V[1]<0) or (V[1]>1) then
           RequireFloatTexCoords := True;
       end;
@@ -242,42 +249,48 @@ begin
     begin
       if L.Count in [4,5] then
       begin
-        for I := 0 to 2 do
+        for I := 0 to L.Count - 2 do
         begin
           L2.DelimitedText := L[1+I];
-          Face.Index[I] := FaceIndex(StrToInt(L2[0]));
-          if L2.Count > 1 then
+          Entry.VertIndex := FaceIndex(AllVerts.Count, StrToInt(L2[0]));
+          if (L2.Count > 1) and (AllTexCoords.Count > 0) then
+            Entry.TexCoordIndex := FaceIndex(AllTexCoords.Count, StrToIntDef(L2[1],0))
+          else
+            Entry.TexCoordIndex := 0;
+          if (L2.Count > 2) and (AllNormals.Count > 0) then
+            Entry.NormalIndex := FaceIndex(AllNormals.Count, StrToInt(L2[2]))
+          else
+            Entry.NormalIndex := 0;
+
+          if not EntryCache.TryGetValue(Entry, NewVertIndex) then
           begin
-            // When faces specify texcoord index then use this for vert -> texcoord mapping
-            if TexCoordReMapping.Count=0 then
-              TexCoordReMapping.AddRange(TexCoords);
-            TexCoordReMapping[ Face.Index[I] ] := TexCoords[ StrToInt(L2[1]) - 1 ];
+            NewVertIndex := Verts.Count;
+            EntryCache.Add(Entry, NewVertIndex);
+            Verts.Add( AllVerts[Entry.VertIndex] );
+            if AllTexCoords.Count > 0 then
+              TexCoords.Add( AllTexCoords[ EnsureRange(Entry.TexCoordIndex, 0, AllTexCoords.Count-1) ] );
+            if AllNormals.Count > 0 then
+              Normals.Add( AllNormals[ EnsureRange(Entry.NormalIndex, 0, AllNormals.Count-1) ] );
+            if AllColors.Count > 0 then
+              Colors.Add( AllColors[ EnsureRange(Entry.VertIndex, 0, AllColors.Count-1) ] )
+            else if Assigned(Mat) then
+              Colors.Add( Mat.Diffuse );
           end;
-          if Assigned(Mat) then
-          begin
-            Colors[ Face.Index[I] ] := Mat.Diffuse;
-            Self.HasVertexColors := True;
-          end;
+
+          if I = 3 then
+          begin  //Split quad into two tris
+            //3 4 1
+            OtherFace.Index[2] := Face.Index[0];
+            OtherFace.Index[0] := Face.Index[2];
+            OtherFace.Index[1] := NewVertIndex;
+            Self.Faces.Add(OtherFace);
+          end else
+            Face.Index[I] := NewVertIndex;
+
         end;
         Self.Faces.Add(Face);
-        if L.Count=5 then
-        begin  //Split quad into two tris
-          //3 4 1
-          J := Face.Index[2];
-          Face.Index[2] := Face.Index[0];
-          Face.Index[0] := J;
-
-          L2.DelimitedText := L[1+3];
-          Face.Index[1] := FaceIndex(StrToInt(L2[0]));
-          if Assigned(Mat) then
-          begin
-            Colors[ Face.Index[1] ] := Mat.Diffuse;
-            Self.HasVertexColors := True;
-          end;
-          Self.Faces.Add(Face);
-        end;
       end else
-        raise Exception.Create('OBJ-reader: Only triangle surfaces supported');
+        raise Exception.Create('OBJ-reader: Only triangle or quad surfaces supported');
     end
     else if L[0]='mtllib' then
     begin
@@ -292,12 +305,14 @@ begin
   L.Free;
   L2.Free;
 
-  if TexCoordReMapping.Count>0 then
-  begin
-    Self.TexCoords.Clear;
-    Self.TexCoords.AddRange(TexCoordReMapping);
-  end;
-  TexCoordReMapping.Free;
+  AllVerts.Free;
+  AllNormals.Free;
+  AllTexCoords.Free;
+  AllColors.Free;
+
+  EntryCache.Free;
+
+  Self.HasVertexColors := Colors.Count > 0;
 
   if AutoScale or AutoCenter then
     ScaleAndCenter;
@@ -330,12 +345,12 @@ begin
     MaxV := Vector3f(0,0,0);
     for I := 0 to Self.Verts.Count - 1 do
     begin
-      MinV[0] := Min(MinV[0],Self.Verts[I][0]);
-      MinV[1] := Min(MinV[1],Self.Verts[I][1]);
-      MinV[2] := Min(MinV[2],Self.Verts[I][2]);
-      MaxV[0] := Max(MaxV[0],Self.Verts[I][0]);
-      MaxV[1] := Max(MaxV[1],Self.Verts[I][1]);
-      MaxV[2] := Max(MaxV[2],Self.Verts[I][2]);
+      MinV[0] := Math.Min(MinV[0],Self.Verts[I][0]);
+      MinV[1] := Math.Min(MinV[1],Self.Verts[I][1]);
+      MinV[2] := Math.Min(MinV[2],Self.Verts[I][2]);
+      MaxV[0] := Math.Max(MaxV[0],Self.Verts[I][0]);
+      MaxV[1] := Math.Max(MaxV[1],Self.Verts[I][1]);
+      MaxV[2] := Math.Max(MaxV[2],Self.Verts[I][2]);
     end;
 
     Stream.Write(MinV,3*4);
@@ -441,6 +456,17 @@ begin
       end;
     end else
       MeshImp.HasTextureCoords := mtcNone;
+
+    if Self.IncludeNormals and (Self.Normals.Count>=Self.Verts.Count) then
+    begin
+      MeshImp.NormalsFormat := mnfFloat;
+      for I := 0 to Self.Verts.Count-1 do
+      begin
+        V := Normals[I];
+        Stream.Write(V, SizeOf(V));
+      end;
+    end else
+      MeshImp.NormalsFormat := mnfNone;
 
     //Write data to binary property
     if MeshImp.MeshData.Data<>nil then
