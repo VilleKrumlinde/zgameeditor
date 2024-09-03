@@ -475,6 +475,13 @@ procedure TZCodeGen.GenValue(Op : TZcOp);
             Exit;
           end;
         end;
+      zctClass :
+        if Cop.ToType.Kind=zctXptr then
+        begin
+          GenValue(Op.Child(0));
+          TExpMisc.Create(Target, emGetUserClass);
+          Exit;
+        end;
     end;
     if Ord(Kind)=99 then
       raise ECodeGenError.Create('Invalid conversion: ' + Op.ToString);
