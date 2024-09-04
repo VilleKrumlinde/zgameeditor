@@ -1050,7 +1050,7 @@ procedure TDefineVariable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
-    //Variabler är ingen ide att spara, de måste sättas ifrån kod
+    //Variabler Ã¤r ingen ide att spara, de mÃ¥ste sÃ¤ttas ifrÃ¥n kod
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
@@ -2297,36 +2297,70 @@ begin
     Env.StackPopTo(Args[ArgCount-I-1]);
 
   //http://en.wikipedia.org/wiki/Calling_convention#ARM
-  //First params in r-registers
-  //Then on stack
+  // First parameters in registers, then on stack
+
   if ArgCount>4 then
+
+  {$if defined(cpuaarch64)} // 64-bit ARM
+
   begin
-    P := @Args+16;
-    Tmp := ArgCount-4;
-    asm
-      ldr r0, Tmp
-      ldr r1, P
-      mov r3, #0
-   .Lmyloop:
-      ldr r2, [r1, r3]
-      str r2, [r13, r3]
-      add r3,r3,#4
-      sub	r0,r0,#1
-      cmp r0,#0
-      bgt .Lmyloop
-    end;
+      P := @Args + 64; // Start after first 8 args (8 * 8 bytes = 64 bytes)
+      Tmp := ArgCount - 8;
+      asm
+        ldr x8, Tmp
+        ldr x9, P
+        mov x11, #0
+      .Lmyloop64:
+        ldr x10, [x9, x11]
+        str x10, [sp, x11]
+        add x11, x11, #8
+        sub x8, x8, #1
+        cmp x8, #0
+        b.gt .Lmyloop64 // bgt .Lmyloop64 isn't compiling when targetting cpuaarch64 instead of CPUARM64
+      end;
+  end;
+
+  asm
+    ldr x8, Args
+    ldr x9, Args + 8
+    ldr x10, Args + 16
+    ldr x11, Args + 24
+
+    ldr x12, TheFunc
+    blr x12
+
+    str x8, RetVal
+  end;
+
+  {$else} // 32-bit ARM
+
+  begin
+      P := @Args + 16; // Start after first 4 args (4 * 4 bytes = 16 bytes)
+      Tmp := ArgCount - 4;
+      asm
+        ldr r0, Tmp
+        ldr r1, P
+        mov r3, #0
+      .Lmyloop:
+        ldr r2, [r1, r3]
+        str r2, [r13, r3]
+        add r3, r3, #4
+        sub r0, r0, #1
+        cmp r0, #0
+        bgt .Lmyloop
+      end;
   end;
 
   asm
     ldr r0, Args
-    ldr r1, Args+4
-    ldr r2, Args+8
-    ldr r3, Args+12
+    ldr r1, Args + 4
+    ldr r2, Args + 8
+    ldr r3, Args + 12
 
-    ldr r4,TheFunc
+    ldr r4, TheFunc
     blx r4
 
-    str r0,RetVal
+    str r0, RetVal
   end;
 
 //    ldr r4, Args+16
@@ -2721,9 +2755,8 @@ begin
   if Self.ReturnType.Kind<>zctVoid then
     Env.StackPush(RetVal);
 end;
-{$endif}
 
-{$if defined(cpuaarch64)}  // ARM64
+{$elseif defined(cpuaarch64)}  // ARM64 Computer, not Android
 
 procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
@@ -2947,6 +2980,10 @@ begin
       Env.StackPush(RetVal);
   end;
 end;
+
+{$endif}
+
+{$if defined(cpuaarch64)}  // ARM64 Computer and Android
 
 destructor TExpExternalFuncCall.Destroy;
 begin
