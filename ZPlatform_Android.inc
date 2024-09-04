@@ -428,7 +428,11 @@ begin
 end;
 
 
-function AudioCallback(Data : pointer) : longint;
+{$IFDEF CPU64}
+function AudioCallback(Data : pointer) : Int64;
+{$ELSE}
+function AudioCallback(P: Pointer): LongInt;
+{$ENDIF}
 const
   OnePassSize = 512;
 var
@@ -516,7 +520,11 @@ end;
 
 procedure Platform_InitAudio;
 var
-  id : LongWord;
+  {$IFDEF CPU64}
+  id: QWord;
+  {$ELSE}
+  id: LongWord;
+  {$ENDIF}
 begin
   AudioTerminated := False;
   BeginThread( AudioCallback, nil, id);
@@ -659,7 +667,7 @@ begin
   end
   else
     TheName := Name;
-  Result := Integer( dlopen(TheName,1) );
+  Result := NativeUInt( dlopen(TheName,1) );
   if Result=0 then
   begin
     Platform_Error( PAnsiChar('failed to load: ' + TheName) );
@@ -684,7 +692,7 @@ function Platform_GetModuleProc(Module : NativeUInt; const Name : PAnsiChar) : p
 begin
   Result := dlsym(Pointer(Module), Name);
   if Result=nil then
-    Platform_Error(Name);
+    Platform_Error(PChar('Function not found: ' + Name));
 end;
 
 function Platform_TouchGetCount : integer;
@@ -713,7 +721,11 @@ begin
     Result := AndroidTouch[TouchIndex].Id;
 end;
 
+{$IFDEF CPU64}
+function ThreadWrapper(Data : pointer) : Int64; stdcall;
+{$ELSE}
 function ThreadWrapper(Data : pointer) : longint;
+{$ENDIF}
 begin
   TZThread(Data).Execute;
   EndThread( 0 );
@@ -722,7 +734,11 @@ end;
 
 function Platform_CreateThread(ZThread : TZThread) : pointer;
 var
-  id : LongWord;
+  {$IFDEF CPU64}
+  id: QWord;
+  {$ELSE}
+  id: LongWord;
+  {$ENDIF}
 begin
   BeginThread(ThreadWrapper, ZThread, id);
   Result := pointer(id);
