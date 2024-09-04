@@ -1,6 +1,6 @@
-//ZOpenGL är ZzDC mapping mot open gl
+//ZOpenGL Ã¤r ZzDC mapping mot open gl
 //Anpassat nedladdad dll
-//Hämta senaste från http://cvs.sourceforge.net/viewcvs.py/jedi-sdl/JEDI-SDLv1.0/
+//HÃ¤mta senaste frÃ¥n http://cvs.sourceforge.net/viewcvs.py/jedi-sdl/JEDI-SDLv1.0/
 
 unit ZOpenGL;
 
@@ -1298,8 +1298,8 @@ var
   glNormalPointer : procedure (atype: GLenum; stride: GLsizei; const pointer: Pointer); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
 
   {$ifdef android}
-  glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
-  glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
+  glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); cdecl;
+  glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLFLoat); cdecl;
   {$else}
   glOrtho : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
   glFrustum : procedure (left, right, bottom, top, zNear, zFar: GLdouble); {$IFDEF WIN32}stdcall;{$ELSE}cdecl;{$ENDIF}
