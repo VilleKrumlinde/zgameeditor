@@ -577,7 +577,7 @@ begin
   Glp := TGLPanel.Create(Self);
   Glp.Align := alClient;
   Glp.OnGLDraw := Self.OnGlDraw;
-  //Byt ut windowproc mot vÂr platform_windowproc
+  //Byt ut windowproc mot v√•r platform_windowproc
   OldGlWindowProc := Glp.WindowProc;
   Glp.WindowProc := GlWindowProc;
   Glp.OnMouseDown := OnGLPanelMouseDown;
@@ -587,7 +587,7 @@ begin
   Glp.OnGlInit := Self.OnGlInit;
   Glp.Parent := ViewerGlTabSheet;
   Glp.ForceInitGL;
-  //Mousewheel mÂste s‰ttas pÂ formul‰ret annars tar det inte
+  //Mousewheel m√•ste s√§ttas p√• formul√§ret annars tar det inte
   //Glp.OnMouseWheel := OnGLPanelMouseWheel;
   Self.OnMouseWheel := OnGLPanelMouseWheel;
 
@@ -608,7 +608,7 @@ begin
   MruList.StrictDelimiter := True;
   MruList.Duplicates := dupIgnore;
 
-  Platform_InitGlobals;  //Nollst‰ll timer etc
+  Platform_InitGlobals;  //Nollst√§ll timer etc
 
   Application.OnException := OnAppException;
 
@@ -968,7 +968,7 @@ begin
   //Needed for platform wndproc
   SetWindowLongPtr(Glp.Handle,GWL_USERDATA, NativeInt(ZApp) );
 
-  //S‰tt till nytt v‰rde sÂ att form.caption ‰ndras
+  //S√§tt till nytt v√§rde s√• att form.caption √§ndras
   _FileChanged := True;
   SetFileChanged(False);
 
@@ -1517,8 +1517,8 @@ begin
       IsRenderComponent := ((ShowNode is TStateBase) or (ShowNode is TZApplication));
 
       if not IsRenderComponent then
-        //Gˆr update fˆr att prop-‰ndringar skall slÂ igenom
-        //Men inte fˆr appar och states, dÂ kˆrs update-kod t.ex. med centerMouse();
+        //G√∂r update f√∂r att prop-√§ndringar skall sl√• igenom
+        //Men inte f√∂r appar och states, d√• k√∂rs update-kod t.ex. med centerMouse();
         ShowNode.Update;
 
       glViewport(0, 0, Glp.Width, Glp.Height);
@@ -1793,7 +1793,7 @@ var
   F : TForm;
   C : TCompEditFrameBase;
 begin
-  //V‰rde har ‰ndrats i propertyeditorn
+  //V√§rde har √§ndrats i propertyeditorn
   Glp.Invalidate;
 
   if CompEditor<>nil then
@@ -1905,7 +1905,7 @@ var
   F : TForm;
   C : TCompEditFrameBase;
 begin
-  //V‰rde har ‰ndrats i propertyeditorn
+  //V√§rde har √§ndrats i propertyeditorn
   Glp.Invalidate;
 
   if CompEditor<>nil then
@@ -1921,7 +1921,7 @@ end;
 
 procedure TEditorForm.OnTreeChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
 begin
-  //Kˆrs innan selected byts
+  //K√∂rs innan selected byts
   if (CompEditor<>nil) and CompEditor.NeedRefreshTreeNode then
   begin
     RefreshCompEditorTreeNode();
@@ -1974,7 +1974,7 @@ end;
 procedure SetupGLShading;
 const
   AmbientLight : array[0..3] of single = (0.4, 0.4, 0.4, 1.0);
-  //exempel frÂn http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
+  //exempel fr√•n http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
   mat_specular : array[0..3] of single = ( 0.2, 0.2, 0.2, 1.0 );
   no_shininess = 0;
   low_shininess = 5;
@@ -2243,8 +2243,8 @@ var
 begin
   CurParent := Node.Parent as TZComponentTreeNode;
   Model := nil;
-  //Om det finns en model-parent sÂ skriv den till symbol 'CurrentModel'
-  //sÂ att den kan anv‰ndas i uttryck.
+  //Om det finns en model-parent s√• skriv den till symbol 'CurrentModel'
+  //s√• att den kan anv√§ndas i uttryck.
   while CurParent <> nil do
   begin
     if Assigned(CurParent.Component) and (CurParent.Component is TModel) then
@@ -2635,7 +2635,7 @@ var
   OutFile : string;
 begin
   OutFile := BuildRelease(bbNormalUncompressed);
-  //Kˆr den skapade filen
+  //K√∂r den skapade filen
   ShellExecute(Handle, 'open',PChar(OutFile), nil, nil, SW_SHOWNORMAL);
 end;
 
@@ -2874,7 +2874,7 @@ begin
     end;
 
     //http://msdn.microsoft.com/en-us/library/ms997538.aspx
-    //l‰gg till ico-file ifall den finns som prop pÂ application
+    //l√§gg till ico-file ifall den finns som prop p√• application
     if ZApp.Icon.Size>0 then
     begin
       IconR := TIconGroupResourceDetails.CreateNew(M,1053,'1');
@@ -3001,7 +3001,7 @@ begin
   //Need to recompile afterwards to reset constants in designer
   CompileAll;
 
-  //linuxbin‰rer med piggyback hanteras ej av upx
+  //linuxbin√§rer med piggyback hanteras ej av upx
   if Kind in [bbNormal,bbScreenSaver] then
   begin
     //Upx -v %1
@@ -3074,7 +3074,7 @@ var
   ParentComps,ParentLists : TStringList;
   CurParent : TZComponentTreeNode;
 begin
-  //Ta reda pÂ vilken lista som nod ska l‰ggas till
+  //Ta reda p√• vilken lista som nod ska l√§ggas till
   if not Assigned(Tree.Selected) then
     Exit;
   if Assigned(Tree.ZSelected.ComponentList) then
@@ -3084,8 +3084,8 @@ begin
   end
 {  else if (TObject(Tree.Selected.Data) is TZComponent) then
   begin
-    //Todo: fÂr endast ha en nested
-    //gˆr c.DesignerGetDefaultList, nil om flera finns
+    //Todo: f√•r endast ha en nested
+    //g√∂r c.DesignerGetDefaultList, nil om flera finns
     Selected.GetProperty(Selected.GetProperties.GetByType(zptComponentList),Value);
     OwnerList := Value.ComponentListValue;
     ParentC := Selected;
@@ -3107,7 +3107,7 @@ begin
       CurParent := CurParent.Parent as TZComponentTreeNode;
     end;
 
-    //Ta reda pÂ vilken klass som ska l‰ggas till
+    //Ta reda p√• vilken klass som ska l√§ggas till
     if not Assigned(SelectComponentForm) then
     begin
       SelectComponentForm := TSelectComponentForm.Create(Self);
@@ -3242,7 +3242,7 @@ begin
     NodeList.Free;
   end;
 
-  //Signalera till parentlistan att den ‰r ‰ndrad
+  //Signalera till parentlistan att den √§r √§ndrad
   UndoParent.ComponentList.Change;
   SelectComponent(nil);
   SetFileChanged(True);
@@ -3398,7 +3398,7 @@ begin
         Exit;
 
       if IsCopy then
-        //Kopiera komponent ifall CTRL ‰r nedtryckt
+        //Kopiera komponent ifall CTRL √§r nedtryckt
         InsertAndRenameComponent(SourceC.Clone,ToNode as TZComponentTreeNode)
       else
       begin
@@ -3409,7 +3409,7 @@ begin
         DestList.AddComponent(SourceC);
         DestList.Change;
 
-        //Flytta tr‰dnoder
+        //Flytta tr√§dnoder
         FromNode.MoveTo(ToNode,naAddChild);
 
         if CompEditor<>nil then
@@ -5378,13 +5378,13 @@ begin
 
     MPath(ProjectPath);
     MPath(ProjectPath + 'libs');
-    MPath(ProjectPath + 'libs\armeabi');
+    MPath(ProjectPath + 'libs\armeabi-v7a');
     MPath(ProjectPath + 'assets');
     MPath(ProjectPath + 'res');
     MPath(ProjectPath + 'res\drawable-ldpi');
     MPath(ProjectPath + 'src\org\zgameeditor');
 
-    MCopy('libs\armeabi\libzgeandroid.so');
+    MCopy('libs\armeabi-v7a\libzgeandroid.so');
     MCopy('src\org\zgameeditor\Zge.java', False, SdkChanged);
     MCopy('src\org\zgameeditor\ZgeActivity.java');
     MCopy('res\drawable-ldpi\icon.png');
