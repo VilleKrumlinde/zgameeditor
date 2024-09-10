@@ -1050,7 +1050,7 @@ procedure TDefineVariable.DefineProperties(List: TZPropertyList);
 begin
   inherited;
   List.AddProperty({$IFNDEF MINIMAL}'Value',{$ENDIF}(@Value), zptFloat);
-    //Variabler ‰r ingen ide att spara, de mÂste s‰ttas ifrÂn kod
+    //Variabler √§r ingen ide att spara, de m√•ste s√§ttas ifr√•n kod
     List.GetLast.NeverPersist := True;
   List.AddProperty({$IFNDEF MINIMAL}'IntValue',{$ENDIF}(@IntValue), zptInteger);
     List.GetLast.NeverPersist := True;
@@ -2261,7 +2261,7 @@ begin
 end;
 {$endif}
 
-{$if defined(android)}
+{$if defined(android) and defined(cpu32)}
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 const
   MaxArgs = 16;
