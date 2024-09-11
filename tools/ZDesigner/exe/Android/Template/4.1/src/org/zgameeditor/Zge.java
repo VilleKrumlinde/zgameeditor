@@ -78,7 +78,7 @@ public class Zge extends GLSurfaceView
         System.loadLibrary("zgeandroid");
 
         String dataPath = context.getFilesDir().getAbsolutePath() + "/";
-        String libraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+        String libraryPath = getContext().getApplicationInfo().nativeLibraryDir + "/";
         String extPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         NativeInit(extPath, dataPath, libraryPath);
 
