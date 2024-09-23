@@ -149,8 +149,8 @@ end;
 
 procedure TGLDriverBase.InitGL;
 const
-  //exempel från http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
-  //Specular är färg för highlights i direkt ljus
+  //exempel frÃ¥n http://rush3d.com/reference/opengl-redbook-1.1/chapter06.html
+  //Specular Ã¤r fÃ¤rg fÃ¶r highlights i direkt ljus
   Specular : array[0..3] of single = ( 0.1, 0.1, 0.1, 1.0 );
   LowShininess = 5;
 begin
@@ -167,8 +167,8 @@ begin
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    //Färg på material följer anrop till glColor. Detta gör att man slipper
-    //sätta glMaterial ambient och diffuse separat.
+    //FÃ¤rg pÃ¥ material fÃ¶ljer anrop till glColor. Detta gÃ¶r att man slipper
+    //sÃ¤tta glMaterial ambient och diffuse separat.
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
@@ -176,7 +176,7 @@ begin
     glMaterialf(GL_FRONT, GL_SHININESS, LowShininess);
   end;
 
-  //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 då blir det för ljust
+  //Viktigt: Annars blir ljus fel vid scaled vectors, t.ex. scale 0.1 dÃ¥ blir det fÃ¶r ljust
   //Detta p.g.a. gl skalar normals vid glScale
   glEnable(GL_NORMALIZE);
 
@@ -191,7 +191,7 @@ end;
 
 procedure TGLDriverBase.EnableMaterial(NewM : TMaterial);
 const
-  //0x8370 GL_MIRRORED_REPEAT, enbart gl 1.4 och uppåt
+  //0x8370 GL_MIRRORED_REPEAT, enbart gl 1.4 och uppÃ¥t
   TexWrapModes : array[0..2] of integer = ($8370,GL_REPEAT,GL_CLAMP_TO_EDGE);
 var
   NilOld : boolean;
@@ -324,7 +324,7 @@ begin
     end;
 
     //Texture matrix
-    //Denna ordning är nödvändig för att scale och rotate ska ske kring texture center (0.5)
+    //Denna ordning Ã¤r nÃ¶dvÃ¤ndig fÃ¶r att scale och rotate ska ske kring texture center (0.5)
     Self.MatrixMode(GL_TEXTURE);
     Self.LoadIdentity();
       Self.Translate(Tex.TextureX+Tex.Origin[0],Tex.TextureY+Tex.Origin[1],0);
@@ -432,11 +432,11 @@ var
   Verts : array[0..3] of TZVector2f;
   Texc : array[0..3] of TZVector2f;
 begin
-  //Y är positivt uppåt
-  //Rita i CCW direction för att skapa en front-facing polygon
-  //Behövs normals här? Default är 0,0,1.
+  //Y Ã¤r positivt uppÃ¥t
+  //Rita i CCW direction fÃ¶r att skapa en front-facing polygon
+  //BehÃ¶vs normals hÃ¤r? Default Ã¤r 0,0,1.
 
-  //För TexCoords gäller: Y=1 Top, Y=0 Bottom
+  //FÃ¶r TexCoords gÃ¤ller: Y=1 Top, Y=0 Bottom
 
   W := Width / 2.0;
   H := Height / 2.0;
@@ -569,12 +569,12 @@ begin
 
     glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandles[0]);
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT,0,pointer(Mesh.VboOffsets[0]));
+    glNormalPointer(GL_FLOAT, 0, Pointer(PtrUInt(Mesh.VboOffsets[0])));
 
     if Mesh.Colors<>nil then
     begin
       glEnableClientState(GL_COLOR_ARRAY);
-      glColorPointer(4,GL_UNSIGNED_BYTE,0,pointer(Mesh.VboOffsets[1]));
+      glColorPointer(4, GL_UNSIGNED_BYTE, 0, Pointer(PtrUInt(Mesh.VboOffsets[1])));
     end;
     if (Mesh.TexCoords<>nil) and (CurrentMaterial<>nil) then
     begin
@@ -583,7 +583,7 @@ begin
         if MultiTextureSupported then
           glClientActiveTexture(GL_TEXTURE0 + I);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2,GL_FLOAT,0,pointer(Mesh.VboOffsets[2]));
+        glTexCoordPointer(2, GL_FLOAT, 0, Pointer(PtrUInt(Mesh.VboOffsets[2])));
       end;
     end;
 
@@ -947,20 +947,20 @@ begin
 
   //Normals
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, pointer(Mesh.VboOffsets[0]));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, Pointer(PtrUInt(Mesh.VboOffsets[0])));
 
   //Colors
   if Mesh.Colors<>nil then
   begin
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, pointer(Mesh.VboOffsets[1]));
+    glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, Pointer(PtrUInt(Mesh.VboOffsets[1])));
   end;
 
   //Texcoords
   if Mesh.TexCoords<>nil then
   begin
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, pointer(Mesh.VboOffsets[2]));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, Pointer(PtrUInt(Mesh.VboOffsets[2])));
   end;
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mesh.VboHandles[1]);
