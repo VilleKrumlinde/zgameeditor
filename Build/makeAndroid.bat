@@ -6,7 +6,7 @@ REM Define the FPC path and version
 set FPC_PATH=C:\FPC\3.2.2\bin\i386-win32
 
 REM Define the Android NDK path and API number
-set NDK_PATH=C:\Android\android-ndk-r21e\platforms\android-29
+set NDK_PATH=C:\Android\android-ndk-r27b\toolchains
 
 REM Enable or disable debug mode (set to true or false)
 set DEBUG=false
