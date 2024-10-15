@@ -259,7 +259,7 @@ type va_list=pointer;
       CallNonvirtualShortMethodA:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID;Args:PJValue):JShort;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
 
       CallNonvirtualIntMethod:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID):JInt;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
-      CallNonvirtualIntMethodV:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID;Args:va_list):JInt;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
+      CallNonvirtualIntMethodV:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID):JInt;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif} varargs;
       CallNonvirtualIntMethodA:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID;Args:PJValue):JInt;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
 
       CallNonvirtualLongMethod:function(Env:PJNIEnv;Obj:JObject;AClass:JClass;MethodID:JMethodID):JLong;{$ifdef mswindows}stdcall;{$else}cdecl;{$endif}
