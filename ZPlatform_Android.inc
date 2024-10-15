@@ -493,7 +493,7 @@ begin
   mRelease := env^.GetMethodID(env, cAudioTrack, 'release', '()V');
   mWrite := env^.GetMethodID(env, cAudioTrack, 'write', '([BII)I');
 
-  bufferSizeInBytes := Env^.CallStaticIntMethodA(env, cAudioTrack, mGetMinBufferSize, C([AudioPlayer.AudioRate, 3, 12]));
+  bufferSizeInBytes := Env^.CallStaticIntMethodA(env, cAudioTrack, mGetMinBufferSize, C([AudioPlayer.AudioRate, 3, 2]));
   //LogValue('BufferSize',bufferSizeInBytes);
 
   track := env^.NewObjectA(env, cAudioTrack, mAudioTrack, C([3, AudioPlayer.AudioRate, 3, 2, bufferSizeInBytes, 1]));
