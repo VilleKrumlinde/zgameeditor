@@ -383,7 +383,7 @@ var
   X,Y : PSingle;
   XStep : single;
   T : PPixelTask;
-  I,J : integer;
+  I,J,stepCount: integer;
 begin
   T := PPixelTask(Task);
 
@@ -398,7 +398,8 @@ begin
   X := PSingle(Env.StackGetPtrToItem(0));
   Y := PSingle(Env.StackGetPtrToItem(1));
 
-  XStep := 1/(T.W-1);
+  stepCount := T.W - 1;
+  XStep := 1 / (stepCount + Ord(stepCount = 0));
 
   Y^ := T.Y*T.YStep;
   for I := 0 to T.H-1 do
@@ -543,8 +544,8 @@ begin
   end
   {$endif};
 
-  //Ifall det behövs format och storleksdata om bitmappen
-  //så kan man lägga till properties senare.
+  //Ifall det behÃ¶vs format och storleksdata om bitmappen
+  //sÃ¥ kan man lÃ¤gga till properties senare.
   case Self.FileFormat of
     bffUncompressed:
       begin
