@@ -781,7 +781,7 @@ begin
   RunClass := Env^.FindClass(Env, 'java/lang/Runtime');
 
   Mid := Env^.GetStaticMethodID(Env, RunClass , 'getRuntime', '()Ljava/lang/Runtime;');
-  RunObj := Env^.CallStaticObjectMethodV(Env, RunClass, Mid, nil);
+  RunObj := Env^.CallStaticObjectMethod(Env, RunClass, Mid);
 
   Mid := Env^.GetMethodID(Env, RunClass , 'availableProcessors', '()I');
   Result := Env^.CallIntMethod(Env,RunObj,Mid);
