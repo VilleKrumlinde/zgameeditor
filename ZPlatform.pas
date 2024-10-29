@@ -41,7 +41,7 @@ procedure Platform_SwapBuffers;
 procedure Platform_Run(Callback : TRunCallback);
 function Platform_GetExeFileName : PAnsiChar;
 
-//Return time in seonds since program start
+//Return time in seconds since program start
 function Platform_GetTime : single;
 function Platform_GetSystemTime : integer;
 
