@@ -428,6 +428,7 @@ var
   TaskList : pointer;
   Task : PPixelTask;
   TaskH : integer;
+  stepCount: integer;
 begin
   SourceB := GetOptionalArgument(Stack);
   if SourceB<>nil then
@@ -461,6 +462,8 @@ begin
   RowsLeft := H;
   TaskH := H div TaskCount;
   P := Pixels;
+  stepCount := H - 1;
+  
   for I := 0 to TaskCount-1 do
   begin
     Task.P := P;
@@ -470,7 +473,7 @@ begin
     if I=TaskCount-1 then
       Inc(Task.H,RowsLeft); //if any rows are left then add to last task
     Task.Y := I*TaskH;
-    Task.YStep := 1/(H-1);
+    Task.YStep := 1 / (stepCount+ Ord(stepCount = 0));
     Inc(Task);
     Inc(P,W*TaskH);
   end;
