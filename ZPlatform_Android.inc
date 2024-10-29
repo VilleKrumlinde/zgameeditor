@@ -429,7 +429,7 @@ end;
 
 
 {$IFDEF CPU64}
-function AudioCallback(Data : pointer) : Int64;
+function AudioCallback(P: pointer): Int64;
 {$ELSE}
 function AudioCallback(P: Pointer): LongInt;
 {$ENDIF}
@@ -442,16 +442,24 @@ var
   bufferSizeInBytes : integer;
   track : jobject;
   Buffer : jarray;
-  Params : array[0..10] of integer;
+  Params : array[0..10] of JValue;
   PBuffer : pointer;
   IsCopy : JBoolean;
 
-  function C(const args : array of const) : pointer;
+  function C(const args : array of const) : PJValue;
   var
     I : integer;
   begin
+    Fillchar(Params, SizeOf(Params), 0);
      for I := 0 to High(args) do
-       Params[I] := args[I].vinteger;
+      begin
+        case args[I].VType of
+          vtInteger: Params[I].i := args[I].VInteger; // Assign integer value
+          vtPointer: Params[I].l := args[I].VPointer; // Assign pointer value
+          else
+            raise Exception.Create('Unsupported argument type');
+        end;
+      end;
      Result := @Params;
   end;
 
@@ -485,10 +493,10 @@ begin
   mRelease := env^.GetMethodID(env, cAudioTrack, 'release', '()V');
   mWrite := env^.GetMethodID(env, cAudioTrack, 'write', '([BII)I');
 
-  bufferSizeInBytes := Env^.CallStaticIntMethodV(env, cAudioTrack, mGetMinBufferSize, C([AudioPlayer.AudioRate, 3, 2]));
+  bufferSizeInBytes := Env^.CallStaticIntMethodA(env, cAudioTrack, mGetMinBufferSize, C([AudioPlayer.AudioRate, 3, 2]));
   //LogValue('BufferSize',bufferSizeInBytes);
 
-  track := env^.NewObjectV(env, cAudioTrack, mAudioTrack, C([3, AudioPlayer.AudioRate, 3, 2, bufferSizeInBytes, 1]));
+  track := env^.NewObjectA(env, cAudioTrack, mAudioTrack, C([3, AudioPlayer.AudioRate, 3, 2, bufferSizeInBytes, 1]));
   if track=nil then
     Platform_error('could not create track')
   else
@@ -501,9 +509,9 @@ begin
     begin
       //Write in small steps to avoid having to lock VoicesMutex for long
       PBuffer := env^.GetPrimitiveArrayCritical(env, buffer, IsCopy);
-      MixAndCopyData(PBuffer,OnePassSize);
+      MixAndCopyData(PBuffer, Min(OnePassSize, bufferSizeInBytes));
       env^.ReleasePrimitiveArrayCritical(env, buffer, pBuffer, 0);
-      env^.CallNonvirtualIntMethodV(env, track, cAudioTrack, mWrite, C([buffer, 0, OnePassSize]));
+      env^.CallNonvirtualIntMethodA(env, track, cAudioTrack, mWrite, C([buffer, 0, Min(OnePassSize, bufferSizeInBytes)]));
 
       //Can only sleep a very short while here, otherwise sound breaks up
       //Round(((SoundBufferSamplesSize/AudioRate)/16) * 1000) );
