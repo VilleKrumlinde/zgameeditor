@@ -730,7 +730,7 @@ begin
 end;
 
 {$IFDEF CPU64}
-function ThreadWrapper(Data : pointer) : Int64; stdcall;
+function ThreadWrapper(Data : pointer) : Int64;
 {$ELSE}
 function ThreadWrapper(Data : pointer) : longint;
 {$ENDIF}
