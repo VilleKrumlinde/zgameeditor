@@ -547,7 +547,7 @@ function Platform_CreateMutex : pointer;
 var
   P : PRTLCriticalSection;
 begin
-  P := GetMem(SizeOf(Pointer));
+  P := GetMem(SizeOf(TRTLCriticalSection));
   InitCriticalSection(P^);
   Result := P;
 end;
