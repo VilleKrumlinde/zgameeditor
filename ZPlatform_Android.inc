@@ -628,31 +628,35 @@ begin
   Result := -1;
 end;
 
-
-procedure Platform_NetOpen(Url : PAnsiChar; InBrowser : boolean; WebOpen : pointer);
+procedure Platform_NetOpen(Url: PAnsiChar; InBrowser: boolean; WebOpen: pointer);
 var
-  Env : PJNIEnv;
-  AppClass : JClass;
-  Mid : JMethodID;
-  Params : array[0..10] of integer;
-
-  function C(const args : array of const) : pointer;
-  var
-    I : integer;
-  begin
-     for I := 0 to High(args) do
-       Params[I] := args[I].vinteger;
-     Result := @Params;
-  end;
+  Env: PJNIEnv;
+  AppClass: JClass;
+  Mid: JMethodID;
+  jniParams: array[0..0] of JValue;
+  JStr: jstring;
 
 begin
   if InBrowser then
   begin
-    CurVM^.GetEnv(CurVM,@Env,JNI_VERSION_1_6);
-    AndroidLog( PAnsiChar('Opening: ' + Url) );
-    AppClass := Env^.GetObjectClass(Env, Jobject(AndroidThis));
-    Mid := Env^.GetMethodID(Env, AppClass , 'openURL', '(Ljava/lang/String;)V');
-    Env^.CallVoidMethodV(Env, Jobject(AndroidThis), Mid, C([Env^.NewStringUTF(Env,Url)]) );
+    // Get JNI environment
+    CurVM^.GetEnv(CurVM, @Env, JNI_VERSION_1_6);
+
+    AndroidLog(PAnsiChar('Opening: ' + Url));
+
+    // Get class and method ID
+    AppClass := Env^.GetObjectClass(Env, jobject(AndroidThis));
+    Mid := Env^.GetMethodID(Env, AppClass, 'openURL', '(Ljava/lang/String;)V');
+
+    // Create Java string and set as argument
+    JStr := Env^.NewStringUTF(Env, Url);
+    jniParams[0].l := JStr;
+
+    // Call Java method using CallVoidMethodA
+    Env^.CallVoidMethodA(Env, jobject(AndroidThis), Mid, @jniParams[0]);
+
+    // Clean up local reference
+    Env^.DeleteLocalRef(Env, JStr);
   end;
 end;
 
