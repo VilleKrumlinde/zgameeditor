@@ -14,8 +14,8 @@
     <ZLibrary Comment="Sprites">
       <Source>
 <![CDATA[class gltex {
-  //Information about where in the texture atlas the sprite is located
-	float w,h,x1,x2,y1,y2;
+    //Information about where in the texture atlas the sprite is located
+    float w,h,x1,x2,y1,y2;
 }
 
 gltex gltex_wall;
@@ -58,51 +58,51 @@ gltex LoadTexture(byte[] ar,byte[] color) {
   //Copy bytes into texture atlas
   gltex tex = new gltex();
 
-	int mask = 0;
-	int i;
-	int j;
-	int stride;
+    int mask = 0;
+    int i;
+    int j;
+    int stride;
 
-  int sprite_x=ar[0];
-  int sprite_y=ar[1];
+    int sprite_x=ar[0];
+    int sprite_y=ar[1];
 
-	if (tex_x + sprite_x > TEX_SIZE) {
-		tex_y += tex_h;
-		tex_h = 0;
-		tex_x = 0;
-	}
-	if (sprite_y > tex_h)
-		tex_h = sprite_y;
-	if (tex_y + tex_h > TEX_SIZE)
-		trace("error");
-	stride = (TEX_SIZE - sprite_x) * 4;
-	int dest = (tex_x + tex_y * TEX_SIZE) * 4;
-	int src = 2;
-	for (j = 0; j < sprite_y; j++) {
-		for (i = 0; i < sprite_x; i++) {
-			if ((i & 7) == 0)
-				mask = ar[src++];
-      tex_buffer[dest++]=color[0];
-      tex_buffer[dest++]=color[1];
-      tex_buffer[dest++]=color[2];
-			if (mask & 0x80) {
-				tex_buffer[dest++] = 255;
-			}
-			else {
-				tex_buffer[dest++] = 0;
-			}
-			mask <<= 1;
-		}
-		dest += stride;
-	}
-  float texSize=TEX_SIZE;
-	tex.x1 = tex_x / texSize;
-	tex.x2 = tex.x1 + sprite_x / texSize;
-	tex.y1 = tex_y / texSize;
-	tex.y2 = tex.y1 + sprite_y / texSize;
-	tex.w = sprite_x;
-	tex.h = sprite_y;
-	tex_x += sprite_x;
+    if (tex_x + sprite_x > TEX_SIZE) {
+        tex_y += tex_h;
+        tex_h = 0;
+        tex_x = 0;
+    }
+    if (sprite_y > tex_h)
+        tex_h = sprite_y;
+    if (tex_y + tex_h > TEX_SIZE)
+        trace("error");
+    stride = (TEX_SIZE - sprite_x) * 4;
+    int dest = (tex_x + tex_y * TEX_SIZE) * 4;
+    int src = 2;
+    for (j = 0; j < sprite_y; j++) {
+        for (i = 0; i < sprite_x; i++) {
+            if ((i & 7) == 0)
+                mask = ar[src++];
+            tex_buffer[dest++]=color[0];
+            tex_buffer[dest++]=color[1];
+            tex_buffer[dest++]=color[2];
+            if (mask & 0x80) {
+                tex_buffer[dest++] = 255;
+            }
+            else {
+                tex_buffer[dest++] = 0;
+            }
+            mask <<= 1;
+        }
+        dest += stride;
+    }
+    float texSize=TEX_SIZE;
+    tex.x1 = tex_x / texSize;
+    tex.x2 = tex.x1 + sprite_x / texSize;
+    tex.y1 = tex_y / texSize;
+    tex.y2 = tex.y1 + sprite_y / texSize;
+    tex.w = sprite_x;
+    tex.h = sprite_y;
+    tex_x += sprite_x;
 
   return tex;
 }
@@ -289,34 +289,34 @@ void LoadTextures() {
     gltex_hat = LoadTexture(data,colorYellow);
   }
 
-	glGenTextures(1, tex_handle);
-	glBindTexture(GL_TEXTURE_2D, tex_handle);
+    glGenTextures(1, tex_handle);
+    glBindTexture(GL_TEXTURE_2D, tex_handle);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		TEX_SIZE, TEX_SIZE, 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, tex_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+        TEX_SIZE, TEX_SIZE, 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, tex_buffer);
 }
 
 void RenderSprite(gltex t, float x, float y)
 {
-	float w = t.w;
-	float h = t.h;
-	//glBindTexture(GL_TEXTURE_2D, t->handle);
-	glBegin(GL_QUADS);
-	glTexCoord2f(t.x1, t.y1);
-	glVertex2f(x, y);
-	glTexCoord2f(t.x1, t.y2);
-	glVertex2f(x, y - h);
-	glTexCoord2f(t.x2, t.y2);
-	glVertex2f(x + w, y - h);
-	glTexCoord2f(t.x2, t.y1);
-	glVertex2f(x + w, y);
-	glEnd();
+    float w = t.w;
+    float h = t.h;
+    //glBindTexture(GL_TEXTURE_2D, t->handle);
+    glBegin(GL_QUADS);
+    glTexCoord2f(t.x1, t.y1);
+    glVertex2f(x, y);
+    glTexCoord2f(t.x1, t.y2);
+    glVertex2f(x, y - h);
+    glTexCoord2f(t.x2, t.y2);
+    glVertex2f(x + w, y - h);
+    glTexCoord2f(t.x2, t.y1);
+    glVertex2f(x + w, y);
+    glEnd();
 }]]>
       </Source>
     </ZLibrary>
@@ -474,11 +474,11 @@ const int BUTTON_DOWN   = 4;
 const int BUTTON_UP     = 8;
 const int BUTTON_JUMP   = 0x10;
 
-const int DIR_L		= 1;
-const int DIR_R		= 2;
-const int DIR_UP	= 4;
-const int DIR_DOWN	= 8;
-const int DIR_HORIZ	= (DIR_R | DIR_L);
+const int DIR_L     = 1;
+const int DIR_R     = 2;
+const int DIR_UP    = 4;
+const int DIR_DOWN  = 8;
+const int DIR_HORIZ = (DIR_R | DIR_L);
 
 int skip_frame;
 int cheat;
@@ -551,57 +551,57 @@ TDuckInfo[5] duck;
 
 int DuckSprite(int n)
 {
-	int dir;
-	int sprite;
+    int dir;
+    int sprite;
 
-  TDuckInfo d=duck[n];
-	dir = d.dir;
-	switch (d.mode) {
-	case DUCK_BORED:
-		if (dir & DIR_HORIZ) {
-			sprite = (dir == DIR_R) ? 0 : 2;
-		}
-		else {
-			sprite = 4;
-		}
-		break;
-	case DUCK_STEP:
-		if (dir & DIR_HORIZ) {
-			sprite = (dir == DIR_R) ? 1 : 3;
-		}
-		else {
-			sprite = 5;
-		}
-		break;
-	case DUCK_EAT2:
-	case DUCK_EAT4:
-		sprite = (dir == DIR_R) ? 6 : 8;
-		break;
-	case DUCK_EAT3:
-		sprite = (dir == DIR_R) ? 7 : 9;
-		break;
-	default:
+    TDuckInfo d=duck[n];
+    dir = d.dir;
+    switch (d.mode) {
+    case DUCK_BORED:
+        if (dir & DIR_HORIZ) {
+            sprite = (dir == DIR_R) ? 0 : 2;
+        }
+        else {
+            sprite = 4;
+        }
+        break;
+    case DUCK_STEP:
+        if (dir & DIR_HORIZ) {
+            sprite = (dir == DIR_R) ? 1 : 3;
+        }
+        else {
+            sprite = 5;
+        }
+        break;
+    case DUCK_EAT2:
+    case DUCK_EAT4:
+        sprite = (dir == DIR_R) ? 6 : 8;
+        break;
+    case DUCK_EAT3:
+        sprite = (dir == DIR_R) ? 7 : 9;
+        break;
+    default:
     trace("wrong value in switch");
-	};
-	return sprite;
+    };
+    return sprite;
 }
 
 /* Movement code generates out of bounds reads.  */
 int Do_ReadMap(byte x, byte y)
 {
-	if (y >= 0x19 || x >= 0x14)
-		return 0;
-	if (y < 0 || x < 0)
-		return 0;
-	return levelmap[x + y * 20];
+    if (y >= 0x19 || x >= 0x14)
+        return 0;
+    if (y < 0 || x < 0)
+        return 0;
+    return levelmap[x + y * 20];
 }
 
 void Do_InitTile(int x, int y, int type)
 {
-	int old_type;
+    int old_type;
 
-	old_type = levelmap[y * 20 + x];
-	levelmap[y * 20 + x] = type;
+    old_type = levelmap[y * 20 + x];
+    levelmap[y * 20 + x] = type;
 }
 
 vec2[] scene_array_xy;
@@ -611,13 +611,13 @@ int scene_verts;
 
 void RenderScene()
 {
-	glVertexPointer(2, GL_FLOAT, 0, scene_array_xy);
-	glTexCoordPointer(2, GL_FLOAT, 0, scene_array_uv);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDrawArrays(GL_QUADS, 0, scene_verts);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, scene_array_xy);
+    glTexCoordPointer(2, GL_FLOAT, 0, scene_array_uv);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDrawArrays(GL_QUADS, 0, scene_verts);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void AddSceneVert(float x, float y, float u, float v)
@@ -635,10 +635,10 @@ void AddSceneVert(float x, float y, float u, float v)
 
 void AddSceneSprite(gltex t, float x, float y)
 {
-	AddSceneVert(x, y, t.x1, t.y1);
-	AddSceneVert(x, y - t.h, t.x1, t.y2);
-	AddSceneVert(x + t.w, y - t.h, t.x2, t.y2);
-	AddSceneVert(x + t.w, y, t.x2, t.y1);
+    AddSceneVert(x, y, t.x1, t.y1);
+    AddSceneVert(x, y - t.h, t.x1, t.y2);
+    AddSceneVert(x + t.w, y - t.h, t.x2, t.y2);
+    AddSceneVert(x + t.w, y, t.x2, t.y1);
 }
 
 int[32] item_pos;
@@ -646,179 +646,179 @@ int item_count;
 
 void RenderBackground()
 {
-	int player;
-	int x;
-	int y;
-	int n;
-	int type;
-	gltex tex;
+    int player;
+    int x;
+    int y;
+    int n;
+    int type;
+    gltex tex;
 
-	scene_verts = 0;
-	AddSceneSprite(gltex_score, 0, 0xf0);
-	for (player = 0; player < num_players; player++) {
-		x = player * 0x22 + 0x1b;
-		AddSceneSprite(gltex_blank, x, 0xf0);
-	}
+    scene_verts = 0;
+    AddSceneSprite(gltex_score, 0, 0xf0);
+    for (player = 0; player < num_players; player++) {
+        x = player * 0x22 + 0x1b;
+        AddSceneSprite(gltex_blank, x, 0xf0);
+    }
 
-	y = 0xe3;
-	AddSceneSprite(gltex_player, 0, y + 1);
-	AddSceneSprite(gltex_digit[current_player + 1], 0x1b, y);
+    y = 0xe3;
+    AddSceneSprite(gltex_player, 0, y + 1);
+    AddSceneSprite(gltex_digit[current_player + 1], 0x1b, y);
 
-	AddSceneSprite(gltex_level, 0x24, y + 1);
-	n = current_level + 1;
-	AddSceneSprite(gltex_digit[n % 10], 0x45, y);
-	n /= 10;
-	AddSceneSprite(gltex_digit[n % 10], 0x40, y);
-	if (n > 10)
-		AddSceneSprite(gltex_digit[n / 10], 0x3b, y);
+    AddSceneSprite(gltex_level, 0x24, y + 1);
+    n = current_level + 1;
+    AddSceneSprite(gltex_digit[n % 10], 0x45, y);
+    n /= 10;
+    AddSceneSprite(gltex_digit[n % 10], 0x40, y);
+    if (n > 10)
+        AddSceneSprite(gltex_digit[n / 10], 0x3b, y);
 
-	AddSceneSprite(gltex_bonus, 0x4e, y + 1);
-	AddSceneSprite(gltex_digit[0], 0x75, y);
-	AddSceneSprite(gltex_time, 0x7e, y + 1);
+    AddSceneSprite(gltex_bonus, 0x4e, y + 1);
+    AddSceneSprite(gltex_digit[0], 0x75, y);
+    AddSceneSprite(gltex_time, 0x7e, y + 1);
 
-	item_count = 0;
-	for (x = 0; x < 20; x++) {
-		for (y = 0; y < 25; y++) {
-			type = levelmap[y * 20 + x];
-			if (type & TILE_LADDER) {
-				tex = gltex_ladder;
-			}
-			else if (type & TILE_WALL) {
-				tex = gltex_wall;
-			}
-			else if (type & (TILE_EGG | TILE_GRAIN)) {
-				item_pos[item_count++] = y * 20 + x;
-				continue;
-			}
-			else {
-				continue;
-			}
-			AddSceneSprite(tex, x << 3, (y << 3) | 7);
-		}
-	}
+    item_count = 0;
+    for (x = 0; x < 20; x++) {
+        for (y = 0; y < 25; y++) {
+            type = levelmap[y * 20 + x];
+            if (type & TILE_LADDER) {
+                tex = gltex_ladder;
+            }
+            else if (type & TILE_WALL) {
+                tex = gltex_wall;
+            }
+            else if (type & (TILE_EGG | TILE_GRAIN)) {
+                item_pos[item_count++] = y * 20 + x;
+                continue;
+            }
+            else {
+                continue;
+            }
+            AddSceneSprite(tex, x << 3, (y << 3) | 7);
+        }
+    }
 
-	if (have_big_duck) {
-		tex = gltex_cage_open;
-	}
-	else {
-		tex = gltex_cage_closed;
-	}
-	AddSceneSprite(tex, 0, 0xdc);
+    if (have_big_duck) {
+        tex = gltex_cage_open;
+    }
+    else {
+        tex = gltex_cage_closed;
+    }
+    AddSceneSprite(tex, 0, 0xdc);
 }
 
 void RenderDigit(int x, int y, int n)
 {
-	RenderSprite(gltex_digit[n], x, y);
+    RenderSprite(gltex_digit[n], x, y);
 }
 
 void RenderPlayerHUD(int player)
 {
-	int x = player * 0x22 + 0x1b;
-	int n;
+    int x = player * 0x22 + 0x1b;
+    int n;
 
-	for (n = 0; n < 6; n++) {
-		RenderDigit(x + 1 + n * 5, 0xef,
-			player_data.score[n + 2]);
-	}
+    for (n = 0; n < 6; n++) {
+        RenderDigit(x + 1 + n * 5, 0xef,
+            player_data.score[n + 2]);
+    }
 
-	n = player_data.lives;
-	if ((n > 8) || (n < 0))
-		n = 8;
-	while (n--) {
-		RenderSprite(gltex_hat, x, 0xe7);
-		x += 4;
-	}
+    n = player_data.lives;
+    if ((n > 8) || (n < 0))
+        n = 8;
+    while (n--) {
+        RenderSprite(gltex_hat, x, 0xe7);
+        x += 4;
+    }
 }
 
 void RenderFrame() {
-	int x;
-	int y;
-	int n;
-	int sprite;
-	int type;
-	gltex tex;
+    int x;
+    int y;
+    int n;
+    int sprite;
+    int type;
+    gltex tex;
 
-	RenderScene();
+    RenderScene();
 
-	/* HUD  */
+    /* HUD  */
   RenderPlayerHUD(0);
 
-	y = 0xe3;
+    y = 0xe3;
 
-	RenderDigit(0x66, y, bonus[0]);
-	RenderDigit(0x6b, y, bonus[1]);
-	RenderDigit(0x70, y, bonus[2]);
+    RenderDigit(0x66, y, bonus[0]);
+    RenderDigit(0x6b, y, bonus[1]);
+    RenderDigit(0x70, y, bonus[2]);
 
-	RenderDigit(0x91, y, timer_ticks[0]);
-	RenderDigit(0x96, y, timer_ticks[1]);
-	RenderDigit(0x9b, y, timer_ticks[2]);
+    RenderDigit(0x91, y, timer_ticks[0]);
+    RenderDigit(0x96, y, timer_ticks[1]);
+    RenderDigit(0x9b, y, timer_ticks[2]);
 
-	/* Egg/Grain.  */
-	for (n = 0; n < item_count; n++) {
-		type = levelmap[item_pos[n]];
-		if (type & TILE_EGG) {
-			tex = gltex_egg;
-		}
-		else if (type & TILE_GRAIN) {
-			tex = gltex_grain;
-		}
-		else {
-			continue;
-		}
-		x = item_pos[n] % 20;
-		y = item_pos[n] / 20;
-		RenderSprite(tex, x << 3, (y << 3) | 7);
-	}
+    /* Egg/Grain.  */
+    for (n = 0; n < item_count; n++) {
+        type = levelmap[item_pos[n]];
+        if (type & TILE_EGG) {
+            tex = gltex_egg;
+        }
+        else if (type & TILE_GRAIN) {
+            tex = gltex_grain;
+        }
+        else {
+            continue;
+        }
+        x = item_pos[n] % 20;
+        y = item_pos[n] / 20;
+        RenderSprite(tex, x << 3, (y << 3) | 7);
+    }
 
-	/* Ducks.  */
-	for (n = 0; n < num_ducks; n++) {
-		x = duck[n].x;
-		sprite = DuckSprite(n);
-		if (sprite >= 8)
-			x -= 8;
+    /* Ducks.  */
+    for (n = 0; n < num_ducks; n++) {
+        x = duck[n].x;
+        sprite = DuckSprite(n);
+        if (sprite >= 8)
+            x -= 8;
 
     if(gltex_duck[sprite]!=null)
-   		RenderSprite(gltex_duck[sprite], x, duck[n].y);
-	}
+        RenderSprite(gltex_duck[sprite], x, duck[n].y);
+    }
 
-	/* Player.  */
-  gltex[4] ps=null;
-	if (player_face == 0) {
-		ps = gltex_player_up;
-		n = (player_y >> 1) & 3;
-	}
-	else {
-		if (player_face < 0)
-			ps = gltex_player_l;
-		else
-			ps = gltex_player_r;
-		n = (player_x >> 1) & 3;
-	}
-	if (player_mode != cPLAYER_CLIMB) {
-		if (move_x == 0)
-			n = 0;
-	}
-	else {
-		if (move_y == 0)
-			n = 0;
-	}
- 	RenderSprite(ps[n], player_x, player_y);
+    /* Player.  */
+    gltex[4] ps=null;
+    if (player_face == 0) {
+        ps = gltex_player_up;
+        n = (player_y >> 1) & 3;
+    }
+    else {
+        if (player_face < 0)
+            ps = gltex_player_l;
+        else
+            ps = gltex_player_r;
+        n = (player_x >> 1) & 3;
+    }
+    if (player_mode != cPLAYER_CLIMB) {
+        if (move_x == 0)
+            n = 0;
+    }
+    else {
+        if (move_y == 0)
+            n = 0;
+    }
+    RenderSprite(ps[n], player_x, player_y);
 
-	/* Lift.  */
-	if (have_lift) {
-		for (n = 0; n < 2; n++) {
-			RenderSprite(gltex_lift, lift_x, lift_y[n]);
-		}
-	}
+    /* Lift.  */
+    if (have_lift) {
+        for (n = 0; n < 2; n++) {
+            RenderSprite(gltex_lift, lift_x, lift_y[n]);
+        }
+    }
 
-	/* Big duck.  */
-	if (big_duck_dir) {
-		tex = big_duck_frame ? gltex_big_duck_l2 : gltex_big_duck_l1;
-	}
-	else {
-		tex = big_duck_frame ? gltex_big_duck_r2 : gltex_big_duck_r1;
-	}
-	RenderSprite(tex, big_duck_x, big_duck_y);
+    /* Big duck.  */
+    if (big_duck_dir) {
+        tex = big_duck_frame ? gltex_big_duck_l2 : gltex_big_duck_l1;
+    }
+    else {
+        tex = big_duck_frame ? gltex_big_duck_r2 : gltex_big_duck_r1;
+    }
+    RenderSprite(tex, big_duck_x, big_duck_y);
 }
 
 int readFromArray(byte[] ar, ref int pos) {
@@ -827,203 +827,203 @@ int readFromArray(byte[] ar, ref int pos) {
 
 void LoadLevel()
 {
-	int i;
-	int tmp;
-	int x;
-	int y;
-	int num_walls;
-	int num_ladders;
-	int num_grain;
+    int i;
+    int tmp;
+    int x;
+    int y;
+    int num_walls;
+    int num_ladders;
+    int num_grain;
 
-	i = current_level >> 4;
-	if (i > 8)
-		i = 8;
-	timer_ticks[0] = 9 - i;
-	timer_ticks[1] = 0;
-	timer_ticks[2] = 0;
+    i = current_level >> 4;
+    if (i > 8)
+        i = 8;
+    timer_ticks[0] = 9 - i;
+    timer_ticks[1] = 0;
+    timer_ticks[2] = 0;
 
-  byte[] levelData;
-  levels.getLevel(current_level & 7,levelData);
+    byte[] levelData;
+    levels.getLevel(current_level & 7,levelData);
 
-  int pos=0;
-	num_walls = readFromArray(levelData,pos);
-	num_ladders = readFromArray(levelData,pos);
-	have_lift = readFromArray(levelData,pos);
-	num_grain = readFromArray(levelData,pos);
-	num_ducks = readFromArray(levelData,pos);;
-	for (i = 0; i < 20 * 25; i++)
-		levelmap[i] = 0;
+    int pos=0;
+    num_walls = readFromArray(levelData,pos);
+    num_ladders = readFromArray(levelData,pos);
+    have_lift = readFromArray(levelData,pos);
+    num_grain = readFromArray(levelData,pos);
+    num_ducks = readFromArray(levelData,pos);;
+    for (i = 0; i < 20 * 25; i++)
+        levelmap[i] = 0;
 
-	while (num_walls--) {
-		y = readFromArray(levelData,pos);;
-		 x = readFromArray(levelData,pos);;
-		i = readFromArray(levelData,pos);;
-		while (x <= i) {
-			Do_InitTile(x, y, TILE_WALL);
-			x++;
-		}
-	}
+    while (num_walls--) {
+        y = readFromArray(levelData,pos);;
+         x = readFromArray(levelData,pos);;
+        i = readFromArray(levelData,pos);;
+        while (x <= i) {
+            Do_InitTile(x, y, TILE_WALL);
+            x++;
+        }
+    }
 
-	while (num_ladders--) {
-		x = readFromArray(levelData,pos);;
-		y = readFromArray(levelData,pos);;
-		i = readFromArray(levelData,pos);;
-		while (y <= i) {
-			tmp = levelmap[x + y * 20];
-			Do_InitTile(x, y, TILE_LADDER | tmp);
-			y++;
-		}
-	}
+    while (num_ladders--) {
+        x = readFromArray(levelData,pos);;
+        y = readFromArray(levelData,pos);;
+        i = readFromArray(levelData,pos);;
+        while (y <= i) {
+            tmp = levelmap[x + y * 20];
+            Do_InitTile(x, y, TILE_LADDER | tmp);
+            y++;
+        }
+    }
 
-	if (have_lift) {
-		lift_x = readFromArray(levelData,pos) << 3;
-	}
+    if (have_lift) {
+        lift_x = readFromArray(levelData,pos) << 3;
+    }
 
-	eggs_left = 0;
-	for (i = 0; i < 0xc; i++) {
-		x = readFromArray(levelData,pos);;
-		y = readFromArray(levelData,pos);;
-		if (player_data.egg[i] == 0) {
-			Do_InitTile(x, y, (i << 4) | TILE_EGG);
-			eggs_left++;
-		}
-	}
+    eggs_left = 0;
+    for (i = 0; i < 0xc; i++) {
+        x = readFromArray(levelData,pos);;
+        y = readFromArray(levelData,pos);;
+        if (player_data.egg[i] == 0) {
+            Do_InitTile(x, y, (i << 4) | TILE_EGG);
+            eggs_left++;
+        }
+    }
 
-	for (i = 0; i < num_grain; i++) {
- 		x = readFromArray(levelData,pos);;
-		y = readFromArray(levelData,pos);;
-		if (player_data.grain[i] == 0) {
-			Do_InitTile(x, y, (i << 4) | TILE_GRAIN);
-		}
-	}
+    for (i = 0; i < num_grain; i++) {
+        x = readFromArray(levelData,pos);;
+        y = readFromArray(levelData,pos);;
+        if (player_data.grain[i] == 0) {
+            Do_InitTile(x, y, (i << 4) | TILE_GRAIN);
+        }
+    }
 
-	for (i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++) {
     TDuckInfo d=duck[i];
-		d.tile_x = readFromArray(levelData,pos);;
-		d.tile_y = readFromArray(levelData,pos);;
-	}
+        d.tile_x = readFromArray(levelData,pos);;
+        d.tile_y = readFromArray(levelData,pos);;
+    }
 
-	RenderBackground();
+    RenderBackground();
 }
 
 void StartLevel()
 {
-	int i;
-	if (have_lift) {
-		lift_y[0] = 8;
-		lift_y[1] = 0x5a;
-		current_lift = 0;
-	}
-	big_duck_x = 4;
-	big_duck_y = 0xcc;
-	big_duck_dx = big_duck_dy = 0;
-	big_duck_frame = 0;
-	big_duck_dir = 0;
-	if ((current_level >> 3) == 1) {
-		num_ducks = 0;
-	}
-	if (current_level >= 24) {
-		num_ducks = 5;
-	}
-	for (i = 0; i < num_ducks; i++) {
-    TDuckInfo d=duck[i];
-		d.x = d.tile_x << 3;
-		d.y = (d.tile_y << 3) + 0x14;
-		d.mode = DUCK_BORED;
-		d.dir = 2;
-	}
-	/* Delay(3) */
-	player_x = 0x3c;
-	player_y = 0x20;
-	player_tilex = 7;
-	player_tiley = 2;
-	player_partial_x = 7;
-	player_partial_y = 0;
-	player_mode = cPLAYER_WALK;
-	player_face = 1;
-	button_ack = 0x1f;
+    int i;
+    if (have_lift) {
+        lift_y[0] = 8;
+        lift_y[1] = 0x5a;
+        current_lift = 0;
+    }
+    big_duck_x = 4;
+    big_duck_y = 0xcc;
+    big_duck_dx = big_duck_dy = 0;
+    big_duck_frame = 0;
+    big_duck_dir = 0;
+    if ((current_level >> 3) == 1) {
+        num_ducks = 0;
+    }
+    if (current_level >= 24) {
+        num_ducks = 5;
+    }
+    for (i = 0; i < num_ducks; i++) {
+        TDuckInfo d=duck[i];
+        d.x = d.tile_x << 3;
+        d.y = (d.tile_y << 3) + 0x14;
+        d.mode = DUCK_BORED;
+        d.dir = 2;
+    }
+    /* Delay(3) */
+    player_x = 0x3c;
+    player_y = 0x20;
+    player_tilex = 7;
+    player_tiley = 2;
+    player_partial_x = 7;
+    player_partial_y = 0;
+    player_mode = cPLAYER_WALK;
+    player_face = 1;
+    button_ack = 0x1f;
 }
 
 /* Returns nonzero if blocked.  */
 int MoveSideways()
 {
-	int tmp, x, y;
-	tmp = move_x;
-	if (tmp == 0)
-		return 0;
-	if (tmp < 0) {
-		if (player_x == 0)
-			return 1;
-		if (player_partial_x >= 2)
-			return 0;
-		if (move_y == 2)
-			return 0;
+    int tmp, x, y;
+    tmp = move_x;
+    if (tmp == 0)
+        return 0;
+    if (tmp < 0) {
+        if (player_x == 0)
+            return 1;
+        if (player_partial_x >= 2)
+            return 0;
+        if (move_y == 2)
+            return 0;
 
-		x = player_tilex - 1;
-		y = player_tiley;
-		tmp = player_partial_y + move_y;
-		if (tmp < 0)
-			y--;
-		else if (tmp >= 8)
-			y++;
-		if (Do_ReadMap(x, y) == 1)
-			return 1;
-		if (move_y >= 0)
-			return 0;
-		x = player_tilex - 1;
-		y++;
-		return (Do_ReadMap(x, y) == 1);
-	}
-	tmp = player_x;
-	if (tmp >= 0x98)
-		return 1;
-	if (player_partial_x < 5)
-		return 0;
-	if (move_y == 2)
-		return 0;
-	x = player_tilex + 1;
-	y = player_tiley;
-	tmp = player_partial_y + move_y;
-	if (tmp < 0)
-		y--;
-	else if (tmp >= 8)
-		y++;
-	if (Do_ReadMap(x, y) == 1)
-		return 1;
-	if (move_y >= 0)
-		return 0;
-	x = player_tilex + 1;
-	y++;
-	return (Do_ReadMap(x, y) == 1);
+        x = player_tilex - 1;
+        y = player_tiley;
+        tmp = player_partial_y + move_y;
+        if (tmp < 0)
+            y--;
+        else if (tmp >= 8)
+            y++;
+        if (Do_ReadMap(x, y) == 1)
+            return 1;
+        if (move_y >= 0)
+            return 0;
+        x = player_tilex - 1;
+        y++;
+        return (Do_ReadMap(x, y) == 1);
+    }
+    tmp = player_x;
+    if (tmp >= 0x98)
+        return 1;
+    if (player_partial_x < 5)
+        return 0;
+    if (move_y == 2)
+        return 0;
+    x = player_tilex + 1;
+    y = player_tiley;
+    tmp = player_partial_y + move_y;
+    if (tmp < 0)
+        y--;
+    else if (tmp >= 8)
+        y++;
+    if (Do_ReadMap(x, y) == 1)
+        return 1;
+    if (move_y >= 0)
+        return 0;
+    x = player_tilex + 1;
+    y++;
+    return (Do_ReadMap(x, y) == 1);
 }
 
 void RemoveGrain(int x, int y)
 {
-	Do_InitTile(x, y, 0);
+    Do_InitTile(x, y, 0);
 }
 
 void ScoreChange(int n, int oldval, int newval)
 {
-	player_data.score[n] = newval;
+    player_data.score[n] = newval;
 }
 
 void AddScore(int n, int val)
 {
-	int oldval;
+    int oldval;
 
-	while (n >= 0) {
-		oldval = player_data.score[n];
-		val += oldval;
-		if (n == 3)
-			extra_life++;
-		if (val < 10) {
-			ScoreChange(n, oldval, val);
-			return;
-		}
-		ScoreChange(n, oldval, val - 10);
-		val = 1;
-		n--;
-	}
+    while (n >= 0) {
+        oldval = player_data.score[n];
+        val += oldval;
+        if (n == 3)
+            extra_life++;
+        if (val < 10) {
+            ScoreChange(n, oldval, val);
+            return;
+        }
+        ScoreChange(n, oldval, val - 10);
+        val = 1;
+        n--;
+    }
 }
 /*        N    T  PI1  PI2  PI3  PN1  PN2  PN3   AA   AD   AS   AR  ALA  ALD */
 /* E1: 0x01 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x7e 0xce 0x00 0x00 0x64 0x00
@@ -1032,439 +1032,439 @@ void AddScore(int n, int val)
  */
 void beep(int tmp) /* 0x0c98 */
 {
-	/* channel = 13 (Flush), note = 1, pitch = tmp, duration = 0x0001 */
-//	sound_start(tmp, 1);
+    /* channel = 13 (Flush), note = 1, pitch = tmp, duration = 0x0001 */
+//  sound_start(tmp, 1);
 }
 
 void squidge(int tmp) /* 0x0ca8 */
 {
-	/* 0001 0003 0000 0004 */
-//	sound_start(tmp, 0);
+    /* 0001 0003 0000 0004 */
+//  sound_start(tmp, 0);
 }
 
 void AnimatePlayer()
 {
-	int tmp;
-	int x, y;
+    int tmp;
+    int x, y;
 
-	player_x += move_x;
-	tmp = player_partial_x + move_x;
-	if (tmp < 0)
-		player_tilex--;
-	if (tmp >= 8)
-		player_tilex++;
-	player_partial_x = tmp & 7;
-	player_y += move_y;
-	tmp = player_partial_y + move_y;
-	if (tmp < 0)
-		player_tiley--;
-	if (tmp >= 8)
-		player_tiley++;
-	player_partial_y = tmp & 7;
-	x = player_tilex;
-	y = player_tiley;
-	if (player_partial_y >= 4)
-		y++;
-	tmp = Do_ReadMap(x, y);
-	if ((tmp & 0x0c) == 0)
-		return;
-	if ((tmp & 0x08) == 0) {
-		/* Got egg */
-		eggs_left--;
-		/* SQUIDGE(6) */
-		squidge(6);
-		tmp >>= 4;
-		player_data.egg[tmp]--;
-		Do_InitTile(x, y, 0);
-		tmp = (current_level >> 2) + 1;
-		if (tmp >= 10)
-			tmp = 10;
-		AddScore(5, tmp);
-	}
-	else {
-		/* Got grain */
-		/* SQUIDGE(5) */
-		squidge(5);
-		tmp >>= 4;
-		player_data.grain[tmp]--;
-		RemoveGrain(x, y);
-		AddScore(6, 5);
-		bonus_hold = 14;
-	}
+    player_x += move_x;
+    tmp = player_partial_x + move_x;
+    if (tmp < 0)
+        player_tilex--;
+    if (tmp >= 8)
+        player_tilex++;
+    player_partial_x = tmp & 7;
+    player_y += move_y;
+    tmp = player_partial_y + move_y;
+    if (tmp < 0)
+        player_tiley--;
+    if (tmp >= 8)
+        player_tiley++;
+    player_partial_y = tmp & 7;
+    x = player_tilex;
+    y = player_tiley;
+    if (player_partial_y >= 4)
+        y++;
+    tmp = Do_ReadMap(x, y);
+    if ((tmp & 0x0c) == 0)
+        return;
+    if ((tmp & 0x08) == 0) {
+        /* Got egg */
+        eggs_left--;
+        /* SQUIDGE(6) */
+        squidge(6);
+        tmp >>= 4;
+        player_data.egg[tmp]--;
+        Do_InitTile(x, y, 0);
+        tmp = (current_level >> 2) + 1;
+        if (tmp >= 10)
+            tmp = 10;
+        AddScore(5, tmp);
+    }
+    else {
+        /* Got grain */
+        /* SQUIDGE(5) */
+        squidge(5);
+        tmp >>= 4;
+        player_data.grain[tmp]--;
+        RemoveGrain(x, y);
+        AddScore(6, 5);
+        bonus_hold = 14;
+    }
 }
 
 void PlayerGrabLadder(int want_move)
 {
-	int tmp;
-	int x;
-	int y;
+    int tmp;
+    int x;
+    int y;
 
-	tmp = player_partial_x + move_x;
-	if (tmp != 3)
-		return;
-	if (want_move == 0)
-		return;
-	if (want_move > 0) {
-		x = player_tilex;
-		y = player_tiley + 1;
-		tmp = Do_ReadMap(x, y);
-		if ((tmp & 2) == 0) {
-			if (player_partial_y >= 4)
-				y++;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 2) == 0)
-				return;
-		}
-		player_mode = cPLAYER_CLIMB;
-		tmp = player_partial_y + move_y;
-		if (tmp & 1)
-			move_y++;
-		return;
-	}
-	x = player_tilex;
-	y = player_tiley;
-	tmp = Do_ReadMap(x, y);
-	if ((tmp & 2) == 0)
-		return;
-	x = player_tilex;
-	y = player_tiley + 1;
-	tmp = Do_ReadMap(x, y);
-	if ((tmp & 2) == 0)
-		return;
-	player_mode = cPLAYER_CLIMB;
-	tmp = player_partial_y + move_y;
-	if (tmp & 1)
-		move_y--;
-	return;
+    tmp = player_partial_x + move_x;
+    if (tmp != 3)
+        return;
+    if (want_move == 0)
+        return;
+    if (want_move > 0) {
+        x = player_tilex;
+        y = player_tiley + 1;
+        tmp = Do_ReadMap(x, y);
+        if ((tmp & 2) == 0) {
+            if (player_partial_y >= 4)
+                y++;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 2) == 0)
+                return;
+        }
+        player_mode = cPLAYER_CLIMB;
+        tmp = player_partial_y + move_y;
+        if (tmp & 1)
+            move_y++;
+        return;
+    }
+    x = player_tilex;
+    y = player_tiley;
+    tmp = Do_ReadMap(x, y);
+    if ((tmp & 2) == 0)
+        return;
+    x = player_tilex;
+    y = player_tiley + 1;
+    tmp = Do_ReadMap(x, y);
+    if ((tmp & 2) == 0)
+        return;
+    player_mode = cPLAYER_CLIMB;
+    tmp = player_partial_y + move_y;
+    if (tmp & 1)
+        move_y--;
+    return;
 }
 
 void PlayerHitLift()
 {
-	int tmp;
-	int y1;
-	int y2;
+    int tmp;
+    int y1;
+    int y2;
 
-	if (!have_lift)
-		return;
-	if ((lift_x > player_x) || (lift_x + 10 < player_x))
-		return;
-	y1 = player_y - 0x11;
-	y2 = player_y - 0x13 + move_y;
-	tmp = lift_y[0];
-	if (tmp > y1 || tmp < y2) {
-		tmp = lift_y[1];
-		if (tmp != y1)
-		{
-			if (tmp >= y1)
-				return;
-			if (tmp < y2)
-				return;
-		}
-		if (current_lift == 0)
-			tmp++;
-	}
-	else {
-		if (current_lift != 0)
-			tmp++;
-	}
-	tmp -= y1;
-	move_y = tmp + 1;
-	player_fall = 0;
-	player_mode = cPLAYER_LIFT;
+    if (!have_lift)
+        return;
+    if ((lift_x > player_x) || (lift_x + 10 < player_x))
+        return;
+    y1 = player_y - 0x11;
+    y2 = player_y - 0x13 + move_y;
+    tmp = lift_y[0];
+    if (tmp > y1 || tmp < y2) {
+        tmp = lift_y[1];
+        if (tmp != y1)
+        {
+            if (tmp >= y1)
+                return;
+            if (tmp < y2)
+                return;
+        }
+        if (current_lift == 0)
+            tmp++;
+    }
+    else {
+        if (current_lift != 0)
+            tmp++;
+    }
+    tmp -= y1;
+    move_y = tmp + 1;
+    player_fall = 0;
+    player_mode = cPLAYER_LIFT;
 }
 
 void PlayerJump()
 {
-	int tmp;
-	int tmp2;
-	int x;
-	int y;
+    int tmp;
+    int tmp2;
+    int x;
+    int y;
 
-	move_x = player_slide;
-	tmp2 = move_y;
-	tmp = player_fall >> 2;
-	if (tmp >= 6)
-		tmp = 6;
-	move_y = 2 - tmp;
-	player_fall++;
-	if (player_y == 0xdc) {
-		move_y = -1;
-		player_fall = 0x0c;
-	}
-	else {
-		PlayerGrabLadder(tmp2);
-		if (player_mode == cPLAYER_CLIMB)
-			return;
-	}
+    move_x = player_slide;
+    tmp2 = move_y;
+    tmp = player_fall >> 2;
+    if (tmp >= 6)
+        tmp = 6;
+    move_y = 2 - tmp;
+    player_fall++;
+    if (player_y == 0xdc) {
+        move_y = -1;
+        player_fall = 0x0c;
+    }
+    else {
+        PlayerGrabLadder(tmp2);
+        if (player_mode == cPLAYER_CLIMB)
+            return;
+    }
 
-	tmp = move_y + player_partial_y;
-	if (tmp == 0) {
-		x = player_tilex;
-		y = player_tiley - 1;
-		tmp = Do_ReadMap(x, y);
-		if ((tmp & 1) != 0)
-			player_mode = cPLAYER_WALK;
-	}
-	else if (tmp > 0) {
-		if (tmp == 8) {
-			x = player_tilex;
-			y = player_tiley;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 1) != 0)
-				player_mode = cPLAYER_WALK;
-		}
-	}
-	else {
-		x = player_tilex;
-		y = player_tiley - 1;
-		tmp = Do_ReadMap(x, y);
-		if ((tmp & 1) != 0) {
-			player_mode = cPLAYER_WALK;
-			move_y = -player_partial_y;
-		}
-	}
+    tmp = move_y + player_partial_y;
+    if (tmp == 0) {
+        x = player_tilex;
+        y = player_tiley - 1;
+        tmp = Do_ReadMap(x, y);
+        if ((tmp & 1) != 0)
+            player_mode = cPLAYER_WALK;
+    }
+    else if (tmp > 0) {
+        if (tmp == 8) {
+            x = player_tilex;
+            y = player_tiley;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 1) != 0)
+                player_mode = cPLAYER_WALK;
+        }
+    }
+    else {
+        x = player_tilex;
+        y = player_tiley - 1;
+        tmp = Do_ReadMap(x, y);
+        if ((tmp & 1) != 0) {
+            player_mode = cPLAYER_WALK;
+            move_y = -player_partial_y;
+        }
+    }
 
-	PlayerHitLift();
-	if (player_mode == cPLAYER_LIFT)
-		return;
+    PlayerHitLift();
+    if (player_mode == cPLAYER_LIFT)
+        return;
 
-	if (MoveSideways()) {
-		move_x = -move_x;
-		player_slide = move_x;
-	}
+    if (MoveSideways()) {
+        move_x = -move_x;
+        player_slide = move_x;
+    }
 }
 
 void StartPlayerJump()
 {
-	int tmp;
+    int tmp;
 
-	button_ack |= 0x10;
-	player_fall = 0;
-	player_mode = cPLAYER_JUMP;
-	tmp = move_x;
-	player_slide = tmp;
-	if (tmp != 0)
-		player_face = tmp;
-	PlayerJump();
+    button_ack |= 0x10;
+    player_fall = 0;
+    player_mode = cPLAYER_JUMP;
+    tmp = move_x;
+    player_slide = tmp;
+    if (tmp != 0)
+        player_face = tmp;
+    PlayerJump();
 }
 
 void MovePlayer()
 {
-	int x, y, tmp;
+    int x, y, tmp;
 
-	move_x = 0;
-	move_y = 0;
-	if (buttons & BUTTON_RIGHT) {
-		move_x++;
-	}
-	if (buttons & BUTTON_LEFT) {
-		move_x--;
-	}
-	if (buttons & BUTTON_DOWN) {
-		move_y--;
-	}
-	if (buttons & BUTTON_UP) {
-		move_y++;
-	}
-	move_y <<= 1;
-	switch (player_mode) {
-	case cPLAYER_JUMP:
-		PlayerJump();
-		break;
-	case cPLAYER_FALL:
-		player_fall++;
-		tmp = player_fall;
-		if (tmp < 4) {
-			move_x = player_slide;
-			move_y = -1;
-		}
-		else {
-			move_x = 0;
-			tmp = player_fall >> 2;
-			if (tmp > 3)
-				tmp = 3;
-			move_y = -(tmp + 1);
-		}
-		tmp = move_y + player_partial_y;
-		if (tmp == 0) {
-			x = player_tilex;
-			y = player_tiley - 1;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 1) != 0)
-				player_mode = cPLAYER_WALK;
-		}
-		else if (tmp < 0) {
-			x = player_tilex;
-			y = player_tiley - 1;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 1) != 0) {
-				player_mode = cPLAYER_WALK;
-				move_y = -player_partial_y;
-			}
-		}
-		break;
-	case cPLAYER_CLIMB:
-		if ((buttons & BUTTON_JUMP) != 0) {
-			StartPlayerJump();
-			break;
-		}
-		if (move_x != 0 && player_partial_y == 0) {
-			x = player_tilex;
-			y = player_tiley - 1;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 1) != 0) {
-				move_y = 0;
-				player_mode = cPLAYER_WALK;
-			}
-		}
-		if (player_mode != cPLAYER_WALK) {
-			move_x = 0;
-			if (move_y != 0 && player_partial_y == 0) {
-				if (move_y >= 0) {
-					x = player_tilex;
-					y = player_tiley + 2;
-					tmp = Do_ReadMap(x, y);
-					if ((tmp & 2) == 0)
-						move_y = 0;
-				}
-				else {
-					x = player_tilex;
-					y = player_tiley - 1;
-					tmp = Do_ReadMap(x, y);
-					if ((tmp & 2) == 0)
-						move_y = 0;
-				}
-			}
-		}
-		player_face = 0;
-		break;
-	case 4: /* On lift */
-		if ((buttons & BUTTON_JUMP) != 0) {
-			StartPlayerJump();
-			break;
-		}
-		if (lift_x > player_x || lift_x + 9 < player_x) {
-			player_fall = 0;
-			player_slide = 0;
-			player_mode = cPLAYER_FALL;
-		}
-		move_y = 1;
-		if (move_x != 0)
-			player_face = move_x;
-		if (MoveSideways()) {
-			move_x = 0;
-		}
-		if (player_y >= 0xdc)
-			is_dead++;
-		break;
-	case cPLAYER_WALK:
-		if (buttons & BUTTON_JUMP) {
-			StartPlayerJump();
-			break;
-		}
-		if (move_y) {
-			if (player_partial_x == 3) {
-				x = player_tilex;
-				if (move_y >= 0)
-					y = player_tiley + 2;
-				else
-					y = player_tiley - 1;
-				tmp = Do_ReadMap(x, y);
-				if ((tmp & 2) != 0) {
-					move_x = 0;
-					player_mode = cPLAYER_CLIMB;
-					break;
-				}
-			}
-			move_y = 0;
-		}
-		tmp = player_partial_x + move_x;
-		x = player_tilex;
-		if (tmp < 0)
-			x--;
-		else if (tmp >= 8)
-			x++;
-		y = player_tiley - 1;
-		tmp = Do_ReadMap(x, y);
-		if ((tmp & 1) == 0) {
-			/* Walk off edge */
-			int n;
-			n = (move_x + player_partial_x) & 7;
-			if (n < 4) {
-				x = 1;
-				y = 1;
-			}
-			else {
-				y = 0;
-				x = -1;
-			}
-			player_slide = x;
-			player_fall = y;
-			player_mode = cPLAYER_FALL;
-		}
-		if (MoveSideways()) {
-			move_x = 0;
-		}
-		if (move_x) {
-			player_face = move_x;
-		}
-		break;
-	default:
+    move_x = 0;
+    move_y = 0;
+    if (buttons & BUTTON_RIGHT) {
+        move_x++;
+    }
+    if (buttons & BUTTON_LEFT) {
+        move_x--;
+    }
+    if (buttons & BUTTON_DOWN) {
+        move_y--;
+    }
+    if (buttons & BUTTON_UP) {
+        move_y++;
+    }
+    move_y <<= 1;
+    switch (player_mode) {
+    case cPLAYER_JUMP:
+        PlayerJump();
+        break;
+    case cPLAYER_FALL:
+        player_fall++;
+        tmp = player_fall;
+        if (tmp < 4) {
+            move_x = player_slide;
+            move_y = -1;
+        }
+        else {
+            move_x = 0;
+            tmp = player_fall >> 2;
+            if (tmp > 3)
+                tmp = 3;
+            move_y = -(tmp + 1);
+        }
+        tmp = move_y + player_partial_y;
+        if (tmp == 0) {
+            x = player_tilex;
+            y = player_tiley - 1;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 1) != 0)
+                player_mode = cPLAYER_WALK;
+        }
+        else if (tmp < 0) {
+            x = player_tilex;
+            y = player_tiley - 1;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 1) != 0) {
+                player_mode = cPLAYER_WALK;
+                move_y = -player_partial_y;
+            }
+        }
+        break;
+    case cPLAYER_CLIMB:
+        if ((buttons & BUTTON_JUMP) != 0) {
+            StartPlayerJump();
+            break;
+        }
+        if (move_x != 0 && player_partial_y == 0) {
+            x = player_tilex;
+            y = player_tiley - 1;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 1) != 0) {
+                move_y = 0;
+                player_mode = cPLAYER_WALK;
+            }
+        }
+        if (player_mode != cPLAYER_WALK) {
+            move_x = 0;
+            if (move_y != 0 && player_partial_y == 0) {
+                if (move_y >= 0) {
+                    x = player_tilex;
+                    y = player_tiley + 2;
+                    tmp = Do_ReadMap(x, y);
+                    if ((tmp & 2) == 0)
+                        move_y = 0;
+                }
+                else {
+                    x = player_tilex;
+                    y = player_tiley - 1;
+                    tmp = Do_ReadMap(x, y);
+                    if ((tmp & 2) == 0)
+                        move_y = 0;
+                }
+            }
+        }
+        player_face = 0;
+        break;
+    case 4: /* On lift */
+        if ((buttons & BUTTON_JUMP) != 0) {
+            StartPlayerJump();
+            break;
+        }
+        if (lift_x > player_x || lift_x + 9 < player_x) {
+            player_fall = 0;
+            player_slide = 0;
+            player_mode = cPLAYER_FALL;
+        }
+        move_y = 1;
+        if (move_x != 0)
+            player_face = move_x;
+        if (MoveSideways()) {
+            move_x = 0;
+        }
+        if (player_y >= 0xdc)
+            is_dead++;
+        break;
+    case cPLAYER_WALK:
+        if (buttons & BUTTON_JUMP) {
+            StartPlayerJump();
+            break;
+        }
+        if (move_y) {
+            if (player_partial_x == 3) {
+                x = player_tilex;
+                if (move_y >= 0)
+                    y = player_tiley + 2;
+                else
+                    y = player_tiley - 1;
+                tmp = Do_ReadMap(x, y);
+                if ((tmp & 2) != 0) {
+                    move_x = 0;
+                    player_mode = cPLAYER_CLIMB;
+                    break;
+                }
+            }
+            move_y = 0;
+        }
+        tmp = player_partial_x + move_x;
+        x = player_tilex;
+        if (tmp < 0)
+            x--;
+        else if (tmp >= 8)
+            x++;
+        y = player_tiley - 1;
+        tmp = Do_ReadMap(x, y);
+        if ((tmp & 1) == 0) {
+            /* Walk off edge */
+            int n;
+            n = (move_x + player_partial_x) & 7;
+            if (n < 4) {
+                x = 1;
+                y = 1;
+            }
+            else {
+                y = 0;
+                x = -1;
+            }
+            player_slide = x;
+            player_fall = y;
+            player_mode = cPLAYER_FALL;
+        }
+        if (MoveSideways()) {
+            move_x = 0;
+        }
+        if (move_x) {
+            player_face = move_x;
+        }
+        break;
+    default:
     trace("wrong value in switch");
-	}
-	AnimatePlayer();
+    }
+    AnimatePlayer();
 }
 
 void MakeSound()
 {
-	int tmp;
-	if (!(move_x || move_y))
-		return;
-	if ((duck_timer & 1) != 0)
-		return;
-	switch (player_mode) {
-	case 0:
-		tmp = 64;
-		break;
-	case 1:
-		tmp = 96;
-		break;
-	case 2:
-		tmp = player_fall;
-		if (tmp >= 0x0b) {
-			tmp = 0xbe - (player_fall * 2);
-		}
-		else {
-			tmp = 0x96 + (player_fall * 2);
-		}
-		break;
-	case 3:
-		tmp = 0x6e - (player_fall * 2);
-		break;
-	case 4:
-		if (move_x == 0)
-			return;
-		tmp = 0x64;
-		break;
-	default:
+    int tmp;
+    if (!(move_x || move_y))
+        return;
+    if ((duck_timer & 1) != 0)
+        return;
+    switch (player_mode) {
+    case 0:
+        tmp = 64;
+        break;
+    case 1:
+        tmp = 96;
+        break;
+    case 2:
+        tmp = player_fall;
+        if (tmp >= 0x0b) {
+            tmp = 0xbe - (player_fall * 2);
+        }
+        else {
+            tmp = 0x96 + (player_fall * 2);
+        }
+        break;
+    case 3:
+        tmp = 0x6e - (player_fall * 2);
+        break;
+    case 4:
+        if (move_x == 0)
+            return;
+        tmp = 0x64;
+        break;
+    default:
     trace("wrong value in switch");
-	}
-	beep(tmp);
+    }
+    beep(tmp);
 }
 
 /* MoveLift */
 void MoveLift()
 {
-	int y;
+    int y;
 
-	if (!have_lift)
-		return;
-	y = lift_y[current_lift];
-	y += 2;
-	if (y == 0xe0)
-		y = 6;
-	lift_y[current_lift] = y;
-	current_lift = 1 - current_lift;
+    if (!have_lift)
+        return;
+    y = lift_y[current_lift];
+    y += 2;
+    if (y == 0xe0)
+        y = 6;
+    lift_y[current_lift] = y;
+    current_lift = 1 - current_lift;
 }
 
 int popcount(int val)
@@ -1479,282 +1479,282 @@ int popcount(int val)
 
 void FrobRandom()
 {
-	int carry;
+    int carry;
 
-	carry = (((rand_low & 0x48) + 0x38) & 0x40) != 0;
-	rand_high = (rand_high << 1) | carry;
-	rand_low = (rand_low << 1) | ((rand_high >> 24) & 1);
+    carry = (((rand_low & 0x48) + 0x38) & 0x40) != 0;
+    rand_high = (rand_high << 1) | carry;
+    rand_low = (rand_low << 1) | ((rand_high >> 24) & 1);
 }
 
 void ReduceBonus()
 {
-	int n;
-	int flag;
+    int n;
+    int flag;
 
-	n = 2;
-	do {
-		bonus[n]--;
-		flag = ((bonus[n] & 0x80) != 0);
-		if (flag) {
-			bonus[n] = 9;
-		}
-		n--;
-	} while (flag);
-	if (bonus[0] + bonus[1] + bonus[2] == 0)
-		zero_bonus = 1;
+    n = 2;
+    do {
+        bonus[n]--;
+        flag = ((bonus[n] & 0x80) != 0);
+        if (flag) {
+            bonus[n] = 9;
+        }
+        n--;
+    } while (flag);
+    if (bonus[0] + bonus[1] + bonus[2] == 0)
+        zero_bonus = 1;
 }
 
 void MoveDucks()
 {
-	int tmp;
-	int y;
-	int x;
-	int flag;
-	int tmp2;
-	int newdir;
+    int tmp;
+    int y;
+    int x;
+    int flag;
+    int tmp2;
+    int newdir;
 
-	duck_timer++;
-	if (duck_timer == 8) {
-		/* Big Duck.  */
-		duck_timer = 0;
-		if (have_big_duck) {
-			tmp = big_duck_x + 4;
-			if (tmp < player_x) {
-				if (big_duck_dx < 5)
-					big_duck_dx++;
-				big_duck_dir = 0;
-			}
-			else {
-				if (big_duck_dx > -5)
-					big_duck_dx--;
-				big_duck_dir = 1;
-			}
-			tmp = player_y + 4;
-			if (tmp >= big_duck_y) {
-				if (big_duck_dy < 5)
-					big_duck_dy++;
-			}
-			else {
-				if (big_duck_dy > -5)
-					big_duck_dy--;
-			}
-			tmp = big_duck_y + big_duck_dy;
-			if (tmp < 0x28)
-				big_duck_dy = -big_duck_dy;
-			tmp = big_duck_x + big_duck_dx;
-			if (tmp < 0 || tmp >= 0x90)
-				big_duck_dx = -big_duck_dx;
-		}
-		big_duck_x += big_duck_dx;
-		big_duck_y += big_duck_dy;
-		big_duck_frame = big_duck_frame^1;
-		return;
-	}
-	if (duck_timer == 4) {
-		/* Update bonus/timer.  */
-		if (bonus_hold) {
-			bonus_hold--;
-			return;
-		}
-		x = 2;
-		do {
-			timer_ticks[x]--;
-			flag = (timer_ticks[x] & 0x80) != 0;
-			if (flag)
-				timer_ticks[x] = 9;
-			x--;
-		} while (flag);
-		tmp = timer_ticks[0] + timer_ticks[1] + timer_ticks[2];
-		if (tmp == 0) {
-			trace("tmp==0");
-			is_dead++;
-			return;
-		}
-		tmp = timer_ticks[2];
-		if (tmp != 0 && tmp != 5)
-			return;
-		if (zero_bonus)
-			return;
-		ReduceBonus();
-		return;
-	}
-	if (current_duck == 0)
-		current_duck = duck_speed;
-	else
-		current_duck--;
-	if (current_duck >= num_ducks)
-		return;
-	/* Move little duck.  */
-	TDuckInfo this_duck = duck[current_duck];
-	if (this_duck.mode >= DUCK_EAT1) {
-		/* Eat grain.  */
-		if (this_duck.mode == DUCK_EAT2) {
-			x = this_duck.tile_x - 1;
-			y = this_duck.tile_y;
-			if ((this_duck.dir & DIR_L) == 0)
-				x += 2;
-			tmp = Do_ReadMap(x, y);
-			if ((tmp & 8) != 0) {
-				player_data.grain[tmp >> 4]--;
-				RemoveGrain(x, y);
-			}
-		}
-	}
-	else if (this_duck.mode == DUCK_BORED) {
-		/* Figure out which way to go next.  */
-		x = this_duck.tile_x;
-		y = this_duck.tile_y;
-		newdir = 0;
-		tmp = Do_ReadMap(x - 1, y - 1);
-		if ((tmp & 1) != 0)
-			newdir = DIR_L;
-		tmp = Do_ReadMap(x + 1, y - 1);
-		if ((tmp & 1) != 0)
-			newdir |= DIR_R;
-		tmp = Do_ReadMap(x, y - 1);
-		if ((tmp & 2) != 0)
-			newdir |= DIR_DOWN;
-		tmp = Do_ReadMap(x, y + 2);
-		if ((tmp & 2) != 0)
-			newdir |= DIR_UP;
-		if (popcount(newdir) != 1) {
-			tmp = this_duck.dir;
-			if (tmp & DIR_HORIZ) {
-				tmp = tmp^0xfc;
-			}
-			else {
-				tmp = tmp^0xf3;
-			}
-			newdir &= tmp;
-		}
-		if (popcount(newdir) != 1) {
-			tmp2 = newdir;
-			do {
-				FrobRandom();
-				newdir = rand_low & tmp2;
-			} while (popcount(newdir) != 1);
-		}
-		this_duck.dir = newdir;
-		/* Check for grain to eat.  */
-		tmp = this_duck.dir;
-		if (tmp & DIR_HORIZ) {
-			if (tmp == DIR_L)
-				tmp = Do_ReadMap(x - 1, y);
-			else
-				tmp = Do_ReadMap(x + 1, y);
-			tmp &= 8;
-			if (tmp != 0) {
-				this_duck.mode = DUCK_EAT1;
-			}
-		}
-	}
-	if (this_duck.mode >= DUCK_EAT1) {
-		/* Eating.  */
-		if (this_duck.mode == DUCK_EAT4)
-			this_duck.mode = DUCK_BORED;
-		else
-			this_duck.mode++;
-		return;
-	}
-	/* Walking.  */
-	if (this_duck.mode == DUCK_STEP) {
-		this_duck.mode = DUCK_BORED;
-		flag = 1;
-	}
-	else {
-		this_duck.mode = DUCK_STEP;
-		flag = 0;
-	}
-	switch (this_duck.dir) {
-	case DIR_L:
-		this_duck.x -= 4;
-		this_duck.tile_x -= flag;
-		break;
-	case DIR_R:
-		this_duck.x += 4;
-		this_duck.tile_x += flag;
-		break;
-	case DIR_UP:
-		this_duck.y += 4;
-		this_duck.tile_y += flag;
-		break;
-	case DIR_DOWN:
-		this_duck.y -= 4;
-		this_duck.tile_y -= flag;;
-		break;
-	default:
-		trace("error 1");
-	}
-	return;
+    duck_timer++;
+    if (duck_timer == 8) {
+        /* Big Duck.  */
+        duck_timer = 0;
+        if (have_big_duck) {
+            tmp = big_duck_x + 4;
+            if (tmp < player_x) {
+                if (big_duck_dx < 5)
+                    big_duck_dx++;
+                big_duck_dir = 0;
+            }
+            else {
+                if (big_duck_dx > -5)
+                    big_duck_dx--;
+                big_duck_dir = 1;
+            }
+            tmp = player_y + 4;
+            if (tmp >= big_duck_y) {
+                if (big_duck_dy < 5)
+                    big_duck_dy++;
+            }
+            else {
+                if (big_duck_dy > -5)
+                    big_duck_dy--;
+            }
+            tmp = big_duck_y + big_duck_dy;
+            if (tmp < 0x28)
+                big_duck_dy = -big_duck_dy;
+            tmp = big_duck_x + big_duck_dx;
+            if (tmp < 0 || tmp >= 0x90)
+                big_duck_dx = -big_duck_dx;
+        }
+        big_duck_x += big_duck_dx;
+        big_duck_y += big_duck_dy;
+        big_duck_frame = big_duck_frame^1;
+        return;
+    }
+    if (duck_timer == 4) {
+        /* Update bonus/timer.  */
+        if (bonus_hold) {
+            bonus_hold--;
+            return;
+        }
+        x = 2;
+        do {
+            timer_ticks[x]--;
+            flag = (timer_ticks[x] & 0x80) != 0;
+            if (flag)
+                timer_ticks[x] = 9;
+            x--;
+        } while (flag);
+        tmp = timer_ticks[0] + timer_ticks[1] + timer_ticks[2];
+        if (tmp == 0) {
+            trace("tmp==0");
+            is_dead++;
+            return;
+        }
+        tmp = timer_ticks[2];
+        if (tmp != 0 && tmp != 5)
+            return;
+        if (zero_bonus)
+            return;
+        ReduceBonus();
+        return;
+    }
+    if (current_duck == 0)
+        current_duck = duck_speed;
+    else
+        current_duck--;
+    if (current_duck >= num_ducks)
+        return;
+    /* Move little duck.  */
+    TDuckInfo this_duck = duck[current_duck];
+    if (this_duck.mode >= DUCK_EAT1) {
+        /* Eat grain.  */
+        if (this_duck.mode == DUCK_EAT2) {
+            x = this_duck.tile_x - 1;
+            y = this_duck.tile_y;
+            if ((this_duck.dir & DIR_L) == 0)
+                x += 2;
+            tmp = Do_ReadMap(x, y);
+            if ((tmp & 8) != 0) {
+                player_data.grain[tmp >> 4]--;
+                RemoveGrain(x, y);
+            }
+        }
+    }
+    else if (this_duck.mode == DUCK_BORED) {
+        /* Figure out which way to go next.  */
+        x = this_duck.tile_x;
+        y = this_duck.tile_y;
+        newdir = 0;
+        tmp = Do_ReadMap(x - 1, y - 1);
+        if ((tmp & 1) != 0)
+            newdir = DIR_L;
+        tmp = Do_ReadMap(x + 1, y - 1);
+        if ((tmp & 1) != 0)
+            newdir |= DIR_R;
+        tmp = Do_ReadMap(x, y - 1);
+        if ((tmp & 2) != 0)
+            newdir |= DIR_DOWN;
+        tmp = Do_ReadMap(x, y + 2);
+        if ((tmp & 2) != 0)
+            newdir |= DIR_UP;
+        if (popcount(newdir) != 1) {
+            tmp = this_duck.dir;
+            if (tmp & DIR_HORIZ) {
+                tmp = tmp^0xfc;
+            }
+            else {
+                tmp = tmp^0xf3;
+            }
+            newdir &= tmp;
+        }
+        if (popcount(newdir) != 1) {
+            tmp2 = newdir;
+            do {
+                FrobRandom();
+                newdir = rand_low & tmp2;
+            } while (popcount(newdir) != 1);
+        }
+        this_duck.dir = newdir;
+        /* Check for grain to eat.  */
+        tmp = this_duck.dir;
+        if (tmp & DIR_HORIZ) {
+            if (tmp == DIR_L)
+                tmp = Do_ReadMap(x - 1, y);
+            else
+                tmp = Do_ReadMap(x + 1, y);
+            tmp &= 8;
+            if (tmp != 0) {
+                this_duck.mode = DUCK_EAT1;
+            }
+        }
+    }
+    if (this_duck.mode >= DUCK_EAT1) {
+        /* Eating.  */
+        if (this_duck.mode == DUCK_EAT4)
+            this_duck.mode = DUCK_BORED;
+        else
+            this_duck.mode++;
+        return;
+    }
+    /* Walking.  */
+    if (this_duck.mode == DUCK_STEP) {
+        this_duck.mode = DUCK_BORED;
+        flag = 1;
+    }
+    else {
+        this_duck.mode = DUCK_STEP;
+        flag = 0;
+    }
+    switch (this_duck.dir) {
+    case DIR_L:
+        this_duck.x -= 4;
+        this_duck.tile_x -= flag;
+        break;
+    case DIR_R:
+        this_duck.x += 4;
+        this_duck.tile_x += flag;
+        break;
+    case DIR_UP:
+        this_duck.y += 4;
+        this_duck.tile_y += flag;
+        break;
+    case DIR_DOWN:
+        this_duck.y -= 4;
+        this_duck.tile_y -= flag;;
+        break;
+    default:
+        trace("error 1");
+    }
+    return;
 }
 
 void MaybeAddExtraLife()
 {
-	if (extra_life == 0)
-		return;
-	extra_life = 0;
-	player_data.lives++;
+    if (extra_life == 0)
+        return;
+    extra_life = 0;
+    player_data.lives++;
 }
 
 void CollisionDetect()
 {
-	int n;
+    int n;
 
-	/* Little ducks */
-	for (n = 0; n < num_ducks; n++) {
+    /* Little ducks */
+    for (n = 0; n < num_ducks; n++) {
     TDuckInfo d=duck[n];
     int dx=(d.x - player_x) + 5;
     int dy=(d.y - 1) - player_y + 0xe;
-		if (dx < 0x0b && dx>0 && dy>0 && dy < 0x1d)
-			is_dead++;
-	}
-	/* Big duck */
-	if (!have_big_duck)
-		return;
-	if ((big_duck_x + 4 - player_x + 5) >= 0x0b)
-		return;
-	if ((big_duck_y - 5 - player_y + 0x0e) >= 0x1d)
-		return;
-	is_dead++;
+        if (dx < 0x0b && dx>0 && dy>0 && dy < 0x1d)
+            is_dead++;
+    }
+    /* Big duck */
+    if (!have_big_duck)
+        return;
+    if ((big_duck_x + 4 - player_x + 5) >= 0x0b)
+        return;
+    if ((big_duck_y - 5 - player_y + 0x0e) >= 0x1d)
+        return;
+    is_dead++;
 }
 
 void SavePlayerState()
 {
-	int i;
-	level[current_player] = current_level;
-	for (i = 0; i < 4; i++)
-		player_data.bonus[i] = bonus[i];
+    int i;
+    level[current_player] = current_level;
+    for (i = 0; i < 4; i++)
+        player_data.bonus[i] = bonus[i];
 }
 
 void ResetPlayer()
 {
-	int a;
-	int i;
-	a = current_level + 1;
-	if (a >= 10)
-		a = 9;
-	player_data.bonus[0] = a;
-	player_data.bonus[1] = 0;
-	player_data.bonus[2] = 0;
-	player_data.bonus[3] = 0;
-	for (i = 0; i < 16; i++) {
-		player_data.egg[i] = 0;
-		player_data.grain[i] = 0;
-	}
+    int a;
+    int i;
+    a = current_level + 1;
+    if (a >= 10)
+        a = 9;
+    player_data.bonus[0] = a;
+    player_data.bonus[1] = 0;
+    player_data.bonus[2] = 0;
+    player_data.bonus[3] = 0;
+    for (i = 0; i < 16; i++) {
+        player_data.egg[i] = 0;
+        player_data.grain[i] = 0;
+    }
 }
 
 void RestorePlayerState()
 {
-	int y;
-	current_level = level[current_player];
-	for (y = 0; y < 4; y++) {
-		bonus[y] = player_data.bonus[y];
-	}
+    int y;
+    current_level = level[current_player];
+    for (y = 0; y < 4; y++) {
+        bonus[y] = player_data.bonus[y];
+    }
 }
 
 void PlayTune(int addr)
 {
-	/* Play tune 0x2f7c */
+    /* Play tune 0x2f7c */
 }
 
 void start_game()
@@ -1765,34 +1765,34 @@ void start_game()
     duck[i]=new TDuckInfo();
   }
 
-	int i, j;
-	num_players = active_players = cNUM_PLAYERS;
-	for (i = 3; i >= 0; i--) {
-		current_player = i;
-		player_data.lives = 5;
-		level[i] = 0;
-		for (j = 0; j < 8; j++) {
-			player_data.score[j] = 0;
-		}
-		ResetPlayer();
-	}
-	RestorePlayerState();
+    int i, j;
+    num_players = active_players = cNUM_PLAYERS;
+    for (i = 3; i >= 0; i--) {
+        current_player = i;
+        player_data.lives = 5;
+        level[i] = 0;
+        for (j = 0; j < 8; j++) {
+            player_data.score[j] = 0;
+        }
+        ResetPlayer();
+    }
+    RestorePlayerState();
 }
 
 void SetupLevel()
 {
-	int arg;
+    int arg;
 
-	arg = current_level;
-	have_big_duck = (arg > 7);
-	duck_timer = 0;
-	current_duck = 0;
-	duck_speed = (arg < 32) ? 8 : 5;
-	extra_life = 0;
-	is_dead = 0;
-	bonus_hold = 0;
-	rand_high = 0x767676;
-	rand_low = 0x76;
+    arg = current_level;
+    have_big_duck = (arg > 7);
+    duck_timer = 0;
+    current_duck = 0;
+    duck_speed = (arg < 32) ? 8 : 5;
+    extra_life = 0;
+    is_dead = 0;
+    bonus_hold = 0;
+    rand_high = 0x767676;
+    rand_low = 0x76;
 }
 
 
@@ -1800,9 +1800,9 @@ void SetupLevel()
 
 
 void initNewLevel() {
-	SetupLevel();
-	LoadLevel();
-	StartLevel();
+    SetupLevel();
+    LoadLevel();
+    StartLevel();
 }
 
 void initNewGame() {
@@ -1816,49 +1816,49 @@ void run_game_one_frame()
   if(player_data==null)
     return;
 
-	int tmp;
-	MovePlayer();
-	MakeSound();
-	MoveLift();
-	MoveDucks();
-	MaybeAddExtraLife();
-	CollisionDetect();
-	RenderFrame();
+    int tmp;
+    MovePlayer();
+    MakeSound();
+    MoveLift();
+    MoveDucks();
+    MaybeAddExtraLife();
+    CollisionDetect();
+    RenderFrame();
 
-//	if ((buttons & 0x80) != 0)
-//		goto new_game;
-	if (is_dead != 0 || player_y < 0x11) {
-		/* Died */
-		SavePlayerState();
-		PlayTune(0x2fa6);
-		if (--player_data.lives == 0) {
-			/* Clear Screen */
-			/* "Game Over" */
-			/* Highscores.  */
-			initNewGame();
+//  if ((buttons & 0x80) != 0)
+//      goto new_game;
+    if (is_dead != 0 || player_y < 0x11) {
+        /* Died */
+        SavePlayerState();
+        PlayTune(0x2fa6);
+        if (--player_data.lives == 0) {
+            /* Clear Screen */
+            /* "Game Over" */
+            /* Highscores.  */
+            initNewGame();
       return;
-		}
-		RestorePlayerState();
+        }
+        RestorePlayerState();
     initNewLevel();
     return;
-	}
-	if (eggs_left == 0 || cheat) {
-		/* Level complete */
-		while (!zero_bonus) {
-			AddScore(6, 1);
-			ReduceBonus();
-			MaybeAddExtraLife();
-		}
-		/* Advance to next level */
-		cheat = 0;
-		zero_bonus = 0;
-		current_level++;
-		SavePlayerState();
-		ResetPlayer();
-		RestorePlayerState();
+    }
+    if (eggs_left == 0 || cheat) {
+        /* Level complete */
+        while (!zero_bonus) {
+            AddScore(6, 1);
+            ReduceBonus();
+            MaybeAddExtraLife();
+        }
+        /* Advance to next level */
+        cheat = 0;
+        zero_bonus = 0;
+        current_level++;
+        SavePlayerState();
+        ResetPlayer();
+        RestorePlayerState();
     initNewLevel();
-	}
-//	goto next_frame;
+    }
+//  goto next_frame;
 }]]>
       </Source>
     </ZLibrary>
