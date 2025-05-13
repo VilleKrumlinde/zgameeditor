@@ -216,46 +216,58 @@ begin
   System.Close(F);
 end;
 
-procedure ReadAssetFile(Filename : PAnsiChar; var Memory : pointer; var Size : integer);
+procedure ReadAssetFile(Filename: PAnsiChar; var Memory: pointer; var Size: integer);
 var
-  Env : PJNIEnv;
-  AppClass : JClass;
-  Mid : JMethodID;
-  Params : array[0..10] of integer;
-  Buffer: jarray;
-  PBuffer : pointer;
-  IsCopy : JBoolean;
-  BufferSize : JSize;
-
-  function C(const args : array of const) : pointer;
-  var
-    I : integer;
-  begin
-     for I := 0 to High(args) do
-       Params[I] := args[I].vinteger;
-     Result := @Params;
-  end;
-
+  Env: PJNIEnv;
+  AppClass: JClass;
+  Mid: JMethodID;
+  jniParams: array[0..0] of JValue; // For the (String) parameter
+  JStr: jstring;
+  Buffer: jbyteArray;
+  PBuffer: pointer;
+  IsCopy: JBoolean;
+  BufferSize: JSize;
 begin
-  CurVM^.GetEnv(CurVM,@Env,JNI_VERSION_1_6);
+  // Get the JNI environment
+  CurVM^.GetEnv(CurVM, @Env, JNI_VERSION_1_6);
 
-  AndroidLog( PAnsiChar('Opening: ' + Filename) );
-  AppClass := Env^.GetObjectClass(Env, Jobject(AndroidThis));
-  Mid := Env^.GetMethodID(Env, AppClass , 'openAssetFile', '(Ljava/lang/String;)[B');
-  Buffer := Env^.CallObjectMethodV(Env, Jobject(AndroidThis), Mid, C([Env^.NewStringUTF(Env,FileName)]) );
+  // Log filename
+  AndroidLog(PAnsiChar('Opening: ' + Filename));
 
-  BufferSize := Env^.GetArrayLength(Env,Buffer);
+  // Get class and method ID
+  AppClass := Env^.GetObjectClass(Env, jobject(AndroidThis));
+  Mid := Env^.GetMethodID(Env, AppClass, 'openAssetFile', '(Ljava/lang/String;)[B');
 
-  PBuffer := Env^.GetByteArrayElements(Env, Buffer, IsCopy);
-  if PBuffer=nil then
-    AndroidLog('could not get buffer')
-  else
+  // Create Java string and assign it to the parameter array
+  JStr := Env^.NewStringUTF(Env, Filename);
+  jniParams[0].l := JStr;
+
+  // Call Java method using CallObjectMethodA
+  Buffer := Env^.CallObjectMethodA(Env, jobject(AndroidThis), Mid, @jniParams[0]);
+
+  // Clean up local ref for the string
+  Env^.DeleteLocalRef(Env, JStr);
+
+  // If Buffer is valid, extract data
+  if Buffer <> nil then
   begin
-    GetMem(Memory, BufferSize);
-    Move(PBuffer^, Memory^, BufferSize);
-    Size := BufferSize;
-    Env^.ReleaseByteArrayElements(Env, Buffer, PBuffer, 0);
-  end;
+    BufferSize := Env^.GetArrayLength(Env, Buffer);
+    PBuffer := Env^.GetByteArrayElements(Env, Buffer, IsCopy);
+
+    if PBuffer = nil then
+      AndroidLog('Could not get buffer')
+    else
+    begin
+      GetMem(Memory, BufferSize);
+      Move(PBuffer^, Memory^, BufferSize);
+      Size := BufferSize;
+
+      // Release Java array
+      Env^.ReleaseByteArrayElements(Env, Buffer, PBuffer, 0);
+    end;
+  end
+  else
+    AndroidLog('CallObjectMethodA returned null');
 end;
 
 procedure Platform_ReadFile(FileName : PAnsiChar; var Memory : pointer; var Size : integer; IsRelative : Boolean);
