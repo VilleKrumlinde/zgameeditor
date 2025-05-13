@@ -5348,7 +5348,7 @@ begin
     Lookups.Add('$sdkpath_normal$',Self.AndroidSdkPath);
     Lookups.Add('$package$', String(Self.ZApp.AndroidPackageName) );
     Lookups.Add('$title$', String(Self.ZApp.Caption) );
-    Lookups.Add('$filename$', ExtractFileName(CurrentFileName) );
+    Lookups.Add('$filename$', ChangeFileExt(ExtractFileName(CurrentFileName), '') );
     Lookups.Add('$versionname$', String(Self.ZApp.AndroidVersionName) );
     Lookups.Add('$versionnumber$', IntToStr(Self.ZApp.AndroidVersionNumber) );
 
