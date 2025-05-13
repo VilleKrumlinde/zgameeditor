@@ -1,4 +1,4 @@
-{Copyright (c) 2008- Ville Krumlinde
+﻿{Copyright (c) 2008- Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -5348,7 +5348,7 @@ begin
     Lookups.Add('$sdkpath_normal$',Self.AndroidSdkPath);
     Lookups.Add('$package$', String(Self.ZApp.AndroidPackageName) );
     Lookups.Add('$title$', String(Self.ZApp.Caption) );
-    Lookups.Add('$filename$', Application.exename );
+    Lookups.Add('$filename$', ExtractFileName(CurrentFileName) );
     Lookups.Add('$versionname$', String(Self.ZApp.AndroidVersionName) );
     Lookups.Add('$versionnumber$', IntToStr(Self.ZApp.AndroidVersionNumber) );
 
