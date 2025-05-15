@@ -196,11 +196,29 @@ procedure TFileAction.Execute;
   end;
 
   procedure WriteFromArray(A : TDefineArray);
+  var
+    i: Integer;
+    p: PPAnsiChar;
+    b: Byte;
   begin
-    Platform_WriteFile(CurFile.WriteFileName,A.GetData,
-      A.CalcLimit * A.GetElementSize,
-      CurWriteBuf.Append);
-    CurWriteBuf.Append := True;
+    if (A._Type.Kind = zctString) then
+    begin
+      p := PPAnsiChar(A.GetData);
+      for i := 0 to A.SizeDim1 - 1 do
+      begin
+        Platform_WriteFile(CurFile.WriteFileName, p^, ZStrLength(p^), CurWriteBuf.Append);
+        CurWriteBuf.Append := True;
+        b := 10;
+        Platform_WriteFile(CurFile.WriteFileName, @b, 1, CurWriteBuf.Append);
+        Inc(p);
+      end;
+    end else
+    begin
+      Platform_WriteFile(CurFile.WriteFileName,A.GetData,
+        A.CalcLimit * A.GetElementSize,
+        CurWriteBuf.Append);
+      CurWriteBuf.Append := True;
+    end;
   end;
 
 var
