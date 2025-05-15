@@ -5365,7 +5365,7 @@ begin
       Lookups.Add('$keystorealias$', Self.AndroidKeystoreAlias );
     end;
 
-    ApkFileName := ProjectPath + 'bin\' + String(Self.ZApp.Caption);
+    ApkFileName := ProjectPath + 'bin\' + ChangeFileExt(ExtractFileName(CurrentFileName), '');
     if IsDebug then
       ApkFileName := ApkFileName + '-debug.apk'
     else
