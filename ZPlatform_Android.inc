@@ -275,7 +275,7 @@ var
   F : file;
   Buf : array[0..511] of AnsiChar;
 begin
-  if Copy(FileName,1,8)='/assets/' then
+  if Copy(FileName,1,7)='assets/' then
   begin
     ReadAssetFile(FileName, Memory, Size);
   end else
