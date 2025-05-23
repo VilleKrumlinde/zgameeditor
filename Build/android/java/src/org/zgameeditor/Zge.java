@@ -96,7 +96,7 @@ public class Zge extends GLSurfaceView
 
     private void initZApp() {
         //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
-        byte[] b = openAssetFile("/assets/zzdc.dat");
+        byte[] b = openAssetFile("assets/zzdc.dat");
         if(b.length!=0)
             NativeSetDataContent(b);
         else
@@ -114,7 +114,7 @@ public class Zge extends GLSurfaceView
 
     //Called from native
     public byte[] openAssetFile(String name) {
-        name=name.substring(8); //strip "/assets/" from name
+        name=name.substring(7); //strip "assets/" from name
         Log.i("ZgeAndroid", "About to open: " + name);
         AssetManager assets = getContext().getAssets();
         byte[] data=new byte[0]; //Return zero length to native if file not available
