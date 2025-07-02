@@ -1,4 +1,4 @@
-{Copyright (c) 2020 Ville Krumlinde
+﻿{Copyright (c) 2020 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,6 @@ type
     procedure Init;
   end;
 
-
   //Klass med en expression-prop
   TZExpression = class(TCommand)
   protected
@@ -114,12 +113,22 @@ type
     {$endif}
   end;
 
+  PExternalFunctionEntry = ^TExternalFunctionEntry;
+  TExternalFunctionEntry = record
+    Name: PAnsiChar;
+    NameLength: Integer;
+    Proc: Pointer;
+    Trampoline: Pointer;
+  end;
+
   //Import of external library (dll)
   TZExternalLibrary = class(TZComponent)
   strict private
+    Entries: TZArrayList;
     ModuleHandle : NativeUInt;
+    procedure ClearEntries;
   private
-    function LoadFunction(P : PAnsiChar) : pointer;
+    function GetEntry(P : PAnsiChar) : PExternalFunctionEntry;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -131,10 +140,10 @@ type
     DefinitionsFile : TPropString;
     function GetDisplayName: ansistring; override;
     procedure DesignerReset; override;
-    destructor Destroy; override;
     {$endif}
+    constructor Create(OwnerList: TZComponentList); override;
+    destructor Destroy; override;
   end;
-
 
   TDefineVariableBase = class(TZComponent)
   protected
@@ -145,7 +154,6 @@ type
     function GetDisplayName: ansistring; override;
     {$endif}
   end;
-
 
   //Define a global variable that can be used in expressions
   TDefineVariable = class(TDefineVariableBase)
@@ -303,7 +311,6 @@ type
      {$endif}
      );
 
-
   TExpFuncCallBase = class(TExpBase)
   protected
     procedure DefineProperties(List: TZPropertyList); override;
@@ -426,10 +433,7 @@ type
 
   TExpExternalFuncCall = class(TExpBase)
   strict private
-    Proc : pointer;
-    {$if defined(cpux64) or defined(cpuaarch64)}
-    Trampoline : pointer;
-    {$endif}
+    Entry: PExternalFunctionEntry;
   protected
     procedure Execute(Env : PExecutionEnvironment); override;
     procedure DefineProperties(List: TZPropertyList); override;
@@ -439,9 +443,6 @@ type
     ArgCount : integer;
     ReturnType : TZcDataType;
     ArgTypes : TPropString;
-    {$if defined(cpux64) or defined(cpuaarch64)}
-    destructor Destroy; override;
-    {$endif}
     {$ifndef minimal}
     procedure DesignerReset; override;
     {$endif}
@@ -2188,7 +2189,31 @@ begin
   {$endif}
 end;
 
-function TZExternalLibrary.LoadFunction(P: PAnsiChar): pointer;
+procedure TZExternalLibrary.ClearEntries;
+var
+  entry: PExternalFunctionEntry;
+  i: Integer;
+begin
+  for i := 0 to Entries.Count - 1 do
+  begin
+    entry := PExternalFunctionEntry(Entries[i]);
+    {$if defined(cpuaarch64)}  // ARM64
+    fpmunmap(entry.Trampoline, 512);
+    {$endif}
+    {$if defined(MSWINDOWS) and defined(CPUX64)}
+    FreeMem(entry.Trampoline);
+    {$endif}
+    FreeMem(entry.Name);
+    Dispose(entry);
+  end;
+  Entries.Clear;
+end;
+
+function TZExternalLibrary.GetEntry(P: PAnsiChar): PExternalFunctionEntry;
+var
+  i, nameLength: Integer;
+  entry: PExternalFunctionEntry;
+  proc: Pointer;
 begin
   if ModuleHandle=0 then
   begin
@@ -2201,18 +2226,57 @@ begin
       ZHalt(Self.ModuleName);
       {$endif}
   end;
-  Result := Platform_GetModuleProc(ModuleHandle,P);
 
-  if Result=nil then
+  nameLength := ZStrLength(P);
+
+  for i := 0 to Entries.Count - 1 do
+  begin
+    entry := PExternalFunctionEntry(Entries[i]);
+    if (entry.NameLength = nameLength) and ZStrCompare(P, entry.Name) then
+      Exit(entry); // return existing entry
+  end;
+
+  proc := Platform_GetModuleProc(ModuleHandle,P);
+
+  if proc=nil then
     //OpenGL functions needs to be handled differently (at least on Win32)
-    Result := Platform_GLLoadProc(P);
+    proc := Platform_GLLoadProc(P);
 
-  if Result=nil then
+  if proc=nil then
+  begin
     {$ifndef minimal}
     ZHalt(P + ' not found');
     {$else}
     ZHalt(P);
     {$endif}
+    Exit(nil);
+  end;
+
+  // add new entry
+  New(Result);
+  Result.Proc := proc;
+  Result.NameLength := nameLength;
+  GetMem(Result.Name, nameLength + 1);
+  ZStrCopy(Result.Name, P);
+  Result.Trampoline := nil;
+  Entries.Add(TObject(Result));
+end;
+
+constructor TZExternalLibrary.Create(OwnerList: TZComponentList);
+begin
+  inherited Create(OwnerList);
+  Entries := TZArrayList.CreateReferenced;
+end;
+
+destructor TZExternalLibrary.Destroy;
+begin
+  {$ifndef minimal}
+  if Self.ModuleHandle<>0 then
+    Platform_FreeModule(Self.ModuleHandle);
+  {$endif}
+  inherited;
+  ClearEntries;
+  Entries.Free;
 end;
 
 {$ifndef minimal}
@@ -2226,13 +2290,7 @@ begin
     Self.ModuleHandle := 0;
     {$endif}
   end;
-end;
-
-destructor TZExternalLibrary.Destroy;
-begin
-  if Self.ModuleHandle<>0 then
-    Platform_FreeModule(Self.ModuleHandle);
-  inherited;
+  ClearEntries;
 end;
 
 function TZExternalLibrary.GetDisplayName: AnsiString;
@@ -2257,11 +2315,12 @@ end;
 procedure TExpExternalFuncCall.DesignerReset;
 begin
   inherited;
-  Self.Proc := nil;
+  Self.Entry := nil;
 end;
 {$endif}
 
 {$if defined(android) and defined(cpu32)}
+// 32-bit Android
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 const
   MaxArgs = 16;
@@ -2277,14 +2336,14 @@ var
   TheFunc : PFunc;
   Args : TArgArray;
 begin
-  if Self.Proc=nil then
+  if Self.Entry=nil then
   begin
-    Self.Proc := Lib.LoadFunction(Self.FuncName);
+    Self.Entry := Lib.GetEntry(Self.FuncName);
     //Make sure android generates enough stack space for calling a func with maxargs params
     if ArgCount<0 then
       PDummyFunc(Self.Proc)^(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);  //Should never execute
   end;
-  TheFunc := Self.Proc;
+  TheFunc := Self.Entry.Proc;
 
   if ArgCount>MaxArgs then
   begin
@@ -2343,6 +2402,7 @@ begin
 end;
 
 {$elseif defined(cpux64)}
+// 64-bit Intel Mac and Windows
 procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
 end;
@@ -2567,13 +2627,13 @@ type
 var
   RetVal : NativeUInt;
 begin
-  if Self.Proc=nil then
+  if Self.Entry=nil then
   begin
-    Self.Proc := Lib.LoadFunction(Self.FuncName);
+    Self.Entry := Lib.GetEntry(Self.FuncName);
     //Make sure there is enough stack space for calling a func with 8 params
     DummyProc(1,2,3,4,5,6,7,8,9,10,11,12);
-    FreeMem(Self.Trampoline);
-    Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
+    if Self.Entry.Trampoline = nil then
+      Self.Entry.Trampoline := GenerateTrampoline(ArgCount, Self.ArgTypes, Self.Entry.Proc);
     {$ifndef minimal}
     Assert(Length(Self.ArgTypes)=ArgCount);
     {$endif}
@@ -2581,10 +2641,10 @@ begin
 
   if Self.ReturnType.Kind=zctFloat then
   begin //Float returns in xmm0
-    PSingle(@RetVal)^ := TFloatFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+    PSingle(@RetVal)^ := TFloatFunc(Self.Entry.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
   end
   else //other return types return in rax
-    Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+    Retval := TFunc(Self.Entry.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
 
   if Self.ReturnType.Kind<>zctVoid then
   begin
@@ -2595,17 +2655,8 @@ begin
   end;
 end;
 
-destructor TExpExternalFuncCall.Destroy;
-begin
-  {$ifdef MSWINDOWS}
-  FreeMem(Trampoline);
-  {$else}
-  fpmunmap(Trampoline,512);  
-  {$endif}
-end;
-
 {$elseif defined(cpux86) or defined(CPU32)}  //CPU32 is for Freepascal
-
+// 32-bit Intel
 procedure TExpExternalFuncCall.Execute(Env : PExecutionEnvironment);
 {.$define darwin}
 type
@@ -2627,9 +2678,9 @@ begin
   Assert(ArgCount<High(Args),'Too many arguments to external function');
   {$endif}
 
-  if Self.Proc=nil then
-    Self.Proc := Lib.LoadFunction(Self.FuncName);
-  TheFunc := Self.Proc;
+  if Self.Entry=nil then
+    Self.Entry := Lib.GetEntry(Self.FuncName);
+  TheFunc := Self.Entry.Proc;
 
   //Transfer arguments from Zc-stack to hardware stack
   for I := 0 to ArgCount-1 do
@@ -2723,8 +2774,8 @@ begin
 end;
 {$endif}
 
-{$if defined(cpuaarch64)}  // ARM64
-
+{$if defined(cpuaarch64)}
+// ARM64 Android and Mac
 procedure DummyProc(i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 : NativeInt);
 begin
 end;
@@ -2920,13 +2971,13 @@ type
 var
   RetVal : NativeUInt;
 begin
-  if Self.Proc=nil then
+  if Self.Entry=nil then
   begin
-    Self.Proc := Lib.LoadFunction(Self.FuncName);
+    Self.Entry := Lib.GetEntry(Self.FuncName);
     //Make sure there is enough stack space for calling a func with many params
     DummyProc(1,2,3,4,5,6,7,8,9,10,11,12);
-    FreeMem(Self.Trampoline);
-    Self.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Proc);
+    if Self.Entry.Trampoline = nil then
+      Self.Entry.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Entry.Proc)
     {$ifndef minimal}
     Assert(Length(Self.ArgTypes)=ArgCount);
     {$endif}
@@ -2934,10 +2985,10 @@ begin
 
   if Self.ReturnType.Kind=zctFloat then
   begin //Float returns in different register than other types
-    PSingle(@RetVal)^ := TFloatFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+    PSingle(@RetVal)^ := TFloatFunc(Self.Entry.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
   end
   else
-    Retval := TFunc(Self.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
+    Retval := TFunc(Self.Entry.Trampoline)( Env.StackPopAndGetPtr(ArgCount) );
 
   if Self.ReturnType.Kind<>zctVoid then
   begin
@@ -2946,11 +2997,6 @@ begin
     else
       Env.StackPush(RetVal);
   end;
-end;
-
-destructor TExpExternalFuncCall.Destroy;
-begin
-  fpmunmap(Trampoline,512);
 end;
 
 {$endif}
