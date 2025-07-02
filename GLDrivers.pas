@@ -1,4 +1,4 @@
-unit GLDrivers;
+﻿unit GLDrivers;
 
 {$include zzdc_globalopt.inc}
 
@@ -109,6 +109,10 @@ type
     procedure UpdateNormalMatrix; override;
     constructor Create;
   end;
+
+  {$ifndef fpc}
+  PtrUInt = UIntPtr;
+  {$endif}
 
 {$ifndef minimal}
 procedure RenderNormals(Mesh : TMesh);

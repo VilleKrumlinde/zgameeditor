@@ -174,7 +174,7 @@ begin
       end;
     WM_KEYDOWN:       // Set the pressed key (wparam) to equal true so we can check if its pressed
       begin
-        Key := {$ifdef cpux64}wParam and 255{$else}Key := Lo(wParam)]{$endif};
+        Key := {$ifdef cpux64}wParam and 255{$else}Lo(wParam){$endif};
         Keys[ Key ] := True;
         //Save keydown event, but only if this is not a auto-repeated key
         if (lParam and $40000000)=0 then
@@ -190,7 +190,7 @@ begin
             PostMessage(hWnd,WM_QUIT,0,0);
         end;
         {$endif}
-        Key := {$ifdef cpux64}wParam and 255{$else}Key := Lo(wParam)]{$endif};
+        Key := {$ifdef cpux64}wParam and 255{$else}Lo(wParam){$endif};
         Keys[ Key ] := False;
         KeyUpList.Add(TObject(Key));
       end;
