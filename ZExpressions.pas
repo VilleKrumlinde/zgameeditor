@@ -2341,7 +2341,7 @@ begin
     Self.Entry := Lib.GetEntry(Self.FuncName);
     //Make sure android generates enough stack space for calling a func with maxargs params
     if ArgCount<0 then
-      PDummyFunc(Self.Proc)^(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);  //Should never execute
+      PDummyFunc(Self.Entry.Proc)^(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);  //Should never execute
   end;
   TheFunc := Self.Entry.Proc;
 
