@@ -620,7 +620,7 @@ begin
         Value1.Right := (Sample1.Right + Sample2.Right);
 
         V.SamplePosition := V.SamplePosition + V.SampleStep;
-        if (V.SamplePosition>=V.SampleCount) and
+        if (Round(V.SamplePosition) >= V.SampleCount) and
           (V.SampleRepeatPosition>=0) then
           V.SamplePosition := V.SampleRepeatPosition;
       end;
@@ -648,6 +648,7 @@ begin
   if V.UseFilter then
   begin  //Based on http://www.musicdsp.org/showone.php?id=29
     Buf := @VoiceBuffer[0];
+    V.FilterCutoff := Clamp(V.FilterCutoff, 0.0, 0.99);
     //set feedback amount given f and q between 0 and 1
     FilterFb := (V.FilterQ + V.FilterQ/(1.0 - V.FilterCutoff));
     for I := 0 to Count-1 do
