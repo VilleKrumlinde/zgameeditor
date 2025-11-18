@@ -446,7 +446,7 @@ type
     procedure FilterQuickCompList;
     procedure BuildZ80(OutFile : string);
     procedure CMDialogChar(var Message: TCMDialogChar); message CM_DIALOGCHAR;
-    function GetUnusedComponents: TArray<string>;
+    function GetUnusedComponents(TheRoot: TZComponent): TArray<string>;
   protected
     procedure CreateWnd; override;
   public
@@ -2261,7 +2261,7 @@ begin
   end;
 end;
 
-function TEditorForm.GetUnusedComponents: TArray<string>;
+function TEditorForm.GetUnusedComponents(TheRoot: TZComponent): TArray<string>;
 var
   I,J : integer;
   L : TObjectList;
@@ -2275,7 +2275,7 @@ begin
   L := TObjectList.Create(False);
   Counts := TDictionary<TZComponent,Integer>.Create;
   try
-    GetAllObjects(Self.Root,L);
+    GetAllObjects(TheRoot,L);
     for I := 0 to L.Count-1 do
     begin
       C := TZComponent(L[I]);
@@ -2310,7 +2310,7 @@ begin
     S := '';
     for C in Counts.Keys do
     begin
-      if (Counts[C]=0) and (not HasReferers(Root,C)) then
+      if (Counts[C]=0) and (not HasReferers(TheRoot,C)) then
         Result := Result + [ string(C.Name) ];
     end;
   finally
@@ -2326,7 +2326,7 @@ begin
   CompileAll(True);
 
   S := '';
-  for Item in GetUnusedComponents do
+  for Item in GetUnusedComponents(Root) do
   begin
     if S='' then
       S := Item
@@ -2589,7 +2589,7 @@ const
 var
   M1,M2 : TMemoryStream;
   IsPiggy : boolean;
-  ShouldRemoveUnused : boolean;
+  ShouldRemoveUnused,SomethingWasRemoved : boolean;
   TheRoot, C: TZComponent;
   S : string;
 begin
@@ -2605,12 +2605,16 @@ begin
   if ShouldRemoveUnused then
   begin
     TheRoot := Self.Root.Clone;
-    for S in GetUnusedComponents do
-    begin
-      C := (TheRoot as TZApplication).SymTab.Lookup(S) as TZComponent;
-      if Assigned(C) then
-        C.Free;
-    end;
+    repeat
+      SomethingWasRemoved := False;
+      for S in GetUnusedComponents(TheRoot) do
+      begin
+        SomethingWasRemoved := True;
+        C := (TheRoot as TZApplication).SymTab.Lookup(S) as TZComponent;
+        if Assigned(C) then
+          C.Free;
+      end;
+    until not SomethingWasRemoved;
   end
   else
     TheRoot := Self.Root;
