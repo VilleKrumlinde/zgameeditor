@@ -243,6 +243,7 @@ type
     BuildZ80MenuItem: TMenuItem;
     N18: TMenuItem;
     HelpComponentAction: TAction;
+    RemoveUnusedComponentsMenuItem: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure SaveBinaryMenuItemClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -445,6 +446,7 @@ type
     procedure FilterQuickCompList;
     procedure BuildZ80(OutFile : string);
     procedure CMDialogChar(var Message: TCMDialogChar); message CM_DIALOGCHAR;
+    function GetUnusedComponents: TArray<string>;
   protected
     procedure CreateWnd; override;
   public
@@ -1163,6 +1165,8 @@ begin
 
     EnableThreadedProcessingMenuItem.Checked := Ini.ReadBool(Section,'UseThreadedProcessing',True);
     EnableThreadedProcessingMenuItem.OnClick(EnableThreadedProcessingMenuItem);
+
+    RemoveUnusedComponentsMenuItem.Checked := Ini.ReadBool(Section,'RemoveUnusedComponents',False);
   finally
     Ini.Free;
   end;
@@ -1355,6 +1359,7 @@ begin
       Ini.WriteString(Section,'AndroidKeystoreAlias',Self.AndroidKeystoreAlias);
 
       Ini.WriteBool(Section,'UseThreadedProcessing',EnableThreadedProcessingMenuItem.Checked);
+      Ini.WriteBool(Section,'RemoveUnusedComponents',RemoveUnusedComponentsMenuItem.Checked);
 
       Ini.WriteString(Section, 'HelpComponentURL', Self.HelpComponentURL);
     except
@@ -2256,7 +2261,7 @@ begin
   end;
 end;
 
-procedure TEditorForm.Findunsedcomponents1Click(Sender: TObject);
+function TEditorForm.GetUnusedComponents: TArray<string>;
 var
   I,J : integer;
   L : TObjectList;
@@ -2267,7 +2272,6 @@ var
   Counts : TDictionary<TZComponent,Integer>;
   S : string;
 begin
-  CompileAll(True);
   L := TObjectList.Create(False);
   Counts := TDictionary<TZComponent,Integer>.Create;
   try
@@ -2307,22 +2311,33 @@ begin
     for C in Counts.Keys do
     begin
       if (Counts[C]=0) and (not HasReferers(Root,C)) then
-      begin
-        if S='' then
-          S := string(C.Name)
-        else
-          S := S + #13 + string(C.Name);
-      end;
+        Result := Result + [ string(C.Name) ];
     end;
-    if S='' then
-      ShowMessage('No unused components found')
-    else
-      ShowMessage('The following components are not used in the project:'#13#13 + S);
-
   finally
     L.Free;
     Counts.Free;
   end;
+end;
+
+procedure TEditorForm.Findunsedcomponents1Click(Sender: TObject);
+var
+  S, Item: string;
+begin
+  CompileAll(True);
+
+  S := '';
+  for Item in GetUnusedComponents do
+  begin
+    if S='' then
+      S := Item
+    else
+     S := S + #13 + Item;
+  end;
+
+  if S='' then
+    ShowMessage('No unused components found')
+  else
+    ShowMessage('The following components are not used in the project:'#13#13 + S);
 end;
 
 procedure TEditorForm.LockShowActionExecute(Sender: TObject);
@@ -2574,15 +2589,33 @@ const
 var
   M1,M2 : TMemoryStream;
   IsPiggy : boolean;
+  ShouldRemoveUnused : boolean;
+  TheRoot, C: TZComponent;
+  S : string;
 begin
+  ShouldRemoveUnused := Self.RemoveUnusedComponentsMenuItem.Checked;
+
   IsPiggy := (PlayerName<>'');
   if not CompileAll then
     Exit;
 
   //Set the NoSound-flag if no sound is used, this means we can remove all audio code later
-  ZApp.NoSound := FindInstanceOf(Self.Root, TSound)=nil;
+  ZApp.NoSound := FindInstanceOf(Root, TSound)=nil;
 
-  M2 := ComponentManager.SaveBinaryToStream(Root) as TMemoryStream;
+  if ShouldRemoveUnused then
+  begin
+    TheRoot := Self.Root.Clone;
+    for S in GetUnusedComponents do
+    begin
+      C := (TheRoot as TZApplication).SymTab.Lookup(S) as TZComponent;
+      if Assigned(C) then
+        C.Free;
+    end;
+  end
+  else
+    TheRoot := Self.Root;
+
+  M2 := ComponentManager.SaveBinaryToStream(TheRoot) as TMemoryStream;
   M1 := TMemoryStream.Create;
   try
     if IsPiggy then
@@ -2596,6 +2629,10 @@ begin
     M1.Free;
     M2.Free;
   end;
+
+  if ShouldRemoveUnused then
+    TheRoot.Free;
+
   Log.Write('File generated: ' + OutputName);
 end;
 

@@ -1710,6 +1710,10 @@ object EditorForm: TEditorForm
         Checked = True
         OnClick = EnableFunctionInliningClick
       end
+      object RemoveUnusedComponentsMenuItem: TMenuItem
+        AutoCheck = True
+        Caption = 'Remove unused components'
+      end
       object DetailedBuildReportMenuItem: TMenuItem
         AutoCheck = True
         Caption = 'Display detailed build report'
