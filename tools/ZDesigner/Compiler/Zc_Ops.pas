@@ -767,7 +767,7 @@ begin
     if Child(0).Kind=zcConstLiteral then
     begin
       C1 := Child(0) as TZcOpLiteral;
-      if (C1.Typ.Kind in [zctFloat,zctInt]) then
+      if (C1.Typ.Kind in [zctFloat,zctInt,zctByte]) then
       begin
         if IsZero(C1.Value) then
         begin
@@ -797,7 +797,7 @@ begin
     if Child(0).Kind=zcConstLiteral then
     begin
       C1 := Child(0) as TZcOpLiteral;
-      if (C1.Typ.Kind in [zctFloat,zctInt]) then
+      if (C1.Typ.Kind in [zctFloat,zctInt,zctByte]) then
       begin
         if IsZero(C1.Value) then
           Exit( Child(2) )  //Replace with False

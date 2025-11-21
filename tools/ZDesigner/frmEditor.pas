@@ -2612,7 +2612,10 @@ begin
         SomethingWasRemoved := True;
         C := (TheRoot as TZApplication).SymTab.Lookup(S) as TZComponent;
         if Assigned(C) then
+        begin
+          Log.Write('Deleting component: ' + S);
           C.Free;
+        end;
       end;
     until not SomethingWasRemoved;
   end
