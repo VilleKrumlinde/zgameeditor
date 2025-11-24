@@ -1454,11 +1454,6 @@ begin
   for I := 0 to CleanUps.Count-1 do
     PInteger(CleanUps[I])^:=0;
   CleanUps.Free;
-
-  {$ifndef minimal}
-  if Self.HasZApp then
-  {$endif}
-  Result._ZApp := Self.ZApp;
 end;
 
 

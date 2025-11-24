@@ -2605,6 +2605,7 @@ begin
   if ShouldRemoveUnused then
   begin
     TheRoot := Self.Root.Clone;
+    var AtLeastOneWasRemoved := False;
     repeat
       SomethingWasRemoved := False;
       for S in GetUnusedComponents(TheRoot) do
@@ -2614,10 +2615,13 @@ begin
         if Assigned(C) then
         begin
           Log.Write('Deleting component: ' + S);
+          AtLeastOneWasRemoved := True;
           C.Free;
         end;
       end;
     until not SomethingWasRemoved;
+    if AtLeastOneWasRemoved then
+      (TheRoot as TZApplication).Compile;
   end
   else
     TheRoot := Self.Root;
