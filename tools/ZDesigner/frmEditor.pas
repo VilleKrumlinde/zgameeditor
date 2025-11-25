@@ -2617,14 +2617,12 @@ begin
           Log.Write('Deleting component: ' + S);
           AtLeastOneWasRemoved := True;
           C.Free;
+          (TheRoot as TZApplication).RefreshSymbolTable;
         end;
       end;
     until not SomethingWasRemoved;
     if AtLeastOneWasRemoved then
-    begin
-      (TheRoot as TZApplication).RefreshSymbolTable;
       (TheRoot as TZApplication).Compile;
-    end;
   end
   else
     TheRoot := Self.Root;
