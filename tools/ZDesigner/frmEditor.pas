@@ -2621,7 +2621,10 @@ begin
       end;
     until not SomethingWasRemoved;
     if AtLeastOneWasRemoved then
+    begin
+      (TheRoot as TZApplication).RefreshSymbolTable;
       (TheRoot as TZApplication).Compile;
+    end;
   end
   else
     TheRoot := Self.Root;
