@@ -1,7 +1,6 @@
 # Help Contents
 
-![ZGE Logo](pic/zge_logo.png)<br>_The rapid game development solution with a
-tiny footprint._
+![ZGE Logo](pic/zge_logo.png)<br>_The rapid game development solution with a tiny footprint._
 
 Welcome to ZGameEditor Help!
 
@@ -26,10 +25,8 @@ Welcome to ZGameEditor Help!
 
 # Reference
 
-- @ref Components "Component reference" - All components and their properties
-  are listed here.
-- @ref ScriptingLanguage "Scripting language reference" - Information about the
-  scripting language.
+- @ref Components "Component reference" - All components and their properties are listed here.
+- @ref ScriptingLanguage "Scripting language reference" - Information about the scripting language.
 - @ref KeyboardShortcuts - Reference on used keyboard shortcuts.
 <!-- TODO - @ref Visualizer - Scripting of ZGameEditor Visualizer effests for FL Studio.-->
 

@@ -15,13 +15,9 @@ External links:
 
 @dt VertexShaderSource @dd GLSL source code for the vertex shader.
 
-If the @ref ZApplicationGLBase "ZApplication.GLBase" property is set to
-"Compatible", you can use anything from
-[GLSL 1.1 shading language (external link)](http://www-evasion.imag.fr/Membres/Sebastien.Barbier/Enseignement/glsl_quickref.pdf).
+If the @ref ZApplicationGLBase "ZApplication.GLBase" property is set to "Compatible", you can use anything from [GLSL 1.1 shading language (external link)](http://www-evasion.imag.fr/Membres/Sebastien.Barbier/Enseignement/glsl_quickref.pdf).
 
-If the @ref ZApplicationGLBase "ZApplication.GLBase" property is set to
-"ES2/GL3", the shader can use the following built-in variables set by
-ZGameEditor:
+If the @ref ZApplicationGLBase "ZApplication.GLBase" property is set to "ES2/GL3", the shader can use the following built-in variables set by ZGameEditor:
 
 | Variable                               | Semantics                                                                                     |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -38,25 +34,15 @@ ZGameEditor:
 
 Value of this property is specified in @ref ShaderEditor "Shader editor".
 
-@dt GeometryShaderSource @dd Optional GLSL source code for the geometry shader.
-Value of this property is specified in @ref ShaderEditor "Shader editor".
+@dt GeometryShaderSource @dd Optional GLSL source code for the geometry shader. Value of this property is specified in @ref ShaderEditor "Shader editor".
 
-@dt FragmentShaderSource @dd GLSL source code for the fragment (pixel) shader.
-Value of this property is specified in @ref ShaderEditor "Shader editor".
+@dt FragmentShaderSource @dd GLSL source code for the fragment (pixel) shader. Value of this property is specified in @ref ShaderEditor "Shader editor".
 
-@dt UpdateVarsOnEachUse @dd Setting this property on will update uniform
-variables before each usage of shader. If it is unset, shader variables are
-updated only on the beginning of rendering cycle.
+@dt UpdateVarsOnEachUse @dd Setting this property on will update uniform variables before each usage of shader. If it is unset, shader variables are updated only on the beginning of rendering cycle.
 
-@dt BeforeLinkExpression @dd An @ref ScriptingLanguage "expression" executed
-between GLSL compiling and linking. Some OpenGL commands must be given in this
-phase; e.g., specifying of shader outputs for GLSL 1.3 and later. Value of this
-property is specified in @ref CodeEditor "Code editor".
+@dt BeforeLinkExpression @dd An @ref ScriptingLanguage "expression" executed between GLSL compiling and linking. Some OpenGL commands must be given in this phase; e.g., specifying of shader outputs for GLSL 1.3 and later. Value of this property is specified in @ref CodeEditor "Code editor".
 
-@dt Handle @dd Read only. The OpenGL handle of the shader. Use this when you
-want to make direct OpenGL calls. This value is available only in runtime.
-Example of usage Handle to obtain handle to attribute variable "position" in
-MyShader:
+@dt Handle @dd Read only. The OpenGL handle of the shader. Use this when you want to make direct OpenGL calls. This value is available only in runtime. Example of usage Handle to obtain handle to attribute variable "position" in MyShader:
 
     positionAttrVar = glGetAttribLocation(MyShader.Handle, "position");
 
@@ -66,7 +52,6 @@ MyShader:
 
 @dl
 
-@dt @anchor ShaderUniformVariables UniformVariables @dd A list of uniform
-variables that may be referenced in the GLSL code. See @subpage ShaderVariable.
+@dt @anchor ShaderUniformVariables UniformVariables @dd A list of uniform variables that may be referenced in the GLSL code. See @subpage ShaderVariable.
 
 @dlx

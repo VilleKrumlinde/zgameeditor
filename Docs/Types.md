@@ -31,12 +31,9 @@ Size: 32 bits
 
 Range: from 3.4e +/- 38 (23 bits for significand, i.e., up to 7 valid digits)
 
-To ensure that integral values are treated as floats, you can add suffix ".0" or
-"f".
+To ensure that integral values are treated as floats, you can add suffix ".0" or "f".
 
-Floats support also scientific notation for large or small numbers in form
-_significand_ x 10<SUP>exponent</SUP>. Instead of 10<SUP>exponent</SUP>, "e" or
-"E" is used to delimit exponent from significand.
+Floats support also scientific notation for large or small numbers in form _significand_ x 10<SUP>exponent</SUP>. Instead of 10<SUP>exponent</SUP>, "e" or "E" is used to delimit exponent from significand.
 
 Examples:
 
@@ -55,8 +52,7 @@ Range: from -128 to 127
 
 # string {#stringType}
 
-Sequence of characters. String literals are enclosed in double quotes. In
-expression, a string literal must start and finish at the same line.
+Sequence of characters. String literals are enclosed in double quotes. In expression, a string literal must start and finish at the same line.
 
 Special characters in string literals:
 
@@ -85,14 +81,12 @@ The following vector types are supported in scripting language:
 - vec3 - three-component float vector
 - vec4 - four-component float vector
 
-Components of vectors are floats and can be accessed from vector variables or
-vector component properties by **index properties**:
+Components of vectors are floats and can be accessed from vector variables or vector component properties by **index properties**:
 
 - X, Y, Z, W (or x, y, z, w) - for position, or
 - R, G, B, A (or r, g, b, a) - for colors.
 
-Arithmetic operations must be performed on particular index properties, it is
-not allowed to add or multiply vectors directly.
+Arithmetic operations must be performed on particular index properties, it is not allowed to add or multiply vectors directly.
 
 Examples:
 
@@ -107,11 +101,9 @@ Examples:
 
 # mat4 {#mat4Type}
 
-Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric
-transformations, see [here](https://open.gl/transformations) for details.
+Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric transformations, see [here](https://open.gl/transformations) for details.
 
-Entries of a matrix can be accessed as array of 16 floats. So you can use 1D
-(matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
+Entries of a matrix can be accessed as array of 16 floats. So you can use 1D (matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
 
 Matrix multiplication is supported by \* operator. Example:
 
@@ -143,35 +135,23 @@ Example of changing model-view matrix in OnRender property of @ref Model :
 
 # xptr {#xptrType}
 
-The type `xptr` is a pointer (a memory address) similar to pointer in C/C++
-language. Its primary purpose is to transfer pointers to C/C++ objects,
-structures and arrays to/from @ref ExternalFunctions "external functions".
+The type `xptr` is a pointer (a memory address) similar to pointer in C/C++ language. Its primary purpose is to transfer pointers to C/C++ objects, structures and arrays to/from @ref ExternalFunctions "external functions".
 
-The keyword `null` is used for null pointer - an "empty" pointer or pointer to
-"nowhere". It is used to determine that the pointer is not set.
+The keyword `null` is used for null pointer - an "empty" pointer or pointer to "nowhere". It is used to determine that the pointer is not set.
 
 Example:
 
-OpenGL external library contains function `glTexImage2D` used to define 2D or 1D
-texture array. Its last parameter is a pointer to an array with texture image
-data:
+OpenGL external library contains function `glTexImage2D` used to define 2D or 1D texture array. Its last parameter is a pointer to an array with texture image data:
 
     void glTexImage2D(int target, int level, int internal format, int width, int height, int border, int format, int atype, xptr pixels) {}
 
-This function can be called with specified name of @ref Array containing the
-data:
+This function can be called with specified name of @ref Array containing the data:
 
     byte[] imageData;
     ...
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
 
-`xptr` can also be used as an identifier of the C++ objects returned from calls
-of external functions that are used in consequent calls of external functions.
-ZGameeditor scripts do not change these pointers, just remember them in
-variables and pass them to function calls. This usage can be seen, for instance,
-in ZgeBullet 3D physic library in function `xptr zbtCreateWorld ()`, which
-creates a physics simulation world and returns a pointer to it. This pointer is
-then used in other functions as parameter:
+`xptr` can also be used as an identifier of the C++ objects returned from calls of external functions that are used in consequent calls of external functions. ZGameeditor scripts do not change these pointers, just remember them in variables and pass them to function calls. This usage can be seen, for instance, in ZgeBullet 3D physic library in function `xptr zbtCreateWorld ()`, which creates a physics simulation world and returns a pointer to it. This pointer is then used in other functions as parameter:
 
     xptr World; // global variable
     ...
@@ -191,11 +171,7 @@ then used in other functions as parameter:
 
 @anchor modelType
 
-There are several types corresponding to (instances of) some components. You can
-create variables of that types, assign components to them and set their
-properties in scripts. Except of the `model` type, variables of component-based
-types must be defined either as local expression variables or global variables
-defined in @ref ZLibrary component.
+There are several types corresponding to (instances of) some components. You can create variables of that types, assign components to them and set their properties in scripts. Except of the `model` type, variables of component-based types must be defined either as local expression variables or global variables defined in @ref ZLibrary component.
 
 | Type      | Corresponding component                 |
 | --------- | --------------------------------------- |
@@ -265,8 +241,7 @@ Additional various examples:
 
 # Arrays {#Arrays}
 
-In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also
-in scripts with the following syntax:
+In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also in scripts with the following syntax:
 
 @syn{<type> [ <size1> ] <name> = { <value>, <value>, ... };}
 
@@ -274,9 +249,7 @@ in scripts with the following syntax:
 
 @syn{<type> [ <size1>, <size2>, <size3> ] <name>;}
 
-Size can be unspecified an therefore is 0 by default. It is also possible to
-optionally initialize one-dimensional array variables at the place of their
-declaration.
+Size can be unspecified an therefore is 0 by default. It is also possible to optionally initialize one-dimensional array variables at the place of their declaration.
 
 Examples:
 
@@ -288,13 +261,9 @@ Examples:
     model[,,] arr5;           // 3D array of models
     byte[] data = {1,2,3,4};  // initialization of 1D array of bytes
 
-Size of array (defined as scripting variable or @ref Array component) can be
-changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3
-respectively, for each dimension of an array. The SizeDim\* properties can also
-be used to check actual size of array.
+Size of array (defined as scripting variable or @ref Array component) can be changed dynamically by setting its properties SizeDim1, SizeDim2 or SizeDim3 respectively, for each dimension of an array. The SizeDim\* properties can also be used to check actual size of array.
 
-Accessing of array items (defined as scripting variable or @ref Array component)
-is done with syntax:
+Accessing of array items (defined as scripting variable or @ref Array component) is done with syntax:
 
 @syn{<name> [ <index1> ]}
 
@@ -316,8 +285,7 @@ Example: Copy of an array.
     for(int i = source.SizeDim1 - 1; i >= 0; i--)
       destination[i] = source[i];
 
-Example: Passing an array as parameter to function and dynamic changing the size
-of the array.
+Example: Passing an array as parameter to function and dynamic changing the size of the array.
 
     const int BUFFER_DELTA = 100;
 
