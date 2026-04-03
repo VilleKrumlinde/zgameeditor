@@ -16,7 +16,7 @@ First, install the _ZGE Android_ application to your Android device. You can use
 
 2. Copy the `<ZGameEditor install dir>\Android\ZGEAndroid-debug.apk` file to the Android's internal storage or SD card mapped as a disk drive to your PC; for instance, as "\\Computer\<device name>\Internal storage" or "\\Computer\<device name>\SD Card".
 
-3. Enable "Settings / Security / Unknown sources" on the Android device. 
+3. Enable "Settings / Security / Unknown sources" on the Android device.
 
   ![](ht4-scr2.png)
 
@@ -54,7 +54,7 @@ Prerequisite:
 
 First, prepare your Android device:
 
-1. Connect the Android device to PC via USB cable. The type of USB connection should be ["Media device (MTP)" (external link)](http://www.mobile-phone-transfer.com/connect-android-to-pc-via-usb-mass-storage.html). 
+1. Connect the Android device to PC via USB cable. The type of USB connection should be ["Media device (MTP)" (external link)](http://www.mobile-phone-transfer.com/connect-android-to-pc-via-usb-mass-storage.html).
 
 2. Enable "USB debugging" in the [Developer options (external link)](http://www.androidcentral.com/all-about-your-phones-developer-options) on your Android device.
 
@@ -62,7 +62,7 @@ First, prepare your Android device:
 
 Compile, deploy and run the application:
 
-1. Open your project in ZGameEditor. 
+1. Open your project in ZGameEditor.
 
 2. Select the "Project / Android: Run project" menu item.
 
@@ -133,7 +133,7 @@ Build the application:
   
 4. You can optionally customize the generated application by:
 
-  * Changing/adding application icon(s) for various screen density. The icons are placed in the  `res\drawable-<resolution>\icon.png` files. The following resolutions can be used (not necessarily all): 
+  * Changing/adding application icon(s) for various screen density. The icons are placed in the  `res\drawable-<resolution>\icon.png` files. The following resolutions can be used (not necessarily all):
     
     - `ldpi` - 36 x 36px icon for 120 dpi screen
     - `mdpi` - 48 x 48px icon for 160 dpi screen
@@ -162,11 +162,11 @@ Build the application:
 
 There are several ways how to copy and install the generated APK file on your Android device, including, putting it to an application market and install it from there. We will describe usage of USB connection between PC and Android device:
 
-1. Connect your Android device to PC via USB cable. The type of USB connection should be ["Media device (MTP)" (external link)](http://www.mobile-phone-transfer.com/connect-android-to-pc-via-usb-mass-storage.html). 
+1. Connect your Android device to PC via USB cable. The type of USB connection should be ["Media device (MTP)" (external link)](http://www.mobile-phone-transfer.com/connect-android-to-pc-via-usb-mass-storage.html).
 
 2. Copy the APK file to the Android's sdcard mapped as a disk drive to your PC; for instance, as "\\Computer\<device name>\Internal storage".
 
-3. Enable "Settings / Security / Unknown sources" on the Android device. 
+3. Enable "Settings / Security / Unknown sources" on the Android device.
 
 4. Install the APK by means of a file manager installed on your Android device.
 

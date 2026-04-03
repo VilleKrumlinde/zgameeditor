@@ -18,7 +18,7 @@ Example usage: BallTexture in @ref ZPong sample project.
 * Assign "Pixel" color (vec3) to set the current pixel.
 * "this" refers to the current Bitmap. It can be omitted if built-in variables do not collide with locally defined variables.
 
-Example of an expression: 
+Example of an expression:
 
     this.Pixel.R = abs(X-0.5)*2;
 

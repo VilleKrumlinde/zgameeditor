@@ -11,7 +11,7 @@ With ZGameEditor you can do:
 
 Take a look at the included sample projects for an idea of what is possible. Other demo projects come with extensions to demonstrate the provided functionality.
 
-The applications you make with ZGameEditor can be as small as 64 kilobytes or less, and become stand-alone programs that can be distributed royalty-free. 
+The applications you make with ZGameEditor can be as small as 64 kilobytes or less, and become stand-alone programs that can be distributed royalty-free.
 
 Of course 64 kb is not a limit of ZGameEditor, you can make games that are much larger. It depends on how much content you import from external files.
 
@@ -34,7 +34,7 @@ For example, the @ref KeyPress component tests for user input from the keyboard.
 Components have properties. These properties can be set to different values. There are two different kinds of properties in ZGameEditor:
 
 1. value properties, and
-2. list properties. 
+2. list properties.
 
 Value properties are simple values that you plug in, such as "Keys" for the @ref KeyPress component that controls which keys will be tested for key presses.
 

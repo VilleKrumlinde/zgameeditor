@@ -7,8 +7,8 @@ The following rules you should take into account when working with threads:
 * Do not run hundreds of threads. at the same time.
 * Do not call sleep() with a very high number.
 * Do not access data that is no longer available from thread.
-* You can make no OpenGL calls in a thread, so don't use any render components. This is a limit of the OpenGL API. 
-* Any threads you created will keep running until finished, even if you stop your project in the ZGameEditor designer. Check the log window to see when a thread is started and finished. 
+* You can make no OpenGL calls in a thread, so don't use any render components. This is a limit of the OpenGL API.
+* Any threads you created will keep running until finished, even if you stop your project in the ZGameEditor designer. Check the log window to see when a thread is started and finished.
 
 See also: @ref startThread "startThread() function", @ref sleep "sleep() function"
 

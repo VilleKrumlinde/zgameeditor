@@ -20,7 +20,7 @@ To open and run a sample project do the following steps:
 
 7. You can modify properties of components or add/remove additional components to customize the project as you wish. To preview the project in editor itself, press the "Start" button in the ZApplication's @ref PreviewWindow or press the ALT+Enter key. Components and their properties can be changed during application previewing.
 
-8. To stop previewing, press the "Stop" button or press ALT+Enter key again. 
+8. To stop previewing, press the "Stop" button or press ALT+Enter key again.
 
 Follows the description of some of the sample projects that are included in ZGameEditor distribution.
 

@@ -29,7 +29,7 @@ Example: "ShipModel.Scale.X".
 @dd How to get the start value:
 
 * UseFromValue - Use the value of the FromValue property.
-* UseTargetValue - Use the current value of the Target property. 
+* UseTargetValue - Use the current value of the Target property.
 
 @dt ToValue
 @dd End value of animation.
