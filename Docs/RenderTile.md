@@ -8,7 +8,7 @@ See also: @ref TileSet
 
 External links: [Discussion about tiles and sprites on the Forum](http://www.emix8.org/forum/viewtopic.php?f=1&t=1159)
 
-# Properties
+## Properties
 
 @dl
 
