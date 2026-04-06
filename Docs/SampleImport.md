@@ -16,7 +16,7 @@ External links: [Discussion of this component in the Forum](http://www.emix8.org
 @dd Data of imported sample. Size shows its size in bytes, the "Clear" button clears the imported data, and the "Import" button imports the sample data from selected file. Importing a sample file also sets values of SampleRate, SampleFormat and SampleFileFormat properties, which can be later changed.
 
 @dt SampleRate
-Sample rate for RAW data expressed in Hz.
+@dd Sample rate for RAW data expressed in Hz.
 
 @dt SampleFormat
 @dd Sample bit format for RAW data. It can be:
