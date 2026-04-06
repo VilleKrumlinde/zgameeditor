@@ -1,6 +1,6 @@
 # BitmapCells {#BitmapCells}
 
-Creates a bitmap with "cell"-style pattern. This bitmap generator is implemented as Voronoi diagram with variable number of points, their placement, visual style, metrics for distance, and width of border between segments. 
+Creates a bitmap with "cell"-style pattern. This bitmap generator is implemented as Voronoi diagram with variable number of points, their placement, visual style, metrics for distance, and width of border between segments.
 
 ![Examples of bitmap cells](comp-cell-examples.png)
 

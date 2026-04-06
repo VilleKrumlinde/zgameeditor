@@ -1,6 +1,6 @@
 # MaterialTexture {#MaterialTexture}
 
-Represents a texture that is used by a material. 
+Represents a texture that is used by a material.
 
 This component can only be used in the @ref MaterialTextures "Material.Textures" property.
 

@@ -11,7 +11,7 @@ Execute a component list depending on the return value of an expression.
 
     return 1; // true
 
-or 
+or
 
     return CurrentModel.Position.X > 5;
 

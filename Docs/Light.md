@@ -24,7 +24,7 @@ When no lights are defined, the default is the active single-light model placed 
 
 * Directional - an infinitely distanced light with parallel light rays of the same intensity everywhere pointed from the direction of light Position to the point (0,0,0).
 * Point - a light placed at a given position in space and giving off equal amounts of light in all directions. Distance from light does not influence intensity of light rays.
-* Spot -  a light that radiates light from given position in a cone. Light intensity can be lower at borders of cone and higher in center. 
+* Spot -  a light that radiates light from given position in a cone. Light intensity can be lower at borders of cone and higher in center.
 
 @dt SpotDirection
 @dd Direction of spot light; axis of light cone. It is ignored for other kinds of light.

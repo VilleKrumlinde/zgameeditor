@@ -38,7 +38,7 @@ The properties are displayed in a vertical list. When you click on a property, y
 1. The name of the property
 2. The value of the property. Click to edit the value
 3. When the name of the property is displayed in __bold__ font, it means that the value is changed from the default value. This is useful for remembering what values you have changed.
-4. Grey text color means that the property is read-only and cannot be changed. 
+4. Grey text color means that the property is read-only and cannot be changed.
 
 The different types of properties:
 
@@ -66,7 +66,7 @@ This window displays different information depending on the currently selected c
 * Model/Mesh preview: Displayed when a Model or Mesh component is selected. The 3D-model is displayed. Click and drag in the window to change camera position.
 * Bitmap preview: Displayed when a Bitmap component is selected.
 * Audio preview/editor: Displayed when a Sound component is selected.
-* Application preview: Displayed when the ZApplication component is selected. 
+* Application preview: Displayed when the ZApplication component is selected.
 
 The preview window allows you to instantly see the effect of changed values of properties. An example:
 
@@ -74,7 +74,7 @@ The preview window allows you to instantly see the effect of changed values of p
 2. In the component tree: select the "BatModel" component. It is located under Content / Models / BatModel.
 3. The player bat is displayed in the preview window.
 4. Now try changing the value of the "Scale" property, either by typing in a new value "1.5" or using the "Edit value" slider in the Custom property editor.
-5. You'll see the models scale changed in the preview window. 
+5. You'll see the models scale changed in the preview window.
 
 ![Preview window](tut1-preview-window.png)
 
@@ -87,7 +87,7 @@ An example:
 1. Select the "BallMesh" component. The ball is displayed in the mesh preview window.
 2. Right-click the component and select "Lock preview".
 3. Now select the "MeshSphere" component which you will find under "Producers" on the "BallMesh" component.
-4. Try changing the Scale property and watch the scale of the ball change. 
+4. Try changing the Scale property and watch the scale of the ball change.
 
 Another example:
 
@@ -95,7 +95,7 @@ Another example:
 2. Right-click the "App" component and select "Lock preview".
 3. Select "MeshSphere" component under Content / Models / BallMesh / Producers.
 4. Click the "Start" button to start the ZPong game in the preview window.
-5. Now try changing the Scale property and watch the scale of the ball change while the game is playing. 
+5. Now try changing the Scale property and watch the scale of the ball change while the game is playing.
 
 ![Lock preview](tut1-lock-preview.png)
 

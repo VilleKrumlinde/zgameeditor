@@ -6,7 +6,7 @@ This component can only be used in the @ref ShaderUniformVariables "Shader.Unifo
 
 See also: @ref Shader
 
-##Properties
+## Properties
 
 @dl
 
