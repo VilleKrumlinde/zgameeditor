@@ -33,7 +33,7 @@ Example usage: see the included project @ref ModPlay for an example.
 
 @dlx
 
-# List Properties
+## List Properties
 
 @dl
 
