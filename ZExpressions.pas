@@ -2539,7 +2539,7 @@ begin
     {$endif}
 
     case TZcDataTypeKind(Ord(ArgTypes[I])-65) of
-      zctInt :
+      zctInt, zctByte :
         begin
           if IntI<IntRegCount then
           begin
@@ -2586,7 +2586,7 @@ begin
     begin
       //push on stack
       case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-65)) of
-        4 :
+        1, 4 :
           begin
             W(Int32Stack1);
             P[-1] := Offs;
@@ -2887,7 +2887,7 @@ begin
     UseStack := False;
 
     case TZcDataTypeKind(Ord(ArgTypes[I])-65) of
-      zctInt :
+      zctInt, zctByte :
         begin
           if IntI<IntRegCount then
           begin
@@ -2929,7 +2929,7 @@ begin
     begin
       //push on stack
       case GetZcTypeSize(TZcDataTypeKind(Ord(ArgTypes[I])-65)) of
-        4 :
+        1, 4 :
           begin
             Assert(StackI<High(Int32Stack));
             W(Int32Stack[StackI]);
