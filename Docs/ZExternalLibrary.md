@@ -2,8 +2,7 @@
 
 Definition of interface, consisting of functions and constants, to external .DLL or Android shared .SO library. After defining in ZExternalLibrary, it is possible to call external functions and defined constants from expressions.
 
-External links:
-[List of external libraries and related discussions in the Forum](http://www.emix8.org/forum/viewforum.php?f=10)
+External links: [List of external libraries and related discussions in the Forum](http://www.emix8.org/forum/viewforum.php?f=10)
 
 ## Properties
 

@@ -15,7 +15,7 @@ External links: [Discussion of this component in the Forum](http://www.emix8.org
 @dl
 
 @dt CellStyle
-@dd Visual style of cell. 
+@dd Visual style of cell.
 
 * Standard
 * Nice1

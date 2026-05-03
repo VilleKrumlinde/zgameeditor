@@ -1,6 +1,6 @@
 # Built-in Functions Reference {#BuiltinFunctions}
 
-# Math {#Math}
+## Math {#Math}
 
 @dl
 
@@ -68,7 +68,7 @@
 
 @dlx
 
-# Vectors and Matrices {#VectorsAndMatrices}
+## Vectors and Matrices {#VectorsAndMatrices}
 
 @dl
 
@@ -82,7 +82,7 @@
 @dd Creates vec4 instance from four floats.
 
 @dtn void @bf{getMatrix} (int type, mat4 matrix)
-@dd Updates the specified _matrix_ by the current OpenGL matrix used for rendering. The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture. 
+@dd Updates the specified _matrix_ by the current OpenGL matrix used for rendering. The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture.
 
 @dtn void @bf{setMatrix} (int type, mat4 matrix)
 @dd Sets the currently used OpenGL matrix to the specified _matrix_.  The _type_ parameter determines type of obtained matrix: 0 - Model view, 1 - Projection, 2 - Texture. Example:
@@ -93,11 +93,11 @@
     setMatrix(0, mvm);
 
 @dtn vec3 @bf{transformPoint} (mat4 matrix, vec3 point)
-@dd Returns position of _point_ transformed by _matrix_. More information about transformation matrices see [here](http://open.gl/transformations).
+@dd Returns position of _point_ transformed by _matrix_. More information about transformation matrices see the [OpenGL transformations tutorial](http://open.gl/transformations).
 
 @dlx
 
-# Strings {#Strings}
+## Strings {#Strings}
 
 @dl
 
@@ -107,7 +107,7 @@
     intToStr(42); // "42"
 
 @dtn int @bf{strToInt} (string s)
-@dd Converts string _s_ to integer. String must be formated as valid integer number, else the result can be improper number. Example: 
+@dd Converts string _s_ to integer. String must be formated as valid integer number, else the result can be improper number. Example:
 
     strToInt("42"); // 42
 
@@ -138,7 +138,7 @@
 
 @dlx
 
-# Threads {#Threads}
+## Threads {#Threads}
 
 @dl
 
@@ -146,11 +146,11 @@
 @dd Launches a new @ref Thread _t_ using _parameter_ as parameter to the thread expression. The parameter is meant to be used for giving each thread a context when several instances of the same Thread component are launched.
 
 @dtn @anchor sleep void @bf{sleep} (int milliseconds)
-@dd Pauses the current @ref Thread and allows other threads to execute. If you use threads and notice your CPU usage is too high, insert a sleep in your computation loop to lower CPU usage. 
+@dd Pauses the current @ref Thread and allows other threads to execute. If you use threads and notice your CPU usage is too high, insert a sleep in your computation loop to lower CPU usage.
 
 @dlx
 
-# Device Input {#DeviceInput}
+## Device Input {#DeviceInput}
 
 @dl
 
@@ -182,11 +182,12 @@
 
 @dlx
 
-# Component Management {#ComponentManagement}
+## Component Management {#ComponentManagement}
 
 @note These functions can only be used from the ZGE IDE and Visualizer. Error message appears if you try to save exe-file using these functions.
 
 Some suggestions on how these functions can be used:
+
 * Debug/support routines in the IDE when creating projects.
 * Useful in Visualizer scripts.
 * Generate code. For instance, in a visualizer script it could create custom Expression components, MeshExpression, BitmapExpression etc. Could be powerful for generated content.
@@ -255,7 +256,7 @@ Some suggestions on how these functions can be used:
 
 @dlx
 
-# Misc {#Misc}
+## Misc {#Misc}
 
 @dl
 

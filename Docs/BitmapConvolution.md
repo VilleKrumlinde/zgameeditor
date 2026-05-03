@@ -13,7 +13,7 @@ External links: [Discussion of this component in the Forum](http://www.emix8.org
 @dl
 
 @dt SwapDimensions
-@dd If checked, the dimensions of convolution array are swapped. 
+@dd If checked, the dimensions of convolution array are swapped.
 
 @dt ConvArray
 @dd 2D array representing the convolution matrix (mask). It is usually 3x3, 5x5, or 7x7 array.

@@ -26,7 +26,7 @@ This component can only be used in the OnRender property of @ref Model, @ref Mod
     Color.B = 1.5 - Color.R;
 
 In the Model preview check "Update time" to see changing of the mesh in time.
- 
+
 @dt VertexColors
 @dd If set the RenderVertexExpression computes vertex colors. If not set, the vertex colors are not computed/changed.
 

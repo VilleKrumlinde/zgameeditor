@@ -2,7 +2,7 @@
 
 This tutorial will guide you through making the "Hello World" application, which is simply a program that displays the text "Hello World" on the screen.
 
-# Displaying Text {#DisplayingText}
+## Displaying Text {#DisplayingText}
 
 Here is how we will begin:
 
@@ -49,7 +49,7 @@ Run the project:
 
 4. Return to the ZGameEditor window.
 
-# Animation {#Animation}
+## Animation {#Animation}
 
 Now we will add some simple animation.
 
@@ -76,7 +76,7 @@ Now we will add some simple animation.
 
 6. Press Escape key to return to the editor.
 
-# User Interaction {#UserInteraction}
+## User Interaction {#UserInteraction}
 
 Time to add some interactivity.
 
@@ -102,7 +102,7 @@ Time to add some interactivity.
 
   When you move the mouse up and down the letters follows the mouse.
 
-# Adding Transparency {#Transparency}
+## Adding Transparency {#Transparency}
 
 You will notice there are ugly borders where the characters overlap. This is because by default graphics in ZGameEditor are not drawn with transparency. Here are the steps to fix that.
 
@@ -139,7 +139,7 @@ Add a component that will use the material:
 
 6. Press Escape key to return to the editor.
 
-# Adding Sound {#AddingSound}
+## Adding Sound {#AddingSound}
 
 Just for fun, we will now add a simple sound effect.
 

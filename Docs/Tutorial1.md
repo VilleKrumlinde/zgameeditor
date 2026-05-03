@@ -17,7 +17,7 @@ The main window is split into the following panels:
 5. @ref LogWindow
 6. @ref ToolbarAndMenu
 
-# Project Tree {#ProjectTree}
+## Project Tree {#ProjectTree}
 
 This panel displays a tree of the components that the current project contains. This works similar to a folder-tree in a file explorer: you can create folders (@ref Group) and arrange your components in sub-folders.
 
@@ -27,7 +27,7 @@ Right mouse button click brings up the context menu with useful functions that c
 
 Mouse drag-and-drop, Ctrl+Up and Ctrl+Down are enabled to reorder components. For full list of keyboard shortcuts see @ref KeyboardShortcuts "here".
 
-# Property Editor {#PropertyEditor}
+## Property Editor {#PropertyEditor}
 
 When you select a component in the component tree (by clicking to highlight it), the properties of that component are displayed in the property editor panel.
 
@@ -59,7 +59,7 @@ Press "Tab" or click outside the property entry area to commit the new value.
 
 By left mouse clicking on a component, this will be added as a child of the selected list property. This is a very effective way of adding (possibly multiple) new components to your project.
 
-# Preview Window {#PreviewWindow}
+## Preview Window {#PreviewWindow}
 
 This window displays different information depending on the currently selected component. The following preview windows can be shown:
 
@@ -105,7 +105,7 @@ There are two ways to test your project:
 
 * Alternatively, you may compile and run application's executable (.EXE file). Just click the "Run" button in the toolbar or press F9.
 
-# Custom Property Editor {#CustomPropertyEditor}
+## Custom Property Editor {#CustomPropertyEditor}
 
 This panel displays different content depending on the type of property that is currently selected in the @ref PropertyEditor.
 
@@ -129,15 +129,15 @@ For more info see [OpenGL Shading Language on Wikipedia (external link)](https:/
 
 Click "Compile" button to commit and validate the expression. In the case of syntax error this is displayed in a error line below and is also written to the @ref LogWindow.
 
-# Log Window {#LogWindow}
+## Log Window {#LogWindow}
 
 This panel displays internal messages from the ZGameEditor-engine. If the editor doesn't behave as you expect, check out the log window.
 
-# Toolbar and Menu {#ToolbarAndMenu}
+## Toolbar and Menu {#ToolbarAndMenu}
 
 A standard toolbar for actions that also can be accessed from the menus above. Hover the mouse pointer over a button for displaying a tool-tip that explains the action of that button.
 
-# Customizing the Editor {#CustomizingEditor}
+## Customizing the Editor {#CustomizingEditor}
 
 To customize the editor, you can perform the following actions:
 

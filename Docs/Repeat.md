@@ -15,7 +15,7 @@ Repeat execution of a component list.
     return this.Iteration < 5;
 
 Value of this property is specified in @ref CodeEditor "Code editor".
-    
+
 @dt Iteration
 @dd Read-only property that contains the identity value of the current iteration. Return a false value to end the repeat-loop. It can be accessed from expressions of the WhileExp or OnIteration properties.
 

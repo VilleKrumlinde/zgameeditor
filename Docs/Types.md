@@ -2,7 +2,7 @@
 
 ZGameEditor scripting language supports the following types:
 
-# int {#intType}
+## int {#intType}
 
 Signed integer number.
 
@@ -23,7 +23,7 @@ Examples:
     a = 0x1f48;     // 8008
     a = 0x1F48;     // 8008
 
-# float {#floatType}
+## float {#floatType}
 
 Floating point number.
 
@@ -42,7 +42,7 @@ Examples:
     a = 1.2e4;      // 12000
     a = 5e-2;       // 0.05
 
-# byte {#byteType}
+## byte {#byteType}
 
 Small integer.
 
@@ -50,7 +50,7 @@ Size: 8 bits
 
 Range: from -128 to 127
 
-# string {#stringType}
+## string {#stringType}
 
 Sequence of characters. String literals are enclosed in double quotes. In expression, a string literal must start and finish at the same line.
 
@@ -71,7 +71,7 @@ Examples:
     s = "aaa\n" +
     "bbb";                              // correct
 
-# Vectors {#Vectors}
+## Vectors {#Vectors}
 
 @anchor vec2Type @anchor vec3Type @anchor vec4Type
 
@@ -99,9 +99,9 @@ Examples:
     App.LightPosition = v3;
     v4.A = 0.5;
 
-# mat4 {#mat4Type}
+## mat4 {#mat4Type}
 
-Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric transformations, see [here](https://open.gl/transformations) for details.
+Matrix of 4x4 floats. It is usually used to store a OpenGL matrix for geometric transformations; see the [OpenGL transformations tutorial](https://open.gl/transformations) for details.
 
 Entries of a matrix can be accessed as array of 16 floats. So you can use 1D (matrix[i], i = 0..15) or 2D (matrix[column,row]) indexing notation.
 
@@ -133,7 +133,7 @@ Example of changing model-view matrix in OnRender property of @ref Model :
 
     setMatrix(0, modelViewMatrix);
 
-# xptr {#xptrType}
+## xptr {#xptrType}
 
 The type `xptr` is a pointer (a memory address) similar to pointer in C/C++ language. Its primary purpose is to transfer pointers to C/C++ objects, structures and arrays to/from @ref ExternalFunctions "external functions".
 
@@ -167,7 +167,7 @@ This function can be called with specified name of @ref Array containing the dat
     // destroy physical world
     zbtDestroyWorld(World);
 
-# Component-based Types {#ComponentTypes}
+## Component-based Types {#ComponentTypes}
 
 @anchor modelType
 
@@ -239,7 +239,7 @@ Additional various examples:
       if(i!=buf[i])
         trace("error when reading");
 
-# Arrays {#Arrays}
+## Arrays {#Arrays}
 
 In addition to the @ref Array component, 1D, 2D or 3D arrays can be defined also in scripts with the following syntax:
 

@@ -4,7 +4,7 @@ ZGameEditor has a scripting language with syntax based upon C language dialects.
 
 The following sections define syntax of the scripting language.
 
-# Statements {#Statements}
+## Statements {#Statements}
 
 Expression consists of zero or more statements and/or @ref Comments "comments". Comments and white space characters (space, tab, new line, etc.) are ignored while they are not included in @ref stringType "strings".
 
@@ -18,7 +18,7 @@ A **statement** represents either declaration of variable or function, or execut
 
 Blocks are usually parts of compound commands that control program flow (see section @ref ControlFlow) or definitions of functions (see section @ref Functions).
 
-# Comments {#Comments}
+## Comments {#Comments}
 
 Comments are portions of the code ignored by the compiler which allow the user to make simple notes in the relevant areas of the source code. Comments come either in block form or as single lines.
 
@@ -35,7 +35,7 @@ Multi-line comment starts with `/*` and end with `*/`.
 */
 @synx
 
-# Variables {#Variables}
+## Variables {#Variables}
 
 Variable is a named value of a specified type. After defining a variable, it is possible to set value of variable and to read this value in expressions. There are two kinds of variables:
 
@@ -77,7 +77,7 @@ Example:
     a++;                    // updating value
     trace(intToStr(a));     // usage - print "24" to Log window
 
-# Constants {#Constants}
+## Constants {#Constants}
 
 **Constant** is named value of basic type.
 
@@ -107,7 +107,7 @@ Example:
 
 ZGameEditor provides several @subpage BuiltinConstants "built-in constants" automatically set by system. They are either mathematical constants or system constants you can use to obtain an information about the operating system the application is running on.
 
-# Accessing Component Properties {#AccessingProperties}
+## Accessing Component Properties {#AccessingProperties}
 
 Named components and values of their properties can be accessed from expressions in the following way:
 
@@ -154,7 +154,7 @@ To change color of bullet during its existence, update color of "BulletColor" co
 
 @ref ModelPersonality "Personality" property of the current model is used to have different colors for multiple instantiated bullets at the same time.
 
-# Assignments {#Assignments}
+## Assignments {#Assignments}
 
 _Simple assignment_ of a value to variable or component property is done with the following syntax:
 
@@ -207,7 +207,7 @@ Example:
     a *= b;     // a is 12
     s += "bbb"; // s is "aaabbb"
 
-# Operators {#Operators}
+## Operators {#Operators}
 
 In addition to @ref Assignments "assignment operators", the scripting language offers also other types of operators described in this section.
 
@@ -264,7 +264,7 @@ Similarly to @ref BooleanOperators "boolean operators" also relational operators
 | -------- | ---------- | ----------------------------------------------------------- |
 | ? :      | Ternary if | a &gt; b ? x : y;<br>is equal to:<br>if(a &gt; b) x else y; |
 
-# Control Flow Statements {#ControlFlow}
+## Control Flow Statements {#ControlFlow}
 
 Scripts allow to define conditional execution of alternative flows, looping of statement blocks, and continuations at different statements using the following statements.
 
@@ -307,7 +307,6 @@ Examples:
       @RemoveModel();
 
 ## switch {#Switch}
-
 
 <!-- prettier-ignore -->
 @syn
@@ -413,7 +412,7 @@ Use the `continue` statement to jump directly to the next loop iteration. For ex
        sum += i;  //this line only executes when i<5
     }
 
-# Functions {#Functions}
+## Functions {#Functions}
 
 ## User-defined Functions {#UserFunctions}
 
@@ -475,7 +474,7 @@ ZGameEditor defines a number of built-in functions providing the basic functiona
 
 See the list of all built-in functions in @subpage BuiltinFunctions "here".
 
-# Advanced Scripting {#AdvancedScripting}
+## Advanced Scripting {#AdvancedScripting}
 
 ## Script-based Component Invocation {#ComponentInvocation}
 
@@ -587,6 +586,6 @@ Example: Even if the scripting language does not support variables of type "arbi
     p = reinterpret_cast<xptr>(Comp2);
     @CallComponent(Component : p);
 
-# Garbage Collecting {#GarbageCollecting}
+## Garbage Collecting {#GarbageCollecting}
 
 Local variables are at end of expression automatically garbage collected. You do not need specially care about deallocation of temporal vector, matrix, object, array or component variables. However, because garbage collecting takes some time, it is recommended to use as less as possible local variables and to reduce their size, if possible.

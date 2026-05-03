@@ -19,7 +19,7 @@ External links: [Discussion about tiles and sprites on the Forum](http://www.emi
 @dd Index of the tile in TileSet.
 
 @dt OriginX, OriginY
-@dd Horizontal and vertical relative position of the rendered tile. The position is expressed in pixels of the rendered bitmap, not pixels of screen. For instance, if OriginX and OriginY are set to 0 (the default value), the tile is drawn from upper-left corner. Setting OriginX to 4 and OriginY to 8 for 8x16 tile draws it centered. 
+@dd Horizontal and vertical relative position of the rendered tile. The position is expressed in pixels of the rendered bitmap, not pixels of screen. For instance, if OriginX and OriginY are set to 0 (the default value), the tile is drawn from upper-left corner. Setting OriginX to 4 and OriginY to 8 for 8x16 tile draws it centered.
 
 @dt MirrorHorizontal
 @dd If set, the tile bitmap is flipped horizontally.

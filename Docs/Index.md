@@ -1,36 +1,38 @@
 # Help Contents
 
-![ZGE Logo](pic/zge_logo.png)<br>_The rapid game development solution with a tiny footprint._
+![ZGE Logo](pic/zge_logo.png)
+
+_The rapid game development solution with a tiny footprint._
 
 Welcome to ZGameEditor Help!
 
-# General info
+## General info
 
 - @ref Overview - Overview and introduction to ZGameEditor.
 - @ref Features - A summary of the main features.
 
-# Getting started
+## Getting started
 
 - @ref Tutorial1 "Tutorial 1" - Guide to the user interface.
 - @ref Tutorial2 "Tutorial 2" - Creating the "Hello World" application.
 - @ref Tutorial3 "Tutorial 3" - A simple game "OneButton".
 - @ref SampleProjects - An overview of the sample projects that are included.
 
-# How-to
+## How-to
 
 - @ref Import3DS
 - @ref ExportWindows
 - @ref ExportLinuxOSX
 - @ref ExportAndroid
 
-# Reference
+## Reference
 
 - @ref Components "Component reference" - All components and their properties are listed here.
 - @ref ScriptingLanguage "Scripting language reference" - Information about the scripting language.
 - @ref KeyboardShortcuts - Reference on used keyboard shortcuts.
 <!-- TODO - @ref Visualizer - Scripting of ZGameEditor Visualizer effests for FL Studio.-->
 
-# Web Links
+## Web Links
 
 ### ZGameEditor links
 
