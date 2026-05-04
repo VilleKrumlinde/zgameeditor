@@ -32,5 +32,5 @@ Current limitations:
 Example screenshots:
 
 ![WolfAndBart application running on Ubuntu Linux](ht3-scr2.png)
-<br>
+
 ![ShaderDemo application running on Mac OS X](ht3-scr3.png)

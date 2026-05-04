@@ -6,13 +6,13 @@ When you have created a .zgeproj file with an effect, store it in the Effects di
 
 @note ZGE projects of all out-of-the-box effects shipped with FL Studio can be edited from the Visualizer by pressing the "Edit effect in ZGameEditor" pop-up menu from the the effect layer.
 
-# Effect Information {#ZgevizEffectInfo}
+## Effect Information {#ZgevizEffectInfo}
 
 Use the _Comment_ property of the @ref ZApplication component to write help text about your effect that will be displayed in ZgeViz when right mouse is clicked and the "Show help for this effect" is chosen. The comment should contain also description of effect parameters which will be displayed in the Hint panel of FL Studio when mouse is over the effect's parameter. Each parameter is described on a separate line in the form: @<parameter name@> - @<description@>.
 
 Put a @ref Constant component with name "AuthorInfo" and specify the effect's author name to its StringValue property. In a script use: @tt{const string AuthorInfo = "author";}. The author name is displayed in the effect panel.
 
-# Custom Content {#ZgevizCustomContent}
+## Custom Content {#ZgevizCustomContent}
 
 Effects can use the media content specified by user in the "Add content" tab of the visualizer.
 
@@ -34,7 +34,7 @@ If a ZGE project file contains a @ref Bitmap component named "UserTextBitmap" it
 
 Text specified in the _Add content_ / _Text_ tab of the visualizer dialog is placed to a built-in array UserTextArray. See @ref UserTextArray "here" for details.
 
-# Built-in Components {#ZgevizBuiltinComponents}
+## Built-in Components {#ZgevizBuiltinComponents}
 
 The following components must be inserted to the ZGE project manually but their content is set by visualizer automatically.
 
@@ -103,19 +103,19 @@ Variable set to the path of the visualizer plugin.
 
 @dlx
 
-# MIDI Input {#ZgevizMidi}
+## MIDI Input {#ZgevizMidi}
 
 @note !!! maybe put this to a separate section Callbacks !!!
 
 Effects can act on MIDI messages, for instance, to watch note on/off messages that could be used for interactive effects. Put the following callback function to a @ref ZLibrary component placed in @ref ZApplicationOnLoaded "OnLoaded" or @ref ZApplicationContent "Content":
 
     void OnMidiMessage(int status, int data1, int data2) {
-    	<your code to process parameters>
+     <your code to process parameters>
     }
 
 [Table of MIDI messages.](http://www.midi.org/techspecs/midimessages.php)
 
-# Built-in Functions {#ZgevizFunctions}
+## Built-in Functions {#ZgevizFunctions}
 
 @note If you want to use any of the following functions in your effect you must declare them explicitly in a @ref ZExternalLibrary component.
 

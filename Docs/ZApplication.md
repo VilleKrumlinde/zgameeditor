@@ -118,6 +118,7 @@ The application top-most component. This component is automatically created when
 
 @dt RenderOrder
 @dd Specifies the order in which OnRender sections of application's components are executed.
+
 * ModelsBeforeApp - The @ref ModelStateOnRender "ModelState.OnRender" section is applied for each active model state as first, then @ref ModelOnRender "Model.OnRender" section for each active model, @ref AppStateOnRender "AppState.OnRender" section for active application state, and finally @ref ZApplicationOnRender "ZApplication.OnRender".
 * AppBeforeModels - Rendering order is reversed.
 

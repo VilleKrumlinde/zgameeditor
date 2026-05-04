@@ -25,7 +25,7 @@ Example of expression for modifying of sound from previous producer:
     this.Sample *= sin(Time * freq) * volume;
 
 Value of this property is specified in @ref CodeEditor "Code editor".
-    
+
 @dt Sample
 @dd Read-write property initially set to the current signal value of sample sound. Its value is in interval from -1 to 1. This property can be accessed only from the Expression property.
 

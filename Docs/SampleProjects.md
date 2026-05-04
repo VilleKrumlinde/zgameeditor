@@ -1,6 +1,6 @@
 # Sample Projects {#SampleProjects}
 
-# Viewing Sample Projects
+## Viewing Sample Projects
 
 ZGameEditor includes several sample projects located in the _Projects_ sub-folder of the installation directory.
 
@@ -24,112 +24,127 @@ To open and run a sample project do the following steps:
 
 Follows the description of some of the sample projects that are included in ZGameEditor distribution.
 
-# ZBlast
+## ZBlast
+
 @anchor ZBlast
 
 Arena style shooting game with abstract graphics.
 
 ![&nbsp;](proj-zblast.png)
 
-# FpsDemo
+## FpsDemo
+
 @anchor FpsDemo
 
 A simple First Person Shooter style demo demonstrating that 3d games are possible with ZGameEditor.
 
-![](proj-fpsdemo.png)
+![FpsDemo](proj-fpsdemo.png)
 
-# ShaderDemo
+## ShaderDemo
+
 @anchor ShaderDemo
 
 Demonstrates the use of GLSL vertex and fragment shaders.
 
-![](proj-shaderdemo.png)
+![ShaderDemo](proj-shaderdemo.png)
 
-# CleanseCube
+## CleanseCube
+
 @anchor CleanseCube
 
 A short non-interactive demo that demonstrates the use of imported bitmap graphics and a warped 3D cube.
 
-![](proj-cleanse.png)
+![CleanseCube](proj-cleanse.png)
 
-# ZPong
+## ZPong
+
 @anchor ZPong
 
 A simple "Pong"-clone. Demonstrates stereo sound and simple game logic.
 
-![](proj-zpong.png)
+![ZPong](proj-zpong.png)
 
-# Particles
+## Particles
+
 @anchor Particles
 
 Particle effects. Can also be generated as a screen saver.
 
-![](proj-particles.png)
+![Particles](proj-particles.png)
 
-# TripleE
+## TripleE
+
 @anchor TripleE
 
 A small shoot-em-up game.
 
-![](proj-triplee.png)
+![TripleE](proj-triplee.png)
 
 Features:
+
 * title and game over screen
 * scoring
 * levels and stages
 * on-the-fly generation of models, every enemy is slightly different
 
-# Steering
+## Steering
+
 @anchor Steering
 
 Demonstrates steering behaviors.
 
-![](proj-steering.png)
+![Steering](proj-steering.png)
 
-# About
+## About
 
 This is the source for the About box animation inside ZGameEditor.
 
-![](proj-about.png)
+![About](proj-about.png)
 
-# Implicit
+## Implicit
+
 @anchor Implicit
 
 A test project for the experimental implicit surface polygonizer.
 
-![](proj-implicit.png)
+![Implicit](proj-implicit.png)
 
-# FileDemo
+## FileDemo
+
 @anchor FileDemo
 
 Demonstrates how to use the @ref File component to load and save data from a text file.
 
-![](proj-filedemo.png)
+![FileDemo](proj-filedemo.png)
 
-# YakYakReader
+## YakYakReader
+
 @anchor YakYakReader
 
 Displays the [YakYak](http://www.yakyak.org/index.php) active topics. Left mouse click on a topic opens this in a Web browser.
 
-![](proj-yakyak.png)
+![YakYakReader](proj-yakyak.png)
 
-# RenderTexture
+## RenderTexture
+
 @anchor RenderTexture
 
 Non-interactive demo that demonstrates usage of @ref RenderTarget and @ref SetRenderTarget components. It renders a dynamic scene to  texture which is in turn used for rendering each size of a rotating cube.
 
-![](proj-rendertexture.png)
+![RenderTexture](proj-rendertexture.png)
 
-# RenderPass
+## RenderPass
+
 @anchor RenderPass
 
 Demonstrates usage of two render passes; see @ref ZApplicationRenderPasses "ZApplication.RenderPasses" for details. In the first render pass a rotating spiral is rendered to a @ref RenderTarget, and in the second render pass the RenderTarget is used as a texture for rendering two sprites and also the large spiral is rendered to the screen.
 
-![](proj-renderpass.png)
+![RenderPass](proj-renderpass.png)
 
-# ModPlay
+## ModPlay
+
 @anchor ModPlay
 
 Plays a music file using the external library BASS.dll. Shows also the text with the current volume level and illustrates this value as size of the rendered beams.
 
-![](proj-modplay.png)
+![ModPlay](proj-modplay.png)

@@ -4,7 +4,7 @@ ZGameEditor allows to develop and deploy applications running on various Android
 
 There are provided several methods how to compile the project, deploy it to the Android device and run it there. You can choose the one the best fits to your needs.
 
-# Manual Generation and Deployment of zzdc.dat
+## Manual Generation and Deployment of zzdc.dat
 
 If you want test your Android application which uses neither external libraries nor built-in resources and you do not want to install any additional tools on PC, use this method.
 
@@ -12,18 +12,17 @@ First, install the _ZGE Android_ application to your Android device. You can use
 
 1. Connect your Android device to PC via USB cable. The type of USB connection should be ["Media device (MTP)" (external link)](http://www.mobile-phone-transfer.com/connect-android-to-pc-via-usb-mass-storage.html).
 
-  ![](ht4-scr1.png)
+  ![USB connection Media device MTP](ht4-scr1.png)
 
 2. Copy the `<ZGameEditor install dir>\Android\ZGEAndroid-debug.apk` file to the Android's internal storage or SD card mapped as a disk drive to your PC; for instance, as "\\Computer\<device name>\Internal storage" or "\\Computer\<device name>\SD Card".
 
 3. Enable "Settings / Security / Unknown sources" on the Android device.
 
-  ![](ht4-scr2.png)
+  ![Copy ZGEAndroid-debug apk to device](ht4-scr2.png)
 
 4. Install the `ZGEAndroid-debug.apk` by means of a file manager installed on your Android device. The application will appear as "ZGE Android".
 
-  ![](ht4-scr3.png)
-
+  ![Install ZGE Android with file manager](ht4-scr3.png)
 
   The __ZGE Android__ is an Android application that interprets the compiled ZGameEditor project file `zzdc.dat` located in the root of the Android device's SD card. It cannot run without this file.
   
@@ -33,8 +32,7 @@ Once you have installed the _ZGE Android_ application, you do not need to reinst
 
 2. Press "Project / Android: Build zzdc.dat file" menu item.
 
-  ![](ht4-scr4.png)
-
+  ![Build zzdc.dat menu](ht4-scr4.png)
 
   After compiling the project, ZGameEditor shows you a message with the path to the resulting `zzdc.dat` file.
 
@@ -44,7 +42,7 @@ Once you have installed the _ZGE Android_ application, you do not need to reinst
 
 See [this video tutorial (external link)](https://www.youtube.com/watch?v=96a5t-275%5Fk) how to create your first Android application with ZGameEditor from scratch. It demonstrates usage of Dropbox for transferring files between PC and Android device.
 
-# One-Click Compiling, Deployment and Running
+## One-Click Compiling, Deployment and Running
 
 If you want to quickly test your Android application which uses neither external libraries nor built-in resources you can use the following method.
 
@@ -58,7 +56,7 @@ First, prepare your Android device:
 
 2. Enable "USB debugging" in the [Developer options (external link)](http://www.androidcentral.com/all-about-your-phones-developer-options) on your Android device.
 
-  ![](ht4-scr5.png)
+  ![USB debugging developer options](ht4-scr5.png)
 
 Compile, deploy and run the application:
 
@@ -66,8 +64,7 @@ Compile, deploy and run the application:
 
 2. Select the "Project / Android: Run project" menu item.
 
-  ![](ht4-scr6.png)
-
+  ![Project Android Run project menu](ht4-scr6.png)
 
   This command automatically installs the _ZGE Android_ application on the connected Android device, compiles the project to the `zzdc.dat` file, copies the file to the device's SD card root directory, and runs the _ZGE Android_ application on the compiled project file.
 
@@ -77,7 +74,7 @@ Compile, deploy and run the application:
 
 If you run the _ZGE Android_ application again, it opens the last deployed ZGameEdior project, unless you manually removed the _zzdc.dat_ file from sdcard.
 
-# Generating APK
+## Generating APK
 
 To create distributable stand-alone Android application (.apk file) with embedded ZGameEditor engine, compiled project file, and possibly also local resource files, external libraries, application icons, and defines specific Android application access rights, use this method.
 
@@ -95,7 +92,7 @@ Prerequisites:
 
   If you want to develop also for older Android devices, you should  manually install SDK Platform for Android 2.2 (API 8). Download it from [this link](http://qdevarena.blogspot.sk/2010/05/download-android-sdk-standalone-for.html) and unpack it to the "platforms" folder of your Android SDK installation folder.
   
-  ![](ht4-scr7.png)
+  ![Android SDK Manager installed packages](ht4-scr7.png)
 
 * You need to install and setup [Apache Ant (external link)](http://ant.apache.org/) for Windows. This is required for Android SDK building. See the [help page (external link)](http://ant.apache.org/manual/install.html) for details.
 
@@ -123,7 +120,7 @@ Build the application:
 
 3. Select "Project / Android: Build APK (debug)" or "Project / Android: Build APK (release)" menu item. In a consequent dialog you can verify and optionally also change the application's properties.
 
-  ![](ht4-scr9.png)
+  ![Android Build APK dialog](ht4-scr9.png)
 
   ZGameEditor generates the Android Application Project folder with name you specified in the @ref ZApplicationAndroidPackageName "ZApplication.AndroidPackageName" property. The folder structure is described [here (external link)](http://developer.android.com/tools/projects/index.html#ApplicationModules).
   
@@ -173,7 +170,8 @@ There are several ways how to copy and install the generated APK file on your An
 5. After finished, you can run the installed Android application.
 
 @anchor AccessingFiles
-# Accessing Android Files
+
+## Accessing Android Files
 
 ZGameEditor application running on Android device can read files stored as resources in the APK file, and also files from SD card. To read files, in general, use the @ref File component. It's @ref FileFileName "FileFileName" property should be prefixed by:
 
@@ -206,7 +204,7 @@ Example: Copy the default configuration file `config.txt` from assets to SD card
       
     }
 
-# Handling Android Device Inputs
+## Handling Android Device Inputs
 
 ## Touch Screen
 

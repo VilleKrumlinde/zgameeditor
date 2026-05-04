@@ -10,7 +10,7 @@ Here is a picture illustrating the gameplay:
 
 First we will create the main active components in our game: Player and Walls. In ZGameEditor a moving graphical entity and its behavior is called a @ref Model. So we need a @ref CreatingPlayerModel "PlayerModel" and a @ref CreatingWallModel "WallModel".
 
-# Creating the Player Model {#CreatingPlayerModel}
+## Creating the Player Model {#CreatingPlayerModel}
 
 Start with defining the player model.
 
@@ -39,7 +39,6 @@ A model needs 3D-geometry for it to display itself. This is called a Mesh. The f
   If you click on the PlayerMesh node you will see that we now have created a small diamond shaped mesh.
 
   ![PlayerMesh node preview](tut3-player-preview.png)
-
 
 In this game we want to use flat-shaded geometry. So the next component we need is a Material.
 
@@ -156,7 +155,7 @@ This is what the expression does:
   3. Test that the player do not move outside the screen.
   4. Rotates the model over the X-axis.
 
-# Delta-time Explained {#DeltaTimeExplained}
+## Delta-time Explained {#DeltaTimeExplained}
 
 Why the multiply with @ref ZApplicationDeltaTime "App.DeltaTime"? This is to make sure your game works in the same speed independent of the frame update interval.
 
@@ -168,7 +167,7 @@ Without DeltaTime, velocity would be 10 times higher on the faster computer. Tha
 
 So that is why DeltaTime is important to use!
 
-# Defining Game Variables {#DefiningGameVariables}
+## Defining Game Variables {#DefiningGameVariables}
 
 Variables are components that are used in expressions for holding values that are important for the application.
 
@@ -194,7 +193,7 @@ Here is how you create the variables:
 
 ![Component tree after defining variables](tut3-tree2.png)
 
-# Creating the Wall Model {#CreatingWallModel}
+## Creating the Wall Model {#CreatingWallModel}
 
 Next is the Wall model. Walls are the obstacles that the player have to dodge.
 
@@ -217,7 +216,6 @@ We create the wall in the same way we created the player. Start with the geometr
   Click the WallMesh component for preview. The wall is a vertical standing box.
 
   ![WallMesh preview](tut3-wall.png)
-
 
 Continue to create the Model for the wall.
 
@@ -302,7 +300,7 @@ This is how the finished wall model should look like on your screen:
 
 We have created our player and wall objects so far. Let's move on to define the application logic.
 
-# Application States {#ApplicationStates}
+## Application States {#ApplicationStates}
 
 An application state is a part of your application that has a distinct behavior, such as waiting for a keypress or displaying a message. Only one state can be active at once. This is called the __current application state__.
 
@@ -464,7 +462,7 @@ We need to tell ZGameEditor that the initial application state is the TitleState
 
   * __State__ = TitleState
 
-# Collision Detection and Displaying the Score {#CollisionDetection}
+## Collision Detection and Displaying the Score {#CollisionDetection}
 
 Almost done now. Three more things are needed:
 
@@ -510,7 +508,7 @@ Now for the definition of behavior when the player collides with a wall. Clear s
 
   * __State__ = TitleState
 
-# The Finished Game {#FinishedGame}
+## The Finished Game {#FinishedGame}
 
 That's it! First save your project again, and then try pressing F9 to start the game.
 

@@ -20,7 +20,7 @@ See also: @ref Shader
 @dd Use this @ref ScriptingLanguage "expression" to compute a value of uniform variable from other properties. Value of this property is specified in @ref CodeEditor "Code editor". For example, type "App.Time * 8" to connect the current application time to a GLSL variable used for animation.
 
 @dt ValueArrayRef
-@dd Set this reference to an @ref Array to pass it to GLSL. The GLSL type is determined by ArrayKind property. Use only float, vec2, vec3, vec4 and mat4 arrays. 
+@dd Set this reference to an @ref Array to pass it to GLSL. The GLSL type is determined by ArrayKind property. Use only float, vec2, vec3, vec4 and mat4 arrays.
 
 @dt ArrayKind
 @dd Determines how an array passed through the ValueArrayRef property is represented in GLSL. If it is set to:
