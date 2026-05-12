@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="29" ViewportRatio="2" FileVersion="2">
+<ZApplication Name="App" Caption="58" ViewportRatio="2" FileVersion="2">
   <OnLoaded>
     <ZExternalLibrary ModuleName="kernel32.dll">
       <Source>
@@ -3333,9 +3333,9 @@ void saveScreenDump() {
   int global_tstates = -tstatesPerInterrupt;
 
   const int soundRate = 44100;
-  const int soundBufSize = soundRate;
+  const int soundBufSize = soundRate / 8;
   float[soundBufSize] soundBuf;
-  int soundReadPos = -soundBufSize;
+  int soundReadPos = 0;
   int soundWritePos = 0;
   int soundNextTStates = global_tstates;
 
@@ -4809,8 +4809,6 @@ for(int i=0; i<RomBytes.SizeDim1; i++)
   mem[i]=RomBytes[i];
 trace("done");
 
-
-
 trace("Loading game...");
 byte[] GameBytes;
 
@@ -4941,9 +4939,19 @@ else {
             <ZExpression Expression="Keys_Y_P &amp;=  (~(1 &lt;&lt; KeyTestP_Y.KeyIndex))&amp;0xff;"/>
           </OnPressed>
         </KeyPress>
-        <KeyPress Name="KeyTestM_B" Keys="MNB">
+        <KeyPress Name="KeyTestQ_T" Keys="QWERT">
           <OnPressed>
-            <ZExpression Expression="Keys_B_SPC &amp;=  (~(4 &lt;&lt; KeyTestM_B.KeyIndex))&amp;0xff;"/>
+            <ZExpression Expression="Keys_Q_T &amp;=  (~(1 &lt;&lt; KeyTestQ_T.KeyIndex))&amp;0xff;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestZ_V" Keys="ZXCV">
+          <OnPressed>
+            <ZExpression Expression="Keys_CAPS_V &amp;=  (~(2 &lt;&lt; KeyTestZ_V.KeyIndex))&amp;0xff;"/>
+          </OnPressed>
+        </KeyPress>
+        <KeyPress Name="KeyTestM_B" Keys=" #MNB">
+          <OnPressed>
+            <ZExpression Expression="Keys_B_SPC &amp;=  (~(1 &lt;&lt; KeyTestM_B.KeyIndex))&amp;0xff;"/>
           </OnPressed>
         </KeyPress>
         <ZExpression Comment="kempston">
@@ -4963,7 +4971,7 @@ if( (axis<-threshold) || isKeyPressed(ord("^")) )
 if( (axis>threshold) || isKeyPressed(ord("_")) )
   JoyState |= 4;
 
-if(joyGetButton(0,0) || isKeyPressed(17))
+if(joyGetButton(0,0) || isKeyPressed(17)) //ctrl
   JoyState |= 16;]]>
           </Expression>
         </ZExpression>
@@ -5266,12 +5274,6 @@ glBitmap(256,192,0,0,0,0,video[0]);]]>
       <OnFillAudioBuffer>
 <![CDATA[//Data: array of destination audio buffer (stereo float)
 //FrameCount : nr of audio frames to write
-
-if(soundReadPos < 0) {
-  soundReadPos += frameCount;
-  return;
-}
-
 for(int i=0; i<FrameCount * 2; i+=2) {
   if(soundReadPos == soundWritePos)
     break;
