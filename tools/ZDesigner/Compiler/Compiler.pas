@@ -1747,6 +1747,10 @@ begin
         begin
           S := 'private string __f() { return ' + CloseComment(S) + '; }';
         end;
+      ekiFillAudioBuffer:
+        begin
+          S := 'private void __f(float[] data, int framecount) { ' + CloseComment(S) + '; }';
+        end;
     end;
 
     Compiler.SymTab := SymTab;

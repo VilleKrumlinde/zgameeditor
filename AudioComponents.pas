@@ -145,8 +145,19 @@ type
     SampleFileFormat : (sffRAW,sffOGG);
   end;
 
+  TAudioBuffer = class(TZComponent)
+  protected
+    procedure DefineProperties(List: TZPropertyList); override;
+  public
+    OnFillAudioBuffer: TZExpressionPropValue;
+    procedure CallFillAudioBuffer(Buf: pointer; FrameCount: integer);
+    constructor Create(OwnerList: TZComponentList); override;
+    destructor Destroy; override;
+  end;
+
 var
   CurrentMusic : TMusic;
+  CurrentAudioBuffer: TAudioBuffer;
 
 implementation
 
@@ -886,6 +897,56 @@ begin
   Stack.Push(S);
 end;
 
+{ TAudioBuffer }
+
+constructor TAudioBuffer.Create(OwnerList: TZComponentList);
+begin
+  inherited;
+  if CurrentAudioBuffer = nil then
+    CurrentAudioBuffer := Self;
+end;
+
+destructor TAudioBuffer.Destroy;
+begin
+  if CurrentAudioBuffer = Self then
+    CurrentAudioBuffer := nil;
+  inherited;
+end;
+
+procedure TAudioBuffer.DefineProperties(List: TZPropertyList);
+begin
+  inherited;
+  List.AddProperty({$IFNDEF MINIMAL}'OnFillAudioBuffer',{$ENDIF}@OnFillAudioBuffer, zptExpression);
+    {$ifndef minimal}
+    List.GetLast.DefaultValue.ExpressionValue.Source :=
+      '//Data: array of destination audio buffer (stereo float)'#13#10 +
+      '//FrameCount : nr of audio frames to write'#13#10 +
+      '//Garbage collection is not working here so avoid allocate memory (strings, vectors and resizing arrays)';
+    List.GetLast.ExpressionKind := ekiFillAudioBuffer;
+    {$endif}
+end;
+
+procedure TAudioBuffer.CallFillAudioBuffer(Buf: pointer; FrameCount: integer);
+var
+  Env : TExecutionEnvironment;
+  AudioArray : TDefineArray;
+begin
+  if OnFillAudioBuffer.Code.Count = 0 then
+    Exit;
+
+  AudioArray := TDefineArray.Create(nil);
+  AudioArray.SizeDim1 := FrameCount * 2;
+  AudioArray.SetExternalData(Buf);
+
+  Env.Init;
+  Env.StackPushPointer(AudioArray);
+  Env.StackPush(FrameCount);
+
+  ZExpressions.RunCode(OnFillAudioBuffer.Code, @Env);
+
+  AudioArray.Free;
+end;
+
 initialization
 
   ZClasses.Register(TSound,SoundClassId);
@@ -917,4 +978,7 @@ initialization
     {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Start/stop playing of music';{$endif}
     {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=42;{$endif}
 
+  ZClasses.Register(TAudioBuffer,AudioBufferClassId);
+    {$ifndef minimal}ComponentManager.LastAdded.HelpText := 'Write expression for live audio output';{$endif}
+    {$ifndef minimal}ComponentManager.LastAdded.ImageIndex:=1;{$endif}
 end.

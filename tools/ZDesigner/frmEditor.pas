@@ -963,6 +963,7 @@ begin
 
   ZApp := Root as TZApplication;
   ZApp.OnGetLibraryPath := Self.OnGetLibraryPath;
+
   Ed.RootComponent := Self.Root;
   Tree.SetRootComponent(Self.Root);
 //  SelectComponent(Self.Root);
@@ -1533,6 +1534,9 @@ begin
       ViewTranslateLabel.Caption := FloatToStr( RoundTo(ViewTranslate[0],-1) ) + #13 +
         FloatToStr( RoundTo(ViewTranslate[1],-1) ) + #13 +
         FloatToStr( RoundTo(ViewTranslate[2],-1) );
+
+      if (ShowNode is TMesh) then
+        (ShowNode as TMesh).BeforeRender;
 
       if (ShowNode is TModel) then
         DrawModel
@@ -2600,7 +2604,7 @@ begin
     Exit;
 
   //Set the NoSound-flag if no sound is used, this means we can remove all audio code later
-  ZApp.NoSound := FindInstanceOf(Root, TSound)=nil;
+  ZApp.NoSound := (FindInstanceOf(Root, TSound) = nil) and (FindInstanceOf(Root, TAudioBuffer) = nil);
 
   if ShouldRemoveUnused then
   begin
@@ -2618,6 +2622,7 @@ begin
           AtLeastOneWasRemoved := True;
           C.Free;
           (TheRoot as TZApplication).RefreshSymbolTable;
+          (TheRoot as TZApplication).OnGetLibraryPath := (Self.Root as TZApplication).OnGetLibraryPath;
         end;
       end;
     until not SomethingWasRemoved;

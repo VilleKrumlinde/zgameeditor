@@ -71,7 +71,8 @@ type
  SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId,
- ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId
+ ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId,
+ AudioBufferClassId
  {$ifndef minimal}
  ,ExpIDEFuncCallClassId
  ,AnyComponentClassId  //Used by the compiler to parse "Component" datatype
@@ -262,7 +263,7 @@ type
   end;
 
   TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap,
-    ekiMesh,ekiThread,ekiGetStringValue);
+    ekiMesh,ekiThread,ekiGetStringValue,ekiFillAudioBuffer);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -1599,6 +1600,11 @@ begin
         begin
           Value := GetProperty(Prop);
           Value.ComponentListValue.DesignerReset;
+        end;
+      zptExpression :
+        begin
+          Value := GetProperty(Prop);
+          Value.ExpressionValue.Code.DesignerReset;
         end;
     end;
   end;
