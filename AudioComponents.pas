@@ -24,7 +24,7 @@ unit AudioComponents;
 
 interface
 
-uses ZClasses,AudioPlayer;
+uses ZClasses,AudioPlayer,ZExpressions;
 
 type
   TSound = class(TZComponent)
@@ -146,6 +146,8 @@ type
   end;
 
   TAudioBuffer = class(TZComponent)
+  strict private
+    AudioArray: TDefineArray;
   protected
     procedure DefineProperties(List: TZPropertyList); override;
   public
@@ -161,7 +163,7 @@ var
 
 implementation
 
-uses ZApplication,ZExpressions,ZMath, ZPlatform, BeRoAudioOGGVorbisTremor
+uses ZApplication,ZMath, ZPlatform, BeRoAudioOGGVorbisTremor
   {$ifndef minimal}
   ,SysUtils
   {$endif}
@@ -904,12 +906,14 @@ begin
   inherited;
   if CurrentAudioBuffer = nil then
     CurrentAudioBuffer := Self;
+  AudioArray := TDefineArray.Create(nil);
 end;
 
 destructor TAudioBuffer.Destroy;
 begin
   if CurrentAudioBuffer = Self then
     CurrentAudioBuffer := nil;
+  AudioArray.Free;
   inherited;
 end;
 
@@ -929,12 +933,10 @@ end;
 procedure TAudioBuffer.CallFillAudioBuffer(Buf: pointer; FrameCount: integer);
 var
   Env : TExecutionEnvironment;
-  AudioArray : TDefineArray;
 begin
   if OnFillAudioBuffer.Code.Count = 0 then
     Exit;
 
-  AudioArray := TDefineArray.Create(nil);
   AudioArray.SizeDim1 := FrameCount * 2;
   AudioArray.SetExternalData(Buf);
 
@@ -943,8 +945,6 @@ begin
   Env.StackPush(FrameCount);
 
   ZExpressions.RunCode(OnFillAudioBuffer.Code, @Env);
-
-  AudioArray.Free;
 end;
 
 initialization

@@ -859,6 +859,7 @@ var
   Finished : boolean;
   Channel : PChannel;
   VBuf : PSoundMixUnit;
+  TempBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
 begin
   ModulateCrossOvers := (RenderCounter+FrameCount) div ModulateFrameCount;
   if ModulateCrossOvers>0 then
@@ -882,8 +883,11 @@ begin
     end;
 
     if Assigned(CurrentAudioBuffer) then
-      //TODO add to output, not replace
-      CurrentAudioBuffer.CallFillAudioBuffer(Buf, ModulateCount);
+    begin
+      FillChar(TempBuffer, SizeOf(TempBuffer), 0);
+      CurrentAudioBuffer.CallFillAudioBuffer(@TempBuffer, ModulateCount);
+      AddToMixBuffer(@TempBuffer,Buf,ModulateCount);
+    end;
 
     if MasterVolume<1.0 then
     begin
