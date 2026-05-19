@@ -2596,6 +2596,7 @@ var
   ShouldRemoveUnused,SomethingWasRemoved : boolean;
   TheRoot, C: TZComponent;
   S : string;
+  OldBuffer: TAudioBuffer;
 begin
   ShouldRemoveUnused := Self.RemoveUnusedComponentsMenuItem.Checked;
 
@@ -2648,7 +2649,11 @@ begin
   end;
 
   if ShouldRemoveUnused then
+  begin
+    OldBuffer := AudioComponents.CurrentAudioBuffer;
     TheRoot.Free;
+    AudioComponents.CurrentAudioBuffer := OldBuffer;
+  end;
 
   Log.Write('File generated: ' + OutputName);
 end;
