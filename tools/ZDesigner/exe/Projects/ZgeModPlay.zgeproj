@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
-<ZApplication Name="App" Caption="ZGameEditor application" FileVersion="2">
+<ZApplication Name="App" Caption="ZGameEditor application" MouseVisible="255" FileVersion="2">
   <OnLoaded>
     <ZLibrary HasInitializer="1">
       <Source>
-<![CDATA[private int min(int x, int y) {
+<![CDATA[private inline int min(int x, int y) {
   return x<y ? x : y;
 }
 
-private int max(int x, int y) {
+private inline int max(int x, int y) {
   return x>y ? x : y;
 }
 
@@ -112,7 +112,7 @@ class Pattern {
 class Mod {
     int length;
     Instrument[] instruments;
-    byte[] patternTable;
+    byte[128] patternTable;
     Pattern[] patterns;
     Mod(byte[] modfile) {
         //const nameArray = new Uint8Array(modfile, 0, 20);
@@ -123,9 +123,8 @@ class Mod {
         this.length = modfile[950];
 
         // Store the pattern table
-        patternTable.SizeDim1 = length;
         int maxPatternIndex = 0;
-        for(int i = 0; i<length; i++) {
+        for(int i = 0; i<patternTable.SizeDim1; i++) {
           byte b = modfile[952 + i];
           if(b>maxPatternIndex)
             maxPatternIndex = b;
@@ -154,29 +153,29 @@ class Mod {
     }
 }
 
-const float PAULA_FREQUENCY = 3546894.6;
-const float ZGE_SAMPLE_RATE = 44100.0;
+private const float PAULA_FREQUENCY = 3546894.6;
+private const float ZGE_SAMPLE_RATE = 44100.0;
 
-const int FX_ARPEGGIO = 0x00;
-const int FX_SLIDE_UP = 0x01;
-const int FX_SLIDE_DOWN = 0x02;
-const int FX_TONE_PORTAMENTO = 0x03;
-const int FX_VIBRATO = 0x04;
-const int FX_TONE_PORTAMENTO_WITH_VOLUME_SLIDE = 0x05;
-const int FX_VIBRATO_WITH_VOLUME_SLIDE = 0x06;
-const int FX_SAMPLE_OFFSET = 0x09;
-const int FX_VOLUME_SLIDE = 0x0A;
-const int FX_SET_VOLUME = 0x0C;
-const int FX_PATTERN_BREAK = 0x0D;
-const int FX_EXTENDED = 0x0e;
-const int FX_SET_SPEED = 0x0f;
-const int FX_PORTA_UP_FINE = 0xe1;
-const int FX_PORTA_DOWN_FINE = 0xe2;
-const int FX_RETRIGGER_NOTE = 0xe9;
-const int FX_VOLUME_SLIDE_UP_FINE = 0xea;
-const int FX_VOLUME_SLIDE_DOWN_FINE = 0xeb;
-const int FX_DELAY_NOTE = 0xed;
-const int true = 1, false = 0;
+private const int FX_ARPEGGIO = 0x00;
+private const int FX_SLIDE_UP = 0x01;
+private const int FX_SLIDE_DOWN = 0x02;
+private const int FX_TONE_PORTAMENTO = 0x03;
+private const int FX_VIBRATO = 0x04;
+private const int FX_TONE_PORTAMENTO_WITH_VOLUME_SLIDE = 0x05;
+private const int FX_VIBRATO_WITH_VOLUME_SLIDE = 0x06;
+private const int FX_SAMPLE_OFFSET = 0x09;
+private const int FX_VOLUME_SLIDE = 0x0A;
+private const int FX_SET_VOLUME = 0x0C;
+private const int FX_PATTERN_BREAK = 0x0D;
+private const int FX_EXTENDED = 0x0e;
+private const int FX_SET_SPEED = 0x0f;
+private const int FX_PORTA_UP_FINE = 0xe1;
+private const int FX_PORTA_DOWN_FINE = 0xe2;
+private const int FX_RETRIGGER_NOTE = 0xe9;
+private const int FX_VOLUME_SLIDE_UP_FINE = 0xea;
+private const int FX_VOLUME_SLIDE_DOWN_FINE = 0xeb;
+private const int FX_DELAY_NOTE = 0xed;
+private const int true = 1, false = 0;
 
 private int globalTick = 0;
 
@@ -346,11 +345,12 @@ class Channel {
             case FX_PATTERN_BREAK:
                 int row = effectHigh * 10 + effectLow;
                 //this.worklet.setPatternBreak(row);
+                trace("TODO: setPatternBreak " + intToStr(row));
                 break;
             case FX_SET_SPEED:
                 if (effectData >= 1 && effectData <= 31) {
                   //  this.worklet.setTicksPerRow(effectData);
-                  trace("TODO: set speed " + intToStr(effectData));
+                  trace("TODO: setTicksPerRow " + intToStr(effectData));
                 }
                 else {
                    // this.worklet.setBpm(effectData);
@@ -363,6 +363,9 @@ class Channel {
             case FX_DELAY_NOTE:
                this.delayNote = effectData;
                break;
+            default : {
+              trace("Unsupported effect: " + intToStr(effectId));
+            }
         }
     }
 
@@ -512,8 +515,9 @@ class ModPlayer  {
             this.channels[i].performTick();
     }
 
-    float nextOutput() {
-        if (!this.playing) return 0.0;
+    void nextOutput(ref float left, ref float right) {
+        if (!this.playing)
+          return;
 
         if (this.outputsUntilNextTick <= 0) {
             this.nextTick();
@@ -522,10 +526,21 @@ class ModPlayer  {
 
         this.outputsUntilNextTick--;
 
-        float acc = 0.0;
-        for (int i = 0; i < 4; ++i)
-            acc += this.channels[i].nextOutput();
-        return acc;
+        const int chanCount = 4;
+        const float majorchmul = 1.0 / (chanCount / 2.0);
+        const float minorchmul = 1.0 / 3.0 / (chanCount / 2);
+
+        left = 0.0; right = 0.0;
+        for (int i = 0; i < 4; ++i) {
+          float sample = this.channels[i].nextOutput();
+          if((i == 1) || (i == 2)) {
+            left += sample * minorchmul;
+            right += sample * majorchmul;
+          } else {
+            left += sample * majorchmul;
+            right += sample * minorchmul;
+          }
+        }
     }
 
 }
@@ -561,9 +576,10 @@ for(int i = 0; i < FrameCount * 2; i+= 2) {
   if( (globalModPlayer == null) || (!globalModPlayer.playing) )
     break;
 
-  float f = globalModPlayer.nextOutput();
-  Data[i] = f;
-  Data[i+1] = f;
+  float left, right;
+  globalModPlayer.nextOutput(left, right);
+  Data[i] = left;
+  Data[i+1] = right;
 }]]>
       </OnFillAudioBuffer>
     </AudioBuffer>
