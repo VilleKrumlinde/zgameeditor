@@ -1441,6 +1441,33 @@ var
     Result := BlockOp;
   end;
 
+  function InAppendArray : TZcOp;
+  //"ar += value" converted to code that appends to array
+  var
+    ArOp,BlockOp,SizeDimOp,ValOp : TZcOp;
+    Ar: TDefineArray;
+  begin
+    Ar := LeftOp.GetDataType.TheArray;
+    if Ar.Dimensions <> dadOne then
+      raise ECodeGenError.Create('Can only append to one-dimensional array: ' + LeftOp.Id);
+    BlockOp := MakeOp(zcBlock);
+
+    SizeDimOp := MakeOp(zcSelect, LeftOp);
+    SizeDimOp.Id := 'SizeDim1';
+
+    //ar.sizedim1 = ar.sizedim1 + 1    
+    BlockOp.Children.Add( MakeAssign(atAssign, SizeDimOp, 
+      MakeOp(zcPlus, [ SizeDimOp, TZcOpLiteral.Create(zctInt,1) ]) ) );
+
+    //ar[ ar.sizedim1 - 1] = value
+    ArOp := MakeArrayAccess(LeftOp);
+    ArOp.Children.Add( MakeOp(zcMinus, [ SizeDimOp, TZcOpLiteral.Create(zctInt,1) ]) );
+    ValOp := RightOp;
+    BlockOp.Children.Add( MakeAssign(atAssign, ArOp, ValOp ) );
+      
+    Result := BlockOp;
+  end;
+
 begin
   if (LeftOp.Kind=zcSelect) then
   begin
@@ -1455,8 +1482,10 @@ begin
   if (LeftTyp.Kind in [zctVec2,zctVec3,zctVec4]) and (not (RightOp.GetDataType.Kind in [zctVec2,zctVec3,zctVec4])) then
     Exit( InMultiAssign(True) );
 
-  RightOp := MakeCompatible(RightOp,LeftTyp);
+  if (Kind=atPlusAssign) and (LeftTyp.Kind=zctArray) then
+    Exit( InAppendArray );
 
+  RightOp := MakeCompatible(RightOp,LeftTyp);
 
   if Kind>atAssign then  //Convert x*=2 to x=x*2
     RightOp := MakeOp(AssignMap[Kind],[LeftOp,RightOp]);
