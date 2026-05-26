@@ -11,6 +11,7 @@ private inline int max(int x, int y) {
   return x>y ? x : y;
 }
 
+float[4] channelLevels;
 
 // Code based on: https://atornblad.github.io/js-mod-player/
 
@@ -86,9 +87,7 @@ class Row {
         // Each note is 4 bytes
         for (int i = 0; i < 16; i += 4) {
             Note not = new Note(rowData, offset + i);
-            int index = notes.SizeDim1;
-            notes.SizeDim1 = index + 1;
-            notes[index] = not;
+            notes += not;
         }
     }
 }
@@ -101,9 +100,7 @@ class Pattern {
         for (int i = 0; i < 64; i++) {
             // Each row is made up of 16 bytes
             Row r = new Row(modfile, 1084 + index * 1024 + i * 16);
-            int x = rows.SizeDim1;
-            rows.SizeDim1 += 1;
-            rows[x] = r;
+            rows += r;
         }
     }
 }
@@ -132,23 +129,19 @@ class Mod {
         }
         trace("Max pat " + intToStr(maxPatternIndex));
         // Extract all instruments
-        instruments.SizeDim1 = 1;
-        instruments[0] = null; // let first be empty
+        instruments.SizeDim1 = 0;
+        instruments += null; // let first be empty
         int sampleStart = 1084 + (maxPatternIndex + 1) * 1024;
         for (int i = 0; i < 31; ++i) {
             Instrument instr = new Instrument(modfile, i, sampleStart);
-            int x = instruments.SizeDim1;
-            instruments.SizeDim1 += 1;
-            instruments[x] = instr;
+            instruments += instr;
             sampleStart += instr.length;
         }
 
         // Extract the pattern data
         for (int i = 0; i <= maxPatternIndex; ++i) {
             Pattern pat = new Pattern(modfile, i);
-            int x = patterns.SizeDim1;
-            patterns.SizeDim1 += 1;
-            patterns[x] = pat;
+            patterns += pat;
         }
     }
 }
@@ -511,8 +504,17 @@ class ModPlayer  {
             this.nextRow();
         }
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i) {
             this.channels[i].performTick();
+        }
+    }
+
+    void updateLevels() {
+      for (int i = 0; i < 4; ++i) {
+          int vol = this.channels[i].volume;
+          float newLevel = vol / 64.0;
+          channelLevels[i] = (channelLevels[i] * 0.2) + (newLevel * 0.8);
+      }
     }
 
     void nextOutput(ref float left, ref float right) {
@@ -559,6 +561,34 @@ globalModPlayer.play(globalMod);]]>
       </Expression>
     </ZExpression>
   </OnLoaded>
+  <OnUpdate>
+    <ZExpression Expression="globalModPlayer.updateLevels();"/>
+  </OnUpdate>
+  <OnRender>
+    <Repeat>
+      <OnIteration>
+        <RenderTransformGroup Name="Rtg1" Scale="0.1 0.1 0.1" Translate="1.5 0 0">
+          <Children>
+            <RenderSprite/>
+          </Children>
+        </RenderTransformGroup>
+      </OnIteration>
+      <WhileExp>
+<![CDATA[//this.Iteration=current iteration nr. Return false to end loop.
+if(this.Iteration>=4)
+  return 0;
+
+Rtg1.Translate.X = -1.5 + this.Iteration;
+float scale = channelLevels[this.Iteration];
+if(scale<0.001)
+  Rtg1.Scale = 0.1;
+else
+  Rtg1.Scale = scale;
+
+return 1;]]>
+      </WhileExp>
+    </Repeat>
+  </OnRender>
   <Content>
     <File Name="File1" Comment="Imported from brainblast.mod">
       <FileEmbedded>

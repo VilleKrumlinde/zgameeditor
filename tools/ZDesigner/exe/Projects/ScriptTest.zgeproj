@@ -1008,6 +1008,28 @@ if(b.method2()!=22)
   Error=2306;]]>
       </Expression>
     </ZExpression>
+    <ZExpression Comment="array append">
+      <Expression>
+<![CDATA[int[] ari;
+for(int i=0; i<10; i++) {
+  ari += i;
+  if(ari[i] != i)
+    Error=2401;
+}
+ari += 1;
+
+float[] arf;
+float f;
+arf += 5.5;
+arf += f;
+
+string[] ars;
+ars += "hello";
+if(ars[0] != "hello")
+  Error=2402;
+ars += "hello " + intToStr(42);]]>
+      </Expression>
+    </ZExpression>
   </OnLoaded>
   <OnUpdate>
     <ZExpression>
