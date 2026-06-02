@@ -569,6 +569,7 @@ globalModPlayer.play(globalMod);]]>
       <OnIteration>
         <RenderTransformGroup Name="Rtg1" Scale="0.1 0.1 0.1" Translate="1.5 0 0">
           <Children>
+            <RenderSetColor Name="Rcol1" Color="0.6196 0.7882 0.7725 1"/>
             <RenderSprite/>
           </Children>
         </RenderTransformGroup>
@@ -578,12 +579,13 @@ globalModPlayer.play(globalMod);]]>
 if(this.Iteration>=4)
   return 0;
 
-Rtg1.Translate.X = -1.5 + this.Iteration;
-float scale = channelLevels[this.Iteration];
+Rtg1.Translate.X = -3.0 + this.Iteration * 2;
+float scale = channelLevels[this.Iteration] * 2;
 if(scale<0.001)
   Rtg1.Scale = 0.1;
 else
   Rtg1.Scale = scale;
+Rtg1.Rotate.Z = random(0, scale * 0.01);
 
 return 1;]]>
       </WhileExp>
