@@ -1,4 +1,4 @@
-//ZOpenGL är ZzDC mapping mot open gl
+﻿//ZOpenGL är ZzDC mapping mot open gl
 //Anpassat nedladdad dll
 //Hämta senaste från http://cvs.sourceforge.net/viewcvs.py/jedi-sdl/JEDI-SDLv1.0/
 
@@ -1495,7 +1495,7 @@ var
 procedure LoadOpenGLExtensions;
 procedure LoadOpenGL(const Mode : integer);
 
-{$ifndef minimal}
+{$ifdef zlog}
 procedure CheckGLError;
 {$endif}
 
@@ -1514,7 +1514,7 @@ uses ZMath,ZLog,ZPlatform
   {$endif}
   ;
 
-{$ifndef minimal}
+{$ifdef zlog}
 procedure CheckGLError;
 var
   Error : GLenum;

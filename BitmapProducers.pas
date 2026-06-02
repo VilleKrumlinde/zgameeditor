@@ -1,4 +1,4 @@
-{Copyright (c) 2008 Ville Krumlinde
+﻿{Copyright (c) 2008 Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -552,7 +552,7 @@ begin
   case Self.FileFormat of
     bffUncompressed:
       begin
-        {$ifndef minimal}
+        {$ifdef zlog}
         if BitmapFile.Size<(SWidth*SHeight*3) then
         begin
           ZLog.GetLog(Self.ClassName).Warning('Incorrect bitmap data size.');
@@ -567,7 +567,7 @@ begin
         Nj := TNjDecoder.Create;
         if not Nj.Decode(BitmapFile.Data,BitmapFile.Size) then
         begin
-          {$ifndef minimal}
+          {$ifdef zlog}
           ZLog.GetLog(Self.ClassName).Warning('Jpeg decoder failed.');
           BM.Free;
           Exit;
@@ -783,7 +783,7 @@ var
 begin
   if Bitmap=nil then
     Exit;
-  {$ifndef minimal}
+  {$ifdef zlog}
   if (Bitmap.PixelWidth<>TZBitmap(Content).PixelWidth) or
      (Bitmap.PixelHeight<>TZBitmap(Content).PixelHeight) then
   begin
@@ -833,7 +833,7 @@ begin
   B1 := TZBitmap(Stack.Pop());
   B2 := TZBitmap(Stack.Pop());
 
-  {$ifndef minimal}
+  {$ifdef zlog}
   if (B1.PixelWidth<>B2.PixelWidth) or
      (B1.PixelHeight<>B2.PixelHeight) then
   begin
@@ -1342,7 +1342,7 @@ begin
   B1 := TZBitmap(Stack.Pop());
   B2 := TZBitmap(Stack.Pop());
 
-  {$ifndef minimal}
+  {$ifdef zlog}
   if (B1.PixelWidth<>B2.PixelWidth) or
      (B1.PixelHeight<>B2.PixelHeight) then
   begin
@@ -1474,7 +1474,7 @@ begin
   if Stack.Count=0 then
     Exit;
 
-  {$ifndef minimal}
+  {$ifdef zlog}
   if ConvArray=nil then
   begin
     ZLog.GetLog(Self.ClassName).Warning('Property ConvArray not set.');

@@ -144,7 +144,7 @@ procedure TFileAction.Execute;
     DestP : ppointer;
     Buf : array[0..2047] of ansichar;
   begin
-    {$ifndef minimal}
+    {$ifdef zlog}
     if not (A._Type.Kind in [zctInt,zctFloat,zctByte,zctString]) then
     begin
       ZLog.GetLog(Self.ClassName).Warning('TargetArray must be of type string, int, float or byte.');

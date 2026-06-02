@@ -333,7 +333,9 @@ var
   J : integer;
   Sm : smallint;
 begin
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write('Obj-file vertcount: ' + IntToStr(Self.Verts.Count) );
+  {$endif}
 
   Stream := TMemoryStream.Create;
   try

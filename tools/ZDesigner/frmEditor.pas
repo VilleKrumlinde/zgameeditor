@@ -365,7 +365,9 @@ type
     SysLibrary : TZComponent;
     SynEditFontSize,AutoCompTimerInterval : integer;
     SynEditFontName : string;
+    {$ifdef zlog}
     Log : TLog;
+    {$endif}
     DetachedCompEditors : TObjectDictionary<TZComponent,TForm>;
     DetachedPropEditors : TObjectDictionary<TPropEditKey,TForm>;
     MainScaling : integer;
@@ -395,7 +397,9 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     function InsertAndRenameComponent(InsertC: TZComponent;
       DestTreeNode: TZComponentTreeNode; Index : integer = -1) : TZComponentTreeNode;
+    {$ifdef zlog}
     procedure OnReceiveLogMessage(Log: TLog; Mess: TLogString; Level : TLogLevel);
+    {$endif}
     procedure OpenProject(const FileName: string; const IsTemplate : boolean = False);
     procedure NewProject(const FromTemplate : string = '');
     procedure CommitAllEdits;
@@ -431,7 +435,9 @@ type
     procedure OnTreeRecreate(Sender : TObject);
     procedure FillNewMenuTemplateItems;
     procedure BuildAndroidApk(const IsDebug : boolean);
+    {$ifdef zlog}
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
+    {$endif}
     procedure WMDROPFILES(var msg : TWMDropFiles) ; message WM_DROPFILES;
     procedure ImportBitmaps(Files: TStringList);
     procedure ImportAudioFiles(Files: TStringList);
@@ -536,12 +542,16 @@ constructor TEditorForm.Create(AOwner: TComponent);
 begin
   Driver := CreateDriver(glbFixed);
   inherited Create(AOwner);
+  {$ifdef zlog}
   ZLog.SetReceiverFunc(OnReceiveLogMessage);
+  {$endif}
 
   Math.SetExceptionMask(exAllArithmeticExceptions);
 
+  {$ifdef zlog}
   Self.Log := ZLog.GetLog(Self.ClassName);
   Log.Write( IntToStr(SizeOf(Pointer)*8) + ' bit version' );
+  {$endif}
 
   LoadGamutBitmap;
   DetachedCompEditors := TObjectDictionary<TZComponent,TForm>.Create([doOwnsValues]);
@@ -821,7 +831,9 @@ procedure TEditorForm.OnAppException(Sender : TObject; E: Exception);
 begin
   if E is EZHalted then
   begin
+    {$ifdef zlog}
     Log.Error(E.Message);
+    {$endif}
   end
   else
     Application.ShowException(E);
@@ -993,7 +1005,9 @@ begin
         except
           on E : EZHalted do ;
         end;
+        {$ifdef zlog}
         CheckGLError;
+        {$endif}
       end
     );
   end;
@@ -1023,6 +1037,7 @@ begin
   ResetCamera;
 end;
 
+{$ifdef zlog}
 type
   TListLogItem = class
   public
@@ -1076,6 +1091,7 @@ begin
     end
   );
 end;
+{$endif}
 
 procedure TEditorForm.ReadAppSettingsFromIni;
 var
@@ -1467,6 +1483,7 @@ begin
   DisableShadersCheckBox.Enabled := ShadersSupported;
   DisableFBOCheckBox.Enabled := FbosSupported;
 
+  {$ifdef zlog}
   if not ShadersSupported then
     Log.Write('GL shaders not supported')
   else
@@ -1486,6 +1503,7 @@ begin
     Log.Write('GL VBOs not supported');
   if not FbosSupported then
     Log.Write('GL FBOs not supported');
+  {$endif}
 end;
 
 procedure TEditorForm.OnGlDraw(Sender: TObject);
@@ -1557,7 +1575,9 @@ begin
     on E : Exception do
     begin
       RenderAborted := True;
+      {$ifdef zlog}
       Log.Error(E.Message);
+      {$endif}
     end;
   end;
 end;
@@ -2507,7 +2527,9 @@ begin
         F.ExprSynEdit.SetFocus;
         //ShowMessage( E.Message );
         F.ShowError(E.Message);
+        {$ifdef zlog}
         Log.Write(E.Message);
+        {$endif}
       end;
     end;
     on E : ECodeGenError do
@@ -2522,7 +2544,9 @@ begin
       begin
         F.CompileErrorLabel.BevelKind := bkTile;
         F.ShowError(E.Message);
+        {$ifdef zlog}
         Log.Write(E.Message);
+        {$endif}
       end;
     end;
   end;
@@ -2532,11 +2556,13 @@ begin
     F.HideError;
     if ShowCompilerDetailsAction.Checked and (not (C is TZExternalLibrary)) then
     begin
+      {$ifdef zlog}
       ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
       ZLog.GetLog(Self.ClassName).Write('----');
       if Value.ExpressionValue.Code.Count<100 then
         for I := 0 to Value.ExpressionValue.Code.Count - 1 do
           Log.Write( (Value.ExpressionValue.Code[I] as TExpBase).ExpAsText );
+      {$endif}
     end;
 
     if F.Component=Self.Tree.ZSelected.Component then
@@ -2619,7 +2645,9 @@ begin
         C := (TheRoot as TZApplication).SymTab.Lookup(S) as TZComponent;
         if Assigned(C) then
         begin
+          {$ifdef zlog}
           Log.Write('Deleting component: ' + S);
+          {$endif}
           AtLeastOneWasRemoved := True;
           C.Free;
           (TheRoot as TZApplication).RefreshSymbolTable;
@@ -2655,7 +2683,9 @@ begin
     AudioComponents.CurrentAudioBuffer := OldBuffer;
   end;
 
+  {$ifdef zlog}
   Log.Write('File generated: ' + OutputName);
+  {$endif}
 end;
 
 procedure TEditorForm.GenerateAndroidActionExecute(Sender: TObject);
@@ -2862,7 +2892,9 @@ var
   SEInfo: TShellExecuteInfo;
   ExitCode: DWORD;
 begin
+  {$ifdef zlog}
   Log.Write(ExeFile + ' ' + ParamString);
+  {$endif}
   FillChar(SEInfo, SizeOf(SEInfo), 0) ;
   SEInfo.cbSize := SizeOf(TShellExecuteInfo) ;
   with SEInfo do
@@ -4268,8 +4300,8 @@ begin
   Glp.SetFocus;
 end;
 
-procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState;
-  X, Y: Integer);
+procedure TEditorForm.LogListBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+{$ifdef zlog}
 const Levels : array[TLogLevel] of string = ('Normal','Warning','Error','UserTrace');
 var
   Point : TPoint;
@@ -4294,6 +4326,10 @@ begin
     Application.ActivateHint(Point);
   end;
 end;
+{$else}
+begin
+end;
+{$endif}
 
 procedure TEditorForm.LogClearMenuItemClick(Sender: TObject);
 var
@@ -4319,8 +4355,8 @@ begin
   Clipboard.AsText := S;
 end;
 
-procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl;
-  Index: Integer; Rect: TRect; State: TOwnerDrawState);
+procedure TEditorForm.LogListBoxDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+{$ifdef zlog}
 const
   LogColors : array[0..5] of TColor =
 // ($0D00C4,$BE00C1,$BF0069,$BC0003,$BA4700,$404040);
@@ -4371,7 +4407,10 @@ begin
   if I>(Control as TListBox).ScrollWidth then
     (Control as TListBox).ScrollWidth := I;
 end;
-
+{$else}
+begin
+end;
+{$endif}
 
 procedure TEditorForm.SaveProjectActionExecute(Sender: TObject);
 begin
@@ -4420,7 +4459,9 @@ begin
   S := ExePath + 'Library.xml';
   if not FileExists(S) then
   begin
+    {$ifdef zlog}
     Log.Write( 'Lib file missing: ' + S );
+    {$endif}
     Exit;
   end;
   AddFromLibraryMenuItem.Clear;
@@ -4702,7 +4743,9 @@ begin
     except
       on E : Exception do
       begin
+        {$ifdef zlog}
         Log.Write(E.Message);
+        {$endif}
         Exit;
       end;
     end;
@@ -4713,8 +4756,10 @@ begin
       zctInt,zctByte : S := IntToStr(NativeInt(Ret.PointerValue));
       zctString: S := String(PAnsiChar(Ret.PointerValue));
     end;
+    {$ifdef zlog}
     if S<>'' then
       Log.Write(S);
+    {$endif}
   finally
     TargetCode.Free;
   end;
@@ -4793,14 +4838,18 @@ begin
   DataSection := Module.ImageSection[2];
   if (Section.SectionName<>'.text') or (DataSection.SectionName<>'.data') then
   begin
+    {$ifdef zlog}
     Log.Warning('wrong section');
+    {$endif}
     Exit;
   end;
 
   MapFile := ExePath + 'zzdc.map';
   if not FileExists(MapFile) then
   begin
+    {$ifdef zlog}
     Log.Error('map file not found');
+    {$endif}
     Exit;
   end;
 
@@ -4817,7 +4866,9 @@ begin
     FirstLine := Lines.IndexOf('  Address             Publics by Name');
     if FirstLine=-1 then
     begin
+      {$ifdef zlog}
       Log.Error('error in map file');
+      {$endif}
       Exit;
     end;
     for I := FirstLine+2 to Lines.Count - 1 do
@@ -5011,7 +5062,9 @@ begin
       Inc(TotalRemovedBytes,Item.Size);
       //Log.Write(Item.Name);
     end;
+    {$ifdef zlog}
     Log.Write('Removed code: ' + IntToStr(TotalRemovedBytes) );
+    {$endif}
 
     if DisplayDetailedReport then
     begin
@@ -5035,9 +5088,13 @@ begin
       begin
         Item := TMapName(NamesKept[I]);
         Inc(TotalKeptBytes,Item.Size);
+        {$ifdef zlog}
         Log.Write(IntToStr(Item.Size) + ' ' + Item.Name);
+        {$endif}
       end;
+      {$ifdef zlog}
       Log.Write('Kept: ' + IntToStr(TotalKeptBytes) );
+      {$endif}
     end;
     NamesKept.Free;
 
@@ -5082,7 +5139,9 @@ begin
         Break;
     end;
   end;
+  {$ifdef zlog}
   Log.Write('Removed type names: ' + IntToStr(TotalRemovedBytes) );
+  {$endif}
 
   NamesToRemove.Free;
 end;

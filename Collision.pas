@@ -446,7 +446,7 @@ begin
   if Style=Unknown then
   begin
     //Unsupported collision style
-    {$ifndef minimal}
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Warning('Collision combination not supported: ' + CollisionStyleNames[Ord(Act1.CollisionStyle)] + ' ' + CollisionStyleNames[Ord(Act2.CollisionStyle)]);
     {$endif}
     Exit;

@@ -759,7 +759,9 @@ begin
   {$ifdef CALLSTACK}
   LogCallstack;
   {$endif}
+  {$ifdef zlog}
   ZHalt(S);
+  {$endif}
 end;
 {$endif}
 
@@ -809,7 +811,7 @@ begin
   end;
   if Env.StackGetDepth=1 then
     Env.StackPopToPointer(Result.PointerValue);
-  {$ifdef ZDESIGNER}
+  {$ifdef zlog}
   if (Env=@LocalEnv) and (Env.StackGetDepth>0) then
     ZLog.GetLog('Zc').Warning('Stack not empty on script completion');
   {$endif}
@@ -1245,7 +1247,7 @@ begin
       begin
         HasReturnValue := False;
         Env.StackPopToPointer(P1);
-        {$ifndef minimal}
+        {$ifdef zlog}
         ZLog.GetLog('Zc').Write(String(PAnsiChar(P1)),lleUserTrace);
         {$endif}
         {$ifdef android}
@@ -2221,7 +2223,7 @@ begin
     ModuleHandle := Platform_LoadModule(Self.ModuleName);
     if ModuleHandle=0 then
       {$ifndef minimal}
-      ZHalt(Self.ModuleName + ' not found');
+      ZHalt( TLogString(Self.ModuleName + ' not found') );
       {$else}
       ZHalt(Self.ModuleName);
       {$endif}
@@ -2245,7 +2247,7 @@ begin
   if proc=nil then
   begin
     {$ifndef minimal}
-    ZHalt(P + ' not found');
+    ZHalt( TLogString(P + ' not found') );
     {$else}
     ZHalt(P);
     {$endif}
@@ -3292,7 +3294,9 @@ begin
         end;
 
         Env.StackPushPointer(C);
+        {$ifdef zlog}
         ZLog.GetLog('Zc').Write('Creating component: ' + Ci.ZClassName,lleNormal);
+        {$endif}
       end;
     fcSetNumericProperty :
       begin

@@ -7,6 +7,6 @@
 
 {$endif}
 
-{$ifdef zdesigner}
+{$if defined(zdesigner) and defined(zlog)}
   {$define CALLSTACK}  //Show callstack if error in zexpression runtime
 {$endif}

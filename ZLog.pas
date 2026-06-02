@@ -104,7 +104,6 @@ begin
   LogLookup.Sorted := True;
 end;
 
-
 procedure SetReceiverFunc(F : TLogReceiverFunc);
 begin
 //  Assert( not Assigned(ReceiverFunc) );

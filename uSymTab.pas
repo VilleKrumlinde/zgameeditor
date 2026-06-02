@@ -37,10 +37,11 @@ type
     end;
     TSymTabScope = TObjectDictionary<string,TSymTabEntry>;
   strict private
+    {$ifdef zlog}
     Log : TLog;
+    {$endif}
     Scopes : TObjectList<TSymTabScope>;
     function CurrentScope : TSymTabScope;
-    //procedure DumpToLog(const Header : string);
   public
     constructor Create;
     destructor Destroy; override;
@@ -54,7 +55,6 @@ type
     procedure ClearAll;
     procedure PushScope;
     procedure PopScope;
-    procedure DumpToLog;
     {$ifndef fpc}
     procedure Iterate(F : TSymTabFunc; Context : pointer = nil);
     {$endif}
@@ -68,7 +68,9 @@ uses SysUtils;
 
 constructor TSymbolTable.Create;
 begin
+  {$ifdef zlog}
   Log := GetLog(Self.ClassName);
+  {$endif}
   Scopes := TObjectList<TSymTabScope>.Create(True);
   ClearAll;
 end;
@@ -191,22 +193,6 @@ begin
   Key := LowerCase(Name);
   CurrentScope.Remove(Key);
 end;
-
-procedure TSymbolTable.DumpToLog;
-var
-  I : integer;
-  List : TSymTabScope;
-  Entry : TSymTabEntry;
-begin
-  Log.Write('Scopes: ' + IntToStr(Scopes.Count));
-  for I := Scopes.Count-1 downto 0 do
-  begin
-    List := Scopes[I];
-    for Entry in List.Values do
-      Log.Write(Entry.Name + ' ' + Entry.Value.ClassName);
-  end;
-end;
-
 
 {$ifndef fpc}
 procedure TSymbolTable.Iterate(F: TSymTabFunc; Context: pointer);

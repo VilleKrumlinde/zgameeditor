@@ -402,7 +402,9 @@ end;
 
 procedure T3dsFileParser.Status(const S: string);
 begin
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write( S );
+  {$endif}
 end;
 
 { T3dsImport }
@@ -833,7 +835,9 @@ begin
   Name := String(M.Name);
   if M.VerticesCount>High(Word) then
   begin
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Error('Cannot export: too many vertices');
+    {$endif}
     Abort;
   end;
   NVertices := M.VerticesCount;

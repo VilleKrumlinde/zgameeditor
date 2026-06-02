@@ -565,7 +565,9 @@ begin
     UpdateProp
   else
   begin
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + S);
+    {$endif}
     //Edit.Undo;
   end;
   Edit.Color := clWhite;
@@ -1092,7 +1094,9 @@ begin
     UpdateProp
   else
   begin
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('Not a float value: ' + Edit.Text);
+    {$endif}
     //Edit.Undo;
   end;
   Edit.Color := clWhite;

@@ -318,7 +318,9 @@ begin
   try
     Cpu.GenFile(OutFile,FileName);
     OutFile.SaveToFile(FileName);
+    {$ifdef zlog}
     ZLog.GetLog(Self.ClassName).Write('File generated: ' + FileName);
+    {$endif}
   finally
     OutFile.Free;
   end;
@@ -574,8 +576,10 @@ end;
 procedure TCpuZ80.GenFinish;
 begin
   Builder.WriteCode([$18,$fe]); //infinite loop
+  {$ifdef zlog}
   if RedundantLoadsRemoved>0 then
     ZLog.GetLog(Self.ClassName).Write('Redundant loads: ' + IntToStr(RedundantLoadsRemoved) );
+  {$endif}
 end;
 
 procedure TCpuZ80.GenFuncCall(Func: TZcOpFunctionUserDefined);
@@ -685,8 +689,10 @@ begin
     Inc(Y,8);
   end;
   FreeMem(OriginalP);
+  {$ifdef zlog}
   if ColorsUsed>16 then
     ZLog.GetLog(Self.ClassName).Write('Too many unique colors: ' + String(Bitmap.Name));
+  {$endif}
 
   //Write palette
   SavePosEnd := Stream.Position;
@@ -762,7 +768,8 @@ begin
             // 56                     LD   d,(hl)
             // 62 6B                  LD   hl,de
             // E9                     JP   (hl)
-
+
+
   else
     Builder.Fail('rtl not handled');
   end;

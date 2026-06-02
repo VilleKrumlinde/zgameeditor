@@ -245,7 +245,9 @@ begin
 
   UsedPatchesList := TStringList.Create;
 
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write( 'Importing: ' + ExtractFileName(FileName) );
+  {$endif}
 
   Self.ReadFile;
 end;
@@ -454,7 +456,9 @@ begin
   if MidiWarnings.IndexOf(S)>-1 then
     Exit;
   MidiWarnings.Add(S);
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write( S );
+  {$endif}
 end;
 
 procedure TMidiFile.WriteOneEvent(Stream : TMemoryStream; Track : TMidiTrack; Event : TMidiEvent);
@@ -539,7 +543,7 @@ begin
     $F : //meta event FF
       begin
         case Event.iData1 of
-          1 : ZLog.GetLog(Self.ClassName).Write( 'Text: ' +  Event.sLetter );
+          1 : {$ifdef zlog}ZLog.GetLog(Self.ClassName).Write( 'Text: ' +  Event.sLetter ){$endif};
           3 : //ZLog.GetLog(Self.ClassName).Write( 'Track name: ' +  Event.sLetter );
         else
           MidiWarning(Format('Ignore meta cmd %d', [Event.iData1]));
@@ -586,7 +590,9 @@ var
   S : string;
   I,PatchNr : integer;
 begin
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write( 'Instrument count: ' + IntToStr(UsedPatchesList.Count) );
+  {$endif}
   S := ExtractFilePath(Application.ExeName) + 'MidiInstruments.xml';
   Root := ComponentManager.LoadXmlFromFile(S);
   try
@@ -644,7 +650,9 @@ begin
     Changed := True;
   end;
   S := Copy(S,1,Length(S)-1);
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write( 'Used channels: ' + S );
+  {$endif}
   if Changed then
   begin
 //    if FindInstanceOf(ZApp,TAudioMixer)=nil then

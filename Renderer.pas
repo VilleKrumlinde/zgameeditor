@@ -1808,7 +1808,7 @@ procedure TShader.ReInit;
     if InCheckShaderValid(@Result,Kind) then
     {$endif}
     glAttachShader(ProgHandle,Result);
-    {$ifndef minimal}CheckGLError;{$endif}
+    {$ifdef zlog}CheckGLError;{$endif}
   end;
 
   procedure InDestroy(H : PGLuint);
@@ -1974,7 +1974,7 @@ begin
   for I := 0 to UniformVariables.Count - 1 do
   begin
     Sv := TShaderVariable(UniformVariables[I]);
-    {$ifndef minimal}
+    {$ifdef zlog}
     if Sv.DesignDisable then
       Continue;
     if Length(Sv.VariableName)=0 then
@@ -1985,7 +1985,7 @@ begin
     end;
     {$endif}
     Sv.Location := glGetUniformLocation(ProgHandle,pointer(Sv.VariableName));
-    {$if (not defined(minimal)) and (not defined(zgeviz)) }
+    {$if defined(zlog) and (not defined(ZgeViz))}
     if Sv.Location=-1 then
       ZLog.GetLog(Self.ClassName).Write( 'Shader variable missing/unused: ' + String(Sv.VariableName) );
     {$ifend}
@@ -2275,7 +2275,7 @@ begin
     {$endif}
 
     // check FBO status
-    {$ifndef minimal}
+    {$ifdef zlog}
     if glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)<>GL_FRAMEBUFFER_COMPLETE_EXT then
       ZLog.GetLog(Self.ClassName).Warning( 'Fbo error: ' + IntToStr(glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT)) );
     {$endif}

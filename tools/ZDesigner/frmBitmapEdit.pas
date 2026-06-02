@@ -662,7 +662,9 @@ begin
 
       if not (C is TContentProducer) then
       begin
+        {$ifdef zlog}
         ZLog.GetLog(Self.ClassName).Write('Diagram can only handle bitmap-producer components.');
+        {$endif}
         Exit;
       end;
 

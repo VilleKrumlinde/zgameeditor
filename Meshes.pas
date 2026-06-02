@@ -460,10 +460,12 @@ begin
   {$if (not defined(minimal)) and (not defined(zgeviz))}
   if CurrentRecursion=0 then
   begin
+    {$ifdef zlog}
     if VerticesCount>=High(TMeshVertexIndex) then
       ZLog.GetLog(Self.ClassName).Error('Too many vertices: ' + IntToStr(Self.VerticesCount) )
     else if (not ZApp.DesignerIsRunning) then
       ZLog.GetLog(Self.ClassName).Write('Triangles ' + IntToStr(Self.IndicesCount div 3) );
+    {$endif}
   end;
   {$endif}
 end;
@@ -772,7 +774,7 @@ begin
   if Self.BaseModel<>nil then
   begin
     //Create all parents first
-    {$ifndef minimal}
+    {$ifdef zlog}
     ZAssert(Self.BaseModel<>Self,'BaseModel cannot be set to itself');
     {$endif}
     Parent := Self.BaseModel;
@@ -1354,7 +1356,7 @@ begin
     else
     begin
       //Reference to original, keep ownership
-      {$ifndef minimal}
+      {$ifdef zlog}
       if Assigned(Model.BaseModel) then
         ZHalt('Model with BaseModel set must be spawned as Clone: ' + Model.Name);
       {$endif}
@@ -2009,7 +2011,7 @@ begin
   if Mesh=nil then
     Exit;
 
-  {$ifndef minimal}
+  {$ifdef zlog}
   if Mesh=Content then
   begin
     ZLog.GetLog(Self.ClassName).Warning('MeshLoad cannot load itself.');

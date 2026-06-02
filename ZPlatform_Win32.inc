@@ -1675,7 +1675,7 @@ begin
     end;
   end;
   JoyCount := I;
-  {$ifndef minimal}
+  {$ifdef zlog}
   ZLog.GetLog('Platform').Write('Gamepads detected: ' + IntToStr(JoyCount));
   {$endif}
 end;
@@ -1852,7 +1852,7 @@ begin
     end;
     InternetOpenUrlA(SessionHandle,Url,nil,0,0,IntPtr(WebOpen));
   end;
-  {$ifndef minimal}
+  {$ifdef zlog}
   ZLog.GetLog('Platform').Write('Net open: ' + Url);
   {$endif}
 end;
