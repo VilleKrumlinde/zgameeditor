@@ -2979,7 +2979,7 @@ begin
     //Make sure there is enough stack space for calling a func with many params
     DummyProc(1,2,3,4,5,6,7,8,9,10,11,12);
     if Self.Entry.Trampoline = nil then
-      Self.Entry.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Entry.Proc)
+      Self.Entry.Trampoline := GenerateTrampoline(ArgCount,Self.ArgTypes,Self.Entry.Proc);
     {$ifndef minimal}
     Assert(Length(Self.ArgTypes)=ArgCount);
     {$endif}
