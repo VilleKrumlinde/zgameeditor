@@ -539,8 +539,10 @@ begin
 
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
-    glDeleteBuffers(2, @VboHandles);
+    if not GpuContextLost then
+      glDeleteBuffers(2, @VboHandles);
     VboHandles[0]:=0;
+    VboHandles[1]:=0;
   end;
 end;
 
@@ -548,8 +550,10 @@ procedure TMesh.ResetGpuResources;
 begin
   if ZOpenGL.VbosSupported and (VboHandles[0]<>0) then
   begin
-    glDeleteBuffers(2, @VboHandles);
+    if not GpuContextLost then
+      glDeleteBuffers(2, @VboHandles);
     VboHandles[0]:=0;
+    VboHandles[1]:=0;
   end;
   inherited;
 end;

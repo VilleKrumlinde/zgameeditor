@@ -190,6 +190,7 @@ begin
 
   //Set other default properties using the material-handler
   Self.CurrentMaterial := nil;
+  SetCurrentShader(nil);
   EnableMaterial(DefaultMaterial);
 end;
 
@@ -825,6 +826,8 @@ end;
 procedure TGLDriverProgrammable.SetCurrentShader(Shader: TShader);
 begin
   Self.CurrentShader := Shader;
+  if Shader=nil then
+    Exit;
   //Must update matrices directly on use to work with scripted OpenGL calls
   //Possibly add a Shader.MatricesUpdatedTime to avoid redundant updates
   UpdateUniforms;

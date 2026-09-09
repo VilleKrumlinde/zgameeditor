@@ -1490,7 +1490,9 @@ var
 
   ShadersSupported,MultiTextureSupported,VbosSupported,FbosSupported : boolean;
 
-
+  // True while invalidating GPU objects after an EGL context loss.
+  // Skip glDelete* against the new context; just zero CPU-side handles.
+  GpuContextLost : boolean = False;
 
 procedure LoadOpenGLExtensions;
 procedure LoadOpenGL(const Mode : integer);

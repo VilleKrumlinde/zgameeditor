@@ -58,6 +58,18 @@ uses
 const
   AppInited : boolean = false;
   ZApp : TZApplication = nil;
+  GpuResetPending : boolean = false;
+  NeedGpuResetOnResume : boolean = false;
+
+procedure ResetGpuAfterContextChange;
+begin
+  if (not AppInited) or (ZApp=nil) then
+    Exit;
+  ZApp.ResetGpuResources;
+  Renderer.CurrentRenderTarget := nil;
+  if ZApp.Driver<>nil then
+    ZApp.Driver.InitGL;
+end;
 
 procedure Java_org_zgameeditor_Zge_NativeDestroy( env : PJNIEnv; thiz : jobject ); cdecl;
 begin
@@ -67,7 +79,23 @@ end;
 
 procedure Java_org_zgameeditor_Zge_NativeSurfaceCreated( env : PJNIEnv; thiz : jobject);cdecl;
 begin
-
+  // New EGL context (first create or context loss). Old GL names are invalid:
+  // invalidate CPU-side handles without glDelete on the new context.
+  if (not AppInited) or (ZApp=nil) then
+    Exit;
+  AndroidLog('SurfaceCreated: reset GPU resources');
+  GpuContextLost := True;
+  try
+    ZApp.ResetGpuResources;
+  finally
+    GpuContextLost := False;
+  end;
+  Renderer.CurrentRenderTarget := nil;
+  if ZApp.Driver<>nil then
+    ZApp.Driver.InitGL;
+  GpuResetPending := True;
+  // Surface path already refreshed GPU for this resume cycle
+  NeedGpuResetOnResume := False;
 end;
 
 procedure Java_org_zgameeditor_Zge_NativeInit( env : PJNIEnv; thiz : jobject; ExtPath : jstring; DataPath : jstring; LibraryPath : jstring);cdecl;
@@ -139,10 +167,20 @@ end;
 
 procedure Java_org_zgameeditor_Zge_NativeSurfaceChanged( env : PJNIEnv; thiz : jobject; Width, Height : jint );cdecl;
 begin
+  if (not AppInited) or (ZApp=nil) then
+    Exit;
   ZApp.ScreenWidth := Width;
   ZApp.ScreenHeight := Height;
-  ZApp.ResetGpuResources;
-  ZApp.Driver.InitGL
+  ZApp.UpdateViewport;
+  // After SurfaceCreated we already invalidated GPU objects. On a size-only
+  // change (preserved context) recreate resources against the still-valid context.
+  if GpuResetPending then
+    GpuResetPending := False
+  else
+  begin
+    AndroidLog('SurfaceChanged: reset GPU resources');
+    ResetGpuAfterContextChange;
+  end;
 end;
 
 procedure DrawTestTriangle;
@@ -166,6 +204,17 @@ function Java_org_zgameeditor_Zge_NativeDrawFrame( env : PJNIEnv; thiz : jobject
 begin
   if AppInited then
   begin
+    // Resume with preserved EGL context: SurfaceCreated may not run. Recreate
+    // GPU resources on the GL thread where the context is current.
+    if NeedGpuResetOnResume then
+    begin
+      NeedGpuResetOnResume := False;
+      if not GpuResetPending then
+      begin
+        AndroidLog('Resume: reset GPU resources');
+        ResetGpuAfterContextChange;
+      end;
+    end;
 //    OldFPUExceptionMask := GetExceptionMask;
 //    SetExceptionMask([]);
     ZApp.Main;
@@ -179,7 +228,10 @@ end;
 procedure Java_org_zgameeditor_Zge_NativeActivate( env : PJNIEnv; thiz : jobject; Activate : jboolean );cdecl;
 begin
  if Activate<>0 then
-   AndroidKeys[ KeyResumed ] := True
+ begin
+   AndroidKeys[ KeyResumed ] := True;
+   NeedGpuResetOnResume := True;
+ end
  else
    AndroidKeys[ KeyPaused ] := True;
 end;

@@ -2041,13 +2041,17 @@ procedure TShader.CleanUp;
 begin
   {$ifndef minimal}
   if HasExternalHandle then
+  begin
     ProgHandle := 0;
+    Exit;
+  end;
   {$endif}
 
   if ProgHandle=0 then
     Exit;
 
-  glDeleteProgram(ProgHandle);
+  if not GpuContextLost then
+    glDeleteProgram(ProgHandle);
   ProgHandle := 0;
 end;
 
@@ -2089,7 +2093,8 @@ procedure TShaderVariable.ResetGpuResources;
 begin
   if TextureHandle<>0 then
   begin
-    glDeleteTextures(1, @TextureHandle);
+    if not GpuContextLost then
+      glDeleteTextures(1, @TextureHandle);
     TextureHandle := 0;
   end;
 end;
@@ -2375,18 +2380,26 @@ procedure TRenderTarget.CleanUp;
 begin
   if FbosSupported and (TexId<>0) then
   begin
-    glDeleteTextures(1, @TexId);
-    glDeleteFramebuffers(1, @FboId);
-    glDeleteRenderbuffers(1, @RboId);
+    if not GpuContextLost then
+    begin
+      glDeleteTextures(1, @TexId);
+      glDeleteFramebuffers(1, @FboId);
+      glDeleteRenderbuffers(1, @RboId);
+      {$ifdef RT_MULTISAMPLE}
+      if UseMultiSample then
+      begin
+        glDeleteTextures(1, @TexId_Ms);
+        glDeleteFramebuffers(1, @FboId_Ms);
+        glDeleteRenderbuffers(1, @RboId_Ms);
+      end;
+      {$endif}
+    end;
     TexId := 0;
+    FboId := 0;
+    RboId := 0;
     {$ifdef RT_MULTISAMPLE}
     if UseMultiSample then
-    begin
-      glDeleteTextures(1, @TexId_Ms);
-      glDeleteFramebuffers(1, @FboId_Ms);
-      glDeleteRenderbuffers(1, @RboId_Ms);
       TexId_Ms := 0;
-    end;
     {$endif}
   end;
 end;

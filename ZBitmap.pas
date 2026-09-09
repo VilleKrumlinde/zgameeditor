@@ -208,11 +208,15 @@ begin
   if IsInitialized then
   begin
     IsInitialized := False;
-    {$ifndef minimal}
-    if not HasExternalHandle then
-    {$endif}
-      glDeleteTextures(1, @Handle);
+    if not GpuContextLost then
+    begin
+      {$ifndef minimal}
+      if not HasExternalHandle then
+      {$endif}
+        glDeleteTextures(1, @Handle);
+    end;
   end;
+  Handle := 0;
 end;
 
 procedure TZBitmap.CopyAndDestroy(Source: TContent);

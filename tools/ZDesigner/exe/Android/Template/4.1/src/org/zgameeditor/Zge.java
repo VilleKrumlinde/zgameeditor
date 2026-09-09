@@ -65,6 +65,8 @@ public class Zge extends GLSurfaceView
     private static final boolean DEBUG = false;
     private static boolean zgeAppLoaded;
     private boolean IsDestroy;
+    private final Object PauseLock = new Object();
+    private boolean PauseHandled;
     private CRenderer Renderer;
     private InputMethodManager InputManager;
     private GestureDetector gestureDetector;
@@ -166,7 +168,32 @@ public class Zge extends GLSurfaceView
     public void onPause()
     {
         if(DEBUG) Log.i("ZgeAndroid", "pause");
-        NativeActivate( false );
+        // Deliver KeyPaused (and run one update) on the GL thread before the
+        // render thread is stopped, so game KeyPress handlers can stop music.
+        PauseHandled = false;
+        queueEvent(new Runnable() {
+            public void run() {
+                NativeActivate(false);
+                NativeDrawFrame();
+                synchronized (PauseLock) {
+                    PauseHandled = true;
+                    PauseLock.notifyAll();
+                }
+            }
+        });
+        synchronized (PauseLock) {
+            long deadline = System.currentTimeMillis() + 1000;
+            while (!PauseHandled) {
+                long left = deadline - System.currentTimeMillis();
+                if (left <= 0)
+                    break;
+                try {
+                    PauseLock.wait(left);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
         super.onPause();
     }
 
