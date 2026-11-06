@@ -26,7 +26,7 @@ See also: @ref Font, @ref Material.
 @dd Scale of text that will be rendered.
 
 @dt Align
-@dd Align text: Left or Center. If the text includes line breaks, then the text will be centered using the width of the first line only.
+@dd Align text: Left or Center. If the text includes line breaks, each line is centered on its own width.
 
 @dt RenderCharExpression
 @dd An expression that will be executed before each character is rendered. This is useful for making animations. Special properties that can be modified in the expression are: CharX, CharY, CharRotate, CharScale and CharI.
