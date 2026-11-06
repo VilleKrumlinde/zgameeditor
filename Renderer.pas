@@ -923,7 +923,7 @@ const
   BuiltInSpacing = -0.18; //Slight overlap to put chars closer to each other (for built-in font)
   CharsScreen = 20; //Scale 1 = 20 characters on screen
 var
-  CurChar,CharLen,I,ArrayLimit : integer;
+  CurChar,I,ArrayLimit : integer;
   P : PByte;
   XStep,StartX : single;
   Spacing,YScaleFactor : single;
@@ -936,6 +936,17 @@ var
   Driver : TGLDriverBase;
   FloatBuf : array[0..19] of ansichar;
   TextBuf : array[0..(8*1024-1)] of ansichar;
+
+  function LineCharCount(LineStart : PByte) : integer;
+  var
+    Q : PByte;
+  begin
+    Q := LineStart;
+    while not (Q^ in [0,13]) do
+      Inc(Q);
+    Result := NativeUInt(Q) - NativeUInt(LineStart);
+  end;
+
 begin
   Driver := Self.ZApp.Driver;
   UseBuiltInFont := (Driver.CurrentMaterial=nil) or (Driver.CurrentMaterial.Font=nil);
@@ -1033,16 +1044,11 @@ begin
   else
     FontSize := 16;
 
-  //Get length of first line in string
-  P := pointer(TheText);
-  while not (P^ in [0,13]) do
-    Inc(P);
-  CharLen := NativeUInt(P) - NativeUInt(TheText);
-
   XStep := 1.0 + Spacing;
 
+  //Center each line on its own width. Left keeps every line on the same start.
   case Align of
-    alCenter : StartX := XStep*0.5 - CharLen*XStep*0.5;
+    alCenter : StartX := XStep*0.5 - LineCharCount(TheText)*XStep*0.5;
   else
     StartX := XStep*0.5;  //alLeft
   end;
@@ -1057,11 +1063,13 @@ begin
   begin
     if P^=13 then
     begin
-      CharX := StartX;
-      CharY := CharY - 1.0;
       Inc(P,1);
       if P^=10 then
         Inc(P);
+      if Align=alCenter then
+        StartX := XStep*0.5 - LineCharCount(P)*XStep*0.5;
+      CharX := StartX;
+      CharY := CharY - 1.0;
       Continue;
     end;
 
