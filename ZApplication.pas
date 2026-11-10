@@ -151,7 +151,9 @@ type
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
     AndroidPortrait : byte;
-    AndroidSdk : byte;
+    AndroidBuild : byte;
+    AndroidArm32 : boolean;
+    AndroidArm64 : boolean;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
     FileVersion : integer;
@@ -1295,9 +1297,14 @@ begin
     List.SetDesignerProperty;
   List.AddProperty('AndroidPortrait',@AndroidPortrait, zptByte);
     List.SetDesignerProperty;
-  List.AddProperty('AndroidSdk',(@AndroidSdk), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['2.2 (API Level 8)','4.1 (API Level 16)']);{$endif}
-    {$ifndef minimal}List.GetLast.DefaultValue.ByteValue := 1;{$endif}
+  List.AddProperty('AndroidBuild',@AndroidBuild, zptByte);
+    List.GetLast.SetOptions(['Debug','Release']);
+    List.SetDesignerProperty;
+  List.AddProperty('AndroidArm32',@AndroidArm32, zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+    List.SetDesignerProperty;
+  List.AddProperty('AndroidArm64',@AndroidArm64, zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
     List.SetDesignerProperty;
   {$ENDIF}
 end;

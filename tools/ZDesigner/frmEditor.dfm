@@ -955,9 +955,9 @@ object EditorForm: TEditorForm
       Caption = 'Settings...'
       OnExecute = ShowSettingsActionExecute
     end
-    object AndroidBuildReleaseApkAction: TAction
-      Caption = 'Android: Build APK (release)'
-      OnExecute = AndroidBuildReleaseApkActionExecute
+    object AndroidBuildApkAction: TAction
+      Caption = 'Android: Build APK'
+      OnExecute = AndroidBuildApkActionExecute
     end
     object FindComponentAction: TAction
       Category = 'Edit'
@@ -1005,10 +1005,6 @@ object EditorForm: TEditorForm
     object AndroidRunAction: TAction
       Caption = 'Android: Run project'
       OnExecute = AndroidRunActionExecute
-    end
-    object AndroidBuildDebugApkAction: TAction
-      Caption = 'Android: Build APK (debug)'
-      OnExecute = AndroidBuildDebugApkActionExecute
     end
     object ImportBitmapAction: TAction
       Caption = 'Import Bitmaps...'
@@ -1741,10 +1737,7 @@ object EditorForm: TEditorForm
         Action = AndroidRunAction
       end
       object AndroidBuildAPK1: TMenuItem
-        Action = AndroidBuildDebugApkAction
-      end
-      object AndroidBuildAPKrelease1: TMenuItem
-        Action = AndroidBuildReleaseApkAction
+        Action = AndroidBuildApkAction
       end
       object N5: TMenuItem
         Caption = '-'

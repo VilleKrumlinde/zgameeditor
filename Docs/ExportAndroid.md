@@ -78,19 +78,19 @@ If you run the _ZGE Android_ application again, it opens the last deployed ZGame
 
 To create distributable stand-alone Android application (.apk file) with embedded ZGameEditor engine, compiled project file, and possibly also local resource files, external libraries, application icons, and defines specific Android application access rights, use this method.
 
-You can create either an unsigned __debug version__ used for testing and unofficial distribution, or signed __release version__ for official distribution on app markets, e.g., [Google Play (external link)](https://play.google.com) or [itch.io (external link)](https://itch.io/).
+You can create either a __debug version__, signed with the debug keystore and used for testing, or a __release version__ for official distribution on app markets, e.g., [Google Play (external link)](https://play.google.com) or [itch.io (external link)](https://itch.io/). Release is signed when a keystore is set in Settings. Otherwise the APK is left unsigned.
 
 Prerequisites:
 
-* To allow compiling ZGameEditor projects to Android application files (.apk), install [Android SDK (external link)](http://developer.android.com/sdk/). You can install either the whole Android Studio IDE or stand-alone Android SDK Tools; Android SDK Tools are smaller and sufficient for development with ZGameEditor. Android SDK requires [Java SE Development Kit (external link)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) to be installed on your machine.
+* To allow compiling ZGameEditor projects to Android application files (.apk), install [Android SDK (external link)](http://developer.android.com/sdk/). You can install either the whole Android Studio IDE or stand-alone Android SDK Tools; Android SDK Tools are smaller and sufficient for development with ZGameEditor. The build also needs [JDK 8 (external link)](http://www.oracle.com/technetwork/java/javase/downloads/index.html). `dx.bat` does not run on Java 9 or later. ZDesigner looks for a JDK 8 and uses it when it launches Ant.
 
 * Start _Android SDK Manager_ tool and install the following items:
   * Tools / Android SDK Tools
   * Tools / Android SDK Platform-tools
-  * Tools / Android SDK Build-tools
-  * Android 4.1.2 (API 16) / SDK Platform
+  * Tools / Android SDK Build-tools 30.0.3
+  * Android 10 (API 29) / SDK Platform
 
-  If you want to develop also for older Android devices, you should  manually install SDK Platform for Android 2.2 (API 8). Download it from [this link](http://qdevarena.blogspot.sk/2010/05/download-android-sdk-standalone-for.html) and unpack it to the "platforms" folder of your Android SDK installation folder.
+  Build-tools 31 and later ship `d8` only and have no `dx.bat`. A newly generated project sets `sdk.buildtools=30.0.3`. An existing project keeps its own `build.xml` and `ant.properties`. If that build still selects a newer revision, add `sdk.buildtools=30.0.3` to the project's `ant.properties`.
   
   ![Android SDK Manager installed packages](ht4-scr7.png)
 
@@ -113,20 +113,26 @@ Build the application:
   * @ref ZApplicationAndroidPackageName "AndroidPackageName"
   * @ref ZApplicationAndroidVersionName "AndroidVersionName"
   * @ref ZApplicationAndroidVersionNumber "AndroidVersionNumber"
+  * @ref ZApplicationAndroidBuild "AndroidBuild"
   * @ref ZApplicationAndroidPortrait "AndroidPortrait"
-  * @ref ZApplicationAndroidSdk "AndroidSdk"
+  * @ref ZApplicationAndroidArm32 "AndroidArm32"
+  * @ref ZApplicationAndroidArm64 "AndroidArm64"
 
   You can set these properties either before generating the Android application the first time, or during the next step.
 
-3. Select "Project / Android: Build APK (debug)" or "Project / Android: Build APK (release)" menu item. In a consequent dialog you can verify and optionally also change the application's properties.
+3. Select the "Project / Android: Build APK" menu item. In the dialog, choose Debug or Release, and verify or change the application's properties. Check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one of those native libraries must stay checked.
 
   ![Android Build APK dialog](ht4-scr9.png)
 
   ZGameEditor generates the Android Application Project folder with name you specified in the @ref ZApplicationAndroidPackageName "ZApplication.AndroidPackageName" property. The folder structure is described [here (external link)](http://developer.android.com/tools/projects/index.html#ApplicationModules).
   
-  Consequently, the building process is automatically started and the result application is placed to the `bin\<app-name>-debug.apk` file. The `<app-name>` is taken from the @ref ZApplicationCaption "ZApplication.Caption" property.
+  Consequently, the building process is automatically started. The APK is placed in the project `bin` folder. `<project>` is the project file name, not @ref ZApplicationCaption "ZApplication.Caption":
 
-  When compiling the release version, the building script asks you for entering the keystore password. The final APK file will be `bin\<app-name>.apk`, without the `-debug` suffix.
+  * debug: `bin\<project>-debug.apk`
+  * release with a keystore: `bin\<project>-release.apk`
+  * release without a keystore: `bin\<project>-release-unsigned.apk`
+
+  When compiling the release version with a keystore, the building script asks you for the keystore password.
   
 4. You can optionally customize the generated application by:
 
@@ -139,7 +145,7 @@ Build the application:
     - `xxhdpi` - 144 x 144px icon for 480 dpi screen
     - `xxxhdpi` - 192 x 192px icon for 640 dpi screen
 
-  * Adding external shared libraries (.so files) into the `libs\<architecture>` directory. The architecture can be `armeabi`, `armeabi-v7a`, `armeabi-v7a-hard`, and/or `arm64-v8a` depending on the target CPU. Other than ARM architectures are not supported.
+  * Choosing which native libraries to ship. In the build dialog, check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one must be checked. The project `libs` folder is left unchanged. The APK receives only the checked ABIs: every `.so` already in `libs\<architecture>` for that ABI, plus `libzgeandroid.so` from `Android\Template\libs` when that file is not already in the project folder.
 
   * Adding asset files which are packed to the final APK and can be read from application code, see section @ref  AccessingFiles "Accessing Android Files" for details.
   
@@ -243,6 +249,4 @@ You can set this property to false and handle "Back" button by your code. To det
 
 ## Controller
 
-Since Android 4.1 (API level 16), it is possible to uniformly use gamepad controllers. ZGameEditor provides library the "Android Gamepad Library" which defines standard Android codes and OUYA-specific codes for identification of controller buttons and axes used in @ref joyGetButton and @ref joyGetAxis functions.
-
-To allow this functionality, the @ref ZApplicationAndroidSdk "ZApplication.AndroidSdk" property must be set to "4.1 (API Level 16)".
+ZGameEditor provides the "Android Gamepad Library", which defines standard Android codes and OUYA-specific codes for identification of controller buttons and axes used in @ref joyGetButton and @ref joyGetAxis functions.

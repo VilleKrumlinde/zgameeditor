@@ -21,6 +21,8 @@ THE SOFTWARE. */
 /*
   Thanks to Andrey Kemka and his ZenGL project for help with Android/Fpc techniques:
     http://zengl.org/
+
+	Support for Android game pads implemented by Radovan Cervenka.
 */
 
 package org.zgameeditor;
@@ -28,6 +30,7 @@ package org.zgameeditor;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import java.io.InputStream;
+import java.util.*;
 
 import android.os.Environment;
 import android.app.Activity;
@@ -40,6 +43,8 @@ import android.view.*;
 import android.view.inputmethod.InputMethodManager;
 import android.view.GestureDetector;
 import android.util.Log;
+
+//import android.content.pm.ApplicationInfo;
 
 public class Zge extends GLSurfaceView
 {
@@ -56,7 +61,10 @@ public class Zge extends GLSurfaceView
     private native void NativeSetDataContent(byte[] content);
     private native int NativeGetGLBase();
     private native void NativeInitAppFromSDCard();
+    private native void NativeSetJoyButton(int joyId, int buttonNr, boolean value);
+    private native void NativeSetJoyAxisValue(int joyId, int axisNr, float value);
 
+    private static final boolean DEBUG = false;
     private static boolean zgeAppLoaded;
     private boolean IsDestroy;
     private final Object PauseLock = new Object();
@@ -75,7 +83,9 @@ public class Zge extends GLSurfaceView
         System.loadLibrary("zgeandroid");
 
         String dataPath = context.getFilesDir().getAbsolutePath() + "/";
-        String libraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+        //String libraryPath = getContext().getApplicationInfo().dataDir + "/lib/";
+        //String libraryPath = getContext().getApplicationInfo().dataDir + "/lib/arm64-v8a/";
+        String libraryPath = getContext().getApplicationInfo().nativeLibraryDir + "/";
         String extPath = Environment.getExternalStorageDirectory().getAbsolutePath();
         NativeInit(extPath, dataPath, libraryPath);
 
@@ -88,23 +98,23 @@ public class Zge extends GLSurfaceView
         getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
 
         if(NativeGetGLBase()==1) {
-          Log.i("ZgeAndroid", "GLES 2");
+          if(DEBUG) Log.i("ZgeAndroid", "GLES 2");
           setEGLContextClientVersion(2);
         }
         Renderer = new CRenderer();
         setRenderer( Renderer );
-        if (android.os.Build.VERSION.SDK_INT >= 11)
-            setPreserveEGLContextOnPause(true);
+        setPreserveEGLContextOnPause(true);
 
         setFocusableInTouchMode( true );
     }
 
-    private void initZApp() {
+    private void initZApp()
+    {
         if (zgeAppLoaded)
             return;
         //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
-        byte[] b = openAssetFile("assets/zzdc.dat");
-        if(b.length!=0)
+        byte[] b = openAssetFile("/assets/zzdc.dat");
+        if(b!=null && b.length!=0)
             NativeSetDataContent(b);
         else
             NativeInitAppFromSDCard();
@@ -112,8 +122,9 @@ public class Zge extends GLSurfaceView
     }
 
     //Called from native
-    public void openURL( String url ) {
-        Log.i("ZgeAndroid", "About to open: " + url);
+    public void openURL( String url )
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "About to open: " + url);
         Uri uriUrl = Uri.parse( url );
         Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
         intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
@@ -121,15 +132,16 @@ public class Zge extends GLSurfaceView
     }
 
     //Called from native
-    public byte[] openAssetFile(String name) {
-        name=name.substring(7); //strip "assets/" from name
-        Log.i("ZgeAndroid", "About to open: " + name);
+    public byte[] openAssetFile(String name)
+    {
+        name=name.substring(8); //strip "/assets/" from name
+        if(DEBUG) Log.i("ZgeAndroid", "About to open: " + name);
         AssetManager assets = getContext().getAssets();
         byte[] data=new byte[0]; //Return zero length to native if file not available
         try {
             InputStream stream = assets.open(name,AssetManager.ACCESS_BUFFER);
             int size = stream.available();
-            Log.i("ZgeAndroid", "Open ok, available: " + size);
+            if(DEBUG) Log.i("ZgeAndroid", "Open ok, available: " + size);
             data = new byte[size];
             stream.read(data);
             stream.close();
@@ -144,20 +156,22 @@ public class Zge extends GLSurfaceView
         return NativeCloseQuery();
     }
 
-    public void onStop() {
-        Log.i("ZgeAndroid", "stop");
+    public void onStop()
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "stop");
         NativeActivate( false );
     }
 
-    public void onStart() {
-        Log.i("ZgeAndroid", "start");
+    public void onStart()
+    {
+        if(DEBUG) Log.i("ZgeAndroid", "start");
         NativeActivate( true );
     }
 
     @Override
     public void onPause()
     {
-        Log.i("ZgeAndroid", "pause");
+        if(DEBUG) Log.i("ZgeAndroid", "pause");
         // Deliver KeyPaused (and run one update) on the GL thread before the
         // render thread is stopped, so game KeyPress handlers can stop music.
         PauseHandled = false;
@@ -190,7 +204,7 @@ public class Zge extends GLSurfaceView
     @Override
     public void onResume()
     {
-        Log.i("ZgeAndroid", "resume");
+        if(DEBUG) Log.i("ZgeAndroid", "resume");
         super.onResume();
         NativeActivate( true );
     }
@@ -265,37 +279,193 @@ public class Zge extends GLSurfaceView
         System.exit( 0 );
     }
 
-    @Override
-    public boolean onKeyDown( int keyCode, KeyEvent event ) {
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getRepeatCount()== 0)) {
-            NativeKeydown(253); //Trigger KeyBack in ZGE
-            if ( NativeCloseQuery() )
-                IsDestroy = true;
-            return true;
-        } else
-            NativeKeydown(event.getUnicodeChar());
+    // this can be removed for Android API level 19,
+    // because InputDevice.getControllerNumber() can be used instead
+    private static final int MAX_NUMBER_OF_DEVICES = 4;
+    private static int[] devices = new int[MAX_NUMBER_OF_DEVICES];
+    private static int lastDevice = 0;
+    private static int getControllerNumber(int deviceId) {
+      for ( int i = 0; i < lastDevice; ++i )
+        if ( devices[i] == deviceId ) return i;
 
-        return super.onKeyDown( keyCode, event );
+      if ( lastDevice == MAX_NUMBER_OF_DEVICES) return -1;
+
+      devices[lastDevice++] = deviceId;
+      return lastDevice - 1;
+    }
+
+    // mapping of Android API button codes to ZGE button codes
+    @SuppressWarnings("serial")
+    static final Map<Integer, Integer> BUTTON_CODES =
+      Collections.unmodifiableMap(new HashMap<Integer, Integer>() {{
+        put(KeyEvent.KEYCODE_BUTTON_A, 0); // OuyaController.BUTTON_O
+        put(KeyEvent.KEYCODE_BUTTON_X, 1); // OuyaController.BUTTON_U
+        put(KeyEvent.KEYCODE_BUTTON_Y, 2); // OuyaController.BUTTON_Y
+        put(KeyEvent.KEYCODE_BUTTON_B, 3); // OuyaController.BUTTON_A
+        put(KeyEvent.KEYCODE_BUTTON_L1, 4); // OuyaController.BUTTON_L1
+        put(KeyEvent.KEYCODE_BUTTON_L2, 5); // OuyaController.BUTTON_L2
+        put(KeyEvent.KEYCODE_BUTTON_THUMBL, 6); // OuyaController.BUTTON_L3
+        put(KeyEvent.KEYCODE_BUTTON_R1, 7); // OuyaController.BUTTON_R1
+        put(KeyEvent.KEYCODE_BUTTON_R2, 8); // OuyaController.BUTTON_R2
+        put(KeyEvent.KEYCODE_BUTTON_THUMBR, 9); // OuyaController.BUTTON_R3
+        put(KeyEvent.KEYCODE_DPAD_UP, 10); // OuyaController.BUTTON_DPAD_UP
+        put(KeyEvent.KEYCODE_DPAD_DOWN, 11); // OuyaController.BUTTON_DPAD_DOWN
+        put(KeyEvent.KEYCODE_DPAD_LEFT, 12); // OuyaController.BUTTON_DPAD_LEFT
+        put(KeyEvent.KEYCODE_DPAD_RIGHT, 13); // OuyaController.BUTTON_DPAD_RIGHT
+        put(KeyEvent.KEYCODE_MENU, 14); // OuyaController.BUTTON_MENU
+
+        put(KeyEvent.KEYCODE_BUTTON_C, 15);
+        put(KeyEvent.KEYCODE_BUTTON_Z, 16);
+        put(KeyEvent.KEYCODE_BUTTON_MODE, 17);
+        put(KeyEvent.KEYCODE_BUTTON_SELECT, 18);
+        put(KeyEvent.KEYCODE_BUTTON_START, 19);
+        // Retroid Pocket / many handhelds send Select as BACK
+        put(KeyEvent.KEYCODE_BACK, 18);
+        put(KeyEvent.KEYCODE_BUTTON_1, 20);
+        put(KeyEvent.KEYCODE_BUTTON_2, 21);
+        put(KeyEvent.KEYCODE_BUTTON_3, 22);
+        put(KeyEvent.KEYCODE_BUTTON_4, 23);
+        put(KeyEvent.KEYCODE_BUTTON_5, 24);
+        put(KeyEvent.KEYCODE_BUTTON_6, 25);
+        put(KeyEvent.KEYCODE_BUTTON_7, 26);
+        put(KeyEvent.KEYCODE_BUTTON_8, 27);
+        put(KeyEvent.KEYCODE_BUTTON_9, 28);
+        put(KeyEvent.KEYCODE_BUTTON_10, 29);
+        put(KeyEvent.KEYCODE_BUTTON_11, 30);
+        put(KeyEvent.KEYCODE_BUTTON_12, 31);
+      }});
+
+    private static int getJoyButtonCode(int keyCode)
+    {
+      Integer result = BUTTON_CODES.get(keyCode);
+      return result != null ? result.intValue() : -1;
+    }
+
+    private boolean isGamepadEvent(KeyEvent event)
+    {
+      int source = event.getSource();
+      return (source & InputDevice.SOURCE_GAMEPAD) != 0
+          || (source & InputDevice.SOURCE_JOYSTICK) != 0
+          || (source & InputDevice.SOURCE_CLASS_BUTTON) != 0;
     }
 
     @Override
-    public boolean onKeyUp( int keyCode, KeyEvent event )
+    public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        NativeKeyup(event.getUnicodeChar());
-        return super.onKeyUp( keyCode, event );
+
+      if ( event.getRepeatCount() == 0) {
+        int joyBtn = getJoyButtonCode(keyCode);
+
+        // B on handhelds is often KEYCODE_BACK. Consume it so Activity does not finish.
+        // Phone Back still asks ZGE (EscapeToQuit=0 in Omeganaut / Sailing Home).
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+          if (isGamepadEvent(event))
+            NativeSetJoyButton(getControllerNumber(event.getDeviceId()), 18, true);
+          else {
+            NativeKeydown(253); // KeyBack code in ZGE
+            if (NativeCloseQuery()) IsDestroy = true;
+          }
+          return true;
+        }
+
+        if (joyBtn >= 0) {
+          NativeSetJoyButton(getControllerNumber(event.getDeviceId()), joyBtn, true);
+          return true;
+        }
+
+        NativeKeydown(event.getUnicodeChar());
+      }
+
+      return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event)
+    {
+
+      int joyBtn = getJoyButtonCode(keyCode);
+
+      if (keyCode == KeyEvent.KEYCODE_BACK) {
+        if (isGamepadEvent(event))
+          NativeSetJoyButton(getControllerNumber(event.getDeviceId()), 18, false);
+        return true;
+      }
+
+      if (joyBtn >= 0) {
+        NativeSetJoyButton(getControllerNumber(event.getDeviceId()), joyBtn, false);
+        return true;
+      }
+
+      NativeKeyup(event.getUnicodeChar());
+      return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(final MotionEvent event)
+    {
+
+      // joystick
+      if ( (event.getSource() & InputDevice.SOURCE_CLASS_JOYSTICK ) != 0) {
+
+        int controllerNb = getControllerNumber(event.getDeviceId());
+
+        NativeSetJoyAxisValue(controllerNb,
+            0, // MotionEvent.AXIS_X or OuyaController.AXIS_LS_X
+            event.getAxisValue(MotionEvent.AXIS_X));
+
+        NativeSetJoyAxisValue(controllerNb,
+            1, // MotionEvent.AXIS_Y or OuyaController.AXIS_LS_Y
+            event.getAxisValue(MotionEvent.AXIS_Y));
+
+        NativeSetJoyAxisValue(controllerNb,
+            2, // MotionEvent.AXIS_Z or OuyaController.AXIS_RS_X
+            event.getAxisValue(MotionEvent.AXIS_Z));
+
+        NativeSetJoyAxisValue(controllerNb,
+            3, // MotionEvent.AXIS_RZ or OuyaController.AXIS_RS_Y
+            event.getAxisValue(MotionEvent.AXIS_RZ));
+
+        NativeSetJoyAxisValue(controllerNb,
+            4, // MotionEvent.AXIS_LTRIGGER or OuyaController.AXIS_L2
+            event.getAxisValue(MotionEvent.AXIS_LTRIGGER));
+
+        NativeSetJoyAxisValue(controllerNb,
+            5, // MotionEvent.AXIS_RTRIGGER or OuyaController.AXIS_R2
+            event.getAxisValue(MotionEvent.AXIS_RTRIGGER));
+
+        NativeSetJoyAxisValue(controllerNb,
+            6, // MotionEvent.AXIS_LTRIGGER or OuyaController.AXIS_L2
+            event.getAxisValue(MotionEvent.AXIS_RX));
+
+        NativeSetJoyAxisValue(controllerNb,
+            7, // MotionEvent.AXIS_RTRIGGER or OuyaController.AXIS_R2
+            event.getAxisValue(MotionEvent.AXIS_RY));
+
+        NativeSetJoyAxisValue(controllerNb,
+            8, // MotionEvent.AXIS_HAT_X
+            event.getAxisValue(MotionEvent.AXIS_HAT_X));
+
+        NativeSetJoyAxisValue(controllerNb,
+            9, // MotionEvent.AXIS_HAT_Y
+            event.getAxisValue(MotionEvent.AXIS_HAT_Y));
+
+        return true;
+      }
+
+      return false;
     }
 
     class CRenderer implements Renderer
     {
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
-            Log.i("ZgeAndroid", "SurfaceCreated: " + gl.glGetString( GL10.GL_VERSION ));
+            if(DEBUG) Log.i("ZgeAndroid", "SurfaceCreated: " + gl.glGetString( GL10.GL_VERSION ));
             NativeSurfaceCreated();
         }
 
         public void onSurfaceChanged( GL10 gl, int width, int height )
         {
-            Log.i("ZgeAndroid", "SurfaceChanged");
+            if(DEBUG) Log.i("ZgeAndroid", "SurfaceChanged");
             NativeSurfaceChanged( width, height );
         }
 
