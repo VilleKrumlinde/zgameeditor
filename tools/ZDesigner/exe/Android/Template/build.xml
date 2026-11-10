@@ -80,6 +80,11 @@
          in order to avoid having your file be overridden by tools such as "android update project"
     -->
     <!-- version-tag: 1 -->
+    <!-- Build-tools 31 and later ship d8 only. 30.0.3 is the last
+         installed revision that still provides dx.bat. -->
+    <property name="java.source" value="1.8" />
+    <property name="java.target" value="1.8" />
+    <property name="sdk.buildtools" value="30.0.3" />
     <import file="${sdk.dir}/tools/ant/build.xml" />
 
 </project>

@@ -5313,7 +5313,7 @@ end;
 
 procedure TEditorForm.BuildAndroidApk;
 var
-  TemplatePath,ProjectPath,OutFile : string;
+  TemplatePath,ProjectPath,OutFile,StageRoot : string;
   Lookups : TDictionary<string,string>;
 
   procedure MPath(const P : string);
@@ -5379,18 +5379,28 @@ var
     end;
   end;
 
-  procedure UseNativeLib(const AbiDir : string; const Include : boolean);
+  procedure StageSelectedAbi(const AbiDir : string; const Include : boolean);
   var
-    Rel : string;
+    SrcDir,DstDir : string;
+    F : TSearchRec;
   begin
-    Rel := 'libs\' + AbiDir + '\libzgeandroid.so';
-    if Include then
-    begin
-      MPath(ProjectPath + 'libs\' + AbiDir);
-      MCopy(Rel);
-    end
-    else if TFile.Exists(ProjectPath + Rel) then
-      TFile.Delete(ProjectPath + Rel);
+    if not Include then
+      Exit;
+    DstDir := StageRoot + AbiDir + '\';
+    TDirectory.CreateDirectory(DstDir);
+    SrcDir := ProjectPath + 'libs\' + AbiDir + '\';
+    if TDirectory.Exists(SrcDir) and (FindFirst(SrcDir + '*.so', faAnyFile, F) = 0) then
+    try
+      repeat
+        if (F.Attr and faDirectory) = 0 then
+          TFile.Copy(SrcDir + F.Name, DstDir + F.Name, True);
+      until FindNext(F) <> 0;
+    finally
+      FindClose(F);
+    end;
+    if not TFile.Exists(DstDir + 'libzgeandroid.so') then
+      TFile.Copy(TemplatePath + 'libs\' + AbiDir + '\libzgeandroid.so',
+        DstDir + 'libzgeandroid.so', True);
   end;
 
 var
@@ -5513,14 +5523,16 @@ begin
     Lookups.Add('$apkpath$',ApkFileName);
 
     MPath(ProjectPath);
-    MPath(ProjectPath + 'libs');
     MPath(ProjectPath + 'assets');
     MPath(ProjectPath + 'res');
     MPath(ProjectPath + 'res\drawable-ldpi');
     MPath(ProjectPath + 'src\org\zgameeditor');
 
-    UseNativeLib('armeabi-v7a', Self.ZApp.AndroidArm32);
-    UseNativeLib('arm64-v8a', Self.ZApp.AndroidArm64);
+    StageRoot := ProjectPath + 'apk-libs\';
+    if TDirectory.Exists(StageRoot) then
+      TDirectory.Delete(StageRoot, True);
+    StageSelectedAbi('armeabi-v7a', Self.ZApp.AndroidArm32);
+    StageSelectedAbi('arm64-v8a', Self.ZApp.AndroidArm64);
     MCopy('src\org\zgameeditor\Zge.java');
     MCopy('src\org\zgameeditor\ZgeActivity.java');
     MCopy('res\drawable-ldpi\icon.png');
@@ -5540,7 +5552,10 @@ begin
     OutFile := BuildRelease(bbNormalAndroid);
     TFile.Copy(OutFile,ProjectPath + 'assets\zzdc.dat',True);
 
-    Params := '-buildfile "' + ProjectPath + 'build.xml" ';
+    Params := '-buildfile "' + ProjectPath + 'build.xml" ' +
+      '-Dnative.libs.absolute.dir="' +
+      StringReplace(ExcludeTrailingPathDelimiter(StageRoot), '\', '/', [rfReplaceAll]) +
+      '" ';
     if IsDebug then
       Params := Params + 'debug'
     else

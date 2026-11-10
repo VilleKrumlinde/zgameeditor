@@ -139,7 +139,7 @@ Build the application:
     - `xxhdpi` - 144 x 144px icon for 480 dpi screen
     - `xxxhdpi` - 192 x 192px icon for 640 dpi screen
 
-  * Choosing which native libraries to ship. In the build dialog, check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one must be checked. ZGameEditor copies `libzgeandroid.so` for each checked ABI from `Android\Template\libs` and removes that file from the project folder when the ABI is unchecked. Other shared libraries you add yourself under `libs\<architecture>` are left in place.
+  * Choosing which native libraries to ship. In the build dialog, check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one must be checked. The project `libs` folder is left unchanged. The APK receives only the checked ABIs: every `.so` already in `libs\<architecture>` for that ABI, plus `libzgeandroid.so` from `Android\Template\libs` when that file is not already in the project folder.
 
   * Adding asset files which are packed to the final APK and can be read from application code, see section @ref  AccessingFiles "Accessing Android Files" for details.
   
