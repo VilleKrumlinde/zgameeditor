@@ -138,7 +138,7 @@ type
     Camera : TCamera;
     GLBase : TGLBase;
     NoSound : boolean;
-    FrameLoss : boolean;  //sätts till true ifall vi tappar frames
+    FrameLoss : boolean;  //sï¿½tts till true ifall vi tappar frames
     ScreenWidth : integer;
     ScreenHeight : integer;
     ThreadedProcessingEnabled : boolean;
@@ -151,7 +151,9 @@ type
     AndroidPackageName,AndroidVersionName : TPropString;
     AndroidVersionNumber : integer;
     AndroidPortrait : byte;
-    AndroidSdk : byte;
+    AndroidBuild : byte;
+    AndroidArm32 : boolean;
+    AndroidArm64 : boolean;
     PreviewClearColor : TZColorf;
     DesignerIsRunning : boolean;
     FileVersion : integer;
@@ -266,8 +268,8 @@ begin
   if not HasShutdown then
     Shutdown;
 
-  //ev problem med models.free, borde göra models.removeall vid terminate först
-  //annars kan models referera modeller som redan har gjorts free på
+  //ev problem med models.free, borde gï¿½ra models.removeall vid terminate fï¿½rst
+  //annars kan models referera modeller som redan har gjorts free pï¿½
   Models.Free;
   Driver.Free;
 
@@ -283,7 +285,7 @@ end;
 procedure TZApplication.Init;
 begin
   {$ifndef zgeviz}
-  Platform_InitGlobals;  //Nollställ timer etc
+  Platform_InitGlobals;  //Nollstï¿½ll timer etc
   {$endif}
 
 //  ZClasses.Tasks.Enabled := Self.ThreadedProcessingEnabled;
@@ -397,7 +399,7 @@ begin
   end
   else
     Self.FrameLoss := False;
-    //todo: om deltatime är för hög, öka LostTime, och justera Time och Accumulated med den
+    //todo: om deltatime ï¿½r fï¿½r hï¿½g, ï¿½ka LostTime, och justera Time och Accumulated med den
 
   if DeltaTime<0 then
     //Apparantly deltatime can become negative in multicore processors
@@ -423,7 +425,7 @@ begin
   if P.Y>=ViewportHeight then
     P.Y := ViewportHeight-1;
 
-  //-1 .. 1, 0 är center
+  //-1 .. 1, 0 ï¿½r center
   Result[0] := (P.X / ViewportWidth) * 2 - 1;
   //Y-axis is reversed compared to our opengl camera
   Result[1] := (((ViewportHeight-P.Y) / ViewportHeight) * 2 - 1);
@@ -761,8 +763,8 @@ begin
     Driver.Rotate( (CameraRotation[0]*360) , 1, 0, 0);
     Driver.Rotate( (CameraRotation[1]*360) , 0, 1, 0);
     Driver.Rotate( (CameraRotation[2]*360) , 0, 0, 1);
-    //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-    //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+    //Mï¿½ste ta negativt pï¿½ cameraposition fï¿½r att dess axlar ska bete sig
+    //likadant som modell-koordinater (positiv y = uppï¿½t t.ex.)
     Driver.Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
   end;
 end;
@@ -835,7 +837,7 @@ begin
   {$endif}
   //End frame
   {$ifdef minimal}
-  //I designer så ansvarar GL-komponenten för swapbuffer
+  //I designer sï¿½ ansvarar GL-komponenten fï¿½r swapbuffer
   Platform_SwapBuffers;
   {$endif}
 end;
@@ -1056,8 +1058,8 @@ begin
     Exit;
   end;
 
-  //Om det finns en model-parent så skriv den till symbol 'CurrentModel'
-  //så att den kan användas i uttryck.
+  //Om det finns en model-parent sï¿½ skriv den till symbol 'CurrentModel'
+  //sï¿½ att den kan anvï¿½ndas i uttryck.
   CurParent := C.GetOwner;
   Model := nil;
   while CurParent <> nil do
@@ -1295,9 +1297,14 @@ begin
     List.SetDesignerProperty;
   List.AddProperty('AndroidPortrait',@AndroidPortrait, zptByte);
     List.SetDesignerProperty;
-  List.AddProperty('AndroidSdk',(@AndroidSdk), zptByte);
-    {$ifndef minimal}List.GetLast.SetOptions(['2.2 (API Level 8)','4.1 (API Level 16)']);{$endif}
-    {$ifndef minimal}List.GetLast.DefaultValue.ByteValue := 1;{$endif}
+  List.AddProperty('AndroidBuild',@AndroidBuild, zptByte);
+    List.GetLast.SetOptions(['Debug','Release']);
+    List.SetDesignerProperty;
+  List.AddProperty('AndroidArm32',@AndroidArm32, zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
+    List.SetDesignerProperty;
+  List.AddProperty('AndroidArm64',@AndroidArm64, zptBoolean);
+    List.GetLast.DefaultValue.BooleanValue := True;
     List.SetDesignerProperty;
   {$ENDIF}
 end;
@@ -1442,8 +1449,8 @@ begin
   D.Rotate( (Rotation[0]*360) , 1, 0, 0);
   D.Rotate( (Rotation[1]*360) , 0, 1, 0);
   D.Rotate( (Rotation[2]*360) , 0, 0, 1);
-  //Måste ta negativt på cameraposition för att dess axlar ska bete sig
-  //likadant som modell-koordinater (positiv y = uppåt t.ex.)
+  //Mï¿½ste ta negativt pï¿½ cameraposition fï¿½r att dess axlar ska bete sig
+  //likadant som modell-koordinater (positiv y = uppï¿½t t.ex.)
   D.Translate(-Position[0], -Position[1], -Position[2]);
 end;
 

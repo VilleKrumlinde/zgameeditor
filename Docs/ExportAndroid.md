@@ -88,9 +88,7 @@ Prerequisites:
   * Tools / Android SDK Tools
   * Tools / Android SDK Platform-tools
   * Tools / Android SDK Build-tools
-  * Android 4.1.2 (API 16) / SDK Platform
-
-  If you want to develop also for older Android devices, you should  manually install SDK Platform for Android 2.2 (API 8). Download it from [this link](http://qdevarena.blogspot.sk/2010/05/download-android-sdk-standalone-for.html) and unpack it to the "platforms" folder of your Android SDK installation folder.
+  * Android 10 (API 29) / SDK Platform
   
   ![Android SDK Manager installed packages](ht4-scr7.png)
 
@@ -113,12 +111,14 @@ Build the application:
   * @ref ZApplicationAndroidPackageName "AndroidPackageName"
   * @ref ZApplicationAndroidVersionName "AndroidVersionName"
   * @ref ZApplicationAndroidVersionNumber "AndroidVersionNumber"
+  * @ref ZApplicationAndroidBuild "AndroidBuild"
   * @ref ZApplicationAndroidPortrait "AndroidPortrait"
-  * @ref ZApplicationAndroidSdk "AndroidSdk"
+  * @ref ZApplicationAndroidArm32 "AndroidArm32"
+  * @ref ZApplicationAndroidArm64 "AndroidArm64"
 
   You can set these properties either before generating the Android application the first time, or during the next step.
 
-3. Select "Project / Android: Build APK (debug)" or "Project / Android: Build APK (release)" menu item. In a consequent dialog you can verify and optionally also change the application's properties.
+3. Select the "Project / Android: Build APK" menu item. In the dialog, choose Debug or Release, and verify or change the application's properties. Check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one of those native libraries must stay checked.
 
   ![Android Build APK dialog](ht4-scr9.png)
 
@@ -139,7 +139,7 @@ Build the application:
     - `xxhdpi` - 144 x 144px icon for 480 dpi screen
     - `xxxhdpi` - 192 x 192px icon for 640 dpi screen
 
-  * Adding external shared libraries (.so files) into the `libs\<architecture>` directory. The architecture can be `armeabi`, `armeabi-v7a`, `armeabi-v7a-hard`, and/or `arm64-v8a` depending on the target CPU. Other than ARM architectures are not supported.
+  * Choosing which native libraries to ship. In the build dialog, check 32-bit (`armeabi-v7a`), 64-bit (`arm64-v8a`), or both. At least one must be checked. ZGameEditor copies `libzgeandroid.so` for each checked ABI from `Android\Template\libs` and removes that file from the project folder when the ABI is unchecked. Other shared libraries you add yourself under `libs\<architecture>` are left in place.
 
   * Adding asset files which are packed to the final APK and can be read from application code, see section @ref  AccessingFiles "Accessing Android Files" for details.
   
@@ -243,6 +243,4 @@ You can set this property to false and handle "Back" button by your code. To det
 
 ## Controller
 
-Since Android 4.1 (API level 16), it is possible to uniformly use gamepad controllers. ZGameEditor provides library the "Android Gamepad Library" which defines standard Android codes and OUYA-specific codes for identification of controller buttons and axes used in @ref joyGetButton and @ref joyGetAxis functions.
-
-To allow this functionality, the @ref ZApplicationAndroidSdk "ZApplication.AndroidSdk" property must be set to "4.1 (API Level 16)".
+ZGameEditor provides the "Android Gamepad Library", which defines standard Android codes and OUYA-specific codes for identification of controller buttons and axes used in @ref joyGetButton and @ref joyGetAxis functions.

@@ -4,7 +4,7 @@ object AndroidApkForm: TAndroidApkForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Build Android APK'
-  ClientHeight = 334
+  ClientHeight = 388
   ClientWidth = 252
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,27 +16,41 @@ object AndroidApkForm: TAndroidApkForm
   Position = poOwnerFormCenter
   DesignSize = (
     252
-    334)
+    388)
   PixelsPerInch = 96
   TextHeight = 13
+  object VersionNumberLabel: TLabel
+    Left = 16
+    Top = 169
+    Width = 74
+    Height = 13
+    Caption = 'Version number'
+  end
+  object Label3: TLabel
+    Left = 16
+    Top = 202
+    Width = 28
+    Height = 13
+    Caption = 'Build'
+  end
   object Label1: TLabel
     Left = 16
-    Top = 219
+    Top = 235
     Width = 54
     Height = 13
     Caption = 'Orientation'
   end
   object Label2: TLabel
     Left = 16
-    Top = 251
-    Width = 75
+    Top = 268
+    Width = 81
     Height = 13
-    Caption = 'Android version'
+    Caption = 'Native libraries'
   end
   object PackageNameEdit: TLabeledEdit
     Left = 16
     Top = 32
-    Width = 217
+    Width = 220
     Height = 21
     EditLabel.Width = 172
     EditLabel.Height = 13
@@ -46,74 +60,99 @@ object AndroidApkForm: TAndroidApkForm
   object AppNameEdit: TLabeledEdit
     Left = 16
     Top = 80
-    Width = 217
+    Width = 220
     Height = 21
     EditLabel.Width = 73
     EditLabel.Height = 13
     EditLabel.Caption = 'Application title'
     TabOrder = 1
   end
-  object Button1: TButton
-    Left = 86
-    Top = 301
-    Width = 75
-    Height = 25
-    Anchors = [akRight, akBottom]
-    Caption = 'OK'
-    ModalResult = 1
-    TabOrder = 2
-  end
-  object Button2: TButton
-    Left = 169
-    Top = 301
-    Width = 75
-    Height = 25
-    Anchors = [akRight, akBottom]
-    Caption = 'Cancel'
-    ModalResult = 2
-    TabOrder = 3
-  end
   object VersionNameEdit: TLabeledEdit
     Left = 16
     Top = 128
-    Width = 217
+    Width = 220
     Height = 21
     EditLabel.Width = 64
     EditLabel.Height = 13
     EditLabel.Caption = 'Version name'
-    TabOrder = 4
+    TabOrder = 2
   end
-  object VersionNumberEdit: TLabeledEdit
-    Left = 16
-    Top = 176
-    Width = 73
+  object VersionNumberEdit: TEdit
+    Left = 108
+    Top = 165
+    Width = 128
     Height = 21
-    EditLabel.Width = 74
-    EditLabel.Height = 13
-    EditLabel.Caption = 'Version number'
     NumbersOnly = True
-    TabOrder = 5
+    TabOrder = 3
   end
-  object OrientationComboBox: TComboBox
-    Left = 96
-    Top = 216
-    Width = 105
+  object BuildTypeComboBox: TComboBox
+    Left = 108
+    Top = 198
+    Width = 128
     Height = 21
     Style = csDropDownList
     ItemIndex = 0
-    TabOrder = 6
+    TabOrder = 4
+    Text = 'Debug'
+    Items.Strings = (
+      'Debug'
+      'Release')
+  end
+  object OrientationComboBox: TComboBox
+    Left = 108
+    Top = 231
+    Width = 128
+    Height = 21
+    Style = csDropDownList
+    ItemIndex = 0
+    TabOrder = 5
     Text = 'Landscape'
     Items.Strings = (
       'Landscape'
       'Portrait'
       'sensorLandscape')
   end
-  object AndroidVersionComboBox: TComboBox
-    Left = 96
-    Top = 248
-    Width = 148
-    Height = 21
-    Style = csDropDownList
+  object Arm32CheckBox: TCheckBox
+    Left = 16
+    Top = 289
+    Width = 220
+    Height = 17
+    Caption = '32-bit (armeabi-v7a)'
+    Checked = True
+    State = cbChecked
+    TabOrder = 6
+  end
+  object Arm64CheckBox: TCheckBox
+    Left = 16
+    Top = 314
+    Width = 220
+    Height = 17
+    Caption = '64-bit (arm64-v8a)'
+    Checked = True
+    State = cbChecked
     TabOrder = 7
+  end
+  object Button1: TButton
+    Left = 78
+    Top = 347
+    Width = 75
+    Height = 25
+    Anchors = [akRight, akBottom]
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 8
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 161
+    Top = 347
+    Width = 75
+    Height = 25
+    Anchors = [akRight, akBottom]
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 9
   end
 end

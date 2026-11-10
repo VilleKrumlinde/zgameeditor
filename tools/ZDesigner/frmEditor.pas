@@ -1,4 +1,4 @@
-﻿{Copyright (c) 2008- Ville Krumlinde
+{Copyright (c) 2008- Ville Krumlinde
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -215,10 +215,8 @@ type
     AndroidRunAction: TAction;
     AndroidRunproject1: TMenuItem;
     N17: TMenuItem;
-    AndroidBuildDebugApkAction: TAction;
+    AndroidBuildApkAction: TAction;
     AndroidBuildAPK1: TMenuItem;
-    AndroidBuildReleaseApkAction: TAction;
-    AndroidBuildAPKrelease1: TMenuItem;
     LogClearMenuItem: TMenuItem;
     GamutImage: TImage;
     EnableThreadedProcessingMenuItem: TMenuItem;
@@ -315,8 +313,7 @@ type
     procedure OpenStyleMenuItemClick(Sender: TObject);
     procedure GenerateAndroidActionExecute(Sender: TObject);
     procedure AndroidRunActionExecute(Sender: TObject);
-    procedure AndroidBuildDebugApkActionExecute(Sender: TObject);
-    procedure AndroidBuildReleaseApkActionExecute(Sender: TObject);
+    procedure AndroidBuildApkActionExecute(Sender: TObject);
     procedure LogClearMenuItemClick(Sender: TObject);
     procedure FileOpenActionBeforeExecute(Sender: TObject);
     procedure EnableThreadedProcessingMenuItemClick(Sender: TObject);
@@ -434,7 +431,7 @@ type
     procedure SwitchToStyle(const StyleName: string; const StyleHandle : TStyleManager.TStyleServicesHandle);
     procedure OnTreeRecreate(Sender : TObject);
     procedure FillNewMenuTemplateItems;
-    procedure BuildAndroidApk(const IsDebug : boolean);
+    procedure BuildAndroidApk;
     {$ifdef zlog}
     procedure AddOneLogString(const S: string; Log : TLog; Level : TLogLevel);
     {$endif}
@@ -5309,19 +5306,14 @@ begin
   end;
 end;
 
-procedure TEditorForm.AndroidBuildDebugApkActionExecute(Sender: TObject);
+procedure TEditorForm.AndroidBuildApkActionExecute(Sender: TObject);
 begin
-  BuildAndroidApk(True);
+  BuildAndroidApk;
 end;
 
-procedure TEditorForm.AndroidBuildReleaseApkActionExecute(Sender: TObject);
-begin
-  BuildAndroidApk(False);
-end;
-
-procedure TEditorForm.BuildAndroidApk(const IsDebug : boolean);
+procedure TEditorForm.BuildAndroidApk;
 var
-  TemplatePath,OverridePath,ProjectPath,OutFile : string;
+  TemplatePath,ProjectPath,OutFile : string;
   Lookups : TDictionary<string,string>;
 
   procedure MPath(const P : string);
@@ -5330,22 +5322,18 @@ var
       TDirectory.CreateDirectory(P);
   end;
 
-  procedure MCopy(const Name : string; const DoReplaceStrings : boolean = False; const AlwaysOverwrite : boolean = False);
+  procedure MCopy(const Name : string; const DoReplaceStrings : boolean = False);
   var
     Src,Dst,Key,S,DstContent : string;
     I : integer;
     L : TStringList;
     NeedReplace : boolean;
   begin
-    if (Length(OverridePath)>0) and TFile.Exists(OverridePath + Name) then
-      Src := OverridePath + Name
-    else
-      Src := TemplatePath + Name;
+    Src := TemplatePath + Name;
     Dst := ProjectPath + Name;
     if not DoReplaceStrings then
     begin
       if TFile.Exists(Dst) and
-        (not AlwaysOverwrite) and
         (TFile.GetLastWriteTime(Dst)>=TFile.GetLastWriteTime(Src)) then
         //no need to copy
       else
@@ -5382,7 +5370,7 @@ var
           end;
           L[I] := S;
         end;
-        if NeedReplace or AlwaysOverwrite then
+        if NeedReplace then
           //Only replace file if the replacement values did not already exists in destination
           L.SaveToFile(Dst);
       finally
@@ -5391,15 +5379,24 @@ var
     end;
   end;
 
-  function InGetApi(const s : string) : string;
+  procedure UseNativeLib(const AbiDir : string; const Include : boolean);
+  var
+    Rel : string;
   begin
-    Result := Copy(S,1,Pos(' ',S)-1);
+    Rel := 'libs\' + AbiDir + '\libzgeandroid.so';
+    if Include then
+    begin
+      MPath(ProjectPath + 'libs\' + AbiDir);
+      MCopy(Rel);
+    end
+    else if TFile.Exists(ProjectPath + Rel) then
+      TFile.Delete(ProjectPath + Rel);
   end;
 
 var
-  Params,ApkFileName,S : string;
+  Params,ApkFileName : string;
   F : TAndroidApkForm;
-  SdkChanged : boolean;
+  IsDebug : boolean;
 begin
   if Self.AndroidSdkPath='' then
   begin
@@ -5418,30 +5415,33 @@ begin
     F.AppNameEdit.Text := String(Self.ZApp.Caption);
     F.VersionNameEdit.Text := String(Self.ZApp.AndroidVersionName);
     F.VersionNumberEdit.Text := IntToStr(Self.ZApp.AndroidVersionNumber);
+    F.BuildTypeComboBox.ItemIndex := Self.ZApp.AndroidBuild;
     F.OrientationComboBox.ItemIndex := Self.ZApp.AndroidPortrait;
-
-    for S in ZApp.GetProperties.GetByName('AndroidSdk').Options do
-      F.AndroidVersionComboBox.Items.Add(S);
-    F.AndroidVersionComboBox.ItemIndex := ZApp.AndroidSdk;
+    F.Arm32CheckBox.Checked := Self.ZApp.AndroidArm32;
+    F.Arm64CheckBox.Checked := Self.ZApp.AndroidArm64;
 
     if F.ShowModal=mrCancel then
       Exit;
 
-    SdkChanged := Self.ZApp.AndroidSdk <> F.AndroidVersionComboBox.ItemIndex;
+    IsDebug := F.BuildTypeComboBox.ItemIndex=0;
 
     if (String(Self.ZApp.AndroidPackageName) <> F.PackageNameEdit.Text) or
        (String(Self.ZApp.Caption) <> F.AppNameEdit.Text) or
        (String(Self.ZApp.AndroidVersionName) <> F.VersionNameEdit.Text) or
        (Self.ZApp.AndroidVersionNumber <> StrToInt(F.VersionNumberEdit.Text)) or
+       (Self.ZApp.AndroidBuild <> F.BuildTypeComboBox.ItemIndex) or
        (Self.ZApp.AndroidPortrait <> F.OrientationComboBox.ItemIndex) or
-       SdkChanged then
+       (Self.ZApp.AndroidArm32 <> F.Arm32CheckBox.Checked) or
+       (Self.ZApp.AndroidArm64 <> F.Arm64CheckBox.Checked) then
     begin
       Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
       Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
       Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
       Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
+      Self.ZApp.AndroidBuild := F.BuildTypeComboBox.ItemIndex;
       Self.ZApp.AndroidPortrait := F.OrientationComboBox.ItemIndex;
-      Self.ZApp.AndroidSdk := F.AndroidVersionComboBox.ItemIndex;
+      Self.ZApp.AndroidArm32 := F.Arm32CheckBox.Checked;
+      Self.ZApp.AndroidArm64 := F.Arm64CheckBox.Checked;
       Self.SetFileChanged(True);
     end;
   finally
@@ -5454,13 +5454,22 @@ begin
     Exit;
   end;
 
-  TemplatePath := Self.ExePath + 'Android\Template\base\';
-  if ZApp.AndroidSdk=0 then
-    OverridePath := ''
-  else
-    OverridePath := Self.ExePath + 'Android\Template\' +
-      InGetApi(ZApp.GetProperties.GetByName('AndroidSdk').Options[ZApp.AndroidSdk]) +
-      '\';
+  TemplatePath := Self.ExePath + 'Android\Template\';
+
+  if Self.ZApp.AndroidArm32 and
+    not TFile.Exists(TemplatePath + 'libs\armeabi-v7a\libzgeandroid.so') then
+  begin
+    ShowMessage('32-bit native library not found:'#13#13 +
+      TemplatePath + 'libs\armeabi-v7a\libzgeandroid.so');
+    Exit;
+  end;
+  if Self.ZApp.AndroidArm64 and
+    not TFile.Exists(TemplatePath + 'libs\arm64-v8a\libzgeandroid.so') then
+  begin
+    ShowMessage('64-bit native library not found:'#13#13 +
+      TemplatePath + 'libs\arm64-v8a\libzgeandroid.so');
+    Exit;
+  end;
 
   if CurrentFileName='' then
     ProjectPath := Self.ExePath + 'Android\Projects\'
@@ -5505,20 +5514,20 @@ begin
 
     MPath(ProjectPath);
     MPath(ProjectPath + 'libs');
-    MPath(ProjectPath + 'libs\armeabi-v7a');
     MPath(ProjectPath + 'assets');
     MPath(ProjectPath + 'res');
     MPath(ProjectPath + 'res\drawable-ldpi');
     MPath(ProjectPath + 'src\org\zgameeditor');
 
-    MCopy('libs\armeabi-v7a\libzgeandroid.so');
-    MCopy('src\org\zgameeditor\Zge.java', False, SdkChanged);
+    UseNativeLib('armeabi-v7a', Self.ZApp.AndroidArm32);
+    UseNativeLib('arm64-v8a', Self.ZApp.AndroidArm64);
+    MCopy('src\org\zgameeditor\Zge.java');
     MCopy('src\org\zgameeditor\ZgeActivity.java');
     MCopy('res\drawable-ldpi\icon.png');
 
-    MCopy('default.properties', False, SdkChanged);
+    MCopy('default.properties');
     MCopy('local.properties', True);
-    MCopy('AndroidManifest.xml', True, SdkChanged);
+    MCopy('AndroidManifest.xml', True);
     MCopy('build.xml',True);
     if IsDebug then
     begin

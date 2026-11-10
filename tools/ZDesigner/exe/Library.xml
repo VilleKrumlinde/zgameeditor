@@ -2717,8 +2717,7 @@ void Normalize( int K,
   Generic Android codes and OUYA-specific codes are included.
 
   Use the codes in joyGetButton() and joyGetAxis() functions to
-  identify buttons and axes. ZApplication.AndroidSdk property
-  must be set to "4.1 (API Level 16)".
+  identify buttons and axes.
 
   Copyright (c) 2014 Radovan Cervenka
 */
