@@ -78,17 +78,19 @@ If you run the _ZGE Android_ application again, it opens the last deployed ZGame
 
 To create distributable stand-alone Android application (.apk file) with embedded ZGameEditor engine, compiled project file, and possibly also local resource files, external libraries, application icons, and defines specific Android application access rights, use this method.
 
-You can create either an unsigned __debug version__ used for testing and unofficial distribution, or signed __release version__ for official distribution on app markets, e.g., [Google Play (external link)](https://play.google.com) or [itch.io (external link)](https://itch.io/).
+You can create either a __debug version__, signed with the debug keystore and used for testing, or a __release version__ for official distribution on app markets, e.g., [Google Play (external link)](https://play.google.com) or [itch.io (external link)](https://itch.io/). Release is signed when a keystore is set in Settings. Otherwise the APK is left unsigned.
 
 Prerequisites:
 
-* To allow compiling ZGameEditor projects to Android application files (.apk), install [Android SDK (external link)](http://developer.android.com/sdk/). You can install either the whole Android Studio IDE or stand-alone Android SDK Tools; Android SDK Tools are smaller and sufficient for development with ZGameEditor. Android SDK requires [Java SE Development Kit (external link)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) to be installed on your machine.
+* To allow compiling ZGameEditor projects to Android application files (.apk), install [Android SDK (external link)](http://developer.android.com/sdk/). You can install either the whole Android Studio IDE or stand-alone Android SDK Tools; Android SDK Tools are smaller and sufficient for development with ZGameEditor. The build also needs [JDK 8 (external link)](http://www.oracle.com/technetwork/java/javase/downloads/index.html). `dx.bat` does not run on Java 9 or later. ZDesigner looks for a JDK 8 and uses it when it launches Ant.
 
 * Start _Android SDK Manager_ tool and install the following items:
   * Tools / Android SDK Tools
   * Tools / Android SDK Platform-tools
-  * Tools / Android SDK Build-tools
+  * Tools / Android SDK Build-tools 30.0.3
   * Android 10 (API 29) / SDK Platform
+
+  Build-tools 31 and later ship `d8` only and have no `dx.bat`. A newly generated project sets `sdk.buildtools=30.0.3`. An existing project keeps its own `build.xml` and `ant.properties`. If that build still selects a newer revision, add `sdk.buildtools=30.0.3` to the project's `ant.properties`.
   
   ![Android SDK Manager installed packages](ht4-scr7.png)
 
@@ -124,9 +126,13 @@ Build the application:
 
   ZGameEditor generates the Android Application Project folder with name you specified in the @ref ZApplicationAndroidPackageName "ZApplication.AndroidPackageName" property. The folder structure is described [here (external link)](http://developer.android.com/tools/projects/index.html#ApplicationModules).
   
-  Consequently, the building process is automatically started and the result application is placed to the `bin\<app-name>-debug.apk` file. The `<app-name>` is taken from the @ref ZApplicationCaption "ZApplication.Caption" property.
+  Consequently, the building process is automatically started. The APK is placed in the project `bin` folder. `<project>` is the project file name, not @ref ZApplicationCaption "ZApplication.Caption":
 
-  When compiling the release version, the building script asks you for entering the keystore password. The final APK file will be `bin\<app-name>.apk`, without the `-debug` suffix.
+  * debug: `bin\<project>-debug.apk`
+  * release with a keystore: `bin\<project>-release.apk`
+  * release without a keystore: `bin\<project>-release-unsigned.apk`
+
+  When compiling the release version with a keystore, the building script asks you for the keystore password.
   
 4. You can optionally customize the generated application by:
 

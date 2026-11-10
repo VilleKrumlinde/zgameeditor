@@ -148,16 +148,16 @@ The application top-most component. This component is automatically created when
 @dd Internal unique version number of Android application placed to AndroidManifest.xml file as `manifest.android:versionCode` attribute. See [Android developer's page](http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode)  for details.
 
 @dt @anchor ZApplicationAndroidPortrait AndroidPortrait
-@dd If checked, the application generated for Android will have "portrait" screen orientation. By default, the property is unchecked and the screen orientation is "landscape".
+@dd Screen orientation of the generated Android application: Landscape (the default), Portrait, or sensorLandscape.
 
 @dt @anchor ZApplicationAndroidBuild AndroidBuild
-@dd Build type used by Android: Build APK. Debug produces an unsigned debug APK. Release produces a signed APK when a keystore is set. Debug is the default, and the last choice is saved with the project.
+@dd Build type used by Android: Build APK. Debug produces `bin\<project>-debug.apk`, signed with the debug keystore. Release produces `bin\<project>-release.apk` when a keystore is set, otherwise `bin\<project>-release-unsigned.apk`. `<project>` is the project file name. Debug is the default, and the last choice is saved with the project.
 
 @dt @anchor ZApplicationAndroidArm32 AndroidArm32
-@dd When checked, the Android export includes the 32-bit native library (`libs\armeabi-v7a\libzgeandroid.so`). Checked by default.
+@dd When checked, the APK includes every native library already in `libs\armeabi-v7a`. The project `libs` folder is left unchanged. If `libzgeandroid.so` is missing there, the export adds the copy from `Android\Template\libs`. Checked by default.
 
 @dt @anchor ZApplicationAndroidArm64 AndroidArm64
-@dd When checked, the Android export includes the 64-bit native library (`libs\arm64-v8a\libzgeandroid.so`). Checked by default. At least one of AndroidArm32 and AndroidArm64 must be checked, so the APK only contains the ABIs you want to ship.
+@dd When checked, the APK includes every native library already in `libs\arm64-v8a`. The project `libs` folder is left unchanged. If `libzgeandroid.so` is missing there, the export adds the copy from `Android\Template\libs`. Checked by default. At least one of AndroidArm32 and AndroidArm64 must be checked.
 
 @dlx
 
